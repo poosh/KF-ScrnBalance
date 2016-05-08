@@ -1,0 +1,39 @@
+﻿Total rebalance of the game. Adds new guns, Gunslinger perk and server-side achievements.
+Now it IS COMPATIBLE with Objective Mode! Select "Objective Mode [ScrN]" for a proper gameplay.
+Version 7.60.
+ 
+Requires [url=http://steamcommunity.com/sharedfiles/filedetails/?id=97735200]ServerPerks v7[/url] to run.
+
+Join [url=http://steamcommunity.com/groups/ScrNBalance]ScrN Balance Official Steam Group [/url] to get the latest information and find official servers to play this mod.
+
+Main features:
+[list]
+[*] New perk: [b]Gunslinger[/b] (pistols);
+[*] More than 300 custom [b]achievements[/b] can be earned;
+[*] New weapons: Golden M79 Incendiary, Namalm Thrower, MK23 with laser sights etc.;
+[*] Medic Grenade Launchers: M79M Medic GL, M4-203M Medic Rifle;
+[*] Chainsaw consumes fuel and brings real massacre to the game;
+[*] Perk bonuses for custom weapons (the ones you can get via workshop);
+[*] Each perk starts the game with same-worth guns (no more selling xbow for $600);
+[*] Balances weapons and perks, making each perk useful in the game;
+[*] Alternate Burning Mechanism makes Firebug awesome (but not OP);
+[*] Perks support custom weapons: install a new weapon, add it to the config and receive perk bonuses for that;
+[*] Configurable spawn inventory and weapon prices;
+[*] Manual Reloading (optional);
+[*] Grenade "Cooking" (optional);
+[*] Show Damage (optional)
+[*] Voting for ending trader time, zed spawn boost etc.
+[*] Configurable max zeds at once on the map. Now you can raise previously hardcoded value of 32 zeds and fight against 100-zed croud!
+[/list]
+Most features are configurable (turn on only what you like).
+
+Detailed info on KF forums:
+[url=http://forums.tripwireinteractive.com/showthread.php?t=80743]http://forums.tripwireinteractive.com/showthread.php?t=80743[/url]
+
+[url=http://steamcommunity.com/sharedfiles/filedetails/?id=124250783]Guide how to use custom weapons with this mutator[/url]
+
+IMPORTANT NOTICE:
+[b][u]Make a backup of your ScrnBalance.ini and ServerPerks.ini files[/u][/b], if you make any changes to them. Otherwise they will be overwritten by the future releases.
+
+
+Copyright © 2012-2014 PU Developing IK, All Rights Reserved.

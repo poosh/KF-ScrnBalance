@@ -1,0 +1,12 @@
+-------------------------------------------------------------------------------
+--=VERSION HISTORY=--
+-------------------------------------------------------------------------------
+
+3.00:
+- Admins always can vote, even if spectators
+- New config variables (see ScrnVoting.ini):
+  VotePercentCountDown - allows to lower requirements, if countdown reached
+  VoteCoolDown - players can not start new vote for defined amount of seconds, 
+    if his previous vote failed.
+- Added BlockedVoters, which can be used by extended classes to block specific 
+  players from starting votes

@@ -1,0 +1,42 @@
+Code-breaking changes in ScrnBalance v5.16 due to removal of ScrnAchInfo
+
+Modifiers:
++ Added
+- Removed
+! Modified
+
+
+ScrnAchievements.uc:
+! AchDef
+- SpawnReplicationInfo()
+- GetAchievementByIndex()
+! GetAchievementByID()
++ ClientSetAchProgress()
++ GetIcon(), IsUnlocked()
++ AchStrInfo
+! ReadProgressFromData() - now should be simulated!
+
+
+ScrnPlayerController.uc:
+Changed variables and functions:
++ AchStrInfo
+! PendingAchievements
+- CurrentAchievement
++ CurrentAchHandler, CurrentAchIndex;
+! DisplayAchievementStatus(), DisplayCurrentAchievement(), PlayerTick()
+
+
+ScrnAchievementEarnedMsg.uc
+Requires ScrnAchievement object to be passed as optional object
+"Switch" now indicates achievement index in ScrnAchievement.AchDefs
+
+
+ScrnAchievementsList.uc:
+- AchievementData
++ AchievementHandlers
++ ListIndexToAch()
+! DrawAchievement()
+
+
+ScrnBalance.uc:
+! AchievementEarned(), BroadcastAchEarn()

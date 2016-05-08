@@ -1,0 +1,17 @@
+Code-breaking changes in ScrnBalance v6.20 due to dramatic changes in trader menu
+
+Modifiers:
++ Added
+- Removed
+! Modified
+
+
+ScrnVeterancyTypes.uc:
+! CheckCowboyMode() - now weapon class is passed instead of weapon instance
++ GetMagCapacityModStatic(), GetReloadSpeedModifierStatic(), GetFireSpeedModStatic()
+    The 3 functions above check weapon classes not weapon instances, so they can be 
+    used without spawning weapon itself. Currently they are in use by 
+    ScrnGUIBuyWeaponInfoPanel to display weapon perk bonuses in trader menu.
+    It is recommended for all ScrN-compatible perks to use new functions instead. 
+    They are backward-compatibe, for example by default (if not overrided) 
+    GetReloadSpeedModifier() returns the result of GetReloadSpeedModifierStatic().
