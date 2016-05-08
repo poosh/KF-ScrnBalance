@@ -11,7 +11,7 @@ class ScrnBalance extends Mutator
 #exec OBJ LOAD FILE=ScrnAch_T.utx    
 
 
-const VERSION = 90200;
+const VERSION = 91000;
 
 var ScrnBalance Mut; // pointer to self to use in default functions, i.e class'ScrnBalance'.default.Mut
 
@@ -107,9 +107,15 @@ var array<CustomPerkedClass> CustomPerkedClassArray;
 
 var ScrnBurnMech BurnMech; // Alternate Burning Mechanism
 
-var transient byte CurrentSpawnSetupNo;
-var transient float NextItemSpawnTime, LastItemSetupTime; //how often reset random pickups on the map
+// v9.05: replaced ammo spawn behavior.
+// Now ammo boxes are spawned only once per wave (at the beginning).
+// When picked up, another box will spawn somewhere else on the map (after some cooldown time).
+// When wave is near the end (TotalMaxMonsters == 0 and NumMonsters < 10), ammo box count is lowered
+// 5 times.
+var transient byte PickupSetupMonsters;
+var transient bool bPickupSetupReduced;
 
+var ScrnMapInfo MapInfo;
 var ScrnGameRules GameRules;
 
 var localized string strAchEarn;
@@ -172,13 +178,6 @@ var globalconfig bool bAlterWaveSize;
 var globalconfig int MaxWaveSize;
 
 var globalconfig int MaxZombiesOnce;
-struct SMapInfo {
-    var String MapName;
-    var int MaxZombiesOnce;
-    var float Difficulty; // map difficulty, where 0 is normal difficulty, -1.0 - easiest, 2.0 - twice harder that normal
-    var byte ForceEventNum; // use event zeds for this map. 0 - don't force
-};
-var globalconfig array<SMapInfo> MapInfo;
 
 var globalconfig byte FakedPlayers; // Min numbers of players to be used in calculation of zed count in wave
 
@@ -294,6 +293,33 @@ var globalconfig bool bFixMusic;
 
 var const float MedicDamageToXPRatio; // Damage made by medic guns is multiplied by this number before adding to XP progress
 var float MedicDamagePenalty; // Every player death drops down medic xp damage by this value
+
+var globalconfig bool bRespawnDoors;
+
+// MutateCommands must be in UPPERCASE and sorted
+var const array<string> MutateCommands;
+enum EMutateCommand
+{
+    MUTATE_ACCURACY,
+    MUTATE_CHECK,
+    MUTATE_CMDLINE,
+    MUTATE_DEBUGGAME,
+    MUTATE_DEBUGPICKUPS,
+    MUTATE_DEBUGSPI,
+    MUTATE_ENEMIES,
+    MUTATE_GIMMECOOKIES,
+    MUTATE_HELP,
+    MUTATE_HL,
+    MUTATE_LEVEL,
+    MUTATE_MAPDIFF,
+    MUTATE_MAPZEDS,
+    MUTATE_MUTLIST,
+    MUTATE_PERKSTATS,
+    MUTATE_PLAYERLIST,
+    MUTATE_STATUS,
+    MUTATE_VERSION,
+    MUTATE_ZEDLIST
+};
 
 // TSC stuff
 var globalconfig bool bNoTeamSkins; 
@@ -802,91 +828,132 @@ function WelcomeMessage(PlayerController PC)
 
 
 // Setup the random ammo pickups
-function SetupPickups()
+function SetupPickups(optional bool bReduceAmount)
 {
     local float W, A; //chance of spawning weapon / ammo box
-    local bool bW, bA;
+    local bool bSpawned;
     local int i;
-    local byte SetupNo;
+    local int CurrentAmmoBoxCount, DesiredAmmoBoxCount; 
+    local array<KFAmmoPickup> AvailableAmmoBoxes;
 
-    if ( !KF.IsInState('MatchInProgress') )
+    // randomize remaining monster count, when pickups are reset to avoid players expliting this 
+    // knowledge
+    PickupSetupMonsters = 10 + rand(10);
+    bPickupSetupReduced = bReduceAmount;
+    
+    // starting with v9.05, amount of pickup is constant accross the difficulties: 
+    // 35% during the wave, 10% during the trader time.
+
+    // Except the beginner, where all pickups are still spawned
+    if ( KF.GameDifficulty < 2 ) {
+        for ( i = 0; i < KF.WeaponPickups.Length ; i++ )
+            KF.WeaponPickups[i].EnableMe();
+        for ( i = 0; i < KF.AmmoPickups.Length ; i++ )
+            KF.AmmoPickups[i].GotoState('Pickup');
         return;
-
-    if ( KF.bTradingDoorsOpen )
-        SetupNo = 40; // 4 times less spawns in trader time - buy, not search!
-    else if ( KF.NumMonsters <= 10 )
-        SetupNo = 30; // 3 times less spawns, when only a few zeds left
-    else if ( KF.TotalMaxMonsters <= 0 )
-        SetupNo = 20; // half of spawns, when all zeds in wave have already spawned
-    else
-        SetupNo = 10;
-
-    if ( SetupNo == CurrentSpawnSetupNo && Level.TimeSeconds < NextItemSpawnTime )
-        return; //spawn is already set up, don't change it
-
-    CurrentSpawnSetupNo = SetupNo;
-    LastItemSetupTime = Level.TimeSeconds;
-    NextItemSpawnTime = Level.TimeSeconds + 300.0; //reset pickup spawns every 5 minutes
-    if ( KF.NumPlayers > 6 )
-        NextItemSpawnTime -= fmin(180, (KF.NumPlayers - 6 ) * 10); // more players = faster spawn reset
-
-    // Randomize Available Ammo Pickups
-    if ( KF.GameDifficulty >= 5.0 ) // Suicidal and Hell on Earth
-    {
-        W = 0.1;
-        A = 0.25;
-    }
-    else if ( KF.GameDifficulty >= 4.0 ) // Hard
-    {
-        W = 0.25;
-        A = 0.40;
-    }
-    else if ( KF.GameDifficulty >= 2.0 ) // Normal
-    {
-        W = 0.35;
-        A = 0.5;
-    }
-    else // Beginner
-    {
-        W = 1.0; //spawn all weapons
-        A = 1.0; //spawn all ammo boxes
     }
     
-    if ( KF.NumPlayers > 6 ) {
+    // Randomize Available Ammo Pickups
+    if ( bReduceAmount ) {
+        W = 0.10;
+        A = 0.10;
+    }
+    else if ( KF.GameDifficulty >= 5.0 ) { 
+        // Suicidal and Hell on Earth
+        W = 0.15;
+        A = 0.33;
+    }
+    else if ( KF.GameDifficulty >= 4.0 ) {
+        // Hard
+        W = 0.25;
+        A = 0.50;
+    }
+    else {
+        // Normal
+        W = 0.35;
+        A = 0.50;
+    }
+    
+    if ( KF.NumPlayers > 6 )
         A *= 1.0 + float(KF.NumPlayers - 6)*Post6AmmoSpawnInc; 
-    }
 
-    if ( SetupNo > 10 && KF.GameDifficulty >= 2.0 ) { //on beginner always spawn all items
-        W /= float(SetupNo) * 0.075; //don't lower weapons so much
-        A /= float(SetupNo) * 0.10;
-    }
-
-    for ( i = 0; i < KF.WeaponPickups.Length ; i++ )
-    {
-        if ( frand() < W ) {
-            KF.WeaponPickups[i].EnableMe();
-            bW = true;
+    if ( KF.WeaponPickups.Length > 0 ) {
+        for ( i = 0; i < KF.WeaponPickups.Length ; i++ )
+        {
+            if ( frand() < W ) {
+                if ( !KF.WeaponPickups[i].bIsEnabledNow )
+                    KF.WeaponPickups[i].EnableMe();
+                bSpawned = true;
+            }
+            else if ( KF.WeaponPickups[i].bIsEnabledNow )
+                KF.WeaponPickups[i].DisableMe();
         }
-        else
-            KF.WeaponPickups[i].DisableMe();
+        if ( !bSpawned )
+            KF.WeaponPickups[rand(KF.WeaponPickups.Length)].EnableMe();
     }
-
-    for ( i = 0; i < KF.AmmoPickups.Length ; i++ )
-    {
-        if ( frand() < A ) {
-            if ( kf.AmmoPickups[i].bSleeping )
-                KF.AmmoPickups[i].GotoState('Pickup');
-            bA = true;
+       
+    DesiredAmmoBoxCount = ceil(A * KF.AmmoPickups.Length);
+    for ( i = 0; i < KF.AmmoPickups.Length ; i++ ) {
+        if ( !KF.AmmoPickups[i].bSleeping )
+            ++CurrentAmmoBoxCount;
+    }
+    
+    if ( CurrentAmmoBoxCount < DesiredAmmoBoxCount ) {
+        // not enough ammo on the map - spawn more
+        for ( i = 0; i < KF.AmmoPickups.Length ; i++ ) {
+            if ( KF.AmmoPickups[i].bSleeping )
+                AvailableAmmoBoxes[AvailableAmmoBoxes.Length] = KF.AmmoPickups[i];
+        }        
+        while ( CurrentAmmoBoxCount < DesiredAmmoBoxCount && AvailableAmmoBoxes.Length > 0 ) {
+            i = rand(AvailableAmmoBoxes.Length);
+            AvailableAmmoBoxes[i].GotoState('Pickup');
+            AvailableAmmoBoxes.remove(i, 1);
+            ++CurrentAmmoBoxCount;
         }
-        else
-            KF.AmmoPickups[i].GotoState('Sleeping', 'Begin');
     }
+    else if ( CurrentAmmoBoxCount > DesiredAmmoBoxCount ) {
+        // too many ammo boxes - remove those which are not seen by players
+        for ( i = 0; i < KF.AmmoPickups.Length ; i++ ) {
+            if ( !KF.AmmoPickups[i].bSleeping && !KF.AmmoPickups[i].PlayerCanSeeMe() )
+                AvailableAmmoBoxes[AvailableAmmoBoxes.Length] = KF.AmmoPickups[i];
+        }        
+        while ( CurrentAmmoBoxCount > DesiredAmmoBoxCount && AvailableAmmoBoxes.Length > 0 ) {
+            i = rand(AvailableAmmoBoxes.Length);
+            AvailableAmmoBoxes[i].GotoState('Sleeping', 'Begin');
+            AvailableAmmoBoxes.remove(i, 1);
+            --CurrentAmmoBoxCount;
+        }  
+    }
+    
+    if ( ScrnGT != none ) {
+        ScrnGT.DesiredAmmoBoxCount = DesiredAmmoBoxCount;
+    }    
+}
 
-    // enable at least 1 spawn of each type
-    if ( !bW && KF.WeaponPickups.Length > 0 )
-        KF.WeaponPickups[rand(KF.WeaponPickups.Length)].EnableMe();
-    if ( !bA && KF.AmmoPickups.Length > 0 )
-        KF.AmmoPickups[rand(KF.AmmoPickups.Length)].GotoState('Pickup');
+function MessagePickups(PlayerController Sender)
+{
+    local int i, a, w;
+    local String msg;
+    
+    a = KF.AmmoPickups.length;
+    for ( i = 0; i < KF.AmmoPickups.length; ++i ) {
+        if ( KF.AmmoPickups[i].bSleeping ) 
+            --a;
+    }
+    
+    w = KF.WeaponPickups.length;
+    for ( i = 0; i < KF.WeaponPickups.length; ++i ) {
+        if ( !KF.WeaponPickups[i].bIsEnabledNow ) 
+            --w;
+    }
+    
+    msg = "Ammo boxes Spawned/Total: "  $ a $ "/" $ KF.AmmoPickups.length;
+    if ( ScrnGT != none ) {
+        msg $= "; Current/Desired: " $ ScrnGT.CurrentAmmoBoxCount $ "/" $ ScrnGT.DesiredAmmoBoxCount;
+        msg $= "; In queue: " $ ScrnGT.SleepingAmmo.length;
+    }
+    msg $= ".  Weapons Spawned/Total: " $ w $ "/" $ KF.WeaponPickups.length;
+    Sender.ClientMessage(msg);
 }
 
 function ForceMaxPlayers()
@@ -1101,9 +1168,6 @@ function KickOffPerkPlayers()
 // executes each second while match is in progress
 function GameTimer()
 {
-    if ( !bStoryMode && (Level.TimeSeconds < NextItemSpawnTime || (KF.TotalMaxMonsters <= 0 && Level.TimeSeconds > LastItemSetupTime + 15)) )
-        SetupPickups();
-
     // check for wave start/end
     if ( bTradingDoorsOpen != KF.bTradingDoorsOpen ) {
         bTradingDoorsOpen = KF.bTradingDoorsOpen;
@@ -1142,11 +1206,18 @@ function GameTimer()
             if ( bWeaponFix ) {
                 DestroyExtraPipebombs();
             }
+
+            // call SetupPickups only when playing non-ScrnGameType mode. 
+            // ScrnGameType automatically calls SetupPickups() during wave begin.
+            if ( ScrnGT == none && !bStoryMode )
+                SetupPickups(false);
         }
         
         if ( bDynamicLevelCap )
             DynamicLevelCap();
     }
+    
+    
 	
 	// in story mode check bWaveInProgress every seconds, if if trader door are closed but wave is not in progress 
 	if ( bStoryMode ) {
@@ -1158,6 +1229,9 @@ function GameTimer()
 	}	
     else {
         CheckDoors();
+        
+        if ( !bPickupSetupReduced && KF.TotalMaxMonsters <= 0 && KF.NumMonsters < PickupSetupMonsters )
+            SetupPickups(true);
     }
 }
 
@@ -1318,7 +1392,7 @@ function MsgEnemies(PlayerController Sender)
 /** Splits long message on short ones before sending it to client.
  *  @param   Sender     Player, who will receive message(-s).  
  *  @param   S          String to send.
- *  @param   MaxLen     Max lenght of one string. Default: 80. If S is longer than this value, 
+ *  @param   MaxLen     Max length of one string. Default: 80. If S is longer than this value, 
  *                      then it will be splitted on serveral messages.
  *  @param  Divider     Character to be used as divider. Default: Space. String is splitted
  *                      at last divder's position before MaxLen is reached.
@@ -1354,70 +1428,120 @@ static function LongMessage(PlayerController Sender, string S, optional int MaxL
 }
 
 
+function bool CheckAdmin(PlayerController Sender)
+{
+    if ( (Sender.PlayerReplicationInfo != none && Sender.PlayerReplicationInfo.bAdmin)
+            || Level.NetMode == NM_Standalone || Level.NetMode == NM_ListenServer )
+        return true;
+        
+    Sender.ClientMessage("Requires ADMIN priviledges");
+    return false;
+}
+
+function bool CheckScrnGT(PlayerController Sender)
+{
+    if ( ScrnGT != none )
+        return true;
+        
+    Sender.ClientMessage("Avaliable in ScrnGameType only!");
+    return false;
+}
+
+function bool CheckNotTourney(PlayerController Sender)
+{
+    if ( ScrnGT == none || !ScrnGT.IsTourney() )
+        return true;
+        
+    Sender.ClientMessage("Not Available in TOURNEY mode");
+    return false;
+}
 
 function Mutate(string MutateString, PlayerController Sender)
 {
-    super.Mutate(MutateString, Sender);
-
-    MutateString = caps(MutateString);
+    local string Value;
+    local int cmd;
     
-    if ( MutateString == "ACCURACY" )
-        SendAccuracy(Sender);
-    else if( MutateString == "CHECK" )
-        Sender.ClientMessage(FriendlyName);
-    else if( MutateString == "GIMMECOOKIES" )
-        XPBoost(Sender, 'TSCT', 6);
-    else if ( MutateString == "HARDCORELEVEL" || MutateString == "HL" )
-        Sender.ClientMessage("Hardcore Level = " $ GameRules.HardcoreLevel);
-    else if ( MutateString == "LEVEL" )
-        MessageBonusLevel(Sender);
-    else if ( MutateString == "MUTLIST" ) 
-        Sender.ClientMessage(MutatorList());
-    else if ( MutateString == "PLAYERLIST" ) 
-        SendPlayerList(Sender);  
-    else if( MutateString == "SPI" )
-        GameRules.DebugSPI(Sender);
-    else if ( MutateString == "STATS" || MutateString == "PERKSTATS" )
-        MessagePerkStats(Sender);        
-    else if ( MutateString == "STATUS")
-        MessageStatus(Sender);
-    else if ( MutateString == "VERSION" )
-        MessageVersion(Sender);
-    else if ( MutateString == "ZEDLIST" ) 
-        SendZedList(Sender);  
-    else if ( Level.NetMode == NM_Standalone || (Sender.PlayerReplicationInfo != none && Sender.PlayerReplicationInfo.bAdmin) ) 
-    {
-        // admin commands
-        if ( MutateString == "CMDLINE" ) {
-            if ( ScrnGT != none )
+    if ( MutateString == "" )
+        return;
+    
+    super.Mutate(MutateString, Sender);
+    
+    Divide(MutateString, " ", MutateString, Value);
+    MutateString = caps(MutateString);
+    cmd = BinarySearchStr(MutateCommands, MutateString);
+    if ( cmd == -1 )
+        return; //unknown command
+        
+    switch ( EMutateCommand(cmd) ) {
+        case MUTATE_ACCURACY: 
+            SendAccuracy(Sender); 
+            break;
+        case MUTATE_CHECK: 
+            Sender.ClientMessage(FriendlyName);
+            break;            
+        case MUTATE_CMDLINE: 
+            if ( CheckAdmin(Sender) && CheckScrnGT(Sender) )
                 LongMessage(Sender, ScrnGT.GetCmdLine(), 80, "?");
-            else 
-                Sender.ClientMessage("Avaliable in ScrnGameType only!");
-        }
-        else if ( MutateString == "DEBUGGAME" ) {
-            Sender.ClientMessage("Game=" $ KF.class.name
-                @ "EventNum=" $ CurrentEventNum
-                @ "MonsterCollection=" $ KF.MonsterCollection
-                @ "Boss=" $ KF.MonsterCollection.default.EndGameBossClass);
-        }
-        else if ( MutateString == "ENEMIES" )
-            MsgEnemies(Sender);
-        else if ( ScrnGT == none || !ScrnGT.IsTourney() ) {
-            if ( Left(MutateString, 7) == "MAPZEDS" ) {
-                if ( SetMapZeds(int(Mid(MutateString, 8))) )
-                    Sender.ClientMessage("Max zeds at once for this map is set to " $ Mid(MutateString, 8));
-                else
-                    Sender.ClientMessage("Max zeds at once must be in range [32..192], e.g. 'mutate mapzeds 64'");
+            break;            
+        case MUTATE_DEBUGGAME: 
+            if ( CheckAdmin(Sender) )
+                Sender.ClientMessage("Game=" $ KF.class.name
+                    @ "EventNum=" $ CurrentEventNum
+                    @ "MonsterCollection=" $ KF.MonsterCollection
+                    @ "Boss=" $ KF.MonsterCollection.default.EndGameBossClass);
+            break;            
+        case MUTATE_DEBUGPICKUPS: 
+            MessagePickups(Sender);
+            break;            
+        case MUTATE_DEBUGSPI: 
+            GameRules.DebugSPI(Sender);
+            break;            
+        case MUTATE_ENEMIES: 
+            if ( CheckAdmin(Sender) )
+                MsgEnemies(Sender);
+            break;            
+        case MUTATE_GIMMECOOKIES: 
+            XPBoost(Sender, 'TSCT', 6);
+            break;            
+        case MUTATE_HELP:
+            MessageMutateCommands(Sender);
+            break;
+        case MUTATE_HL:
+            Sender.ClientMessage("Hardcore Level = " $ GameRules.HardcoreLevel);
+            break;            
+        case MUTATE_LEVEL:
+            MessageBonusLevel(Sender);
+            break;            
+        case MUTATE_MAPDIFF: 
+            if ( CheckAdmin(Sender) )
+                MapInfo.SetMapDifficulty(Value, Sender);
+            break;            
+        case MUTATE_MAPZEDS: 
+            if ( CheckAdmin(Sender) && CheckNotTourney(Sender) ) {
+                if ( MapInfo.SetMapZeds(int(Value), Sender) ) {
+                    SetMaxZombiesOnce();
+                    BroadcastMessage("Max zeds at once set to " $ KF.MaxZombiesOnce);
+                }                
             }
-            else if ( MutateString == "FORCEZEDS" ) {
-                SetMaxZombiesOnce();
-                Sender.ClientMessage("Max zeds at once forced to " $ KF.MaxZombiesOnce);
-            }
-            else if ( Left(MutateString, 7) == "MAPDIFF" ) 
-                SetMapDifficulty(Mid(MutateString, 8), Sender);
-            else if ( Left(MutateString, 13) == "MAPDIFFICULTY" ) 
-                SetMapDifficulty(Mid(MutateString, 14), Sender);
-        }   
+            break;            
+        case MUTATE_MUTLIST:
+            Sender.ClientMessage(MutatorList());
+            break;            
+        case MUTATE_PERKSTATS: 
+            MessagePerkStats(Sender);
+            break;            
+        case MUTATE_PLAYERLIST: 
+            SendPlayerList(Sender);
+            break;            
+        case MUTATE_STATUS: 
+            MessageStatus(Sender);
+            break;            
+        case MUTATE_VERSION: 
+            MessageVersion(Sender);
+            break;            
+        case MUTATE_ZEDLIST: 
+            SendZedList(Sender);
+            break;            
     }
 }
 
@@ -1446,6 +1570,16 @@ private final function DebugDoors(PlayerController Sender)
 	}
 }
 */
+
+function MessageMutateCommands(PlayerController Sender)
+{
+    local int i;
+    Sender.ClientMessage("ScrN Mutate Commands");
+    Sender.ClientMessage("====================");
+    for ( i = 0; i < MutateCommands.length; ++i ) {
+        Sender.ClientMessage(MutateCommands[i]);
+    }
+}
 
 function XPBoost(PlayerController Sender, name Achievement, byte Level)
 {
@@ -2009,7 +2143,7 @@ function LoadCustomWeapons()
             continue;
         }
 
-        ClientLink = spawn(class'ScrnBalanceSrv.ScrnCustomWeaponLink', self);
+        ClientLink = spawn(class'ScrnBalanceSrv.ScrnCustomWeaponLink');
         if ( ClientLink == none ) {
             log("Can't load Client Replication Link for a Custom Weapon: '" $ W $"'!", 'ScrnBalance');
             continue;
@@ -2301,6 +2435,11 @@ function SetupRepLink(ClientPerkRepLink R)
     ScrnRep.MaximumLevel = R.MaximumLevel;
     ScrnRep.RequirementScaling = R.RequirementScaling;
     ScrnRep.CachePerks = R.CachePerks;
+    // remove non-scrn perks
+    for( i=0; i<ScrnRep.CachePerks.Length; ++i) {
+        if ( class<ScrnVeterancyTypes>(ScrnRep.CachePerks[i].PerkClass) == none )
+            ScrnRep.CachePerks.remove(i--, 1);
+    }
     
     ScrnRep.OwnerPC = ScrnPlayerController(R.Owner);
     ScrnRep.OwnerPRI = KFPlayerReplicationInfo(ScrnRep.OwnerPC.PlayerReplicationInfo);
@@ -2389,9 +2528,9 @@ function ForceEvent()
     local int i, j;
     local class<KFMonstersCollection> MC;
     
-    i = FindMapInfo();
-    if ( i != -1 && MapInfo[i].ForceEventNum > 0 ) 
-        CurrentEventNum = MapInfo[i].ForceEventNum;
+    i = MapInfo.FindMapInfo(false);
+    if ( i != -1 && MapInfo.MapInfo[i].ForceEventNum > 0 ) 
+        CurrentEventNum = MapInfo.MapInfo[i].ForceEventNum;
     else if ( EventNum == 0 )
         CurrentEventNum = int(KF.GetSpecialEventType()); // autodetect event
     else
@@ -2535,9 +2674,9 @@ function SetMaxZombiesOnce()
 {
     local int i, value;
     
-    i = FindMapInfo();
-    if ( i != -1 && MapInfo[i].MaxZombiesOnce >= 16 )
-        value = MapInfo[i].MaxZombiesOnce;
+    i = MapInfo.FindMapInfo(false);
+    if ( i != -1 && MapInfo.MapInfo[i].MaxZombiesOnce >= 16 )
+        value = MapInfo.MapInfo[i].MaxZombiesOnce;
     else 
         value = MaxZombiesOnce;
 
@@ -2573,6 +2712,7 @@ function PostBeginPlay()
         ScrnGT.ScrnBalanceMut = self;
         ScrnGT.bCloserZedSpawns = bCloserZedSpawns;
     }
+    MapInfo = Spawn(Class'ScrnBalanceSrv.ScrnMapInfo');
 
     
     if ( bForceEvent )
@@ -2621,13 +2761,14 @@ function PostBeginPlay()
     ApplyWeaponFix();
 
     bUseAchievements = bool(AchievementFlags & ACH_ENABLE);
-    GameRules = Spawn(Class'ScrnBalanceSrv.ScrnGameRules', self);
+    GameRules = Spawn(Class'ScrnBalanceSrv.ScrnGameRules');
     if ( GameRules != none ) {
+        GameRules.Mut = self;
         GameRules.bShowDamages = bShowDamages;
         GameRules.bUseAchievements = bUseAchievements && KF.GameDifficulty >= 2;
         if ( GameRules.bUseAchievements ) {
             // spawn achievement handlers
-            AchHandler = GameRules.Spawn(Class'ScrnBalanceSrv.ScrnAchHandler', GameRules);
+            AchHandler = GameRules.Spawn(Class'ScrnBalanceSrv.ScrnAchHandler');
         }
         
         if ( bResetSquadsAtStart || EventNum == 254 ) {
@@ -2730,28 +2871,54 @@ function CheckDoors()
     
 }
 
+static function class<ScrnVeterancyTypes> PickRandomPerk(ScrnClientPerkRepLink L)
+{
+    local array< class<ScrnVeterancyTypes> > CA;
+    local int i;
+    local class<ScrnVeterancyTypes> Perk;
+    
+    for ( i=0; i < L.CachePerks.length; ++i ) {
+        if ( L.CachePerks[i].CurrentLevel > 0 ) {
+            Perk = class<ScrnVeterancyTypes>(L.CachePerks[i].PerkClass);
+            if ( Perk != none && !Perk.default.bLocked )
+                CA[CA.Length] = Perk;
+        }
+    }
+    
+    if ( CA.Length > 0 )
+        return CA[rand(CA.Length)];
+    return none;
+}
 
 function LockPerk(class<ScrnVeterancyTypes> Perk, bool bLock)
 {
-    local Controller P;
+    local Controller C;
     local PlayerController Player;
     local ClientPerkRepLink L;
     local int i;
+    local class<ScrnVeterancyTypes> RandomPerk;
 
     Perk.default.bLocked = bLock;
 
-    for ( P = Level.ControllerList; P != none; P = P.nextController ) {
-        Player = PlayerController(P);
+    for ( C = Level.ControllerList; C != none; C = C.nextController ) {
+        Player = PlayerController(C);
         if ( Player != none && SRStatsBase(Player.SteamStatsAndAchievements) != none ) {
             L = SRStatsBase(Player.SteamStatsAndAchievements).Rep;
             if ( L != none ) {
                 for ( i=0; i < L.CachePerks.length; ++i ) {
                     if ( L.CachePerks[i].PerkClass == Perk ) {
-                        L.CachePerks[i].CurrentLevel = Perk.static.PerkIsAvailable(L);
-                        L.ClientReceivePerk(i, L.CachePerks[i].PerkClass, L.CachePerks[i].CurrentLevel);
-                        // if player uses locked perk, pick another, unlocked perk for him
-                        if ( L.CachePerks[i].CurrentLevel == 0 && KFPlayerReplicationInfo(Player.PlayerReplicationInfo).ClientVeteranSkill == Perk ) {
-                            L.ServerSelectPerk(L.PickRandomPerk());
+                        if ( bLock ) {
+                            L.ClientPerkLevel(i, 255);  // mark perk as locked
+                            if ( KFPlayerReplicationInfo(Player.PlayerReplicationInfo).ClientVeteranSkill == Perk ) {
+                                RandomPerk = PickRandomPerk(ScrnClientPerkRepLink(L));
+                                if ( RandomPerk != none )
+                                    ScrnClientPerkRepLink(L).ServerSelectPerkSE(RandomPerk);
+                            }
+                        }
+                        else {
+                            // set highest bit to 1 (128 = 10000000b) to notify client
+                            // that perk has been unlocked
+                            L.ClientPerkLevel(i, 0x80 | L.CachePerks[i].PerkClass.static.PerkIsAvailable(L));
                         }
                         break;
                     }
@@ -2759,88 +2926,6 @@ function LockPerk(class<ScrnVeterancyTypes> Perk, bool bLock)
             }
         }
     }
-}
-
-// searches MapInfo array for a given map 
-// returns -1 if map not found
-function int FindMapInfo(optional string MapName)
-{
-    local int i;
-    
-    if ( MapName == "" )
-        MapName = KF.GetCurrentMapName(Level);
-    
-    for ( i = 0; i < MapInfo.length; ++i ) {
-        if ( MapInfo[i].MapName ~= MapName )
-            return i;
-    }
-    
-    return -1;
-}
-// creates new MapInfo record, if map is not found. 
-// Returns array index
-function int CreateMapInfo(optional string MapName)
-{
-    local int i;
-
-    if ( MapName == "" )
-        MapName = KF.GetCurrentMapName(Level);
-        
-    i = FindMapInfo(MapName);
-    
-    if ( i == -1 ) {
-        i = MapInfo.length;
-        MapInfo.insert(MapInfo.length, 1);
-        MapInfo[i].MapName = MapName;    
-        MapInfo[i].MaxZombiesOnce = MaxZombiesOnce;
-    }
-    
-    return i;
-}
-
-function bool SetMapZeds(int value)
-{
-    local int i;
-    
-    if ( value < 32 || value > 192 )
-        return false;
-    
-    i = CreateMapInfo();
-    MapInfo[i].MaxZombiesOnce = value;
-    SaveConfig();
-    return true;
-}
-
-function SetMapDifficulty(string StrDiff, PlayerController Sender)
-{
-    local int i;
-    local float d;
-    
-    i = FindMapInfo();
-    
-    if ( StrDiff == "" ) {
-        if ( i != -1 )
-            d = MapInfo[i].Difficulty;
-        Sender.ClientMessage("Map Difficulty = "$d$". (-1.0 = easiest; 0.0 = normal; 1.0 = hardest)");
-        return;
-    }
-    
-    if ( StrDiff != "0" && StrDiff != "0.0" && StrDiff != "0.00" ) {
-        d = float(StrDiff);
-        if ( d == 0.0 ) {
-            Sender.ClientMessage("Map Difficulty must be a number between -1.0 and 1.0! (-1.0 = easiest; 0.0 = normal; 1.0 = hardest)");
-            return;
-        }
-    }
-    if ( d < -1.0 || d > 1.0 ) {
-        Sender.ClientMessage("Map Difficulty must be a number between -1.0 and 1.0! (-1.0 = easiest; 0.0 = normal; 1.0 = hardest)");
-        return;
-    }
-    
-    if ( i == -1 ) 
-        i = CreateMapInfo();
-    MapInfo[i].Difficulty = d;
-    SaveConfig();
 }
 
 function bool ShouldReplacePickups()
@@ -2910,7 +2995,13 @@ function ServerTraveling(string URL, bool bItems)
     
     for ( j=0; j<Perks.length; ++j )
         if ( Perks[j] != none )
-            Perks[j].default.DefaultInventory.length = 0;    
+            Perks[j].default.DefaultInventory.length = 0;   
+
+    // destroy local objects
+    if ( MapInfo != none ) {
+        MapInfo.Destroy();  
+        MapInfo = none;
+    }
 }
 
 // Limits placed pipebomb count to perk's capacity
@@ -2959,7 +3050,7 @@ final static function bool GetHighlyDecorated(int SteamID32,
     end = default.HighlyDecorated.length;
     
     while ( start <= end ) {
-        i = start + (end - start)/2;
+        i = start + ((end - start)>>1);
         if ( SteamID32 == default.HighlyDecorated[i].SteamID32 ) {
             if ( default.HighlyDecorated[i].Avatar == none && default.HighlyDecorated[i].AvatarRef != "" )
                 default.HighlyDecorated[i].Avatar = Material(DynamicLoadObject(default.HighlyDecorated[i].AvatarRef, class'Material'));
@@ -2991,6 +3082,48 @@ final static function bool GetHighlyDecorated(int SteamID32,
     Playoffs = 0;
     TourneyWon = 0;
     return false;
+}
+
+/** Performs binary search on sorted array.
+ * @param arr : array of sorted items (in ascending order). Array will not be modified. 
+ *              out modifier is used just for performance purpose (pass by reference).
+ * @param val : value to search
+ * @return array index or -1, if value not found.
+ */
+final static function int BinarySearch(out array<int> arr, int val)
+{
+    local int start, end, i;
+    
+    start = 0;
+    end = arr.length;    
+    while ( start <= end ) {
+        i = start + ((end - start)>>1);
+        if ( arr[i] == val )
+            return i;
+        else if ( val < arr[i] )
+            end = i - 1;
+        else 
+            start = i + 1;
+    }
+    return -1;
+}
+
+final static function int BinarySearchStr(out array<string> arr, string val)
+{
+    local int start, end, i;
+    
+    start = 0;
+    end = arr.length;    
+    while ( start <= end ) {
+        i = start + ((end - start)>>1);
+        if ( arr[i] == val )
+            return i;
+        else if ( val < arr[i] )
+            end = i - 1;
+        else 
+            start = i + 1;
+    }
+    return -1;
 }
 
 defaultproperties
@@ -3185,6 +3318,27 @@ defaultproperties
     StatBonusMinHL=0
     FirstStatBonusMult=2
     
+    MutateCommands(0)="ACCURACY"
+    MutateCommands(1)="CHECK"
+    MutateCommands(2)="CMDLINE"
+    MutateCommands(3)="DEBUGGAME"
+    MutateCommands(4)="DEBUGPICKUPS"
+    MutateCommands(5)="DEBUGSPI"
+    MutateCommands(6)="ENEMIES"
+    MutateCommands(7)="GIMMECOOKIES"
+    MutateCommands(8)="HELP"
+    MutateCommands(9)="HL"
+    MutateCommands(10)="LEVEL"
+    MutateCommands(11)="MAPDIFF"
+    MutateCommands(12)="MAPZEDS"
+    MutateCommands(13)="MUTLIST"
+    MutateCommands(14)="PERKSTATS"
+    MutateCommands(15)="PLAYERLIST"
+    MutateCommands(16)="STATUS"
+    MutateCommands(17)="VERSION"
+    MutateCommands(18)="ZEDLIST"
+
+
 
     bAddToServerPackages=True
     bAlwaysRelevant=True
@@ -3201,8 +3355,6 @@ defaultproperties
     // Description="Balances perk levels, weapons and money. Fixes bugs, issues and exploits. Brings new Gunslinger perk and server-side achievements. Supports workshop weapons."
     
 
-
-
 HighlyDecorated(0)=(SteamID32=3907835,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
 HighlyDecorated(1)=(SteamID32=4787302,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
 HighlyDecorated(2)=(SteamID32=15243342,ClanIconRef="ScrnTex.Players.Code",PreNameIconRef="KillingFloor2HUD.PerkReset.PReset_Medic_Grey",PrefixIconColor=(R=255,G=255,B=255,A=1),PostfixIconColor=(R=255,G=255,B=255,A=255))
@@ -3214,7 +3366,7 @@ HighlyDecorated(7)=(SteamID32=27784497,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourn
 HighlyDecorated(8)=(SteamID32=32271863,AvatarRef="ScrnTex.Players.PooSH",PreNameIconRef="ScrnTex.Perks.Hud_Perk_Star_Gray",PostNameIconRef="ScrnTex.Perks.Hud_Perk_Star_Gray",PrefixIconColor=(A=0),PostfixIconColor=(A=0))
 HighlyDecorated(9)=(SteamID32=32279441,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
 HighlyDecorated(10)=(SteamID32=32976519,Playoffs=1,ClanIconRef="ScrnTex.Players.Dosh",PreNameIconRef="KillingFloor2HUD.PerkReset.PReset_Sharpshooter_Grey",PrefixIconColor=(R=255,G=255,B=255,A=0),PostfixIconColor=(R=255,G=255,B=255,A=255))
-HighlyDecorated(11)=(SteamID32=34308728,AvatarRef="ScrnTex.Players.Janitor",PreNameIconRef="KillingFloor2HUD.PerkReset.PReset_Firebug_Grey",PostNameIconRef="KillingFloor2HUD.PerkReset.PReset_Firebug_Grey",PrefixIconColor=(R=255,G=255,B=255,A=1),PostfixIconColor=(R=255,G=255,B=255,A=0))
+HighlyDecorated(11)=(SteamID32=34308728,AvatarRef="ScrnTex.Players.Janitor",PreNameIconRef="KillingFloor2HUD.PerkReset.PReset_Firebug_Grey",PostNameIconRef="KillingFloor2HUD.PerkReset.PReset_Firebug_Grey",PrefixIconColor=(A=0),PostfixIconColor=(A=0))
 HighlyDecorated(12)=(SteamID32=37444251,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
 HighlyDecorated(13)=(SteamID32=41734606,Playoffs=1,TourneyWon=1,ClanIconRef="ScrnTex.Tourney.TBN",PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
 HighlyDecorated(14)=(SteamID32=43087787,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
@@ -3249,34 +3401,37 @@ HighlyDecorated(42)=(SteamID32=70606615,AvatarRef="ScrnTex.Players.aaa",PrefixIc
 HighlyDecorated(43)=(SteamID32=71427768,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
 HighlyDecorated(44)=(SteamID32=75600845,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
 HighlyDecorated(45)=(SteamID32=76661591,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
-HighlyDecorated(46)=(SteamID32=81947447,Playoffs=1,TourneyWon=1,ClanIconRef="ScrnTex.Tourney.TBN",PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
-HighlyDecorated(47)=(SteamID32=83417929,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
-HighlyDecorated(48)=(SteamID32=85142081,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
-HighlyDecorated(49)=(SteamID32=87647886,ClanIconRef="ScrnTex.Players.Dosh",PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
-HighlyDecorated(50)=(SteamID32=89323130,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
-HighlyDecorated(51)=(SteamID32=93919492,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
-HighlyDecorated(52)=(SteamID32=95752287,AvatarRef="ScrnTex.Players.FosterKF2",PreNameIconRef="KillingFloor2HUD.PerkReset.PReset_Sharpshooter_Grey",PostNameIconRef="KillingFloor2HUD.PerkReset.PReset_Sharpshooter_Grey",PrefixIconColor=(R=255,G=255,B=255,A=1),PostfixIconColor=(R=255,G=255,B=255,A=0))
-HighlyDecorated(53)=(SteamID32=99293732,Playoffs=1,TourneyWon=1,ClanIconRef="ScrnTex.Tourney.TBN",PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
-HighlyDecorated(54)=(SteamID32=102496714,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
-HighlyDecorated(55)=(SteamID32=106835439,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
-HighlyDecorated(56)=(SteamID32=107039826,Playoffs=1,AvatarRef="ScrnTex.Players.Seely",ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
-HighlyDecorated(57)=(SteamID32=109654784,AvatarRef="ScrnTex.Players.BertieDastard",PreNameIconRef="KillingFloor2HUD.PerkReset.PReset_Support_Grey",PrefixIconColor=(R=255,G=255,B=255,A=0),PostfixIconColor=(R=255,G=255,B=255,A=255))
-HighlyDecorated(58)=(SteamID32=112564543,ClanIconRef="ScrnTex.Players.Dosh",PreNameIconRef="ScrnTex.Perks.Hud_Perk_Star_Gray",PostNameIconRef="ScrnTex.Perks.Hud_Perk_Star_Gray",PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-HighlyDecorated(59)=(SteamID32=113961551,Playoffs=1,AvatarRef="ScrnTex.Players.Baffi",ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PreNameIconRef="KillingFloor2HUD.PerkReset.PReset_Demolition_Grey",PrefixIconColor=(R=255,G=255,B=255,A=0),PostfixIconColor=(R=255,G=255,B=255,A=255))
-HighlyDecorated(60)=(SteamID32=114826433,Playoffs=1,AvatarRef="ScrnTex.Players.nmm",ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PreNameIconRef="KillingFloor2HUD.PerkReset.PReset_Sharpshooter_Grey",PrefixIconColor=(R=255,G=255,B=255,A=0),PostfixIconColor=(R=255,G=255,B=255,A=255))
-HighlyDecorated(61)=(SteamID32=121550025,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
-HighlyDecorated(62)=(SteamID32=124874371,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
-HighlyDecorated(63)=(SteamID32=127624729,AvatarRef="ScrnTex.Players.Scrublord",PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
-HighlyDecorated(64)=(SteamID32=128107383,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
-HighlyDecorated(65)=(SteamID32=128199891,Playoffs=1,TourneyWon=1,ClanIconRef="ScrnTex.Tourney.TBN",PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
-HighlyDecorated(66)=(SteamID32=134825301,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
-HighlyDecorated(67)=(SteamID32=139723798,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
-HighlyDecorated(68)=(SteamID32=143999622,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
-HighlyDecorated(69)=(SteamID32=150832205,AvatarRef="ScrnTex.Players.Taloril",PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
-HighlyDecorated(70)=(SteamID32=152138369,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
-HighlyDecorated(71)=(SteamID32=152983683,Playoffs=1,TourneyWon=1,ClanIconRef="ScrnTex.Tourney.TBN",PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
-HighlyDecorated(72)=(SteamID32=153788974,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
-HighlyDecorated(73)=(SteamID32=160715546,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
-HighlyDecorated(74)=(SteamID32=162712343,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
-HighlyDecorated(75)=(SteamID32=192070782,Playoffs=1,TourneyWon=1,ClanIconRef="ScrnTex.Tourney.TBN",PrefixIconColor=(R=255,G=255,B=255,A=0),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(46)=(SteamID32=81279347,ClanIconRef="ScrnTex.Players.Dosh",PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(47)=(SteamID32=81947447,Playoffs=1,TourneyWon=1,ClanIconRef="ScrnTex.Tourney.TBN",PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(48)=(SteamID32=83417929,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(49)=(SteamID32=85142081,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(50)=(SteamID32=87647886,ClanIconRef="ScrnTex.Players.Dosh",PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(51)=(SteamID32=89323130,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(52)=(SteamID32=93919492,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(53)=(SteamID32=95752287,AvatarRef="ScrnTex.Players.FosterKF2",PreNameIconRef="KillingFloor2HUD.PerkReset.PReset_Sharpshooter_Grey",PostNameIconRef="KillingFloor2HUD.PerkReset.PReset_Sharpshooter_Grey",PrefixIconColor=(R=255,G=255,B=255,A=1),PostfixIconColor=(R=255,G=255,B=255,A=0))
+HighlyDecorated(54)=(SteamID32=99293732,Playoffs=1,TourneyWon=1,ClanIconRef="ScrnTex.Tourney.TBN",PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(55)=(SteamID32=102496714,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(56)=(SteamID32=106835439,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(57)=(SteamID32=107039826,Playoffs=1,AvatarRef="ScrnTex.Players.Seely",ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(58)=(SteamID32=109654784,AvatarRef="ScrnTex.Players.BertieDastard",PreNameIconRef="KillingFloor2HUD.PerkReset.PReset_Support_Grey",PrefixIconColor=(R=255,G=255,B=255,A=0),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(59)=(SteamID32=112564543,ClanIconRef="ScrnTex.Players.Dosh",PreNameIconRef="ScrnTex.Perks.Hud_Perk_Star_Gray",PostNameIconRef="ScrnTex.Perks.Hud_Perk_Star_Gray",PrefixIconColor=(A=0),PostfixIconColor=(A=0))
+HighlyDecorated(60)=(SteamID32=113961551,Playoffs=1,AvatarRef="ScrnTex.Players.Baffi",ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PreNameIconRef="KillingFloor2HUD.PerkReset.PReset_Demolition_Grey",PrefixIconColor=(R=255,G=255,B=255,A=0),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(61)=(SteamID32=114826433,Playoffs=1,AvatarRef="ScrnTex.Players.nmm",ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PreNameIconRef="KillingFloor2HUD.PerkReset.PReset_Sharpshooter_Grey",PrefixIconColor=(R=255,G=255,B=255,A=0),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(62)=(SteamID32=121550025,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(63)=(SteamID32=124874371,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(64)=(SteamID32=127624729,AvatarRef="ScrnTex.Players.Scrublord",PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(65)=(SteamID32=128107383,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(66)=(SteamID32=128199891,Playoffs=1,TourneyWon=1,ClanIconRef="ScrnTex.Tourney.TBN",PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(67)=(SteamID32=134825301,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(68)=(SteamID32=139723798,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(69)=(SteamID32=143999622,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(70)=(SteamID32=150832205,AvatarRef="ScrnTex.Players.Taloril",PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(71)=(SteamID32=152138369,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(72)=(SteamID32=152983683,Playoffs=1,TourneyWon=1,ClanIconRef="ScrnTex.Tourney.TBN",PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(73)=(SteamID32=153788974,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(74)=(SteamID32=160715546,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(75)=(SteamID32=162712343,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(76)=(SteamID32=192070782,Playoffs=1,TourneyWon=1,ClanIconRef="ScrnTex.Tourney.TBN",PrefixIconColor=(R=255,G=255,B=255,A=0),PostfixIconColor=(R=255,G=255,B=255,A=255))
+
 }
+

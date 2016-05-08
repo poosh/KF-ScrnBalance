@@ -8,6 +8,8 @@ simulated state QuickMelee
     {
         if ( OldWeapon != none ) {
             Instigator.PendingWeapon = OldWeapon;
+            if ( KFWeapon(OldWeapon) != none )
+                KFWeapon(OldWeapon).ClientGrenadeState = GN_BringUp;            
             PutDown();
         }
         else 
@@ -76,4 +78,10 @@ defaultproperties
      FireModeClass(1)=Class'ScrnBalanceSrv.ScrnMacheteFireB'
      PickupClass=Class'ScrnBalanceSrv.ScrnMachetePickup'
      ItemName="Machete SE"
+     Priority=250
+     
+     // PutDownAnimRate=2.0
+     // SelectAnimRate=2.0
+     // BringUpTime=0.25
+     // PutDownTime=0.25
 }

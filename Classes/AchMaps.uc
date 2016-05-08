@@ -224,4 +224,29 @@ defaultproperties
      AchDefs(189)=(id="KF-ThrillsChillsHard",DisplayName="Cavern of Pain",Description="Thrills Chills",Icon=Texture'KillingFloor2HUD.Achievements.Achievement_281')
      AchDefs(190)=(id="KF-ThrillsChillsSui",DisplayName="Grotto of Terror",Description="Thrills Chills",Icon=Texture'KillingFloor2HUD.Achievements.Achievement_282')
      AchDefs(191)=(id="KF-ThrillsChillsHoe",DisplayName="Hollow of Horror",Description="Thrills Chills",Icon=Texture'KillingFloor2HUD.Achievements.Achievement_283')
+     
+     AchDefs(192)=(id="KF-TheGreatPyramid-Arena",DisplayName="The First Encounter",Description="Great Pyramid",Icon=Texture'ScrnAch_T.Maps.Pyramid_0')
+     AchDefs(193)=(id="KF-TheGreatPyramid-ArenaHard",DisplayName="The First Encounter: HD",Description="Great Pyramid",Icon=Texture'ScrnAch_T.Maps.Pyramid_1')
+     AchDefs(194)=(id="KF-TheGreatPyramid-ArenaSui",DisplayName="Are You SERIOUS?",Description="Great Pyramid",Icon=Texture'ScrnAch_T.Maps.Pyramid_2')
+     AchDefs(195)=(id="KF-TheGreatPyramid-ArenaHoe",DisplayName="Mental",Description="Great Pyramid",Icon=Texture'ScrnAch_T.Maps.Pyramid_3')
+
+     AchDefs(196)=(id="KF-PandorasBox",DisplayName="Baby Box",Description="Pandora's Box",Icon=Texture'ScrnAch_T.Maps.Pandora_0')
+     AchDefs(197)=(id="KF-PandorasBoxHard",DisplayName="Hard Box",Description="Pandora's Box",Icon=Texture'ScrnAch_T.Maps.Pandora_1')
+     AchDefs(198)=(id="KF-PandorasBoxSui",DisplayName="Opening the Pandora's Box",Description="Pandora's Box",Icon=Texture'ScrnAch_T.Maps.Pandora_2')
+     AchDefs(199)=(id="KF-PandorasBoxHoe",DisplayName="Unleashing Evil into Devil",Description="Pandora's Box",Icon=Texture'ScrnAch_T.Maps.Pandora_3')
+     
+     AchDefs(200)=(id="KF-ScrapHeap",DisplayName="Scrap Metal Merchant",Description="Scrap Heap",Icon=Texture'ScrnAch_T.Maps.ScrapHeap_0')
+     AchDefs(201)=(id="KF-ScrapHeapHard",DisplayName="Underground Boxer",Description="Scrap Heap",Icon=Texture'ScrnAch_T.Maps.ScrapHeap_1')
+     AchDefs(202)=(id="KF-ScrapHeapSui",DisplayName="King of the Box Ring",Description="Scrap Heap",Icon=Texture'ScrnAch_T.Maps.ScrapHeap_2')
+     AchDefs(203)=(id="KF-ScrapHeapHoe",DisplayName="Knocking Down the Satan",Description="Scrap Heap",Icon=Texture'ScrnAch_T.Maps.ScrapHeap_3')
+
+     AchDefs(204)=(id="KF-Train",DisplayName="Choo-Choo Train",Description="Train",Icon=Texture'ScrnAch_T.Maps.Train_0')
+     AchDefs(205)=(id="KF-TrainHard",DisplayName="Poo-Poo Train",Description="Train",Icon=Texture'ScrnAch_T.Maps.Train_1')
+     AchDefs(206)=(id="KF-TrainSui",DisplayName="Suicidal Train Driver",Description="Train",Icon=Texture'ScrnAch_T.Maps.Train_2')
+     AchDefs(207)=(id="KF-TrainHoe",DisplayName="Baron of Hell",Description="Train",Icon=Texture'ScrnAch_T.Maps.Train_3')
+
+     AchDefs(208)=(id="KF-WickedCity",DisplayName="Homeless resident of Wicked City",Description="Wicked City",Icon=Texture'ScrnAch_T.Maps.WickedCity_0')
+     AchDefs(209)=(id="KF-WickedCityHard",DisplayName="Citizen of Wicked City",Description="Wicked City",Icon=Texture'ScrnAch_T.Maps.WickedCity_1')
+     AchDefs(210)=(id="KF-WickedCitySui",DisplayName="Wicked City's First Maniac",Description="Wicked City",Icon=Texture'ScrnAch_T.Maps.WickedCity_2')
+     AchDefs(211)=(id="KF-WickedCityHoe",DisplayName="Wicked Hell",Description="Wicked City",Icon=Texture'ScrnAch_T.Maps.WickedCity_3')
 }

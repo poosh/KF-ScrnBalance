@@ -14,10 +14,11 @@ var private transient class<KFVeterancyTypes> PrevPerkClass;
 
 var bool bCowboyMode;
 
-var ScrnHumanPawn   LastHealedBy; // last player who healed me
-var ScrnHumanPawn   LastHealed; // last player, who was healed by me
-var KFMonster       CombatMedicTarget; // "LastHealedBy" must kill this monster to earn an ach
-var int             HealthBeforeHealing;
+var transient ScrnHumanPawn   LastHealedBy; // last player who healed me
+var transient ScrnHumanPawn   LastHealed; // last player, who was healed by me
+var transient KFMonster       CombatMedicTarget; // "LastHealedBy" must kill this monster to earn an ach
+var transient int             HealthBeforeHealing;
+var transient float           LastDamageTime;
 
 // Seems like bonus ammo is fixed in v1051 and not needed anymore
 // var class<Ammunition> BonusAmmoClass;
@@ -61,6 +62,8 @@ var     transient Frag          PlayerGrenade;
 
 var bool bTraderSpeedBoost;
 var float TraderSpeedBoost;
+var byte MacheteBoost; // that's one of the most retarded things I've done
+var float MacheteResetTime;
 
 var transient KFMeleeGun QuickMeleeWeapon;
 var transient KFWeapon WeaponToFixClientState;
@@ -71,7 +74,7 @@ replication
         ClientSetInventoryGroup;
         
     reliable if( bNetOwner && Role == ROLE_Authority )
-        QuickMeleeWeapon;
+        QuickMeleeWeapon, MacheteBoost;
         
     reliable if( Role == ROLE_Authority )
         ClientSetVestClass; //send it to all clients, cuz they need to know max health and max shield
@@ -100,7 +103,6 @@ simulated function PostBeginPlay()
 {
     super.PostBeginPlay();
 	
-	class'KFMod.Knife'.default.Priority = 2; // set lowest priority after pipebombs
 	FindGameRules();	
 	ReplaceRequiredEquipment();
 	
@@ -217,6 +219,8 @@ simulated function ModifyVelocity(float DeltaTime, vector OldVelocity)
 
         if ( bTraderSpeedBoost && !KFGameReplicationInfo(Level.GRI).bWaveInProgress )
             GroundSpeed *= TraderSpeedBoost;
+            
+        GroundSpeed += MacheteBoost;
     }
 	
 	
@@ -308,6 +312,17 @@ function bool AddInventory( inventory NewItem )
             if ( weap.bTorchEnabled )
                 AddToFlashlightArray(weap.class); // v6.22 - each weapon has own flashlight
             CheckQuickMeleeWeapon(KFMeleeGun(weap));
+            if ( class'ScrnBalance'.default.Mut.bWeaponFix && Machete(weap) != none ) {
+                if ( MacheteBoost < 250 && VSizeSquared(Velocity) > 10000 ) {
+                    if ( MacheteBoost < 30 )
+                        MacheteBoost += 3;
+                    else if ( MacheteBoost < 70 )
+                        MacheteBoost += 2;
+                    else 
+                        MacheteBoost++;
+                }
+                MacheteResetTime = Level.TimeSeconds + 3.0;
+            }
         }
         return true;
     }
@@ -320,6 +335,9 @@ function DeleteInventory( inventory Item )
     if ( Item == QuickMeleeWeapon ) {
         QuickMeleeWeapon = none;
         SetBestQuickMeleeWeapon();
+        // for machete-walking
+        if ( QuickMeleeWeapon != none )
+            PendingWeapon = QuickMeleeWeapon;
     }
 }
 
@@ -383,7 +401,7 @@ simulated function SwitchWeapon(byte F)
                 // weapon has no ammo
                 SortedGroupInv[SortedGroupInv.length] = W;
             }
-            else if ( bPerkedFirst && (PipeBombExplosive(W) != none 
+            else if ( bPerkedFirst && (PipeBombExplosive(W) != none || Knife(W) != none 
                     || class<KFWeaponPickup>(W.PickupClass) == none 
                     || class<KFWeaponPickup>(W.PickupClass).default.CorrespondingPerkIndex != ScrnPerk.default.PerkIndex) )
             {
@@ -1468,8 +1486,12 @@ simulated function Tick(float DeltaTime)
     }
     
     if ( WeaponToFixClientState != none ) {
-        WeaponToFixClientState.ClientState = WS_Hidden;
-        WeaponToFixClientState.SetTimer(0, false);
+        // make sure that we don't hide current weapon (in case when QuickMelee didn't worked)
+        if ( WeaponToFixClientState != Weapon ) {
+            WeaponToFixClientState.ClientState = WS_Hidden;
+            WeaponToFixClientState.ClientGrenadeState = GN_None;
+            WeaponToFixClientState.SetTimer(0, false);
+        }
         WeaponToFixClientState = none;
     }
     
@@ -1477,7 +1499,13 @@ simulated function Tick(float DeltaTime)
     super.Tick(DeltaTime);
 
     bCowboyMode = bCowboyMode && ShieldStrength < 26;
-    if ( Role < ROLE_Authority ) {
+    if ( Role == ROLE_Authority ) {
+        if ( MacheteBoost > 0 && Level.TimeSeconds > MacheteResetTime ) {
+            MacheteBoost = 0;
+            ModifyVelocity(0, Velocity);
+        }    
+    }
+    else {
         if ( KFPRI != none && PrevPerkClass != KFPRI.ClientVeteranSkill ) {
             ClientVeterancyChanged(PrevPerkClass);
             PrevPerkClass = KFPRI.ClientVeteranSkill;
@@ -1650,6 +1678,7 @@ function WeaponDown()
         //copied from weapon's putdown timer
         W.SetTimer(0, false);
         W.ClientState = WS_Hidden;
+        W.ClientGrenadeState = GN_None;
         if( W.FlashLight!=none )
 				W.Tacshine.Destroy();
         
@@ -1853,6 +1882,7 @@ simulated function TakeDamage( int Damage, Pawn InstigatedBy, Vector Hitlocation
     // copied from KFPawn to adjust player-to-player damage -- PooSH
     LastHitDamType = damageType;
     LastDamagedBy = instigatedBy;
+    LastDamageTime = Level.TimeSeconds;
     KFDamType = class<KFWeaponDamageType>(damageType);
     
     if ( KFDamType != none && KFDamType.default.bDealBurningDamage && class<DamTypeMAC10MPInc>(KFDamType) == none && KFPawn(instigatedBy) != none )
@@ -2146,9 +2176,15 @@ function Sound GetSound(xPawnSoundGroup.ESoundType soundType)
 
 simulated event SetAnimAction(name NewAction)
 {
+    local KFWeapon W;
+    
+    
 	super.SetAnimAction(NewAction);
-	if ( InStr(Caps(String(AnimAction)), "RELOAD") != -1 )
+    
+    W = KFWeapon(Weapon);
+	if ( W != none && InStr(Caps(String(AnimAction)), "RELOAD") != -1 ) {
 		ServerReload();
+    }
 }
 
 function ServerReload()
@@ -2391,7 +2427,22 @@ function bool CanBuyNow()
     Return False;
 }
 
+event Bump(actor Other)
+{
+    local ZombieCrawler crawler;
+    
+    super.Bump(Other);
 
+    if ( class'ScrnBalance'.default.Mut.bBeta ) {
+        // push crawlers away
+        crawler = ZombieCrawler(Other);
+        if ( crawler != none && crawler.health > 0 && !crawler.bPouncing //&& !crawler.bShotAnim
+                && (LastDamagedBy != crawler || Level.TimeSeconds - LastDamageTime > 0.2) ) 
+        {
+            crawler.Velocity = GroundSpeed * 0.5 * normal(Velocity);
+        }
+    }
+}
 
 defaultproperties
 {

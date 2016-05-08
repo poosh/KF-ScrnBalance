@@ -113,7 +113,6 @@ simulated function AddMeToPRI()
     }
 }
 
-
 simulated function PostNetBeginPlay()
 {
     super.PostNetBeginPlay();
@@ -124,15 +123,67 @@ simulated function PostNetBeginPlay()
     }
 }
 
+function SendClientPerksSE()
+{
+	local int i;
+    local class<ScrnVeterancyTypes> Perk;
+    local byte Level;
 
-function ServerSelectPerkSE(Class<SRVeterancyTypes> VetType)
+	for( i=0; i<CachePerks.Length; i++ ) {
+        Perk = class<ScrnVeterancyTypes>(CachePerks[i].PerkClass);
+        if ( Perk.default.bLocked )
+            Level = 255;
+        else 
+            Level = 0x80 | CachePerks[i].CurrentLevel;
+		ClientReceivePerk(i, Perk, Level);
+    }
+}
+
+simulated function ClientReceivePerk( int Index, class<SRVeterancyTypes> V, byte Level )
+{
+    
+	// Setup correct icon for trader.
+	if( V.Default.PerkIndex<255 && V.Default.OnHUDIcon!=None )
+	{
+		if( ShopPerkIcons.Length <= V.Default.PerkIndex )
+			ShopPerkIcons.Length = V.Default.PerkIndex+1;
+		ShopPerkIcons[V.Default.PerkIndex] = V.Default.OnHUDIcon;
+	}
+
+	if( CachePerks.Length <= Index )
+		CachePerks.Length = Index+1;
+	CachePerks[Index].PerkClass = V;
+    ClientPerkLevel(Index, Level);
+}
+
+simulated function ClientPerkLevel( int Index, byte NewLevel )
+{
+    if ( NewLevel == 255 ) {
+        class<ScrnVeterancyTypes>(CachePerks[Index].PerkClass).default.bLocked = true;
+        CachePerks[Index].CurrentLevel = 0;
+    }
+    else if ( (NewLevel & 0x80) > 0 ) {
+        // highest bit indicates that perk should be unlocked
+        class<ScrnVeterancyTypes>(CachePerks[Index].PerkClass).default.bLocked = false;
+        CachePerks[Index].CurrentLevel = NewLevel & 0x7F;
+    }
+    else if ( class<ScrnVeterancyTypes>(CachePerks[Index].PerkClass).default.bLocked == false ) {
+        if ( CachePerks[Index].CurrentLevel > 0 && NewLevel > CachePerks[Index].CurrentLevel )
+            Level.GetLocalPlayerController().ReceiveLocalizedMessage(Class'KFVetEarnedMessageSR',(NewLevel-1),,,CachePerks[Index].PerkClass);
+        CachePerks[Index].CurrentLevel = NewLevel;
+    }
+}
+
+function ServerSelectPerkSE(Class<ScrnVeterancyTypes> VetType)
 {
     local KFGameType KF;
     local bool bDifferentPerk;
     
     KF = KFGameType(Level.Game);
     
-    if ( OwnerPC == none || KF == none || KF.bWaitingToStartMatch || OwnerPC.Mut.bAllowAlwaysPerkChanges )
+    if ( VetType == none || VetType.default.bLocked )
+        OwnerPC.ClientMessage(OwnerPC.strPerkLocked);
+    else if ( OwnerPC == none || KF == none || KF.bWaitingToStartMatch || OwnerPC.Mut.bAllowAlwaysPerkChanges )
         StatObject.ServerSelectPerk(VetType); // shouldn't happen, but just to be sure...
     else {
         if ( OwnerPC.Mut.bNoPerkChanges && OwnerPC.bHadPawn 
@@ -657,7 +708,6 @@ ignores StartClientInitialReplication;
     }
 }
 
-
 //=============================================================================
 // SERVER STATES
 //=============================================================================
@@ -703,7 +753,7 @@ Begin:
     sleep(0.2);
     
     CurrentJob = "Sending Perks";
-    SendClientPerks();
+    SendClientPerksSE();
     NextRepTime = Level.TimeSeconds + 5.0; // no effin spamming us until we're done
     sleep(1.0);
     

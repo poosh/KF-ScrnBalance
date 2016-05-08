@@ -42,6 +42,12 @@ simulated function ClearString()
 	}
 }
 
+simulated function Destroyed()
+{
+    ClearString();
+    super.Destroyed();
+}
+
 defaultproperties
 {
 }

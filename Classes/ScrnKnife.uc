@@ -8,6 +8,8 @@ simulated state QuickMelee
     {
         if ( OldWeapon != none ) {
             Instigator.PendingWeapon = OldWeapon;
+            if ( KFWeapon(OldWeapon) != none )
+                KFWeapon(OldWeapon).ClientGrenadeState = GN_BringUp;
             PutDown();
         }
         else 
@@ -85,4 +87,9 @@ defaultproperties
     ItemName="Knife SE"
     Description="Military Combat Knife"
     Priority=2
+    
+    // PutDownAnimRate=2.0
+    // SelectAnimRate=2.0
+    // BringUpTime=0.25
+    // PutDownTime=0.25        
 }

@@ -15,4 +15,5 @@ defaultproperties
      ItemName="Machete SE"
      ItemShortName="Machete SE"
      InventoryType=Class'ScrnBalanceSrv.ScrnMachete'
+     CorrespondingPerkIndex=7
 }

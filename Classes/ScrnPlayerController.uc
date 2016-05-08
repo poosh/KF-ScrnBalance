@@ -88,7 +88,7 @@ var transient bool bDestroying; // indicates that Destroyed() is executing
 var bool bDamageAck; // does server needs to acknowledge client of damages he made?
 
 var transient byte PerkChangeWave; // wave num, when perk was changed last time
-var	localized string strNoPerkChanges;
+var	localized string strNoPerkChanges, strPerkLocked;
 
 var transient Controller FavoriteSpecs[2];
 var localized string strSpecFavoriteAssigned, strSpecNoFavorites;
@@ -1669,7 +1669,7 @@ function SelectVeterancy(class<KFVeterancyTypes> VetSkill, optional bool bForceC
         
     if ( L != none ) {
         if ( ScrnClientPerkRepLink(L) != none )
-            ScrnClientPerkRepLink(L).ServerSelectPerkSE(Class<SRVeterancyTypes>(VetSkill));
+            ScrnClientPerkRepLink(L).ServerSelectPerkSE(Class<ScrnVeterancyTypes>(VetSkill));
         else
             L.ServerSelectPerk(Class<SRVeterancyTypes>(VetSkill));
     }
@@ -1955,6 +1955,25 @@ function LoadGunSkinFromConfig()
     }
 }
 
+// overrided KFWeapon behavior to block reloading while putting down, bringing up or throwing the nade
+exec function ReloadMeNow()
+{
+    local KFWeapon W;
+    
+    if ( Pawn != none )
+        W = KFWeapon(Pawn.Weapon);
+    if ( W == none )
+        return;
+        
+    // ClientMessage( "Reloading Weapon: "
+        // @ "Timer=" $ W.TimerCounter$"/"$W.TimerRate
+        // @ "ClientState=" $ GetEnum(Enum'EWeaponClientState', W.ClientState)
+        // @ "ClientGrenadeState=" $ GetEnum(Enum'EClientGrenadeState', W.ClientGrenadeState)
+    // );
+
+    if ( W.ClientState == WS_ReadyToFire /* && W.ClientGrenadeState == GN_None */ )
+        W.ReloadMeNow();
+}
 
 // STATES
 
@@ -2198,15 +2217,19 @@ function ClientSetBehindView(bool B)
         if ( ScrnHUD(MyHUD) != none )
             ScrnHUD(MyHUD).DebugCrosshair(!bBehindView);
     }
+    else if ( B == false ) {
+        bFreeCamera = false;
+    }
 }
 
 exec function FreeCamera( bool B )
 {
+    ClientMessage("FreeCamera is blocked due to exploits. Use ToggleBehindView instead");
     // free roaming is prohibited in tourney mode
-    if ( B && !PlayerReplicationInfo.bOnlySpectator && Mut.SrvTourneyMode != 0 )
-        return;
+    // if ( B && !PlayerReplicationInfo.bOnlySpectator && Mut.SrvTourneyMode != 0 )
+        // return;
     
-    super.FreeCamera(B);    
+    // super.FreeCamera(B);    
 }
 
 
@@ -2348,7 +2371,28 @@ exec function RepLinkMessages(bool value)
     Class'ScrnClientPerkRepLink'.Static.FindMe(self).bClientDebug = bDebugRepLink;
 }
 
-
+exec function TestQuickMelee()
+{
+    local Inventory inv;
+    local KFWeapon W;
+    local string s;
+    
+    if ( Pawn == none )
+        return;
+    
+    for ( inv = Pawn.Inventory; inv != none; inv = inv.Inventory ) {
+        W = KFWeapon(inv);
+        if ( W != none ) {
+            if ( W == Pawn.Weapon )
+                s = "[CURRENT]";
+            else
+                s = "";
+            s @= W.ItemName $ ": ClientState=" $ GetEnum(Enum'EWeaponClientState', W.ClientState);
+            s @= "ClientGrenadeState=" $ GetEnum(Enum'EClientGrenadeState', W.ClientGrenadeState);
+            ClientMessage(s, 'log');
+        }
+    }
+}
 
 
 // ======================== COMMENT BEFORE RELEASE !!! =====================
@@ -2454,6 +2498,7 @@ defaultproperties
 	strLockDisabled="Weapon lock is disabled by server"
 	strAlreadySpectating="Already spectating. Type READY, if you want to join the game."
     strNoPerkChanges="Mid-game perk changes disabled"
+    strPerkLocked="Perk is locked"
     bWaveGarbageCollection=False
 	
 	DualWieldables(0)=(Single=class'KFMod.Single',Dual=class'KFMod.Dualies')

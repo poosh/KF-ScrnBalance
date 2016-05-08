@@ -35,28 +35,31 @@ var string Reason; // reason why voting was started (e.g. kick player for being 
 
 var transient float LastBlameVoteTime;
 
-function class<ScrnVeterancyTypes> FindPerkByName(PlayerController Sender, string VeterancyName)
+function class<ScrnVeterancyTypes> FindPerkByName(PlayerController Sender, string VeterancyNameOrIndex)
 {
     local int i;
     local ClientPerkRepLink L;
     local class<ScrnVeterancyTypes> Perk;
     local string s1, s2;
     
-    // log("FindPerkByName("$Sender$", "$VeterancyName$")", 'ScrnBalance');
+    // log("FindPerkByName("$Sender$", "$VeterancyNameOrIndex$")", 'ScrnBalance');
     
-    if ( Sender == none || VeterancyName == "" || SRStatsBase(Sender.SteamStatsAndAchievements) == none )
+    if ( Sender == none || VeterancyNameOrIndex == "" || SRStatsBase(Sender.SteamStatsAndAchievements) == none )
         return none;
     L = SRStatsBase(Sender.SteamStatsAndAchievements).Rep;
     if ( L == none )
         return none;
-        
+    
+    i = int(VeterancyNameOrIndex);
+    if ( i > 0 && i <= L.CachePerks.Length )
+        return class<ScrnVeterancyTypes>(L.CachePerks[i-1].PerkClass); 
     // log("CachePerks.Length="$L.CachePerks.Length, 'ScrnBalance');
     for ( i = 0; i < L.CachePerks.Length; ++i ) {
         Perk = class<ScrnVeterancyTypes>(L.CachePerks[i].PerkClass);
         if ( Perk != none ) {
-            // log(GetItemName(String(Perk.class)) @ Perk.default.VeterancyName, 'ScrnBalance');
-            if ( GetItemName(String(Perk.class)) ~= VeterancyName || Perk.default.VeterancyName ~= VeterancyName 
-                    || (Divide(Perk.default.VeterancyName, " ", s1, s2) && (VeterancyName ~= s1 || VeterancyName ~= s2)) )
+            // log(GetItemName(String(Perk.class)) @ Perk.default.VeterancyNameOrIndex, 'ScrnBalance');
+            if ( GetItemName(String(Perk.class)) ~= VeterancyNameOrIndex || Perk.default.VeterancyName ~= VeterancyNameOrIndex 
+                    || (Divide(Perk.default.VeterancyName, " ", s1, s2) && (VeterancyNameOrIndex ~= s1 || VeterancyNameOrIndex ~= s2)) )
                 return Perk;
         }
     }    

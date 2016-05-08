@@ -9,6 +9,54 @@
 -------------------------------------------------------------------------------
 *** VERSION 9 *** 
 -------------------------------------------------------------------------------
+v9.10:
+- MACHETE-SPRINTING. Dropping/Picking up machete while running boosts player's
+  movement speed and machete's damage.
+- 3 new Machete-related achievements
+- Added 5 Community-made Maps: 
+    The Great Pyramid - Arena
+    Pandora's Box (Janitor's fix)
+    Scrap Heap (by arramus)
+    Train (Janitor's fix)
+    Wicked City (by =Z.E.D= dextronaut
+- Winnin KF-HellFreezesOver1-2 unlocks KF-Hell achievements
+- [BETA] Players can push Crawlers.
+- MapInfo moved into separate config: ScrnMapInfo.ini. Now you can use commands
+  such as "MUTATE MAPZEDS 64" without worrying about messing up ScrnBalance.ini
+- MUTATE MAPZEDS automatically forces new max-zeds-at-once value. 
+  No need to enter two commands anymore (MUTATE FORCEZEDS command removed).
+- Fixed QuickMelee bug when it hid current weapon
+- Added TestQuickMelee console command to print weapon state into both console and log
+- Fixed reload animation bug after weapon's bring up, i.e. when weapon was 
+  reloading without animation play.
+- Fixed FreeCamera exploit (thanks to prototype22)  
+- MUTATE LOCKPERK / UNLOCKPERK allows perk now allow passing perk indexes instead of names,
+  e.g. MUTATE LOCKPERK 1 locks first perk in the perk list (usually Medic).
+- Fixed achievement earn message popping up after locking perk.
+- Admins can't use locked perks anymore.
+- New Ammo Box spawn rules:
+  Fixed "Trolling" ammo boxes.
+  Ammo box count during the wave on Sui/HoE raised up to 33%.
+  During the trader time and when last 10-20 zeds left, ammo box count drops 
+  down to 10% on all difficulties.
+  Ammo box can't disappear when seen by player.
+  When ammo box is picked up, another one spawns somewhere on the map in 5..30s
+  (cooldown depends from player count)
+  MUTATE DEBUGPICKUPS shows information about currently spawned ammo boxes
+- [ScrnSP] - fixed downloading "None.txt" from FTP on map change.
+  
+CONSOLE COMMANDS:
+MUTATE HELP - prints all MUTATE commands supported by ScrN Balance
+MUTATE MAPZEDS - changed behavior. When entered command without value, it just prints current
+    value. Entering value (e.g. MUTATE MAPZEDS 64) sets value, stores it in ScrnMapInfo.ini
+    and applies it on-the-fly.
+TestQuickMelee - prints weapon states for debug purposes (in case QuickMelee bugs out again).
+
+CONFIG VARIABLES (ScrnBalance.ini):
+bRespawnDoors - controls door respawning at the end of the wave. By default it
+    is false, i.e. if door breaks, then it's gone forever.
+
+
 v9.02:
 - Fixed money drop exploit
 - Fixed minor issues with QuickMelee
@@ -21,7 +69,6 @@ v9.02:
 - GUI still supports only 3 settings: Classic bars(70), Modern Bars (83) and Cool Bars (90).
   Other values can be set via config or "PlayerInfoVersion" console command.
 - All bars now support Chat Icon.
-  
 
 
 v9.01:

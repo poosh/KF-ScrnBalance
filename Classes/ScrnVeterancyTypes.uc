@@ -344,7 +344,7 @@ static function class<Grenade> GetNadeType(KFPlayerReplicationInfo KFPRI)
 }
 
 
-static function string GetVetInfoText( byte Level, byte Type, optional byte RequirementNum )
+static function string GetVetInfoText(byte Level, byte Type, optional byte RequirementNum)
 {
     return super.GetVetInfoText(GetBonusLevel(Level), Type, RequirementNum);
 }
@@ -354,12 +354,20 @@ static function bool IsAdmin(PlayerController Player)
     return Player != none && Player.PlayerReplicationInfo != none && Player.PlayerReplicationInfo.bAdmin;
 }
 // Return the level of perk that is available, 0 = perk is n/a.
-static function byte PerkIsAvailable( ClientPerkRepLink StatOther )
+static function byte PerkIsAvailable(ClientPerkRepLink StatOther)
 {
-    if ( default.bLocked && !IsAdmin(PlayerController(StatOther.Owner)) )
+    if ( default.bLocked )
         return 0;
         
 	return super.PerkIsAvailable(StatOther);
+}
+
+static function bool LevelIsFinished(ClientPerkRepLink StatOther, byte CurLevel)
+{
+    if ( default.bLocked )
+        return false;
+        
+    return super.LevelIsFinished(StatOther, CurLevel);
 }
 
 // Reduce damage zombies can deal to you

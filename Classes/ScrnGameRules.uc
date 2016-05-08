@@ -102,10 +102,11 @@ function PostBeginPlay()
 {
     if( Level.Game.GameRulesModifiers==None )
         Level.Game.GameRulesModifiers = Self;
-    else Level.Game.GameRulesModifiers.AddGameRules(Self);
+    else 
+        Level.Game.GameRulesModifiers.AddGameRules(Self);
     
-    Mut = ScrnBalance(Owner);
     KF = KFGameType(Level.Game);
+    Mut = class'ScrnBalance'.static.Myself(Level);
     
     MonsterInfos.Length = Mut.KF.MaxZombiesOnce; //reserve a space that will be required anyway
     InitHardcoreLevel();
@@ -454,9 +455,9 @@ function GiveMapAchievements(optional String MapName)
 	BonusMult = Mut.EndGameStatBonus;
 	if ( Mut.bStatBonusUsesHL )
 		BonusMult *= fmax(0, HardcoreLevel - Mut.StatBonusMinHL);
-	i = Mut.FindMapInfo();
+	i = Mut.MapInfo.FindMapInfo();
 	if ( i != -1 )
-		BonusMult *= 1.0 + Mut.MapInfo[i].Difficulty;
+		BonusMult *= 1.0 + Mut.MapInfo.MapInfo[i].Difficulty;
     bGiveBonus = BonusMult >= 0.1;
     if ( bGiveBonus )
         log("Giving bonus xp to winners (x"$BonusMult$")", 'ScrnBalance');    
@@ -1029,7 +1030,6 @@ function protected InitHardcoreLevel()
     HardcoreLevel = int(HardcoreLevelFloat+0.01);
     // replicate to clients
     Mut.HardcoreLevel = clamp(HardcoreLevel,0,255); 
-    Mut.NetUpdateTime = Level.TimeSeconds - 1;
 
 }
 
@@ -1064,20 +1064,20 @@ function RaiseHardcoreLevel(float inc, string reason)
 
 
 
-function WeaponReloaded(PlayerController Owner, KFWeapon W)
+function WeaponReloaded(PlayerController WeaponOwner, KFWeapon W)
 {
 	local ScrnPlayerInfo SPI;
 	
-	SPI = GetPlayerInfo(Owner);
+	SPI = GetPlayerInfo(WeaponOwner);
 	if ( SPI != none )
 		SPI.WeaponReloaded(W);
 }
 
-function WeaponFire(PlayerController Owner, KFWeapon W, byte FireMode)
+function WeaponFire(PlayerController WeaponOwner, KFWeapon W, byte FireMode)
 {
 	local ScrnPlayerInfo SPI;
 	
-	SPI = GetPlayerInfo(Owner);
+	SPI = GetPlayerInfo(WeaponOwner);
 	if ( SPI != none )
 		SPI.WeaponFired(W, FireMode);
 }
@@ -1289,12 +1289,14 @@ final function ScrnPlayerInfo CreatePlayerInfo(PlayerController PlayerOwner, opt
 function DebugSPI(PlayerController Sender)
 {
     local ScrnPlayerInfo SPI;
+    local int i;
     
     Sender.ClientMessage("Active SPIs:");
     Sender.ClientMessage("------------------------------------");
     for ( SPI = Mut.GameRules.PlayerInfo; SPI != none; SPI = SPI.NextPlayerInfo ) {
         if ( SPI.PlayerOwner != none )
-            Sender.ClientMessage(SPI.SteamID32 @ SPI.PlayerOwner.PlayerReplicationInfo.PlayerName @  SPI.PRI_Kills );
+            Sender.ClientMessage(SPI.SteamID32 @ SPI.PlayerOwner.PlayerReplicationInfo.PlayerName 
+                @  SPI.PRI_Kills @ "Machete-steps: " $ SPI.GetCustomValue(none, 'MacheteWalker') );
         else 
             Sender.ClientMessage(SPI.SteamID32 @ "none" @  SPI.PRI_Kills );
     }
@@ -1474,6 +1476,9 @@ defaultproperties
 	MapAliases(16)=(FileName="KF-HospitalhorrorsLightsOut",AchName="KF-Hospitalhorrors")
 	MapAliases(17)=(FileName="KF-Doom2-SE",AchName="KF-D2M1")
 	MapAliases(18)=(FileName="KF-Icebreaker-SE",AchName="KF-Icebreaker")
+	MapAliases(19)=(FileName="KF-HellFreezesOver1-2",AchName="KF-Hell")
+	MapAliases(20)=(FileName="KF-Train-fix",AchName="KF-Train")
+	MapAliases(21)=(FileName="KF-PandorasBoxV2-fix",AchName="KF-PandorasBox")
     
     SovietDamageTypes(0)=class'KFMod.DamTypeKnife'
     SovietDamageTypes(1)=class'KFMod.DamTypeFrag'

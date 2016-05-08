@@ -194,4 +194,8 @@ defaultproperties
     AchDefs(138)=(id="OP_Firebug",DisplayName="Is Firebug OP?",Description="Survive 3+player game where everybody is playing Firebug",Icon=Texture'ScrnAch_T.Teamwork.OP_Firebug',MaxProgress=1,DataSize=1,Group="TW")
     AchDefs(139)=(id="OP_Demo",DisplayName="Is Demo OP?",Description="Survive 3+player game where everybody is playing Demolition",Icon=Texture'ScrnAch_T.Teamwork.OP_Demo',MaxProgress=1,DataSize=1,Group="TW")
     AchDefs(140)=(id="OP_Gunslinger",DisplayName="Is Gunslinger OP?",Description="Survive 3+player game where everybody is playing Gunslinger",Icon=Texture'ScrnAch_T.Teamwork.OP_Gunslinger',MaxProgress=1,DataSize=1,Group="TW")
+    // v9.10
+    AchDefs(141)=(id="MacheteKillMidairCrawler",DisplayName="Machete Master",Description="Use Machete to melee-kill Crawler in midair without taking damage",Icon=Texture'ScrnAch_T.Master.MacheteCrawlerCut',MaxProgress=1,DataSize=1,Group="MASTER")
+    AchDefs(142)=(id="MacheteStunSC",DisplayName="Machete Stuns!",Description="Stun Scrake with Machete",Icon=Texture'ScrnAch_T.Master.MacheteScrake',MaxProgress=1,DataSize=1,Group="MASTER")
+    AchDefs(143)=(id="MacheteWalker",DisplayName="Machete Marathon",Description="Perform 'Machete-sprint': drop/pickup Machete 422 times while running in a single game",Icon=Texture'ScrnAch_T.Achievements.MacheteWalker',MaxProgress=1,DataSize=1,bForceShow=True)
 }

@@ -5,10 +5,10 @@ var ScrnBalance ScrnBalanceMut;
 var bool bCloserZedSpawns; // if true uses modified RateZombieVolume() function to get closer volumes for zeds
 var private string CmdLine;
 
-
 var private int TourneyMode;
 
-
+var array<KFAmmoPickup> SleepingAmmo;
+var transient int CurrentAmmoBoxCount, DesiredAmmoBoxCount;
 //var const protected array< class<Pickup> > CheatPickups; // disallowed pickups in tourney mode
 
 event InitGame( string Options, out string Error )
@@ -629,10 +629,32 @@ event PostLogin( PlayerController NewPlayer )
         ScrnPlayerController(NewPlayer).PostLogin();
 }
 
+function AmmoPickedUp(KFAmmoPickup PickedUp)
+{
+    local int i;
+    
+    // CurrentAmmoBoxCount is set in ScrnAmmoPickup
+    // DesiredAmmoBoxCount is set in ScrnBalance
+    if ( CurrentAmmoBoxCount < DesiredAmmoBoxCount ) {
+        if ( SleepingAmmo.length == 0 ) {
+            for ( i = 0; i < AmmoPickups.length; ++i ) {
+                if ( AmmoPickups[i] != PickedUp && AmmoPickups[i].bSleeping )
+                    SleepingAmmo[SleepingAmmo.length] = AmmoPickups[i];
+            }
+        }
+        
+        if ( SleepingAmmo.length > 0 ) {
+            i = rand(SleepingAmmo.Length);
+            SleepingAmmo[i].GotoState('Sleeping', 'DelayedSpawn');
+            SleepingAmmo.remove(i, 1);
+        }
+        else 
+            PickedUp.GotoState('Sleeping', 'DelayedSpawn');
+    }
+}
 
-// STATES
 
-
+// ==================================== STATES ===============================
 auto State PendingMatch
 {
     // overrided to require at least 1 player to be ready to start LobbyTimeout
@@ -724,6 +746,150 @@ auto State PendingMatch
             KFGameReplicationInfo(GameReplicationInfo).LobbyTimeout = -1;
         }
     }
+}
+
+State MatchInProgress
+{
+    function SetupPickups()
+    {
+        local int i, j;
+        
+        // let mutator do the job
+        ScrnBalanceMut.SetupPickups(false);
+        
+        for ( i = 0; i < AmmoPickups.length; ++i ) {
+            if ( AmmoPickups[i].bSleeping )
+                SleepingAmmo[j++] = AmmoPickups[i];
+        }
+        SleepingAmmo.length = j;
+    }
+    
+    function DoWaveEnd()
+    {
+        local Controller C;
+        local PlayerController Survivor;
+        local int SurvivorCount;
+
+        // Only reset this at the end of wave 0. That way the sine wave that scales
+        // the intensity up/down will be somewhat random per wave
+        if( WaveNum < 1 )
+        {
+            WaveTimeElapsed = 0;
+        }
+
+        if ( !rewardFlag )
+            RewardSurvivingPlayers();
+
+        if( bDebugMoney )
+        {
+            log("$$$$$$$$$$$$$$$$ Wave "$WaveNum$" TotalPossibleWaveMoney = "$TotalPossibleWaveMoney,'Debug');
+            log("$$$$$$$$$$$$$$$$ TotalPossibleMatchMoney = "$TotalPossibleMatchMoney,'Debug');
+            TotalPossibleWaveMoney=0;
+        }
+
+        // Clear Trader Message status
+        bDidTraderMovingMessage = false;
+        bDidMoveTowardTraderMessage = false;
+
+        bWaveInProgress = false;
+        bWaveBossInProgress = false;
+        bNotifiedLastManStanding = false;
+        KFGameReplicationInfo(GameReplicationInfo).bWaveInProgress = false;
+
+        WaveCountDown = Max(TimeBetweenWaves,1);
+        KFGameReplicationInfo(GameReplicationInfo).TimeToNextWave = WaveCountDown;
+        WaveNum++;
+
+        for ( C = Level.ControllerList; C != none; C = C.NextController )
+        {
+            if ( C.PlayerReplicationInfo != none )
+            {
+                C.PlayerReplicationInfo.bOutOfLives = false;
+                C.PlayerReplicationInfo.NumLives = 0;
+
+                if ( KFPlayerController(C) != none )
+                {
+                    if ( KFPlayerReplicationInfo(C.PlayerReplicationInfo) != none )
+                    {
+                        KFPlayerController(C).bChangedVeterancyThisWave = false;
+
+                        if ( KFPlayerReplicationInfo(C.PlayerReplicationInfo).ClientVeteranSkill != KFPlayerController(C).SelectedVeterancy )
+                        {
+                            KFPlayerController(C).SendSelectedVeterancyToServer();
+                        }
+                    }
+                }
+
+                if ( C.Pawn != none )
+                {
+                    if ( PlayerController(C) != none )
+                    {
+                        Survivor = PlayerController(C);
+                        SurvivorCount++;
+                    }
+                }
+                else if ( !C.PlayerReplicationInfo.bOnlySpectator )
+                {
+                    C.PlayerReplicationInfo.Score = Max(MinRespawnCash,int(C.PlayerReplicationInfo.Score));
+
+                    if( PlayerController(C) != none )
+                    {
+                        PlayerController(C).GotoState('PlayerWaiting');
+                        PlayerController(C).SetViewTarget(C);
+                        PlayerController(C).ClientSetBehindView(false);
+                        PlayerController(C).bBehindView = False;
+                        PlayerController(C).ClientSetViewTarget(C.Pawn);
+                    }
+
+                    C.ServerReStartPlayer();
+                }
+
+                if ( KFPlayerController(C) != none )
+                {
+                    if ( KFSteamStatsAndAchievements(PlayerController(C).SteamStatsAndAchievements) != none )
+                    {
+                        KFSteamStatsAndAchievements(PlayerController(C).SteamStatsAndAchievements).WaveEnded();
+                    }
+
+                    // Don't broadcast this message AFTER the final wave!
+                    if( WaveNum < FinalWave )
+                    {
+                        KFPlayerController(C).bSpawnedThisWave = false;
+                        BroadcastLocalizedMessage(class'KFMod.WaitingMessage', 2);
+                    }
+                    else if ( WaveNum == FinalWave )
+                    {
+                        KFPlayerController(C).bSpawnedThisWave = false;
+                    }
+                    else
+                    {
+                        KFPlayerController(C).bSpawnedThisWave = true;
+                    }
+                }
+            }
+        }
+
+        if ( Level.NetMode != NM_StandAlone && Level.Game.NumPlayers > 1 &&
+             SurvivorCount == 1 && Survivor != none && KFSteamStatsAndAchievements(Survivor.SteamStatsAndAchievements) != none )
+        {
+            KFSteamStatsAndAchievements(Survivor.SteamStatsAndAchievements).AddOnlySurvivorOfWave();
+        }
+
+        bUpdateViewTargs = True;
+        
+        RespawnDoors();
+    }
+    
+    function RespawnDoors()
+    {
+        local KFDoorMover KFDM;
+        
+        if ( ScrnBalanceMut.bRespawnDoors && !ScrnBalanceMut.bTSCGame ) {
+            foreach DynamicActors(class'KFDoorMover', KFDM)
+                KFDM.RespawnDoor();    
+        }
+    }
+    
 }
 
 defaultproperties

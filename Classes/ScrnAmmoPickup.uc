@@ -1,7 +1,26 @@
 class ScrnAmmoPickup extends KFAmmoPickup;
 
+function float GetRespawnTime()
+{
+    return RespawnTime / clamp(Level.Game.NumPlayers, 1, 6);
+}
+
 state Pickup
 {
+    function BeginState()
+    {   
+        super.BeginState();
+        if ( ScrnGameType(Level.Game) != none )
+            ScrnGameType(Level.Game).CurrentAmmoBoxCount++;
+    }
+    
+    function EndState()
+    {
+        super.EndState();
+        if ( ScrnGameType(Level.Game) != none )
+            ScrnGameType(Level.Game).CurrentAmmoBoxCount--;
+    }
+    
 	// When touched by an actor.
 	function Touch(Actor Other)
 	{
@@ -74,4 +93,88 @@ state Pickup
 			}
 		}
 	}
+}
+
+auto state Sleeping
+{
+	ignores Touch;
+
+	function bool ReadyToPickup(float MaxWait)
+	{
+		return (bPredictRespawns && LatentFloat < MaxWait);
+	}
+
+	function StartSleeping() {}
+
+	function BeginState()
+	{
+		local int i;
+
+		NetUpdateTime = Level.TimeSeconds - 1;
+		bHidden = true;
+		bSleeping = true;
+		SetCollision(false, false);
+
+		for ( i = 0; i < 4; i++ )
+		{
+			TeamOwner[i] = None;
+		}
+	}
+
+	function EndState()
+	{
+		NetUpdateTime = Level.TimeSeconds - 1;
+		bHidden = false;
+		bSleeping = false;
+		SetCollision(default.bCollideActors, default.bBlockActors);
+	}
+
+Begin:
+	bSleeping = true;
+	Sleep(1000000.0); // Sleep for 11.5 days(never wake up)
+
+DelayedSpawn:
+	bSleeping = false;
+	Sleep(GetRespawnTime()); // Delay before respawning
+	goto('Respawn');
+
+TryToRespawnAgain:
+	Sleep(1.0);
+
+Respawn:
+	bShowPickup = true;
+    // ignore player visibility here  -- PooSH
+	// for ( OtherPlayer = Level.ControllerList; OtherPlayer != none; OtherPlayer=OtherPlayer.NextController )
+	// {
+		// if ( PlayerController(OtherPlayer) != none && OtherPlayer.Pawn != none )
+		// {
+	 		// if ( FastTrace(self.Location, OtherPlayer.Pawn.Location) )
+	 		// {
+	 			// bShowPickup = false;
+	 			// break;
+			// }
+		// }
+	// }
+
+	if ( bShowPickup )
+	{
+		RespawnEffect();
+		Sleep(RespawnEffectTime);
+
+		if ( PickUpBase != none )
+		{
+			PickUpBase.TurnOn();
+		}
+
+		GotoState('Pickup');
+	}
+    else 
+        Goto('TryToRespawnAgain');
+}
+
+defaultproperties
+{
+    RespawnTime=30
+    RespawnEffectTime=0.5
+    RotationRate=(Yaw=0)
 }

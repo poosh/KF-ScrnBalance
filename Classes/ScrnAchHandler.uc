@@ -498,8 +498,11 @@ function MonsterDamaged(int Damage, KFMonster Victim, ScrnPlayerInfo InstigatorI
         if ( !Victim.bDamagedAPlayer && DamType.default.bIsMeleeDamage && !ClassIsChildOf(DamType, class'DamTypeCrossbuzzsaw') ) {
             if ( Damage >= Victim.Health )
                 InstigatorInfo.ProgressAchievement('MeleeKillCrawlers', 1); 
-            if ( Victim.Physics == PHYS_Falling )
+            if ( Victim.Physics == PHYS_Falling ) {
+                if ( Damage >= Victim.Health && ClassIsChildOf(DamType, class'KFMod.DamTypeMachete') )
+                    InstigatorInfo.ProgressAchievement('MacheteKillMidairCrawler', 1);
                 InstigatorInfo.ProgressAchievement('MeleeKillMidairCrawlers', 1); 
+            }
         }
     }
     else if ( Victim.IsA('ZombieShiver') ) {
@@ -596,6 +599,9 @@ function MonsterDamaged(int Damage, KFMonster Victim, ScrnPlayerInfo InstigatorI
                 }
             } 
             else if ( Damage >= Victim.default.Health/1.5 ) {
+                if ( DamType.default.bIsMeleeDamage && ClassIsChildOf(DamType, class'KFMod.DamTypeMachete') ) 
+                    InstigatorInfo.ProgressAchievement('MacheteStunSC', 1);
+                            
 				// STUN DAMAGE
                 if ( GameRules.MonsterInfos[index].DamType1 == none ) {
                     GameRules.MonsterInfos[index].KillAss1 = InstigatorInfo;
@@ -1060,6 +1066,14 @@ function PickedCash(int CashAmount, ScrnPlayerInfo ReceiverInfo, ScrnPlayerInfo 
 		if ( DonatorInfo.CashDonated - DonatorInfo.CashReceived - DonatorInfo.CashFound >= 2000 )
 			DonatorInfo.ProgressAchievement('MilkingCow', 1); 
 	}
+}
+
+function PickedWeapon(ScrnPlayerInfo SPI, KFWeaponPickup WeaponPickup)
+{
+    if ( MachetePickup(WeaponPickup ) != none ) {
+        if ( SPI.IncCustomValue(none, 'MacheteWalker', 1) == 422 )
+            SPI.ProgressAchievement('MacheteWalker', 1); 
+    }
 }
 
 
