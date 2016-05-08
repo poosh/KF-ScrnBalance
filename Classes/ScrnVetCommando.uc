@@ -216,7 +216,7 @@ static function int ZedTimeExtensions(KFPlayerReplicationInfo KFPRI)
         return min(10, 4 + GetClientVeteranSkillLevel(KFPRI)/3); // 1 extention per 3 levels above 6
 	else if ( GetClientVeteranSkillLevel(KFPRI) >= 3 )
 		return GetClientVeteranSkillLevel(KFPRI) - 2; // Up to 4 Zed Time Extensions
-	return 0;
+	return 1;
 }
 
 // Change the cost of particular items

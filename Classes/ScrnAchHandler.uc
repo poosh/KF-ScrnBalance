@@ -237,10 +237,10 @@ function WaveEnded(byte WaveNum)
 	if ( TotalPlayers >= 5 && MaxKills > SecondPlaceKills * 2.5 )
 		TopKillsSPI.ProgressAchievement('KillWhore', 1);  
 
-	if ( bPerfectWave && TotalPlayers >= 5 )	
+	if ( bPerfectWave && TotalPlayers >= 3 )	
 		Ach2Alive('PerfectWave', 1);
 		
-	if ( PlayersKilledByJason >= 5 )
+	if ( PlayersKilledByJason >= 3 )
 		Ach2Alive('Friday13', 1);
 }
 
@@ -625,6 +625,8 @@ function MonsterDamaged(int Damage, KFMonster Victim, ScrnPlayerInfo InstigatorI
         }
     }
     else if ( ZombieFleshpound(Victim) != none ) {
+        if ( Victim.bDecapitated && !bWasDecapitated && ClassIsChildOf(DamType, class'DamTypeAxe') )
+            InstigatorInfo.ProgressAchievement('OldSchoolKiting', 1);              
         // both TW FP achievements requires first shot from xbow or m99
         // Pipe achievement also requires it to be a rage shot. 
         // M14 ach alows to shoot already raged FP.
@@ -676,8 +678,8 @@ function MonsterDamaged(int Damage, KFMonster Victim, ScrnPlayerInfo InstigatorI
         }
     }
     else if ( GameRules.BossClass == Victim.class ) {
-        bBossM99Only = bBossM99Only && (DamType == class'DamTypeM99SniperRifle' || DamType == class'DamTypeM99HeadShot');
-        bBossXbowOnly = bBossXbowOnly && (DamType == class'DamTypeCrossbow' || DamType == class'DamTypeCrossbowHeadShot');
+        bBossM99Only = bBossM99Only && ClassIsChildOf(DamType, class'DamTypeM99SniperRifle');
+        bBossXbowOnly = bBossXbowOnly && ClassIsChildOf(DamType, class'DamTypeCrossbow');
         bBossMeleeOnly = bBossMeleeOnly && DamType.default.bIsMeleeDamage && !ClassIsChildOf(DamType, class'DamTypeCrossbuzzsaw');
         bBoss9mmOnly = bBoss9mmOnly && ClassIsChildOf(DamType, class'DamTypeDualies');
 		BossLastDamageTime = Level.TimeSeconds;
@@ -934,14 +936,17 @@ function MonsterKilled(KFMonster Victim, ScrnPlayerInfo KillerInfo, class<KFWeap
            KillerInfo.ProgressAchievement('GunslingerSC', 1);  
     }
     else if ( ZombieFleshpound(Victim) != none ) {
-        if ( ClassIsChildOf(DamType, class'DamTypeAxe') )
-            KillerInfo.ProgressAchievement('OldSchoolKiting', 1);  
-        else if ( DamType.default.bIsExplosive )
+        if ( DamType.default.bIsExplosive )
             KillerInfo.ProgressAchievement('Kill100FPExplosives', 1); 
 		else if ( DamType.default.bIsPowerWeapon) {
 			if ( DamType == class'KFMod.DamTypeDBShotgun' || DamType == class'KFMod.DamTypeBenelli' )
 				KillerInfo.ProgressAchievement('GetOffMyLawn', 1); 
 		}
+        else if ( DamType.default.bIsMeleeDamage) {
+            // if Victim is already decapitated, then OldSchoolKiting  is granted on decapitation
+            if ( !Victim.bDecapitated && ClassIsChildOf(DamType, class'DamTypeAxe') )
+                KillerInfo.ProgressAchievement('OldSchoolKiting', 1);  
+        }
             
         if ( (MC.KillAssistants.Length == 0 || 
 					(MC.KillAssistants.Length == 1 && MC.KillAssistants[0].PC == KillerInfo.PlayerOwner))

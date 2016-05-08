@@ -9,4 +9,7 @@ defaultproperties
      KeyData(4)=(Alias="mvote BORING",KeyLabel="Vote Game is Boring (increase zed spawn rate)")
      KeyData(5)=(Alias="IronSightZoomIn | TogglePlayerInfo | onrelease IronSightZoomOut | onrelease TogglePlayerInfo",KeyLabel="Clear Zoom")
      KeyData(6)=(Alias="Button bAltFire | QuickMelee",KeyLabel="QuickMelee")
+     KeyData(7)=(KeyLabel="TSC Features",bIsSection=True)
+     KeyData(8)=(Alias="SetupBase",KeyLabel="Setup Base")
+     KeyData(9)=(Alias="DropFlag",KeyLabel="Drop Base Guardian")
 }

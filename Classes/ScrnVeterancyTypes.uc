@@ -479,8 +479,15 @@ static function float GetFireSpeedModStatic(KFPlayerReplicationInfo KFPRI, class
 	return 1.0;
 }
 
+// Set number times Zed Time can be extended
+static function int ZedTimeExtensions(KFPlayerReplicationInfo KFPRI)
+{
+    if ( class'ScrnBalance'.default.Mut.bBeta )
+        return 1;
+    return 0;
+}
 
-// TSC featurs (Team Survival Competition)
+// TSC features (Team Survival Competition)
 static function bool ShowEnemyHealthBars(KFPlayerReplicationInfo KFPRI, KFPlayerReplicationInfo EnemyPRI)
 {
     return false;

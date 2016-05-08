@@ -65,9 +65,9 @@ var automated   GUIButton               b_Spec;
 var automated   GUIButton               b_Kick;
 var automated   GUIButton               b_TSC_C;
 var automated   GUIButton               b_TSC_A;
-var automated   GUIButton               b_TSC_Lock;
-var automated   GUIButton               b_TSC_Unlock;
-var automated   GUIButton               b_TSC_Invite;
+var automated   GUIButton               b_Team_Lock;
+var automated   GUIButton               b_Team_Unlock;
+var automated   GUIButton               b_Team_Invite;
 var automated   GUIButton               b_MVOTE_Yes;
 var automated   GUIButton               b_MVOTE_No;
 var automated   GUIButton               b_MVOTE_Boring;
@@ -145,14 +145,16 @@ function ShowPanel(bool bShow)
     lbl_TourneyMember.SetVisibility(b);
     b_GetPrize.SetVisibility(b && !class'ScrnAchievements'.static.IsAchievementUnlocked(
         Class'ScrnClientPerkRepLink'.Static.FindMe(PC), 'TSCT')); 
-    
+
+    // v9.11: team locks are available in regular game too
+    b_Team_Lock.SetVisibility(true); 
+    b_Team_Unlock.SetVisibility(false); 
+    b_Team_Invite.SetVisibility(true); 
+        
     // TSC
     b = TSCGameReplicationInfoBase(PC.Level.GRI) != none;
     b_TSC_C.SetVisibility(b);
     b_TSC_A.SetVisibility(b); 
-    b_TSC_Lock.SetVisibility(b); 
-    b_TSC_Unlock.SetVisibility(b); 
-    b_TSC_Invite.SetVisibility(b); 
     
     sl_BarScale.SetVisibility(H.PlayerInfoVersionNumber >= 80);
     sl_HudScale.SetVisibility(H.bCoolHud);
@@ -207,11 +209,8 @@ function RefreshInfo()
         b_MVOTE_EndTrade.Hide();
     }
     
-    // TSC
-    if ( b_TSC_Lock.bVisible || b_TSC_Unlock.bVisible ) {
-        b_TSC_Unlock.SetVisibility(TSCGameReplicationInfoBase(PC.Level.GRI).bTeamsLocked);
-        b_TSC_Lock.SetVisibility(!b_TSC_Unlock.bVisible);
-    }
+    b_Team_Unlock.SetVisibility(class'ScrnBalance'.default.Mut.bTeamsLocked);
+    b_Team_Lock.SetVisibility(!b_Team_Unlock.bVisible);
 }
 
 function ServerStatus()
@@ -719,11 +718,11 @@ function bool ButtonClicked(GUIComponent Sender)
         case b_MVOTE_EndTrade:
             PC.Mutate("VOTE ENDTRADE");
             break; 
-        case b_TSC_Lock:
-            PC.Mutate("VOTE TEAM LOCK");
+        case b_Team_Lock:
+            PC.Mutate("VOTE LOCKTEAM");
             break;               
-        case b_TSC_Unlock:
-            PC.Mutate("VOTE TEAM UNLOCK");
+        case b_Team_Unlock:
+            PC.Mutate("VOTE UNLOCKTEAM");
             break;               
     }
     
@@ -757,8 +756,8 @@ function bool PlayerVoteButtonClicked(GUIComponent Sender)
         case b_TSC_A:
             cmd = "TEAM A";
             break;    
-        case b_TSC_Invite:
-            cmd = "TEAM INVITE";
+        case b_Team_Invite:
+            cmd = "INVITE";
             break;            
     }
     
@@ -1559,7 +1558,7 @@ defaultproperties
         OnClick=ScrnTab_UserSettings.ButtonClicked
         OnKeyEvent=TeamLockButton.InternalOnKeyEvent
     End Object
-    b_TSC_Lock=GUIButton'ScrnBalanceSrv.ScrnTab_UserSettings.TeamLockButton'  
+    b_Team_Lock=GUIButton'ScrnBalanceSrv.ScrnTab_UserSettings.TeamLockButton'  
     
     Begin Object Class=GUIButton Name=TeamUnlockButton
         Caption="Unlock Team"
@@ -1577,7 +1576,7 @@ defaultproperties
         OnClick=ScrnTab_UserSettings.ButtonClicked
         OnKeyEvent=TeamUnlockButton.InternalOnKeyEvent
     End Object
-    b_TSC_Unlock=GUIButton'ScrnBalanceSrv.ScrnTab_UserSettings.TeamUnlockButton'      
+    b_Team_Unlock=GUIButton'ScrnBalanceSrv.ScrnTab_UserSettings.TeamUnlockButton'      
 
     Begin Object Class=GUIButton Name=TeamInviteButton
         Caption="Invite"
@@ -1595,7 +1594,7 @@ defaultproperties
         OnClick=ScrnTab_UserSettings.PlayerVoteButtonClicked
         OnKeyEvent=TeamInviteButton.InternalOnKeyEvent
     End Object
-    b_TSC_Invite=GUIButton'ScrnBalanceSrv.ScrnTab_UserSettings.TeamInviteButton'      
+    b_Team_Invite=GUIButton'ScrnBalanceSrv.ScrnTab_UserSettings.TeamInviteButton'      
     
     
     // SERVER INFO ---------------------------------------------------------------------

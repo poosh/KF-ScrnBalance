@@ -10,12 +10,10 @@ var byte HumanDamageMode;
 var PlayerReplicationInfo TeamCaptain[2];   // MVOTE TEAM CAPTAIN
 var PlayerReplicationInfo TeamCarrier[2];   // MVOTE TEAM CARRIER
 
-var bool bTeamsLocked;
-
 replication
 {
 	reliable if( bNetDirty && Role == ROLE_Authority )
-		BlueShop, bSuddenDeath, bTeamsLocked,
+		BlueShop, bSuddenDeath,
         HumanDamageMode, TeamCaptain, TeamCarrier;
 }
 

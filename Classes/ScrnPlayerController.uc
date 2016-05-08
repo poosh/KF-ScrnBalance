@@ -2396,6 +2396,23 @@ exec function TestQuickMelee()
 
 
 // ======================== COMMENT BEFORE RELEASE !!! =====================
+// exec function WaveNum(byte w)
+// {
+    // if ( Level.NetMode == NM_Standalone ) {
+        // KFGameType(Level.Game).WaveNum = w;
+        // KFGameReplicationInfo(Level.GRI).WaveNumber = KFGameType(Level.Game).WaveNum;
+    // }
+// }
+
+// exec function FinalWave(byte w)
+// {
+    // if ( Level.NetMode == NM_Standalone ) {
+        // KFGameType(Level.Game).FinalWave = w;
+        // KFGameReplicationInfo(Level.GRI).FinalWave = KFGameType(Level.Game).FinalWave;
+    // }
+// }
+
+
 // exec function SetSID64(coerce string SteamID64)
 // {
     // //if ( Level.NetMode == NM_Standalone )

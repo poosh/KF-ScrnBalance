@@ -112,7 +112,9 @@ simulated function ProcessTouch (Actor Other, vector HitLocation)
 
 defaultproperties
 {
-     HeadShotDamageMult=3.000000
-     Damage=800.000000
-	 DamageRadius=0
+    DamageTypeHeadShot=Class'ScrnBalanceSrv.ScrnDamTypeM99HeadShot'
+    MyDamageType=Class'ScrnBalanceSrv.ScrnDamTypeM99SniperRifle'
+    HeadShotDamageMult=3.000000
+    Damage=800.000000
+    DamageRadius=0
 }

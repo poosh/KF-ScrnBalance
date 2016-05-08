@@ -11,6 +11,8 @@ var array<KFAmmoPickup> SleepingAmmo;
 var transient int CurrentAmmoBoxCount, DesiredAmmoBoxCount;
 //var const protected array< class<Pickup> > CheatPickups; // disallowed pickups in tourney mode
 
+var array<string> InviteList; // contains players' steam IDs
+
 event InitGame( string Options, out string Error )
 {
     local int ConfigMaxPlayers;
@@ -624,9 +626,163 @@ function bool CanSpectate( PlayerController Viewer, bool bOnlySpectator, actor V
 event PostLogin( PlayerController NewPlayer )
 {
     super.PostLogin(NewPlayer);
-    
+    GiveStartingCash(NewPlayer);    
     if ( ScrnPlayerController(NewPlayer) != none )
         ScrnPlayerController(NewPlayer).PostLogin();
+}
+
+function LockTeams()
+{
+    local Controller C;
+    local PlayerController PC;
+    
+    if ( ScrnBalanceMut.bTeamsLocked )
+        return;
+    
+    ScrnBalanceMut.bTeamsLocked = true;
+    BroadcastLocalizedMessage(class'ScrnGameMessages', 243);
+    // auto-invite all current players
+    for ( C = Level.ControllerList; C != none; C = C.NextController ) {
+        PC = PlayerController(C);
+        if ( PC != none && PC.PlayerReplicationInfo != none && !PC.PlayerReplicationInfo.bOnlySpectator )
+            InvitePlayer(PC);
+    }    
+}
+
+function UnlockTeams()
+{
+    if ( ScrnBalanceMut.bTeamsLocked ) {
+        ScrnBalanceMut.bTeamsLocked = false;
+        BroadcastLocalizedMessage(class'ScrnGameMessages', 242);
+    }
+}
+
+static function string GetPlayerID(PlayerController PC)
+{
+    local string ID;
+    
+    if ( PC != none && PC.PlayerReplicationInfo != none ) {
+        ID = PC.GetPlayerIDHash();
+        if ( ID == "" )
+            ID = PC.PlayerReplicationInfo.PlayerName;
+    }
+    return ID;
+}
+
+function bool IsInvited(PlayerController PC)
+{   
+    local int i;
+    local string ID;
+    
+    if ( InviteList.length == 0 )
+        return false;
+
+    ID = GetPlayerID(PC);
+    if ( ID == "" )
+        return false;
+
+    for ( i=0; i<InviteList.length; ++i ) {
+        if ( InviteList[i] == ID )
+            return true;
+    }
+    return false;
+}
+
+function InvitePlayer(PlayerController PC)
+{
+    local string ID;
+    local int i;
+    
+    ID = GetPlayerID(PC);
+    if ( ID == "" )
+        return;
+    for ( i=0; i<InviteList.length; ++i ) {
+        if ( InviteList[i] == ID )
+            return; // already invited
+    }    
+    InviteList[InviteList.length] = ID;
+}
+
+function UninvitePlayer(PlayerController PC)
+{
+    local string ID;
+    local int i;
+    
+    ID = GetPlayerID(PC);
+    if ( ID == "" )
+        return;
+    for ( i=0; i<InviteList.length; ++i ) {
+        if ( InviteList[i] == ID ) {
+            InviteList.remove(i, 1);
+            return;
+        }
+    }    
+}
+
+function bool AllowBecomeActivePlayer(PlayerController P)
+{
+    if( P.PlayerReplicationInfo==None || !P.PlayerReplicationInfo.bOnlySpectator )
+        Return False; // Already is an active player
+        
+    if ( ScrnBalanceMut.bTeamsLocked && !IsInvited(P) ) {
+        P.ReceiveLocalizedMessage(class'ScrnGameMessages', 243);
+        return false;
+    }
+        
+    if ( /*!GameReplicationInfo.bMatchHasBegun ||*/ NumPlayers >= MaxPlayers
+        || P.IsInState('GameEnded') || P.IsInState('RoundEnded') )
+    {
+        P.ReceiveLocalizedMessage(GameMessageClass, 13);
+        
+        // debug info
+        // if ( !GameReplicationInfo.bMatchHasBegun )
+            // P.ClientMessage("Reason: Match has not begun yet");
+        // else 
+        if ( NumPlayers >= MaxPlayers )
+            P.ClientMessage("Reason: MaxPlayers reached ("$MaxPlayers$")");
+        else if ( P.IsInState('GameEnded') )
+            P.ClientMessage("Reason: You are in GameEnded state");
+        else if ( P.IsInState('RoundEnded') )
+            P.ClientMessage("Reason: You are in RoundEnded state");
+            
+        return false;
+    }
+    
+    if ( (Level.NetMode==NM_Standalone) && (NumBots>InitialBots) )
+    {
+        RemainingBots--;
+        bPlayerBecameActive = true;
+    }
+    GiveStartingCash(P);
+    return true;
+}
+
+function GiveStartingCash(PlayerController PC)
+{
+    PC.PlayerReplicationInfo.Score = StartingCash + CalcStartingCashBonus(PC);
+    if ( ScrnPlayerController(PC) != none )
+        ScrnPlayerController(PC).StartCash = PC.PlayerReplicationInfo.Score; // prevent tossing bonus too
+}
+
+// used by TSC
+function int CalcStartingCashBonus(PlayerController PC)
+{
+    return 0;
+}
+
+// returns wave number relative to the current game length
+function byte RelativeWaveNum(float LongGameWaveNum)
+{
+    if ( FinalWave == 10 ) 
+        return ceil(LongGameWaveNum);
+    return ceil(LongGameWaveNum * FinalWave / 10.0);
+}
+
+function SetupWave()
+{
+    super.SetupWave();
+    if ( (WaveNum+1) == RelativeWaveNum(ScrnBalanceMut.LockTeamAutoWave) )
+        LockTeams();
 }
 
 function AmmoPickedUp(KFAmmoPickup PickedUp)
@@ -652,7 +808,6 @@ function AmmoPickedUp(KFAmmoPickup PickedUp)
             PickedUp.GotoState('Sleeping', 'DelayedSpawn');
     }
 }
-
 
 // ==================================== STATES ===============================
 auto State PendingMatch

@@ -120,6 +120,7 @@ var int SteamID32;
 var int PRI_Score, PRI_Kills, PRI_KillAssists, PRI_Deaths, PRI_StartTime;
 var byte PRI_BlameCounter;
 var class<KFVeterancyTypes> PRI_ClientVeteranSkill;
+var byte PRI_TeamIndex;
 
 function ClientPerkRepLink GetRep()
 {
@@ -944,6 +945,11 @@ function BackupPRI()
     PRI_StartTime = KFPRI.StartTime;
     PRI_ClientVeteranSkill = KFPRI.ClientVeteranSkill;
     
+    if ( KFPRI.Team == none )
+        PRI_TeamIndex = 255;
+    else
+        PRI_TeamIndex = KFPRI.Team.TeamIndex;
+    
     if ( ScrnPRI != none ) {
         PRI_BlameCounter = ScrnPRI.BlameCounter;
     }
@@ -970,6 +976,10 @@ function RestorePRI()
     KFPRI.StartTime = min(PRI_StartTime, KFPRI.StartTime);
     if ( PRI_ClientVeteranSkill != none )
         KFPRI.ClientVeteranSkill = PRI_ClientVeteranSkill;
+        
+    if ( PRI_TeamIndex < 2 && ( KFPRI.Team == none || KFPRI.Team.TeamIndex != PRI_TeamIndex ) ) {
+        Level.Game.ChangeTeam( PlayerOwner, PRI_TeamIndex, true );
+    }
         
     if ( ScrnPRI != none ) {
         ScrnPRI.BlameCounter = max(PRI_BlameCounter, ScrnPRI.BlameCounter);

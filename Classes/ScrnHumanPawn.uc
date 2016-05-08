@@ -280,7 +280,7 @@ function bool AddInventory( inventory NewItem )
     local KFWeapon weap;
     local bool GroupChanged;
 	// local KFAmmunition ammo;
-
+    
     weap = KFWeapon(NewItem);
     if( weap != none ) {
 		//log("AddInventory:" @ weap, 'ScrnBalance');
@@ -312,16 +312,16 @@ function bool AddInventory( inventory NewItem )
             if ( weap.bTorchEnabled )
                 AddToFlashlightArray(weap.class); // v6.22 - each weapon has own flashlight
             CheckQuickMeleeWeapon(KFMeleeGun(weap));
-            if ( class'ScrnBalance'.default.Mut.bWeaponFix && Machete(weap) != none ) {
+            if ( class'ScrnBalance'.default.Mut.bWeaponFix && class'ScrnBalance'.default.Mut.SrvTourneyMode == 0 && Machete(weap) != none ) {
                 if ( MacheteBoost < 250 && VSizeSquared(Velocity) > 10000 ) {
-                    if ( MacheteBoost < 30 )
+                    if ( MacheteBoost < 48 )
                         MacheteBoost += 3;
-                    else if ( MacheteBoost < 70 )
+                    else if ( MacheteBoost < 100 )
                         MacheteBoost += 2;
                     else 
                         MacheteBoost++;
                 }
-                MacheteResetTime = Level.TimeSeconds + 3.0;
+                MacheteResetTime = Level.TimeSeconds + 5.0;
             }
         }
         return true;
@@ -656,6 +656,7 @@ function VeterancyChanged()
 		if ( PrevPerkClass != KFPRI.ClientVeteranSkill ) {
             ClientVeterancyChanged(PrevPerkClass);
 			PrevPerkClass = KFPRI.ClientVeteranSkill;
+            RecalcAmmo();
 		}
 	}
 }
@@ -667,6 +668,23 @@ simulated function ClientVeterancyChanged(class<KFVeterancyTypes> OldPerk)
         HealthMax = (default.HealthMax + HealthBonus) * ScrnPerk.static.HealthMaxMult(KFPRI, self);
     }
     ApplyWeaponStats(Weapon);
+    RecalcAmmo();
+}
+
+// recalculates ammo bonuses
+simulated function RecalcAmmo()
+{
+    local Inventory CurInv;
+    local Ammunition MyAmmo;
+    local float ClipPrice, FullRefillPrice;
+    local int ClipSize;
+    
+    for ( CurInv = Inventory; CurInv != none; CurInv = CurInv.Inventory ) {
+        if ( KFAmmunition(CurInv) != none ) {
+            // just call this function to apply perk bonuses
+            CalcAmmoCost(self, Class<Ammunition>(CurInv.class), MyAmmo, ClipPrice, FullRefillPrice, ClipSize);
+        }
+    }
 }
 
 function DestroyMyPipebombs(optional int CountToLeave)

@@ -14,6 +14,9 @@ const VOTE_ENDWAVE   = 8;
 const VOTE_SPEC      = 9;
 const VOTE_READY     = 10;
 const VOTE_UNREADY   = 11;
+const VOTE_TEAMLOCK  = 12;
+const VOTE_TEAMUNLOCK= 13;
+const VOTE_INVITE    = 14;
 const VOTE_RKILL     = 100;
 
 var localized string strCantEndTrade;
@@ -245,6 +248,31 @@ function int GetVoteIndex(PlayerController Sender, string Key, out string Value,
 		VoteInfo = "Kick " $ Value;
 		result = VOTE_KICK;
 	}
+	else if ( Key == "INVITE" ) {
+        if ( !Mut.CheckScrnGT(Sender) )
+            return VOTE_LOCAL;
+            
+		if ( Value == "" ) {
+			SendPlayerList(Sender);
+			return VOTE_LOCAL;
+		}
+		
+		Reason = "";
+		Divide(Value, " ", Value, Reason);
+		VotingHandler.VotedPlayer = FindPlayer(Value);
+		if ( VotingHandler.VotedPlayer == none ) {
+			Sender.ClientMessage(strPlayerNotFound);
+			SendPlayerList(Sender);
+			return VOTE_ILLEGAL;
+		}
+        else if ( Mut.ScrnGT.IsInvited(VotingHandler.VotedPlayer) ) {
+            VotingHandler.VotedPlayer = none;
+            return VOTE_NOEFECT;
+        }
+		Value = Mut.ColoredPlayerName(VotingHandler.VotedPlayer.PlayerReplicationInfo);
+		VoteInfo = "Invite " $ Value;
+		result = VOTE_INVITE;
+	}    
 	else if ( Key == "BORING" ) {
 		if ( Mut.bStoryMode ) {
             Sender.ClientMessage(strNotInStoryMode);
@@ -318,7 +346,25 @@ function int GetVoteIndex(PlayerController Sender, string Key, out string Value,
             return VOTE_NOEFECT;
             
         return VOTE_UNREADY;
-    }   
+    }  
+    else if ( Key == "LOCKTEAM" || Key == "LOCKTEAMS" ) {
+        if ( !Mut.CheckScrnGT(Sender) )
+            return VOTE_LOCAL;
+        else if ( Mut.bTeamsLocked )
+            return VOTE_NOEFECT;
+        else if ( !Sender.PlayerReplicationInfo.bAdmin && (Mut.ScrnGT.WaveNum+1) < Mut.ScrnGT.RelativeWaveNum(Mut.LockTeamMinWave) ) {
+            Sender.ClientMessage(strNotAvaliableATM);
+            return VOTE_LOCAL;
+        }
+        return VOTE_TEAMLOCK;        
+    }
+    else if ( Key == "UNLOCKTEAM" || Key == "UNLOCKTEAMS" ) {
+        if ( !Mut.CheckScrnGT(Sender) )
+            return VOTE_LOCAL;
+        else if ( !Mut.bTeamsLocked )
+            return VOTE_NOEFECT;
+        return VOTE_TEAMUNLOCK;        
+    }    
 	else if ( Key == "R_KILL" ) {
         if ( !Sender.PlayerReplicationInfo.bAdmin || Mut.SrvTourneyMode == 0 ) {
 			Sender.ClientMessage(strRCommands);
@@ -458,11 +504,16 @@ function ApplyVoteValue(int VoteIndex, string VoteValue)
 			break;
 		case VOTE_SPEC:
 			if ( VotingHandler.VotedPlayer != none && !VotingHandler.VotedPlayer.PlayerReplicationInfo.bAdmin ) {
+                if ( Mut.ScrnGT != none )
+                    Mut.ScrnGT.UninvitePlayer(VotingHandler.VotedPlayer);
                 VotingHandler.VotedPlayer.BecomeSpectator();
             }
 			break;            
 		case VOTE_KICK:
 			if ( VotingHandler.VotedPlayer != none && !VotingHandler.VotedPlayer.PlayerReplicationInfo.bAdmin && NetConnection(VotingHandler.VotedPlayer.Player)!=None ) {
+                if ( Mut.ScrnGT != none )
+                    Mut.ScrnGT.UninvitePlayer(VotingHandler.VotedPlayer);
+                    
 				if ( Reason == "" ) {
 					VotingHandler.BroadcastMessage(VoteValue $ " kicked");
 					VotingHandler.VotedPlayer.ClientNetworkMessage("AC_Kicked", "Team Vote");
@@ -500,7 +551,16 @@ function ApplyVoteValue(int VoteIndex, string VoteValue)
             break;
         case VOTE_UNREADY:
             SetReady(VotingHandler.VotedTeam.TeamIndex, false);
-            break;            
+            break;
+        case VOTE_TEAMLOCK:
+            Mut.ScrnGT.LockTeams();
+            break;
+        case VOTE_TEAMUNLOCK:
+            Mut.ScrnGT.UnlockTeams();
+            break;
+        case VOTE_INVITE:
+            Mut.ScrnGT.InvitePlayer(VotingHandler.VotedPlayer);
+			break;          
             
 		case VOTE_RKILL:
 			if ( VotingHandler.VotedPlayer != none && VotingHandler.VotedPlayer.Pawn != none ) {
@@ -685,17 +745,18 @@ defaultproperties
 {
     bAlwaysTick=True // tick during game pause
 
-    HelpInfo(0)="%gLOCKPERK %y<perk_name> %w Disable perk at the end of the wave"
-    HelpInfo(1)="%gUNLOCKPERK %y<perk_name> %w Enable perk at the end of the wave"
+    HelpInfo(0)="%gLOCKPERK%w|%gUNLOCKPERK %y<perk_name> %w Disables/Enables perk at the end of the wave"
+    HelpInfo(1)="%gLOCKTEAM%w|%gUNLOCKTEAM %w Locks/Unlocks teams. Only invited players may join locked team."
     HelpInfo(2)="%gPAUSE %yX %w Pause the game for X seconds"
     HelpInfo(3)="%gEND TRADE %w Immediately end current trader time and start next wave"
     HelpInfo(4)="%gEND WAVE %w Kills last stuck zeds to end the wave"
     HelpInfo(5)="%gBLAME %y<player_name> %b[<reason>] %w Blame player [for the <reason>]"
     HelpInfo(6)="%gSPEC %y<player_name> %b[<reason>] %w Move player to spectators"
     HelpInfo(7)="%gKICK %y<player_name> %b[<reason>] %w Kick player [for the <reason>]"
-    HelpInfo(8)="%gBORING %w Doubles ZED spawn rate"
-    HelpInfo(9)="%gSPAWN %y<squad_name> %w Spawns zed squad"
-    HelpInfo(10)="%gREADY%w|%gUNREADY %w Makes everybody ready/unready to play"
+    HelpInfo(8)="%gINVITE %y<player_name> %w Invite player to join locked team."
+    HelpInfo(9)="%gBORING %w Doubles ZED spawn rate"
+    HelpInfo(10)="%gSPAWN %y<squad_name> %w Spawns zed squad"
+    HelpInfo(11)="%gREADY%w|%gUNREADY %w Makes everybody ready/unready to play"
     
     strCantEndTrade="Can not end trade time at the current moment"
     strTooLate="Too late"

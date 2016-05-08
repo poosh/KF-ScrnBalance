@@ -9,6 +9,28 @@
 -------------------------------------------------------------------------------
 *** VERSION 9 *** 
 -------------------------------------------------------------------------------
+v9.14:
+- Fixed weird rotation of stunned zeds
+- Fixed MVOTE INVITE <player>
+- Max ammo is now recalculating at perk change
+- Boosted M99 death velocity
+- Now game doesn't end when all players left the lobby.
+
+
+v9.11:
+- MVOTE LOCKTEAM / UNLOCKTEAM / INVITE <player> - moved from TSC into regular game
+- New config options: LockTeamMinWave and LockTeamAutoWave. Former sets when players
+  can start to MVOTE LOCKTEAM (prevent newcomers to join the game unless invited).
+  Latter can do it automatically (by default newcomers can't join the game starting from wave 9/10)
+- Machete-sprinting disabled in Tourney Mode.
+- Machete-sprint's cooldown raised to 5 seconds (up from 3s)
+- Fixed bug when 1st-person-spectators didn't see ammo count in magazine
+- Team number is saved on disconnect/crash (for TSC)
+WEAPON BALANCE:
+- Stunned zeds do not rotate anymore
+- [BETA] Every perk has at least 1 ZED time extension
+
+
 v9.10:
 - MACHETE-SPRINTING. Dropping/Picking up machete while running boosts player's
   movement speed and machete's damage.
@@ -19,7 +41,7 @@ v9.10:
     Scrap Heap (by arramus)
     Train (Janitor's fix)
     Wicked City (by =Z.E.D= dextronaut
-- Winnin KF-HellFreezesOver1-2 unlocks KF-Hell achievements
+- Winning KF-HellFreezesOver1-2 unlocks KF-Hell achievements
 - [BETA] Players can push Crawlers.
 - MapInfo moved into separate config: ScrnMapInfo.ini. Now you can use commands
   such as "MUTATE MAPZEDS 64" without worrying about messing up ScrnBalance.ini
@@ -32,7 +54,7 @@ v9.10:
 - Fixed FreeCamera exploit (thanks to prototype22)  
 - MUTATE LOCKPERK / UNLOCKPERK allows perk now allow passing perk indexes instead of names,
   e.g. MUTATE LOCKPERK 1 locks first perk in the perk list (usually Medic).
-- Fixed achievement earn message popping up after locking perk.
+- Fixed level earn message popping up after locking perk.
 - Admins can't use locked perks anymore.
 - New Ammo Box spawn rules:
   Fixed "Trolling" ammo boxes.

@@ -387,6 +387,9 @@ function bool CheckEndGame(PlayerReplicationInfo Winner, string Reason)
         log("Calling CheckEndGame() for already ended game!", 'ScrnBalance');
         return true;
     }
+    else if ( Level.Game.bWaitingToStartMatch ) {
+        return false;
+    }
 	
 	if ( NextGameRules != None && !NextGameRules.CheckEndGame(Winner,Reason) )
 		return false;
@@ -644,6 +647,16 @@ function int NetDamage( int OriginalDamage, int Damage, pawn injured, pawn insti
 	bP2M = ZedVictim != none && KFDamType != none && instigatedBy != none && PlayerController(instigatedBy.Controller) != none;
     if ( instigatedBy != none )
         ScrnPC = ScrnPlayerController(instigatedBy.Controller);
+        
+    // prevent zed from rotating while stunned
+    // Special case fo Husks -  201+ sniper damage stuns them
+    if ( Mut.bWeaponFix && ZedVictim != none && ZedVictim.Controller != none 
+            && (Damage*1.5 >= ZedVictim.default.Health 
+                || (Damage > 200 && KFDamType != none && KFDamType.default.bSniperWeapon && ZedVictim.IsA('ZombieHusk') && !ZedVictim.IsA('TeslaHusk'))) )
+    {
+        ZedVictim.Controller.Focus = none; 
+        ZedVictim.Controller.FocalPoint = ZedVictim.Location + 512 * vector(ZedVictim.Rotation);
+    }
     
 	if ( bP2M ) {
 		idx = GetMonsterIndex(ZedVictim);
@@ -1289,7 +1302,6 @@ final function ScrnPlayerInfo CreatePlayerInfo(PlayerController PlayerOwner, opt
 function DebugSPI(PlayerController Sender)
 {
     local ScrnPlayerInfo SPI;
-    local int i;
     
     Sender.ClientMessage("Active SPIs:");
     Sender.ClientMessage("------------------------------------");
