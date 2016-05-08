@@ -1,6 +1,6 @@
 class ScrnNailGun extends NailGun;
 
-var transient ScrnAchievements.AchStrInfo ach_Nail100m, ach_NailToWall, ach_PushShiver; //related achievements
+var transient ScrnAchievements.AchStrInfo ach_Nail100m, ach_NailToWall, ach_PushShiver, ach_ProNailer; //related achievements
 
 
 replication
@@ -22,6 +22,7 @@ simulated function PostBeginPlay()
             ach_Nail100m = class'ScrnBalanceSrv.ScrnAchievements'.static.GetAchievementByID(Stats.Rep, 'NailPush100m', true);
             ach_NailToWall = class'ScrnBalanceSrv.ScrnAchievements'.static.GetAchievementByID(Stats.Rep, 'Nail250Zeds', true);
             ach_PushShiver = class'ScrnBalanceSrv.ScrnAchievements'.static.GetAchievementByID(Stats.Rep, 'NailPushShiver', true);
+            ach_ProNailer = class'ScrnBalanceSrv.ScrnAchievements'.static.GetAchievementByID(Stats.Rep, 'ProNailer', true);
         }
     }
 }
@@ -112,7 +113,7 @@ simulated function bool ConsumeAmmo( int Mode, float Load, optional bool bAmount
 
 defaultproperties
 {
-     MagCapacity=30
+     MagCapacity=42
      Weight=6.000000
      bTorchEnabled=False
      FireModeClass(0)=Class'ScrnBalanceSrv.ScrnNailGunFire'

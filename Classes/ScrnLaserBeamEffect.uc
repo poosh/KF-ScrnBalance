@@ -116,60 +116,33 @@ simulated function Tick(float dt)
     if ( LaserColor == LASER_Destroyed )
         return;
 
-    if (Role == ROLE_Authority && (Instigator == None || Instigator.Controller == None 
-        || Instigator.Weapon != Owner) )
+    if (Role == ROLE_Authority && (Instigator == None || Instigator.Controller == None || Instigator.Weapon != Owner) )
     {
         DelayedDestroy();
         return;
     }
 
     // set beam start location
-    if ( Instigator == None )
-    {
-        // do nothing
+    if ( Instigator == None || (Instigator.Weapon != none && Instigator.IsFirstPerson()) 
+            || MyAttachment == none || (Level.TimeSeconds - MyAttachment.LastRenderTime) > 1 )
+    {      
+       // hide beam, if Instigator or 3rd person weapon attachment are not replecated yet or irrelevant
+       bHidden = true;
     }
-    else
-    {
-        if ( Instigator.IsFirstPerson() && Instigator.Weapon != None )
-        {
-            bHidden=True;
-            if (Spot != None)
-            {
-                Spot.Destroy();
-            }
-        }
+    else {
+        bHidden=!bLaserActive;
+        if( bLaserActive && Spot == none && Level.NetMode != NM_DedicatedServer )
+            SpawnDot(); //spawn dot of LaserDotClass
+
+        LaserDist = VSize(EndBeamEffect - StartEffect);
+        if( LaserDist > 100 )
+            LaserDist = 100;
         else
-        {
-            bHidden=!bLaserActive;
-            if( bLaserActive && Level.NetMode != NM_DedicatedServer && Spot == none )
-            {
-				//spawn dot of LaserDotClass
-                SpawnDot();
-            }
+            LaserDist *= 0.5;
 
-            LaserDist = VSize(EndBeamEffect - StartEffect);
-            if( LaserDist > 100 )
-            {
-                LaserDist = 100;
-            }
-            else
-            {
-                LaserDist *= 0.5;
-            }
-
-            if (MyAttachment != None && (Level.TimeSeconds - MyAttachment.LastRenderTime) < 1)
-            {
-                StartEffect= MyAttachment.GetTipLocation();
-                NewRotation = Rotator(-MyAttachment.GetBoneCoords(MyAttachmentBone).XAxis);
-                SetLocation( StartEffect + MyAttachment.GetBoneCoords(MyAttachmentBone).XAxis * LaserDist );
-            }
-            else
-            {
-                StartEffect = Instigator.Location + Instigator.EyeHeight*Vect(0,0,1) + Normal(EndBeamEffect - Instigator.Location) * 25.0;
-                SetLocation( StartEffect + Normal(EndBeamEffect - StartEffect) * LaserDist );
-                NewRotation = Rotator(Normal(StartEffect - Location));
-            }
-        }
+        StartEffect= MyAttachment.GetTipLocation();
+        NewRotation = Rotator(-MyAttachment.GetBoneCoords(MyAttachmentBone).XAxis);
+        SetLocation( StartEffect + MyAttachment.GetBoneCoords(MyAttachmentBone).XAxis * LaserDist );
     }
 
     BeamDir = Normal(StartEffect - Location);
@@ -178,17 +151,15 @@ simulated function Tick(float dt)
     mSpawnVecA = StartEffect;
 
 
-    if (Spot != None)
-    {
-        Spot.SetLocation(EndBeamEffect + BeamDir * SpotProjectorPullback);
-
-        if( EffectHitNormal == vect(0,0,0) )
-        {
-            Spot.SetRotation(Rotator(-BeamDir));
-        }
-        else
-        {
-            Spot.SetRotation(Rotator(-EffectHitNormal));
+    if (Spot != None) {
+        Spot.bHidden = bHidden;
+        
+        if ( !bHidden ) {
+            Spot.SetLocation(EndBeamEffect + BeamDir * SpotProjectorPullback);
+            if( EffectHitNormal == vect(0,0,0) )
+                Spot.SetRotation(Rotator(-BeamDir));
+            else
+                Spot.SetRotation(Rotator(-EffectHitNormal));
         }
     }
 }
@@ -198,4 +169,5 @@ defaultproperties
      LaserDotClass=Class'ScrnBalanceSrv.ScrnLaserDot'
      MyAttachmentBone="tip"
      Skins(0)=Texture'ScrnTex.Laser.Laser_Blue'
+     //bAlwaysRelevant=True
 }

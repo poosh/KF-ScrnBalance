@@ -71,7 +71,7 @@ static final function ScrnClientPerkRepLink FindMe( PlayerController MyOwner )
     if( MyOwner == none || MyOwner.PlayerReplicationInfo == None )
         return none;
     
-    if ( MyOwner.Level.NetMode != NM_Client ) {
+    if ( MyOwner.Level.NetMode != NM_Client && SRStatsBase(MyOwner.SteamStatsAndAchievements) != none ) {
         PerkLink = ScrnClientPerkRepLink(SRStatsBase(MyOwner.SteamStatsAndAchievements).Rep);
         if ( PerkLink != none )
             return PerkLink;
@@ -136,7 +136,8 @@ function ServerSelectPerkSE(Class<SRVeterancyTypes> VetType)
         StatObject.ServerSelectPerk(VetType); // shouldn't happen, but just to be sure...
     else {
         if ( OwnerPC.Mut.bNoPerkChanges && OwnerPC.bHadPawn 
-                && (!OwnerPC.Mut.bPerkChangeBoss || OwnerPC.Mut.bTSCGame || KF.WaveNum < KF.FinalWave) ) 
+                && (!OwnerPC.Mut.bPerkChangeBoss || OwnerPC.Mut.bTSCGame || KF.WaveNum < KF.FinalWave) 
+                && (!OwnerPC.Mut.bPerkChangeDead || (OwnerPC.Pawn != none && OwnerPC.Pawn.Health > 0)) ) 
         {
             OwnerPC.ClientMessage(OwnerPC.strNoPerkChanges);
             return;

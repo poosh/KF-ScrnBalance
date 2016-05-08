@@ -1,3 +1,6 @@
+// This class is deprecated and kept only for compatibility reasons.
+// Please migrate to ScrnLaserWeaponAttachment.
+// (c) PooSH
 class ScrnLaserDot extends LaserDot;
 
 #exec OBJ LOAD FILE=ScrnTex.utx
@@ -72,4 +75,5 @@ simulated function SetValid(bool bNewValid)
 defaultproperties
 {
      ProjTexture=Texture'ScrnTex.Laser.Laser_Dot_Blue'
+     RemoteRole=ROLE_None
 }

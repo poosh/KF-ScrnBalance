@@ -4,9 +4,9 @@ class ScrnNailGunAmmo extends KFAmmunition;
 
 defaultproperties
 {
-     AmmoPickupAmount=30
-     MaxAmmo=240
-     InitialAmount=120
+     AmmoPickupAmount=42
+     MaxAmmo=336
+     InitialAmount=126
      IconMaterial=Texture'KillingFloorHUD.Generic.HUD'
      IconCoords=(X1=451,Y1=445,X2=510,Y2=500)
 }

@@ -61,7 +61,11 @@ simulated event OnStatsAndAchievementsReady()
     }
 	// for ( i = 0; i < Achievements.Length; i++ )
 		// GetAchievementDescription(Achievements[i].SteamName, Default.Achievements[i].DisplayName, Default.Achievements[i].Description);    
-        
+     
+    // fix for solo mode or listen server
+    if ( ScrnPCOwner.SteamStatsAndAchievements != none && (Level.NetMode == NM_ListenServer || Level.NetMode == NM_Standalone) )
+        ScrnPCOwner.PlayerReplicationInfo.SteamStatsAndAchievements = ScrnPCOwner.SteamStatsAndAchievements;
+
 	Destroy();
 }
 

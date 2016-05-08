@@ -1,10 +1,143 @@
 -------------------------------------------------------------------------------
 --=VERSION HISTORY=--
 -------------------------------------------------------------------------------
+(NB!)   In this document all references to config file ScrnBalance.ini should be 
+        treated as ScrnBalanceSrv.ini, if you're using server version of 
+        ScrnBalance (ScrnBalanceSrv.ScrnBalance).
+
+
+-------------------------------------------------------------------------------
+*** VERSION 9 *** 
+-------------------------------------------------------------------------------
+v9.02:
+- Fixed money drop exploit
+- Fixed minor issues with QuickMelee
+- Adjusted ScrnHUD.PlayerInfoVersionNumber.
+    70: Classic Bars (vanilla) 
+    80: Modern Bars (scalabale over distance, green bar for 100% HP), avatar during trader time only
+    81: Modern Bars with avatars 
+    83: Modern Bars with avatars and weapon info
+    90: Cool Bars
+- GUI still supports only 3 settings: Classic bars(70), Modern Bars (83) and Cool Bars (90).
+  Other values can be set via config or "PlayerInfoVersion" console command.
+- All bars now support Chat Icon.
+  
+
+
+v9.01:
+- Blood-colored perk icons for level 31+ (RED/GOLD/GREEN/BLUE/PURPLE/ORANGE/BLOOD)
+- New HUD, aka "Cool HUD"
+- New Player Health Bars, aka "Cool Bars"
+- User-defined music (check MyMusic in User.ini and PlayMyMusic command)
+- If player has more health than max (overcharged), then it ticks down 2hp / 1.5s
+- Fixed laser beams going out from player heads.
+- Completely rewritten network code for laser sights. Vanilla verstion was eating too much network traffic.
+- Thrown dosh now stays for 2 minutes. This doesn't affect Frozen Dosh or DoshGrab mutator.
+- Medic Gun damage gives Medic XP (3%, i.e. 1000 damage gives +30XP).
+  Medic damage XP is adding only once per wave - at the end of each wave.
+  If any player gets killed by a zed, then medic damage xp for that wave is halved for all players.
+- Fixed Medic XP gain for server listener and solo mode.
+- Server-defined Hardcore Levels (see ScrnBalance.ini) 
+
+ScrnGameType (ScrN Floor):
+- ScrnGameType (ScrN Floor): Last two Medium waves replaced with last two Long waves (MW6=LW9, MW7=LW10)
+  Now you can play Medium Games while keeping diffulty from Long Games.
+- Stats of disconnected/crashed players are saved and restored on reconnect.
+  Dosh is restored only if bLeaveCashOnDisconnect=False. Otherwise it goes into team budget.
+
+ScrnSP:
+- Added config options to ServerPerks.ini: bBroadcastFTPErrors, bBroadcastToAdminsOnly
+  to stop spamming regular players with FTP codes while continue debugging. 
+
+
+Quick Melee Bash:
+- Vanilla Knife replaced with SE version (ScrnKnife)
+- Don't forget to replace "KFMod.KnifePickup" with "ScrnBalanceSrv.ScrnKnifePickup" in 
+  spawn invetory (ScrnBalance.ini). Otherwise Quick Melee won't work.
+- Currently Quick Melee Bash is working with Knife SE and Machete SE only
+- Assign the following command to a key for melee bash: "Button bAltFire | QuickMelee"
+- Console command to assign thumb mouse button for melee bash: 
+    SET INPUT Mouse4 Button bAltFire | QuickMelee
+  or via user.ini:
+    Mouse4=Button bAltFire | QuickMelee
+
+
+WEAPON BALANCE:
+- Nailgun now fires 7 nails per shot and holds 42 nails in clip
+- MP5 damage raised to 32 (+2)
+- Restored "auto-fire" for Katana's primary attack
+- Tactical Reload (when round in chamber) implemented for AK-47, M4, M4-203, M4-203M, FNFAL, SCARMK17.
+- Commando's reload speed bonus lowered down to 35% (-15) due to tactical reload.
+- Raised total ammo count for both drum Tommy guns to compensate lack of tactical reload. 
+- Commando's reload speed bonus for Tommy Guns set to 60% to compensate lack of tactical reload. 
+- Lowered HuskGun's and single Flare Revolver's spread. 
+  Now headshoting zeds from moderate-to-far distance depends not only from luck.
+- Fixed loss of bonus ammo when dropping Boomstick or Husk Gun
+    
+SCRNBALANCE[SRV].INI
+bPerkChangeDead - Allows dead players to change perks despite bNoPerkChanges=True  
+bTraderSpeedBoost  - Allows players to move significantly faster during trader time
+ 
+    
+USER.INI:
+[ScrnPlayerController]
+MusicPlaylistNames - list of user-friendly music playlist names. First record always should be <DEFAULT>
+MyMusic - list of user-defined music.
+
+[ScrnHUD]
+bCoolHud - True: new, ScrN v8.50 Cool HUD  /  False: Classic HUD.
+    Classic HUD is forced when Scoreboard is open.
+CoolHudScale - scales Cool HUD, including ammo counter. Default = 2.0
+bCoolHudLeftAlign - True: draws Cool HUD in left corner  /  False: in the middle
+CoolHudAmmoScale - allows independently change ammo counter size. 
+    Keep in mind that ammo counter size depends from both: CoolHudScale and CoolHudAmmoScale
+CoolHudAmmoOffsetX/CoolHudAmmoOffsetY - adjust Bottom/Right position of ammo counter 
+    1.0 - right/bottom of the screen, 0.5 - middle of the screen
+CoolHealthFadeOutTime - amount of time (in seconds) for health and armor digits stay on the screen
+    after last change (heal or hurt). 0 - never fade out (always stay on the screen).
+PlayerInfoVersionNumber (can be set via PlayerInfoVersion console command):
+    70: Classic Bars (vanilla) 
+    80: Modern Bars (scalabale over distance, green bar for 100% HP)
+    81: Modern Bars with chat icon / weapon info
+    85: Cool Bars
+PlayerInfoScale - allows to zoom both Modern and Cool player info bars (not Classic!)
+    0.5 - half size, 1.0 - full size, 2.0 - double size etc.
+CowboyTileY is not configurable anymore    
+
+[Engine.HUD]
+bShowPoints (can be set via in-game HUD Settings: "Show Score" checkbox) 
+    If true, dosh will be always drawn on cool HUD
+    If false, dhos will be drawn only during the Trader Time.
+
+Console Commands:
+PlayMyMusic <PL> - activates user-defined music playlist (see MyMusic in User.ini)
+  Built-in playlists:
+    PlayMyMusic 1 - KF1 classic soundtrack
+    PlayMyMusic 2 - DooM Metal Soundtrack (requires subscription to KF-Doom2-SE map: http://steamcommunity.com/sharedfiles/filedetails/?id=414181000)
+                    ToggleDoomMusic is deprecated.    
+StopMyMusic - stops user-defined music and restores map-specific music next wave.
+PlayerInfoVersion - sets and applies ScrnHUD.PlayerInfoVersionNumber
+ToggleHudStyle - switches between Classic HUD / Cool HUD (Middle) / Cool HUD (Left)
+CoolHudSize - sets CoolHudScale
+CoolHudAmmoSize - sets CoolHudAmmoScale
+CoolHudAmmoX/CoolHudAmmoY - set CoolHudAmmoOffsetX/CoolHudAmmoOffsetY
+    
+    
+Code-breaking changes:
+- ScrnHUD.DrawSpeed() migrated to GetSpeedStr()
+- Non-ScrN perks are not supported anymore (i.e. those which are not extended from ScrnVeterancyTypes)
+- Optimized HUD drawing code
+- From now on ScrnHumanPawn ignores bLockWeaponSelection (not sure if it was in use at all)
+- ScrnPlayerController.FindScrnCustomPRI() removed. Use ScrnPlayerController.ScrnCustomPRI instead.
+
+
+
+
 
 -------------------------------------------------------------------------------
 *** VERSION 8 *** 
 -------------------------------------------------------------------------------
+
 v8.21:
 - Fixed map achievements
 
@@ -22,7 +155,7 @@ v8.20:
 
 
 v8.17:
-- bFixMusic (see ScrnBalanceSrv.ini for details)
+- bFixMusic (see ScrnBalance.ini for details)
 
 v8.15:
 - Fixed SpawnInventory being stacked from each map played
@@ -60,7 +193,7 @@ v8.10:
 - Fixed bug that prevented Sirens from destroying pipebombs
 - Fixed Manual Reload for IJC Cryo Mass Driver 14 (Freezer Gun)
 - A few new achievements
-- SpawnInventory suppors achievement requirement and inventory check (see ScrnBalanceSrv.ini for details)
+- SpawnInventory suppors achievement requirement and inventory check (see ScrnBalance.ini for details)
 - SpawnInventory supports ammo pickups to give extra ammo for unlocking achievements (see ammo.txt)
 - Setting EventNum=255 doesn't ignore MapInfo anymore.
 - EventNum=254 - picks up random monster collection between regular, summer, halloween and xmas.
@@ -73,7 +206,7 @@ MONEY AND WEAPON BALANCE:
 - Faster M203 fire rate
 
 
-CONFIG VARIABLES (ScrnBalanceSrv.ini):
+CONFIG VARIABLES (ScrnBalance.ini):
 - bDoubleDoT - doubles zed burn rate (twice per second) dealing half a damage per tick
 - MySteamID64 - for solo and listen servers
 - bBuyPerkedWeaponsOnly - limits trader inventory to perked weapons only

@@ -1,6 +1,6 @@
 class ScrnCustomPRI extends LinkedReplicationInfo;
 
-var int                     BlameCounter;
+var byte                    BlameCounter;
 var private Material        Avatar, ClanIcon, PreNameIcon, PostNameIcon;
 var Color                   PrefixIconColor, PostfixIconColor;
 var private int             TourneyPlayoffs, TourneyWins;

@@ -135,84 +135,12 @@ simulated function bool PutDown()
 }
 
 
-// When TWI starts thinking about modders? 
-// Copy-pasted entire function, applied BoomstickPickup class comparement for 
-// subclasses too 
-// (c) PooSH, 2012
+
 function GiveAmmo(int m, WeaponPickup WP, bool bJustSpawned)
 {
-	local bool bJustSpawnedAmmo;
-	local int addAmount, InitialAmount;
-
-	UpdateMagCapacity(Instigator.PlayerReplicationInfo);
-
-	if ( FireMode[m] != None && FireMode[m].AmmoClass != None )
-	{
-		Ammo[m] = Ammunition(Instigator.FindInventoryType(FireMode[m].AmmoClass));
-		bJustSpawnedAmmo = false;
-
-		if ( bNoAmmoInstances )
-		{
-			if ( (FireMode[m].AmmoClass == None) || ((m != 0) && (FireMode[m].AmmoClass == FireMode[0].AmmoClass)) )
-				return;
-
-			InitialAmount = FireMode[m].AmmoClass.Default.InitialAmount;
-
-			if(WP!=none && WP.bThrown==true)
-				InitialAmount = WP.AmmoAmount[m];
-			else
-			{
-				// Other change - if not thrown, give the gun a full clip
-				//MagAmmoRemaining = MagCapacity;
-			}
-
-			if ( Ammo[m] != None )
-			{
-				addamount = InitialAmount + Ammo[m].AmmoAmount;
-				Ammo[m].Destroy();
-			}
-			else
-				addAmount = InitialAmount;
-
-			AddAmmo(addAmount,m);
-		}
-		else
-		{
-			if ( (Ammo[m] == None) && (FireMode[m].AmmoClass != None) )
-			{
-				Ammo[m] = Spawn(FireMode[m].AmmoClass, Instigator);
-				Instigator.AddInventory(Ammo[m]);
-				bJustSpawnedAmmo = true;
-			}
-			else if ( (m == 0) || (FireMode[m].AmmoClass != FireMode[0].AmmoClass) )
-				bJustSpawnedAmmo = ( bJustSpawned || ((WP != None) && !WP.bWeaponStay) );
-
-	  	      // and here is the modification for instanced ammo actors
-
-			if(WP!=none && WP.bThrown==true)
-			{
-				addAmount = WP.AmmoAmount[m];
-			}
-			else if ( bJustSpawnedAmmo )
-			{
-				if (default.MagCapacity == 0)
-					addAmount = 0;  // prevent division by zero.
-				else
-					addAmount = Ammo[m].InitialAmount * (float(MagCapacity) / float(default.MagCapacity));
-			}
-
-			//removed: WP.Class == class'BoomstickPickup' -- (c) PooSH
-			if ( WP != none && m > 0 )
-			{
-				return;
-			}
-
-			Ammo[m].AddAmmo(addAmount);
-			Ammo[m].GotoState('');
-		}
-	}
+    super(KFWeapon).GiveAmmo(m,WP,bJustSpawned);
     
-    // Update the singleshotcount if we pick this weapon up
+        // Update the singleshotcount if we pick this weapon up
     if( WP != none )
     {
         if( m == 0 && AmmoAmount(0) < 2 )
@@ -229,8 +157,8 @@ function GiveAmmo(int m, WeaponPickup WP, bool bJustSpawned)
             ClientSetSingleShotCount(SingleShotCount);
             NetUpdateTime = Level.TimeSeconds - 1;
         }
-    }    
-}
+    }  
+}    
 
 simulated function ClientSetSingleShotCount(float NewSingleShotCount)
 {

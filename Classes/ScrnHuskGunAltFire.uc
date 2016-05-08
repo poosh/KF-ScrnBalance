@@ -41,4 +41,5 @@ defaultproperties
      FireRate=1.500000
      ProjectileClass=Class'ScrnBalanceSrv.ScrnHuskGunProjectile_Alt'
      Spread=750.000000
+     SpreadStyle=SS_Random
 }

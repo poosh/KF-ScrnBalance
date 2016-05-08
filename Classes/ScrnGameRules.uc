@@ -14,16 +14,15 @@ var bool bUseAchievements;
 
 var bool bScrnDoom; // is serrver running ScrN version of Doom3 mutator?
 var localized string msgDoom3Monster, msgDoomPercent, msgDoom3Boss;
-var transient int WaveTotalKills, WaveDoom3Kills;
-var transient int DoomHardcorePointsGained;
+var transient int WaveTotalKills, WaveDoom3Kills, GameDoom3Kills;
+var deprecated transient int DoomHardcorePointsGained; // left for backwards compatibility
 
-// var class<KFMonster> ShiverClass, BruteClass, JasonClass, FemaleFPClass, TeslaHuskClass, GhostClass;
-// var class<KFMonster> SuperFPClass, SuperScrakeClass, SuperHuskClass;
+
 var transient bool bHasCustomZeds;
 
 var class<KFMonster> BossClass;
 var KFMonster Boss;
-var transient bool bSuperPat, bDoomPat, bFemaleFP;
+var transient bool bSuperPat, bDoomPat;
 var bool bFinalWave; // is this a final wave
 
 
@@ -76,7 +75,9 @@ var array<MapAlias> MapAliases;
 var array< class<KFMonster> > CheckedMonsterClasses;
 
 var array<ScrnAchHandlerBase> AchHandlers;
-var ScrnPlayerInfo PlayerInfo;
+var transient ScrnPlayerInfo PlayerInfo;
+var private transient ScrnPlayerInfo BackupPlayerInfo;
+var protected int WavePlayerCount, WaveDeadPlayers;
 
 var class<ScrnAchievements> AchClass;
 var class<ScrnMapAchievements> MapAchClass;
@@ -86,6 +87,16 @@ var localized string strWaveAccuracy;
 
 // moved here from ScrnWeaponPack for extended compatibility with other muts
 var array< class<KFWeaponDamageType> > SovietDamageTypes;
+
+struct SHardcoreMonster {
+    var config string MonsterClass;
+    var config float HL;
+    var transient bool bUsed;
+};
+var config float HL_Normal, HLMult_Normal, HL_Hard, HLMult_Hard, HL_Suicidal, HLMult_Suicidal, HL_HoE, HLMult_HoE;
+var config float HL_Hardcore, HL_Story, HL_TSC;
+var config array<SHardcoreMonster> HardcoreZeds, HardcoreBosses;
+var transient float ZedHLMult;
 
 function PostBeginPlay()
 {
@@ -97,30 +108,26 @@ function PostBeginPlay()
     KF = KFGameType(Level.Game);
     
     MonsterInfos.Length = Mut.KF.MaxZombiesOnce; //reserve a space that will be required anyway
+    InitHardcoreLevel();
+}
+
+event Destroyed()
+{
+    local ScrnPlayerInfo SPI;
     
-    // Hardcore Level: 4 points on HoE, 2 - on Suicidal
-    if ( Level.Game.GameDifficulty >= 7 )
-       HardcoreLevel = 4; //hoe
-    else if ( Level.Game.GameDifficulty >= 5 )
-       HardcoreLevel = 2; //sui
-    else if ( Level.Game.GameDifficulty >= 4 )
-       HardcoreLevel = -1; //hard
-    else 
-        HardcoreLevel = -4; // Soft Pussy Mode
-		
-    if ( Mut.bHardcore )
-		HardcoreLevel += 2; // 2 extra hardcore points in hardcore mode
-        
-	if ( Mut.bStoryMode )
-		HardcoreLevel += 3; // 3 extra hardcore points for playing objective mode
-    else if ( Mut.bTSCGame )
-		HardcoreLevel += 6; // 6 extra hardcore points for playing Team Survival Competition (-2 in v8)
-        
-    // + 3 points if perk levels are limited to 6, +1 point per each level limited below 6
-    if ( Mut.MaxLevel < 9  )
-        HardcoreLevel += 9 - Mut.MaxLevel;
-        
-    HardcoreLevelFloat = HardcoreLevel;
+    // clear all ScrnPlayerInfo objects
+    while ( PlayerInfo != none ) {
+        SPI = PlayerInfo;
+        PlayerInfo = SPI.NextPlayerInfo;
+        SPI.Destroy();
+    }
+    while ( BackupPlayerInfo != none ) {
+        SPI = BackupPlayerInfo;
+        BackupPlayerInfo = SPI.NextPlayerInfo;
+        SPI.Destroy();
+    }
+    
+    super.Destroyed();
 }
 
 
@@ -234,20 +241,23 @@ function WaveStarted()
     
     WaveDoom3Kills = 0;
     WaveTotalKills = 0;   
-
+    WavePlayerCount = 0;
+    WaveDeadPlayers = 0;
 	bFinalWave = Mut.KF.WaveNum == Mut.KF.FinalWave;
     
 	ClearNonePlayerInfos();
     for ( P = Level.ControllerList; P != none; P = P.nextController ) {
         PC = PlayerController(P);
         if ( PC != none && PC.Pawn != none && PC.Pawn.Health > 0 ) {
+            ++WavePlayerCount;
 			if ( ScrnPlayerController(PC) != none )
 				ScrnPlayerController(PC).ResetWaveStats();
 			SPI = CreatePlayerInfo(PC);
-			if ( SPI != none ) {
-				SPI.WaveStarted(Mut.KF.WaveNum);
-				SPI.ProgressAchievement('Welcome', 1);
-			}
+            // in case when stats were created before ClientReplLink created
+            if ( !SPI.GameStartStats.bSet )
+                SPI.BackupStats(SPI.GameStartStats);            
+            SPI.WaveStarted(Mut.KF.WaveNum);
+            SPI.ProgressAchievement('Welcome', 1);
 		}
     }
 	
@@ -271,11 +281,30 @@ function WaveStarted()
     DestroyBuzzsawBlade(); // prevent cheating
 }
 
+function PlayerLeaving(ScrnPlayerController PC)
+{
+    local ScrnPlayerInfo SPI;
+    
+    if ( Level.Game.bGameEnded )
+        return; // game over
+    
+    SPI = GetPlayerInfo(PC);
+    if ( SPI != none ) {
+        SPI.BackupPRI();
+        SPI.PlayerOwner = none;
+    }
+}
+
+// Ensure that PC has valid SteamID before this function call!
+function PlayerEntering(ScrnPlayerController PC)
+{
+    CreatePlayerInfo(PC, true);
+}
+
 
 function WaveEnded()
 {
     local int i;
-    local int DoomPct, DoomHP;
     local string s;
 	local ScrnPlayerInfo SPI;
 	local byte WaveNum;
@@ -286,27 +315,10 @@ function WaveEnded()
 	// KF.WaveNum already set to a next wave, when WaveEnded() has been called
 	// E.g. KF.WaveNum == 1 means that first wave has been ended (wave with index 0)
 	WaveNum = KF.WaveNum-1;
-    
-    
-    // If there are >=5% of Doom3 monsters in wave, give additional 1 hardcore points
-    // >=10% - 2 points
-    // Do this only once in game and exclude boss wave
-    if ( WaveDoom3Kills > 0 && DoomHardcorePointsGained < 4 && WaveNum < Mut.KF.FinalWave ) {
-        DoomPct = WaveDoom3Kills * 100 / WaveTotalKills;
-        if ( DoomPct >= 10 ) 
-            DoomHP = 4;
-        else if ( DoomPct >= 5 ) 
-            DoomHP = 3;
-        if ( DoomHP > DoomHardcorePointsGained ) {
-            s = msgDoomPercent;
-            ReplaceText(s, "%p", String(DoomPct));
-            RaiseHardcoreLevel(DoomHP - DoomHardcorePointsGained, s);
-            DoomHardcorePointsGained = DoomHP;
-        }
-    }
 	
     for ( SPI=PlayerInfo; SPI!=none; SPI=SPI.NextPlayerInfo ) {
 		SPI.WaveEnded(WaveNum);
+        SPI.BackupPRI(); // just in case
         
         // broadcast players with high accuracy
         if ( bFinalWave || SPI.DecapsPerWave >= 30 ) {
@@ -435,7 +447,7 @@ function GiveMapAchievements(optional String MapName)
 	else {
 		bGiveHardAch = HardcoreLevel >= 5 && HasCustomZeds();
 		bGiveSuiAch = HardcoreLevel >= 10 && (bDoomPat || bSuperPat);
-		bGiveHoeAch = HardcoreLevel >= 15 && DoomHardcorePointsGained > 0;    
+		bGiveHoeAch = HardcoreLevel >= 15 && GameDoom3Kills > 0;    
 	}
     
     // end game bonus
@@ -750,9 +762,11 @@ function bool PreventDeath(Pawn Killed, Controller Killer, class<DamageType> dam
     if ( (NextGameRules != None) && NextGameRules.PreventDeath(Killed,Killer, damageType,HitLocation) )
         return true;
 
-    WaveTotalKills++;
-    if ( Killed.IsA('DoomMonster') )
-        WaveDoom3Kills++;
+    ++WaveTotalKills;
+    if ( Killed.IsA('DoomMonster') ) {
+        ++WaveDoom3Kills;
+        ++GameDoom3Kills;
+    }
 
     if ( bUseAchievements ) {
 		if ( KFMonster(Killed) != none && PlayerController(Killer) != none && class<KFWeaponDamageType>(DamageType) != none ) {
@@ -761,16 +775,25 @@ function bool PreventDeath(Pawn Killed, Controller Killer, class<DamageType> dam
 				SPI.KilledMonster(KFMonster(Killed), class<KFWeaponDamageType>(DamageType));
 		}
 		else if ( KFHumanPawn(Killed) != none && PlayerController(Killed.Controller) != none ) {
+            ++WaveDeadPlayers;
 			if ( Killer != none && KFMonster(Killer.Pawn) != none ) {
+                // player killed by monster
 				idx = GetMonsterIndex(KFMonster(Killer.Pawn));
 				MonsterInfos[idx].PlayerKillCounter++;
 				MonsterInfos[idx].PlayerKillTime = Level.TimeSeconds;
+                
+                // decrease XP for all medics for not keeping teammate alive
+                for ( SPI=PlayerInfo; SPI!=none; SPI=SPI.NextPlayerInfo ) {
+                    if ( SPI.PlayerOwner != Killed.Controller && !SPI.bDied )
+                        SPI.MedicDamagePerWave *= Mut.MedicDamagePenalty;
+                }                
 			}
 			// don't count suicide deaths during trader time
 			if ( !Mut.KF.bTradingDoorsOpen ) {
 				SPI = GetPlayerInfo(PlayerController(Killed.Controller));
-				if ( SPI != none ) 
+				if ( SPI != none ) {
 					SPI.Died(Killer, DamageType);		
+                }
 			}
 			if ( Mut.bSpawn0 || Mut.bStoryMode ) {
                 idx = Killed.Health;
@@ -927,122 +950,37 @@ function RegisterMonster(KFMonster Monster)
 
 function CheckNewMonster(KFMonster Monster)
 {
-    if ( ZombieStalker(Monster) != none ) {
-        if ( Monster.IsA('ZombieGhost') ) {
+    local int i;
+    local string MCS;
+    
+    MCS = GetItemName(string(Monster.Class));
+    
+    for ( i=0; i<HardcoreZeds.length; ++i ) {
+        if ( !HardcoreZeds[i].bUsed && HardcoreZeds[i].MonsterClass ~= MCS ) {
+            HardcoreZeds[i].bUsed = true;
             bHasCustomZeds = true;
-            RaiseHardcoreLevel(0.5, Monster.MenuName);
+            RaiseHardcoreLevel(HardcoreZeds[i].HL * ZedHLMult, Monster.MenuName);
+            break;
         }
-        else if ( Monster.IsA('ZombieSuperStalker')) {
-            // bHasCustomZeds = true;
-            RaiseHardcoreLevel(0.3, Monster.MenuName);
-        }
-    }
-    else if ( ZombieGorefast(Monster) != none ) {
-        if ( Monster.IsA('ZombieSuperGorefast')) {
-            // bHasCustomZeds = true;
-            RaiseHardcoreLevel(0.3, Monster.MenuName);
-        }
-    }
-    else if ( ZombieCrawler(Monster) != none ) {
-        if ( Monster.IsA('ZombieSuperCrawler')) {
-            // bHasCustomZeds = true;
-            RaiseHardcoreLevel(0.3, Monster.MenuName);
-        }
-    }  
-    else if ( ZombieBloat(Monster) != none ) {
-        if ( Monster.IsA('ZombieSuperBloat')) {
-            // bHasCustomZeds = true;
-            RaiseHardcoreLevel(0.3, Monster.MenuName);
-        }
-    }    
-    else if ( ZombieSiren(Monster) != none ) {
-        if ( Monster.IsA('ZombieSuperSiren')) {
-            bHasCustomZeds = true;
-            RaiseHardcoreLevel(1.0, Monster.MenuName);
-        }
-    }     
-    else if ( ZombieHusk(Monster) != none ) {
-        if ( Monster.IsA('ZombieSuperHusk') ) {
-            bHasCustomZeds = true;
-            RaiseHardcoreLevel(1.4, Monster.MenuName);
-        }
-		else if ( Monster.IsA('TeslaHusk') ) {
-            bHasCustomZeds = true;
-			RaiseHardcoreLevel(1.5, Monster.MenuName);
-		}	
-    }
-    else if ( ZombieScrake(Monster) != none ) {
-        if ( Monster.IsA('ZombieSuperScrake') ) {
-            bHasCustomZeds = true;
-            RaiseHardcoreLevel(1.4, Monster.MenuName);
-        }
-        else if ( Monster.IsA('ZombieJason') ) {
-            bHasCustomZeds = true;
-            RaiseHardcoreLevel(1.5, Monster.MenuName);
-        }        
-    }  
-    else if ( ZombieFleshpound(Monster) != none ) {
-        if ( Monster.IsA('ZombieSuperFP') ) {
-            bHasCustomZeds = true;
-            RaiseHardcoreLevel(1, Monster.MenuName);
-        }
-    }  
-    else if ( Monster.IsA('ZombieShiver') ) {
-        bHasCustomZeds = true;
-        RaiseHardcoreLevel(1, Monster.MenuName);
-    }
-    else if ( Monster.IsA('ZombieBrute') ) {
-        bHasCustomZeds = true;
-        RaiseHardcoreLevel(2, Monster.MenuName);
-    }
-    else if ( Monster.IsA('ZombieJason') ) {
-            bHasCustomZeds = true;
-        RaiseHardcoreLevel(1.5, Monster.MenuName);
-    }
-	else if ( Monster.IsA('FemaleFP') ) {
-        if ( !bFemaleFP ) {
-            bFemaleFP = true;
-            bHasCustomZeds = true;
-            RaiseHardcoreLevel(2.5, Monster.MenuName);
-        }
-	}
-    else if ( Monster.IsA('DoomMonster') ) {
-        if ( DoomHardcorePointsGained == 0 ) {
-            log("Doom3 monster package name is " $ String(Monster.class.outer.name), 'ScrnBalance');
-            bScrnDoom = Monster.class.outer.name == 'ScrnDoom3KF';
-            DoomHardcorePointsGained = 2;
-            RaiseHardcoreLevel(2, msgDoom3Monster);
-        }
-        // + 1 point per boss
-        if ( bScrnDoom && Monster.default.Health >= 3000 )
-            RaiseHardcoreLevel(1, msgDoom3Boss);
-        // + extra 2 hardcore points can be earned if there are are >10% doom monsters is a wave
     }
 }
 
 function InitBoss(KFMonster Monster)
 {
 	local int i;
+    local string BossClassStr;
     
     Boss = Monster;
     BossClass = Monster.class;
-    bSuperPat = false;
-    bDoomPat = false;
+    BossClassStr = GetItemName(string(BossClass.name)); 
+    bSuperPat = Monster.IsA('ZombieSuperBoss') || Monster.IsA('HardPat');
+    bDoomPat = Monster.IsA('DoomMonster');
     
-    if ( Monster.IsA('DoomMonster') ) {
-        if ( bScrnDoom && Monster.default.Health >= 3000 ) {
-            bDoomPat = true;
-            RaiseHardcoreLevel(2, Monster.MenuName);
-        }
-    }
-    else if ( ZombieBoss(Monster) != none ) {
-        if ( Monster.IsA('ZombieSuperBoss') ) {
-            bSuperPat = true;
-            RaiseHardcoreLevel(2, Monster.MenuName);
-        }
-        else if ( Monster.IsA('HardPat') ) {
-            bSuperPat = true;
-            RaiseHardcoreLevel(2, "HardPat");
+    for ( i=0; i<HardcoreBosses.length; ++i ) {
+        if ( !HardcoreBosses[i].bUsed && HardcoreBosses[i].MonsterClass ~= BossClassStr ) {
+            HardcoreBosses[i].bUsed = true;
+            RaiseHardcoreLevel(HardcoreBosses[i].HL * ZedHLMult, Boss.MenuName);
+            break;
         }
     }
 	
@@ -1062,6 +1000,39 @@ function ScrakeNaded(ZombieScrake Scrake)
     MonsterInfos[index].DamageFlags2 = DF_RAGED | DF_STUPID; 
 }
 
+function protected InitHardcoreLevel()
+{
+    if ( Level.Game.GameDifficulty >= 7 ) {
+       HardcoreLevelFloat = HL_HoE;
+       ZedHLMult = HLMult_HoE;
+    }
+    else if ( Level.Game.GameDifficulty >= 5 ) {
+       HardcoreLevelFloat = HL_Suicidal;
+       ZedHLMult = HLMult_Suicidal;
+    }
+    else if ( Level.Game.GameDifficulty >= 4 ) {
+       HardcoreLevelFloat = HL_Hard;
+       ZedHLMult = HLMult_Hard;
+    }
+    else {
+       HardcoreLevelFloat = HL_Normal;
+       ZedHLMult = HLMult_Normal;
+    }
+		
+    if ( Mut.bHardcore )
+		HardcoreLevelFloat += HL_Hardcore;
+	if ( Mut.bStoryMode )
+		HardcoreLevelFloat += HL_Story;
+    else if ( Mut.bTSCGame )
+		HardcoreLevelFloat += HL_TSC;
+        
+    HardcoreLevel = int(HardcoreLevelFloat+0.01);
+    // replicate to clients
+    Mut.HardcoreLevel = clamp(HardcoreLevel,0,255); 
+    Mut.NetUpdateTime = Level.TimeSeconds - 1;
+
+}
+
 function RaiseHardcoreLevel(float inc, string reason)
 {
     local string s;
@@ -1073,6 +1044,9 @@ function RaiseHardcoreLevel(float inc, string reason)
 
     HardcoreLevelFloat += inc;
     HardcoreLevel = int(HardcoreLevelFloat+0.01);
+    // replicate to clients
+    Mut.HardcoreLevel = clamp(HardcoreLevel,0,255); 
+    Mut.NetUpdateTime = Level.TimeSeconds - 1;
     
     s = msgHardcore;
     ReplaceText(s, "%a", String(HardcoreLevel));
@@ -1136,25 +1110,12 @@ function ScrnPlayerInfo GetPlayerInfo(PlayerController PlayerOwner)
 
 function int AlivePlayerCount()
 {
-	local ScrnPlayerInfo SPI;
-	local int count;
-	
-	for ( SPI=PlayerInfo; SPI!=none; SPI=SPI.NextPlayerInfo ) {
-		if ( SPI.PlayerOwner != none && !SPI.bDied )
-			count++;
-	}
-	return count;
+	return WavePlayerCount - WaveDeadPlayers;
 }
 
 function int PlayerCountInWave()
 {
-	local ScrnPlayerInfo SPI;
-	local int count;
-	
-	for ( SPI=PlayerInfo; SPI!=none; SPI=SPI.NextPlayerInfo ) {
-		count++;
-	}
-	return count;
+    return WavePlayerCount;
 }
 
 /**
@@ -1181,11 +1142,24 @@ function ProgressAchievementForAllPlayers(name AchID, int Inc, optional bool bOn
 	}
 }
 
+final private function BackupOrDestroySPI(ScrnPlayerInfo SPI)
+{
+    if ( SPI.SteamID32 > 0 && (SPI.PRI_Kills > 0 || SPI.PRI_Deaths > 0 || SPI.PRI_KillAssists > 0) ) {
+        if ( BackupPlayerInfo == none ) {
+            SPI.NextPlayerInfo = none;
+            BackupPlayerInfo = SPI;
+        }
+        else {
+            SPI.NextPlayerInfo = BackupPlayerInfo;
+            BackupPlayerInfo = SPI;
+        }
+    }
+    else 
+        SPI.Destroy();
+}
 
-
-
-// destoroys player infos without PlayerOwner
-function ClearNonePlayerInfos() 
+// destroys player infos without PlayerOwner
+final function ClearNonePlayerInfos() 
 {
 	local ScrnPlayerInfo SPI, PrevSPI;
 	
@@ -1193,7 +1167,7 @@ function ClearNonePlayerInfos()
 	{
 		PrevSPI = PlayerInfo;
 		PlayerInfo = PrevSPI.NextPlayerInfo;
-		PrevSPI.Destroy();
+        BackupOrDestroySPI(PrevSPI);
 	}
 	
 	if ( PlayerInfo == none )
@@ -1205,7 +1179,7 @@ function ClearNonePlayerInfos()
 	while ( SPI != none ) {
 		if ( SPI.PlayerOwner == none || PlayerInfo.PlayerOwner.Pawn == none ) {
 			PrevSPI.NextPlayerInfo = SPI.NextPlayerInfo;
-			SPI.Destroy();
+            BackupOrDestroySPI(SPI);
 		}
 		else {		
 			PrevSPI = SPI;
@@ -1214,34 +1188,125 @@ function ClearNonePlayerInfos()
 	}
 }
 
-function ScrnPlayerInfo CreatePlayerInfo(PlayerController PlayerOwner) 
+/**
+ * Returns ScrnPlayerInfo (SPI) object for given PlayerController. If SPI object already exists and
+ * active (i.e. player is in the game), then just returns it. If there is no active SPI record found,
+ * function looks for backup, comparing by SteamID32 (in case of reconnecting players).
+ * If SPI object is not found in both active and backup lists, then creates a new one.
+ *
+ * @param   PlayerOwner             PlayerController, which owns the SPI object. Note that it means 
+ *                                  SPI.PlayerOwner = PlayerOwner, NOT SPI.Owner (latter is none)
+ * @param   bDontRestoreFromBackup  This parameter is used only when SPI object is in the backup.
+ *                                  True means it will be kept in backup.
+ *                                  False means it will be restored to active player info list.
+ * @return  SPI object which is linked to given PlayerOwner. Theoretically function always should returns 
+ *          a valid pointer.
+ */
+final function ScrnPlayerInfo CreatePlayerInfo(PlayerController PlayerOwner, optional bool bDontRestoreFromBackup) 
 {
-	local ScrnPlayerInfo SPI;
+	local ScrnPlayerInfo SPI, PrevSPI;
+    local ScrnCustomPRI ScrnPRI;
+    local int SteamID32; 
 	
 	if ( PlayerOwner == none )
 		return none;
-	
-	SPI = GetPlayerInfo(PlayerOwner);
-	if ( SPI == none ) {
-		SPI = spawn(class'ScrnPlayerInfo');
-		if ( SPI == none ) {
-			log("Unable to spawn ScrnPlayerInfo!", 'ScrnBalance');
-			return none;
-		}
-
-		if ( PlayerInfo == none )
-			PlayerInfo = SPI;
-		else {
-			SPI.NextPlayerInfo = PlayerInfo;
-			PlayerInfo = SPI;
-		}
-		// initial data
-		SPI.PlayerOwner = PlayerOwner;
-		SPI.GameRules = self;
-		SPI.BackupStats(SPI.GameStartStats);
-		SPI.StartWave = Mut.KF.WaveNum;
+        
+	// Does it exist and active?
+	for ( SPI=PlayerInfo; SPI!=none; SPI=SPI.NextPlayerInfo ) {
+		if ( SPI.PlayerOwner == PlayerOwner )
+			return SPI; 
 	}
+    
+    ScrnPRI = class'ScrnCustomPRI'.static.FindMe(PlayerOwner.PlayerReplicationInfo);
+    if ( ScrnPRI != none )
+        SteamID32 = ScrnPRI.GetSteamID32();
+    // check by SteamID for quickly reconnecting players (e.g. crashed)
+    if ( SteamID32 > 0 ) {
+        for ( SPI = PlayerInfo; SPI != none; SPI = SPI.NextPlayerInfo ) {
+            if ( SPI.SteamID32 == SteamID32 ) {
+                SPI.PlayerOwner = PlayerOwner;
+                SPI.RestorePRI();
+                return SPI;
+            }
+        }
+    }
+    
+    // Check for backup
+    if ( BackupPlayerInfo != none && SteamID32 > 0 ) {
+        for ( SPI = BackupPlayerInfo; SPI != none; SPI = SPI.NextPlayerInfo ) {
+            if ( SPI.SteamID32 == SteamID32) {
+                if ( SPI.PlayerOwner != PlayerOwner ) {
+                    SPI.PlayerOwner = PlayerOwner;
+                    SPI.RestorePRI();
+                }
+
+                if ( bDontRestoreFromBackup ) {
+                    //remove from backup 
+                    if ( PrevSPI != none )
+                        PrevSPI.NextPlayerInfo = SPI.NextPlayerInfo;
+                    else 
+                        BackupPlayerInfo = SPI.NextPlayerInfo;
+                    SPI.NextPlayerInfo = none;
+                    
+                    // link to PlayerInfo list
+                    if ( PlayerInfo == none )
+                        PlayerInfo = SPI;
+                    else {
+                        SPI.NextPlayerInfo = PlayerInfo;
+                        PlayerInfo = SPI;
+                    }
+                }        
+                
+                return SPI;                
+            }
+            PrevSPI = SPI;
+        }
+    }
+    
+    // not active and not backed up - create a new one    
+    SPI = spawn(class'ScrnPlayerInfo');
+    if ( SPI == none ) {
+        // this never should happen
+        log("Unable to spawn ScrnPlayerInfo!", 'ScrnBalance');
+        return none;
+    }
+
+    if ( PlayerInfo == none )
+        PlayerInfo = SPI;
+    else {
+        SPI.NextPlayerInfo = PlayerInfo;
+        PlayerInfo = SPI;
+    }
+    // initial data
+    SPI.PlayerOwner = PlayerOwner;
+    SPI.GameRules = self;
+    SPI.SteamID32 = SteamID32;
+    SPI.StartWave = Mut.KF.WaveNum;
+    SPI.BackupStats(SPI.GameStartStats);
 	return SPI;
+}
+
+function DebugSPI(PlayerController Sender)
+{
+    local ScrnPlayerInfo SPI;
+    
+    Sender.ClientMessage("Active SPIs:");
+    Sender.ClientMessage("------------------------------------");
+    for ( SPI = Mut.GameRules.PlayerInfo; SPI != none; SPI = SPI.NextPlayerInfo ) {
+        if ( SPI.PlayerOwner != none )
+            Sender.ClientMessage(SPI.SteamID32 @ SPI.PlayerOwner.PlayerReplicationInfo.PlayerName @  SPI.PRI_Kills );
+        else 
+            Sender.ClientMessage(SPI.SteamID32 @ "none" @  SPI.PRI_Kills );
+    }
+    Sender.ClientMessage("------------------------------------");
+    Sender.ClientMessage("Backup SPIs:");
+    Sender.ClientMessage("------------------------------------");
+    for ( SPI = Mut.GameRules.BackupPlayerInfo; SPI != none; SPI = SPI.NextPlayerInfo ) {
+        if ( SPI.PlayerOwner != none )
+            Sender.ClientMessage(SPI.SteamID32 @ SPI.PlayerOwner.PlayerReplicationInfo.PlayerName @  SPI.PRI_Kills );
+        else 
+            Sender.ClientMessage(SPI.SteamID32 @ "none" @  SPI.PRI_Kills );
+    }
 }
 
 
@@ -1376,7 +1441,6 @@ function MonsterFrustration()
 */
 
 
-
 defaultproperties
 {
 	msgHardcore="Hardcore level raised to %a (+%i for %r)"
@@ -1415,4 +1479,56 @@ defaultproperties
     SovietDamageTypes(1)=class'KFMod.DamTypeFrag'
     SovietDamageTypes(2)=class'KFMod.DamTypeAK47AssaultRifle'
     SovietDamageTypes(3)=class'ScrnBalanceSrv.ScrnDamTypeAK47AssaultRifle'
+    
+    HL_Normal=0
+    HLMult_Normal=0.5
+    HL_Hard=2
+    HLMult_Hard=0.75
+    HL_Suicidal=5
+    HLMult_Suicidal=1.0
+    HL_HoE=7
+    HLMult_HoE=1.0
+    HL_Hardcore=2
+    HL_Story=3
+    HL_TSC=6
+    
+    HardcoreBosses(0)=(MonsterClass="HardPat",HL=2)
+    HardcoreBosses(1)=(MonsterClass="ZombieSuperBoss",HL=2)
+    HardcoreBosses(2)=(MonsterClass="Sabaoth",HL=2)
+    HardcoreBosses(3)=(MonsterClass="Vagary",HL=1)
+    HardcoreBosses(4)=(MonsterClass="Maledict",HL=2)
+    HardcoreBosses(5)=(MonsterClass="HunterInvul",HL=2)
+    HardcoreBosses(6)=(MonsterClass="HunterBerserk",HL=2)
+    HardcoreBosses(7)=(MonsterClass="HunterHellTime",HL=2)
+    HardcoreBosses(8)=(MonsterClass="Guardian",HL=2)
+    HardcoreBosses(9)=(MonsterClass="Cyberdemon",HL=2)
+    
+    HardcoreZeds(0)=(MonsterClass="ZombieGhost",HL=0.5)
+    HardcoreZeds(1)=(MonsterClass="ZombieShiver",HL=1.0)
+    HardcoreZeds(2)=(MonsterClass="ZombieJason",HL=1.5)
+    HardcoreZeds(3)=(MonsterClass="TeslaHusk",HL=1.5)
+    HardcoreZeds(4)=(MonsterClass="ZombieJason",HL=1.5)
+    HardcoreZeds(5)=(MonsterClass="ZombieBrute",HL=2.0)
+    HardcoreZeds(6)=(MonsterClass="FemaleFP",HL=2.5)
+    HardcoreZeds(7)=(MonsterClass="FemaleFP_MKII",HL=2.5)
+    HardcoreZeds(8)=(MonsterClass="ZombieSuperStalker",HL=0.3)
+    HardcoreZeds(9)=(MonsterClass="ZombieSuperGorefast",HL=0.3)
+    HardcoreZeds(10)=(MonsterClass="ZombieSuperCrawler",HL=0.3)
+    HardcoreZeds(11)=(MonsterClass="ZombieSuperBloat",HL=0.3)
+    HardcoreZeds(12)=(MonsterClass="ZombieSuperSiren",HL=1.0)
+    HardcoreZeds(13)=(MonsterClass="ZombieSuperFP",HL=1.0)
+    HardcoreZeds(14)=(MonsterClass="ZombieSuperHusk",HL=1.4)
+    HardcoreZeds(15)=(MonsterClass="ZombieSuperScrake",HL=1.4)
+    HardcoreZeds(16)=(MonsterClass="Imp",HL=1)
+    HardcoreZeds(17)=(MonsterClass="Pinky",HL=1)
+    HardcoreZeds(18)=(MonsterClass="Archvile",HL=1)
+    HardcoreZeds(19)=(MonsterClass="HellKnight",HL=1)
+    HardcoreZeds(20)=(MonsterClass="Sabaoth",HL=1)
+    HardcoreZeds(21)=(MonsterClass="Vagary",HL=1)
+    HardcoreZeds(22)=(MonsterClass="Maledict",HL=1)
+    HardcoreZeds(23)=(MonsterClass="HunterInvul",HL=1)
+    HardcoreZeds(24)=(MonsterClass="HunterBerserk",HL=1)
+    HardcoreZeds(25)=(MonsterClass="HunterHellTime",HL=1)
+    HardcoreZeds(26)=(MonsterClass="Guardian",HL=1)
+    HardcoreZeds(27)=(MonsterClass="Cyberdemon",HL=1)    
 }

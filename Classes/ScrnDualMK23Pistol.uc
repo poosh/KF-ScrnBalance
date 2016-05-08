@@ -1,5 +1,11 @@
 class ScrnDualMK23Pistol extends DualMK23Pistol;
 
+function AttachToPawn(Pawn P)
+{
+    super(Dualies).AttachToPawn(P); // skip code duplication in Dual44Magnum
+}
+
+
 function bool HandlePickupQuery( pickup Item )
 {
 	if ( Item.InventoryType==Class'ScrnBalanceSrv.ScrnMK23Pistol' )

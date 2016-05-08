@@ -737,6 +737,11 @@ defaultproperties
     
     bCloserZedSpawns=True
     
+    // copied from last two LongWaves
+    NormalWaves(5)=(WaveMask=75393519,WaveMaxMonsters=40,WaveDuration=255,WaveDifficulty=0.300000)
+    NormalWaves(6)=(WaveMask=90171865,WaveMaxMonsters=45,WaveDuration=255,WaveDifficulty=0.300000)
+    
+    
     
     KFHints[0]="ScrN Balance: You can reload a single shell into Hunting Shotgun."
     KFHints[1]="ScrN Balance: You can't skip Hunting Shotgun's reload. So use it with caution."
@@ -765,4 +770,6 @@ defaultproperties
     KFHints[24]="ScrN Console Command: MVOTE - access to ScrN Voting. Type MVOTE HELP for more info."
     KFHints[25]="ScrN Console Command: DROPALLWEAPONS - drops all your weapons to the ground. What else did you expected?"
     KFHints[26]="ScrN Console Command: TOGGLEWEAPONLOCK - lock/unlocks your weapons on the ground."
+    KFHints[27]="ScrN Console Commands: ToggleHudStyle, CoolHudSize, CoolHudAmmoSize, CoolHudAmmoX/Y - customize your HUD as you like."
+    KFHints[28]="ScrN Balance: Medic gets XP for shooting zeds with Medic Guns. But do not forget to heal your teammates!"
 }

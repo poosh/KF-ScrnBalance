@@ -324,7 +324,10 @@ static function byte PreDrawPerk( Canvas C, byte Level, out Material PerkIcon, o
 		}
 		PerkIcon = default.OnHUDIcons[idx].PerkIcon;
 		StarIcon = default.OnHUDIcons[idx].StarIcon;
-		C.SetDrawColor(default.OnHUDIcons[idx].DrawColor.R, default.OnHUDIcons[idx].DrawColor.G, default.OnHUDIcons[idx].DrawColor.B, C.DrawColor.A);		
+		C.DrawColor.R = default.OnHUDIcons[idx].DrawColor.R;
+		C.DrawColor.G = default.OnHUDIcons[idx].DrawColor.G;
+		C.DrawColor.B = default.OnHUDIcons[idx].DrawColor.B;
+		C.DrawColor.A = default.OnHUDIcons[idx].DrawColor.A;
 	}
 	//return Min(Level,15); // max 15 stars to draw
 	return Level;

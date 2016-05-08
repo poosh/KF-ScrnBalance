@@ -176,9 +176,12 @@ function ModeDoFire()
 
 defaultproperties
 {
-     MaxChargeAmmo=10
-     WeakProjectileClass=Class'ScrnBalanceSrv.ScrnHuskGunProjectile_Weak'
-     StrongProjectileClass=Class'ScrnBalanceSrv.ScrnHuskGunProjectile_Strong'
-     AmmoClass=Class'ScrnBalanceSrv.ScrnHuskGunAmmo'
-     ProjectileClass=Class'ScrnBalanceSrv.ScrnHuskGunProjectile'
+    MaxChargeAmmo=10
+    WeakProjectileClass=Class'ScrnBalanceSrv.ScrnHuskGunProjectile_Weak'
+    StrongProjectileClass=Class'ScrnBalanceSrv.ScrnHuskGunProjectile_Strong'
+    AmmoClass=Class'ScrnBalanceSrv.ScrnHuskGunAmmo'
+    ProjectileClass=Class'ScrnBalanceSrv.ScrnHuskGunProjectile'
+    
+    SpreadStyle=SS_None
+    Spread=0
 }

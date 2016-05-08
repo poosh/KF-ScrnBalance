@@ -314,6 +314,9 @@ static function bool ShowEnemyHealthBars(KFPlayerReplicationInfo KFPRI, KFPlayer
 
 defaultproperties
 {
+     DefaultDamageType=Class'ScrnBalanceSrv.ScrnDamTypeMedicBase'
+     DefaultDamageTypeNoBonus=Class'ScrnBalanceSrv.ScrnDamTypeMedicBase'
+     
      progressArray0(0)=100
      progressArray0(1)=450
      progressArray0(2)=1750
@@ -338,6 +341,7 @@ defaultproperties
 	 OnHUDIcons(3)=(PerkIcon=Texture'ScrnTex.Perks.Perk_Medic_Blue',StarIcon=Texture'ScrnTex.Perks.Hud_Perk_Star_Blue',DrawColor=(B=255,G=255,R=255,A=255))
 	 OnHUDIcons(4)=(PerkIcon=Texture'ScrnTex.Perks.Perk_Medic_Purple',StarIcon=Texture'ScrnTex.Perks.Hud_Perk_Star_Purple',DrawColor=(B=255,G=255,R=255,A=255))
 	 OnHUDIcons(5)=(PerkIcon=Texture'ScrnTex.Perks.Perk_Medic_Orange',StarIcon=Texture'ScrnTex.Perks.Hud_Perk_Star_Orange',DrawColor=(B=255,G=255,R=255,A=255))
+	 OnHUDIcons(6)=(PerkIcon=Texture'ScrnTex.Perks.Perk_Medic_Blood',StarIcon=Texture'ScrnTex.Perks.Hud_Perk_Star_Blood',DrawColor=(B=255,G=255,R=255,A=255))
      VeterancyName="Field Medic"
      Requirements(0)="Heal %x HP on your teammates"
 }

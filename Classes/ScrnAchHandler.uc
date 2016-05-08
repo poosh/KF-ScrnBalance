@@ -1,6 +1,7 @@
 class ScrnAchHandler extends ScrnAchHandlerBase;
 
-var bool bOnePlayerPerPerk;
+var bool bOnePlayerPerPerk, bAllSamePerk;
+var transient class<KFVeterancyTypes> SamePerk;
 var transient bool bBossXbowOnly, bBossM99Only, bBossMeleeOnly, bBoss9mmOnly, bBossPrey;
 var transient float BossSpawnTime, BossLastDamageTime;
 var float InstantKillTime; // instant kill counts, if time between shot is less than this
@@ -12,6 +13,8 @@ var int TeslaChainedPlayers;
 var ScrnPlayerInfo TeslaChainedP1, TeslaChainedP2;
 
 var int iDoT_Damage;
+
+var bool bNoHeadshots, bAllCanDoHeadshots;
 
 function PlayerDamaged(int Damage, ScrnPlayerInfo VictimSPI, KFMonster InstigatedBy, class<DamageType> DamType) 
 {
@@ -112,13 +115,20 @@ function WaveStarted(byte WaveNum)
 		if ( SPI.PlayerOwner.PlayerReplicationInfo.Score >= 10000 )
 			SPI.ProgressAchievement('Money10k', 1);  
 
-		if ( bOnePlayerPerPerk ) {
+		if ( bOnePlayerPerPerk || bAllSamePerk ) {
             if ( KFPlayerReplicationInfo(SPI.PlayerOwner.PlayerReplicationInfo) != none )
                 Perk = KFPlayerReplicationInfo(SPI.PlayerOwner.PlayerReplicationInfo).ClientVeteranSkill;
 			
-            if ( Perk == none )
+            if ( Perk == none ) {
                 bOnePlayerPerPerk = false; // no perk = no balance
+            }
             else {
+                if ( bAllSamePerk ) {
+                    if ( SamePerk == none )
+                        SamePerk = Perk;
+                    else if ( SamePerk != Perk )
+                        bAllSamePerk = false;
+                }
                 for ( i = 0; i < UsedPerks.length; ++i ) {
                     if ( UsedPerks[i] == Perk ) {
                         bOnePlayerPerPerk = false;
@@ -203,8 +213,9 @@ function WaveEnded(byte WaveNum)
 				else if ( SPI.WeapInfos[i].KillsPerWave > 0 )
 					bAsh = false;
 			}
-			if ( ClassIsChildOf(SPI.WeapInfos[i].DamType, Class'ScrnDamTypeM4203AssaultRifle') 
-				|| ClassIsChildOf(SPI.WeapInfos[i].DamType, Class'DamTypeM203Grenade') ) 
+			if ( ClassIsChildOf(SPI.WeapInfos[i].DamType, Class'ScrnDamTypeM4AssaultRifle') 
+				|| ClassIsChildOf(SPI.WeapInfos[i].DamType, Class'DamTypeM203Grenade') 
+                || ClassIsChildOf(SPI.WeapInfos[i].DamType, Class'ScrnDamTypeM4203M') ) 
 			{	
 				M4Kills += SPI.WeapInfos[i].KillsPerWave;
 			}
@@ -238,26 +249,47 @@ function GameWon(string MapName)
 	local ScrnPlayerInfo SPI;
 	local ScrnPlayerController ScrnPC;
     local TeamInfo WinnerTeam;
+    local int PlayerCount;
     
     WinnerTeam = TeamInfo(Level.GRI.Winner);
+    PlayerCount = GameRules.PlayerCountInWave();
 	
-	if ( bOnePlayerPerPerk && GameRules.PlayerCountInWave() >= 6 )
+	if ( bOnePlayerPerPerk && PlayerCount >= 6 )
 		Ach2All('PerfectBalance', 1);
-	// boss-related achievements
-	if (GameRules.bSuperPat)
-		Ach2All('KillSuperPat', 1); 
-	if ( bBossPrey && Level.TimeSeconds - BossSpawnTime <= 120 )
-		Ach2All('PatPrey', 1); 
-		
-		
-	if (bBossXbowOnly)
-		Ach2All('MerryMen', 1);  
-	else if (bBossM99Only)
-		Ach2All('MerryMen50cal', 1);  
-	else if (bBossMeleeOnly)
-		Ach2All('PatMelee', 1);  
-	else if (bBoss9mmOnly)
-		Ach2All('Pat9mm', 1);  
+    if ( bNoHeadshots && PlayerCount >= 2 )
+        Ach2All('TW_NoHeadshots', 1, none, WinnerTeam);
+    if ( bAllCanDoHeadshots && PlayerCount >= 2 )
+        Ach2All('TW_SkullCrackers', 1, none, WinnerTeam);
+        
+    if ( !GameRules.Mut.bTSCGame ) {
+        // boss-related achievements
+        if (GameRules.bSuperPat)
+            Ach2All('KillSuperPat', 1); 
+        if ( bBossPrey && Level.TimeSeconds - BossSpawnTime <= 120 )
+            Ach2All('PatPrey', 1); 
+        if (bBossXbowOnly)
+            Ach2All('MerryMen', 1);  
+        else if (bBossM99Only)
+            Ach2All('MerryMen50cal', 1);  
+        else if (bBossMeleeOnly)
+            Ach2All('PatMelee', 1);  
+        else if (bBoss9mmOnly)
+            Ach2All('Pat9mm', 1);              
+            
+        if ( bAllSamePerk && SamePerk != none && PlayerCount >= 3 ) {
+            switch ( SamePerk ) {
+                case class'ScrnVetFieldMedic': Ach2All('OP_Medic', 1); break;
+                case class'ScrnVetSupportSpec': Ach2All('OP_Support', 1); break;
+                case class'ScrnVetSharpshooter': Ach2All('OP_Sharpshooter', 1); break;
+                case class'ScrnVetCommando': Ach2All('OP_Commando', 1); break;
+                case class'ScrnVetBerserker': Ach2All('OP_Berserker', 1); break;
+                case class'ScrnVetFirebug': Ach2All('OP_Firebug', 1); break;
+                case class'ScrnVetDemolitions': Ach2All('OP_Demo', 1); break;
+                case class'ScrnVetGunslinger': Ach2All('OP_Gunslinger', 1); break;
+            }
+        }
+    }
+
 	
 	for ( SPI=GameRules.PlayerInfo; SPI!=none; SPI=SPI.NextPlayerInfo ) {
 		ScrnPC = ScrnPlayerController(SPI.PlayerOwner);
@@ -265,11 +297,11 @@ function GameWon(string MapName)
 			if ( SPI.Deaths == 0 && SPI.StartWave <= 1 && !ScrnPC.bHadArmor )
 				SPI.ProgressAchievement('BallsOfSteel', 1);  
 		}
-		if ( SPI.StartWave == 0 && GameRules.Mut.KF.KFGameLength == GameRules.Mut.KF.GL_Long ) {
+		if ( SPI.StartWave == 0 && !GameRules.Mut.bTSCGame ) {
 			if ( bPerfectGame )
 				SPI.ProgressAchievement('PerfectGame', 1);
 				
-			if ( !GameRules.Mut.bTSCGame && GameRules.Mut.KF.ShopList.Length >= 3 && Level.Game.GameReplicationInfo.ElapsedTime <= 2700) {
+			if ( GameRules.Mut.KF.ShopList.Length >= 3 && Level.Game.GameReplicationInfo.ElapsedTime <= 2700 ) {
 				SPI.ProgressAchievement('SpeedrunBronze', 1);
 				if ( Level.Game.GameReplicationInfo.ElapsedTime <= 2400) {
 					SPI.ProgressAchievement('SpeedrunSilver', 1);
@@ -370,7 +402,7 @@ function int WDecapsPerShot(ScrnPlayerInfo SPI, KFWeapon Weapon, class<KFWeaponD
 
 function int WKillsPerMagazine(ScrnPlayerInfo SPI, KFWeapon Weapon, class<KFWeaponDamageType> DamType, int Count)
 {
-	if ( ClassIsChildOf(DamType, class'ScrnBalanceSrv.ScrnDamTypeM4203AssaultRifle') ) {
+	if ( ClassIsChildOf(DamType, class'ScrnBalanceSrv.ScrnDamTypeM4203M') ) {
 		if ( Count < 15) 
 			return 15; // need 15 kills for the achievement
 		// if achievement is earned - no need to track stat anymore, so return IGNORE_STAT
@@ -445,7 +477,8 @@ function MonsterDamaged(int Damage, KFMonster Victim, ScrnPlayerInfo InstigatorI
 	if ( MC == none )
 		return; // wtf?
         
-    
+    bNoHeadshots = bNoHeadshots && !bIsHeadshot;
+    bAllCanDoHeadshots = bAllCanDoHeadshots && DamType.default.bCheckForHeadShots;
 		
     index = GameRules.GetMonsterIndex(Victim);
         
@@ -1034,5 +1067,8 @@ defaultproperties
 {
     iDoT_Damage=300
 	bOnePlayerPerPerk=true
+	bAllSamePerk=true
     InstantKillTime=0.500000
+    bNoHeadshots=True
+    bAllCanDoHeadshots=True
 }

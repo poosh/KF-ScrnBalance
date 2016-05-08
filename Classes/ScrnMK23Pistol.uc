@@ -1,5 +1,7 @@
 class ScrnMK23Pistol extends MK23Pistol;
 
+
+
 simulated function bool PutDown()
 {
 	if ( Instigator.PendingWeapon.class == class'ScrnBalanceSrv.ScrnDualMK23Pistol' )

@@ -1,16 +1,19 @@
 ﻿Total rebalance of the game. Adds new guns, Gunslinger perk and server-side achievements.
 Now it IS COMPATIBLE with Objective Mode! Select "Objective Mode [ScrN]" for a proper gameplay.
-Version 8.21.
+Version 9.01.
 
 [URL=http://steamcommunity.com/groups/ScrNBalance][IMG]https://dl.dropboxusercontent.com/u/70213558/ButtonSteamGroup.png[/IMG][/URL]  [URL=http://steamcommunity.com/groups/ScrNBalance/discussions/2/610575007206806236/][IMG]https://dl.dropboxusercontent.com/u/70213558/ButtonDownload.png[/IMG][/URL]  [URL=https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=VFARLRAL7CNJ4&lc=LV&item_name=Scrake%20Naders%20Community&item_number=ScrnBalance&currency_code=EUR&bn=PP%2dDonationsBF%3abtn_donateCC_LG%2egif%3aNonHosted][IMG]https://dl.dropboxusercontent.com/u/70213558/ButtonDonate.png[/IMG][/URL]   
+[i]If you have any questions about this mod, then please press "Join Steam Group" button above and post your questions there.[/i]
 
 Main features:
 [list]
 [*] New perk: [b]Gunslinger[/b] (pistols);
-[*] More than 300 custom [b]achievements[/b] can be earned;
+[*] More than 400 custom [b]achievements[/b] can be earned;
 [*] Earn achievements to unlock weapons.
 [*] New weapons: Golden M79 Incendiary, Napalm Thrower, MK23 with laser sights etc.;
 [*] Medic Grenade Launchers: M79M Medic GL, M4-203M Medic Rifle;
+[*] Quick Melee Bash feature.
+[*] Tactical Reload for Commando.
 [*] Chainsaw consumes fuel and brings real massacre to the game;
 [*] Perk bonuses for custom weapons (the ones you can get via workshop);
 [*] Changing gun skings "on-the-fly"
@@ -18,16 +21,18 @@ Main features:
 [*] Alternate Burning Mechanism makes Firebug awesome (but not OP);
 [*] Perks support custom weapons: install a new weapon, add it to the config and receive perk bonuses for that;
 [*] Configurable spawn inventory and weapon prices;
+[*] New HUD (optional);
 [*] Manual Reloading (optional);
 [*] Grenade "Cooking" (optional);
 [*] Show Damage (optional)
+[*] User-defined soundtrack.
 [*] Voting for ending trader time, zed spawn boost etc.
 [*] Configurable max zeds at once on the map. Now you can raise previously hardcoded value of 32 zeds and fight against 100-zed croud!
 [/list]
 Most features are configurable (turn on only what you like).
 
-Detailed info on KF forums:
-[url=http://forums.tripwireinteractive.com/showthread.php?t=80743]http://forums.tripwireinteractive.com/showthread.php?t=80743[/url]
+Detailed info on Group Page:
+[url=http://steamcommunity.com/groups/ScrNBalance/discussions/2/]ScrN Balance News Page[/url]
 
 [url=http://steamcommunity.com/sharedfiles/filedetails/?id=124250783]Guide how to use custom weapons with this mutator[/url]
 

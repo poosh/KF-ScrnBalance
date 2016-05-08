@@ -7,5 +7,5 @@ defaultproperties
     FireAnimRate=0.893333
     FireRate=0.750000
     WideDamageMinHitAngle=0.000000
-    bWaitForRelease=True
+    bWaitForRelease=False
 }

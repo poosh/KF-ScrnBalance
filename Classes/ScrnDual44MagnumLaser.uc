@@ -5,91 +5,37 @@
  */
 
 class ScrnDual44MagnumLaser extends ScrnDual44Magnum
-dependson(ScrnLaserDot)
+dependson(ScrnLocalLaserDot)
 config(user);
 
-var         ScrnLaserDot                Spot, LeftSpot;             // The first person laser site dot
-var()       float                       SpotProjectorPullback;      // Amount to pull back the laser dot projector from the hit location
-var         bool                        bLaserActive;               // The laser site is active
-var         ScrnLaserBeamEffect         Beam, Beam2;                       // Third person laser beam effect
+var const   class<ScrnLocalLaserDot>    LaserDotClass;
+var         ScrnLocalLaserDot           RightDot, LeftDot;             // The first person laser site dot
 
 var()       class<InventoryAttachment>  LaserAttachmentClass;      // First person laser attachment class
-var         Actor                       LaserAttachment, LeftLaserAttachment;           // First person laser attachment
+var         Actor                       RightLaserAttachment, LeftLaserAttachment; // First person laser attachment
 
-var         ScrnLaserDot.ELaserColor    LaserType;       //current laser type
-var         class<ScrnLaserBeamEffect>  LaserBeamClass;  
-var         class<ScrnLaserDot>         LaserDotClass;
+var         byte                        LaserType;       //current laser type
 
-var         bool bCowboyMode;
-
-var 		float 						FireSpotRenrerTime; 		// how long to render spot after weapon fire (after that spot will be put in the center of the screen)
+var 		float 						FireSpotRenrerTime; 		// how long to render RightDot after weapon fire (after that RightDot will be put in the center of the screen)
 
 
 replication
 {
-    reliable if (bNetDirty && Role == ROLE_Authority)
-        bCowboyMode;
-
     reliable if(Role < ROLE_Authority)
         ServerSetLaserType;
 }
 
-function SpawnBeam()
-{
-    if ( Beam == None )
-        Beam = Spawn(LaserBeamClass, self);    
-	if ( Beam2 == None )
-        Beam2 = Spawn(LaserBeamClass, self);
-    
-    if ( Beam != none ) {
-        Beam.MyAttachment = KFWeaponAttachment(ThirdPersonActor);
-    }
-    if ( Beam2 != none ) {
-        Beam2.MyAttachment = KFWeaponAttachment(altThirdPersonActor);
-    }
-}
 
-function DestroyBeam()
-{
-    if (Beam != None)
-        Beam.DelayedDestroy();    
-	if (Beam2 == None)
-        Beam2.DelayedDestroy();
-}
-
-
-simulated function SpawnDot()
-{
-    if (Spot == None)
-        Spot = Spawn(LaserDotClass, self);
-    //set dot texture
-    Spot.SetLaserColor(LaserType);  
-
-    if (LeftSpot == None)
-        LeftSpot = Spawn(LaserDotClass, self);
-    //set dot texture
-    LeftSpot.SetLaserColor(LaserType);	
-}
-
-simulated function PostBeginPlay()
-{
-    super.PostBeginPlay();
-    
-    if (Role == ROLE_Authority) 
-        SpawnBeam();
-}
 
 simulated function Destroyed()
 {
-    if (Spot != None)
-        Spot.Destroy();    
-	if (LeftSpot != None)
-        LeftSpot.Destroy();
+    if (RightDot != None)
+        RightDot.Destroy();    
+	if (LeftDot != None)
+        LeftDot.Destroy();
 
-	DestroyBeam();
-
-    if (LaserAttachment != None)
-        LaserAttachment.Destroy();
+    if (RightLaserAttachment != None)
+        RightLaserAttachment.Destroy();
     if (LeftLaserAttachment != None)
         LeftLaserAttachment.Destroy();
 
@@ -99,151 +45,70 @@ simulated function Destroyed()
 // Use alt fire to switch laser type
 simulated function AltFire(float F)
 {
-    if(ReadyToFire(0))
-    {
-        ToggleLaser();
-    }
-}
-
-// Cowboys don't use moder stuff like laser sights
-// If laser is turned on, cowboy mode will be prohibited until the next reload
-//if player turned off laser before reloading, enable CobwoyMode again
-function AddReloadedAmmo()
-{
-    bCowboyMode = ! bLaserActive;
-
-    super.AddReloadedAmmo();
-}
-
-simulated function WeaponTick(float dt)
-{
-    local Vector StartTrace, EndTrace, X,Y,Z;
-    local Vector HitLocation, HitNormal;
-    local Actor Other;
-    local vector MyEndBeamEffect;
-    local coords C;
-
-    super.WeaponTick(dt);
-
-    if( Role == ROLE_Authority) {
-		if ( Beam != none ) {
-			if( bIsReloading && Beam.MyAttachment != none ) {
-				C = Beam.MyAttachment.GetBoneCoords(Beam.MyAttachmentBone);
-				X = C.XAxis;
-				Y = C.YAxis;
-				Z = C.ZAxis;
-			}
-			else
-				GetViewAxes(X,Y,Z);
-
-			// the to-hit trace always starts right in front of the eye
-			StartTrace = Instigator.Location + Instigator.EyePosition() + X*Instigator.CollisionRadius;
-
-			EndTrace = StartTrace + 65535 * X;
-
-			Other = Trace(HitLocation, HitNormal, EndTrace, StartTrace, true);
-
-			if (Other != None && Other != Instigator && Other.Base != Instigator )
-				MyEndBeamEffect = HitLocation;
-			else
-				MyEndBeamEffect = EndTrace;
-
-			Beam.EndBeamEffect = MyEndBeamEffect;
-			Beam.EffectHitNormal = HitNormal;
-		}
-		if ( Beam2 != none ) {
-			if( bIsReloading && Beam2.MyAttachment != none ) {
-				C = Beam2.MyAttachment.GetBoneCoords(Beam2.MyAttachmentBone);
-				X = C.XAxis;
-				Y = C.YAxis;
-				Z = C.ZAxis;
-			}
-			else
-				GetViewAxes(X,Y,Z);
-
-			// the to-hit trace always starts right in front of the eye
-			StartTrace = Instigator.Location + Instigator.EyePosition() + X*Instigator.CollisionRadius;
-
-			EndTrace = StartTrace + 65535 * X;
-
-			Other = Trace(HitLocation, HitNormal, EndTrace, StartTrace, true);
-
-			if (Other != None && Other != Instigator && Other.Base != Instigator )
-				MyEndBeamEffect = HitLocation;
-			else
-				MyEndBeamEffect = EndTrace;
-
-			Beam2.EndBeamEffect = MyEndBeamEffect;
-			Beam2.EffectHitNormal = HitNormal;
-		}	
-    }
+    ToggleLaser();
 }
 
 //bring Laser to current state, which is indicating by LaserType 
 simulated function ApplyLaserState()
 {
-    if( !Instigator.IsLocallyControlled() ) 
-		return;
-		
-    if( Role < ROLE_Authority  ) {
+    if( Role < ROLE_Authority  )
         ServerSetLaserType(LaserType);
-    }
-    bLaserActive = LaserType != LASER_None;
-    if ( bLaserActive ) bCowboyMode = false;
 
-    if( Beam != none )
-        Beam.SetLaserColor(LaserType);
-    if( Beam2 != none )
-        Beam2.SetLaserColor(LaserType);
-
-    if( bLaserActive ) {
-        //spawn 1-st person laser attachment for weapon owner
-        ConstantColor'ScrnTex.Laser.LaserColor'.Color = 
-            class'ScrnLaserDot'.static.GetLaserColor(LaserType);
+    if ( ThirdPersonActor != none )
+        ScrnLaserDualWeaponAttachment(ThirdPersonActor).SetLaserType(LaserType);
+    if ( altThirdPersonActor != none )
+        ScrnLaserDualWeaponAttachment(altThirdPersonActor).SetLaserType(LaserType);
         
-        if ( LaserAttachment == none ) {
-            //Log("Magnum44 Bone rotation = " $ GetBoneRotation('Tip_Right'));
-            LaserAttachment = Spawn(LaserAttachmentClass,self,,,);
-            AttachToBone(LaserAttachment,'Tip_Right');
+    if ( !Instigator.IsLocallyControlled() )
+        return;
+        
+    if( LaserType > 0 ) {
+        if (RightDot == None)
+            RightDot = Spawn(LaserDotClass, self);
+        if (LeftDot == None)
+            LeftDot = Spawn(LaserDotClass, self);
+        RightDot.SetLaserType(LaserType);  
+        LeftDot.SetLaserType(LaserType);
+        // adjust 1-st person laser color
+        ConstantColor'ScrnTex.Laser.LaserColor'.Color = LeftDot.GetLaserColor();
+        if ( RightLaserAttachment == none ) {
+            RightLaserAttachment = Spawn(LaserAttachmentClass,self,,,);
+            AttachToBone(RightLaserAttachment,'Tip_Right');
         }
-        LaserAttachment.bHidden = false;
-		
         if ( LeftLaserAttachment == none ) {
-            //Log("Magnum44 Bone rotation = " $ GetBoneRotation('Tip_Right'));
             LeftLaserAttachment = Spawn(LaserAttachmentClass,self,,,);
             AttachToBone(LeftLaserAttachment,'Tip_Left');
         }
-        LeftLaserAttachment.bHidden = false;		
-
-        SpawnDot();
+		RightLaserAttachment.bHidden = false;
+		LeftLaserAttachment.bHidden = false;
     }
     else {
-        if ( LaserAttachment != none ) 
-            LaserAttachment.bHidden = true;
+        if ( RightLaserAttachment != none ) 
+            RightLaserAttachment.bHidden = true;
         if ( LeftLaserAttachment != none ) 
             LeftLaserAttachment.bHidden = true;
-        if (Spot != None) 
-            Spot.Destroy();
-        if (LeftSpot != None) 
-            LeftSpot.Destroy();
+        if (RightDot != None) 
+            RightDot.Destroy();
+        if (LeftDot != None) 
+            LeftDot.Destroy();
     }
 }
 // Toggle laser on or off
 simulated function ToggleLaser()
 {
-    if( !Instigator.IsLocallyControlled() ) return;
+    if( !Instigator.IsLocallyControlled() ) 
+        return;
 
-    if (bLaserActive) LaserType = LASER_None;
-    else LaserType = LASER_Orange;
+    if ( LaserType == 0 ) 
+        LaserType = 4; // orange
+    else 
+        LaserType = 0;
 
     ApplyLaserState();
 }
 
 simulated function BringUp(optional Weapon PrevWeapon)
 {
-    if (Role == ROLE_Authority)
-        SpawnBeam();
-        
     ApplyLaserState();
     Super.BringUp(PrevWeapon);
 }
@@ -251,18 +116,13 @@ simulated function BringUp(optional Weapon PrevWeapon)
 simulated function bool PutDown()
 {
     TurnOffLaser();
-	DestroyBeam();
-
     return super.PutDown();
 }
 
 simulated function DetachFromPawn(Pawn P)
 {
     TurnOffLaser();
-
     Super.DetachFromPawn(P);
-
-	DestroyBeam();
 }
 
 simulated function TurnOffLaser()
@@ -270,75 +130,43 @@ simulated function TurnOffLaser()
     if( !Instigator.IsLocallyControlled() )
         return;
 
-        if( Role < ROLE_Authority  ) {
-            ServerSetLaserType(LASER_None);
-        }
+    if( Role < ROLE_Authority  )
+        ServerSetLaserType(0);
 
-        bLaserActive = false;
-        //don't change Laser type here, because we need to restore it state 
-        //when next time weapon will be brought up
-        if ( LaserAttachment != none )
-            LaserAttachment.bHidden = true;
-        if ( LeftLaserAttachment != none )
-            LeftLaserAttachment.bHidden = true;
+    //don't change Laser type here, because we need to restore it state 
+    //when next time weapon will be brought up
+    if ( RightLaserAttachment != none )
+        RightLaserAttachment.bHidden = true;
+    if ( LeftLaserAttachment != none )
+        LeftLaserAttachment.bHidden = true;
 
-        if( Beam != none )
-            Beam.SetActive(false);
-        if( Beam2 != none )
-            Beam2.SetActive(false);
-
-        if (Spot != None)
-            Spot.Destroy();
-        if (LeftSpot != None)
-            LeftSpot.Destroy();
+    if (RightDot != None)
+        RightDot.Destroy();
+    if (LeftDot != None)
+        LeftDot.Destroy();
 }
 
 
 
 // Set the new fire mode on the server
-function ServerSetLaserType(ScrnLaserDot.ELaserColor NewLaserType)
+function ServerSetLaserType(byte NewLaserType)
 {
     LaserType = NewLaserType;
-    bLaserActive = NewLaserType != LASER_None;
-    if ( bLaserActive ) 
-        bCowboyMode = false;
-
-    if( NewLaserType != LASER_None )
-    {
-        SpawnBeam();
-        if( Beam != none )
-            Beam.SetLaserColor(NewLaserType);
-        if( Beam2 != none )
-            Beam2.SetLaserColor(NewLaserType);
-
-        bLaserActive = true;
-        SpawnDot();
-    }
-    else  {
-        if( Beam != none )
-            Beam.SetLaserColor(LASER_None);
-        if( Beam2 != none )
-            Beam2.SetLaserColor(LASER_None);      
-            
-        bLaserActive = false;
-        if (Spot != None)
-            Spot.Destroy();
-        if (LeftSpot != None)
-            LeftSpot.Destroy();
-    }
+    ScrnLaserDualWeaponAttachment(ThirdPersonActor).SetLaserType(LaserType);   
+    ScrnLaserDualWeaponAttachment(altThirdPersonActor).SetLaserType(LaserType);   
 }
 
 
-//copy-pasted from M14EBR
 simulated function RenderOverlays( Canvas Canvas )
 {
-    local int m;
+    local int i;
     local Vector StartTrace, EndTrace;
     local Vector HitLocation, HitNormal;
     local Actor Other;
     local vector X,Y,Z;
     local coords C;
 	local KFFire KFM;
+    local array<Actor> HitActors;
 
     if (Instigator == None)
         return;
@@ -351,12 +179,9 @@ simulated function RenderOverlays( Canvas Canvas )
 
     // draw muzzleflashes/smoke for all fire modes so idle state won't
     // cause emitters to just disappear
-    for (m = 0; m < NUM_FIRE_MODES; m++)
-    {
-        if (FireMode[m] != None)
-        {
-            FireMode[m].DrawMuzzleFlash(Canvas);
-        }
+    for ( i = 0; i < NUM_FIRE_MODES; ++i ) {
+        if (FireMode[i] != None)
+            FireMode[i].DrawMuzzleFlash(Canvas);
     }
 	
 	KFM = KFFire(FireMode[0]);
@@ -364,101 +189,113 @@ simulated function RenderOverlays( Canvas Canvas )
     SetLocation( Instigator.Location + Instigator.CalcDrawOffset(self) );
     SetRotation( Instigator.GetViewRotation() + ZoomRotInterp);
 
+    
     // Handle drawing the laser dot
-    if (Spot != None)
+    if ( RightDot != None )
     {
-        StartTrace = Instigator.Location + Instigator.EyePosition();
-        GetViewAxes(X, Y, Z);
-
-        //move spot on weapon recoil too -- PooSH
-        if( Instigator.IsLocallyControlled() && (bIsReloading || (Level.TimeSeconds < KFM.LastFireTime + FireSpotRenrerTime
-			&& ( (!bAimingRifle && KFM.FireAnim == 'FireLeft') 
-				 || (bAimingRifle && KFM.FireAimedAnim == 'FireLeft_Iron') ) )) )
-        {
+        //move RightDot during fire animation too  -- PooSH
+        if( bIsReloading || (Level.TimeSeconds < KFM.LastFireTime + FireSpotRenrerTime
+			&& ((!bAimingRifle && KFM.FireAnim == 'FireLeft') 
+				 || (bAimingRifle && KFM.FireAimedAnim == 'FireLeft_Iron'))) )
+		{
             C = GetBoneCoords('Tip_Right');
             X = C.XAxis;
             Y = C.YAxis;
             Z = C.ZAxis;
         }
+        else 
+            GetViewAxes(X, Y, Z);
 
+        StartTrace = Instigator.Location + Instigator.EyePosition();
         EndTrace = StartTrace + 65535 * X;
 
-        Other = Trace(HitLocation, HitNormal, EndTrace, StartTrace, true);
+        while (true) {
+            Other = Trace(HitLocation, HitNormal, EndTrace, StartTrace, true);
+            if ( ROBulletWhipAttachment(Other) != none ) {
+                HitActors[HitActors.Length] = Other;
+                Other.SetCollision(false);
+                StartTrace = HitLocation + X;
+            }
+            else {
+                if (Other != None && Other != Instigator && Other.Base != Instigator )
+                    EndBeamEffect = HitLocation;
+                else
+                    EndBeamEffect = EndTrace;
+                break;
+            }
+        }
+        // restore collision
+        for ( i=0; i<HitActors.Length; ++i )
+            HitActors[i].SetCollision(true);
 
-        if (Other != None && Other != Instigator && Other.Base != Instigator )
-        {
-            EndBeamEffect = HitLocation;
-        }
-        else
-        {
-            EndBeamEffect = EndTrace;
-        }
+        RightDot.SetLocation(EndBeamEffect - X*RightDot.ProjectorPullback);
 
-        Spot.SetLocation(EndBeamEffect - X*SpotProjectorPullback);
-
-        if(  Pawn(Other) != none )
-        {
-            Spot.SetRotation(Rotator(X));
-            Spot.SetDrawScale(Spot.default.DrawScale * 0.5);
+        if(  Pawn(Other) != none ) {
+            RightDot.SetRotation(Rotator(X));
+            RightDot.SetDrawScale(RightDot.default.DrawScale * 0.5);
         }
-        else if( HitNormal == vect(0,0,0) )
-        {
-            Spot.SetRotation(Rotator(-X));
-            Spot.SetDrawScale(Spot.default.DrawScale);
+        else if( HitNormal == vect(0,0,0) ) {
+            RightDot.SetRotation(Rotator(-X));
+            RightDot.SetDrawScale(RightDot.default.DrawScale);
         }
-        else
-        {
-            Spot.SetRotation(Rotator(-HitNormal));
-            Spot.SetDrawScale(Spot.default.DrawScale);
+        else {
+            RightDot.SetRotation(Rotator(-HitNormal));
+            RightDot.SetDrawScale(RightDot.default.DrawScale);
         }
     }
-    if (LeftSpot != None)
+    
+    if ( LeftDot != None )
     {
-        StartTrace = Instigator.Location + Instigator.EyePosition();
-        GetViewAxes(X, Y, Z);
-
-        //move LeftSpot on weapon recoil too -- PooSH
-        if( Instigator.IsLocallyControlled() && (bIsReloading || (Level.TimeSeconds < KFM.LastFireTime + FireSpotRenrerTime
-			&& ( (!bAimingRifle && KFM.FireAnim == 'FireRight') 
-				 || (bAimingRifle && KFM.FireAimedAnim == 'FireRight_Iron') ) )) )
-        {
+        //move LeftDot during fire animation too  -- PooSH
+        if( bIsReloading || (Level.TimeSeconds < KFM.LastFireTime + FireSpotRenrerTime
+			&& ((!bAimingRifle && KFM.FireAnim == 'FireRight') 
+				 || (bAimingRifle && KFM.FireAimedAnim == 'FireRight_Iron'))) )
+		{
             C = GetBoneCoords('Tip_Left');
             X = C.XAxis;
             Y = C.YAxis;
             Z = C.ZAxis;
         }
+        else 
+            GetViewAxes(X, Y, Z);
 
+        StartTrace = Instigator.Location + Instigator.EyePosition();
         EndTrace = StartTrace + 65535 * X;
 
-        Other = Trace(HitLocation, HitNormal, EndTrace, StartTrace, true);
+        while (true) {
+            Other = Trace(HitLocation, HitNormal, EndTrace, StartTrace, true);
+            if ( ROBulletWhipAttachment(Other) != none ) {
+                HitActors[HitActors.Length] = Other;
+                Other.SetCollision(false);
+                StartTrace = HitLocation + X;
+            }
+            else {
+                if (Other != None && Other != Instigator && Other.Base != Instigator )
+                    EndBeamEffect = HitLocation;
+                else
+                    EndBeamEffect = EndTrace;
+                break;
+            }
+        }
+        // restore collision
+        for ( i=0; i<HitActors.Length; ++i )
+            HitActors[i].SetCollision(true);
 
-        if (Other != None && Other != Instigator && Other.Base != Instigator )
-        {
-            EndBeamEffect = HitLocation;
-        }
-        else
-        {
-            EndBeamEffect = EndTrace;
-        }
+        LeftDot.SetLocation(EndBeamEffect - X*LeftDot.ProjectorPullback);
 
-        LeftSpot.SetLocation(EndBeamEffect - X*SpotProjectorPullback);
-
-        if(  Pawn(Other) != none )
-        {
-            LeftSpot.SetRotation(Rotator(X));
-            LeftSpot.SetDrawScale(LeftSpot.default.DrawScale * 0.5);
+        if(  Pawn(Other) != none ) {
+            LeftDot.SetRotation(Rotator(X));
+            LeftDot.SetDrawScale(LeftDot.default.DrawScale * 0.5);
         }
-        else if( HitNormal == vect(0,0,0) )
-        {
-            LeftSpot.SetRotation(Rotator(-X));
-            LeftSpot.SetDrawScale(LeftSpot.default.DrawScale);
+        else if( HitNormal == vect(0,0,0) ) {
+            LeftDot.SetRotation(Rotator(-X));
+            LeftDot.SetDrawScale(LeftDot.default.DrawScale);
         }
-        else
-        {
-            LeftSpot.SetRotation(Rotator(-HitNormal));
-            LeftSpot.SetDrawScale(LeftSpot.default.DrawScale);
+        else {
+            LeftDot.SetRotation(Rotator(-HitNormal));
+            LeftDot.SetDrawScale(LeftDot.default.DrawScale);
         }
-    }	
+    }    
 
     //PreDrawFPWeapon();    // Laurent -- Hook to override things before render (like rotation if using a staticmesh)
 
@@ -567,15 +404,14 @@ function GiveTo( pawn Other, optional Pickup Pickup )
 defaultproperties
 {
      LaserAttachmentClass=Class'ScrnBalanceSrv.ScrnLaserAttachmentFirstPerson'
-     LaserBeamClass=Class'ScrnBalanceSrv.ScrnLaserBeamEffect'
-     LaserDotClass=Class'ScrnBalanceSrv.ScrnLaserDot'
-     bCowboyMode=True
+     LaserDotClass=Class'ScrnBalanceSrv.ScrnLocalLaserDot'
      Weight=5.000000
      bIsTier3Weapon=True
      Description="Yeah! One in each hand! Now with laser attachment."
      DemoReplacement=None
      InventoryGroup=4
      PickupClass=Class'ScrnBalanceSrv.ScrnDual44MagnumLaserPickup'
+     AttachmentClass=Class'ScrnBalanceSrv.ScrnDual44MagnumLaserAttachment'
      ItemName="Laser Dual 44 Magnums"
 	 FireSpotRenrerTime=1.0
      MagAmmoRemaining=12

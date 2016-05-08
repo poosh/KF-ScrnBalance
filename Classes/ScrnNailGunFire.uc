@@ -16,6 +16,7 @@ function projectile SpawnProjectile(Vector Start, Rotator Dir)
         nail.ach_Nail100m = w.ach_Nail100m;
         nail.ach_NailToWall = w.ach_NailToWall;
         nail.ach_PushShiver = w.ach_PushShiver;
+        nail.ach_ProNailer = w.ach_ProNailer;
     }
     return p;
 }
@@ -71,10 +72,10 @@ function ModeDoFire()
 
 defaultproperties
 {
-    SingleSpread=0.500000
+    SingleSpread=0.20
     ProjPerFire=1
     AmmoClass=Class'ScrnBalanceSrv.ScrnNailGunAmmo'
-    AmmoPerFire=5
+    AmmoPerFire=7
     ProjectileClass=Class'ScrnBalanceSrv.ScrnNailGunProjectile'
     Spread=1250.000000
     FireRate=0.40 // 0.50

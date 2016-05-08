@@ -253,6 +253,7 @@ defaultproperties
 	 OnHUDIcons(3)=(PerkIcon=Texture'ScrnTex.Perks.Perk_Firebug_Blue',StarIcon=Texture'ScrnTex.Perks.Hud_Perk_Star_Blue',DrawColor=(B=255,G=255,R=255,A=255))
 	 OnHUDIcons(4)=(PerkIcon=Texture'ScrnTex.Perks.Perk_Firebug_Purple',StarIcon=Texture'ScrnTex.Perks.Hud_Perk_Star_Purple',DrawColor=(B=255,G=255,R=255,A=255))
 	 OnHUDIcons(5)=(PerkIcon=Texture'ScrnTex.Perks.Perk_Firebug_Orange',StarIcon=Texture'ScrnTex.Perks.Hud_Perk_Star_Orange',DrawColor=(B=255,G=255,R=255,A=255))
+	 OnHUDIcons(6)=(PerkIcon=Texture'ScrnTex.Perks.Perk_Firebug_Blood',StarIcon=Texture'ScrnTex.Perks.Hud_Perk_Star_Blood',DrawColor=(B=255,G=255,R=255,A=255))
      VeterancyName="Firebug"
      Requirements(0)="Deal %x damage with the Flamethrower"
 }

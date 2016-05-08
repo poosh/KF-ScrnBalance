@@ -182,4 +182,16 @@ defaultproperties
 
 	AchDefs(128)=(id="MeleeKillMidairCrawlers",DisplayName="My Kung Fu is Awesome",Description="Melee-hit %c Crawlers in midair without taking damage",Icon=Texture'ScrnAch_T.Achievements.MeleeCrawler',MaxProgress=50,DataSize=6,Group="MASTER")
 	AchDefs(129)=(id="GunslingerSC",DisplayName="Two Bloody Handsome",Description="Kill %c Scrakes with Dual HC/.44 without taking damage",Icon=Texture'ScrnAch_T.Master.GunslingerSC',MaxProgress=50,DataSize=6,Group="MASTER")
+	// v9
+    AchDefs(130)=(id="ProNailer",DisplayName="Pro-Nailer",Description="Decapitate zed with nail ricochet",Icon=Texture'ScrnAch_T.Master.ProNailer',MaxProgress=1,DataSize=1,Group="MASTER")
+    AchDefs(131)=(id="TW_NoHeadshots",DisplayName="Hitboxes Are TOTALLY Overrated",Description="Survive 2+player game without scoring any headshots",Icon=Texture'ScrnAch_T.Teamwork.NoobAlert',MaxProgress=1,DataSize=1,Group="TW")
+    AchDefs(132)=(id="TW_SkullCrackers",DisplayName="SkullCrackers",Description="Survive 2+player game by only using weapons that are capable of doing headshots (no nades, fire etc.)",Icon=Texture'ScrnAch_T.Teamwork.SkullCrackers',MaxProgress=1,DataSize=1,Group="TW")
+    AchDefs(133)=(id="OP_Medic",DisplayName="Is Medic OP?",Description="Survive 3+player game where everybody is playing Medic",Icon=Texture'ScrnAch_T.Teamwork.OP_Medic',MaxProgress=1,DataSize=1,Group="TW")
+    AchDefs(134)=(id="OP_Support",DisplayName="Is Support OP?",Description="Survive 3+player game where everybody is playing Support",Icon=Texture'ScrnAch_T.Teamwork.OP_Support',MaxProgress=1,DataSize=1,Group="TW")
+    AchDefs(135)=(id="OP_Sharpshooter",DisplayName="Is Sharpshooter OP?",Description="Survive 3+player game where everybody is playing Sharpshooter",Icon=Texture'ScrnAch_T.Teamwork.OP_Sharpshooter',MaxProgress=1,DataSize=1,Group="TW")
+    AchDefs(136)=(id="OP_Commando",DisplayName="Is Commando OP?",Description="Survive 3+player game where everybody is playing Commando",Icon=Texture'ScrnAch_T.Teamwork.OP_Commando',MaxProgress=1,DataSize=1,Group="TW")
+    AchDefs(137)=(id="OP_Berserker",DisplayName="Is Berserker OP?",Description="Survive 3+player game where everybody is playing Berserker",Icon=Texture'ScrnAch_T.Teamwork.OP_Berserker',MaxProgress=1,DataSize=1,Group="TW")
+    AchDefs(138)=(id="OP_Firebug",DisplayName="Is Firebug OP?",Description="Survive 3+player game where everybody is playing Firebug",Icon=Texture'ScrnAch_T.Teamwork.OP_Firebug',MaxProgress=1,DataSize=1,Group="TW")
+    AchDefs(139)=(id="OP_Demo",DisplayName="Is Demo OP?",Description="Survive 3+player game where everybody is playing Demolition",Icon=Texture'ScrnAch_T.Teamwork.OP_Demo',MaxProgress=1,DataSize=1,Group="TW")
+    AchDefs(140)=(id="OP_Gunslinger",DisplayName="Is Gunslinger OP?",Description="Survive 3+player game where everybody is playing Gunslinger",Icon=Texture'ScrnAch_T.Teamwork.OP_Gunslinger',MaxProgress=1,DataSize=1,Group="TW")
 }

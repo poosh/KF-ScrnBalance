@@ -2,7 +2,7 @@ class ScrnHumanPawn extends SRHumanPawn;
 
 var float HealthRestoreRate; // how fast player can be healed (hp/s)
 var float HealthToGiveRemainder; // pawn receives integer amount of hp. remainder should be moved to next healing tick 
-var float ClientHealthToGive; //required for client replication
+var byte ClientHealthToGive; //required for client replication
 
 
 var const class<ScrnVestPickup> NoVestClass;            // dummy class that indicates player has no armor
@@ -54,14 +54,24 @@ var transient bool bAmIBaron; // :trollface:
 // spectator info
 var bool bViewTarget; // somebody spectating me
 var class<KFWeapon> SpecWeapon; 
+var byte AmmoStatus;
 var byte SpecWeight, SpecMagAmmo, SpecMags, SpecSecAmmo, SpecNades;
 
 var     transient Frag          PlayerGrenade;
+
+var bool bTraderSpeedBoost;
+var float TraderSpeedBoost;
+
+var transient KFMeleeGun QuickMeleeWeapon;
+var transient KFWeapon WeaponToFixClientState;
 
 replication
 {
     reliable if( bNetOwner && Role == ROLE_Authority )
         ClientSetInventoryGroup;
+        
+    reliable if( bNetOwner && Role == ROLE_Authority )
+        QuickMeleeWeapon;
         
     reliable if( Role == ROLE_Authority )
         ClientSetVestClass; //send it to all clients, cuz they need to know max health and max shield
@@ -69,8 +79,10 @@ replication
     reliable if( bNetDirty && Role == ROLE_Authority )
         ClientHealthToGive, HealthBonus; // all clients  need to know it to properly display it on the hud
         
+    reliable if( bNetDirty && Role == ROLE_Authority )
+        SpecWeapon, AmmoStatus;
     reliable if( bNetDirty && bViewTarget && Role == ROLE_Authority )
-        SpecWeapon, SpecWeight, SpecMagAmmo, SpecMags, SpecSecAmmo, SpecNades; 
+        SpecWeight, SpecMagAmmo, SpecMags, SpecSecAmmo, SpecNades; 
     
     // seem like that there is no need to replicate bCowboyMode, because it is used only on local player,
     // which can set it himself
@@ -97,6 +109,8 @@ simulated function PostBeginPlay()
 
     HealthMax += HealthBonus;
     Health += HealthBonus;
+    
+    bTraderSpeedBoost = class'ScrnBalance'.default.Mut.bTraderSpeedBoost;
 }
 
 function ReplaceRequiredEquipment()
@@ -110,6 +124,8 @@ function ReplaceRequiredEquipment()
 	if ( KFStoryGameInfo(Level.Game) != none ) {
 		StoryRules = KFStoryGameInfo(Level.Game).StoryRules;
 		for ( i = 0; i < StoryRules.RequiredPlayerEquipment.Length; ++i ) {
+			if ( StoryRules.RequiredPlayerEquipment[i] == Class'KFMod.Knife' )
+				StoryRules.RequiredPlayerEquipment[i] = class'ScrnBalanceSrv.ScrnKnife';
 			if ( Mut.bGunslinger && StoryRules.RequiredPlayerEquipment[i] == Class'KFMod.Single' )
 				StoryRules.RequiredPlayerEquipment[i] = class'ScrnBalanceSrv.ScrnSingle';
 			else if ( Mut.bReplaceNades && StoryRules.RequiredPlayerEquipment[i] == Class'KFMod.Frag' )
@@ -123,6 +139,8 @@ function ReplaceRequiredEquipment()
             RequiredEquipment[i] = "";
     }
 	else {
+        RequiredEquipment[0] = String(class'ScrnBalanceSrv.ScrnKnife');
+        
 		if ( Mut.bGunslinger )
 			RequiredEquipment[1] = String(class'ScrnBalanceSrv.ScrnSingle');
 
@@ -195,7 +213,10 @@ simulated function ModifyVelocity(float DeltaTime, vector OldVelocity)
 				GroundSpeed = StoryInv.ForcedGroundSpeed;
 				return;
 			}
-        }		
+        }	
+
+        if ( bTraderSpeedBoost && !KFGameReplicationInfo(Level.GRI).bWaveInProgress )
+            GroundSpeed *= TraderSpeedBoost;
     }
 	
 	
@@ -248,6 +269,8 @@ simulated function ClientSetInventoryGroup( class<Inventory> NewInventoryClass, 
 // }
 
 
+
+
 function bool AddInventory( inventory NewItem )
 {
     local KFWeapon weap;
@@ -281,12 +304,58 @@ function bool AddInventory( inventory NewItem )
         ClientSetInventoryGroup(NewItem.class, NewItem.InventoryGroup); 
     
     if ( super.AddInventory(NewItem) ) {
-		// v6.22 - each weapon has own flashlight
-		if ( weap != none && weap.bTorchEnabled )
-			AddToFlashlightArray(weap.class);
+		if ( weap != none ) {
+            if ( weap.bTorchEnabled )
+                AddToFlashlightArray(weap.class); // v6.22 - each weapon has own flashlight
+            CheckQuickMeleeWeapon(KFMeleeGun(weap));
+        }
         return true;
     }
     return false;
+}
+
+function DeleteInventory( inventory Item )
+{
+    super.DeleteInventory(Item);
+    if ( Item == QuickMeleeWeapon ) {
+        QuickMeleeWeapon = none;
+        SetBestQuickMeleeWeapon();
+    }
+}
+
+// todo: add support for modded guns
+function bool ValidQuickMeleeWeapon(KFMeleeGun W) 
+{
+    if ( W == none )
+        return false;
+    
+    return ScrnKnife(W) != none || ScrnMachete(W) != none;
+}
+
+function bool CheckQuickMeleeWeapon(KFMeleeGun W)
+{
+    if ( !ValidQuickMeleeWeapon(W) )
+        return false;
+        
+    if ( QuickMeleeWeapon == none || class<KFMeleeFire>(QuickMeleeWeapon.FireModeClass[1]).default.MeleeDamage < 
+            class<KFMeleeFire>(W.FireModeClass[1]).default.MeleeDamage ) 
+    {
+        QuickMeleeWeapon = W;
+        return true;
+    }
+    return false;
+}
+
+function SetBestQuickMeleeWeapon() 
+{
+	local inventory inv;
+    local KFMeleeGun W;
+
+    for ( inv = Inventory; inv != none; inv = inv.Inventory) {
+        W = KFMeleeGun(inv);
+        if ( W != none )
+            CheckQuickMeleeWeapon(W);
+    }
 }
 
 // The player wants to switch to weapon group number F.
@@ -480,10 +549,10 @@ simulated function ApplyWeaponStats(Weapon NewWeapon)
         }
     }
 
-    
+    SetAmmoStatus();
     if ( KFPRI != none && Weap != none ) {
 		Weap.bIsTier3Weapon = Weap.default.bIsTier3Weapon; // restore default value from the hack in AddInventory()
-		
+        
         if ( Weap.bSpeedMeUp ) {
             if ( KFPRI.ClientVeteranSkill != none )
                 BaseMeleeIncrease += KFPRI.ClientVeteranSkill.Static.GetMeleeMovementSpeedModifier(KFPRI);
@@ -493,14 +562,14 @@ simulated function ApplyWeaponStats(Weapon NewWeapon)
         if ( ScrnPerk != none ) {
             InventorySpeedModifier += 
                 default.GroundSpeed * ScrnPerk.static.GetWeaponMovementSpeedBonus(KFPRI, NewWeapon);
-			MaxCarryWeight = default.MaxCarryWeight + ScrnPerk.Static.AddCarryMaxWeight(KFPRI);
-			if ( CurrentWeight > MaxCarryWeight )
-				FixOverweight();
+            MaxCarryWeight = default.MaxCarryWeight + ScrnPerk.Static.AddCarryMaxWeight(KFPRI);
+            if ( CurrentWeight > MaxCarryWeight )
+                FixOverweight();
         }
-        
         // ScrN Armor can slow down players (or even boost) -- PooSH
         InventorySpeedModifier -= default.GroundSpeed * CurrentVestClass.default.SpeedModifier;
-    }  
+    } 
+       
 
     //fix spawn offsets for projectile fire modes
     //exclude healing nades, cuz they detonate on instigator too
@@ -877,7 +946,7 @@ function AddDefaultInventory()
     
     // make sure players have at least knife, when admin screwed up the config
     if ( Inventory == none && KFSPGameType(Level.Game) == none ) {
-        CreateInventory("KFMod.Knife");
+        CreateInventory("ScrnBalanceSrv.ScrnKnife");
         if ( Inventory != none ) {
             Inventory.OwnerEvent('LoadOut');
             Controller.ClientSwitchToBestWeapon();
@@ -1244,10 +1313,30 @@ function ServerBuyWeapon( Class<Weapon> WClass, float ItemWeight )
 // allows to adjust player's health
 function bool GiveHealth(int HealAmount, int HealMax)
 {
-	if ( KFPRI != none && class<ScrnVeterancyTypes>(KFPRI.ClientVeteranSkill) != none ) {
-        HealthMax = (default.HealthMax + HealthBonus) * class<ScrnVeterancyTypes>(KFPRI.ClientVeteranSkill).static.HealthMaxMult(KFPRI, self);
-	}
-    return super.GiveHealth(HealAmount, HealthMax);
+	if (ScrnPerk != none )
+        HealthMax = (default.HealthMax + HealthBonus) * ScrnPerk.static.HealthMaxMult(KFPRI, self);
+    
+    if( BurnDown > 0 ) {
+        if( BurnDown > 1 )
+            BurnDown *= 0.5;
+        LastBurnDamage *= 0.5;
+    }
+
+    // Don't let them heal more than the max health
+    if( HealAmount + HealthToGive + Health  > HealthMax ) {
+        healAmount = HealthMax - (Health + HealthToGive);
+
+        if( healAmount == 0 )
+            return false;
+    }
+
+    if( Health < HealMax ) {
+        HealthToGive+=HealAmount;
+        ClientHealthToGive = HealthToGive;
+        lastHealTime = level.timeSeconds;
+        return true;
+    }
+    return false;    
 }
 
 // returns true, if player is using medic perk
@@ -1268,7 +1357,6 @@ function TakeHealing(ScrnHumanPawn Healer, int HealAmount, float HealPotency, op
 
     if ( GiveHealth(HealAmount, HealthMax) ) {
         HealthRestoreRate = fmax(default.HealthRestoreRate * HealPotency, 1);
-        ClientHealthToGive = HealthToGive;
 
         if ( LastHealedBy != Healer ) {
             LastHealedBy = Healer;
@@ -1287,6 +1375,7 @@ function TakeHealing(ScrnHumanPawn Healer, int HealAmount, float HealPotency, op
             }
         }
     }
+    ClientHealthToGive = HealthToGive;
 }
 
 
@@ -1326,7 +1415,7 @@ simulated function AddHealth()
             lastHealTime = level.timeSeconds;
             // if we are all healed, there's no more healing gonna be
             HealthToGive = 0;
-            ClientHealthToGive = HealthToGive;
+            ClientHealthToGive = 0;
             HealthToGiveRemainder = 0;
         }
     }
@@ -1339,11 +1428,31 @@ function Timer()
     
     super.Timer();
     // tick down health if it's greater than max
-    if ( Health > HealthMax )
-        Health--;
-		
-	// make each weapon have own flashlight battery
-	ApplyWeaponFlashlight(true);
+    if ( Health > HealthMax ) {
+        if (Health > 200)
+            Health-=5;
+        else 
+            Health-=2;
+        if (Health < HealthMax)
+            Health = HealthMax;
+    }
+    SetAmmoStatus();
+    ApplyWeaponFlashlight(true);
+}
+
+function SetAmmoStatus()
+{
+    if ( KFWeapon(Weapon) == none ) {
+        SpecWeapon = none;
+        AmmoStatus = 0;
+    }
+    else {
+        SpecWeapon = KFWeapon(Weapon).class;
+        if (Weapon.MaxAmmo(0) <= 0)
+            AmmoStatus = 0;
+        else 
+            AmmoStatus = clamp(255 * Weapon.AmmoAmount(0) / Weapon.MaxAmmo(0), 1, 255);        
+    }
 }
 
 simulated function Tick(float DeltaTime)
@@ -1353,9 +1462,20 @@ simulated function Tick(float DeltaTime)
     else if ( KFPRI == none )
         KFPRI = KFPlayerReplicationInfo(PlayerReplicationInfo);
     
+    if( HealthToGive < 0 ) {
+        HealthToGive = 0;
+        ClientHealthToGive = 0;
+    }
+    
+    if ( WeaponToFixClientState != none ) {
+        WeaponToFixClientState.ClientState = WS_Hidden;
+        WeaponToFixClientState.SetTimer(0, false);
+        WeaponToFixClientState = none;
+    }
+    
     AlphaAmount = 255; // hack to avoid KFHumanPawn of updating KFPRI.ThreeSecondScore
     super.Tick(DeltaTime);
-    
+
     bCowboyMode = bCowboyMode && ShieldStrength < 26;
     if ( Role < ROLE_Authority ) {
         if ( KFPRI != none && PrevPerkClass != KFPRI.ClientVeteranSkill ) {
@@ -1365,8 +1485,7 @@ simulated function Tick(float DeltaTime)
     }
     
     if ( bViewTarget )
-        UpdateSpecInfo();    
-        
+        UpdateSpecInfo(); 
 }
 
    
@@ -1468,19 +1587,89 @@ function ThrowCookedGrenade()
 
 function ThrowGrenade()
 {
-    if (SecondaryItem != none)
+    local KFWeapon KFW; 
+    
+    if ( bThrowingNade || SecondaryItem != none )
+        return;    
+        
+    KFW = KFWeapon(Weapon);
+    if ( KFW == none || KFW.GetFireMode(0).NextFireTime - Level.TimeSeconds > 0.1 
+            || (KFW.bIsReloading && !KFW.InterruptReload()) )
+        return;
+             
+
+    if ( PlayerGrenade == none )
+        PlayerGrenade = FindPlayerGrenade();
+    if ( PlayerGrenade != none && PlayerGrenade.HasAmmo() ) {
+        KFW.ClientGrenadeState = GN_TempDown;
+        KFW.PutDown();
+    }
+}
+
+function QuickMelee()
+{
+    local KFWeapon KFW; 
+
+    if ( bThrowingNade )
+        return;   
+        
+    KFW = KFWeapon(Weapon);
+    if ( KFW == none || KFW.GetFireMode(0).NextFireTime - Level.TimeSeconds > 0.1 
+            // || KFW.ClientState != WS_ReadyToFire
+            || (KFW.bIsReloading && !KFW.InterruptReload()) )
         return;
         
-    super.ThrowGrenade();
+    if ( QuickMeleeWeapon != none && Weapon == QuickMeleeWeapon && QuickMeleeWeapon.IsInState('QuickMelee') ) {
+        QuickMeleeWeapon.GotoState('');
+        return;
+    }
+    
+    if ( KFMeleeGun(KFW) != none ) {
+        AltFire();
+        return;
+    }
+
+    
+    if ( SecondaryItem == none && QuickMeleeWeapon != none ) {
+        SecondaryItem = QuickMeleeWeapon;
+        KFW.SetTimer(0, false);
+        KFW.ClientGrenadeState = GN_TempDown;
+        KFW.PutDown();
+    }
 }
+
 
 function WeaponDown()
 {
-    //Can't throw nade when secondary item is in use (e.g. for nade cooking)
-    if (SecondaryItem != none)
-        return;
+    local KFWeapon W;
+    local byte Mode;
+    
+    W = KFWeapon(Weapon);
+    if ( SecondaryItem == QuickMeleeWeapon && QuickMeleeWeapon != none ) {
+        // quick melee
+        //copied from weapon's putdown timer
+        W.SetTimer(0, false);
+        W.ClientState = WS_Hidden;
+        if( W.FlashLight!=none )
+				W.Tacshine.Destroy();
         
-    super.WeaponDown();    
+        QuickMeleeWeapon.GotoState('QuickMelee');
+        PendingWeapon = QuickMeleeWeapon;
+        ChangedWeapon(); // sets Weapon=PendingWeapon and calls BringUp
+        
+         //copied from weapon's putdown timer
+        for( Mode = 0; Mode < W.NUM_FIRE_MODES; Mode++ )
+            W.GetFireMode(Mode).DestroyEffects();
+            
+        // after calling this function W.ClientSet will be set back to WS_ReadyToFire in KFWeapon.Timer()
+        // That's why QuickMeleeWeapon must reset it to WS_Hidden again 
+        WeaponToFixClientState = W;
+    }
+    else if (SecondaryItem == none && PlayerGrenade != none ) {
+        //Can't throw nade when secondary item is in use (e.g. for nade cooking)
+        SecondaryItem = PlayerGrenade;
+        PlayerGrenade.StartThrow();    
+    }
 }
 
 simulated function ThrowGrenadeFinished()
@@ -1536,6 +1725,7 @@ simulated function AltFire( optional float F )
     
     if ( Weapon == none )
         return;    
+    
     
     PC = ScrnPlayerController(Controller);
     W = KFWeapon(Weapon);
@@ -1654,10 +1844,8 @@ simulated function TakeDamage( int Damage, Pawn InstigatedBy, Vector Hitlocation
 	}
 
 	// Don't allow momentum from a player shooting a player
-	if( InstigatedBy != none && KFHumanPawn(InstigatedBy) != none )
-	{
+	if( KFHumanPawn(InstigatedBy) != none )
 		Momentum = vect(0,0,0);
-	}
     
     OriginalDamage = Damage;
     OldHealth = Health;
@@ -2042,39 +2230,68 @@ function FindGameRules()
 // overrided to allow tossing amount below 50
 exec function TossCash( int Amount )
 {
+    local Vector X,Y,Z;
+    local ScrnCashPickup CashPickup;
+    local Vector TossVel;
+    local Actor A;
 	local int StartCash;
-	
-	if ( PlayerReplicationInfo.Score <= 0 )
-		return;
-		
-	if ( ScrnPlayerController(Controller) != none )
-		StartCash = ScrnPlayerController(Controller).StartCash;
-
-	if ( Amount <= 0 )
-		Amount = 50;
 		
 	// To fix cash tossing exploit.
-	if( CashTossTimer<Level.TimeSeconds && (LongTossCashTimer<Level.TimeSeconds || LongTossCashCount<20) )
-	{
-		// don't use bNoStartCashToss in story mode
-		if ( class'ScrnBalance'.default.Mut.bNoStartCashToss && KF_StoryGRI(Level.GRI) == none ) {
-			if ( int(PlayerReplicationInfo.Score) - StartCash <= 0 ) {
-				PlayerController(Controller).ClientMessage(strNoSpawnCashToss);
-				CashTossTimer = Level.TimeSeconds+1.0;
-				return;
-			}
-			Amount = Min(Amount, int(PlayerReplicationInfo.Score) - StartCash);
-		}
+	if( Level.TimeSeconds < CashTossTimer || (Level.TimeSeconds < LongTossCashTimer && LongTossCashCount>=20) )
+        return;
+        
+    PlayerReplicationInfo.Score = int(PlayerReplicationInfo.Score); // why it is defined as float in a first place?
+    if ( PlayerReplicationInfo.Score <= 0 )
+        return;
+        
+    if ( ScrnPlayerController(Controller) != none )
+        StartCash = ScrnPlayerController(Controller).StartCash;
+    if ( Amount <= 0 )
+        Amount = 50;
+    if ( Amount > PlayerReplicationInfo.Score )
+        Amount = PlayerReplicationInfo.Score;
 
-		Super(KFPawn).TossCash(Amount);
-		CashTossTimer = Level.TimeSeconds+0.1f;
-		if( LongTossCashTimer<Level.TimeSeconds )
-		{
-			LongTossCashTimer = Level.TimeSeconds+5.f;
-			LongTossCashCount = 0;
-		}
-		else ++LongTossCashCount;
-	}
+    // don't use bNoStartCashToss in story mode
+    if ( class'ScrnBalance'.default.Mut.bNoStartCashToss && KF_StoryGRI(Level.GRI) == none ) {
+        if ( PlayerReplicationInfo.Score <= ScrnPlayerController(Controller).StartCash ) {
+            PlayerController(Controller).ClientMessage(strNoSpawnCashToss);
+            CashTossTimer = Level.TimeSeconds+1.0;
+            return;
+        }
+        Amount = Min(Amount, PlayerReplicationInfo.Score - ScrnPlayerController(Controller).StartCash);
+    }
+
+    // copied from KFPawn to override dosh class
+    GetAxes(Rotation,X,Y,Z);
+    TossVel = Vector(GetViewRotation());
+    TossVel = TossVel * ((Velocity Dot TossVel) + 500) + Vect(0,0,200);
+    CashPickup = Spawn(class'ScrnCashPickup',,, Location + 0.8 * CollisionRadius * X - 0.5 * CollisionRadius * Y);
+    if(CashPickup != none) {
+        CashPickup.CashAmount = Amount;
+        CashPickup.bDroppedCash = true;
+        CashPickup.RespawnTime = 0;   // Dropped cash doesnt respawn. For obvious reasons.
+        CashPickup.Velocity = TossVel;
+        CashPickup.DroppedBy = Controller;
+        CashPickup.InitDroppedPickupFor(None);
+        PlayerReplicationInfo.Score -= Amount;
+
+        if ( Level.Game.NumPlayers > 1 && Level.TimeSeconds - LastDropCashMessageTime > DropCashMessageDelay )
+            PlayerController(Controller).Speech('AUTO', 4, "");
+        // Hack to get Slot machines to accept dosh that's thrown inside their collision cylinder.
+        ForEach CashPickup.TouchingActors(class 'Actor', A) {
+            if( A.IsA('KF_Slot_Machine') )
+                A.Touch(Cashpickup);
+        }
+    }
+    // end of copy
+    
+    CashTossTimer = Level.TimeSeconds+0.1f;
+    if( LongTossCashTimer<Level.TimeSeconds ){
+        LongTossCashTimer = Level.TimeSeconds+5.f;
+        LongTossCashCount = 0;
+    }
+    else 
+        ++LongTossCashCount;
 }
 
 simulated function DoHitCamEffects(vector HitDirection, float JarrScale, float BlurDuration, float JarDurationScale )
@@ -2187,4 +2404,5 @@ defaultproperties
 	 bCheckHorzineArmorAch=true
 	 strNoSpawnCashToss="Can not drop starting cash"
      HeadshotSound=sound'ProjectileSounds.impact_metal09'
+     TraderSpeedBoost=1.5
 }

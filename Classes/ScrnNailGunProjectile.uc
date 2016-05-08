@@ -11,6 +11,7 @@ class ScrnNailGunProjectile extends ScrnCustomShotgunBullet;
 var     String         ImpactSoundRefs[6];
 
 var byte Bounces;
+var transient bool bBounced;
 var bool bFinishedPenetrating;
 
 var KFMonster MonsterHeadAttached;
@@ -23,7 +24,7 @@ var vector      NailHitDelta; // distance between hit's and victim's locations
 var transient vector      NailingLocation; // location, where zed was hit by nail
 var transient float       NailedFlyDistance; // how far did zed flew away?
 var transient bool        bStillFlying; // NailedMonster is still flying (not pinned yet)
-var transient ScrnAchievements.AchStrInfo ach_Nail100m, ach_NailToWall, ach_PushShiver; //related achievements
+var transient ScrnAchievements.AchStrInfo ach_Nail100m, ach_NailToWall, ach_PushShiver, ach_ProNailer; //related achievements
 
 var Pawn PendingDeadVictim;
 var vector PendingHitSpot;
@@ -275,7 +276,7 @@ simulated function ProcessTouch (Actor Other, vector HitLocation)
     
     if ( KFM != none ) {
         bWasDecapitated = KFM.bDecapitated;
-        Velocity /= 1.0 + KFM.Mass*VelocityModMass + KFM.Health*VelocityModHealth/PerkedDamage; //heavy and healthy pawns slow down nails more
+        Velocity /= 1.0 + (KFM.Mass*VelocityModMass + KFM.Health*VelocityModHealth)/PerkedDamage; //heavy and healthy pawns slow down nails more
     }
     
  	if( ROBulletWhipAttachment(Other) != none ) {
@@ -302,13 +303,15 @@ simulated function ProcessTouch (Actor Other, vector HitLocation)
             // HEADSHOT
             Victim.TakeDamage(Damage * HeadShotDamageMult, Instigator, HitLocation, MomentumTransfer * Normal(Velocity), MyDamageType);
 
-            if( Role == ROLE_Authority && Bounces > 0 && MonsterHeadAttached == none &&
-                KFM != none && !bWasDecapitated && KFM.Health < 0 )
-            {
-                MonsterHeadAttached = KFM;
-
-                if( Level.NetMode == NM_ListenServer || Level.NetMode == NM_StandAlone )
-                    PostNetReceive();
+            if( Role == ROLE_Authority && KFM != none && !bWasDecapitated ) {
+                if ( bBounced && KFM.bDecapitated )
+                    ach_ProNailer.AchHandler.ProgressAchievement(ach_ProNailer.AchIndex, 1);
+                    
+                if( MonsterHeadAttached == none && KFM.Health < 0 )  {
+                    MonsterHeadAttached = KFM;
+                    if( Level.NetMode == NM_ListenServer || Level.NetMode == NM_StandAlone )
+                        PostNetReceive();
+                }
             }
         }
         else {
@@ -412,7 +415,8 @@ simulated function HitWall( vector HitNormal, actor Wall )
 
         Velocity = 0.65 * (Velocity - 2.0*HitNormal*(Velocity dot HitNormal));
         SetPhysics(PHYS_Falling);
-        Bounces--;
+        --Bounces;
+        bBounced=True;
 
     	if ( !Level.bDropDetail && (Level.NetMode != NM_DedicatedServer))
     	{

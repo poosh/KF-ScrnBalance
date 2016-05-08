@@ -1,5 +1,10 @@
 class ScrnDual44Magnum extends Dual44Magnum;
 
+function AttachToPawn(Pawn P)
+{
+    super(Dualies).AttachToPawn(P); // skip code duplication in Dual44Magnum
+}
+
 function bool HandlePickupQuery( pickup Item )
 {
 	if ( ClassIsChildOf(Item.InventoryType, Class'Magnum44Pistol') ) {

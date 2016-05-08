@@ -7,123 +7,93 @@
  */
 
 class ScrnM14EBRBattleRifle extends M14EBRBattleRifle
-dependson(ScrnLaserDot)
+dependson(ScrnLocalLaserDot)
     config(user);
 
-var()	ScrnLaserDot.ELaserColor		LaserType; 	  //current laser type
-var     class<ScrnLaserBeamEffect>      LaserBeamClass;  
-var     class<LaserDot>                	LaserDotClass;
+var()	byte		                        LaserType; 	  //current laser type
+var const class<ScrnLocalLaserDot>          LaserDotClass;
+var     ScrnLocalLaserDot                   LaserDot;
+var     name                                LaserAttachmentBone;
+
 
 replication
 {
 	reliable if(Role < ROLE_Authority)
-		ServerSetLaserType, LaserType;
+		ServerSetLaserType;
 }
 
-function SpawnBeam()
-{
-    if ( Beam != none && ScrnLaserBeamEffect(Beam) == none ) {
-        Beam.Destroy();
-        Beam = none;
-    }
-    
-	if ( Beam == None )
-		Beam = Spawn(LaserBeamClass, self);
-        
-    if ( Beam != none ) {
-        ScrnLaserBeamEffect(Beam).MyAttachment = KFWeaponAttachment(ThirdPersonActor);
-    }        
-}
-
-function DestroyBeam()
-{
-    if (Beam != None)
-        ScrnLaserBeamEffect(Beam).DelayedDestroy();    
-}
-
-simulated function SpawnDot()
-{
-	if (Spot == None)
-		Spot = Spawn(LaserDotClass, self);
-	//set dot texture
-	ScrnLaserDot(Spot).SetLaserColor(LaserType);		
-}
 
 simulated function PostBeginPlay()
 {
 	super(KFWeapon).PostBeginPlay();
-
-	if (Role == ROLE_Authority) 
-		SpawnBeam();
 }
+
+simulated function Destroyed()
+{
+	if (LaserDot != None)
+		LaserDot.Destroy();
+
+	if (LaserAttachment != None)
+		LaserAttachment.Destroy();
+
+	super(KFWeapon).Destroyed();
+}
+
 
 // Use alt fire to switch laser type
 simulated function AltFire(float F)
 {
-	//try to allow switching laser while reloading too
-	//if(ReadyToFire(0))
-	//{
-		ToggleLaser();
-	//}
+    ToggleLaser();
 }
-
 
 
 //bring Laser to current state, which is indicating by LaserType 
 simulated function ApplyLaserState()
 {
-	bLaserActive = LaserType != LASER_None;
-	if( Role < ROLE_Authority  ) {
+	bLaserActive = LaserType > 0;
+	if( Role < ROLE_Authority  )
 		ServerSetLaserType(LaserType);
-	}
 
-	if( Beam != none )
-		ScrnLaserBeamEffect(Beam).SetLaserColor(LaserType);
-
+    if ( ThirdPersonActor != none )
+        ScrnLaserWeaponAttachment(ThirdPersonActor).SetLaserType(LaserType);
+    
+    if ( !Instigator.IsLocallyControlled() )
+        return;
+    
 	if( bLaserActive ) {
+        if ( LaserDot == none )
+            LaserDot = Spawn(LaserDotClass, self);
+        LaserDot.SetLaserType(LaserType);
 		//spawn 1-st person laser attachment for weapon owner
-		ConstantColor'ScrnTex.Laser.LaserColor'.Color = 
-			class'ScrnLaserDot'.static.GetLaserColor(LaserType);
-		//LaserAttachment.Destroy();
 		if ( LaserAttachment == none ) {
 			LaserAttachment = Spawn(LaserAttachmentClass,,,,);
-			AttachToBone(LaserAttachment,'LightBone');
+			AttachToBone(LaserAttachment, LaserAttachmentBone);
 		}
+		ConstantColor'ScrnTex.Laser.LaserColor'.Color = 
+			LaserDot.GetLaserColor(); // LaserAttachment's color
 		LaserAttachment.bHidden = false;
 
-		SpawnDot();
 	}
 	else {
 		if ( LaserAttachment != none )
 			LaserAttachment.bHidden = true;
-		if (Spot != None) { 	
-			Spot.Destroy();
-		}
+        if ( LaserDot != none )
+            LaserDot.Destroy(); //bHidden = true;
 	}
 }
 // Toggle laser modes: RED/GREEN/OFF
 simulated function ToggleLaser()
 {
-	if( !Instigator.IsLocallyControlled() ) return;
+	if( !Instigator.IsLocallyControlled() ) 
+        return;
 
-	switch ( LaserType ) {
-		case LASER_None: 
-			LaserType = LASER_Red;
-			break;
-		case LASER_Red: 
-			LaserType = LASER_Green;
-			break;
-		default:
-			LaserType = LASER_None;
-	}
+    if ( (++LaserType) > 2 )  
+        LaserType = 0;
 	ApplyLaserState();
 }
 
 simulated function BringUp(optional Weapon PrevWeapon)
 {
-	if (Role == ROLE_Authority)
-		SpawnBeam();
-		
 	ApplyLaserState();
 	Super.BringUp(PrevWeapon);
 }
@@ -133,79 +103,140 @@ simulated function TurnOffLaser()
 	if( !Instigator.IsLocallyControlled() )
 		return;
 
-    if( Role < ROLE_Authority  ) {
-        ServerSetLaserType(LASER_None);
-    }
+    if( Role < ROLE_Authority  )
+        ServerSetLaserType(0);
 
     bLaserActive = false;
     //don't change Laser type here, because we need to restore it state 
     //when next time weapon will be bringed up
     if ( LaserAttachment != none )
         LaserAttachment.bHidden = true;
-
-    if( Beam != none )
-        Beam.SetActive(false);
-
-    if (Spot != None) {
-        Spot.Destroy();
-    }
+    if (LaserDot != None)
+        LaserDot.Destroy();
 }
 
 
 
 // Set the new fire mode on the server
-function ServerSetLaserType(ScrnLaserDot.ELaserColor NewLaserType)
+function ServerSetLaserType(byte NewLaserType)
 {
-	if (NewLaserType == LASER_None) 
-		bLaserActive = false;
-		
-	SpawnBeam();
-	ScrnLaserBeamEffect(Beam).SetLaserColor(NewLaserType);
-
-	if( NewLaserType != LASER_None )
-	{
-		bLaserActive = true;
-		SpawnDot();
-	}
-	else
-	{
-		bLaserActive = false;
-		if (Spot != None) {
-			Spot.Destroy();
-		}
-	}
+    LaserType = NewLaserType;
+	bLaserActive = NewLaserType > 0; 
+    ScrnLaserWeaponAttachment(ThirdPersonActor).SetLaserType(LaserType);   
 }
 
 simulated function bool PutDown()
 {
 	TurnOffLaser();
-	DestroyBeam();
-
 	return super(KFWeapon).PutDown();
 }
 
-simulated function Destroyed()
+simulated function WeaponTick(float dt)
 {
-	if (Spot != None)
-		Spot.Destroy();
+    super(KFWeapon).WeaponTick(dt);
+}
 
-	DestroyBeam();
+simulated function RenderOverlays( Canvas Canvas )
+{
+    local int i;
+    local Vector StartTrace, EndTrace;
+    local Vector HitLocation, HitNormal;
+    local Actor Other;
+    local vector X,Y,Z;
+    local coords C;
+	local KFFire KFM;
+    local array<Actor> HitActors;
 
-	if (LaserAttachment != None)
-		LaserAttachment.Destroy();
+    if (Instigator == None)
+        return;
 
-	super(KFWeapon).Destroyed();
+    if ( Instigator.Controller != None )
+        Hand = Instigator.Controller.Handedness;
+
+    if ((Hand < -1.0) || (Hand > 1.0))
+        return;
+
+    // draw muzzleflashes/smoke for all fire modes so idle state won't
+    // cause emitters to just disappear
+    for ( i = 0; i < NUM_FIRE_MODES; ++i ) {
+        if (FireMode[i] != None)
+            FireMode[i].DrawMuzzleFlash(Canvas);
+    }
+
+    SetLocation( Instigator.Location + Instigator.CalcDrawOffset(self) );
+    SetRotation( Instigator.GetViewRotation() + ZoomRotInterp);
+	
+	KFM = KFFire(FireMode[0]);
+
+    // Handle drawing the laser dot
+    if ( LaserDot != None )
+    {
+        //move LaserDot during fire animation too  -- PooSH
+        if( bIsReloading )
+		{
+            C = GetBoneCoords(LaserAttachmentBone);
+            X = C.XAxis;
+            Y = C.YAxis;
+            Z = C.ZAxis;
+        }
+        else 
+            GetViewAxes(X, Y, Z);
+
+        StartTrace = Instigator.Location + Instigator.EyePosition();
+        EndTrace = StartTrace + 65535 * X;
+
+        while (true) {
+            Other = Trace(HitLocation, HitNormal, EndTrace, StartTrace, true);
+            if ( ROBulletWhipAttachment(Other) != none ) {
+                HitActors[HitActors.Length] = Other;
+                Other.SetCollision(false);
+                StartTrace = HitLocation + X;
+            }
+            else {
+                if (Other != None && Other != Instigator && Other.Base != Instigator )
+                    EndBeamEffect = HitLocation;
+                else
+                    EndBeamEffect = EndTrace;
+                break;
+            }
+        }
+        // restore collision
+        for ( i=0; i<HitActors.Length; ++i )
+            HitActors[i].SetCollision(true);
+
+        LaserDot.SetLocation(EndBeamEffect - X*LaserDot.ProjectorPullback);
+
+        if(  Pawn(Other) != none ) {
+            LaserDot.SetRotation(Rotator(X));
+            LaserDot.SetDrawScale(LaserDot.default.DrawScale * 0.5);
+        }
+        else if( HitNormal == vect(0,0,0) ) {
+            LaserDot.SetRotation(Rotator(-X));
+            LaserDot.SetDrawScale(LaserDot.default.DrawScale);
+        }
+        else {
+            LaserDot.SetRotation(Rotator(-HitNormal));
+            LaserDot.SetDrawScale(LaserDot.default.DrawScale);
+        }
+    }
+
+    //PreDrawFPWeapon();    // Laurent -- Hook to override things before render (like rotation if using a staticmesh)
+
+    bDrawingFirstPerson = true;
+    Canvas.DrawActor(self, false, false, DisplayFOV);
+    bDrawingFirstPerson = false;
 }
 
 	
 
 defaultproperties
 {
-     LaserBeamClass=Class'ScrnBalanceSrv.ScrnLaserBeamEffect'
-     LaserDotClass=Class'ScrnBalanceSrv.ScrnLaserDot'
-     LaserAttachmentClass=Class'ScrnBalanceSrv.ScrnLaserAttachmentFirstPerson'
-     FireModeClass(0)=Class'ScrnBalanceSrv.ScrnM14EBRFire'
-     Description="Updated M14 Enhanced Battle Rifle - Semi Auto variant. Equipped with a laser sight. A special lens allows to change laser's color on the fly."
-     PickupClass=Class'ScrnBalanceSrv.ScrnM14EBRPickup'
-     ItemName="M14EBR SE"
+    LaserAttachmentBone="LightBone"
+    LaserDotClass=Class'ScrnBalanceSrv.ScrnLocalLaserDot'
+    LaserAttachmentClass=Class'ScrnBalanceSrv.ScrnLaserAttachmentFirstPerson'
+    FireModeClass(0)=Class'ScrnBalanceSrv.ScrnM14EBRFire'
+    Description="Updated M14 Enhanced Battle Rifle - Semi Auto variant. Equipped with a laser sight. A special lens allows to change laser's color on the fly."
+    PickupClass=Class'ScrnBalanceSrv.ScrnM14EBRPickup'
+    AttachmentClass=Class'ScrnBalanceSrv.ScrnM14EBRAttachment'
+    ItemName="M14EBR SE"
 }

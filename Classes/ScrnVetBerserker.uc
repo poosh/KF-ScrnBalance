@@ -139,7 +139,7 @@ static function int ReduceDamage(KFPlayerReplicationInfo KFPRI, KFPawn Injured, 
     // HARDCORE - no damage resistance from Husk's fire damage
     // Except Doom3 Monsters mode, because there is no way to differ Husk damage from Imp or ArchVile damage
 	if ( DmgType == class'DamTypeBurned' && class'ScrnBalance'.default.Mut.bHardcore 
-            && class'ScrnBalance'.default.Mut.GameRules.DoomHardcorePointsGained == 0 )
+            && class'ScrnBalance'.default.Mut.GameRules.GameDoom3Kills == 0 )
         return InDamage;
 
 	if ( DmgType == class'DamTypeVomit' ) {
@@ -318,4 +318,5 @@ defaultproperties
 	 OnHUDIcons(3)=(PerkIcon=Texture'ScrnTex.Perks.Perk_Berserker_Blue',StarIcon=Texture'ScrnTex.Perks.Hud_Perk_Star_Blue',DrawColor=(B=255,G=255,R=255,A=255))
 	 OnHUDIcons(4)=(PerkIcon=Texture'ScrnTex.Perks.Perk_Berserker_Purple',StarIcon=Texture'ScrnTex.Perks.Hud_Perk_Star_Purple',DrawColor=(B=255,G=255,R=255,A=255))
 	 OnHUDIcons(5)=(PerkIcon=Texture'ScrnTex.Perks.Perk_Berserker_Orange',StarIcon=Texture'ScrnTex.Perks.Hud_Perk_Star_Orange',DrawColor=(B=255,G=255,R=255,A=255))
+	 OnHUDIcons(6)=(PerkIcon=Texture'ScrnTex.Perks.Perk_Berserker_Blood',StarIcon=Texture'ScrnTex.Perks.Hud_Perk_Star_Blood',DrawColor=(B=255,G=255,R=255,A=255))
 }

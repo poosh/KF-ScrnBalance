@@ -29,19 +29,27 @@ var automated   GUIButton               b_Accuracy;
 var localized string strLockWeapons, strUnlockWeapons;
 var localized string strBoundToCook, strBoundToThrow, strCantFindNade;
 
+
 // HUD & Info
 var automated   GUISectionBackground    bg_HUD;
 var automated 	moCheckBox    	        ch_ShowDamages;
 var automated 	moCheckBox    	        ch_ShowSpeed;
 var automated 	moCheckBox    	        ch_ShowAchProgress;
-var automated 	moCheckBox    	        ch_OldStyleIcons;
-var automated 	moCheckBox    	        ch_AllwaysDrawSpecialIcons;
-var automated 	moCheckBox    	        ch_PlayerInfoZoom;
+
+var automated   moComboBox    	        cbx_BarStyle;
+var automated   moSlider                sl_BarScale;
+var automated   moComboBox    	        cbx_HudStyle;
+var automated   moSlider                sl_HudScale;
+var automated   moSlider                sl_HudAmmoScale;
+var automated   moSlider                sl_HudY;
+
+var array<localized string>             BarStyleItems;
+var array<localized string>             HudStyleItems;
+
 
 var automated   GUIButton               b_Status;
 var automated   GUIButton               b_HL;
 var automated   GUIButton               b_Zeds;
-var automated   GUIButton               b_TourneyCheck;
 
 
 // PLAYERS
@@ -79,10 +87,36 @@ var color StatusColor[2];
 
 // event ResolutionChanged( int ResX, int ResY )
 
+function InitComponent(GUIController MyController, GUIComponent MyOwner)
+{
+	local int i;
+
+	Super.InitComponent(MyController, MyOwner);
+    
+    /*
+    bg_Weapons.ManageComponent(ch_ManualReload);
+    bg_Weapons.ManageComponent(ch_CookNade);
+    bg_Weapons.ManageComponent(ch_PrioritizePerkedWeapons);
+    bg_Weapons.ManageComponent(ch_PrioritizeBoomstick);
+    bg_Weapons.ManageComponent(b_GunSkin);
+    bg_Weapons.ManageComponent(b_WeaponLock);
+    bg_Weapons.ManageComponent(b_PerkProgress);
+    bg_Weapons.ManageComponent(b_Accuracy);
+    */
+    
+    cbx_BarStyle.ResetComponent();
+    for ( i=0; i < BarStyleItems.length; ++i ) 
+        cbx_BarStyle.AddItem(BarStyleItems[i]);
+        
+    cbx_HudStyle.ResetComponent();
+    for ( i=0; i < HudStyleItems.length; ++i ) 
+        cbx_HudStyle.AddItem(HudStyleItems[i]);    
+}    
 
 function ShowPanel(bool bShow)
 {
 	local ScrnPlayerController PC;
+    local ScrnHUD H;
     local ScrnCustomPRI ScrnPRI;
     local bool b;
 	    
@@ -101,6 +135,7 @@ function ShowPanel(bool bShow)
     PC = ScrnPlayerController(PlayerOwner());
     if ( PC == none )
         return;
+    H = ScrnHUD(PC.myHUD);    
     ScrnPRI = class'ScrnCustomPRI'.static.FindMe(PC.PlayerReplicationInfo);
     
     
@@ -119,11 +154,22 @@ function ShowPanel(bool bShow)
     b_TSC_Unlock.SetVisibility(b); 
     b_TSC_Invite.SetVisibility(b); 
     
+    sl_BarScale.SetVisibility(H.PlayerInfoVersionNumber >= 80);
+    sl_HudScale.SetVisibility(H.bCoolHud);
+    sl_HudAmmoScale.SetVisibility(H.bCoolHud);
+    sl_HudY.SetVisibility(H.bCoolHud);
+    
+    sl_BarScale.SetValue(H.PlayerInfoScale);
+    sl_HudScale.SetValue(H.CoolHudScale);
+    sl_HudAmmoScale.SetValue(H.CoolHudAmmoScale);
+    sl_HudY.SetValue(H.CoolHudAmmoOffsetY);
+    
     RefreshInfo();
     FillPlayerList();
-    
+
     SetTimer(1, true);
 }
+
 
 function Timer()
 {
@@ -191,7 +237,7 @@ function ServerStatus()
     
     if ( !m.bNoPerkChanges )
         cNoPerkChanges = StatusColor[0];
-    else if ( !m.bPerkChangeBoss )
+    else if ( !m.bPerkChangeBoss || !m.bPerkChangeDead )
         cNoPerkChanges = StatusColor[1];
     else {
         cNoPerkChanges.R = 255;
@@ -233,8 +279,11 @@ function FillPlayerList()
     local array<KFPlayerReplicationInfo> PRIs;
     local GameReplicationInfo GRI;
     
-    // sort list by Red Players -> Blue Players -> Spectators
     GRI = PlayerOwner().Level.GRI;
+    if ( GRI == none )
+        return;
+        
+    // sort list by Red Players -> Blue Players -> Spectators
 	for ( i = 0; i < GRI.PRIArray.Length; i++) {
 		KFPRI = KFPlayerReplicationInfo(GRI.PRIArray[i]);
         if ( KFPRI == none || KFPRI.PlayerID == 0 ) 
@@ -298,8 +347,10 @@ function LoadPlayerData()
 function InternalOnLoadINI(GUIComponent Sender, string s)
 {
     local ScrnPlayerController PC;
+    local ScrnHUD H;
     
     PC = ScrnPlayerController(PlayerOwner());
+    H = ScrnHUD(PC.myHUD);
 
     switch (Sender)
     {
@@ -338,25 +389,25 @@ function InternalOnLoadINI(GUIComponent Sender, string s)
             
             
         case ch_ShowDamages:
-            if ( !PC.Mut.bShowDamages || ScrnHUD(PC.myHUD) == none ) {
+            if ( !PC.Mut.bShowDamages || H == none ) {
                 ch_ShowDamages.Checked(false);
                 ch_ShowDamages.DisableMe();
                 ch_ShowDamages.Hint = strDisabledByServer;
             }
             else {
-                ch_ShowDamages.Checked(ScrnHUD(PC.myHUD).bShowDamages);
+                ch_ShowDamages.Checked(H.bShowDamages);
                 ch_ShowDamages.EnableMe();
                 ch_ShowDamages.Hint = ch_ShowDamages.default.Hint;
             }        
             break;            
              
         case ch_ShowSpeed:
-            if ( ScrnHUD(PC.myHUD) == none ) {
+            if ( H == none ) {
                 ch_ShowSpeed.Checked(false);
                 ch_ShowSpeed.DisableMe();
             }
             else {
-                ch_ShowSpeed.Checked(ScrnHUD(PC.myHUD).bShowSpeed);
+                ch_ShowSpeed.Checked(H.bShowSpeed);
                 ch_ShowSpeed.EnableMe();
             }        
             break;               
@@ -364,42 +415,69 @@ function InternalOnLoadINI(GUIComponent Sender, string s)
         case ch_ShowAchProgress:
             ch_ShowAchProgress.Checked(PC.bAlwaysDisplayAchProgression);
             break;               
-			
-        case ch_OldStyleIcons:
-            ch_OldStyleIcons.Checked(class'ScrnVeterancyTypes'.default.bOldStyleIcons);
-            break;          
-		
-        case ch_AllwaysDrawSpecialIcons:
-            if ( ScrnHUD(PC.myHUD) == none ) {
-                ch_AllwaysDrawSpecialIcons.Checked(false);
-                ch_AllwaysDrawSpecialIcons.DisableMe();
+        
+        case cbx_BarStyle:
+            if ( H == none ) {
+                cbx_BarStyle.SetIndex(0);
+                cbx_BarStyle.DisableMe();
+            }
+            else  {
+                if ( H.PlayerInfoVersionNumber < 80 )
+                    cbx_BarStyle.SetIndex(0);
+                else if ( H.PlayerInfoVersionNumber < 90 )
+                    cbx_BarStyle.SetIndex(1);
+                else 
+                    cbx_BarStyle.SetIndex(2);
+                cbx_BarStyle.EnableMe();
+            }
+            break;
+        
+        case cbx_HudStyle:    
+            if ( H == none ) {
+                if ( class'ScrnVeterancyTypes'.default.bOldStyleIcons )
+                    cbx_HudStyle.SetIndex(0);
+                else 
+                    cbx_HudStyle.SetIndex(1);
+                cbx_HudStyle.DisableMe();
+            }
+            else  {
+                cbx_HudStyle.EnableMe();
+                if ( H.bCoolHud ) {
+                    if ( H.bCoolHudLeftAlign ) 
+                        cbx_HudStyle.SetIndex(3);
+                    else 
+                        cbx_HudStyle.SetIndex(2);
+                }
+                else if ( class'ScrnVeterancyTypes'.default.bOldStyleIcons )
+                    cbx_HudStyle.SetIndex(0);
+                else 
+                    cbx_HudStyle.SetIndex(1);
+            }
+            break;
+            
+        case sl_BarScale:
+            if ( H == none ) {
+                sl_BarScale.DisableMe();            
+                sl_BarScale.DisableMe();            
             }
             else {
-                ch_AllwaysDrawSpecialIcons.Checked(ScrnHUD(PC.myHUD).bAllwaysDrawSpecialIcons);
-                ch_AllwaysDrawSpecialIcons.EnableMe();
-            }        
-            break;   
-
-        case ch_PlayerInfoZoom:
-            if ( ScrnHUD(PC.myHUD) == none ) {
-                ch_PlayerInfoZoom.Checked(true);
-                ch_PlayerInfoZoom.DisableMe();
+                sl_BarScale.EnableMe();
             }
-            else {
-                ch_PlayerInfoZoom.Checked(!ScrnHUD(PC.myHUD).bPlayerInfoZoom);
-                ch_PlayerInfoZoom.EnableMe();
-            }        
-            break;               
+            break;
     }
 }
+
+
 
 function InternalOnChange(GUIComponent Sender)
 {
     local ScrnPlayerController PC;
+    local ScrnHUD H;
 
     Super.InternalOnChange(Sender);
 
     PC = ScrnPlayerController(PlayerOwner());
+    H = ScrnHUD(PC.myHUD);
        
     switch (sender)
     {
@@ -423,17 +501,17 @@ function InternalOnChange(GUIComponent Sender)
 			break;              
             
         case ch_ShowDamages:
-                if ( ScrnHUD(PC.myHUD) != none ) {
-                    ScrnHUD(PC.myHUD).bShowDamages = ch_ShowDamages.IsChecked();
+                if ( H != none ) {
+                    H.bShowDamages = ch_ShowDamages.IsChecked();
                     PC.ServerAcknowledgeDamages(ch_ShowDamages.IsChecked());
-                    PC.myHUD.SaveConfig();
+                    H.SaveConfig();
                 }
 			break;    
             
         case ch_ShowSpeed:
-                if ( ScrnHUD(PC.myHUD) != none ) {
-                    ScrnHUD(PC.myHUD).bShowSpeed = ch_ShowSpeed.IsChecked();
-                    PC.myHUD.SaveConfig();
+                if ( H != none ) {
+                    H.bShowSpeed = ch_ShowSpeed.IsChecked();
+                    H.SaveConfig();
                 }
 			break;  
             
@@ -442,29 +520,75 @@ function InternalOnChange(GUIComponent Sender)
                 PC.SaveConfig();
 			break;            
             
-        case ch_OldStyleIcons:
-				class'ScrnBalanceSrv.ScrnVeterancyTypes'.default.bOldStyleIcons = ch_OldStyleIcons.IsChecked();
-                if ( ScrnHUD(PC.myHUD) != none ) {
-                    ScrnHUD(PC.myHUD).bOldStyleIcons = class'ScrnBalanceSrv.ScrnVeterancyTypes'.default.bOldStyleIcons;
-                    PC.myHUD.SaveConfig();
-                }
-			break;            
+        
+        case cbx_BarStyle:
+            switch (cbx_BarStyle.GetIndex()) {
+                case 0: PC.ConsoleCommand("PlayerInfoVersion 70"); break;
+                case 1: PC.ConsoleCommand("PlayerInfoVersion 83"); break;
+                case 2: PC.ConsoleCommand("PlayerInfoVersion 90"); break;
+            }
+            sl_BarScale.SetVisibility(cbx_BarStyle.GetIndex() > 0);
+            PC.myHUD.SaveConfig();
+            break;
             
-        case ch_AllwaysDrawSpecialIcons:
-                if ( ScrnHUD(PC.myHUD) != none ) {
-                    ScrnHUD(PC.myHUD).bAllwaysDrawSpecialIcons = ch_AllwaysDrawSpecialIcons.IsChecked();
-                    PC.myHUD.SaveConfig();
+        case cbx_HudStyle:
+            if ( H != none ) {
+                switch (cbx_HudStyle.GetIndex()) {
+                    case 0: 
+                        class'ScrnBalanceSrv.ScrnVeterancyTypes'.default.bOldStyleIcons = true;
+                        H.bCoolHud = false;
+                        break;
+                    case 1: 
+                        class'ScrnBalanceSrv.ScrnVeterancyTypes'.default.bOldStyleIcons = false;
+                        H.bCoolHud = false;
+                        break;
+                    case 2: 
+                        class'ScrnBalanceSrv.ScrnVeterancyTypes'.default.bOldStyleIcons = false;
+                        H.bCoolHud = true;
+                        H.bCoolHudLeftAlign = false;
+                        break;
+                    case 3: 
+                        class'ScrnBalanceSrv.ScrnVeterancyTypes'.default.bOldStyleIcons = false;
+                        H.bCoolHud = true;
+                        H.bCoolHudLeftAlign = true;
+                        break;
                 }
-			break;    
+                sl_HudScale.SetVisibility(H.bCoolHud);
+                sl_HudAmmoScale.SetVisibility(H.bCoolHud);
+                sl_HudY.SetVisibility(H.bCoolHud);
+                H.SaveConfig();
+            }
+            break;    
+
+        case sl_BarScale:
+            if ( H != none ) {
+                H.PlayerInfoScale = sl_BarScale.GetValue();
+                H.SaveConfig();
+            }
+            break;
+  
             
-        case ch_PlayerInfoZoom:
-                if ( ScrnHUD(PC.myHUD) != none ) {
-                    ScrnHUD(PC.myHUD).bPlayerInfoZoom = !ch_PlayerInfoZoom.IsChecked();
-                    PC.myHUD.SaveConfig();
-                }
-			break;     
-
-
+        case sl_HudScale:
+            if ( H != none ) {
+                H.CoolHudScale = sl_HudScale.GetValue();
+                H.SaveConfig();
+            }
+            break;   
+            
+        case sl_HudAmmoScale:
+            if ( H != none ) {
+                H.CoolHudAmmoScale = sl_HudAmmoScale.GetValue();
+                H.SaveConfig();
+            }
+            break;  
+            
+        case sl_HudY:
+            if ( H != none ) {
+                H.CoolHudAmmoOffsetY = sl_HudY.GetValue();
+                H.SaveConfig();
+            }
+            break;   
+            
         case cbx_Player:
             LoadPlayerData();
             break;
@@ -578,9 +702,6 @@ function bool ButtonClicked(GUIComponent Sender)
         case b_Zeds:
             PC.Mutate("ZEDLIST");
             break;   
-        case b_TourneyCheck:
-            PC.TourneyCheck();
-            break;   
             
         case b_Profile:
             if ( PlayerSteamID64 != "" )
@@ -687,7 +808,7 @@ defaultproperties
         TextAlign=TXTA_Center
         TextFont="UT2LargeFont"
         FontScale=FNS_Small
-        TextColor=(R=0,G=160,B=255)
+        TextColor=(R=160,G=0,B=0)
         ShadowOffsetX=2
         ShadowOffsetY=2
         WinTop=0.01
@@ -1005,61 +1126,6 @@ defaultproperties
         OnLoadINI=ScrnTab_UserSettings.InternalOnLoadINI
     End Object
     ch_ShowAchProgress=moCheckBox'ScrnBalanceSrv.ScrnTab_UserSettings.ShowAchProgress'      
-  
-    Begin Object Class=moCheckBox Name=OldStyleIcons
-        Caption="Old Style Icons"
-        Hint="Toggles style of perk icons for levels 11+"
-        bFlipped=False
-        CaptionWidth=0.955000
-        WinTop=0.38
-        WinLeft=0.515
-        WinWidth=0.288
-        TabOrder=23
-        RenderWeight=0.5
-        ComponentClassName="ScrnBalanceSrv.ScrnGUICheckBoxButton"
-        OnCreateComponent=OldStyleIcons.InternalOnCreateComponent
-        IniOption="@Internal"
-        OnChange=ScrnTab_UserSettings.InternalOnChange
-        OnLoadINI=ScrnTab_UserSettings.InternalOnLoadINI
-    End Object
-    ch_OldStyleIcons=moCheckBox'ScrnBalanceSrv.ScrnTab_UserSettings.OldStyleIcons'  
-
-    Begin Object Class=moCheckBox Name=AllwaysDrawSpecialIcons
-        Caption="Player Avatars"
-        Hint="If checked, player avatars always will be drawn. If not, then avatars will be shown only during Trader Time."
-        bFlipped=False
-        CaptionWidth=0.955000
-        WinTop=0.43
-        WinLeft=0.515
-        WinWidth=0.288
-        TabOrder=24
-        RenderWeight=0.5
-        OnCreateComponent=AllwaysDrawSpecialIcons.InternalOnCreateComponent
-        ComponentClassName="ScrnBalanceSrv.ScrnGUICheckBoxButton"
-        IniOption="@Internal"
-        OnChange=ScrnTab_UserSettings.InternalOnChange
-        OnLoadINI=ScrnTab_UserSettings.InternalOnLoadINI
-    End Object
-    ch_AllwaysDrawSpecialIcons=moCheckBox'ScrnBalanceSrv.ScrnTab_UserSettings.AllwaysDrawSpecialIcons'      
-   
-    Begin Object Class=moCheckBox Name=PlayerInfoZoom
-        Caption="Old HP Bars"
-        Hint="If checked, player health and armor bars won't be scaled on distance."
-        bFlipped=False
-        CaptionWidth=0.955000
-        WinTop=0.43
-        WinLeft=0.81
-        WinWidth=0.175
-        TabOrder=29
-        RenderWeight=0.5
-        OnCreateComponent=PlayerInfoZoom.InternalOnCreateComponent
-        ComponentClassName="ScrnBalanceSrv.ScrnGUICheckBoxButton"
-        IniOption="@Internal"
-        OnChange=ScrnTab_UserSettings.InternalOnChange
-        OnLoadINI=ScrnTab_UserSettings.InternalOnLoadINI
-    End Object
-    ch_PlayerInfoZoom=moCheckBox'ScrnBalanceSrv.ScrnTab_UserSettings.PlayerInfoZoom'      
-
 
     Begin Object Class=GUIButton Name=StatusButton
         Caption="Server Status"
@@ -1070,7 +1136,7 @@ defaultproperties
         WinWidth=0.175
         WinHeight=0.045
         RenderWeight=1.0
-        TabOrder=25
+        TabOrder=23
         bBoundToParent=True
         bScaleToParent=True        
         OnClick=ScrnTab_UserSettings.ButtonClicked
@@ -1086,7 +1152,7 @@ defaultproperties
         WinWidth=0.175
         WinHeight=0.045
         RenderWeight=1.0
-        TabOrder=26
+        TabOrder=24
         bBoundToParent=True
         bScaleToParent=True        
         OnClick=ScrnTab_UserSettings.ButtonClicked
@@ -1102,30 +1168,133 @@ defaultproperties
         WinWidth=0.175
         WinHeight=0.045
         RenderWeight=1.0
-        TabOrder=27
+        TabOrder=25
         bBoundToParent=True
         bScaleToParent=True        
         OnClick=ScrnTab_UserSettings.ButtonClicked
     End Object
     b_Zeds=GUIButton'ScrnBalanceSrv.ScrnTab_UserSettings.ZedsButton'
 
-    
-    Begin Object Class=GUIButton Name=TourneyCheckButton
-        Caption="Tourney Check"
-        Hint="Executes Tourney Mode check and prints results to the console"
-        bAutoSize=False
-        WinTop=0.3775
-        WinLeft=0.81
-        WinWidth=0.175
-        WinHeight=0.045
+    Begin Object Class=moComboBox Name=BarStyleList
+        bReadOnly=True
+        CaptionWidth=0
+        Caption=""
+        IniOption="@Internal"
+        Hint="Player Info Bar Style (Beacons above teammates)"
+        WinTop=0.38
+        WinLeft=0.515
+        WinWidth=0.218
+        TabOrder=26
         RenderWeight=1.0
-        bBoundToParent=True
-        bScaleToParent=True        
-        TabOrder=28
-        OnClick=ScrnTab_UserSettings.ButtonClicked
+        OnChange=ScrnTab_UserSettings.InternalOnChange
+        OnLoadINI=ScrnTab_UserSettings.InternalOnLoadINI
+        OnCreateComponent=BarStyleList.InternalOnCreateComponent
     End Object
-    b_TourneyCheck=GUIButton'ScrnBalanceSrv.ScrnTab_UserSettings.TourneyCheckButton'	   
+    cbx_BarStyle=moComboBox'ScrnBalanceSrv.ScrnTab_UserSettings.BarStyleList'    
+    BarStyleItems(0)="Classic Bars"
+    BarStyleItems(1)="Modern Bars"
+    BarStyleItems(2)="Cool Bars"
+    
+    Begin Object Class=moSlider Name=BarScale
+        MinValue=0.5
+        MaxValue=2.0
+        bIntSlider=false
+        LabelJustification=TXTA_Center
+        ComponentJustification=TXTA_Left
+        CaptionWidth=0
+        Caption=""
+        LabelColor=(B=255,G=255,R=255)
+        Hint="Adjust size of the Player Bars"
+        WinTop=0.38
+        WinLeft=0.76
+        WinWidth=0.10
+        TabOrder=27
+        OnChange=ScrnTab_UserSettings.InternalOnChange
+        OnLoadINI=ScrnTab_UserSettings.InternalOnLoadINI
+        OnCreateComponent=BarScale.InternalOnCreateComponent
+    End Object
+    sl_BarScale=moSlider'ScrnBalanceSrv.ScrnTab_UserSettings.BarScale'    
+    
+    Begin Object Class=moComboBox Name=HudStyleList
+        bReadOnly=True
+        CaptionWidth=0
+        Caption=""
+        IniOption="@Internal"
+        Hint="HUD Style"
+        WinTop=0.43
+        WinLeft=0.515
+        WinWidth=0.218
+        TabOrder=29
+        RenderWeight=1.0
+        OnChange=ScrnTab_UserSettings.InternalOnChange
+        OnLoadINI=ScrnTab_UserSettings.InternalOnLoadINI
+        OnCreateComponent=HudStyleList.InternalOnCreateComponent
+    End Object
+    cbx_HudStyle=moComboBox'ScrnBalanceSrv.ScrnTab_UserSettings.HudStyleList'    
+    HudStyleItems(0)="Classic HUD, old icons"
+    HudStyleItems(1)="Classic HUD, new icons"
+    HudStyleItems(2)="Cool HUD (center)"
+    HudStyleItems(3)="Cool HUD (left)"
+    
+    Begin Object Class=moSlider Name=HudScale
+        MinValue=1.5
+        MaxValue=3.0
+        bIntSlider=False
+        LabelJustification=TXTA_Center
+        ComponentJustification=TXTA_Left
+        CaptionWidth=0
+        Caption=""
+        LabelColor=(B=255,G=255,R=255)
+        Hint="Adjust size of the Cool HUD"
+        WinTop=0.43
+        WinLeft=0.76
+        WinWidth=0.10
+        TabOrder=30
+        OnChange=ScrnTab_UserSettings.InternalOnChange
+        OnLoadINI=ScrnTab_UserSettings.InternalOnLoadINI
+        OnCreateComponent=HudScale.InternalOnCreateComponent
+    End Object
+    sl_HudScale=moSlider'ScrnBalanceSrv.ScrnTab_UserSettings.HudScale'   
    
+    Begin Object Class=moSlider Name=HudAmmoScale
+        MinValue=0.25
+        MaxValue=1.50
+        bIntSlider=False
+        LabelJustification=TXTA_Center
+        ComponentJustification=TXTA_Left
+        CaptionWidth=0
+        Caption=""
+        LabelColor=(B=255,G=255,R=255)
+        Hint="Adjust size of Ammo Counter"
+        WinTop=0.415
+        WinLeft=0.87
+        WinWidth=0.10
+        TabOrder=31
+        OnChange=ScrnTab_UserSettings.InternalOnChange
+        OnLoadINI=ScrnTab_UserSettings.InternalOnLoadINI
+        OnCreateComponent=HudAmmoScale.InternalOnCreateComponent
+    End Object
+    sl_HudAmmoScale=moSlider'ScrnBalanceSrv.ScrnTab_UserSettings.HudAmmoScale'  
+    
+    Begin Object Class=moSlider Name=HudY
+        MinValue=0.2
+        MaxValue=1.0
+        bIntSlider=False
+        LabelJustification=TXTA_Center
+        ComponentJustification=TXTA_Left
+        CaptionWidth=0
+        Caption=""
+        LabelColor=(B=255,G=255,R=255)
+        Hint="Adjust vertical position of Ammo Counter"
+        WinTop=0.445
+        WinLeft=0.87
+        WinWidth=0.10
+        TabOrder=32
+        OnChange=ScrnTab_UserSettings.InternalOnChange
+        OnLoadINI=ScrnTab_UserSettings.InternalOnLoadINI
+        OnCreateComponent=HudY.InternalOnCreateComponent
+    End Object
+    sl_HudY=moSlider'ScrnBalanceSrv.ScrnTab_UserSettings.HudY'     
    
     // MVOTE ---------------------------------------------------------------------------
     Begin Object Class=GUISectionBackground Name=PlayerBG
@@ -1155,7 +1324,6 @@ defaultproperties
          OnCreateComponent=PlayerList.InternalOnCreateComponent
      End Object
      cbx_Player=moComboBox'ScrnBalanceSrv.ScrnTab_UserSettings.PlayerList'    
-     
     Begin Object Class=GUILabel Name=PlayerLabel
         Caption=""
         TextFont="UT2SmallFont"

@@ -6,6 +6,7 @@ var texture BackGround;
 var	texture	ProgressBarBackground;
 var	texture	ProgressBarForeground;
 
+var byte Align; // 0 - left, 1 - center, 2 - right
 
 
 /*
@@ -92,7 +93,11 @@ static function RenderComplexMessage(
         MaxHeight += BarHeight;
         
 	//X = C.CurX;
-    X = (c.ClipX - MaxWidth)*0.5; 
+    switch ( default.Align ) {
+        case 0:     X = C.OrgX; break;
+        case 1:     X = (c.ClipX - C.OrgX - MaxWidth)/2; break;
+        default:    X = c.ClipX - MaxWidth;
+    }
 	Y = C.ClipY - MaxHeight;
 
     //background
@@ -182,21 +187,24 @@ static function RenderComplexMessage(
 
 
 
-/*
 static function ClientReceive(
-    PlayerController P,
-    optional int Switch,
-    optional PlayerReplicationInfo RelatedPRI_1,
-    optional PlayerReplicationInfo RelatedPRI_2,
-    optional Object OptionalObject
+        PlayerController P,
+        optional int Switch,
+        optional PlayerReplicationInfo RelatedPRI_1,
+        optional PlayerReplicationInfo RelatedPRI_2,
+        optional Object OptionalObject
     )
 {
-	P.ClientPlaySound(Sound'KF_InterfaceSnd.Perks.PerkAchieved',true,2.f,SLOT_Talk);
-	P.ClientPlaySound(Sound'KF_InterfaceSnd.Perks.PerkAchieved',true,2.f,SLOT_Interface);
-
+    local ScrnHUD hud;
+    
 	Super.ClientReceive(P,Switch,RelatedPRI_1,RelatedPRI_2,OptionalObject);
+    
+    hud = ScrnHUD(P.MyHUD);
+    if ( hud != none && hud.bCoolHud && !hud.bCoolHudLeftAlign)
+        default.Align = 0 ; // align left, if hud is in center
+    else 
+        default.Align = 1 ; // align right
 }
-*/
 
 defaultproperties
 {
@@ -210,4 +218,5 @@ defaultproperties
      DrawColor=(G=255,R=255)
      PosY=0.800000
      FontSize=5
+     Align=1
 }

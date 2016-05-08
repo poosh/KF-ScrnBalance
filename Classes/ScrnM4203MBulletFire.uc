@@ -3,4 +3,5 @@ class ScrnM4203MBulletFire extends ScrnM4203BulletFire;
 
 defaultproperties
 {
+     DamageType=Class'ScrnBalanceSrv.ScrnDamTypeM4203M'
 }

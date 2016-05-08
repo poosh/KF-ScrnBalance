@@ -256,33 +256,34 @@ static function string GetCustomLevelInfo( byte Level )
 
 defaultproperties
 {
-     DefaultDamageType=Class'ScrnBalanceSrv.ScrnDamTypeSniper'
-     DefaultDamageTypeNoBonus=Class'ScrnBalanceSrv.ScrnDamTypeSniperBase'
+    DefaultDamageType=Class'ScrnBalanceSrv.ScrnDamTypeSniper'
+    DefaultDamageTypeNoBonus=Class'ScrnBalanceSrv.ScrnDamTypeSniperBase'
 
-     progressArray0(0)=10
-     progressArray0(1)=30
-     progressArray0(2)=100
-     progressArray0(3)=775
-     progressArray0(4)=2500
-     progressArray0(5)=5500
-     progressArray0(6)=8500
-     CustomLevelInfo="*** BONUS LEVEL %L|+%s Headshot dmg. with Sniper Rifles|+%p Headshot dmg. with Pistols|+50% Headshot damage with other weapons|75% less recoil with Pistols/Sniper Rifles|60% faster reload with Pistols/Sniper Rifles|%d discount on Pistols/Sniper Rifles|%a discount on Crossbow/M99 ammo|Spawn with a Crossbow"
-     SRLevelEffects(0)="*** BONUS LEVEL 0|+10% Headshot dmg. with Pistols/Sniper Rifles|+5% Headshot damage with other weapons|10% discount on Pistols/Sniper Rifles"
-     SRLevelEffects(1)="*** BONUS LEVEL 1|+21% Headshot dmg. with Pistols/Sniper Rifles|+10% Headshot damage with other weapons|25% less recoil with Pistols/Sniper Rifles|10% faster reload with Pistols/Sniper Rifles|20% discount on Pistols/Sniper Rifles|7% discount on Crossbow/M99 ammo"
-     SRLevelEffects(2)="*** BONUS LEVEL 2|+38% Headshot dmg. with Pistols/Sniper Rifles|+20% Headshot damage with other weapons|50% less recoil with Pistols/Sniper Rifles|20% faster reload with Pistols/Sniper Rifles|30% discount on Pistols/Sniper Rifles|14% discount on Crossbow/M99 ammo"
-     SRLevelEffects(3)="*** BONUS LEVEL 3|+56% Headshot dmg. with Pistols/Sniper Rifles|+30% Headshot damage with other weapons|75% less recoil with Pistols/Sniper Rifles|30% faster reload with Pistols/Sniper Rifles|40% discount on Pistols/Sniper Rifles|21% discount on Crossbow/M99 ammo"
-     SRLevelEffects(4)="*** BONUS LEVEL 4|+82% Headshot dmg. with Pistols/Sniper Rifles|+40% Headshot damage with other weapons|75% less recoil with Pistols/Sniper Rifles|40% faster reload with Pistols/Sniper Rifles|50% discount on Pistols/Sniper Rifles|28% discount on Crossbow/M99 ammo"
-     SRLevelEffects(5)="*** BONUS LEVEL 5|+125% Headshot dmg. with Pistols/Sniper Rifles|+50% Headshot damage with other weapons|75% less recoil with Pistols/Sniper Rifles|50% faster reload with Pistols/Sniper Rifles|60% discount on Pistols/Sniper Rifles|35% discount on Crossbow/M99 ammo|Spawn with a Lever Action Rifle"
-     SRLevelEffects(6)="*** BONUS LEVEL 6|+140% Headshot dmg. with Pistols/Sniper Rifles|+50% Headshot damage with other weapons|75% less recoil with Pistols/Sniper Rifles|60% faster reload with Pistols/Sniper Rifles|70% discount on Pistols/Sniper Rifles|42% discount on Crossbow/M99 ammo|Spawn with a Crossbow"
-     PerkIndex=2
-     OnHUDIcon=Texture'KillingFloorHUD.Perks.Perk_SharpShooter'
-     OnHUDGoldIcon=Texture'KillingFloor2HUD.Perk_Icons.Perk_SharpShooter_Gold'
-   	 OnHUDIcons(0)=(PerkIcon=Texture'KillingFloorHUD.Perks.Perk_SharpShooter',StarIcon=Texture'KillingFloorHUD.HUD.Hud_Perk_Star',DrawColor=(B=255,G=255,R=255,A=255))
-	 OnHUDIcons(1)=(PerkIcon=Texture'KillingFloor2HUD.Perk_Icons.Perk_SharpShooter_Gold',StarIcon=Texture'KillingFloor2HUD.Perk_Icons.Hud_Perk_Star_Gold',DrawColor=(B=255,G=255,R=255,A=255))
-	 OnHUDIcons(2)=(PerkIcon=Texture'ScrnTex.Perks.Perk_SharpShooter_Green',StarIcon=Texture'ScrnTex.Perks.Hud_Perk_Star_Green',DrawColor=(B=255,G=255,R=255,A=255))
-	 OnHUDIcons(3)=(PerkIcon=Texture'ScrnTex.Perks.Perk_SharpShooter_Blue',StarIcon=Texture'ScrnTex.Perks.Hud_Perk_Star_Blue',DrawColor=(B=255,G=255,R=255,A=255))
-	 OnHUDIcons(4)=(PerkIcon=Texture'ScrnTex.Perks.Perk_SharpShooter_Purple',StarIcon=Texture'ScrnTex.Perks.Hud_Perk_Star_Purple',DrawColor=(B=255,G=255,R=255,A=255))
-	 OnHUDIcons(5)=(PerkIcon=Texture'ScrnTex.Perks.Perk_SharpShooter_Orange',StarIcon=Texture'ScrnTex.Perks.Hud_Perk_Star_Orange',DrawColor=(B=255,G=255,R=255,A=255))
-	VeterancyName="Sharpshooter"
-     Requirements(0)="Get %x headshot kills with Pistols/LAR/M14/Crossbow/M99"
+    progressArray0(0)=10
+    progressArray0(1)=30
+    progressArray0(2)=100
+    progressArray0(3)=775
+    progressArray0(4)=2500
+    progressArray0(5)=5500
+    progressArray0(6)=8500
+    CustomLevelInfo="*** BONUS LEVEL %L|+%s Headshot dmg. with Sniper Rifles|+%p Headshot dmg. with Pistols|+50% Headshot damage with other weapons|75% less recoil with Pistols/Sniper Rifles|60% faster reload with Pistols/Sniper Rifles|%d discount on Pistols/Sniper Rifles|%a discount on Crossbow/M99 ammo|Spawn with a Crossbow"
+    SRLevelEffects(0)="*** BONUS LEVEL 0|+10% Headshot dmg. with Pistols/Sniper Rifles|+5% Headshot damage with other weapons|10% discount on Pistols/Sniper Rifles"
+    SRLevelEffects(1)="*** BONUS LEVEL 1|+21% Headshot dmg. with Pistols/Sniper Rifles|+10% Headshot damage with other weapons|25% less recoil with Pistols/Sniper Rifles|10% faster reload with Pistols/Sniper Rifles|20% discount on Pistols/Sniper Rifles|7% discount on Crossbow/M99 ammo"
+    SRLevelEffects(2)="*** BONUS LEVEL 2|+38% Headshot dmg. with Pistols/Sniper Rifles|+20% Headshot damage with other weapons|50% less recoil with Pistols/Sniper Rifles|20% faster reload with Pistols/Sniper Rifles|30% discount on Pistols/Sniper Rifles|14% discount on Crossbow/M99 ammo"
+    SRLevelEffects(3)="*** BONUS LEVEL 3|+56% Headshot dmg. with Pistols/Sniper Rifles|+30% Headshot damage with other weapons|75% less recoil with Pistols/Sniper Rifles|30% faster reload with Pistols/Sniper Rifles|40% discount on Pistols/Sniper Rifles|21% discount on Crossbow/M99 ammo"
+    SRLevelEffects(4)="*** BONUS LEVEL 4|+82% Headshot dmg. with Pistols/Sniper Rifles|+40% Headshot damage with other weapons|75% less recoil with Pistols/Sniper Rifles|40% faster reload with Pistols/Sniper Rifles|50% discount on Pistols/Sniper Rifles|28% discount on Crossbow/M99 ammo"
+    SRLevelEffects(5)="*** BONUS LEVEL 5|+125% Headshot dmg. with Pistols/Sniper Rifles|+50% Headshot damage with other weapons|75% less recoil with Pistols/Sniper Rifles|50% faster reload with Pistols/Sniper Rifles|60% discount on Pistols/Sniper Rifles|35% discount on Crossbow/M99 ammo|Spawn with a Lever Action Rifle"
+    SRLevelEffects(6)="*** BONUS LEVEL 6|+140% Headshot dmg. with Pistols/Sniper Rifles|+50% Headshot damage with other weapons|75% less recoil with Pistols/Sniper Rifles|60% faster reload with Pistols/Sniper Rifles|70% discount on Pistols/Sniper Rifles|42% discount on Crossbow/M99 ammo|Spawn with a Crossbow"
+    PerkIndex=2
+    OnHUDIcon=Texture'KillingFloorHUD.Perks.Perk_SharpShooter'
+    OnHUDGoldIcon=Texture'KillingFloor2HUD.Perk_Icons.Perk_SharpShooter_Gold'
+    OnHUDIcons(0)=(PerkIcon=Texture'KillingFloorHUD.Perks.Perk_SharpShooter',StarIcon=Texture'KillingFloorHUD.HUD.Hud_Perk_Star',DrawColor=(B=255,G=255,R=255,A=255))
+    OnHUDIcons(1)=(PerkIcon=Texture'KillingFloor2HUD.Perk_Icons.Perk_SharpShooter_Gold',StarIcon=Texture'KillingFloor2HUD.Perk_Icons.Hud_Perk_Star_Gold',DrawColor=(B=255,G=255,R=255,A=255))
+    OnHUDIcons(2)=(PerkIcon=Texture'ScrnTex.Perks.Perk_SharpShooter_Green',StarIcon=Texture'ScrnTex.Perks.Hud_Perk_Star_Green',DrawColor=(B=255,G=255,R=255,A=255))
+    OnHUDIcons(3)=(PerkIcon=Texture'ScrnTex.Perks.Perk_SharpShooter_Blue',StarIcon=Texture'ScrnTex.Perks.Hud_Perk_Star_Blue',DrawColor=(B=255,G=255,R=255,A=255))
+    OnHUDIcons(4)=(PerkIcon=Texture'ScrnTex.Perks.Perk_SharpShooter_Purple',StarIcon=Texture'ScrnTex.Perks.Hud_Perk_Star_Purple',DrawColor=(B=255,G=255,R=255,A=255))
+    OnHUDIcons(5)=(PerkIcon=Texture'ScrnTex.Perks.Perk_SharpShooter_Orange',StarIcon=Texture'ScrnTex.Perks.Hud_Perk_Star_Orange',DrawColor=(B=255,G=255,R=255,A=255))
+    OnHUDIcons(6)=(PerkIcon=Texture'ScrnTex.Perks.Perk_Sharpshooter_Blood',StarIcon=Texture'ScrnTex.Perks.Hud_Perk_Star_Blood',DrawColor=(B=255,G=255,R=255,A=255))
+    VeterancyName="Sharpshooter"
+    Requirements(0)="Get %x headshot kills with Pistols/LAR/M14/Crossbow/M99"
 }

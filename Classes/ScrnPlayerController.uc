@@ -82,6 +82,7 @@ var localized string strCantShopInEnemyTrader;
 var array<string> RedCharacters, BlueCharacters;
 
 var class<ScrnCustomPRI> CustomPlayerReplicationInfoClass;
+var ScrnCustomPRI ScrnCustomPRI;
 var transient bool bDestroying; // indicates that Destroyed() is executing
 
 var bool bDamageAck; // does server needs to acknowledge client of damages he made?
@@ -108,8 +109,22 @@ var array<SDLC> DLC;
 
 var transient int AchResetPassword;
 
-var globalconfig bool bDoomMusic;
-var transient string PendingSong;
+
+struct SMusicRecord {
+    var byte PL, Wave;
+    var bool bTrader;
+    var string Song;
+    var string Artist, Title;
+};
+var globalconfig byte ActiveMusicPlaylist;
+var globalconfig array<String> MusicPlaylistNames;
+var globalconfig array<SMusicRecord> MyMusic;
+
+var private transient array<int> MusicPlaylistIndex; // MusicPlaylistIndex[PL] = index of first playlist entry in MyMusic
+var private transient bool bMusicPlaylistIndexReady;
+var private transient int ActiveMusicSongIndex;
+var private transient string PendingSong;
+var localized string strPlayingSong;
 
 
 replication
@@ -151,19 +166,16 @@ simulated function PreBeginPlay()
 // and only if using ScrnGameType, ScrnStoryGameInfo or descendants
 function PostLogin()
 {
-    local ScrnCustomPRI ScrnPRI;
-
     ClientPostLogin();
     
-    ScrnPRI = class'ScrnCustomPRI'.static.FindMe(PlayerReplicationInfo);
-    if  ( ScrnPRI != none ) {
-        ScrnPRI.GotoState('');
-        if ( Level.NetMode == NM_Standalone || (Level.NetMode == NM_ListenServer && Viewport(Player) != None) )
-            ScrnPRI.SetSteamID64(Mut.MySteamID64);
-        else
-            ScrnPRI.SetSteamID64(GetPlayerIDHash());
-        ScrnPRI.NetUpdateTime = Level.TimeSeconds - 1;
-    }
+    ScrnCustomPRI.GotoState('');
+    if ( Level.NetMode == NM_Standalone || (Level.NetMode == NM_ListenServer && Viewport(Player) != None) )
+        ScrnCustomPRI.SetSteamID64(Mut.MySteamID64);
+    else
+        ScrnCustomPRI.SetSteamID64(GetPlayerIDHash());
+    ScrnCustomPRI.NetUpdateTime = Level.TimeSeconds - 1;
+    
+    Mut.GameRules.PlayerEntering(self);
 }
 
 simulated function ClientPostLogin()
@@ -182,6 +194,8 @@ simulated function LoadMutSettings()
             bManualReload = Mut.bManualReload;
         if ( Mut.bHardCore )
             bOtherPlayerLasersBlue = false;
+        if ( ScrnHumanPawn(Pawn) != none )
+            ScrnHumanPawn(Pawn).bTraderSpeedBoost = Mut.bTraderSpeedBoost;
     }
     else { 
         //this shouldn't happen
@@ -196,7 +210,6 @@ simulated function LoadMutSettings()
 function InitPlayerReplicationInfo()
 {
     local LinkedReplicationInfo L;
-    local ScrnCustomPRI ScrnPRI;
     
     super.InitPlayerReplicationInfo();
     
@@ -207,11 +220,14 @@ function InitPlayerReplicationInfo()
             break;    
     }
     
-    ScrnPRI = spawn(CustomPlayerReplicationInfoClass, self); 
-    if ( L == none )
-        PlayerReplicationInfo.CustomReplicationInfo = ScrnPRI;
+    ScrnCustomPRI = spawn(CustomPlayerReplicationInfoClass, self); 
+    if ( ScrnCustomPRI != none ) {
+        if ( PlayerReplicationInfo.CustomReplicationInfo != none )
+            ScrnCustomPRI.NextReplicationInfo = PlayerReplicationInfo.CustomReplicationInfo;
+        PlayerReplicationInfo.CustomReplicationInfo = ScrnCustomPRI;
+    }
     else
-        L.NextReplicationInfo = ScrnPRI;
+        warn("Can not create ScrnCustomPRI: " $ CustomPlayerReplicationInfoClass);
 }
 
 simulated function ClientForceCollectGarbage()
@@ -223,10 +239,6 @@ simulated function ClientForceCollectGarbage()
     }
 }
 
-final static function ScrnCustomPRI FindScrnCustomPRI(PlayerReplicationInfo PRI)
-{
-    return class'ScrnCustomPRI'.static.FindMe(PRI);
-}
 
 simulated function PreloadFireModeAssetsSE(class<WeaponFire> WF, optional WeaponFire SpawnedFire)
 {
@@ -380,6 +392,12 @@ exec function ThrowCookedGrenade()
         ScrnHumanPawn(Pawn).ThrowCookedGrenade();
 }
 
+exec function QuickMelee()
+{
+    if ( ScrnHumanPawn(Pawn) != none )
+        ScrnHumanPawn(Pawn).QuickMelee();
+}
+
 /** 
  * DamTypeNum:
  * 0 - normal
@@ -434,12 +452,6 @@ simulated function ClientMonsterBlamed(class<KFMonster> BlamedMonsterClass)
 	}
 }
 
-exec function TogglePlayerInfo()
-{
-    if ( ScrnHUD(myHUD) != none )
-        ScrnHUD(myHUD).bHidePlayerInfo = !ScrnHUD(myHUD).bHidePlayerInfo; 
-}
-
 exec function ScrnInit()
 {
     local LinkedReplicationInfo L;
@@ -492,83 +504,265 @@ simulated function PlayerTick( float DeltaTime )
         }
         
         if ( KFInterAct != none && PendingSong != "" && PendingSong == KFInterAct.ActiveSong ) {
-            if ( KFInterAct.ActiveHandel == 0) {
-                // unable to start song - playe default one
-                log("Unable to play music file: '"$PendingSong$".ogg'. Playing default song instead.", 'ScrnBalance');
-                PlayDefaultMusic(class'ScrnMusicTrigger');
+            // don't bother with this, if player has turned off music
+            if ( GetMusicVolume() > 0 ) { 
+                if ( KFInterAct.ActiveHandel == 0) {
+                    // unable to start song - play default one
+                    ClientMessage("Unable to play music file: '"$PendingSong$".ogg'. Playing default song instead.", 'Log');
+                    PlayDefaultMusic(class'ScrnMusicTrigger');
+                }
+                else 
+                    SongPlaying(PendingSong, ActiveMusicSongIndex);
             }
             PendingSong = "";
         }
     }
 }
 
-function string GetSong(class<KFMusicTrigger> M)
+event SongPlaying(String Song, int MyIndex)
+{
+    if ( Song == "" )
+        return;
+        
+    if ( MyIndex >=0 && MyIndex < MyMusic.length && MyMusic[MyIndex].Song == Song ) {
+        if ( MyMusic[MyIndex].Title == "" )
+            MyMusic[MyIndex].Title = MyMusic[MyIndex].Song;
+        ClientMessage(strPlayingSong
+            $ ConsoleColorString(MyMusic[MyIndex].Artist, 192, 1, 192)
+            @ ConsoleColorString(MyMusic[MyIndex].Title, 255, 255, 1)
+        );
+    }
+    else {
+        for ( MyIndex = 0; MyIndex < MyMusic.length; ++MyIndex ) {
+            if ( MyMusic[MyIndex].Song == Song )
+                SongPlaying(Song, MyIndex);
+        }
+    }
+}
+
+function UpdateMusicPlaylistIndex()
+{
+    local int i, prev_pl;
+    
+    bMusicPlaylistIndexReady = true;
+    for ( i=0; i<MyMusic.length; ++i ) {
+        if ( MyMusic[i].PL != prev_pl ) {
+            if ( MyMusic[i].PL < prev_pl ) {
+                ClientMessage("MyMusic broken! MyMusic must be sorded in (PL,Wave,bTrader) order! Line Number = " $i, 'Log');
+                MusicPlaylistIndex.Length = 0;    
+                return;
+            }
+            prev_pl = MyMusic[i].PL;
+            MusicPlaylistIndex[prev_pl] = i;
+        }
+    }
+}
+
+/**
+ *  Gets song name from MyMusic according to playlist (PL) and wave numbers.
+ *  Function doesn't check if music file exists.
+ *
+ *  @param PL       Playlist number as defined in MyMusic.PL. Starting with 1. PL=0 is reserved for default music.
+ *                  Calling GetMySong with PL = 0 always returns empty string.      
+ *  @param Wave     Player-friendly wave number, i.e. 1 - Wave 1, 11 - Boss wave etc.
+ *                  Calling GetMySong with Wave=0 returns default song for this playlist    
+ *  @param bTrader  Are we looking for calm song for trader time (bTrader=True) or battle song (false)?
+ *  @return         Record index in MyMusic. -1 if not found
+ */
+function int GetMySongIndex(byte PL, byte Wave, bool bTrader)
+{
+    local int i, start, end;
+    local bool bFound;
+    
+    if ( !bMusicPlaylistIndexReady )
+        UpdateMusicPlaylistIndex();
+    
+    if ( PL == 0 )
+        return -1;
+        
+    if ( PL >= MusicPlaylistIndex.Length ) {
+        if ( ActiveMusicPlaylist == PL )
+            ActiveMusicPlaylist = 0;
+        ClientMessage("Music Playlist #"$PL $" is not defined", 'Log');
+        return -1;
+    }
+        
+    start = MusicPlaylistIndex[PL];
+    if ( start >= MyMusic.Length ) {
+        ClientMessage("Music Playlist #"$PL $" has no songs or MyMusic is not sorted", 'Log');
+        return -1;
+    }
+    if ( (PL+1) == MusicPlaylistIndex.Length )
+        end = MyMusic.length;
+    else 
+        end = MusicPlaylistIndex[PL+1];
+    
+    for ( i = start; i < end; ++i ) {
+        if ( bFound ) {
+            if ( MyMusic[i].Wave != Wave || MyMusic[i].bTrader != bTrader ) {
+                end = i;
+                break;
+            }
+        }
+        else if ( MyMusic[i].Wave == Wave && MyMusic[i].bTrader == bTrader ) {
+            bFound = true;
+            start = i;
+        }
+    }
+    if ( bFound ) {
+        if ( start + 1 == end )
+            return start;
+        else
+            return start + Rand(end-start);
+    }
+    else if ( Wave >  0)
+        return GetMySongIndex(PL, 0, bTrader); // no songs defined for given wave. return default
+    
+    return -1;
+}
+
+function int GetMyActiveSongIndex()
 {
     local KFGameReplicationInfo KFGRI;
-    local string song;
+    local byte w;
+    
+    KFGRI = KFGameReplicationInfo(Level.GRI);
+    if ( KFGRI == none )
+        return -1; // wtf?
+    if ( KF_StoryGRI(KFGRI) != none ) {
+        // story mode
+        return -1; // story music must be set explicitly by L.D.
+    }
+
+    w = KFGRI.WaveNumber;
+    if ( KFGRI.bWaveInProgress ) {
+        if ( w == KFGRI.FinalWave && TSCGameReplicationInfoBase(KFGRI) == none )
+            w = 10; // boss battle song
+    }
+    else {
+        if ( KFGRI.TimeToNextWave > 10 )
+            ++w; // KFGRI.WaveNumber is updated only at the end of the trader time
+    }
+    return GetMySongIndex(ActiveMusicPlaylist, w+1, !KFGRI.bWaveInProgress);
+}
+
+function PlayDefaultMusic(class<KFMusicTrigger> M)
+{
+    local string sng;
+    
+    if ( KFInterAct == none )
+        return;
+        
+    sng = GetSongFromMusicTrigger(M);
+    if ( sng != "" )
+        KFInterAct.SetSong(sng, M.default.FadeInTime, M.default.FadeOutTime);
+}
+
+function string GetSongFromMusicTrigger(class<KFMusicTrigger> M)
+{
+    local KFGameReplicationInfo KFGRI;
+    local string sng;
     local int w;
     
     KFGRI = KFGameReplicationInfo(Level.GRI);
     if ( KFGRI == none )
-        return ""; // wtf?
+        return sng; // wtf?
     if ( KF_StoryGRI(KFGRI) != none )
-        return ""; // story music must be set explicitly by L.D.   
+        return sng; // story music must be set explicitly by L.D.   
 
     w = KFGRI.WaveNumber;
     if ( KFGRI.bWaveInProgress ) {
         if ( w == KFGRI.FinalWave && M.default.WaveBasedSongs.length > 10 && TSCGameReplicationInfoBase(KFGRI) == none )
-            song = M.default.WaveBasedSongs[10].CombatSong; // boss battle song
+            sng = M.default.WaveBasedSongs[10].CombatSong; // boss battle song
         else if ( w < M.default.WaveBasedSongs.length )
-            song = M.default.WaveBasedSongs[w].CombatSong;
+            sng = M.default.WaveBasedSongs[w].CombatSong;
         else
-            song = M.default.CombatSong;
+            sng = M.default.CombatSong;
     }
     else {
         if ( KFGRI.TimeToNextWave > 10 )
             w++; // KFGRI.WaveNumber is updated only at the end of the trader time
         if ( w < M.default.WaveBasedSongs.length )
-            song = M.default.WaveBasedSongs[w].CalmSong;
+            sng = M.default.WaveBasedSongs[w].CalmSong;
         else
-            song = M.default.Song;    
+            sng = M.default.Song;    
     }
-    return song;    
+    return sng;    
 }
 
-function PlayDefaultMusic(class<KFMusicTrigger> M)
+function int GetActiveMusicSongIndex() 
 {
-    local string song;
-    
-    if ( KFInterAct == none )
-        return;
-        
-    song = GetSong(M);
-    if ( song != "" )
-        KFInterAct.SetSong(song, M.default.FadeInTime, M.default.FadeOutTime);
+    return ActiveMusicSongIndex;
 }
 
 function NetPlayMusic( string Song, float FadeInTime, float FadeOutTime )
 {
-    local string DoomSong;
-    
-    if ( bDoomMusic ) {
-        DoomSong = GetSong(class'DoomMusicTrigger');
-        if ( DoomSong != "" )
-            Song = DoomSong;
+    if ( ActiveMusicPlaylist > 0 ) {
+        ActiveMusicSongIndex = GetMyActiveSongIndex();
+        if ( ActiveMusicSongIndex != -1 )
+            Song = MyMusic[ActiveMusicSongIndex].Song;
     }
+    else
+        ActiveMusicSongIndex = -1;
+        
     PendingSong = Song;
     super.NetPlayMusic(Song, FadeInTime, FadeOutTime);
 }
 
-exec function DoomMusic(bool bEnable)
+exec function PlayMyMusic(int PL)
 {
-    bDoomMusic = bEnable;
+    local int i;
+    
+    if ( !bMusicPlaylistIndexReady )
+        UpdateMusicPlaylistIndex();    
+    
+    if ( MusicPlaylistIndex.length <= 1 ) {
+        ConsoleMessage("No user-defined music available", 0, 255, 1, 1);
+        return;
+    }
+    
+    if ( PL >= MusicPlaylistIndex.length ) {
+        ConsoleMessage("Wrong playlist number!", 0, 255, 1, 1);
+        PL = 0;
+    }
+    
+    if ( PL == 0) {
+        ConsoleMessage("Available music playlists:");
+        ConsoleMessage("---------------------------------------------");
+        for ( i=1; i<MusicPlaylistIndex.length; ++i ) {
+            if ( ActiveMusicPlaylist == i )
+                ConsoleMessage(i @ MusicPlaylistNames[i], 0, 1, 255, 1);
+            else 
+                ConsoleMessage(i @ MusicPlaylistNames[i]);
+        }
+        ConsoleMessage("---------------------------------------------");
+        if ( ActiveMusicSongIndex != -1 )
+             ConsoleMessage(strPlayingSong 
+                $ ConsoleColorString(MyMusic[ActiveMusicSongIndex].Artist, 192, 1, 192)
+                @ ConsoleColorString(MyMusic[ActiveMusicSongIndex].Title, 255, 255, 1)  
+            );
+        return;
+    }
+    
+    ActiveMusicPlaylist = PL;
     NetPlayMusic("ThisWillBeReplacedWithDefaultWaveTrack", 1, 1);
-    ClientMessage("Doom Metal Soundtrack " $ eval(bDoomMusic, "enabled", "disabled"));
+    ClientMessage(ConsoleColorString(MusicPlaylistNames[PL], 1, 192, 1)
+        $ ConsoleColorString(" activated", 192, 192, 192));
+    SaveConfig();
 }
 
-exec function ToggleDoomMusic()
+exec function StopMyMusic(int PL)
 {
-    DoomMusic(!bDoomMusic);
+    if ( ActiveMusicPlaylist > 0 ) {
+        ActiveMusicPlaylist = 0;
+        ClientMessage("User-defined music disabled. Map-specific music will be restored next wave.");
+        SaveConfig();
+    }
+}
+
+function float GetMusicVolume()
+{
+    return float(ConsoleCommand("get ini:Engine.Engine.AudioDevice MusicVolume"));
 }
 
 
@@ -933,7 +1127,7 @@ function bool SetPause( BOOL bPause )
     bFire = 0;
     bAltFire = 0;
     if ( !Level.Game.SetPause(bPause, self) ) {
-        ServerMutate("VOTE PAUSE 60");
+        ServerMutate("VOTE PAUSE 120");
         return false;
     }
     return true;
@@ -998,6 +1192,8 @@ simulated event Destroyed()
         {
             PlayerReplicationInfo.Team.Score += PlayerReplicationInfo.Score - StartCash;
             PlayerReplicationInfo.Score = StartCash; // just in case
+            if ( Mut.GameRules != none )
+                Mut.GameRules.PlayerLeaving(self);
         }
     } 
 
@@ -1579,6 +1775,7 @@ final function ServerKillRules(string RuleName)
     }
 }
 
+
 function CheckDLC()
 {
     local ScrnSteamStatsGetter A;
@@ -1722,7 +1919,8 @@ function ServerGunSkin(class<KFWeapon> SkinnedWeaponClass)
             KFPlayerController(C).ClientWeaponSpawned(SkinnedWeaponClass, none);
     }
     
-    W = KFWeapon(Pawn.Weapon);
+    if ( Pawn != none )
+        W = KFWeapon(Pawn.Weapon);
     if ( W != none && W.AttachmentClass != SkinnedWeaponClass.default.AttachmentClass ) {
         W.ThirdPersonActor.Destroy();
         W.ThirdPersonActor = none;
@@ -2165,13 +2363,19 @@ exec function RepLinkMessages(bool value)
     // SetSID64("76561197992537591");
 // }
 
-/*
-exec function PerkLevel(int L)
-{
-    if ( Level.NetMode == NM_Standalone )
-        KFPlayerReplicationInfo(PlayerReplicationInfo).ClientVeteranSkillLevel = L;
-} 
 
+// exec function PerkLevel(int L)
+// {
+    // if ( Level.NetMode == NM_Standalone )
+        // KFPlayerReplicationInfo(PlayerReplicationInfo).ClientVeteranSkillLevel = L;
+// } 
+
+
+
+
+
+
+/*
 exec function IncAch(name AchID)
 {
     if ( Level.NetMode == NM_Standalone )
@@ -2231,11 +2435,6 @@ exec function TestEndGame()
 
 */
 
-
-
-
-
-
 defaultproperties
 {
     bManualReload=True
@@ -2276,6 +2475,53 @@ defaultproperties
     DLC(6)=(AppID=258751)
 	DLC(7)=(AppID=258752)
 	DLC(8)=(AppID=309991)
+    
+    strPlayingSong="Now playing: "
+    MusicPlaylistNames(0)="<DEFAULT>"
+    MusicPlaylistNames(1)="KF1 Classic Soundtrack"
+    MusicPlaylistNames(2)="DooM Metal Soundtrack"
+    
+    MyMusic( 0)=(PL=1,Wave=0,bTrader=True,Song="KF_Defection",Artist="zYnthetic",Title="Defection")
+    MyMusic( 1)=(PL=1,Wave=0,bTrader=True,Song="KF_Harm",Artist="zYnthetic",Title="Harm Intended")
+    MyMusic( 2)=(PL=1,Wave=0,bTrader=True,Song="KF_Insect",Artist="zYnthetic",Title="Insect Wings")
+    MyMusic( 3)=(PL=1,Wave=0,bTrader=True,Song="KF_Mutagen",Artist="zYnthetic",Title="Mutagen")
+    MyMusic( 4)=(PL=1,Wave=0,bTrader=True,Song="KF_Neurotoxin",Artist="zYnthetic",Title="Neurotoxin")
+    MyMusic( 5)=(PL=1,Wave=0,bTrader=True,Song="KF_Peripheral",Artist="zYnthetic",Title="Peripheral")
+    MyMusic( 6)=(PL=1,Wave=0,bTrader=True,Song="KF_SinSoma",Artist="zYnthetic",Title="Sin Soma and the Masquerade")
+    MyMusic( 7)=(PL=1,Wave=0,bTrader=True,Song="KF_Smolder",Artist="zYnthetic",Title="Smolder")
+    MyMusic( 8)=(PL=1,Wave=0,bTrader=True,Song="KF_SurfaceTension",Artist="zYnthetic",Title="Surface Tension")
+    MyMusic( 9)=(PL=1,Wave=0,bTrader=True,Song="KF_TheEdge",Artist="zYnthetic",Title="The Edge Of The Abyss")
+    MyMusic(10)=(PL=1,Wave=0,bTrader=True,Song="KF_TheStitches",Artist="zYnthetic",Title="The Stitches Are A Reminder")
+    MyMusic(11)=(PL=1,Wave=0,bTrader=True,Song="KF_Treatments",Artist="zYnthetic",Title="Treatments Are More Profitable Than Cures")
+    MyMusic(12)=(PL=1,Wave=0,bTrader=True,Song="KF_Vapour",Artist="zYnthetic",Title="Vapour")
+    MyMusic(13)=(PL=1,Wave=0,bTrader=True,Song="KF_Wading",Artist="zYnthetic",Title="Wading Through The Bodies")
+    MyMusic(14)=(PL=1,Wave=0,Song="DirgeDefective1",Artist="Dirge",Title="Defective")
+    MyMusic(15)=(PL=1,Wave=0,Song="DirgeDefective2",Artist="Dirge",Title="Defective")
+    MyMusic(16)=(PL=1,Wave=0,Song="DirgeDisunion1",Artist="Dirge",Title="Disunion")
+    MyMusic(17)=(PL=1,Wave=0,Song="DirgeDisunion2",Artist="Dirge",Title="Disunion")
+    MyMusic(18)=(PL=1,Wave=0,Song="DirgeRepulse1",Artist="Dirge",Title="Repulse")
+    MyMusic(19)=(PL=1,Wave=0,Song="DirgeRepulse2",Artist="Dirge",Title="Repulse")
+    MyMusic(20)=(PL=1,Wave=0,Song="KF_Infectious_Cadaver",Artist="Six Feet of Foreplay",Title="Infectious Cadaver")
+    MyMusic(21)=(PL=1,Wave=0,Song="KF_BledDry",Artist="zYnthetic",Title="Bled Dry")
+    MyMusic(22)=(PL=1,Wave=0,Song="KF_Containment",Artist="zYnthetic",Title="Containment Breach")
+    MyMusic(23)=(PL=1,Wave=0,Song="KF_Hunger",Artist="zYnthetic",Title="Hunger")
+    MyMusic(24)=(PL=1,Wave=0,Song="KF_Pathogen",Artist="zYnthetic",Title="Pathogen")
+    MyMusic(25)=(PL=1,Wave=0,Song="KF_WPrevention",Artist="zYnthetic",Title="Witness Prevention")
+    MyMusic(26)=(PL=1,Wave=11,Song="KF_Abandon",Artist="zYnthetic",Title="Abandon All")
+    
+    MyMusic(27)=(PL=2,Wave=0,bTrader=True,Song="EGT-ThisLove",Artist="elguitarTom",Title="Waiting For Romero To Play")
+    MyMusic(28)=(PL=2,Wave=0,bTrader=True,Song="EGT-Interlevel",Artist="elguitarTom",Title="Interlevel")
+    MyMusic(29)=(PL=2,Wave=1,Song="EGT-Entryway",Artist="elguitarTom",Title="Entryway")
+    MyMusic(30)=(PL=2,Wave=2,Song="EGT-E1M1",Artist="elguitarTom",Title="E1M1")
+    MyMusic(31)=(PL=2,Wave=3,Song="EGT-Demon1",Artist="elguitarTom",Title="The Demon's Dead, Part 1")
+    MyMusic(32)=(PL=2,Wave=4,Song="EGT-Shawn",Artist="elguitarTom",Title="Shawn's Got The Shotgun")
+    MyMusic(33)=(PL=2,Wave=5,Song="EGT-ToxinRefinery",Artist="elguitarTom",Title="Toxin Refinery")
+    MyMusic(34)=(PL=2,Wave=6,Song="EGT-Entryway",Artist="elguitarTom",Title="Entryway")
+    MyMusic(35)=(PL=2,Wave=7,Song="EGT-Demon2",Artist="elguitarTom",Title="The Demon's Dead, Part 2")
+    MyMusic(36)=(PL=2,Wave=8,Song="EGT-PhobosLab",Artist="elguitarTom",Title="Phobos Lab")
+    MyMusic(37)=(PL=2,Wave=9,Song="EGT-E1M1",Artist="elguitarTom",Title="E1M1")
+    MyMusic(38)=(PL=2,Wave=10,Song="EGT-Shawn",Artist="elguitarTom",Title="Shawn's Got The Shotgun")
+    MyMusic(39)=(PL=2,Wave=11,Song="EGT-SignOfEvil",Artist="elguitarTom",Title="Sign Of Evil")
     
     // TSC
     strCantShopInEnemyTrader="You can not trade with enemy trader!"

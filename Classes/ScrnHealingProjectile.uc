@@ -36,7 +36,7 @@ simulated function ProcessTouch(Actor Other, Vector HitLocation)
 		return;
         
     // KFBulletWhipAttachment is attached to KFPawns    
-    if ( KFBulletWhipAttachment(Other) != none ) {
+    if ( ROBulletWhipAttachment(Other) != none ) {
         Healed = KFHumanPawn(Other.Owner);
 		if ( Healed == none || Healed.Health >= Healed.HealthMax )
 			return;

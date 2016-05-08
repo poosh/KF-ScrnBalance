@@ -203,22 +203,10 @@ static function float ModifyRecoilSpread(KFPlayerReplicationInfo KFPRI, WeaponFi
 //v2.40 raise reload speed for perked weapons
 static function float GetReloadSpeedModifierStatic(KFPlayerReplicationInfo KFPRI, class<KFWeapon> Other)
 {
-    if ( class'ScrnBalance'.default.Mut.bWeaponFix && !class'ScrnBalance'.default.Mut.bHardcore && GetClientVeteranSkillLevel(KFPRI) > 0 
-            && (ClassIsChildOf(Other, class'Bullpup')
-				|| ClassIsChildOf(Other, class'AK47AssaultRifle') || ClassIsChildOf(Other, class'MKb42AssaultRifle')
-				|| ClassIsChildOf(Other, class'M4AssaultRifle')
-				|| ClassIsChildOf(Other, class'SCARMK17AssaultRifle') || ClassIsChildOf(Other, class'FNFAL_ACOG_AssaultRifle')
-				|| ClassIsChildOf(Other, class'ThompsonSMG')
-                || ClassIsInArray(default.PerkedWeapons, Other) //v3 - custom weapon support
-            ) )
-    {
-        if ( GetClientVeteranSkillLevel(KFPRI) <= 6 )    
-            return 1.0 + (0.1 * fmin(5, float(GetClientVeteranSkillLevel(KFPRI)))); // Up to 50% faster reload speed for assault rifles
-        else        
-            return 1.5 + (0.05 * (GetClientVeteranSkillLevel(KFPRI)-6)); // 5% per level post 6
-    }
+    if ( class'ScrnBalance'.default.Mut.bWeaponFix && ClassIsChildOf(Other, class'ThompsonSMG') )
+        return 1.0 + (0.1 * fmin(6, GetClientVeteranSkillLevel(KFPRI))); // Up to 60% faster reload speed for Tommy Guns
 
-	return 1.05 + (0.05 * float(GetClientVeteranSkillLevel(KFPRI))); // Up to 35% faster reload speed for any weapon
+	return 1.05 + (0.05 * fmin(6, GetClientVeteranSkillLevel(KFPRI))); // Up to 35% faster reload speed for any weapon
 }
 
 // Set number times Zed Time can be extended
@@ -292,8 +280,8 @@ static function string GetCustomLevelInfo( byte Level )
     
 	ReplaceText(S,"%L",string(BonusLevel+6));
 	ReplaceText(S,"%s",GetPercentStr(0.5 + 0.05*BonusLevel));
-	ReplaceText(S,"%a",GetPercentStr(0.5 + 0.05*BonusLevel));
-	ReplaceText(S,"%r",GetPercentStr(0.35 + 0.05*BonusLevel));
+	//ReplaceText(S,"%a",GetPercentStr(0.5 + 0.05*BonusLevel));
+	//ReplaceText(S,"%r",GetPercentStr(0.35 + 0.05*BonusLevel));
 	ReplaceText(S,"%c",GetPercentStr(0.4 + fmin(0.5, 0.05*BonusLevel)));
 	ReplaceText(S,"%z",string(BonusLevel/3+4));
 	ReplaceText(S,"%d",GetPercentStr(0.7 + fmin(0.2, 0.05*BonusLevel)));    
@@ -323,14 +311,14 @@ defaultproperties
      progressArray1(5)=3500000
      progressArray1(6)=5500000
 	 
-     CustomLevelInfo="*** BONUS LEVEL %L|%s more damage with Assaut Rifles|%c less recoil with Assaut Rifles|25% larger Assaut Rifles clip|%a faster reload with Assaut Rifles|%r faster reload with all weapons|%d discount on Assaut Rifles|Can see cloaked Stalkers from %vm|Can see enemy health from 16m|Up to %z Zed-Time Extensions|Spawn with an AK47"
+     CustomLevelInfo="*** BONUS LEVEL %L|%s more damage with Assaut Rifles|%c less recoil with Assaut Rifles|25% larger Assaut Rifles clip|60% faster reload with Tommy Guns|35% faster reload with all weapons|%d discount on Assaut Rifles|Can see cloaked Stalkers from %vm|Can see enemy health from 16m|Up to %z Zed-Time Extensions|Spawn with an AK47"
      SRLevelEffects(0)="*** BONUS LEVEL 0|5% more damage with Assaut Rifles|5% less recoil with Assaut Rifles|5% faster reload with all weapons|10% discount on Assaut Rifles|Can see cloaked Stalkers from 4 meters"
-     SRLevelEffects(1)="*** BONUS LEVEL 1|10% more damage with Assaut Rifles|10% less recoil with Assaut Rifles|10% larger Assaut Rifles clip|10% faster reload with all weapons|20% discount on Assaut Rifles|Can see cloaked Stalkers from 8m|Can see enemy health from 4m"
-     SRLevelEffects(2)="*** BONUS LEVEL 2|20% more damage with Assaut Rifles|15% less recoil with Assaut Rifles|20% larger Assaut Rifles clip|20% faster reload with Assaut Rifles|15% faster reload with all weapons|30% discount on Assaut Rifles|Can see cloaked Stalkers from 10m|Can see enemy health from 7m"
-     SRLevelEffects(3)="*** BONUS LEVEL 3|30% more damage with Assaut Rifles|20% less recoil with Assaut Rifles|25% larger Assaut Rifles clip|30% faster reload with Assaut Rifles|20% faster reload with all weapons|40% discount on Assaut Rifles|Can see cloaked Stalkers from 12m|Can see enemy health from 10m|Zed-Time can be extended by killing an enemy while in slow motion"
-     SRLevelEffects(4)="*** BONUS LEVEL 4|40% more damage with Assaut Rifles|30% less recoil with Assaut Rifles|25% larger Assaut Rifles clip|40% faster reload with Assaut Rifles|25% faster reload with all weapons|50% discount on Assaut Rifles|Can see cloaked Stalkers from 14m|Can see enemy health from 13m|Up to 2 Zed-Time Extensions"
-     SRLevelEffects(5)="*** BONUS LEVEL 5|50% more damage with Assaut Rifles|30% less recoil with Assaut Rifles|25% larger Assaut Rifles clip|50% faster reload with Assaut Rifles|30% faster reload with all weapons|60% discount on Assaut Rifles|Can see cloaked Stalkers from 16m|Can see enemy health from 16m|Up to 3 Zed-Time Extensions|Spawn with a Bullpup"
-     SRLevelEffects(6)="*** BONUS LEVEL 6|50% more damage with Assaut Rifles|40% less recoil with Assaut Rifles|25% larger Assaut Rifles clip|50% faster reload with Assaut Rifles|35% faster reload with all weapons|70% discount on Assaut Rifles|Can see cloaked Stalkers from 16m|Can see enemy health from 16m|Up to 4 Zed-Time Extensions|Spawn with an AK47"
+     SRLevelEffects(1)="*** BONUS LEVEL 1|10% more damage with Assaut Rifles|10% less recoil with Assaut Rifles|10% larger Assaut Rifles clip|10% faster reload with Tommy Guns|10% faster reload with all weapons|20% discount on Assaut Rifles|Can see cloaked Stalkers from 8m|Can see enemy health from 4m"
+     SRLevelEffects(2)="*** BONUS LEVEL 2|20% more damage with Assaut Rifles|15% less recoil with Assaut Rifles|20% larger Assaut Rifles clip|20% faster reload with Tommy Guns|15% faster reload with all weapons|30% discount on Assaut Rifles|Can see cloaked Stalkers from 10m|Can see enemy health from 7m"
+     SRLevelEffects(3)="*** BONUS LEVEL 3|30% more damage with Assaut Rifles|20% less recoil with Assaut Rifles|25% larger Assaut Rifles clip|30% faster reload with Tommy Guns|20% faster reload with all weapons|40% discount on Assaut Rifles|Can see cloaked Stalkers from 12m|Can see enemy health from 10m|Zed-Time can be extended by killing an enemy while in slow motion"
+     SRLevelEffects(4)="*** BONUS LEVEL 4|40% more damage with Assaut Rifles|30% less recoil with Assaut Rifles|25% larger Assaut Rifles clip|40% faster reload with Tommy Guns|25% faster reload with all weapons|50% discount on Assaut Rifles|Can see cloaked Stalkers from 14m|Can see enemy health from 13m|Up to 2 Zed-Time Extensions"
+     SRLevelEffects(5)="*** BONUS LEVEL 5|50% more damage with Assaut Rifles|30% less recoil with Assaut Rifles|25% larger Assaut Rifles clip|50% faster reload with Tommy Guns|30% faster reload with all weapons|60% discount on Assaut Rifles|Can see cloaked Stalkers from 16m|Can see enemy health from 16m|Up to 3 Zed-Time Extensions|Spawn with a Bullpup"
+     SRLevelEffects(6)="*** BONUS LEVEL 6|50% more damage with Assaut Rifles|40% less recoil with Assaut Rifles|25% larger Assaut Rifles clip|60% faster reload with Tommy Guns|35% faster reload with all weapons|70% discount on Assaut Rifles|Can see cloaked Stalkers from 16m|Can see enemy health from 16m|Up to 4 Zed-Time Extensions|Spawn with an AK47"
      NumRequirements=2
      PerkIndex=3
      OnHUDIcon=Texture'KillingFloorHUD.Perks.Perk_Commando'
@@ -341,6 +329,7 @@ defaultproperties
 	 OnHUDIcons(3)=(PerkIcon=Texture'ScrnTex.Perks.Perk_Commando_Blue',StarIcon=Texture'ScrnTex.Perks.Hud_Perk_Star_Blue',DrawColor=(B=255,G=255,R=255,A=255))
 	 OnHUDIcons(4)=(PerkIcon=Texture'ScrnTex.Perks.Perk_Commando_Purple',StarIcon=Texture'ScrnTex.Perks.Hud_Perk_Star_Purple',DrawColor=(B=255,G=255,R=255,A=255))
 	 OnHUDIcons(5)=(PerkIcon=Texture'ScrnTex.Perks.Perk_Commando_Orange',StarIcon=Texture'ScrnTex.Perks.Hud_Perk_Star_Orange',DrawColor=(B=255,G=255,R=255,A=255))
+	 OnHUDIcons(6)=(PerkIcon=Texture'ScrnTex.Perks.Perk_Commando_Blood',StarIcon=Texture'ScrnTex.Perks.Hud_Perk_Star_Blood',DrawColor=(B=255,G=255,R=255,A=255))
 	 
      VeterancyName="Commando"
      Requirements(0)="Kill %x Stalkers/Shivers with Assault Rifles"

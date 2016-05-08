@@ -18,4 +18,5 @@ defaultproperties
      FireModeClass(1)=Class'ScrnBalanceSrv.ScrnSyringeAltFire'
      PickupClass=Class'ScrnBalanceSrv.ScrnSyringePickup'
      ItemName="Med-Syringe SE"
+     TraderInfoTexture=Texture'KillingFloorHUD.WeaponSelect.Syringe'
 }

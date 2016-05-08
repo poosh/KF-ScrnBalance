@@ -1,6 +1,6 @@
 // Additional player info used in achievements
 class ScrnPlayerInfo extends Info
-	config (ScrnBalance);
+	config(ScrnBalance);
 
 // variable below are initially set by ScrnGameRules
 var ScrnGameRules GameRules;
@@ -75,6 +75,7 @@ var Controller LastKilledBy; // enemy who killed player last time
 
 var float LastDmgTime, LastKillTime;
 var float LastDamage; // last damage value
+var class<KFWeaponDamageType> LastDamageType;
 var KFMonster LastDamagedMonster; // last monster, who was damaged by the player
 var bool bHeadshot; // was last damage made by this player a headshot?
 var byte RowHeadshots; //number of headshots in a row made by this player
@@ -86,6 +87,7 @@ var int DamagePerWave, DamagePerGame;
 
 var int DamageReceivedPerWave, DamageReceivedPerGame; // damage received from monsters
 var int HealedPointsInWave;
+var int MedicDamagePerWave;
 
 // Minimal values to trigger an event. If Value >= Trigger value, event will be called.
 var int TriggerRowHeadshots;
@@ -113,6 +115,11 @@ var private name LastSearchedStatName;
 var private int LastFoundCustomDataIndex;
 
 
+// Backup data for PlayerReplicationInfo
+var int SteamID32;
+var int PRI_Score, PRI_Kills, PRI_KillAssists, PRI_Deaths, PRI_StartTime;
+var byte PRI_BlameCounter;
+var class<KFVeterancyTypes> PRI_ClientVeteranSkill;
 
 function ClientPerkRepLink GetRep()
 {
@@ -208,8 +215,12 @@ function BonusStats(out TPerkStats InitialStats, float Mult)
 	local SRStatsBase SteamStats;
 	local int i, v;
 
-	if ( !InitialStats.bSet || Mult <= 0 )
+    if ( Mult <= 0 )
+        return;
+	if ( !InitialStats.bSet ) {
+        PlayerOwner.ClientMessage(class'ScrnPlayerController'.static.ConsoleColorString("Unable to give end game bonus! No stat backup found", 255, 1, 1));
 		return;
+    }
 		
 	SteamStats = SRStatsBase(PlayerOwner.SteamStatsAndAchievements);
 	if ( SteamStats == none )
@@ -660,6 +671,7 @@ function MadeDamage(int Damage, KFMonster Injured, class<KFWeaponDamageType> Dam
 	local KFWeapon Weapon;
 	
 	LastDamage = Damage;
+    LastDamageType = DamType;
 	LastDamagedMonster = Injured;
 	DamagePerWave += Damage;
 	DamagePerGame += Damage;
@@ -689,6 +701,10 @@ function MadeDamage(int Damage, KFMonster Injured, class<KFWeaponDamageType> Dam
 			BodyshotsPerGame++;
 		}
 	}
+    
+    // count medic damage
+    if ( ClassIsChildOf(DamType, class'ScrnDamTypeMedicBase') )
+        MedicDamagePerWave += min(Damage, Injured.Health);
 	
 	LastWeapInfoIndex = FindWeaponInfoByDamType(DamType);
 	for ( i=0; i<GameRules.AchHandlers.length; ++i ) {
@@ -900,6 +916,64 @@ function WaveStarted(byte WaveNum)
 
 function WaveEnded(byte WaveNum)
 {
+    if ( MedicDamagePerWave > 0 && PlayerOwner != none ) {
+        SRStatsBase(PlayerOwner.SteamStatsAndAchievements).AddDamageHealed(MedicDamagePerWave*GameRules.Mut.MedicDamageToXPRatio);
+        MedicDamagePerWave = 0;
+    }
+}
+
+// backup vital player data from KFPRI
+function BackupPRI()
+{
+    local KFPlayerReplicationInfo KFPRI;
+    local ScrnCustomPRI ScrnPRI;
+    
+    if ( PlayerOwner == none )
+        return;
+    
+    KFPRI = KFPlayerReplicationInfo(PlayerOwner.PlayerReplicationInfo);
+    if ( KFPRI == none )
+        return;
+    ScrnPRI = class'ScrnCustomPRI'.static.FindMe(KFPRI);
+     
+    if ( !GameRules.Mut.bLeaveCashOnDisconnect )
+        PRI_Score = KFPRI.Score;
+    PRI_Kills = KFPRI.Kills;
+    PRI_KillAssists = KFPRI.KillAssists;
+    PRI_Deaths = KFPRI.Deaths;
+    PRI_StartTime = KFPRI.StartTime;
+    PRI_ClientVeteranSkill = KFPRI.ClientVeteranSkill;
+    
+    if ( ScrnPRI != none ) {
+        PRI_BlameCounter = ScrnPRI.BlameCounter;
+    }
+}
+
+function RestorePRI()
+{
+    local KFPlayerReplicationInfo KFPRI;
+    local ScrnCustomPRI ScrnPRI;
+    
+    if ( PlayerOwner == none )
+        return;
+    
+    KFPRI = KFPlayerReplicationInfo(PlayerOwner.PlayerReplicationInfo);
+    if ( KFPRI == none )
+        return;
+    ScrnPRI = class'ScrnCustomPRI'.static.FindMe(KFPRI);
+        
+    if ( !GameRules.Mut.bLeaveCashOnDisconnect )
+        KFPRI.Score = max(PRI_Score, KFPRI.Score);
+    KFPRI.Kills = max(PRI_Kills, KFPRI.Kills);
+    KFPRI.KillAssists = max(PRI_KillAssists, KFPRI.KillAssists);
+    KFPRI.Deaths = max(PRI_Deaths, KFPRI.Deaths);
+    KFPRI.StartTime = min(PRI_StartTime, KFPRI.StartTime);
+    if ( PRI_ClientVeteranSkill != none )
+        KFPRI.ClientVeteranSkill = PRI_ClientVeteranSkill;
+        
+    if ( ScrnPRI != none ) {
+        ScrnPRI.BlameCounter = max(PRI_BlameCounter, ScrnPRI.BlameCounter);
+    }        
 }
 
 
