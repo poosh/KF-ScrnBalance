@@ -1,6 +1,6 @@
 class ScrnGUIBuyWeaponInfoPanel extends SRGUIBuyWeaponInfoPanel;
 
-var automated 	GUIImage 			ScrnLogo;
+var automated 	GUIImage 			ScrnLogo, TourneyLogo;
 var localized 	string 				strSecondsPerShot, StrReloadsInDPM, strMeters;
 var automated 	GUILabel 			lblDamage, lblDPS, lblDPM, lblRange, lblMag, lblAmmo;
 var automated	ScrnGUIWeaponBar 	barDamage, barDPS, barDPM, barRange, barMag, barAmmo;
@@ -305,6 +305,8 @@ function LoadStats(GUIBuyable NewBuyable, byte FireMode, optional bool bSetTopVa
 
 function Display(GUIBuyable NewBuyable)
 {
+    local ScrnCustomPRI ScrnPRI;
+
 	LastBuyable = NewBuyable;
 	if ( NewBuyable != none ) {
 		ItemName.Caption = NewBuyable.ItemName;
@@ -312,6 +314,7 @@ function Display(GUIBuyable NewBuyable)
 		ItemImage.Image = NewBuyable.ItemImage;
 		ItemImage.SetVisibility(true);
 		ScrnLogo.SetVisibility(false);
+		TourneyLogo.SetVisibility(false);
 		
 		WeightLabel.Caption = Repl(Weight, "%i", int(NewBuyable.ItemWeight));
 		if ( NewBuyable.bSaleList && !KFPawn(PlayerOwner().Pawn).CanCarry(NewBuyable.ItemWeight) ) {
@@ -350,13 +353,22 @@ function Display(GUIBuyable NewBuyable)
 		lblAmmo.SetVisibility(barAmmo.bVisible);		
 	}
 	else {
-		ItemName.Caption = "ScrN Shop";
+        ScrnPRI = class'ScrnCustomPRI'.static.FindMe(PlayerOwner().PlayerReplicationInfo);
+        if ( ScrnPRI != none && ScrnPRI.IsTourneyMember() ) {
+            ItemName.Caption = "Trophy Shop";
+            TourneyLogo.SetVisibility(true);
+            ScrnLogo.SetVisibility(false);
+        }
+        else {
+            ItemName.Caption = "ScrN Shop";
+            ScrnLogo.SetVisibility(true);
+            TourneyLogo.SetVisibility(false);
+        }
 		
 		ItemImage.SetVisibility(false);
-		ScrnLogo.SetVisibility(true);
 		FavoriteButton.SetVisibility(false);
-		WeightLabel.Caption = "";
 		FavoriteButton.SetVisibility(false);
+        WeightLabel.Caption = "";
 		ch_FireMode0.SetVisibility(false);
 		ch_FireMode1.SetVisibility(false);
 		
@@ -406,7 +418,21 @@ defaultproperties
 	 
      Begin Object Class=GUIImage Name=ILogo
 		Image=texture'ScrnTex.HUD.ScrNBalanceLogo256'
-		ImageColor=(B=255,G=255,R=255,A=32)
+		ImageColor=(B=255,G=255,R=255,A=64)
+         ImageStyle=ISTY_Scaled
+         WinTop=0.15
+         WinLeft=0.15
+         WinWidth=0.70
+         WinHeight=0.85
+         bBoundToParent=True
+         bScaleToParent=True
+		 RenderWeight=1.000000
+     End Object
+     ScrnLogo=GUIImage'ScrnBalanceSrv.ScrnGUIBuyWeaponInfoPanel.ILogo'
+     
+     Begin Object Class=GUIImage Name=TSCLogo
+		Image=Texture'ScrnTex.Tourney.TourneyMember' 
+		ImageColor=(B=255,G=255,R=255,A=255)
          ImageStyle=ISTY_Scaled
          WinTop=0.15
          WinLeft=0.15
@@ -415,8 +441,9 @@ defaultproperties
          bBoundToParent=True
          bScaleToParent=True
 		 RenderWeight=2.000000
+         bVisible=False
      End Object
-     ScrnLogo=GUIImage'ScrnBalanceSrv.ScrnGUIBuyWeaponInfoPanel.ILogo'
+     TourneyLogo=GUIImage'ScrnBalanceSrv.ScrnGUIBuyWeaponInfoPanel.TSCLogo'     
 
      Begin Object Class=GUIImage Name=LWeightBG
          //Image=Texture'KF_InterfaceArt_tex.Menu.Innerborder_transparent'
@@ -458,6 +485,7 @@ defaultproperties
 		WinLeft=0.05
 		WinWidth=0.40
 		TabOrder=0
+        ComponentClassName="ScrnBalanceSrv.ScrnGUICheckBoxButton"
 		IniOption="@Internal"
 		OnChange=ScrnGUIBuyWeaponInfoPanel.FireModeChange
 		RenderWeight=3
@@ -477,6 +505,7 @@ defaultproperties
 		WinLeft=0.50
 		WinWidth=0.40
 		TabOrder=1
+        ComponentClassName="ScrnBalanceSrv.ScrnGUICheckBoxButton"
 		IniOption="@Internal"
 		OnChange=ScrnGUIBuyWeaponInfoPanel.FireModeChange
 		RenderWeight=3

@@ -221,7 +221,7 @@ defaultproperties
      progressArray0(0)=1000
      progressArray0(1)=2000
      progressArray0(2)=7000
-     progressArray0(3)=35000
+     progressArray0(3)=33500
      progressArray0(4)=120000
      progressArray0(5)=250000
      progressArray0(6)=370000

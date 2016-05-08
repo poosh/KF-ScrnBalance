@@ -195,6 +195,7 @@ defaultproperties
          Caption="Show Only Locked"
          OnCreateComponent=OnlyLockedCheckBox.InternalOnCreateComponent
          IniOption="@Internal"
+         ComponentClassName="ScrnBalanceSrv.ScrnGUICheckBoxButton"
          Hint="Shows only locked achievements"
          WinTop=0.085000
          WinLeft=0.700000

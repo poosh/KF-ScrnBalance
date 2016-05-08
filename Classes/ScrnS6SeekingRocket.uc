@@ -9,7 +9,7 @@ function TakeDamage( int Damage, Pawn InstigatedBy, Vector Hitlocation, Vector M
 		if ( InstigatedBy != none && InstigatedBy.Health > 0 )
 			Disintegrate(HitLocation, vect(0,0,1));
 	}
-	else if ( !bDud && Damage >= 50 ) {
+	else if ( !bDud && Damage >= 10 ) {
         if ( (VSizeSquared(Location - OrigLoc) < ArmDistSquared) || OrigLoc == vect(0,0,0))  
             Disintegrate(HitLocation, vect(0,0,1));
         else
@@ -19,7 +19,8 @@ function TakeDamage( int Damage, Pawn InstigatedBy, Vector Hitlocation, Vector M
 
 defaultproperties
 {
-	Damage=100.000000
-	DamageRadius=150.000000
+	Damage=130.000000
+	DamageRadius=200.000000
 	ImpactDamage=32 //75
+    MyDamageType=Class'ScrnBalanceSrv.ScrnDamTypeSeekerSixRocket'
 }

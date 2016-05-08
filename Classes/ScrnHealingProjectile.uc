@@ -115,8 +115,8 @@ simulated function ProcessTouch(Actor Other, Vector HitLocation)
 
 function ClientSuccessfulHeal(String PlayerName)
 {
-    if( MP7MMedicGun(Instigator.Weapon) != none )
-        MP7MMedicGun(Instigator.Weapon).ClientSuccessfulHeal(PlayerName);
+    if( KFMedicGun(Instigator.Weapon) != none )
+        KFMedicGun(Instigator.Weapon).ClientSuccessfulHeal(PlayerName);
 }
 
 simulated function Timer()

@@ -219,4 +219,9 @@ defaultproperties
      AchDefs(185)=(id="KF-ClandestineHard",DisplayName="Rack 'em up",Description="Clandestine",Icon=Texture'KillingFloor2HUD.Achievements.Achievement_276')
      AchDefs(186)=(id="KF-ClandestineSui",DisplayName="Burned out",Description="Clandestine",Icon=Texture'KillingFloor2HUD.Achievements.Achievement_277')
      AchDefs(187)=(id="KF-ClandestineHoe",DisplayName="Hangover from Hell",Description="Clandestine",Icon=Texture'KillingFloor2HUD.Achievements.Achievement_278')
+
+     AchDefs(188)=(id="KF-ThrillsChills",DisplayName="Cave of Wonder",Description="Thrills Chills",Icon=Texture'KillingFloor2HUD.Achievements.Achievement_280')
+     AchDefs(189)=(id="KF-ThrillsChillsHard",DisplayName="Cavern of Pain",Description="Thrills Chills",Icon=Texture'KillingFloor2HUD.Achievements.Achievement_281')
+     AchDefs(190)=(id="KF-ThrillsChillsSui",DisplayName="Grotto of Terror",Description="Thrills Chills",Icon=Texture'KillingFloor2HUD.Achievements.Achievement_282')
+     AchDefs(191)=(id="KF-ThrillsChillsHoe",DisplayName="Hollow of Horror",Description="Thrills Chills",Icon=Texture'KillingFloor2HUD.Achievements.Achievement_283')
 }

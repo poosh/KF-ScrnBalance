@@ -1,15 +1,129 @@
-TODO (after the Tournament):
-- check out ScrnClientPerkRepLink
-- Raise Buzzsaw's price to $4000 and ammo cost to $80 (keep perk discount)
-- Raise M99 ammo cost to $80, but keep perk discount
-- Lower TSC's Hardcore Level from +8 down to +6
-- Make Zeds looking focus/target on stun, e.g. prevents stunned SC from turning to the player
-- Nerf Gunslinger's reload bonus in Cowboy Mode. 
-- ^p and ^t color tags
+-------------------------------------------------------------------------------
+--=VERSION HISTORY=--
+-------------------------------------------------------------------------------
+
+-------------------------------------------------------------------------------
+*** VERSION 8 *** 
+-------------------------------------------------------------------------------
+v8.01:
+- Beta finished
+- Minor bugfixes
+
+
+BETA 50:
+- Players now are dropping both pistols upon death (if bSpawn0=True)
+- New config variable: AutoLoadMutators
+- Thrills Chills map achievements
+- HuskGun and Flare impact damage bonuses are restored when setting bWeaponFix=False
+- Fixed network replication of some config variables
+
+BETA 33:
+- Fixed GunSkin for custom weapons with SleeveNum=0
+- Fixed bNoTeamSkins
+- Minor bugfixes
+
+CONFIG VARIABLES:
+bPlayerZEDTime - Player death triggers ZED Time
+bPerkChangeBoss - allows changing perk before Pat wave despite bNoPerkChanges=True
+
+
+BETA 25:
+- Fixed Country Tags
+- Changed HL values of SuperZombies
+- A few minor bug fixes
+
+BETA 22:
+- bugfix in PreloadFireModeAssets()
+- All HUD messages support color tags now (e.g. Kill Messages)
+
+BETA 11:
+- Laser 44 Magnum reload speed set the same as non-laser version
+- Cowboy's Reload bonus lowered down to 35%
+- 20% M99 damage resistance given to Patriarch
+- Fixed Medic's HP Bar scaling
+- Added ScrN setting: "Old Style HP Bars" 
+
+v8.00 BETA 10:
+GOLDEN/CAMO/NEON WEAPON SUPPORT:
+- GUNSKIN console command - allows changing weapon skins on-the-fly (normal/gold/camo/neon).
+- Weapon skins are saved in user.ini and restored every time player equips that weapon.
+- Players now can spawn with skinned weapon (e.g. Golden AK47)
+- DLC checks is in place: you can't use skinned weapons without buying DLC(-s)
+
+GUNSLINGER:
+- Reload speed bonus in Cowboy Mode lowered to 45% (down from 75%)
+- No fire rate bonus, except dual-9mm pistols in Cowboy Mode.
+- 44 Magnum's headshot multiplier raised to x1.2 (up from x1.1). 
+  Now it is possible to flinch-lock Scrakes with headshots.
+- Single pistol kills now are counted toward perk progress too.
+- Perk requirements raised x1.5 (configurable by ReqBalanceMode)
+- Max weight set to 15
+
+MONEY BALANCE:
+- Buzzsaw Bow's price raised to $4000 (up from 2500)
+- Buzzsaw Blades's price raised to $80 (up from 60). 30% discount still is in place.
+- M99 ammo price raised to $99. 42% discount still is in place.
+- Seeker6 price lowered to $2500 (down from 4000).
+- M32 price raised to $4000 (up from 2500).
+
+WEAPON BALANCE:
+- Seeker 6 damage raised to 130 and blast radius to 4m (up from 100 and 3m)
+- Removed Seeker's damage bonus to FP
+- Fixed missing sound in Seeker 6 projectile 
+- Boomstick is switching before AA12 (configurable)
+- Fixed "Perked Weapons Switching First"
+- Dead players won't be dropping Knifes, Syringes and Welders anymore (except Story Mode)
+- M4-203 now allows prematurely stopping burst (shoot 1 or 2 bullets instead of 3)
+- Removed auto-swings from all melee weapons
+- Slightly lowered Axe's radial attack angle (~49 -> ~41 degrees)
+- Removed HRL
+
+TOURNEY MODE:
+- TSC Tournament Playoff Members hard-coded into ScrN Balance with a special icon, 
+  achievement and perk xp boost
+- MUTATE GIMMECOOKIES - gives perk xp boost, if caller is TSC Tournament Playoff Member
+- TSC's Hardcore Level lowered from +8 down to +6
+- Dead player can't do free roam in Tourney Mode
+- Tourney now has different modes, which should be passed in command line: "?Tourney=X,
+  where X is sum of the following values:
+  0 - no tourney. Passing "?Tourney" without value now TURNS OFF tourney mode!
+  1 - Tourney Mode On.
+  2 - Vanilla Tourney.
+  4 - Disable Starting Cash
+Example:
+  1 - normal ScrN tourney like it was in TSC Community Tournament
+  2 - Vanilla Tournament. Weapon balance is disabled.
+  5 - ScrN Balance + No Staring Cash
+  6 - Vanilla Tournament + No Staring Cash
+  
+OTHER CHANGES:
+- Redesigned ScrN Settings GUI page
+- Fixed player HP bar transparency and scaling over distance
+- [TSC] Shortened distance cap on drawing enemy health bars to prevent spotting 
+  enemies in the darkness
+- [TSC] bNoTeamSkins config option (forced false in tourney mode)
+- Added European Union flag for [EU] coutnry tag
+- Slightly adjusted perk lv7+ requirements for headhots, stalkers and welding points
+- [CONFIG] bNoPerkChanges - disables perk change during the game
+- ^p and ^t color tag support (perk color and team color)
+- Changed HL values for SuperZombies
+
+CODE CHANGES:
+- ScrnScoreBoard: DrawCountryNameSE(), DrawNamePrefixIcons(), DrawNamePostfixIcons()
+  changed arguments
+- Several functions in ScrnVeterancyTypes marked as final
+- TeamColors[] and TextColors[] moved from TSCHUD to ScrnHUD
+- ScrnPlayerController.PostLogin() and ClientPostLogin()
+- ScrnCustomPRI now replicated SteamID64 and have functions to convert 
+  it to SteamID32 and vice-versa
+- ScrnBalance.ParseColorTags(): added 2nd optional parameter: PRI
+- Fixed ScrnBalance.LongMessage()
+- BugFix: ScrnPlayerController.PreloadFireModeAssets() now correctly is passing 
+  WeaponFire argument
 
 
 -------------------------------------------------------------------------------
---=VERSION HISTORY=--
+*** VERSION 7 *** 
 -------------------------------------------------------------------------------
 7.60:
 - Compatible with KF 1062
@@ -269,6 +383,9 @@ ScrnGameType:
 - Removed Berserker's fire damage resistance in Hardcore Mode (bHardcore=True)
 
 
+-------------------------------------------------------------------------------
+*** VERSION 6 *** 
+-------------------------------------------------------------------------------
 6.26:
 - Uses ScrnVotingHandler v3
 - Added map achievements for KF-Forgotten
@@ -439,7 +556,9 @@ VoteKillPenaltyMult
 - Fixed Buzzsaw's ammo HUD
 
 
-
+-------------------------------------------------------------------------------
+*** VERSION 5 *** 
+-------------------------------------------------------------------------------
 5.55:
 - Ability to force KF event: global or for specific maps.
 - Ability to make own event with custom monsters collection
@@ -768,6 +887,10 @@ CHAINSAW:
 5.00 Beta 33:
 http://forums.tripwireinteractive.com/showpost.php?p=1165537&postcount=272
 
+
+-------------------------------------------------------------------------------
+*** VERSION 4 *** 
+-------------------------------------------------------------------------------
 4.59:
 - Made compatible with new Custom Monster Balance version
 - Fixed a bug, when player couldn't partially repair armor
@@ -931,6 +1054,9 @@ Balance job hasn't made yet. Just added as they are, except the following:
 Added new weapon: M79M (shoots healing nades)    
 
 
+-------------------------------------------------------------------------------
+*** VERSION 3 *** 
+-------------------------------------------------------------------------------
 3.76:
     Fixed a bug when Syringe couldn't heal Berserker above 100hp.
 
@@ -1010,7 +1136,11 @@ LEVEL 7+ BALANCE:
     
 3.00:
     Custom Weapon Support (easy to apply perk bonuses on them, see Readme)
-    
+   
+
+-------------------------------------------------------------------------------
+*** VERSION 2 *** 
+-------------------------------------------------------------------------------
 2.83:
     + Fixed a bug, when player was supposed to have 4 free weight blocks to pickup
         second MK23 (instead of 1).
@@ -1175,6 +1305,9 @@ GUNSLINGER:
     + Laser-MK23 (simmilar to Laser-44) 
     + Both Laser pistols receive 50% spread bonus while laser sights are on
 
+-------------------------------------------------------------------------------
+*** VERSION 1 *** 
+-------------------------------------------------------------------------------
 1.72
 SPAWN BALANCE:
     + Chainsaw's price brought back to 1000
@@ -1261,14 +1394,6 @@ WEAPON BALANCE:
 
 0.94 
     ! Fixed some replication issues
-    
-    
--------------------------------------------------------------------------------
---=KNOWN BUGS/ISSUES=--
--------------------------------------------------------------------------------
-In the trader's inventory Firebug's bonus nade (>5) buy button shows as disabled,
-  but still is clickable
-
 
 -------------------------------------------------------------------------------
 --=SPAWN BALANCE=--

@@ -873,11 +873,15 @@ function PickedItem(Pickup Item)
 
 function float GetAccuracyWave()
 {
+    if ( HeadshotsPerWave+BodyShotsPerWave == 0 )
+        return 0.f;
     return float(HeadshotsPerWave) / float(HeadshotsPerWave+BodyShotsPerWave);
 }
 
 function float GetAccuracyGame()
 {
+    if ( HeadshotsPerGame+BodyShotsPerGame == 0 )
+        return 0.f;
     return float(HeadshotsPerGame) / float(HeadshotsPerGame+BodyShotsPerGame);
 }
 

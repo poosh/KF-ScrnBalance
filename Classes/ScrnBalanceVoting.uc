@@ -368,7 +368,7 @@ function ApplyVoteValue(int VoteIndex, string VoteValue)
 				VotingHandler.BroadcastMessage(VoteValue $ " blamed for " $Reason);
 
 			//achievement
-			if ( IsGoodReason() && VotingHandler.VoteInitiator != none 
+			if ( IsGoodReason(Reason) && VotingHandler.VoteInitiator != none 
 					&& SRStatsBase(VotingHandler.VoteInitiator.SteamStatsAndAchievements) != none ) 
 			{
 				class'ScrnBalanceSrv.ScrnAchievements'.static.ProgressAchievementByID(
@@ -387,7 +387,7 @@ function ApplyVoteValue(int VoteIndex, string VoteValue)
 
             
 			if ( VotingHandler.VotedPlayer != none ) {
-                ScrnPRI = class'ScrnPlayerController'.static.FindScrnCustomPRI(VotingHandler.VotedPlayer.PlayerReplicationInfo);
+                ScrnPRI = class'ScrnCustomPRI'.static.FindMe(VotingHandler.VotedPlayer.PlayerReplicationInfo);
 				if ( ScrnPRI != none ) {
 					VotingHandler.VotedPlayer.ReceiveLocalizedMessage(class'ScrnBalanceSrv.ScrnBlamedMsg', ScrnPRI.BlameCounter++); // more blame = bigger shit
                     
@@ -404,13 +404,19 @@ function ApplyVoteValue(int VoteIndex, string VoteValue)
 			if ( VoteValue ~= "TEAM" || VoteValue ~= "ALL" ) {
 				BlameAll();
 				//achievement
-				if ( IsGoodReason() && VotingHandler.VoteInitiator != none 
+				if ( IsGoodReason(Reason) && VotingHandler.VoteInitiator != none 
 						&& SRStatsBase(VotingHandler.VoteInitiator.SteamStatsAndAchievements) != none )
 					class'ScrnBalanceSrv.ScrnAchievements'.static.ProgressAchievementByID(
 						SRStatsBase(VotingHandler.VoteInitiator.SteamStatsAndAchievements).Rep, 'BlameTeam', 1);
 			}
 			else if ( VoteValue ~= "Baron" || (VotingHandler.VotedPlayer != none && VotingHandler.VotedPlayer.GetPlayerIDHash() == "76561198006289592") ) {
 				Mut.BroadcastFakedAchievement(0); // blame Baron :)
+                // blame the one who blamed baron
+                if ( VotingHandler.VoteInitiator != none && VotingHandler.VotedPlayer != VotingHandler.VoteInitiator ) {
+                    VotingHandler.VotedPlayer = VotingHandler.VoteInitiator;
+                    Reason = "Blaming Baron";
+                    ApplyVoteValue(VoteIndex, VoteValue);                    
+                }
 			}
 			else if ( VoteValue ~= "TWI" || VoteValue ~= "Tripwire" || VoteValue ~= "Tripwire Interactive" ) {
 				Mut.BroadcastFakedAchievement(3); // blame Tripwire :)
@@ -519,7 +525,7 @@ function BlameAll()
     for ( P = Level.ControllerList; P != none; P = P.nextController ) {
         Player = ScrnPlayerController(P);
         if ( Player != none ) {
-            ScrnPRI = Player.FindScrnCustomPRI(Player.PlayerReplicationInfo);
+            ScrnPRI = class'ScrnCustomPRI'.static.FindMe(Player.PlayerReplicationInfo);
 			if ( ScrnPRI != none ) {    
                 Player.ReceiveLocalizedMessage(class'ScrnBalanceSrv.ScrnBlamedMsg', ScrnPRI.BlameCounter++); // more blame = bigger shit
                 if ( Player.PlayerReplicationInfo != none && Player.PlayerReplicationInfo.PlayerName ~= "Baron" )
@@ -552,7 +558,7 @@ function bool BlameMonster(String MonsterName)
 	return true;
 }
 
-function bool IsGoodReason()
+static function bool IsGoodReason(string Reason)
 {
 	local string a, b;
 	

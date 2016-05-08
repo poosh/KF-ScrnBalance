@@ -140,6 +140,7 @@ function DoTrace(Vector Start, Rotator Dir)
 	}
 }
 
+/*
 simulated function float GetSpread()
 {
     local float AccuracyMod;
@@ -152,6 +153,7 @@ simulated function float GetSpread()
     
     return AccuracyMod * super.GetSpread();
 }
+*/
 
 // Remove left gun's aiming bug  (c) PooSH
 // Thanks to n87, Benjamin

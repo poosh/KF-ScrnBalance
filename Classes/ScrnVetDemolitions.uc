@@ -21,7 +21,6 @@ static function float AddExtraAmmoFor(KFPlayerReplicationInfo KFPRI, Class<Ammun
 		return 1.0 + (0.5 * float(GetClientVeteranSkillLevel(KFPRI)));
 	}
 	else if ( ClassIsChildOf(AmmoType, class'ScrnLAWAmmo')
-				|| ClassIsChildOf(AmmoType, class'ScrnHRLAmmo')
 				|| ClassIsInArray(default.PerkedAmmo, AmmoType) //v3 - custom weapon support
 			) {
 		// ScrnLAW has base ammo 16

@@ -570,8 +570,6 @@ defaultproperties
      LaserBeamClass=Class'ScrnBalanceSrv.ScrnLaserBeamEffect'
      LaserDotClass=Class'ScrnBalanceSrv.ScrnLaserDot'
      bCowboyMode=True
-     ReloadRate=3.500000
-     ReloadAnimRate=1.276200
      Weight=5.000000
      bIsTier3Weapon=True
      Description="Yeah! One in each hand! Now with laser attachment."

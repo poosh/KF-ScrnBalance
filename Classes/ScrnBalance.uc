@@ -1,14 +1,17 @@
 /**
  * ScrN Total Game Balance
  * @author PooSH, contact via steam: [ScrN]PooSH
- * Copyright (c) 2012-2014 PU Developing IK, All Rights Reserved.
+ * Copyright (c) 2012-2015 PU Developing IK, All Rights Reserved.
  */
 
 class ScrnBalance extends Mutator
     Config(ScrnBalance);
+    
+#exec OBJ LOAD FILE=ScrnTex.utx
+#exec OBJ LOAD FILE=ScrnAch_T.utx    
 
 
-const VERSION = 76101;
+const VERSION = 80100;
 
 var ScrnBalance Mut; // pointer to self to use in default functions, i.e class'ScrnBalance'.default.Mut
 
@@ -20,22 +23,26 @@ var localized string strStatus, strStatus2;
 var localized string strSrvWarning, strSrvWarning2;
 var localized string strBetaOnly;
 
-var() globalconfig bool bSpawnBalance, bWeaponFix, bGunslinger, bAltBurnMech;
-var() globalconfig bool bReplacePickups, bReplacePickupsStory, bReplaceNades, bShieldWeight;
-var() globalconfig bool bSpawn0;
-var() globalconfig bool bShowDamages;
-var() globalconfig byte ReqBalanceMode;
+// SRVFLAGS
+var transient int SrvFlags; // used for network replication of the values below
+var globalconfig bool bSpawnBalance, bSpawn0, bNoStartCashToss, bMedicRewardFromTeam;
+var globalconfig bool bWeaponFix, bAltBurnMech, bGunslinger;
+var globalconfig bool bReplaceNades, bShieldWeight, bHardcore, bBeta;
+var globalconfig bool bShowDamages, bManualReload, bForceManualReload, bAllowWeaponLock;
+var globalconfig bool bNoPerkChanges, bPerkChangeBoss, b10Stars;
+// END OF SRVFLAGS
 
-var() globalconfig bool bManualReload, bForceManualReload, bHardcore, bBeta;
+var globalconfig byte ReqBalanceMode;
+var transient byte SrvReqBalanceMode;
 
-var() globalconfig int ForcedMaxPlayers;
+var globalconfig int ForcedMaxPlayers;
 
-var() globalconfig int
+var globalconfig int
     BonusLevelNormalMax
     , BonusLevelHardMin, BonusLevelHardMax
     , BonusLevelSuiMin, BonusLevelSuiMax
     , BonusLevelHoeMin, BonusLevelHoeMax;
-var() globalconfig float Post6RequirementScaling;
+var globalconfig float Post6RequirementScaling, WeldingRequirementScaling, StalkerRequirementScaling;
 
 
 var transient int MinLevel, MaxLevel;
@@ -55,6 +62,7 @@ struct SPickupReplacement {
 };
 var array<SPickupReplacement> pickupReplaceArray;
 var const int FragReplacementIndex;
+var globalconfig bool bReplacePickups, bReplacePickupsStory;
 
 var class<ScrnFunctions> Functions;
 
@@ -82,7 +90,7 @@ var protected  byte GameStartCountDown;
  *      * - add to special weapons list
  *     If bonuses aren't specified, all of them will be applied, except Dd*
  */
-var() globalconfig array<string> PerkedWeapons, CustomPerks;
+var globalconfig array<string> PerkedWeapons, CustomPerks;
 //var StringReplicationInfo ClientPerkedWeaponsSRI, ClientPerksSRI;
 var array< class<ScrnVeterancyTypes> > Perks;
 
@@ -103,8 +111,9 @@ var transient float NextItemSpawnTime, LastItemSetupTime; //how often reset rand
 var ScrnGameRules GameRules;
 
 var localized string strAchEarn;
-var() globalconfig bool bBroadcastAchievementEarn; //tell other players that somebody earned an achievement (excluding map achs)
-var() globalconfig int AchievementFlags;
+var globalconfig bool bBroadcastAchievementEarn; //tell other players that somebody earned an achievement (excluding map achs)
+var globalconfig int AchievementFlags;
+var transient int SrvAchievementFlags; // used for network replication
 var bool bUseAchievements;
 const ACH_ALLFLAGS   = 0xFFFFFFFF;
 const ACH_ENABLE     = 0x0001;
@@ -115,17 +124,15 @@ const ACH_SCRNZEDS   = 0x0010;
 const ACH_WPCZEDS    = 0x0020;
 const ACH_HARDPAT    = 0x0040;
 const ACH_DOOM3      = 0x0080;
+const ACH_TOURNEY    = 0x1000;
 
 
-var() globalconfig bool bSaveStatsOnAchievementEarned; //save stats to serverpeprks database every time an achievement is earned
+var globalconfig bool bSaveStatsOnAchievementEarned; //save stats to serverpeprks database every time an achievement is earned
 var transient bool bNeedToSaveStats;
 var transient float NextStatSaveTime;
 
 var protected bool bTradingDoorsOpen; // used to check wave start / end
 var protected transient byte CurWave; // used to check wave start / end
-
-
-var() globalconfig float WeldingRequirementScaling, StalkerRequirementScaling;
 
 var ScrnCustomWeaponLink CustomWeaponLink;
 
@@ -136,7 +143,7 @@ var transient bool bInitReplicationReceived;
 var Mutator ServerPerksMut;
 var transient bool bAllowAlwaysPerkChanges; // value replicated from ServerPerksMut
 
-var() globalconfig bool bAllowVoting;
+var globalconfig bool bAllowVoting;
 var ScrnBalanceVoting MyVotingOptions;
 var globalconfig bool bPauseTraderOnly; //game can be vote-paused in trader time only
 var globalconfig float SkippedTradeTimeMult; //how much of the skipped trader time (mvote ENDTRADE) to add to the next one (0 - don't add, 1 - full, 0.5 - half of the skipped time)
@@ -153,6 +160,7 @@ var globalconfig bool bDynamicLevelCap;
 var int OriginalMaxLevel;
 
 var globalconfig string ServerPerksPkgName; // if user didn't added SP mut before ScrnBalance - do it for him!
+var globalconfig array<string> AutoLoadMutators;
 
 var globalconfig bool bReplaceHUD, bReplaceScoreBoard;
 
@@ -178,7 +186,6 @@ var globalconfig int  StatBonusMinHL;
 
 var globalconfig int SharpProgMinDmg; // if headshot damage dealth with Sharpshooter's weapon exceeds this, then SS gets +1 to perk progression
 
-var globalconfig bool bAllowWeaponLock; // allows players to lock their dropped weapon. If weapons locked, they can not be picked up by other players
 var globalconfig bool bBroadcastPickups; // broadcast weapon pickups
 var globalconfig String BroadcastPickupText; // broadcast weapon pickups
 
@@ -224,10 +231,7 @@ var globalconfig array<string> SpawnInventory;
 var globalconfig int StartCashNormal, StartCashHard, StartCashSui, StartCashHoE;
 var globalconfig int MinRespawnCashNormal, MinRespawnCashHard, MinRespawnCashSui, MinRespawnCashHoE;
 var globalconfig int TraderTimeNormal, TraderTimeHard, TraderTimeSui, TraderTimeHoE;
-var globalconfig bool bNoStartCashToss, bMedicRewardFromTeam;
-var globalconfig bool bLeaveCashOnDisconnect;
-
-var globalconfig bool b10Stars;
+var globalconfig bool bLeaveCashOnDisconnect, bPlayerZEDTime;
 
 struct SColorTag {
     var string T;
@@ -246,22 +250,37 @@ var StaticMesh          AmmoBoxMesh;
 var float               AmmoBoxDrawScale;
 var vector              AmmoBoxDrawScale3D;
 
+struct SSpecialPlayers
+{
+    var int SteamID32;
+    var string AvatarRef, ClanIconRef, PreNameIconRef, PostNameIconRef;
+    var Material Avatar, ClanIcon, PreNameIcon, PostNameIcon;
+    var Color PrefixIconColor, PostfixIconColor;
+    var int Playoffs, TourneyWon;
+};
+var const private array<SSpecialPlayers> HighlyDecorated;
+
+// TSC stuff
+var globalconfig bool bNoTeamSkins; 
+// SrvTourneyMode should be used for informative purposes only. 
+// All real checks must be done server-side only to prevent cheating.
+var transient byte SrvTourneyMode; 
+// END OF TSC STUFF
 
 replication
 {
     reliable if ( (bNetInitial || bNetDirty) && Role == ROLE_Authority )
         SrvMinLevel, SrvMaxLevel;
 
+        // flags to replicate config variables
     reliable if ( bNetInitial && Role == ROLE_Authority )
-        bSpawnBalance, bSpawn0, bWeaponFix, bAltBurnMech, bGunslinger,
-        bReplaceNades, bShieldWeight, bBeta,
-        bShowDamages, bManualReload, bForceManualReload, bHardcore,
-        Post6RequirementScaling, WeldingRequirementScaling, StalkerRequirementScaling, ReqBalanceMode,
-        AchievementFlags, 
-        CustomWeaponLink,
-        bAllowWeaponLock,
-		bNoStartCashToss, bMedicRewardFromTeam,
-        b10Stars;
+        SrvFlags, SrvAchievementFlags, SrvReqBalanceMode;
+        
+    // non-config vars and configs vars which seem to replicate fine
+    reliable if ( bNetInitial && Role == ROLE_Authority ) 
+        CustomWeaponLink, SrvTourneyMode,
+        Post6RequirementScaling, WeldingRequirementScaling, StalkerRequirementScaling;
+        
 }
 
 // ======================================= FUNCTIONS =======================================
@@ -284,7 +303,6 @@ simulated function PostNetBeginPlay()
     }
 }
 
-
 // client-side only
 simulated function ClientInitSettings()
 {
@@ -295,20 +313,14 @@ simulated function ClientInitSettings()
         return;
 
     Mut = self;
+    default.Mut = self;
+    class'ScrnBalance'.default.Mut = self;
     bStoryMode = KF_StoryGRI(Level.GRI) != none;
     bTSCGame = TSCGameReplicationInfoBase(Level.GRI) != none;
-    MinLevel = SrvMinLevel;
-    MaxLevel = SrvMaxLevel;
-
-    // support of extended classes 
-    // if class MyBalance extends ScrnBalance, then default settings must be
-    // set for both class'MyBalance' and class'ScrnBalance'
-    ClientInitStaticSettings(self.class);
-    if ( self.class != class'ScrnBalance' )
-        ClientInitStaticSettings(class'ScrnBalance');
+    LoadReplicationData();
         
     LocalPlayer = ScrnPlayerController(Level.GetLocalPlayerController());
-    if ( LocalPlayer != none ) {
+    if ( LocalPlayer != none && LocalPlayer.Mut == none ) {
         LocalPlayer.Mut = self;
         LocalPlayer.LoadMutSettings();
     }  
@@ -317,6 +329,9 @@ simulated function ClientInitSettings()
 }
 
 
+// v8: no more using default settings
+// use class'ScrnBalance'.default.Mut.<variable> instead of class'ScrnBalance'.default.<variable>
+/*
 simulated function ClientInitStaticSettings(class<ScrnBalance> MyBalanceClass)
 {
     if ( Role == ROLE_Authority )
@@ -324,6 +339,7 @@ simulated function ClientInitStaticSettings(class<ScrnBalance> MyBalanceClass)
         
     MyBalanceClass.default.Mut = self;  
 
+    
     MyBalanceClass.default.MinLevel = SrvMinLevel;
     MyBalanceClass.default.MaxLevel = SrvMaxLevel;
 
@@ -349,46 +365,61 @@ simulated function ClientInitStaticSettings(class<ScrnBalance> MyBalanceClass)
     MyBalanceClass.default.bMedicRewardFromTeam = bMedicRewardFromTeam;
     MyBalanceClass.default.b10Stars = b10Stars;
 }
+*/
 
 // client & server side
 simulated function InitSettings()
 {
+    local int i;
+    
     ApplySpawnBalance();
     ApplyWeaponFix();
 
-    class'ScrnBalanceSrv.ScrnVetSupportSpec'.default.progressArray0[0]=1000.0 * WeldingRequirementScaling;
-    class'ScrnBalanceSrv.ScrnVetSupportSpec'.default.progressArray0[1]=2000.0 * WeldingRequirementScaling;
-    class'ScrnBalanceSrv.ScrnVetSupportSpec'.default.progressArray0[2]=7000.0 * WeldingRequirementScaling;
-    class'ScrnBalanceSrv.ScrnVetSupportSpec'.default.progressArray0[3]=35000.0 * WeldingRequirementScaling;
-    class'ScrnBalanceSrv.ScrnVetSupportSpec'.default.progressArray0[4]=120000.0 * WeldingRequirementScaling;
-    class'ScrnBalanceSrv.ScrnVetSupportSpec'.default.progressArray0[5]=250000.0 * WeldingRequirementScaling;
-    class'ScrnBalanceSrv.ScrnVetSupportSpec'.default.progressArray0[6]=370000.0 * WeldingRequirementScaling;
+    class'ScrnVetSupportSpec'.default.progressArray0[0]=1000.0 * WeldingRequirementScaling;
+    class'ScrnVetSupportSpec'.default.progressArray0[1]=2000.0 * WeldingRequirementScaling;
+    class'ScrnVetSupportSpec'.default.progressArray0[2]=7000.0 * WeldingRequirementScaling;
+    class'ScrnVetSupportSpec'.default.progressArray0[3]=33500.0 * WeldingRequirementScaling;
+    class'ScrnVetSupportSpec'.default.progressArray0[4]=120000.0 * WeldingRequirementScaling;
+    class'ScrnVetSupportSpec'.default.progressArray0[5]=250000.0 * WeldingRequirementScaling;
+    class'ScrnVetSupportSpec'.default.progressArray0[6]=370000.0 * WeldingRequirementScaling;
 
-    class'ScrnBalanceSrv.ScrnVetCommando'.default.progressArray0[0]=10.0 * StalkerRequirementScaling;
-    class'ScrnBalanceSrv.ScrnVetCommando'.default.progressArray0[1]=30.0 * StalkerRequirementScaling;
-    class'ScrnBalanceSrv.ScrnVetCommando'.default.progressArray0[2]=100.0 * StalkerRequirementScaling;
-    class'ScrnBalanceSrv.ScrnVetCommando'.default.progressArray0[3]=350.0 * StalkerRequirementScaling;
-    class'ScrnBalanceSrv.ScrnVetCommando'.default.progressArray0[4]=1200.0 * StalkerRequirementScaling;
-    class'ScrnBalanceSrv.ScrnVetCommando'.default.progressArray0[5]=2400.0 * StalkerRequirementScaling;
-    class'ScrnBalanceSrv.ScrnVetCommando'.default.progressArray0[6]=3600.0 * StalkerRequirementScaling;
+    class'ScrnVetCommando'.default.progressArray0[0]=10.0 * StalkerRequirementScaling;
+    class'ScrnVetCommando'.default.progressArray0[1]=30.0 * StalkerRequirementScaling;
+    class'ScrnVetCommando'.default.progressArray0[2]=100.0 * StalkerRequirementScaling;
+    class'ScrnVetCommando'.default.progressArray0[3]=325.0 * StalkerRequirementScaling;
+    class'ScrnVetCommando'.default.progressArray0[4]=1200.0 * StalkerRequirementScaling;
+    class'ScrnVetCommando'.default.progressArray0[5]=2400.0 * StalkerRequirementScaling;
+    class'ScrnVetCommando'.default.progressArray0[6]=3600.0 * StalkerRequirementScaling;
 
-    if ( ReqBalanceMode == 1) {
-        class'ScrnBalanceSrv.ScrnVetSharpshooter'.default.progressArray0[3] = 800;
+    class'ScrnVetGunslinger'.default.progressArray0[0]=20;
+    class'ScrnVetGunslinger'.default.progressArray0[1]=50;
+    class'ScrnVetGunslinger'.default.progressArray0[2]=200;
+    class'ScrnVetGunslinger'.default.progressArray0[3]=1000;
+    class'ScrnVetGunslinger'.default.progressArray0[4]=3000;
+    class'ScrnVetGunslinger'.default.progressArray0[5]=7000;
+    class'ScrnVetGunslinger'.default.progressArray0[6]=11000;
+    if ( (ReqBalanceMode & 4) > 0 ) {
+        for ( i=0; i<class'ScrnVetGunslinger'.default.progressArray0.length; ++i )
+            class'ScrnVetGunslinger'.default.progressArray0[i] = 1.5 * class'ScrnVetGunslinger'.default.progressArray0[i];
+    }
 
-        class'ScrnBalanceSrv.ScrnVetFieldMedic'.default.progressArray0[1] = 450;
-        class'ScrnBalanceSrv.ScrnVetFieldMedic'.default.progressArray0[2] = 1750;
-        class'ScrnBalanceSrv.ScrnVetFieldMedic'.default.progressArray0[3] = 9000;
-        class'ScrnBalanceSrv.ScrnVetFieldMedic'.default.progressArray0[4] = 25000;
-        class'ScrnBalanceSrv.ScrnVetFieldMedic'.default.progressArray0[5] = 50000;
+    if ( (ReqBalanceMode & 1) > 0 ) {
+        class'ScrnVetSharpshooter'.default.progressArray0[3] = 775;
+
+        class'ScrnVetFieldMedic'.default.progressArray0[1] = 450;
+        class'ScrnVetFieldMedic'.default.progressArray0[2] = 1750;
+        class'ScrnVetFieldMedic'.default.progressArray0[3] = 9000;
+        class'ScrnVetFieldMedic'.default.progressArray0[4] = 25000;
+        class'ScrnVetFieldMedic'.default.progressArray0[5] = 50000;
     }
     else {
-        class'ScrnBalanceSrv.ScrnVetSharpshooter'.default.progressArray0[3] = 700;
+        class'ScrnVetSharpshooter'.default.progressArray0[3] = 700;
 
-        class'ScrnBalanceSrv.ScrnVetFieldMedic'.default.progressArray0[1] = 200;
-        class'ScrnBalanceSrv.ScrnVetFieldMedic'.default.progressArray0[2] = 750;
-        class'ScrnBalanceSrv.ScrnVetFieldMedic'.default.progressArray0[3] = 4000;
-        class'ScrnBalanceSrv.ScrnVetFieldMedic'.default.progressArray0[4] = 12000;
-        class'ScrnBalanceSrv.ScrnVetFieldMedic'.default.progressArray0[5] = 25000;
+        class'ScrnVetFieldMedic'.default.progressArray0[1] = 200;
+        class'ScrnVetFieldMedic'.default.progressArray0[2] = 750;
+        class'ScrnVetFieldMedic'.default.progressArray0[3] = 4000;
+        class'ScrnVetFieldMedic'.default.progressArray0[4] = 12000;
+        class'ScrnVetFieldMedic'.default.progressArray0[5] = 25000;
     }
 
     if (bShieldWeight) {
@@ -596,6 +627,11 @@ static final function string ColorString(string s, byte R, byte G, byte B)
     return chr(27)$chr(max(R,1))$chr(max(G,1))$chr(max(B,1))$s;
 }
 
+static final function string ColorStringC(string s, color c)
+{
+    return chr(27)$chr(max(c.R,1))$chr(max(c.G,1))$chr(max(c.B,1))$s;
+}
+
 static final function string StripColor(string s)
 {
     local int p;
@@ -631,12 +667,23 @@ static final function string LeftCol(string ColoredString, int i)
     return Left(ColoredString, c);
 }
 
-simulated function string ParseColorTags(string ColoredText)
+simulated function string ParseColorTags(string ColoredText, optional PlayerReplicationInfo PRI)
 {
     local int i;
     local string s;
     
     s = ColoredText;
+    if ( PRI != none && PRI.Team != none )
+        ReplaceText(s, "^t", ColorStringC("", class'ScrnHUD'.default.TextColors[PRI.Team.TeamIndex]));
+    else
+        ReplaceText(s, "^t", "");    
+        
+    if ( KFPlayerReplicationInfo(PRI) != none )
+        ReplaceText(s, "^p", ColorStringC("", class'ScrnHUD'.static.PerkColor(KFPlayerReplicationInfo(PRI).ClientVeteranSkillLevel)));
+    else
+        ReplaceText(s, "^p", "");
+        
+    
     for ( i=0; i<ColorTags.Length; ++i ) {
         if ( InStr(s, ColorTags[i].T) != -1 )
             ReplaceText(s, ColorTags[i].T, ColorString("", 
@@ -652,7 +699,8 @@ simulated function string StripColorTags(string ColoredText)
     local string s;
     
     s = ColoredText;
-    
+    ReplaceText(s, "^p", "");
+    ReplaceText(s, "^t", "");
     for ( i=0; i<ColorTags.Length; ++i ) {
         if ( InStr(s, ColorTags[i].T) != -1 )
             ReplaceText(s, ColorTags[i].T, "");
@@ -666,7 +714,7 @@ simulated function string ColoredPlayerName(PlayerReplicationInfo PRI)
     if ( PRI == none )
         return "";
         
-    return ParseColorTags(PRI.PlayerName);
+    return ParseColorTags(PRI.PlayerName, PRI);
 }
 
 function StolenWeapon(Pawn NewOwner, KFWeaponPickup WP)
@@ -674,7 +722,7 @@ function StolenWeapon(Pawn NewOwner, KFWeaponPickup WP)
     local string str;
     
     str = BroadcastPickupText;
-    ReplaceText(str, "%p", ColorString(ParseColorTags(NewOwner.GetHumanReadableName()), 192, 1, 1) $ ColorString("", 192, 192, 192));
+    ReplaceText(str, "%p", ColorString(ParseColorTags(NewOwner.GetHumanReadableName(), NewOwner.PlayerReplicationInfo), 192, 1, 1) $ ColorString("", 192, 192, 192));
     ReplaceText(str, "%o", ColorString(ColoredPlayerName(WP.DroppedBy.PlayerReplicationInfo), 1, 192, 1) $ ColorString("", 192, 192, 192));
     ReplaceText(str, "%w", ColorString(WP.ItemName, 1, 96, 192) $ ColorString("", 192, 192, 192));
     ReplaceText(str, "%$", ColorString(String(WP.SellValue), 192, 192, 1) $ ColorString("", 192, 192, 192));
@@ -828,7 +876,7 @@ function BroadcastAchEarn(ScrnAchievements AchHandler, int AchIndex)
             continue;    
         ScrnPlayer = ScrnPlayerController(C);
         if ( ScrnPlayer != None && ScrnPlayer != AchHandler.Owner ) {
-            ScrnPlayer.ClientMessage(ScrnPlayer.ConsoleColorString(s, 1, 150, 255));
+            ScrnPlayer.ClientMessage(ColorString(s, 1, 150, 255));
         }
     }
 }
@@ -1089,6 +1137,9 @@ simulated function Tick( float DeltaTime )
             InitDoors();
 			SetStartCash();
         }
+        if ( bTSCGame ) {
+            Level.GRI.bNoTeamSkins = bNoTeamSkins && !ScrnGameType(Level.Game).IsTourney();
+        }
         SetTimer(1, true);
         Disable('Tick');
     }
@@ -1195,7 +1246,14 @@ function MsgEnemies(PlayerController Sender)
     }
 }
 
-// splits long message on short ones
+/** Splits long message on short ones before sending it to client.
+ *  @param   Sender     Player, who will receive message(-s).  
+ *  @param   S          String to send.
+ *  @param   MaxLen     Max lenght of one string. Default: 80. If S is longer than this value, 
+ *                      then it will be splitted on serveral messages.
+ *  @param  Divider     Character to be used as divider. Default: Space. String is splitted
+ *                      at last divder's position before MaxLen is reached.
+ */
 static function LongMessage(PlayerController Sender, string S, optional int MaxLen, optional string Divider)
 {
     local int pos;
@@ -1213,7 +1271,7 @@ static function LongMessage(PlayerController Sender, string S, optional int MaxL
         if ( pos == -1 )
             break; // no more dividers
         
-        if ( len(part) + pos + 1 > MaxLen) {
+        if ( part != "" && len(part) + pos + 1 > MaxLen) {
             Sender.ClientMessage(part);
             part = "";
         }
@@ -1223,7 +1281,7 @@ static function LongMessage(PlayerController Sender, string S, optional int MaxL
 
     part $= S;
     if ( part != "" )
-        Sender.ClientMessage(S);
+        Sender.ClientMessage(part);
 }
 
 function Mutate(string MutateString, PlayerController Sender)
@@ -1236,30 +1294,24 @@ function Mutate(string MutateString, PlayerController Sender)
         SendAccuracy(Sender);
     else if( MutateString == "CHECK" )
         Sender.ClientMessage(FriendlyName);
-    else if ( MutateString == "LEVEL" )
-        MessageBonusLevel(Sender);
-    else if ( MutateString == "VERSION" )
-        MessageVersion(Sender);
-    else if ( MutateString == "STATUS")
-        MessageStatus(Sender);
-    else if ( MutateString == "MUTLIST" ) 
-        Sender.ClientMessage(MutatorList());
-    else if ( MutateString == "STATS" || MutateString == "PERKSTATS" )
-        MessagePerkStats(Sender);        
+    else if( MutateString == "GIMMECOOKIES" )
+        XPBoost(Sender, 'TSCT', 6);
     else if ( MutateString == "HARDCORELEVEL" || MutateString == "HL" )
         Sender.ClientMessage("Hardcore Level = " $ GameRules.HardcoreLevel);
+    else if ( MutateString == "LEVEL" )
+        MessageBonusLevel(Sender);
+    else if ( MutateString == "MUTLIST" ) 
+        Sender.ClientMessage(MutatorList());
     else if ( MutateString == "PLAYERLIST" ) 
         SendPlayerList(Sender);  
+    else if ( MutateString == "STATS" || MutateString == "PERKSTATS" )
+        MessagePerkStats(Sender);        
+    else if ( MutateString == "STATUS")
+        MessageStatus(Sender);
+    else if ( MutateString == "VERSION" )
+        MessageVersion(Sender);
     else if ( MutateString == "ZEDLIST" ) 
         SendZedList(Sender);  
-    else if ( MutateString == "TESTSPEC") {
-        Sender.ClientMessage("Pawn="$Sender.Pawn @ "ViewTarget="$Sender.ViewTarget @ "RealViewTarget="$Sender.RealViewTarget);
-        Sender.ClientMessage("Pawn.bViewTarget="$ScrnHumanPawn(Sender.Pawn).bViewTarget
-            @ "Pawn.SpecWeapon="$ScrnHumanPawn(Sender.Pawn).SpecWeapon
-            @ "Pawn.SpecMagAmmo="$ScrnHumanPawn(Sender.Pawn).SpecMagAmmo
-            @ "Pawn.SpecMags="$ScrnHumanPawn(Sender.Pawn).SpecMags
-            @ "Pawn.SpecSecAmmo="$ScrnHumanPawn(Sender.Pawn).SpecSecAmmo);
-    }
     else if ( Level.NetMode == NM_Standalone || (Sender.PlayerReplicationInfo != none && Sender.PlayerReplicationInfo.bAdmin) ) 
     {
         // admin commands
@@ -1278,23 +1330,7 @@ function Mutate(string MutateString, PlayerController Sender)
         else if ( MutateString == "ENEMIES" )
             MsgEnemies(Sender);
         else if ( ScrnGT == none || !ScrnGT.IsTourney() ) {
-            if ( MutateString == "RESETBOSS" ) {
-                switch (CurrentEventNum) {
-                    case 1:
-                        KF.MonsterCollection.default.EndGameBossClass = "KFChar.ZombieBoss_CIRCUS";
-                        break;
-                    case 2:
-                        KF.MonsterCollection.default.EndGameBossClass = "KFChar.ZombieBoss_HALLOWEEN";
-                        break;
-                    case 2:
-                        KF.MonsterCollection.default.EndGameBossClass = "KFChar.ZombieBoss_XMAS";
-                        break;
-                    default:
-                        KF.MonsterCollection.default.EndGameBossClass = "KFChar.ZombieBoss";
-                }
-                Sender.ClientMessage("End game boss reset to " $ KF.MonsterCollection.default.EndGameBossClass);
-            }
-            else if ( Left(MutateString, 7) == "MAPZEDS" ) {
+            if ( Left(MutateString, 7) == "MAPZEDS" ) {
                 if ( SetMapZeds(int(Mid(MutateString, 8))) )
                     Sender.ClientMessage("Max zeds at once for this map is set to " $ Mid(MutateString, 8));
                 else
@@ -1338,6 +1374,53 @@ private final function DebugDoors(PlayerController Sender)
 }
 */
 
+function XPBoost(PlayerController Sender, name Achievement, byte Level)
+{
+    local ScrnCustomPRI ScrnPRI;
+    local SRStatsBase SteamStats;
+    local ScrnPlayerInfo SPI;
+    local SRCustomProgress S;
+    local int v;
+    
+    ScrnPRI = class'ScrnCustomPRI'.static.FindMe(Sender.PlayerReplicationInfo);
+    if ( ScrnPRI == none || !ScrnPRI.IsTourneyMember() )
+        return;
+     
+    SteamStats = SRStatsBase(Sender.SteamStatsAndAchievements); 
+    SPI = GameRules.GetPlayerInfo(Sender);
+    if ( SPI == none || SteamStats == none ) {
+        Sender.ClientMessage("Player achievements are not loaded yet. Try again later.");
+        return;
+    }
+    // ProgressAchievement() returns true if progress has been made, i.e. 
+    // achievement wasn't achieved before
+    if ( Achievement == '' || SPI.ProgressAchievement(Achievement, 1) ) {
+        SteamStats.AddDamageHealed(class'ScrnVetFieldMedic'.default.progressArray0[Level]);
+        SteamStats.AddWeldingPoints(class'ScrnVetSupportSpec'.default.progressArray0[Level]);
+        SteamStats.AddShotgunDamage(class'ScrnVetSupportSpec'.default.progressArray1[Level]);
+        v = class'ScrnVetSharpshooter'.default.progressArray0[Level];
+        while ( v-- > 0 )
+            SteamStats.AddHeadshotKill(false);
+        v = class'ScrnVetCommando'.default.progressArray0[Level];
+        while ( v-- > 0 )
+            SteamStats.AddStalkerKill();	
+        SteamStats.AddBullpupDamage(class'ScrnVetCommando'.default.progressArray1[Level]);
+        SteamStats.AddMeleeDamage(class'ScrnVetBerserker'.default.progressArray0[Level]);
+        SteamStats.AddFlameThrowerDamage(class'ScrnVetFirebug'.default.progressArray0[Level]);
+        SteamStats.AddExplosivesDamage(class'ScrnVetDemolitions'.default.progressArray0[Level]);
+        for ( S = SteamStats.Rep.CustomLink; S!=none; S=S.NextLink ) {
+            if ( ScrnPistolKillProgress(S) != none )
+                S.IncrementProgress(class'ScrnVetGunslinger'.default.progressArray0[Level]);
+            else if ( ScrnPistolDamageProgress(S) != none )
+                S.IncrementProgress(class'ScrnVetGunslinger'.default.progressArray1[Level]);
+        }        
+        SaveStats(); // for ServerPerks to write stats
+        // ensure that xp boost won't be multiplied by end-game bonus
+        SPI.GameStartStats.bSet = false;
+        SPI.BackupStats(SPI.GameStartStats);
+    }
+}
+
 
 function string MutatorList()
 {
@@ -1353,13 +1436,15 @@ function string MutatorList()
 
 function SendZedList(PlayerController Sender)
 {
-    local int i, j, NumZeds;
+    local int i, j, k, NumZeds;
     local string str, ZedClass;
     
     Sender.ClientMessage("Collection: " $ KF.MonsterCollection);
     Sender.ClientMessage("Boss: " $ KF.MonsterCollection.default.EndGameBossClass);
-    for ( i=0; i< KF.MonsterCollection.default.MonsterClasses.Length; ++i ) {
-        Sender.ClientMessage(KF.MonsterCollection.default.MonsterClasses[i].MID $ ": " $ KF.MonsterCollection.default.MonsterClasses[i].MClassName);
+    for ( k=0; k< KF.MonsterCollection.default.MonsterClasses.Length; ++k ) {
+        Sender.ClientMessage(
+            ColorString(KF.MonsterCollection.default.MonsterClasses[k].MID, 1, 100, 200)  
+            $ ColorString(": "$KF.MonsterCollection.default.MonsterClasses[k].MClassName, 200, 200, 200));
     }
     Sender.ClientMessage("SpecialSquads:");
     for ( i=0; i< KF.MonsterCollection.default.SpecialSquads.Length; ++i ) {
@@ -1369,7 +1454,16 @@ function SendZedList(PlayerController Sender)
                 ZedClass = KF.MonsterCollection.default.SpecialSquads[i].ZedClass[j];
                 NumZeds = KF.MonsterCollection.default.SpecialSquads[i].NumZeds[j];
                 if( ZedClass != "" ) {
-                    str @= NumZeds$"x"$GetItemName(ZedClass);
+                    // replace zed class with MonsterID
+                    for ( k=0; k< KF.MonsterCollection.default.MonsterClasses.Length; ++k ) {
+                        if ( ZedClass ~= KF.MonsterCollection.default.MonsterClasses[k].MClassName ) {
+                            ZedClass = ColorString(KF.MonsterCollection.default.MonsterClasses[k].MID, 1, 100, 200);    
+                            break;
+                        }
+                    }      
+                    if ( k == KF.MonsterCollection.default.MonsterClasses.Length )
+                        ZedClass = GetItemName(ZedClass); // zed class not found in monster collection
+                    str @= ColorString(NumZeds$"x", 200, 200, 200) $ GetItemName(ZedClass);
                 }
             }
             if ( str != "" )
@@ -1426,9 +1520,9 @@ function SendAccuracy(PlayerController Sender)
         msg = 
             ColoredPlayerName(SPI.PlayerOwner.PlayerReplicationInfo) $ ": "
             @ "Wave: "$GetColoredPercent(SPI.GetAccuracyWave(), false)
-            @ ColorString(string(SPI.HeadshotsPerWave),1,220,1)$ColorString("/"$SPI.BodyShotsPerWave,200,200,200)
+            @ ColorString("("$SPI.HeadshotsPerWave,1,220,1)$ColorString("/"$SPI.BodyShotsPerWave,200,200,200)$")"
             @ " Game: "$GetColoredPercent(SPI.GetAccuracyGame(), false)
-            @ ColorString(string(SPI.HeadshotsPerGame),1,220,1)$ColorString("/"$SPI.BodyshotsPerGame,200,200,200);
+            @ ColorString("("$SPI.HeadshotsPerGame,1,220,1)$ColorString("/"$SPI.BodyshotsPerGame,200,200,200)$")";
         if ( ScrnPlayerController(SPI.PlayerOwner) != none && ScrnPlayerController(SPI.PlayerOwner).ab_warning > 0 )
             msg @= ColorString("AB="$ScrnPlayerController(SPI.PlayerOwner).ab_warning$"%", 255, 200, 1);
 		Sender.ClientMessage(msg);
@@ -1493,6 +1587,7 @@ static function FillPlayInfo(PlayInfo PlayInfo)
     PlayInfo.AddSetting(default.BonusCapGroup,"bGunslinger","Gunslinger Perk",1,0, "Check");
     PlayInfo.AddSetting(default.BonusCapGroup,"bShowDamages","Show Damages",1,0, "Check");
     PlayInfo.AddSetting(default.BonusCapGroup,"bReplaceHUD","Replace HUD",1,0, "Check");
+    PlayInfo.AddSetting(default.BonusCapGroup,"bNoPerkChanges","No Perk Changes",1,0, "Check");
 
     PlayInfo.AddSetting(default.BonusCapGroup,"EventNum","Event", 0, 1, "Select", "0;Autodetect;255;Normal;1;Summer;2;Halloween;3;Xmas",,,True);
     PlayInfo.AddSetting(default.BonusCapGroup,"bForceEvent","Force Event",1,0, "Check");
@@ -1530,7 +1625,9 @@ static function string GetDescriptionText(string PropName)
         case "bGunslinger":                 return "Enabling Gunslinger perk will also remove dual pistols from the Sharpshooter perk";
         case "bShowDamages":                return "Allows showing damage values on the HUD. Clients will still be able to turn it off in their User.ini";
         case "bReplaceHUD":                 return "Replace heads-up display with ScrN version (recommended). Disable only if you have compatibility issues with other mods!";
+        case "bNoPerkChanges":              return "Disables perk changes during the game.";
         
+        case "EventNum":                    return "Setup KF event zeds";
         case "bForceEvent":                 return "Check it to force selected event";
 
         //case "PerkedWeapons":               return "List of perked custom weapons for perk bonuses in format '<PerkIndex>:<WeaponClassName>:<Bonuses>'";
@@ -1609,19 +1706,80 @@ function SetLevels()
     
     if ( MinLevel > MaxLevel )
         MinLevel = MaxLevel;
- 
-    default.MinLevel = MinLevel;
-    default.MaxLevel = MaxLevel;
-    if ( self.class != class'ScrnBalance' ) {
-        class'ScrnBalance'.default.MinLevel = MinLevel;
-        class'ScrnBalance'.default.MaxLevel = MaxLevel;
-    }
     OriginalMaxLevel = MaxLevel;
 
     //for the replication
     SrvMinLevel = MinLevel;
     SrvMaxLevel = MaxLevel;
+}
 
+
+function SetReplicationData()
+{
+    SrvMinLevel = MinLevel;
+    SrvMaxLevel = MaxLevel;
+    SrvAchievementFlags = AchievementFlags;
+    SrvReqBalanceMode = ReqBalanceMode;
+    
+    SrvFlags = 0;
+    if ( bSpawnBalance )                    SrvFlags = SrvFlags | 0x00000001;
+    if ( bSpawn0 )                          SrvFlags = SrvFlags | 0x00000002;        
+    if ( bNoStartCashToss )                 SrvFlags = SrvFlags | 0x00000004;  
+    if ( bMedicRewardFromTeam )             SrvFlags = SrvFlags | 0x00000008;  
+
+    if ( bWeaponFix )                       SrvFlags = SrvFlags | 0x00000010;
+    if ( bAltBurnMech )                     SrvFlags = SrvFlags | 0x00000020;        
+    if ( bGunslinger )                      SrvFlags = SrvFlags | 0x00000040;  
+    // if (  )                                 SrvFlags = SrvFlags | 0x00000080; 
+
+    if ( bReplaceNades )                    SrvFlags = SrvFlags | 0x00000100;
+    if ( bShieldWeight )                    SrvFlags = SrvFlags | 0x00000200;        
+    if ( bHardcore )                        SrvFlags = SrvFlags | 0x00000400;  
+    if ( bBeta )                            SrvFlags = SrvFlags | 0x00000800;    
+
+    if ( bShowDamages )                     SrvFlags = SrvFlags | 0x00001000;
+    if ( bManualReload )                    SrvFlags = SrvFlags | 0x00002000;        
+    if ( bForceManualReload )               SrvFlags = SrvFlags | 0x00004000;  
+    if ( bAllowWeaponLock )                 SrvFlags = SrvFlags | 0x00008000;  
+
+    if ( bNoPerkChanges )                   SrvFlags = SrvFlags | 0x00010000;
+    if ( bPerkChangeBoss )                  SrvFlags = SrvFlags | 0x00020000;        
+    if ( b10Stars )                         SrvFlags = SrvFlags | 0x00040000;  
+}
+
+simulated function LoadReplicationData()
+{
+    if ( Role == ROLE_Authority )
+        return;
+        
+    MinLevel = SrvMinLevel;
+    MaxLevel = SrvMaxLevel;
+    AchievementFlags = SrvAchievementFlags;
+    ReqBalanceMode = SrvReqBalanceMode;        
+        
+    bSpawnBalance                      = (SrvFlags & 0x00000001) > 0;
+    bSpawn0                            = (SrvFlags & 0x00000002) > 0;        
+    bNoStartCashToss                   = (SrvFlags & 0x00000004) > 0;  
+    bMedicRewardFromTeam               = (SrvFlags & 0x00000008) > 0;  
+
+    bWeaponFix                         = (SrvFlags & 0x00000010) > 0;
+    bAltBurnMech                       = (SrvFlags & 0x00000020) > 0;        
+    bGunslinger                        = (SrvFlags & 0x00000040) > 0;  
+    //                                    = (SrvFlags & 0x00000080) > 0; 
+
+    bReplaceNades                      = (SrvFlags & 0x00000100) > 0;
+    bShieldWeight                      = (SrvFlags & 0x00000200) > 0;        
+    bHardcore                          = (SrvFlags & 0x00000400) > 0;  
+    bBeta                              = (SrvFlags & 0x00000800) > 0;    
+
+    bShowDamages                       = (SrvFlags & 0x00001000) > 0;
+    bManualReload                      = (SrvFlags & 0x00002000) > 0;        
+    bForceManualReload                 = (SrvFlags & 0x00004000) > 0;  
+    bAllowWeaponLock                   = (SrvFlags & 0x00008000) > 0;  
+
+    bNoPerkChanges                     = (SrvFlags & 0x00010000) > 0;
+    bPerkChangeBoss                    = (SrvFlags & 0x00020000) > 0;        
+    b10Stars                           = (SrvFlags & 0x00040000) > 0; 
 }
 
 simulated function ApplySpawnBalance()
@@ -1680,19 +1838,38 @@ simulated function ApplyWeaponFix()
     class'KFMod.DwarfAxe'.default.UnlockedByAchievement = -1;
     class'KFMod.DwarfAxe'.default.AppID = 0;
     
+    // fix missing references
+    class'KFMod.Shotgun'.default.HudImageRef="KillingFloorHUD.WeaponSelect.combat_shotgun_unselected";
+    class'KFMod.Shotgun'.default.SelectedHudImageRef="KillingFloorHUD.WeaponSelect.combat_shotgun";
+    class'KFMod.Shotgun'.default.SelectSoundRef="KF_PumpSGSnd.SG_Select";
+    class'KFMod.Shotgun'.default.MeshRef="KF_Weapons_Trip.Shotgun_Trip";
+    class'KFMod.Shotgun'.default.SkinRefs[0]="KF_Weapons_Trip_T.Shotguns.shotgun_cmb";
+    class'KFMod.ShotgunAttachment'.default.MeshRef="KF_Weapons3rd_Trip.Shotgun_3rd";
+    
+    class'KFMod.DualDeagle'.default.HudImageRef="KillingFloorHUD.WeaponSelect.dual_handcannon_unselected";
+    class'KFMod.DualDeagle'.default.SelectedHudImageRef="KillingFloorHUD.WeaponSelect.dual_handcannon";
+    class'KFMod.DualDeagle'.default.SelectSoundRef="KF_HandcannonSnd.50AE_Select";
+    class'KFMod.DualDeagle'.default.MeshRef="KF_Weapons_Trip.Dual50_Trip";
+    class'KFMod.DualDeagle'.default.SkinRefs[0]="KF_Weapons_Trip_T.Pistols.deagle_cmb";
+    
+    class'KFMod.GoldenDualDeagle'.default.HudImageRef="KillingFloor2HUD.WeaponSelect.Gold_Dual_Deagle_unselected";
+    class'KFMod.GoldenDualDeagle'.default.SelectedHudImageRef="KillingFloor2HUD.WeaponSelect.Gold_Dual_Deagle";
+    class'KFMod.GoldenDualDeagle'.default.SelectSoundRef="KF_HandcannonSnd.50AE_Select";
+    class'KFMod.GoldenDualDeagle'.default.MeshRef="KF_Weapons_Trip.Dual50_Trip";
+    class'KFMod.GoldenDualDeagle'.default.SkinRefs[0]="KF_Weapons_Gold_T.Weapons.Gold_deagle_cmb";
+    
     if ( bWeaponFix )
     {
         class'ScrnHumanPawn'.default.HealthRestoreRate = 7; //30% lower off-perk, but medics now have a bonus
 
-        //class'ScrnBalanceSrv.ScrnVetFieldMedic'.default.SRLevelEffects[6]="200% faster Syringe recharge|75% more potent medical injections|75% less damage from Bloat Bile|18% faster movement speed|100% larger Medic Gun clip|50% faster reload with MP5/MP7|60% better Body Armor|70% discount on Body Armor||87% discount on Medic Guns| Spawn with Body Armor and MP7M";
-        //class'ScrnBalanceSrv.ScrnVetFieldMedic'.default.CustomLevelInfo="%s faster Syringe recharge|75% more potent medical injections|75% less damage from Bloat Bile|%r faster movement speed|100% larger Medic Gun clip|50% faster reload with MP5/MP7|%a better Body Armor|%d discount on Body Armor||%m discount on Medic Guns| Spawn with Body Armor and MP7M";
+        // prevent weapons from dropping on death
+        class'Knife'.default.bCanThrow = bStoryMode;
+        class'Syringe'.default.bCanThrow = bStoryMode;
+        class'Welder'.default.bCanThrow = bStoryMode;
     }
     else
     {
         class'ScrnHumanPawn'.default.HealthRestoreRate = 10;
-
-        //class'ScrnBalanceSrv.ScrnVetFieldMedic'.default.SRLevelEffects[6]="200% faster Syringe recharge|75% more potent medical injections|75% less damage from Bloat Bile|18% faster movement speed|100% larger Medic Gun clip|50% faster reload with MP5/MP7|75% better Body Armor|70% discount on Body Armor||87% discount on Medic Guns| Spawn with Body Armor and MP7M";
-        //class'ScrnBalanceSrv.ScrnVetFieldMedic'.default.CustomLevelInfo="%s faster Syringe recharge|75% more potent medical injections|75% less damage from Bloat Bile|%r faster movement speed|100% larger Medic Gun clip|50% faster reload with MP5/MP7|75% better Body Armor|%d discount on Body Armor||%m discount on Medic Guns| Spawn with Body Armor and MP7M";
     }
 }
 
@@ -1911,21 +2088,6 @@ function LoadSpawnInventory()
 	}
 }
 
-
-function SetupRandomSpawn(ScrnRandomItemSpawn item)
-{
-    if ( !bReplacePickups ) {
-        item.PickupClasses[0] = Class'KFMod.DualiesPickup';
-        item.PickupClasses[1] = Class'KFMod.ShotgunPickup';
-        item.PickupClasses[2] = Class'KFMod.BullpupPickup';
-        item.PickupClasses[3] = Class'KFMod.DeaglePickup';
-        item.PickupClasses[4] = Class'KFMod.WinchesterPickup';
-        item.PickupClasses[5] = Class'KFMod.AxePickup';
-        item.PickupClasses[6] = Class'KFMod.MachetePickup';
-        item.PickupClasses[8] = Class'KFMod.MAC10Pickup';
-    }
-}
-
 function SetupStoryRules(KFLevelRules_Story StoryRules)
 {
 	local int i,j;
@@ -1949,6 +2111,8 @@ function bool CheckReplacement(Actor Other, out byte bSuperRelevant)
     
     // first check classes that need to be replaced
 	if ( Other.class == class'KFRandomItemSpawn' ) {	
+        if ( !bReplacePickups )
+            return true;
 		ReplaceWith(Other, "ScrnBalanceSrv.ScrnRandomItemSpawn");
 		return false;
 	}  
@@ -1991,9 +2155,6 @@ function bool CheckReplacement(Actor Other, out byte bSuperRelevant)
         class'ScrnAchievements'.static.InitAchievements(SRStatsBase(Other).Rep); 
         SetupRepLink(SRStatsBase(Other).Rep);
     }
-	else if ( ScrnRandomItemSpawn(Other) != none) {
-		SetupRandomSpawn(ScrnRandomItemSpawn(Other));
-	}
     else if ( Other.class == class'ScrnAmmoPickup' ) {
         Other.SetStaticMesh(AmmoBoxMesh);
         Other.SetDrawScale(AmmoBoxDrawScale);
@@ -2283,6 +2444,7 @@ function SetMaxZombiesOnce()
 function PostBeginPlay()
 {
     local ScrnVotingHandlerMut VH;
+    local int i;
 
     KF = KFGameType(Level.Game);
     if (KF == none) {
@@ -2329,6 +2491,7 @@ function PostBeginPlay()
             log("Unable to spawn " $ ServerPerksPkgName, class.outer.name);
     }
     bAllowAlwaysPerkChanges = ServerPerksMut.GetPropertyText("bAllowAlwaysPerkChanges") ~= "True";
+    bNoPerkChanges = bNoPerkChanges && !bAllowAlwaysPerkChanges;
     
     
     if ( !ClassIsChildOf(KF.PlayerControllerClass, class'ScrnBalanceSrv.ScrnPlayerController') ) {
@@ -2345,6 +2508,7 @@ function PostBeginPlay()
     KF.LoginMenuClass = string(Class'ScrnBalanceSrv.ScrnInvasionLoginMenu');
 
     SetLevels();
+    SetReplicationData();
     //exec this on server side only
     ApplySpawnBalance();
     ApplyWeaponFix();
@@ -2398,8 +2562,14 @@ function PostBeginPlay()
 		class'ScrnAchievements'.static.RegisterAchievements(class'AchObjMaps');
 	}
     
-    
     Log(FriendlyName @ GetVersionStr()$" loaded", class.outer.name);
+    
+    for ( i=0; i<AutoLoadMutators.length; ++i ) {
+        if ( AutoLoadMutators[i] != "" )  {
+            Log("Loading additional mutator: " $ AutoLoadMutators[i], class.outer.name);
+            KF.AddMutator(AutoLoadMutators[i], true);
+        }
+    }
 }
 
 function InitDoors()
@@ -2636,7 +2806,8 @@ function DestroyExtraPipebombs()
                 if ( KFPRIArray[i] == KFPRI )
                     break;
             }
-            if ( i == KFPRIArray.length ) {
+            if ( i == KFPRIArray.length ) { 
+                // KFPRI not found. Add a new record.
                 KFPRIArray[i] = KFPRI;
                 PipeBombCapacity[i] = 2 * KFPRI.ClientVeteranSkill.static.AddExtraAmmoFor(KFPRI, class'PipeBombAmmo');
             }
@@ -2649,6 +2820,50 @@ function DestroyExtraPipebombs()
 	}    
 }
 
+final static function bool GetHighlyDecorated(int SteamID32, 
+    out material Avatar, out material ClanIcon, 
+    out material PreNameIcon, out Color PrefixIconColor, out material PostNameIcon, out Color PostfixIconColor,
+    out int Playoffs, out int TourneyWon)
+{
+    local int start, end, i;
+    
+    start = 0;
+    end = default.HighlyDecorated.length;
+    
+    while ( start <= end ) {
+        i = start + (end - start)/2;
+        if ( SteamID32 == default.HighlyDecorated[i].SteamID32 ) {
+            if ( default.HighlyDecorated[i].Avatar == none && default.HighlyDecorated[i].AvatarRef != "" )
+                default.HighlyDecorated[i].Avatar = Material(DynamicLoadObject(default.HighlyDecorated[i].AvatarRef, class'Material'));
+            if ( default.HighlyDecorated[i].ClanIcon == none && default.HighlyDecorated[i].ClanIconRef != "" )
+                default.HighlyDecorated[i].ClanIcon = Material(DynamicLoadObject(default.HighlyDecorated[i].ClanIconRef, class'Material'));
+            if ( default.HighlyDecorated[i].PreNameIcon == none && default.HighlyDecorated[i].PreNameIconRef != "" )
+                default.HighlyDecorated[i].PreNameIcon = Material(DynamicLoadObject(default.HighlyDecorated[i].PreNameIconRef, class'Material'));
+            if ( default.HighlyDecorated[i].PostNameIcon == none && default.HighlyDecorated[i].PostNameIconRef != "" )
+                default.HighlyDecorated[i].PostNameIcon = Material(DynamicLoadObject(default.HighlyDecorated[i].PostNameIconRef, class'Material'));
+            Avatar = default.HighlyDecorated[i].Avatar;
+            ClanIcon = default.HighlyDecorated[i].ClanIcon;
+            PreNameIcon = default.HighlyDecorated[i].PreNameIcon;
+            PostfixIconColor = default.HighlyDecorated[i].PostfixIconColor;
+            PostNameIcon = default.HighlyDecorated[i].PostNameIcon;
+            PrefixIconColor = default.HighlyDecorated[i].PrefixIconColor;
+            Playoffs = default.HighlyDecorated[i].Playoffs;
+            TourneyWon = default.HighlyDecorated[i].TourneyWon;
+            return true;
+        }
+        else if ( SteamID32 < default.HighlyDecorated[i].SteamID32 )
+            end = i - 1;
+        else 
+            start = i + 1;
+    }
+    Avatar = none;
+    ClanIcon = none;
+    PreNameIcon = none;
+    PostNameIcon = none;
+    Playoffs = 0;
+    TourneyWon = 0;
+    return false;
+}
 
 defaultproperties
 {
@@ -2681,7 +2896,7 @@ defaultproperties
 	bVoteKillCheckVisibility=True
 	VoteKillPenaltyMult=5.0
 	
-    ReqBalanceMode=1
+    ReqBalanceMode=5
     BonusLevelNormalMax=3
     BonusLevelHardMax=4
     BonusLevelSuiMin=4
@@ -2828,12 +3043,80 @@ defaultproperties
     bCloserZedSpawns=True
     bServerInfoVeterancy=True
     bScrnClientPerkRepLink=True
+    bPlayerZEDTime=True
 
     bAddToServerPackages=True
     bAlwaysRelevant=True
     bOnlyDirtyReplication=False
     RemoteRole=ROLE_SimulatedProxy
     bNetNotify=True
+    
+    HighlyDecorated(0)=(SteamID32=3907835,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+    HighlyDecorated(1)=(SteamID32=4787302,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+    HighlyDecorated(2)=(SteamID32=21825964,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+    HighlyDecorated(3)=(SteamID32=26505257,Playoffs=1,AvatarRef="ScrnTex.Players.Duckbuster",ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PreNameIconRef="KillingFloor2HUD.PerkReset.PReset_Support_Grey",PrefixIconColor=(R=255,G=255,B=255,A=0)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+    HighlyDecorated(4)=(SteamID32=27263782,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+    HighlyDecorated(5)=(SteamID32=27784497,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+    HighlyDecorated(6)=(SteamID32=32271863,AvatarRef="ScrnTex.Players.PooSH",PreNameIconRef="KillingFloor2HUD.PerkReset.PReset_Berserker_Grey",PostNameIconRef="KillingFloor2HUD.PerkReset.PReset_Berserker_Grey",PrefixIconColor=(R=255,G=255,B=255,A=1)),PostfixIconColor=(R=255,G=255,B=255,A=0))
+    HighlyDecorated(7)=(SteamID32=32279441,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+    HighlyDecorated(8)=(SteamID32=32976519,Playoffs=1,ClanIconRef="ScrnTex.Players.Dosh",PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+    HighlyDecorated(9)=(SteamID32=34308728,AvatarRef="ScrnTex.Players.Janitor",PreNameIconRef="KillingFloor2HUD.PerkReset.PReset_Firebug_Grey",PostNameIconRef="KillingFloor2HUD.PerkReset.PReset_Firebug_Grey",PrefixIconColor=(R=255,G=255,B=255,A=1)),PostfixIconColor=(R=255,G=255,B=255,A=0))
+    HighlyDecorated(10)=(SteamID32=37444251,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+    HighlyDecorated(11)=(SteamID32=41734606,Playoffs=1,TourneyWon=1,ClanIconRef="ScrnTex.Tourney.TBN",PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+    HighlyDecorated(12)=(SteamID32=43087787,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+    HighlyDecorated(13)=(SteamID32=43944237,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+    HighlyDecorated(14)=(SteamID32=44141219,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+    HighlyDecorated(15)=(SteamID32=44328745,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+    HighlyDecorated(16)=(SteamID32=45088649,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+    HighlyDecorated(17)=(SteamID32=45352894,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+    HighlyDecorated(18)=(SteamID32=46023864,AvatarRef="ScrnTex.Players.Baron",PreNameIconRef="KillingFloor2HUD.PerkReset.PReset_Medic_Grey",PostNameIconRef="ScrnAch_T.Achievements.Baron",PrefixIconColor=(R=255,G=255,B=255,A=1)),PostfixIconColor=(R=255,G=255,B=255,A=0))
+    HighlyDecorated(19)=(SteamID32=47199674,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+    HighlyDecorated(20)=(SteamID32=47820768,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+    HighlyDecorated(21)=(SteamID32=49361376,Playoffs=1,TourneyWon=1,ClanIconRef="ScrnTex.Tourney.TBN",PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+    HighlyDecorated(22)=(SteamID32=51667940,Playoffs=1,TourneyWon=1,ClanIconRef="ScrnTex.Tourney.TBN",PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+    HighlyDecorated(23)=(SteamID32=52109233,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+    HighlyDecorated(24)=(SteamID32=53781980,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+    HighlyDecorated(25)=(SteamID32=54179805,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+    HighlyDecorated(26)=(SteamID32=54471316,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+    HighlyDecorated(27)=(SteamID32=58813412,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+    HighlyDecorated(28)=(SteamID32=59018230,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+    HighlyDecorated(29)=(SteamID32=59344954,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+    HighlyDecorated(30)=(SteamID32=59865355,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+    HighlyDecorated(31)=(SteamID32=61480134,Playoffs=1,TourneyWon=1,ClanIconRef="ScrnTex.Tourney.TBN",PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+    HighlyDecorated(32)=(SteamID32=63934831,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+    HighlyDecorated(33)=(SteamID32=64861994,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+    HighlyDecorated(34)=(SteamID32=66767874,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+    HighlyDecorated(35)=(SteamID32=67141366,Playoffs=1,TourneyWon=1,ClanIconRef="ScrnTex.Tourney.TBN",PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+    HighlyDecorated(36)=(SteamID32=68703215,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+    HighlyDecorated(37)=(SteamID32=68932148,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+    HighlyDecorated(38)=(SteamID32=71427768,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+    HighlyDecorated(39)=(SteamID32=75600845,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+    HighlyDecorated(40)=(SteamID32=76661591,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+    HighlyDecorated(41)=(SteamID32=81947447,Playoffs=1,TourneyWon=1,ClanIconRef="ScrnTex.Tourney.TBN",PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+    HighlyDecorated(42)=(SteamID32=83417929,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+    HighlyDecorated(43)=(SteamID32=85142081,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+    HighlyDecorated(44)=(SteamID32=89323130,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+    HighlyDecorated(45)=(SteamID32=93919492,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+    HighlyDecorated(46)=(SteamID32=95752287,AvatarRef="ScrnTex.Players.FosterKF2",PreNameIconRef="KillingFloor2HUD.PerkReset.PReset_Sharpshooter_Grey",PostNameIconRef="KillingFloor2HUD.PerkReset.PReset_Sharpshooter_Grey",PrefixIconColor=(R=255,G=255,B=255,A=1)),PostfixIconColor=(R=255,G=255,B=255,A=0))
+    HighlyDecorated(47)=(SteamID32=99293732,Playoffs=1,TourneyWon=1,ClanIconRef="ScrnTex.Tourney.TBN",PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+    HighlyDecorated(48)=(SteamID32=102496714,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+    HighlyDecorated(49)=(SteamID32=106835439,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+    HighlyDecorated(50)=(SteamID32=107039826,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+    HighlyDecorated(51)=(SteamID32=112564543,ClanIconRef="ScrnTex.Players.Dosh",PreNameIconRef="KillingFloor2HUD.PerkReset.PReset_Medic_Grey",PostNameIconRef="KillingFloor2HUD.PerkReset.PReset_Medic_Grey",PrefixIconColor=(R=255,G=255,B=255,A=1)),PostfixIconColor=(R=255,G=255,B=255,A=0))    HighlyDecorated(52)=(SteamID32=113961551,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+    HighlyDecorated(53)=(SteamID32=114826433,Playoffs=1,AvatarRef="ScrnTex.Players.nmm",ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PreNameIconRef="KillingFloor2HUD.PerkReset.PReset_Sharpshooter_Grey",PrefixIconColor=(R=255,G=255,B=255,A=0)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+    HighlyDecorated(54)=(SteamID32=121550025,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+    HighlyDecorated(55)=(SteamID32=124874371,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+    HighlyDecorated(56)=(SteamID32=128107383,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+    HighlyDecorated(57)=(SteamID32=128199891,Playoffs=1,TourneyWon=1,ClanIconRef="ScrnTex.Tourney.TBN",PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+    HighlyDecorated(58)=(SteamID32=134825301,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+    HighlyDecorated(59)=(SteamID32=139723798,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+    HighlyDecorated(60)=(SteamID32=143999622,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+    HighlyDecorated(61)=(SteamID32=152138369,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+    HighlyDecorated(62)=(SteamID32=152983683,Playoffs=1,TourneyWon=1,ClanIconRef="ScrnTex.Tourney.TBN",PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+    HighlyDecorated(63)=(SteamID32=153788974,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+    HighlyDecorated(64)=(SteamID32=160715546,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+    HighlyDecorated(65)=(SteamID32=162712343,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+    HighlyDecorated(66)=(SteamID32=192070782,Playoffs=1,TourneyWon=1,ClanIconRef="ScrnTex.Tourney.TBN",PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
     
     GroupName="KF-Scrn"
 

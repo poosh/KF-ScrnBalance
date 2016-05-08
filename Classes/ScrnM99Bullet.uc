@@ -67,6 +67,8 @@ simulated function ProcessTouch (Actor Other, vector HitLocation)
     if ( IgnoreImpactPawn != none && class'ScrnBalance'.default.Mut.bWeaponFix ) {
         if ( ZombieFleshpound(IgnoreImpactPawn) != none )
             AdjustedDamage *= 0.7; // It will be multiplied by 0.5 in ZombieFleshpound.TakeDamage(), ending up with 0.35
+        else if (ZombieBoss(IgnoreImpactPawn) != none )
+             AdjustedDamage *= 0.8; // 20% resistance to Pat
         else if ( Level.Game.GameDifficulty >= 5.0 && ZombieScrake(IgnoreImpactPawn) != none )
             AdjustedDamage *= 0.5;
     }        

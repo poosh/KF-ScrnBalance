@@ -1,1 +1,0 @@
-class ScrnHRLAttachment extends LAWAttachment;

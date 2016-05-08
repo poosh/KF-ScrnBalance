@@ -42,10 +42,12 @@ var array<SDefaultInventory> DefaultInventory;
 
 var class<HUDOverlay> HUDOverlay;
 
+var Material HighDecMat;
+
 // ==================================================  FUNCTIONS  ==================================================
       
 // try to avoid using this function on client-side, except for bNetOwner      
-static function Pawn FindPawn(PlayerReplicationInfo PRI)
+final static function Pawn FindPawn(PlayerReplicationInfo PRI)
 {
     local Pawn P;
     
@@ -65,7 +67,7 @@ static function Pawn FindPawn(PlayerReplicationInfo PRI)
 }
       
 // Adds class to array. Doesn't add none or classes, which already are stored in array.
-static function bool ClassAddToArrayUnique( out array <class> AArray, class AClass )
+final static function bool ClassAddToArrayUnique( out array <class> AArray, class AClass )
 {
     if ( AClass == none || ClassIsInArray(AArray, AClass) )
         return false;
@@ -75,7 +77,7 @@ static function bool ClassAddToArrayUnique( out array <class> AArray, class ACla
 }
 
 // returns true if an array contains a given class 
-static function bool ClassIsInArray(out array <class> AArray, class AClass)
+final static function bool ClassIsInArray(out array <class> AArray, class AClass)
 {
     local int i;
     
@@ -89,7 +91,7 @@ static function bool ClassIsInArray(out array <class> AArray, class AClass)
 }
 
 //returns true if class or its parent is in a given array
-static function bool ClassChildIsInArray(out array <class> AArray, class AClass)
+final static function bool ClassChildIsInArray(out array <class> AArray, class AClass)
 {
     local int i;
     
@@ -103,7 +105,7 @@ static function bool ClassChildIsInArray(out array <class> AArray, class AClass)
 }
 
 //output array to a log - for debugging
-static function LogArray(out array <class> AArray)
+final static function LogArray(out array <class> AArray)
 {
     local int i;
     
@@ -155,24 +157,24 @@ static function AddCustomStats( ClientPerkRepLink Other )
     class'ScrnBalanceSrv.ScrnAchievements'.static.InitAchievements(Other);    
 }    
 
-static function float GetPost6RequirementScaling()
+final static function float GetPost6RequirementScaling()
 {
     return class'ScrnBalance'.default.Mut.Post6RequirementScaling;
 }
 
 
-static function byte GetBonusLevel(int level)
+final static function byte GetBonusLevel(int level)
 {
     return Clamp(level, class'ScrnBalance'.default.Mut.MinLevel, class'ScrnBalance'.default.Mut.MaxLevel);
 }
     
-static function byte GetClientVeteranSkillLevel(KFPlayerReplicationInfo KFPRI)
+final static function byte GetClientVeteranSkillLevel(KFPlayerReplicationInfo KFPRI)
 {
     // c&p from GetBonusLevel() to reduce function calls  -- PooSH
     return Clamp(KFPRI.ClientVeteranSkillLevel, class'ScrnBalance'.default.Mut.MinLevel, class'ScrnBalance'.default.Mut.MaxLevel);
 }
 
-static function bool IsGunslingerEnabled()
+final static function bool IsGunslingerEnabled()
 {
     return class'ScrnBalance'.default.Mut.bGunslinger;
 }

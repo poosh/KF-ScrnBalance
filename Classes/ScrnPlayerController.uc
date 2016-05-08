@@ -23,6 +23,15 @@ var globalconfig int AchGroupIndex;
 
 var globalconfig bool bSpeechVote; //allow using speeches Yes and No in voting
 
+struct SWeaponSetting
+{
+    var globalconfig class<KFWeapon> Weapon;
+    var globalconfig byte SkinIndex;
+    var transient class<KFWeapon> SkinnedWeapon; //used on server-side only
+    var transient KFWeapon LastWeapon; // last weapon on which skin was used
+};
+var globalconfig array<SWeaponSetting> WeaponSettings;
+
 var ScrnBalance Mut;
 
 
@@ -49,11 +58,10 @@ var transient float LastLockMsgTime; // last time when player received a message
 
 var localized string strAlreadySpectating;
 
-var globalconfig bool bPrioritizePerkedWeapons;
+var globalconfig bool bPrioritizePerkedWeapons, bPrioritizeBoomstick;
 
 var int StartCash; // amount of cash given to this pawn on game/wave start
-
-var private transient bool bHadPawn;
+var transient bool bHadPawn;
 
 struct SDualWieldable {
 	var class<KFWeapon> Single, Dual;
@@ -79,6 +87,7 @@ var transient bool bDestroying; // indicates that Destroyed() is executing
 var bool bDamageAck; // does server needs to acknowledge client of damages he made?
 
 var transient byte PerkChangeWave; // wave num, when perk was changed last time
+var	localized string strNoPerkChanges;
 
 var transient Controller FavoriteSpecs[2];
 var localized string strSpecFavoriteAssigned, strSpecNoFavorites;
@@ -87,18 +96,26 @@ var transient Actor OldViewTarget;
 var transient rotator PrevRot;
 var transient int ab_warning;
 
+// DLC checks
+struct SDLC {
+    var int AppID;
+    var bool bOwnsDLC;
+    var bool bChecked;
+};
+var array<SDLC> DLC;
+
 
 replication
 {
     reliable if ( Role == ROLE_Authority )
-        ClientMonsterBlamed;
+        ClientMonsterBlamed, ClientPostLogin;
 
     unreliable if ( bDamageAck && Role == ROLE_Authority )
         ClientPlayerDamaged;
 
     reliable if ( Role < ROLE_Authority )
         ServerVeterancyLevelEarned, ResetMyAchievements, ResetMapAch,
-		ServerDropAllWeapons, ServerLockWeapons,
+		ServerDropAllWeapons, ServerLockWeapons, ServerGunSkin,
         ServerAcknowledgeDamages,
         ServerDebugRepLink,
         ServerTourneyCheck, ServerKillMut, ServerKillRules,
@@ -123,6 +140,29 @@ simulated function PreBeginPlay()
 }
 
 
+// this function is called only while using ScrnGameType, ScrnStoryGameInfo or descendants
+function PostLogin()
+{
+    local ScrnCustomPRI ScrnPRI;
+
+    ClientPostLogin();
+    
+    ScrnPRI = class'ScrnCustomPRI'.static.FindMe(PlayerReplicationInfo);
+    if  ( ScrnPRI != none ) {
+        ScrnPRI.GotoState('');
+        ScrnPRI.SetSteamID64(GetPlayerIDHash());
+        ScrnPRI.NetUpdateTime = Level.TimeSeconds - 1;
+    }
+}
+
+simulated function ClientPostLogin()
+{
+    if ( Viewport(Player) != None )  {
+        CheckDLC();
+    }
+}
+
+
 simulated function LoadMutSettings()
 {
     if ( Mut != none ) {
@@ -134,7 +174,7 @@ simulated function LoadMutSettings()
     else { 
         //this shouldn't happen
         log("Player Controller can not find ScrnBalance!", class.outer.name);
-        if ( class'ScrnBalance'.default.bForceManualReload)
+        if ( class'ScrnBalance'.default.Mut.bForceManualReload)
             bManualReload =  class'ScrnBalance'.default.bManualReload;
         if ( class'ScrnBalance'.default.Mut.bHardcore )
             bOtherPlayerLasersBlue = false;        
@@ -164,19 +204,10 @@ function InitPlayerReplicationInfo()
 
 final static function ScrnCustomPRI FindScrnCustomPRI(PlayerReplicationInfo PRI)
 {
-    local LinkedReplicationInfo L;
-    local ScrnCustomPRI result;
-    
-    for( L = PRI.CustomReplicationInfo; L != none && result == none ; L = L.NextReplicationInfo )
-        result = ScrnCustomPRI(L);
-    
-    return result;
+    return class'ScrnCustomPRI'.static.FindMe(PRI);
 }
 
-/* 
-// NOW INTEGRATED INTO Marco's SP v6.50
-
-simulated function PreloadFireModeAssets(class<WeaponFire> WF)
+simulated function PreloadFireModeAssetsSE(class<WeaponFire> WF, optional WeaponFire SpawnedFire)
 {
     local class<Projectile> P;//log("ScrnPlayerController.PreloadFireModeAssets()" @ WF, default.class.outer.name);
 
@@ -185,11 +216,11 @@ simulated function PreloadFireModeAssets(class<WeaponFire> WF)
 
 
     if ( class<KFFire>(WF) != none && class<KFFire>(WF).default.FireSoundRef != "" )
-        class<KFFire>(WF).static.PreloadAssets(Level);
+        class<KFFire>(WF).static.PreloadAssets(Level, KFFire(SpawnedFire));
     else if ( class<KFMeleeFire>(WF) != none && class<KFMeleeFire>(WF).default.FireSoundRef != "" )
-        class<KFMeleeFire>(WF).static.PreloadAssets();
+        class<KFMeleeFire>(WF).static.PreloadAssets(KFMeleeFire(SpawnedFire));
     else if ( class<KFShotgunFire>(WF) != none && class<KFShotgunFire>(WF).default.FireSoundRef != "" )
-        class<KFShotgunFire>(WF).static.PreloadAssets(Level);
+        class<KFShotgunFire>(WF).static.PreloadAssets(Level, KFShotgunFire(SpawnedFire));
 
         
     // preload projectile assets    
@@ -216,51 +247,16 @@ simulated function PreloadFireModeAssets(class<WeaponFire> WF)
         class<M99Bullet>(P).static.PreloadAssets();               
     else if ( class<PipeBombProjectile>(P) != none && class<PipeBombProjectile>(P).default.StaticMeshRef != "" )
         class<PipeBombProjectile>(P).static.PreloadAssets();             
-}
-
-simulated function UnloadFireModeAssets(class<WeaponFire> WF)
-{
-    local class<Projectile> P;
-
-    if ( WF == none || WF == Class'KFMod.NoFire' ) 
-        return;
-
-    if ( class<KFFire>(WF) != none && class<KFFire>(WF).default.FireSoundRef != "" )
-        class<KFFire>(WF).static.UnloadAssets();
-    else if ( class<KFMeleeFire>(WF) != none && class<KFMeleeFire>(WF).default.FireSoundRef != "" )
-        class<KFMeleeFire>(WF).static.UnloadAssets();
-    else if ( class<KFShotgunFire>(WF) != none && class<KFShotgunFire>(WF).default.FireSoundRef != "" )
-        class<KFShotgunFire>(WF).static.UnloadAssets();
-        
-    // Unload projectile assets only if refs aren't empty (i.e. they have been dynamically loaded)    
-    P = WF.default.ProjectileClass;
-    if ( P == none || P.default.StaticMesh != none ) 
-        return;
-        
-    if ( class<ScrnCustomShotgunBullet>(P) != none )
-        class<ScrnCustomShotgunBullet>(P).static.UnloadAssets();               
-    else if ( class<CrossbuzzsawBlade>(P) != none )
-        class<CrossbuzzsawBlade>(P).static.UnloadAssets();               
-    else if ( class<LAWProj>(P) != none && class<LAWProj>(P).default.StaticMeshRef != "" )
-        class<LAWProj>(P).static.UnloadAssets();               
-    else if ( class<M79GrenadeProjectile>(P) != none && class<M79GrenadeProjectile>(P).default.StaticMeshRef != "" )
-        class<M79GrenadeProjectile>(P).static.UnloadAssets();               
-    else if ( class<SPGrenadeProjectile>(P) != none && class<SPGrenadeProjectile>(P).default.StaticMeshRef != "" )
-        class<SPGrenadeProjectile>(P).static.UnloadAssets();               
-    else if ( class<HealingProjectile>(P) != none && class<HealingProjectile>(P).default.StaticMeshRef != "" )
-        class<HealingProjectile>(P).static.UnloadAssets();               
-    else if ( class<CrossbowArrow>(P) != none && class<CrossbowArrow>(P).default.MeshRef != "" )
-        class<CrossbowArrow>(P).static.UnloadAssets();   
-    else if ( class<M99Bullet>(P) != none )
-        class<M99Bullet>(P).static.UnloadAssets();               
-    else if ( class<PipeBombProjectile>(P) != none && class<PipeBombProjectile>(P).default.StaticMeshRef != "" )
-        class<PipeBombProjectile>(P).static.UnloadAssets();               
+	// More DLC
+	else if ( class<SealSquealProjectile>(P) != none && class<SealSquealProjectile>(P).default.StaticMeshRef != "" )
+		class<SealSquealProjectile>(P).static.PreloadAssets();
 }
 
 simulated function ClientWeaponSpawned(class<Weapon> WClass, Inventory Inv)
 {
     local class<KFWeapon> W;
     local class<KFWeaponAttachment> Att;
+    local Weapon Spawned;
     
     //log("ScrnPlayerController.ClientWeaponSpawned()" @ WClass $ ". Default Mesh = " $ WClass.default.Mesh, default.class.outer.name);
     //super.ClientWeaponSpawned(WClass, Inv);
@@ -280,31 +276,20 @@ simulated function ClientWeaponSpawned(class<Weapon> WClass, Inventory Inv)
             else
                 Att.static.PreloadAssets();
         }
-        PreloadFireModeAssets(W.default.FireModeClass[0]);
-        PreloadFireModeAssets(W.default.FireModeClass[1]);
+        // 2014-11-23 fix
+        Spawned = Weapon(Inv);
+        if ( Spawned != none ) {
+            PreloadFireModeAssetsSE(W.default.FireModeClass[0], Spawned.GetFireMode(0));
+            PreloadFireModeAssetsSE(W.default.FireModeClass[1], Spawned.GetFireMode(0));
+        }
+        else {
+            PreloadFireModeAssetsSE(W.default.FireModeClass[0]);
+            PreloadFireModeAssetsSE(W.default.FireModeClass[1]);
+        }
     }
 }
 
-simulated function ClientWeaponDestroyed(class<Weapon> WClass)
-{
-    local class<KFWeapon> W;
-    local class<KFWeaponAttachment> Att;
-    
-    //log(default.class @ "ClientWeaponDestroyed()" @ WClass, default.class.outer.name);
-    //super.ClientWeaponDestroyed(WClass); 
-    
-    W = class<KFWeapon>(WClass);
-    //if default mesh is set, then count that weapon has static assets, so don't unload them
-    // that's lame, but no so lame as Tripwire's original code
-    if ( W != none && W.default.MeshRef != "" && W.static.UnloadAssets() ) {
-        Att = class<KFWeaponAttachment>(W.default.AttachmentClass);
-        if ( Att != none && Att.default.Mesh == none )
-            Att.static.PreloadAssets();
-        UnloadFireModeAssets(W.default.FireModeClass[0]);
-        UnloadFireModeAssets(W.default.FireModeClass[1]);
-    }
-}
-*/
+
 
 
 
@@ -598,7 +583,7 @@ event ClientMessage( coerce string S, optional Name Type )
     }
         
     if ( Mut != none )
-        super.ClientMessage(Mut.ParseColorTags(S), Type);
+        super.ClientMessage(Mut.ParseColorTags(S, PlayerReplicationInfo), Type);
     else    
         super.ClientMessage(S, Type);
 }
@@ -635,7 +620,7 @@ event TeamMessage( PlayerReplicationInfo PRI, coerce string S, name Type  )
     			else if (PRI.Team.TeamIndex==1)
         			c = chr(27)$chr(75)$chr(139)$chr(198);
 			}
-			S = Mut.ColoredPlayerName(PRI)$c$": "$ Mut.ParseColorTags(S);
+			S = Mut.ColoredPlayerName(PRI)$c$": "$ Mut.ParseColorTags(S, PRI);
 		}
 		Player.Console.Chat( c$s, 6.0, PRI );
 	}
@@ -1211,7 +1196,7 @@ simulated function bool IsTeamCharacter(string CharacterName)
     if ( CharacterName == "" )
         return false;
         
-    if ( TSCGameReplicationInfoBase(Level.GRI) == none || PlayerReplicationInfo == none || PlayerReplicationInfo.Team == none )
+    if ( Level.GRI.bNoTeamSkins || TSCGameReplicationInfoBase(Level.GRI) == none || PlayerReplicationInfo == none || PlayerReplicationInfo.Team == none )
         return true; // no team = any character can be used
     
     if ( PlayerReplicationInfo.Team.TeamIndex == 0 )
@@ -1345,28 +1330,19 @@ final function ServerTourneyCheck()
     if ( GT == none )
         ClientMessage("Current game type doesn't support Tourney Mode");
     else {
-        ClientMessage("Tourney Mode: " $ GT.IsTourney());
-        //LongMessage("Command Line: " $ GT.GetCmdLine(), 80, "?");
+        if ( GT.IsTourney() )
+            ClientMessage("Tourney Mode: " $ GT.GetTourneyMode());
+        else 
+            ClientMessage("Tourney Mode DISABLED");
     }
-    
     s = "Mutators:";
-    for ( M = Level.Game.BaseMutator; M != None; M = M.NextMutator ) {
-        if ( len(s) > 80) {
-            ClientMessage(s);
-            s = "";
-        }
+    for ( M = Level.Game.BaseMutator; M != None; M = M.NextMutator )
         s @= string(M.class);
-    }
     LongMessage(s, 80, " ");
     
     s = "Rules:";
-    for ( G=Level.Game.GameRulesModifiers; G!=None; G=G.NextGameRules ) {
-        if ( len(s) > 80) {
-            ClientMessage(s);
-            s = "";
-        }
+    for ( G=Level.Game.GameRulesModifiers; G!=None; G=G.NextGameRules )
         s @= string(G.class);
-    }
     LongMessage(s, 80, " ");
 }
 
@@ -1436,6 +1412,184 @@ final function ServerKillRules(string RuleName)
     }
 }
 
+function CheckDLC()
+{
+    local ScrnSteamStatsGetter A;
+    
+    foreach AllActors(class'ScrnSteamStatsGetter', A)
+        return; // do not allow duplicates
+    
+    spawn(class'ScrnSteamStatsGetter',self);
+}
+
+// returns true if players owns DLC
+function bool OwnsDLC(int AppID)
+{
+    local int i;
+    local bool bNeedCheck;
+    
+    for ( i=0; i<DLC.length; ++i ) {
+        bNeedCheck = bNeedCheck || !DLC[i].bChecked;
+        if ( DLC[i].AppID == AppID)
+            break;
+    }    
+    if ( i == DLC.length ) {
+        DLC.insert(i, 1);
+        DLC[i].AppID = AppID;
+    }
+    
+    if ( bNeedCheck )
+        CheckDLC(); // this doesn't happen immediately, so function returns false in the first try
+
+    return DLC[i].bOwnsDLC;
+}
+
+/**
+ * Sets gun skin according to index in pickup's VariantClasses[]. Check DLC locks.
+ *
+ * @param index     Skin index: 
+ *                  0 - switch to next skin
+ *                  1 - switch to default skin
+ *                  2+  switch to skin defined in Weapon.PickupClass.VariantClasses array.
+ *                      2 - first item in array (VariantClasses[0]), 3 - second (VariantClasses[1]) etc.
+ * @param bTryNext  If this skin is locked (DLC), then should we try selecting next skin?
+ */
+exec function GunSkin(optional byte index, optional bool bTryNext)
+{
+    local KFWeapon W;
+    local class<KFWeaponPickup> P;
+    local int i;
+    local class<KFWeapon> SkinnedWeaponClass;
+    local byte k;
+    
+    if ( Pawn == none || Pawn.Weapon == none )
+        return;
+    W = KFWeapon(Pawn.Weapon);
+    P = class<KFWeaponPickup>(Pawn.Weapon.PickupClass);
+    if ( W == none || P == none || P.default.VariantClasses.Length == 0 )
+        return;
+        
+    if ( W.SleeveNum == 0 )
+        k = 1; // for weapons where hand skin is first in array
+        
+        
+    if ( index == 0 ) {
+        bTryNext = true;
+        // find out current skin
+        if ( W.Skins[k] == W.default.Skins[k] )
+            index = 1; // default skin
+        else {
+            for ( i=0; i<P.default.VariantClasses.Length; ++i ) {
+                
+                if ( P.default.VariantClasses[i] == none ) {
+                    //bugfix
+                    P.default.VariantClasses.remove(i--,1);
+                    continue;
+                }
+                
+                if ( W.Skins[k] == P.default.VariantClasses[i].default.InventoryType.default.Skins[k] ) 
+                {
+                    index = i + 2;
+                    break;
+                }
+            }
+        }
+        if ( P.default.VariantClasses.Length == 0 )
+            return; // bugfix, when VariantClasses have "none" elements
+        index++;
+    }
+    
+    if ( index >= P.default.VariantClasses.Length+2 )
+        index = 1; 
+
+    if ( index == 1 ) {
+        // load default skin
+        SkinnedWeaponClass = W.class; 
+    }
+    else {
+        // load skin from variant class
+        SkinnedWeaponClass = class<KFWeapon>(P.default.VariantClasses[index-2].default.InventoryType);
+        // DLC check
+        if ( SkinnedWeaponClass == none || (!Mut.bBeta && SkinnedWeaponClass.default.AppID > 0 
+                && !OwnsDLC(SkinnedWeaponClass.default.AppID)) ) 
+        { 
+            // this skin is locked
+            if ( bTryNext )
+                GunSkin(index+1, true); // try next one
+            return;
+        }        
+    }
+        
+    if ( SkinnedWeaponClass == none )
+        return;  
+    ClientWeaponSpawned(SkinnedWeaponClass, none); // preload assets
+    SkinnedWeaponClass.static.PreloadAssets(W);
+    W.HandleSleeveSwapping(); // restore proper arms
+    ServerGunSkin(SkinnedWeaponClass);
+
+    // save skin in user.ini
+    for ( i=0; i<WeaponSettings.length; ++i )
+        if ( W.class == WeaponSettings[i].Weapon )
+            break; 
+    if ( i == WeaponSettings.length ) {
+        WeaponSettings.insert(i,1);
+        WeaponSettings[i].Weapon = W.class;
+    }
+    if ( WeaponSettings[i].SkinIndex != index ) {
+        WeaponSettings[i].SkinIndex = index;
+        WeaponSettings[i].LastWeapon = W;
+        SaveConfig();
+    }
+}
+
+// replicate attachment (3-rd person model) skin to other players
+function ServerGunSkin(class<KFWeapon> SkinnedWeaponClass)
+{
+    local Controller C;
+    local int i;
+    local KFWeapon W;
+    
+    // preload assets
+    for ( C = Level.ControllerList; C != none; C = C.nextController ) {
+        if ( C != self && KFPlayerController(C) != none )
+            KFPlayerController(C).ClientWeaponSpawned(SkinnedWeaponClass, none);
+    }
+    
+    W = KFWeapon(Pawn.Weapon);
+    if ( W != none && W.AttachmentClass != SkinnedWeaponClass.default.AttachmentClass ) {
+        W.ThirdPersonActor.Destroy();
+        W.ThirdPersonActor = none;
+        W.AttachmentClass = SkinnedWeaponClass.default.AttachmentClass;
+        W.AttachToPawn(Pawn);
+        
+        //remember weapon choise
+        for ( i=0; i<WeaponSettings.length; ++i )
+            if ( W.class == WeaponSettings[i].Weapon )        
+                break;
+        if ( i == WeaponSettings.length ) {
+            WeaponSettings.insert(i,1);
+            WeaponSettings[i].Weapon = W.class;
+        }
+        WeaponSettings[i].SkinnedWeapon = SkinnedWeaponClass;
+    }
+}
+
+function LoadGunSkinFromConfig()
+{
+    local int i;
+        
+    if ( Pawn == none || Pawn.Weapon == none )
+        return;
+    
+    for ( i=0; i<WeaponSettings.length; ++i ) {
+        if ( Pawn.Weapon.class == WeaponSettings[i].Weapon ) {
+            if ( WeaponSettings[i].LastWeapon != Pawn.Weapon )
+                GunSkin(WeaponSettings[i].SkinIndex);
+            break;
+        }
+    }
+}
+
 
 // STATES
 
@@ -1451,14 +1605,63 @@ state Dead
     }
 }
 
+    // view next player
 function ServerViewNextPlayer()
 {
-    super.ServerViewNextPlayer();
+    local Controller C, Pick;
+    local bool bFound, bWasSpec;
+
+	if( !IsInState('Spectating') )
+	    return;
+        
+    if ( ScrnGameType(Level.Game) == none ) {
+        super.ServerViewNextPlayer();
+        ViewTargetChanged();;
+        return;
+    }
+
+    // copy-pasted to remove team hack
+    bWasSpec = !bBehindView && (ViewTarget != Pawn) && (ViewTarget != self);
+    for ( C=Level.ControllerList; C!=None; C=C.NextController ) {
+        if ( Level.Game.CanSpectate(self,PlayerReplicationInfo.bOnlySpectator,C) ) {
+            if ( Pick == None )
+                Pick = C;
+            if ( bFound ) {
+                Pick = C;
+                break;
+            }
+            else
+                bFound = ( (RealViewTarget == C) || (ViewTarget == C) );
+        }
+    }
+    SetViewTarget(Pick);
+    ClientSetViewTarget(Pick);
+    if ( (ViewTarget == self) || bWasSpec )
+        bBehindView = false;
+    else
+        bBehindView = true; //bChaseCam;
+    ClientSetBehindView(bBehindView);
     ViewTargetChanged();
 }
 
 function ServerViewSelf()
 {
+    if ( !PlayerReplicationInfo.bOnlySpectator && ScrnGameType(Level.Game) != none 
+            && ScrnGameType(Level.Game).IsTourney() )
+    {
+        // free roaming is prohibited in tourney mode
+        ServerViewNextPlayer();
+        return;
+    }
+        
+	SetLocation(ViewTarget.Location);
+	ClientSetLocation(ViewTarget.Location, Rotation);
+
+    bBehindView = false;
+    SetViewTarget(self);
+    ClientSetViewTarget(self);
+    ClientMessage(OwnCamera, 'Event');
+    
     super.ServerViewSelf();
     ViewTargetChanged();    
 }
@@ -1620,9 +1823,28 @@ function ClientSetBehindView(bool B)
     }
 }
 
+exec function FreeCamera( bool B )
+{
+    // free roaming is prohibited in tourney mode
+    if ( B && !PlayerReplicationInfo.bOnlySpectator && Mut.SrvTourneyMode != 0 )
+        return;
+    
+    super.FreeCamera(B);    
+}
+
 
 state Spectating
 {
+   // Return to spectator's own camera.
+    exec function AltFire( optional float F )
+    {
+        // free roaming is prohibited in tourney mode
+        if ( !PlayerReplicationInfo.bOnlySpectator && Mut.SrvTourneyMode != 0 )
+            return;
+        
+        super.AltFire(F);
+    }
+    
     exec function SwitchWeapon(byte T) 
     {
         ServerSwitchViewMode(T);
@@ -1653,7 +1875,7 @@ exec function TestColorTags(coerce string ColorTagString, optional int i)
 {
     local string c, s;
     
-    c = class'ScrnBalance'.default.Mut.ParseColorTags(ColorTagString);
+    c = class'ScrnBalance'.default.Mut.ParseColorTags(ColorTagString, PlayerReplicationInfo);
     s = class'ScrnBalance'.default.Mut.StripColorTags(ColorTagString);
     if ( i > 0) {
         c = class'ScrnBalance'.static.LeftCol(c, i);
@@ -1671,7 +1893,8 @@ exec function MyTeam()
     else if ( PlayerReplicationInfo.Team == none )
         ClientMessage("Team is not selected");
     else 
-        ClientMessage("My Team Index = " $ PlayerReplicationInfo.Team.TeamIndex);
+        ClientMessage("My Team Index = " $ PlayerReplicationInfo.Team.TeamIndex 
+            $ " ("$ PlayerReplicationInfo.Team.class$")");
 }
 
 
@@ -1715,8 +1938,18 @@ exec function TestRepLink()
 
 
 
-// ======================== COMMENT BEFORE RELEASE !!! =====================
 
+// ======================== COMMENT BEFORE RELEASE !!! =====================
+// exec function SetSID64(coerce string SteamID64)
+// {
+    // //if ( Level.NetMode == NM_Standalone )
+    // if ( Role == ROLE_Authority )
+        // class'ScrnCustomPRI'.static.FindMe(PlayerReplicationInfo).SetSteamID64(SteamID64);
+// }
+// exec function TestSID()
+// {
+    // SetSID64("76561197992537591");
+// }
 
 /*
 exec function PerkLevel(int level)
@@ -1727,40 +1960,12 @@ exec function PerkLevel(int level)
     KFPlayerReplicationInfo(PlayerReplicationInfo).ClientVeteranSkillLevel = level;
 } 
 
-exec function PawnNames()
-{
-	local Controller C;
-	
-	for ( C=Level.ControllerList; C!=none; C=C.NextController ) {
-		if ( C.Pawn != none )
-			ClientMessage("The name of" @ String(C.Pawn.class) @ "is" @ C.Pawn.name);
-	}
-}
-
 exec function GiveSpawnInv()
 {
 	if ( Role != ROLE_Authority )
 		return;
 	
 	KFPlayerReplicationInfo(PlayerReplicationInfo).ClientVeteranSkill.static.AddDefaultInventory(KFPlayerReplicationInfo(PlayerReplicationInfo), Pawn);
-}
-
-
-exec function MonsterInfo(float angle)
-{
-	local ScrnPlayerInfo SPI;
-	
-	SPI = Mut.GameRules.GetPlayerInfo(self);
-	if ( SPI == none ) {	
-		ClientMessage("No player info found");
-		return;
-	}
-	ClientMessage("Last damaged monster = " $GetItemName(String(SPI.LastDamagedMonster))
-		$". Can be seen = " $ CanSee(SPI.LastDamagedMonster)
-		$". Can see me = " $ SPI.LastDamagedMonster.Controller.CanSee(Pawn)
-		$". I'm in Line of sight = " $ SPI.LastDamagedMonster.Controller.LineOfSightTo(Pawn)
-		$". I'm rotated at monster = " $ class'ScrnAchHandlerBase'.static.IsRotatedAtLocation(Pawn, SPI.LastDamagedMonster.Location, angle)
-		);
 }
 
 
@@ -1782,42 +1987,6 @@ exec function TestEndGame()
     Mut.KF.CheckEndGame(PlayerReplicationInfo, "Test");
 }
 
-exec function GiveShields(int value)
-{
-    local xPawn P;
-    
-    foreach DynamicActors(class'xPawn', P) {
-        P.ShieldStrength = value;  
-        P.ShieldStrengthMax = max(value, 100);  
-    }
-}
-
-exec function SpamPickups()
-{
-    local NavigationPoint N;
-    local int i, c;
-    local ClientPerkRepLink L;
-    
-    L = SRStatsBase(SteamStatsAndAchievements).Rep;
-    for( N=Level.NavigationPointList; N!=None; N=N.NextNavigationPoint ) {
-        for ( i = 0; i < L.ShopInventory.Length; ++i ) {
-            spawn(L.ShopInventory[i].PC, N, '', N.Location);
-            c++;
-        }
-    }
-    ConsoleMessage("Spawned pickup count = " $ string(c));
-}
-exec function FreePickups()
-{
-    local NavigationPoint N;
-    local Pickup P;
-    
-    for( N=Level.NavigationPointList; N!=None; N=N.NextNavigationPoint ) {
-        foreach N.ChildActors(class'Pickup', P) {
-            P.Destroy();
-        }
-    }
-}
 */
 
 
@@ -1843,6 +2012,7 @@ defaultproperties
 	strUnlocked="Weapon pickups UNLOCKED"
 	strLockDisabled="Weapon lock is disabled by server"
 	strAlreadySpectating="Already spectating. Type READY, if you want to join the game."
+    strNoPerkChanges="Mid-game perk changes disabled"
 	
 	DualWieldables(0)=(Single=class'KFMod.Single',Dual=class'KFMod.Dualies')
 	DualWieldables(1)=(Single=class'KFMod.Deagle',Dual=class'KFMod.DualDeagle')
@@ -1853,6 +2023,16 @@ defaultproperties
     
     strSpecFavoriteAssigned="View target marked as favorite"
     strSpecNoFavorites="No favorite view targets! Press '4' to assign favorite."
+    
+	DLC(0)=(AppID=210934)
+	DLC(1)=(AppID=210938)
+	DLC(2)=(AppID=210939)
+	DLC(3)=(AppID=210942)
+	DLC(4)=(AppID=210943)
+	DLC(5)=(AppID=210944)
+    DLC(6)=(AppID=258751)
+	DLC(7)=(AppID=258752)
+	DLC(8)=(AppID=309991)
     
     // TSC
     strCantShopInEnemyTrader="You can not trade with enemy trader!"

@@ -39,8 +39,11 @@ function bool CheckCanCarry(KFHumanPawn Hm) {
     for ( CurInv = Hm.Inventory; CurInv != none; CurInv = CurInv.Inventory ) {
         if ( CurInv.class == default.DualInventoryType ) {
             //already have duals, can't carry a single
-            LastCantCarryTime = Level.TimeSeconds + 0.5;
-            PlayerController(Hm.Controller).ReceiveLocalizedMessage(Class'KFMainMessages', 2);
+            if ( LastCantCarryTime < Level.TimeSeconds && PlayerController(Hm.Controller) != none )
+            {
+                LastCantCarryTime = Level.TimeSeconds + 0.5;
+                PlayerController(Hm.Controller).ReceiveLocalizedMessage(Class'KFMainMessages', 2);
+            }
             return false; 
         }
         else if ( CurInv.class == default.InventoryType ) {
@@ -51,8 +54,10 @@ function bool CheckCanCarry(KFHumanPawn Hm) {
     }
 
     if ( !Hm.CanCarry(AddWeight) ) {
-        LastCantCarryTime = Level.TimeSeconds + 0.5;
-        PlayerController(Hm.Controller).ReceiveLocalizedMessage(Class'KFMainMessages', 2);
+		if ( LastCantCarryTime < Level.TimeSeconds && PlayerController(Hm.Controller) != none )	{
+			LastCantCarryTime = Level.TimeSeconds + 0.5;
+			PlayerController(Hm.Controller).ReceiveLocalizedMessage(Class'KFMainMessages', 2);
+		}
 
         return false;
     }

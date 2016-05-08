@@ -248,4 +248,5 @@ defaultproperties
 	Description="This is my BOOMstick (c) Ash, Evil Dead - Army of Darkness, 1992.|Has been used through the centuries to hunt down Demons, Aliens and Zombies. Now it's time for the ZEDs.|Can shoot from one or two barrels simultaneousely. Single shell reload is avaliable."
 	PickupClass=Class'ScrnBalanceSrv.ScrnBoomStickPickup'
 	ItemName="Boomstick"
+    //Priority=220 // 160 - switch before aa12
 }

@@ -84,9 +84,15 @@ simulated function bool PutDown()
 
 defaultproperties
 {
-     Weight=6.000000
-     FireModeClass(0)=Class'ScrnBalanceSrv.ScrnDualDeagleFire'
-     DemoReplacement=Class'ScrnBalanceSrv.ScrnDeagle'
-     PickupClass=Class'ScrnBalanceSrv.ScrnDualDeaglePickup'
-     ItemName="Dual Handcannons SE"
+    Weight=6.000000
+    FireModeClass(0)=Class'ScrnBalanceSrv.ScrnDualDeagleFire'
+    DemoReplacement=Class'ScrnBalanceSrv.ScrnDeagle'
+    PickupClass=Class'ScrnBalanceSrv.ScrnDualDeaglePickup'
+    ItemName="Dual Handcannons SE"
+
+    HudImageRef="KillingFloorHUD.WeaponSelect.dual_handcannon_unselected"
+    SelectedHudImageRef="KillingFloorHUD.WeaponSelect.dual_handcannon"
+    SelectSoundRef="KF_HandcannonSnd.50AE_Select"
+    MeshRef="KF_Weapons_Trip.Dual50_Trip"
+    SkinRefs(0)="KF_Weapons_Trip_T.Pistols.deagle_cmb"
 }

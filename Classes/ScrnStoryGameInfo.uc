@@ -14,6 +14,15 @@ event InitGame( string Options, out string Error )
     log("MonsterCollection = " $ MonsterCollection);
 }
 
+event PostLogin( PlayerController NewPlayer )
+{
+    super.PostLogin(NewPlayer);
+    
+    if ( ScrnPlayerController(NewPlayer) != none )
+        ScrnPlayerController(NewPlayer).ClientPostLogin();
+        
+}
+
 // fixed GameRules.NetDamage() call
 function int ReduceDamage(int Damage, pawn injured, pawn instigatedBy, vector HitLocation, out vector Momentum, class<DamageType> DamageType)
 {

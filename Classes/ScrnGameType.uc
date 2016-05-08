@@ -4,7 +4,9 @@ class ScrnGameType extends KFGameType;
 var ScrnBalance ScrnBalanceMut;
 var bool bCloserZedSpawns; // if true uses modified RateZombieVolume() function to get closer volumes for zeds
 var private string CmdLine;
-var private bool bTourney;
+
+
+var private int TourneyMode;
 
 
 //var const protected array< class<Pickup> > CheatPickups; // disallowed pickups in tourney mode
@@ -21,9 +23,8 @@ event InitGame( string Options, out string Error )
         KFGameLength = GL_Long;
     }
     
-    bTourney = HasOption(Options, "Tourney");
-    if ( bTourney )
-        PreStartTourney();
+    TourneyMode = GetIntOption(Options, "Tourney", TourneyMode);
+    PreStartTourney(TourneyMode);
     
     ConfigMaxPlayers = default.MaxPlayers;
     super.InitGame(Options, Error);
@@ -32,7 +33,7 @@ event InitGame( string Options, out string Error )
     
     log("MonsterCollection = " $ MonsterCollection);
     
-    if ( bTourney )
+    if ( TourneyMode > 0 )
         StartTourney();
 }
 static event class<GameInfo> SetGameType( string MapName )
@@ -88,7 +89,7 @@ function Killed(Controller Killer, Controller Killed, Pawn KilledPawn, class<Dam
     if ( (MonsterController(Killed) != None) || (Monster(KilledPawn) != None) )
     {
         ZombiesKilled++;
-        KFGameReplicationInfo(Level.Game.GameReplicationInfo).MaxMonsters = Max(TotalMaxMonsters + NumMonsters - 1,0);
+        KFGameReplicationInfo(GameReplicationInfo).MaxMonsters = Max(TotalMaxMonsters + NumMonsters - 1,0);
         if ( !bDidTraderMovingMessage )
         {
             if ( PlayerController(Killer) != none && float(ZombiesKilled) / float(ZombiesKilled + TotalMaxMonsters + NumMonsters - 1) >= 0.20 )
@@ -376,19 +377,24 @@ function GetServerDetails( out ServerResponseLine ServerState )
     AddServerDetail( ServerState, "Starting cash", StartingCash );
     
     // ScrnGameType
-    if ( bTourney )
-        AddServerDetail( ServerState, "ScrN Tourney Mode", "True" );
+    if ( TourneyMode > 0 )
+        AddServerDetail( ServerState, "ScrN Tourney Mode", TourneyMode );
 }
 
-// called before spawning mutators
-protected function PreStartTourney() 
+// Called before spawning mutators.
+// This is the only place where TourneyMode can be changed by descendants.
+protected function PreStartTourney(out int TourneyMode) 
 {
 }
 
 // called at the end of InitGame(), when mutators have been spawned already
 protected function StartTourney() 
 { 
-    log("Starting TOURNEY mode", class.outer.name);
+    local bool bVanilla, bNoStartCash;
+
+    log("Starting TOURNEY MODE " $ TourneyMode, class.outer.name);
+    bVanilla = (TourneyMode&2) > 0;
+    bNoStartCash = (TourneyMode&4) > 0;
     
     if ( GameDifficulty < 4 ) {
         // hard difficulty at least
@@ -396,8 +402,11 @@ protected function StartTourney()
         KFGameReplicationInfo(GameReplicationInfo).GameDiff = GameDifficulty;
         ScrnBalanceMut.SetLevels();
     }
-    ScrnBalanceMut.bSpawnBalance = true;
-    ScrnBalanceMut.bWeaponFix = true;
+    ScrnBalanceMut.SrvTourneyMode = TourneyMode;
+    ScrnBalanceMut.bSpawnBalance = !bVanilla;
+    ScrnBalanceMut.bWeaponFix = !bVanilla;
+    ScrnBalanceMut.bAltBurnMech = !bVanilla;
+    ScrnBalanceMut.bReplacePickups = !bVanilla;
     ScrnBalanceMut.bNoRequiredEquipment = false;
     ScrnBalanceMut.bForceManualReload = false;
     ScrnBalanceMut.bDynamicLevelCap = false;
@@ -407,25 +416,41 @@ protected function StartTourney()
     ScrnBalanceMut.Post6ZedsPerPlayer = 0.4;
     ScrnBalanceMut.Post6ZedSpawnInc=0.25;
     ScrnBalanceMut.Post6AmmoSpawnInc=0.20;
-    ScrnBalanceMut.FakedPlayers = 6;
+    //ScrnBalanceMut.FakedPlayers = 6;
     
     ScrnBalanceMut.bUseExpLevelForSpawnInventory = false;
     ScrnBalanceMut.bSpawn0 = true;
-    ScrnBalanceMut.StartCashHard = 200;
-    ScrnBalanceMut.StartCashSui = 200;
-    ScrnBalanceMut.StartCashHoE = 200;
-    ScrnBalanceMut.MinRespawnCashHard = 100;
-    ScrnBalanceMut.MinRespawnCashSui = 100;
-    ScrnBalanceMut.MinRespawnCashHoE = 100;    
     ScrnBalanceMut.bNoStartCashToss = true;
     ScrnBalanceMut.bMedicRewardFromTeam = true;
+    if ( bNoStartCash ) {
+        ScrnBalanceMut.StartCashHard = 0;
+        ScrnBalanceMut.StartCashSui = 0;
+        ScrnBalanceMut.StartCashHoE = 0;
+        ScrnBalanceMut.MinRespawnCashHard = 0;
+        ScrnBalanceMut.MinRespawnCashSui = 0;
+        ScrnBalanceMut.MinRespawnCashHoE = 0;    
+    }
+    else {
+        ScrnBalanceMut.StartCashHard = 200;
+        ScrnBalanceMut.StartCashSui = 200;
+        ScrnBalanceMut.StartCashHoE = 200;
+        ScrnBalanceMut.MinRespawnCashHard = 100;
+        ScrnBalanceMut.MinRespawnCashSui = 100;
+        ScrnBalanceMut.MinRespawnCashHoE = 100;    
+    }
     
     ScrnBalanceMut.InitSettings();
+    ScrnBalanceMut.SetReplicationData();
 }
 
 function final bool IsTourney()
 {
-    return bTourney;
+    return TourneyMode > 0;
+}
+
+function final int GetTourneyMode()
+{
+    return TourneyMode;
 }
 
 function final string GetCmdLine()
@@ -437,17 +462,19 @@ function final string GetCmdLine()
 function SetupRepLink(ClientPerkRepLink R)
 {
     local int i;
+    local bool bVanillaTourney;
     local class<Pickup> PC;
     
     if ( R == none )
         return; // wtf?
     
-    if ( bTourney ) {
+    if ( TourneyMode > 0 ) {
+        bVanillaTourney = (TourneyMode&2)  > 0;
         // allow only stock or SE weapons in tourney mode
         for ( i=R.ShopInventory.length-1; i>=0; --i ) {
             PC = R.ShopInventory[i].PC;
-            if ( PC == none || PC == class'ScrnHorzineVestPickup'
-                    || (PC.outer.name != 'ScrnBalanceSrv' && PC.outer.name != 'KFMod') )
+            if ( PC == none || PC == class'ScrnHorzineVestPickup' || PC == class'ZEDMKIIPickup'
+                    || (PC.outer.name != 'KFMod' && (bVanillaTourney || PC.outer.name != 'ScrnBalanceSrv')) )
                 R.ShopInventory.remove(i, 1);
         }
         // allow only ScrN Perks
@@ -496,6 +523,15 @@ function bool CanSpectate( PlayerController Viewer, bool bOnlySpectator, actor V
     
 	return Pawn(ViewTarget) != None && Pawn(ViewTarget).IsPlayerPawn()
 		&& (bOnlySpectator || Pawn(ViewTarget).PlayerReplicationInfo.Team == Viewer.PlayerReplicationInfo.Team);
+}
+
+event PostLogin( PlayerController NewPlayer )
+{
+    super.PostLogin(NewPlayer);
+    
+    if ( ScrnPlayerController(NewPlayer) != none )
+        ScrnPlayerController(NewPlayer).PostLogin();
+        
 }
 
 

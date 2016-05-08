@@ -97,8 +97,8 @@ function bool ButtonClicked(GUIComponent Sender)
 
 defaultproperties
 {
-    Panels(5)=(ClassName="ScrnBalanceSrv.ScrnTab_Achievements",Caption="Achievements",Hint="Achievements")
-    Panels(6)=(ClassName="ScrnBalanceSrv.ScrnTab_UserSettings",Caption="ScrN Settings",Hint="ScrN Balance Settings")
+    Panels(5)=(ClassName="ScrnBalanceSrv.ScrnTab_Achievements",Caption="Achievements",Hint="ScrN server-side achievements")
+    Panels(6)=(ClassName="ScrnBalanceSrv.ScrnTab_UserSettings",Caption="ScrN Features",Hint="ScrN Balance features, settings and info")
 
     Begin Object Class=GUIButton Name=TeamSwitchButton
         Caption="Switch Team"

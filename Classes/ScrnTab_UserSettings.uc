@@ -1,29 +1,475 @@
 class ScrnTab_UserSettings extends Settings_Tabs;
 
-var automated 	moCheckBox    	ch_ManualReload;
-var automated 	moCheckBox    	ch_OtherPlayerLasersBlue;
-var automated 	moCheckBox    	ch_CookNade;
-var automated 	moCheckBox    	ch_ShowDamages;
-var automated 	moCheckBox    	ch_ShowSpeed;
-var automated 	moCheckBox    	ch_ShowAchProgress;
-var automated 	moCheckBox    	ch_OldStyleIcons;
-var automated 	moCheckBox    	ch_PrioritizePerkedWeapons;
-
-
-
-var automated GUILabel lbl_Version;
-var automated GUILabel lbl_CR;
-
-
-var automated GUISectionBackground i_BG_Settings;
-var automated GUISectionBackground i_BG;
-
-var automated GUIButton b_WeaponLock;
-var automated GUIButton b_PerkProgress;
-
-var localized string strBoundToCook, strBoundToThrow, strCantFindNade;
 var localized string strDisabledByServer, strForcedByServer;
+var localized string strLock, strUnlock;
+
+
+// version
+var automated 	GUIImage 		        img_ScrnLogo;
+var automated 	GUIImage 		        img_TourneyLogo;
+var automated   GUILabel                lbl_Version;
+var automated   GUILabel                lbl_CR;
+var automated   GUILabel                lbl_TourneyMember;
+var automated   GUIButton               b_ScrnGroup;
+var automated   GUIButton               b_GetPrize;
+
+
+// weapons
+var automated   GUISectionBackground    bg_Weapons;
+var automated 	moCheckBox    	        ch_ManualReload;
+var automated 	moCheckBox    	        ch_CookNade;
+var automated 	moCheckBox    	        ch_PrioritizePerkedWeapons;
+var automated 	moCheckBox    	        ch_PrioritizeBoomstick;
+
+var automated   GUIButton               b_GunSkin;
+var automated   GUIButton               b_WeaponLock;
+var automated   GUIButton               b_PerkProgress;
+var automated   GUIButton               b_Accuracy;
+
 var localized string strLockWeapons, strUnlockWeapons;
+var localized string strBoundToCook, strBoundToThrow, strCantFindNade;
+
+// HUD & Info
+var automated   GUISectionBackground    bg_HUD;
+var automated 	moCheckBox    	        ch_ShowDamages;
+var automated 	moCheckBox    	        ch_ShowSpeed;
+var automated 	moCheckBox    	        ch_ShowAchProgress;
+var automated 	moCheckBox    	        ch_OldStyleIcons;
+var automated 	moCheckBox    	        ch_AllwaysDrawSpecialIcons;
+var automated 	moCheckBox    	        ch_PlayerInfoZoom;
+
+var automated   GUIButton               b_Status;
+var automated   GUIButton               b_HL;
+var automated   GUIButton               b_Zeds;
+var automated   GUIButton               b_TourneyCheck;
+
+
+// PLAYERS
+var automated   GUISectionBackground    bg_Players;
+var automated   moComboBox    	        cbx_Player;
+var automated   GUILabel    	        lbl_PlayerID;
+var automated   GUIButton               b_Profile;
+var automated   GUIButton               b_PlayerList;
+
+var automated   moEditBox    	        txt_Reason;
+var automated   GUIButton               b_Blame;
+var automated   GUIButton               b_Spec;
+var automated   GUIButton               b_Kick;
+var automated   GUIButton               b_TSC_C;
+var automated   GUIButton               b_TSC_A;
+var automated   GUIButton               b_TSC_Lock;
+var automated   GUIButton               b_TSC_Unlock;
+var automated   GUIButton               b_TSC_Invite;
+var automated   GUIButton               b_MVOTE_Yes;
+var automated   GUIButton               b_MVOTE_No;
+var automated   GUIButton               b_MVOTE_Boring;
+var automated   GUIButton               b_MVOTE_EndTrade;
+
+var transient   int                     PlayerLocalID;
+var transient   string                  PlayerSteamID64;
+
+var localized  string strBadReason;
+
+// SERVER INFO
+var automated   GUILabel                lbl_ServerInfo;
+var localized string strServerInfoSeparator;
+var localized string strPerkRange, strPerkXPLevel, strPerkBonusLevel;
+var localized string strSpawnBalance, strWeaponFix, strAltBurnMech, strBeta, strHardcore, strNoPerkChanges;
+var color StatusColor[2];             
+
+// event ResolutionChanged( int ResX, int ResY )
+
+
+function ShowPanel(bool bShow)
+{
+	local ScrnPlayerController PC;
+    local ScrnCustomPRI ScrnPRI;
+    local bool b;
+	    
+	Super.ShowPanel(bShow);
+
+	if ( !bShow ) {
+        SetTimer(0, false);
+        return;
+    }
+    
+        
+    lbl_Version.Caption = class'ScrnBalance'.default.FriendlyName @ class'ScrnBalance'.static.GetVersionStr();
+    lbl_CR.Caption = "Copyright (c) 2012-2015 PU Developing IK, Latvia. All Rights Reserved.";
+    ServerStatus();
+    
+    PC = ScrnPlayerController(PlayerOwner());
+    if ( PC == none )
+        return;
+    ScrnPRI = class'ScrnCustomPRI'.static.FindMe(PC.PlayerReplicationInfo);
+    
+    
+    // tourney member
+    b = ScrnPRI != none && ScrnPRI.IsTourneyMember();
+    img_TourneyLogo.SetVisibility(b);
+    lbl_TourneyMember.SetVisibility(b);
+    b_GetPrize.SetVisibility(b && !class'ScrnAchievements'.static.IsAchievementUnlocked(
+        Class'ClientPerkRepLink'.Static.FindStats(PC), 'TSCT')); 
+    
+    // TSC
+    b = TSCGameReplicationInfoBase(PC.Level.GRI) != none;
+    b_TSC_C.SetVisibility(b);
+    b_TSC_A.SetVisibility(b); 
+    b_TSC_Lock.SetVisibility(b); 
+    b_TSC_Unlock.SetVisibility(b); 
+    b_TSC_Invite.SetVisibility(b); 
+    
+    RefreshInfo();
+    FillPlayerList();
+    
+    SetTimer(1, true);
+}
+
+function Timer()
+{
+    RefreshInfo();
+}
+
+function RefreshInfo()
+{
+	local ScrnPlayerController PC;
+
+	PC = ScrnPlayerController(PlayerOwner());
+    if ( PC == none )
+        return;
+    
+	if ( PC.Mut.bAllowWeaponLock ) {
+		b_WeaponLock.EnableMe();
+		b_WeaponLock.Hint = b_WeaponLock.default.Hint ;
+		
+		if ( PC.bWeaponsLocked )
+			b_WeaponLock.Caption = strUnlockWeapons;
+		else
+			b_WeaponLock.Caption = strLockWeapons;
+	}
+	else {
+		b_WeaponLock.DisableMe();
+		b_WeaponLock.Hint = PC.strLockDisabled;
+	}
+    
+    if ( KFGameReplicationInfo(PC.Level.GRI) != none ) {
+        b_MVOTE_Boring.SetVisibility(KFGameReplicationInfo(PC.Level.GRI).bWaveInProgress);
+        b_MVOTE_EndTrade.SetVisibility(!b_MVOTE_Boring.bVisible);
+    }
+    else {
+        b_MVOTE_Boring.Hide();
+        b_MVOTE_EndTrade.Hide();
+    }
+    
+    // TSC
+    if ( b_TSC_Lock.bVisible || b_TSC_Unlock.bVisible ) {
+        b_TSC_Unlock.SetVisibility(TSCGameReplicationInfoBase(PC.Level.GRI).bTeamsLocked);
+        b_TSC_Lock.SetVisibility(!b_TSC_Unlock.bVisible);
+    }
+}
+
+function ServerStatus()
+{
+    local ScrnBalance m;
+    local string s;
+    local color cSpawnBalance, cNoPerkChanges;
+    local KFPlayerReplicationInfo KFPRI;
+    
+    m = class'ScrnBalance'.default.Mut;
+    if ( m == none )    
+        return; // wtf?
+
+    s = m.ColorStringC(strServerInfoSeparator, lbl_ServerInfo.TextColor);
+    if ( !m.bSpawnBalance )
+        cSpawnBalance = StatusColor[0];
+    else if ( m.bNoStartCashToss && m.bMedicRewardFromTeam && m.bSpawn0 )
+        cSpawnBalance = StatusColor[1];
+    else {
+        cSpawnBalance.R = 255;
+        cSpawnBalance.G = 106;
+    }
+    
+    if ( !m.bNoPerkChanges )
+        cNoPerkChanges = StatusColor[0];
+    else if ( !m.bPerkChangeBoss )
+        cNoPerkChanges = StatusColor[1];
+    else {
+        cNoPerkChanges.R = 255;
+        cNoPerkChanges.G = 106;
+    }    
+        
+    lbl_ServerInfo.Caption = 
+        strPerkRange$"[" 
+            $ class'ScrnHUD'.static.ColoredPerkLevel(m.SrvMinLevel) 
+            $ m.ColorStringC("..", lbl_ServerInfo.TextColor)
+            $ class'ScrnHUD'.static.ColoredPerkLevel(m.SrvMaxLevel)  
+            $ m.ColorStringC("]", lbl_ServerInfo.TextColor);
+            
+    KFPRI = KFPlayerReplicationInfo(PlayerOwner().PlayerReplicationInfo);
+    if ( KFPRI != none && KFPRI.ClientVeteranSkill != none ) {
+        lbl_ServerInfo.Caption $= s $ strPerkXPLevel 
+            $ class'ScrnHUD'.static.ColoredPerkLevel(KFPRI.ClientVeteranSkillLevel);
+        if ( class<ScrnVeterancyTypes>(KFPRI.ClientVeteranSkill) != none)
+            lbl_ServerInfo.Caption $= s $ strPerkBonusLevel 
+                $ class'ScrnHUD'.static.ColoredPerkLevel(
+                    class'ScrnVeterancyTypes'.static.GetBonusLevel(KFPRI.ClientVeteranSkillLevel));
+    }
+        
+    lbl_ServerInfo.Caption $= "|" $ m.ColorStringC(strSpawnBalance, cSpawnBalance)
+        $ s $ m.ColorStringC(strWeaponFix, StatusColor[byte(m.bWeaponFix)])
+        $ s $ m.ColorStringC(strAltBurnMech, StatusColor[byte(m.bAltBurnMech)])
+        $ s $ m.ColorStringC(strBeta, StatusColor[byte(m.bBeta)])
+        $ s $ m.ColorStringC(strHardcore, StatusColor[byte(m.bHardcore)])
+        $ s $ m.ColorStringC(strNoPerkChanges, cNoPerkChanges);
+}
+
+
+
+function FillPlayerList()
+{
+    local int i, idx;
+    local KFPlayerReplicationInfo KFPRI; 
+    local int BlueIndex; 
+    local array<KFPlayerReplicationInfo> PRIs;
+    local GameReplicationInfo GRI;
+    
+    // sort list by Red Players -> Blue Players -> Spectators
+    GRI = PlayerOwner().Level.GRI;
+	for ( i = 0; i < GRI.PRIArray.Length; i++) {
+		KFPRI = KFPlayerReplicationInfo(GRI.PRIArray[i]);
+        if ( KFPRI == none || KFPRI.PlayerID == 0 ) 
+            continue;
+        if ( KFPRI.bOnlySpectator || KFPRI.Team == none )    
+            PRIs[PRIs.length] = KFPRI; // add to the end
+        else if ( KFPRI.Team.TeamIndex == 0 ) {
+            PRIs.insert(0,1);
+            PRIs[0] = KFPRI; // add to the end
+            BlueIndex++;
+        }
+        else {
+            PRIs.insert(BlueIndex,1);
+            PRIs[BlueIndex] = KFPRI; // add to the end
+        }
+    }
+    
+    KFPRI = KFPlayerReplicationInfo(cbx_Player.GetObject());
+    cbx_Player.ResetComponent();
+    for ( i = 0; i < PRIs.Length; i++) {
+        cbx_Player.AddItem(class'ScrnBalance'.default.Mut.ColoredPlayerName(PRIs[i]), PRIs[i]);
+        if ( PRIs[i] == KFPRI )
+            idx = i;            
+    }
+    if ( PRIs.Length > 0 )
+        cbx_Player.SetIndex(idx);
+    LoadPlayerData();
+}
+
+function LoadPlayerData()
+{
+    local KFPlayerReplicationInfo KFPRI; 
+    local ScrnCustomPRI ScrnPRI;
+    local string s;
+    
+    KFPRI = KFPlayerReplicationInfo(cbx_Player.GetObject());
+    
+    PlayerLocalID = 0;
+    PlayerSteamID64 = "";
+    if ( KFPRI == none ) {
+        lbl_PlayerID.Caption = "";
+    }
+    else {
+        PlayerLocalID = KFPRI.PlayerID;
+        ScrnPRI = class'ScrnCustomPRI'.static.FindMe(KFPRI);
+        
+        s = "ID="$KFPRI.PlayerID;
+        if ( ScrnPRI != none ) {
+            PlayerSteamID64 = ScrnPRI.GetSteamID64();
+            s $= "  SID64="$ PlayerSteamID64;
+        }
+        lbl_PlayerID.Caption = s;
+        if ( KFPRI.Team == none || KFPRI.Team.TeamIndex > 1 )
+            lbl_PlayerID.TextColor = lbl_ServerInfo.TextColor;
+        else
+            lbl_PlayerID.TextColor = class'ScrnHUD'.default.TextColors[KFPRI.Team.TeamIndex];
+    }
+}
+
+
+function InternalOnLoadINI(GUIComponent Sender, string s)
+{
+    local ScrnPlayerController PC;
+    
+    PC = ScrnPlayerController(PlayerOwner());
+
+    switch (Sender)
+    {
+        case ch_ManualReload:
+            ch_ManualReload.Checked(PC.bManualReload);
+            if ( PC.Mut.bForceManualReload ) {
+                ch_ManualReload.DisableMe();
+                ch_ManualReload.Hint = strForcedByServer;
+            }
+            else {
+                ch_ManualReload.EnableMe();
+                ch_ManualReload.Hint = ch_ManualReload.default.Hint;
+            }
+            break;
+            
+        case ch_CookNade:
+            if ( PC.Mut.bReplaceNades ) {
+                ch_CookNade.Checked(IsCookingSet());
+                ch_CookNade.EnableMe();
+                ch_CookNade.Hint = strDisabledByServer;
+            }
+            else {
+                ch_CookNade.Checked(false);
+                ch_CookNade.DisableMe();
+                ch_CookNade.Hint = ch_CookNade.default.Hint;
+            }
+            break;
+
+		case ch_PrioritizePerkedWeapons:
+            ch_PrioritizePerkedWeapons.Checked(PC.bPrioritizePerkedWeapons);
+            break;  
+            
+		case ch_PrioritizeBoomstick:
+            ch_PrioritizeBoomstick.Checked(PC.bPrioritizeBoomstick);
+            break;  
+            
+            
+        case ch_ShowDamages:
+            if ( !PC.Mut.bShowDamages || ScrnHUD(PC.myHUD) == none ) {
+                ch_ShowDamages.Checked(false);
+                ch_ShowDamages.DisableMe();
+                ch_ShowDamages.Hint = strDisabledByServer;
+            }
+            else {
+                ch_ShowDamages.Checked(ScrnHUD(PC.myHUD).bShowDamages);
+                ch_ShowDamages.EnableMe();
+                ch_ShowDamages.Hint = ch_ShowDamages.default.Hint;
+            }        
+            break;            
+             
+        case ch_ShowSpeed:
+            if ( ScrnHUD(PC.myHUD) == none ) {
+                ch_ShowSpeed.Checked(false);
+                ch_ShowSpeed.DisableMe();
+            }
+            else {
+                ch_ShowSpeed.Checked(ScrnHUD(PC.myHUD).bShowSpeed);
+                ch_ShowSpeed.EnableMe();
+            }        
+            break;               
+
+        case ch_ShowAchProgress:
+            ch_ShowAchProgress.Checked(PC.bAlwaysDisplayAchProgression);
+            break;               
+			
+        case ch_OldStyleIcons:
+            ch_OldStyleIcons.Checked(class'ScrnVeterancyTypes'.default.bOldStyleIcons);
+            break;          
+		
+        case ch_AllwaysDrawSpecialIcons:
+            if ( ScrnHUD(PC.myHUD) == none ) {
+                ch_AllwaysDrawSpecialIcons.Checked(false);
+                ch_AllwaysDrawSpecialIcons.DisableMe();
+            }
+            else {
+                ch_AllwaysDrawSpecialIcons.Checked(ScrnHUD(PC.myHUD).bAllwaysDrawSpecialIcons);
+                ch_AllwaysDrawSpecialIcons.EnableMe();
+            }        
+            break;   
+
+        case ch_PlayerInfoZoom:
+            if ( ScrnHUD(PC.myHUD) == none ) {
+                ch_PlayerInfoZoom.Checked(true);
+                ch_PlayerInfoZoom.DisableMe();
+            }
+            else {
+                ch_PlayerInfoZoom.Checked(!ScrnHUD(PC.myHUD).bPlayerInfoZoom);
+                ch_PlayerInfoZoom.EnableMe();
+            }        
+            break;               
+    }
+}
+
+function InternalOnChange(GUIComponent Sender)
+{
+    local ScrnPlayerController PC;
+
+    Super.InternalOnChange(Sender);
+
+    PC = ScrnPlayerController(PlayerOwner());
+       
+    switch (sender)
+    {
+    	case ch_ManualReload:
+                PC.bManualReload = ch_ManualReload.IsChecked();
+                PC.SaveConfig();
+			break;
+
+        case ch_CookNade:
+            SetCookNade(ch_CookNade.IsChecked());
+            break;
+            
+        case ch_PrioritizePerkedWeapons:
+				PC.bPrioritizePerkedWeapons =  ch_PrioritizePerkedWeapons.IsChecked();
+                PC.SaveConfig();
+			break;      
+            
+        case ch_PrioritizeBoomstick:
+				PC.bPrioritizeBoomstick =  ch_PrioritizeBoomstick.IsChecked();
+                PC.SaveConfig();
+			break;              
+            
+        case ch_ShowDamages:
+                if ( ScrnHUD(PC.myHUD) != none ) {
+                    ScrnHUD(PC.myHUD).bShowDamages = ch_ShowDamages.IsChecked();
+                    PC.ServerAcknowledgeDamages(ch_ShowDamages.IsChecked());
+                    PC.myHUD.SaveConfig();
+                }
+			break;    
+            
+        case ch_ShowSpeed:
+                if ( ScrnHUD(PC.myHUD) != none ) {
+                    ScrnHUD(PC.myHUD).bShowSpeed = ch_ShowSpeed.IsChecked();
+                    PC.myHUD.SaveConfig();
+                }
+			break;  
+            
+        case ch_ShowAchProgress:
+                PC.bAlwaysDisplayAchProgression = ch_ShowAchProgress.IsChecked();
+                PC.SaveConfig();
+			break;            
+            
+        case ch_OldStyleIcons:
+				class'ScrnBalanceSrv.ScrnVeterancyTypes'.default.bOldStyleIcons = ch_OldStyleIcons.IsChecked();
+                if ( ScrnHUD(PC.myHUD) != none ) {
+                    ScrnHUD(PC.myHUD).bOldStyleIcons = class'ScrnBalanceSrv.ScrnVeterancyTypes'.default.bOldStyleIcons;
+                    PC.myHUD.SaveConfig();
+                }
+			break;            
+            
+        case ch_AllwaysDrawSpecialIcons:
+                if ( ScrnHUD(PC.myHUD) != none ) {
+                    ScrnHUD(PC.myHUD).bAllwaysDrawSpecialIcons = ch_AllwaysDrawSpecialIcons.IsChecked();
+                    PC.myHUD.SaveConfig();
+                }
+			break;    
+            
+        case ch_PlayerInfoZoom:
+                if ( ScrnHUD(PC.myHUD) != none ) {
+                    ScrnHUD(PC.myHUD).bPlayerInfoZoom = !ch_PlayerInfoZoom.IsChecked();
+                    PC.myHUD.SaveConfig();
+                }
+			break;     
+
+
+        case cbx_Player:
+            LoadPlayerData();
+            break;
+    }
+}
 
 function SetCookNade(bool bCook)
 {
@@ -90,392 +536,924 @@ function bool IsCookingSet()
     return BindAliases.length > 0;
 }
 
-function InternalOnChange(GUIComponent Sender)
-{
-    local ScrnPlayerController PC;
 
-    Super.InternalOnChange(Sender);
 
-    PC = ScrnPlayerController(PlayerOwner());
-       
-    switch (sender)
-    {
-    	case ch_ManualReload:
-                PC.bManualReload = ch_ManualReload.IsChecked();
-                PC.SaveConfig();
-			break;
-
-        case ch_OtherPlayerLasersBlue:
-                PC.bOtherPlayerLasersBlue = ch_OtherPlayerLasersBlue.IsChecked();
-                PC.SaveConfig();
-			break;
-
-        case ch_CookNade:
-            SetCookNade(ch_CookNade.IsChecked());
-            break;
-            
-        case ch_ShowDamages:
-                if ( ScrnHUD(PC.myHUD) != none ) {
-                    ScrnHUD(PC.myHUD).bShowDamages = ch_ShowDamages.IsChecked();
-                    PC.ServerAcknowledgeDamages(ch_ShowDamages.IsChecked());
-                    PC.myHUD.SaveConfig();
-                }
-			break;    
-            
-        case ch_ShowSpeed:
-                if ( ScrnHUD(PC.myHUD) != none ) {
-                    ScrnHUD(PC.myHUD).bShowSpeed = ch_ShowSpeed.IsChecked();
-                    PC.myHUD.SaveConfig();
-                }
-			break;  
-            
-        case ch_ShowAchProgress:
-                if ( ScrnHUD(PC.myHUD) != none ) {
-                    PC.bAlwaysDisplayAchProgression = ch_ShowAchProgress.IsChecked();
-                    PC.SaveConfig();
-                }
-			break;            
-            
-        case ch_OldStyleIcons:
-				class'ScrnBalanceSrv.ScrnVeterancyTypes'.default.bOldStyleIcons = ch_OldStyleIcons.IsChecked();
-                if ( ScrnHUD(PC.myHUD) != none ) {
-                    ScrnHUD(PC.myHUD).bOldStyleIcons = class'ScrnBalanceSrv.ScrnVeterancyTypes'.default.bOldStyleIcons;
-                    PC.myHUD.SaveConfig();
-                }
-			break;            
-            
-        case ch_PrioritizePerkedWeapons:
-				PC.bPrioritizePerkedWeapons =  ch_PrioritizePerkedWeapons.IsChecked();
-			break;            
-    }
-}
-
-function InternalOnLoadINI(GUIComponent Sender, string s)
+function bool ButtonClicked(GUIComponent Sender)
 {
     local ScrnPlayerController PC;
     
     PC = ScrnPlayerController(PlayerOwner());
-
-    switch (Sender)
-    {
-        case ch_ManualReload:
-            ch_ManualReload.Checked(PC.bManualReload);
-            if ( PC.Mut.bForceManualReload ) {
-                ch_ManualReload.DisableMe();
-                ch_ManualReload.Hint = strForcedByServer;
-            }
-            else {
-                ch_ManualReload.EnableMe();
-                ch_ManualReload.Hint = ch_ManualReload.default.Hint;
-            }
+    if ( PC == none )
+        return true;
+    
+    switch ( Sender ) {
+        case b_ScrnGroup:
+            LaunchURLPage("http://steamcommunity.com/groups/ScrNBalance");
+            break;    
+        case b_GetPrize:
+            PC.Mutate("GIMMECOOKIES");
+            b_GetPrize.Hide();
             break;
             
-        case ch_OtherPlayerLasersBlue:
-            if ( PC.Mut.bHardcore ) {
-                ch_OtherPlayerLasersBlue.Checked(false);
-                ch_OtherPlayerLasersBlue.DisableMe();
-                ch_OtherPlayerLasersBlue.Hint = strDisabledByServer;
-            }
-            else {
-                ch_OtherPlayerLasersBlue.Checked(PC.bOtherPlayerLasersBlue);
-                ch_OtherPlayerLasersBlue.EnableMe();
-                ch_OtherPlayerLasersBlue.Hint = ch_OtherPlayerLasersBlue.default.Hint;
-            }        
-            
-        case ch_CookNade:
-            if ( PC.Mut.bReplaceNades ) {
-                ch_CookNade.Checked(IsCookingSet());
-                ch_CookNade.EnableMe();
-                ch_CookNade.Hint = strDisabledByServer;
-            }
-            else {
-                ch_CookNade.Checked(false);
-                ch_CookNade.DisableMe();
-                ch_CookNade.Hint = ch_CookNade.default.Hint;
-            }
-            break;
-            
-        case ch_ShowDamages:
-            if ( !PC.Mut.bShowDamages || ScrnHUD(PC.myHUD) == none ) {
-                ch_ShowDamages.Checked(false);
-                ch_ShowDamages.DisableMe();
-                ch_ShowDamages.Hint = strDisabledByServer;
-            }
-            else {
-                ch_ShowDamages.Checked(ScrnHUD(PC.myHUD).bShowDamages);
-                ch_ShowDamages.EnableMe();
-                ch_ShowDamages.Hint = ch_ShowDamages.default.Hint;
-            }        
+        case b_GunSkin:
+            PC.GunSkin(0, true);
             break;            
-             
-        case ch_ShowSpeed:
-            if ( ScrnHUD(PC.myHUD) == none ) {
-                ch_ShowSpeed.Checked(false);
-                ch_ShowSpeed.DisableMe();
-            }
-            else {
-                ch_ShowSpeed.Checked(ScrnHUD(PC.myHUD).bShowSpeed);
-                ch_ShowSpeed.EnableMe();
-            }        
-            break;               
-
-        case ch_ShowAchProgress:
-            ch_ShowAchProgress.Checked(PC.bAlwaysDisplayAchProgression);
-            break;               
-			
-        case ch_OldStyleIcons:
-            ch_OldStyleIcons.Checked(class'ScrnVeterancyTypes'.default.bOldStyleIcons);
+        case b_WeaponLock:
+            PC.ToggleWeaponLock();
+            RefreshInfo();
+            break;
+        case b_PerkProgress:
+            PC.Mutate("PERKSTATS");
+            break;
+        case b_Accuracy:
+            PC.Mutate("ACCURACY");
+            break;   
+            
+        case b_Status:
+            PC.Mutate("STATUS");
+            break;   
+        case b_HL:
+            PC.Mutate("HL");
+            break;   
+        case b_Zeds:
+            PC.Mutate("ZEDLIST");
+            break;   
+        case b_TourneyCheck:
+            PC.TourneyCheck();
+            break;   
+            
+        case b_Profile:
+            if ( PlayerSteamID64 != "" )
+                LaunchURLPage("http://steamcommunity.com/profiles/"$PlayerSteamID64);
             break;          
-		
-		case ch_PrioritizePerkedWeapons:
-            ch_PrioritizePerkedWeapons.Checked(PC.bPrioritizePerkedWeapons);
-            break;  
+        case b_MVOTE_Yes:
+            PC.Mutate("VOTE YES");
+            break; 
+        case b_MVOTE_No:
+            PC.Mutate("VOTE NO");
+            break; 
+        case b_MVOTE_Boring:
+            PC.Mutate("VOTE BORING");
+            break; 
+        case b_MVOTE_EndTrade:
+            PC.Mutate("VOTE ENDTRADE");
+            break; 
+        case b_TSC_Lock:
+            PC.Mutate("VOTE TEAM LOCK");
+            break;               
+        case b_TSC_Unlock:
+            PC.Mutate("VOTE TEAM UNLOCK");
+            break;               
     }
+    
+    return true;
 }
 
-function ShowPanel(bool bShow)
+function bool PlayerVoteButtonClicked(GUIComponent Sender)
 {
-	Super.ShowPanel(bShow);
-
-	if ( bShow ) {
-        lbl_Version.Caption = class'ScrnBalance'.default.FriendlyName @ class'ScrnBalance'.static.GetVersionStr();
-		RefreshInfo();
-	}
+    local bool bNeedReason;
+    local string cmd;
+    
+    if ( PlayerLocalID <= 0 )
+        return true;
+    
+    switch (Sender) {
+        case b_Blame:
+            cmd = "BLAME";
+            bNeedReason = true;
+            break;
+        case b_Spec:
+            cmd = "SPEC";
+            bNeedReason = true;
+            break;            
+        case b_Kick:
+            cmd = "KICK";
+            bNeedReason = true;
+            break;
+        case b_TSC_C:
+            cmd = "TEAM C";
+            break;            
+        case b_TSC_A:
+            cmd = "TEAM A";
+            break;    
+        case b_TSC_Invite:
+            cmd = "TEAM INVITE";
+            break;            
+    }
+    
+    cmd = "VOTE" @ cmd @ PlayerLocalID;
+    if ( bNeedReason ) {
+        if ( !class'ScrnBalanceVoting'.static.IsGoodReason(txt_Reason.GetText()) ) {
+            txt_Reason.SetFocus(none);
+            PlayerOwner().ClientMessage(strBadReason);
+            return true;
+        }
+        cmd @= txt_Reason.GetText();
+    }
+    PlayerOwner().Mutate(cmd);
+    return true;
 }
 
-function RefreshInfo()
+
+function LaunchURLPage( string URL )
 {
-	local ScrnPlayerController PC;
-	
-	PC = ScrnPlayerController(PlayerOwner());
-	if ( PC.Mut.bAllowWeaponLock ) {
-		b_WeaponLock.EnableMe();
-		b_WeaponLock.Hint = b_WeaponLock.default.Hint ;
-		
-		if ( PC.bWeaponsLocked )
-			b_WeaponLock.Caption = strUnlockWeapons;
-		else
-			b_WeaponLock.Caption = strLockWeapons;
-	}
-	else {
-		b_WeaponLock.DisableMe();
-		b_WeaponLock.Hint = PC.strLockDisabled;
-	}
+	PlayerOwner().Player.Console.DelayedConsoleCommand("START "$URL);
 }
 
-function bool WeaponLockButtonClicked(GUIComponent Sender)
-{
-	ScrnPlayerController(PlayerOwner()).ToggleWeaponLock();
-	RefreshInfo();
-	return true;
-}
-
-function bool PerkProgressButtonClicked(GUIComponent Sender)
-{
-	PlayerOwner().Mutate("PERKSTATS");
-	return true;
-}
 
 defaultproperties
 {
-     Begin Object Class=moCheckBox Name=ManualReload
-         CaptionWidth=0.955000
-         Caption="Manual Reload"
-         OnCreateComponent=ManualReload.InternalOnCreateComponent
-         IniOption="@Internal"
-         Hint="Check this to disable automatic reloading when firing with an empty gun"
-         WinTop=0.200000
-         WinLeft=0.300000
-         WinWidth=0.400000
-         TabOrder=0
-         OnChange=ScrnTab_UserSettings.InternalOnChange
-         OnLoadINI=ScrnTab_UserSettings.InternalOnLoadINI
-     End Object
-     ch_ManualReload=moCheckBox'ScrnBalanceSrv.ScrnTab_UserSettings.ManualReload'
+    strDisabledByServer="Disable on the Server side"
+    strForcedByServer="Forced by the Server"    
+    strLock="Lock"
+    strUnlock="Unlock"
 
-     Begin Object Class=moCheckBox Name=OtherPlayerLasersBlue
-         CaptionWidth=0.955000
-         Caption="Blue lasers for teammates"
-         OnCreateComponent=OtherPlayerLasersBlue.InternalOnCreateComponent
-         IniOption="@Internal"
-         Hint="Draw teammates' lasers in blue color"
-         WinTop=0.250000
-         WinLeft=0.300000
-         WinWidth=0.400000
-         TabOrder=1
-         OnChange=ScrnTab_UserSettings.InternalOnChange
-         OnLoadINI=ScrnTab_UserSettings.InternalOnLoadINI
-     End Object
-     ch_OtherPlayerLasersBlue=moCheckBox'ScrnBalanceSrv.ScrnTab_UserSettings.OtherPlayerLasersBlue'
+    // VERSION -------------------------------------------------------------------------
+    Begin Object Class=GUIImage Name=LogoStandard
+        Image=texture'ScrnTex.HUD.ScrNBalanceLogo256'
+        ImageColor=(B=255,G=255,R=255,A=255)
+        ImageStyle=ISTY_Scaled
+        WinTop=0.005
+        WinLeft=0.005
+        WinWidth=0.09
+        WinHeight=0.16
+        bBoundToParent=True
+        bScaleToParent=True
+        RenderWeight=0.9
+    End Object
+    img_ScrnLogo=GUIImage'ScrnBalanceSrv.ScrnTab_UserSettings.LogoStandard'
 
-     Begin Object Class=moCheckBox Name=CookNade
-         CaptionWidth=0.955000
-         Caption="Enable Grenade 'Cooking'"
-         OnCreateComponent=CookNade.InternalOnCreateComponent
-         IniOption="@Internal"
-         Hint="If checked, armed grenade will remain in player's hands while he is holding the key"
-         WinTop=0.300000
-         WinLeft=0.300000
-         WinWidth=0.400000
-         TabOrder=2
-         OnChange=ScrnTab_UserSettings.InternalOnChange
-         OnLoadINI=ScrnTab_UserSettings.InternalOnLoadINI
-     End Object
-     ch_CookNade=moCheckBox'ScrnBalanceSrv.ScrnTab_UserSettings.CookNade'
+    Begin Object Class=GUILabel Name=VersionLabel
+        TextAlign=TXTA_Center
+        TextFont="UT2LargeFont"
+        FontScale=FNS_Small
+        TextColor=(R=0,G=160,B=255)
+        ShadowOffsetX=2
+        ShadowOffsetY=2
+        WinTop=0.01
+        WinLeft=0.100000
+        WinWidth=0.800000
+        WinHeight=0.05
+    End Object
+    lbl_Version=GUILabel'ScrnBalanceSrv.ScrnTab_UserSettings.VersionLabel'
 
-     Begin Object Class=moCheckBox Name=ShowDamages
-         CaptionWidth=0.955000
-         Caption="Show Damages"
-         OnCreateComponent=ShowDamages.InternalOnCreateComponent
-         IniOption="@Internal"
-         Hint="If checked, damage you're doing to zeds will popup on your screen"
-         WinTop=0.350000
-         WinLeft=0.300000
-         WinWidth=0.400000
-         TabOrder=3
-         OnChange=ScrnTab_UserSettings.InternalOnChange
-         OnLoadINI=ScrnTab_UserSettings.InternalOnLoadINI
-     End Object
-     ch_ShowDamages=moCheckBox'ScrnBalanceSrv.ScrnTab_UserSettings.ShowDamages'
+    Begin Object Class=GUILabel Name=CRLabel
+        Caption=""
+        TextFont="UT2SmallFont"
+        FontScale=FNS_Small
+        TextAlign=TXTA_Center
+        TextColor=(R=128,G=128,B=128,A=255)
+        WinTop=0.055
+        WinLeft=0.100000
+        WinWidth=0.800000
+        WinHeight=0.05
+    End Object
+    lbl_CR=GUILabel'ScrnBalanceSrv.ScrnTab_UserSettings.CRLabel'     
 
-     Begin Object Class=moCheckBox Name=ShowSpeed
-         CaptionWidth=0.955000
-         Caption="Show Speed"
-         OnCreateComponent=ShowSpeed.InternalOnCreateComponent
-         IniOption="@Internal"
-         Hint="Shows your current movement speed on the HUD"
-         WinTop=0.400000
-         WinLeft=0.300000
-         WinWidth=0.400000
-         TabOrder=4
-         OnChange=ScrnTab_UserSettings.InternalOnChange
-         OnLoadINI=ScrnTab_UserSettings.InternalOnLoadINI
-     End Object
-     ch_ShowSpeed=moCheckBox'ScrnBalanceSrv.ScrnTab_UserSettings.ShowSpeed'
-     
-     Begin Object Class=moCheckBox Name=ShowAchProgress
-         CaptionWidth=0.955000
-         Caption="Always Show Achievement Progress"
-         OnCreateComponent=ShowSpeed.InternalOnCreateComponent
-         IniOption="@Internal"
-         Hint="If checked, you will always receive norification message on any achievement progress. If not, game will automatically decide when to show a notification."
-         WinTop=0.450000
-         WinLeft=0.300000
-         WinWidth=0.400000
-         TabOrder=5
-         OnChange=ScrnTab_UserSettings.InternalOnChange
-         OnLoadINI=ScrnTab_UserSettings.InternalOnLoadINI
-     End Object
-     ch_ShowAchProgress=moCheckBox'ScrnBalanceSrv.ScrnTab_UserSettings.ShowAchProgress'
-     
-     Begin Object Class=moCheckBox Name=OldStyleIcons
-         CaptionWidth=0.955000
-         Caption="Old Style Icons"
-         OnCreateComponent=ShowSpeed.InternalOnCreateComponent
-         IniOption="@Internal"
-         Hint="Toggles style of perk icons for levels 11+"
-         WinTop=0.500000
-         WinLeft=0.300000
-         WinWidth=0.400000
-         TabOrder=6
-         OnChange=ScrnTab_UserSettings.InternalOnChange
-         OnLoadINI=ScrnTab_UserSettings.InternalOnLoadINI
-     End Object
-     ch_OldStyleIcons=moCheckBox'ScrnBalanceSrv.ScrnTab_UserSettings.OldStyleIcons'
-	 
-     Begin Object Class=moCheckBox Name=PrioritizePerkedWeapons
-         CaptionWidth=0.955000
-         Caption="Switch Perked Weapons First"
-         OnCreateComponent=ShowSpeed.InternalOnCreateComponent
-         IniOption="@Internal"
-         Hint="If checked, perked weapons will be switched first in the inventory group"
-         WinTop=0.550000
-         WinLeft=0.300000
-         WinWidth=0.400000
-         TabOrder=6
-         OnChange=ScrnTab_UserSettings.InternalOnChange
-         OnLoadINI=ScrnTab_UserSettings.InternalOnLoadINI
-     End Object
-     ch_PrioritizePerkedWeapons=moCheckBox'ScrnBalanceSrv.ScrnTab_UserSettings.PrioritizePerkedWeapons'	 
+    Begin Object Class=GUIButton Name=SteamGroupButton
+        Caption="Group..."
+        Hint="Opens up ScrN Balance Fans - Official Steam Group in Web Browser (minimizes KF)."
+        CaptionAlign=TXTA_Center
+        FontScale=FNS_Medium       
+        WinTop=0.115
+        WinLeft=0.10
+        WinWidth=0.095
+        WinHeight=0.045
+        TabOrder=0
+        bAutoSize=True
+        bAutoShrink=False
+        bWrapCaption=False
+        bBoundToParent=True
+        bScaleToParent=True  
+        RenderWeight=2.0
+        OnClick=ScrnTab_UserSettings.ButtonClicked
+        OnKeyEvent=SteamGroupButton.InternalOnKeyEvent
+    End Object
+    b_ScrnGroup=GUIButton'ScrnBalanceSrv.ScrnTab_UserSettings.SteamGroupButton'	    
 
-     Begin Object Class=GUILabel Name=VersionLabel
-         TextAlign=TXTA_Center
-         TextColor=(B=0,G=206)
-         WinTop=0.030000
-         WinLeft=0.100000
-         WinWidth=0.800000
-         WinHeight=0.10
-     End Object
-     lbl_Version=GUILabel'ScrnBalanceSrv.ScrnTab_UserSettings.VersionLabel'
-     
-     Begin Object Class=GUILabel Name=CRLabel
-         Caption="Copyright (c) 2012-2014 PU Developing IK, All Rights Reserved."
-         TextAlign=TXTA_Center
-         TextColor=(R=192,G=192,B=192,A=255)
-         WinTop=0.950000
-         WinLeft=0.100000
-         WinWidth=0.800000
-         WinHeight=0.05
-     End Object
-     lbl_CR=GUILabel'ScrnBalanceSrv.ScrnTab_UserSettings.CRLabel'     
+    // TSC TOURNEY ---------------------------------------------------------------------
+    Begin Object Class=GUIImage Name=LogoTourney
+        Image=Texture'ScrnTex.Tourney.TourneyMember' 
+        ImageColor=(B=255,G=255,R=255,A=255)
+        ImageStyle=ISTY_Scaled
+        WinTop=0.005
+        WinLeft=0.905
+        WinWidth=0.09
+        WinHeight=0.16
+        bBoundToParent=True
+        bScaleToParent=True
+        RenderWeight=0.9
+        bVisible=False
+    End Object
+    img_TourneyLogo=GUIImage'ScrnBalanceSrv.ScrnTab_UserSettings.LogoTourney' 
+    
+    Begin Object Class=GUILabel Name=TourneyLabel
+        Caption="Congratulations on getting into TSC Tournament Playoffs!"
+        TextAlign=TXTA_Center
+        TextColor=(R=0,G=255,B=0,A=255)
+        ShadowOffsetX=1
+        ShadowOffsetY=1        
+        WinTop=0.115
+        WinLeft=0.100000
+        WinWidth=0.800000
+        WinHeight=0.045
+        bVisible=False
+    End Object
+    lbl_TourneyMember=GUILabel'ScrnBalanceSrv.ScrnTab_UserSettings.TourneyLabel' 
+    
+    Begin Object Class=GUIButton Name=PrizeButton
+        Caption="Get Prize"
+        Hint="Grants xp boost for all ScrN official perks"
+        CaptionAlign=TXTA_Center
+        FontScale=FNS_Medium       
+        WinTop=0.115
+        WinLeft=0.775
+        WinWidth=0.12
+        WinHeight=0.045
+        TabOrder=1
+        bAutoSize=True
+        bAutoShrink=False
+        bWrapCaption=False
+        bVisible=False
+        bBoundToParent=True
+        bScaleToParent=True  
+        RenderWeight=2.0
+        OnClick=ScrnTab_UserSettings.ButtonClicked
+        OnKeyEvent=PrizeButton.InternalOnKeyEvent
+    End Object
+    b_GetPrize=GUIButton'ScrnBalanceSrv.ScrnTab_UserSettings.PrizeButton'	    
 
-     Begin Object Class=GUISectionBackground Name=SettingsBG
-         Caption="Settings"
-         WinTop=0.150000
-         WinLeft=0.250000
-         WinWidth=0.500000
-         WinHeight=0.450000
-         RenderWeight=0.100100
-         OnPreDraw=SettingsBG.InternalPreDraw
-     End Object
-     i_BG_Settings=GUISectionBackground'ScrnBalanceSrv.ScrnTab_UserSettings.SettingsBG'
 
-     Begin Object Class=GUISectionBackground Name=BG
-         WinTop=0.015000
-         WinLeft=0.250000
-         WinWidth=0.500000
-         WinHeight=0.110000
-         RenderWeight=0.100100
-         OnPreDraw=BG.InternalPreDraw
-     End Object
-     i_BG=GUISectionBackground'ScrnBalanceSrv.ScrnTab_UserSettings.BG'
-	 
-     Begin Object Class=GUIButton Name=PerkProgressButton
-         Caption="Perk Progress"
-		 Hint="Outputs perk progress and gained xp during this game to the console"
-         bAutoSize=False
-         WinTop=0.20
-         WinLeft=0.77
-         WinWidth=0.21
-         WinHeight=0.045
-         TabOrder=7
-         OnClick=ScrnTab_UserSettings.PerkProgressButtonClicked
-         OnKeyEvent=ProfileButton.InternalOnKeyEvent
-     End Object
-     b_PerkProgress=GUIButton'ScrnBalanceSrv.ScrnTab_UserSettings.PerkProgressButton'	
-	 
-     Begin Object Class=GUIButton Name=WeaponLockButton
-         Caption="Lock Weapons"
-		 Hint="Locks/Unlocks dropped weapons, so they can not be picked up by other players"
-         bAutoSize=False
-         WinTop=0.25
-         WinLeft=0.77
-         WinWidth=0.21
-         WinHeight=0.045
-         TabOrder=8
-         OnClick=ScrnTab_UserSettings.WeaponLockButtonClicked
-         OnKeyEvent=ProfileButton.InternalOnKeyEvent
-     End Object
-     b_WeaponLock=GUIButton'ScrnBalanceSrv.ScrnTab_UserSettings.WeaponLockButton'	
+    // WEAPONS -------------------------------------------------------------------------
+    Begin Object Class=GUISectionBackground Name=WeaponsBG
+        Caption="Weapons"
+        WinTop=0.175000
+        WinLeft=0.005
+        WinWidth=0.49
+        WinHeight=0.315
+        RenderWeight=0.100100
+        OnPreDraw=WeaponsBG.InternalPreDraw
+    End Object
+    bg_Weapons=GUISectionBackground'ScrnBalanceSrv.ScrnTab_UserSettings.WeaponsBG'
+    
+    Begin Object Class=moCheckBox Name=ManualReload
+        Caption="Manual Reload"
+        Hint="Check this to disable automatic reloading when firing with an empty gun"
+        bFlipped=False
+        CaptionWidth=0.955000
+        WinTop=0.23
+        WinLeft=0.015
+        WinWidth=0.288
+        TabOrder=10
+        RenderWeight=0.5
+        ComponentClassName="ScrnBalanceSrv.ScrnGUICheckBoxButton"
+        OnCreateComponent=ManualReload.InternalOnCreateComponent
+        IniOption="@Internal"
+        OnChange=ScrnTab_UserSettings.InternalOnChange
+        OnLoadINI=ScrnTab_UserSettings.InternalOnLoadINI
+    End Object
+    ch_ManualReload=moCheckBox'ScrnBalanceSrv.ScrnTab_UserSettings.ManualReload'
+
+    Begin Object Class=moCheckBox Name=CookNade
+        Caption="Enable Grenade 'Cooking'"
+        Hint="If checked, armed grenade will remain in your hands while key is being held. Nade cooking slows down toss rate!"
+        bFlipped=False
+        CaptionWidth=0.955000
+        WinTop=0.28
+        WinLeft=0.015
+        WinWidth=0.288
+        TabOrder=11
+        RenderWeight=0.5
+        ComponentClassName="ScrnBalanceSrv.ScrnGUICheckBoxButton"
+        OnCreateComponent=CookNade.InternalOnCreateComponent
+        IniOption="@Internal"
+        OnChange=ScrnTab_UserSettings.InternalOnChange
+        OnLoadINI=ScrnTab_UserSettings.InternalOnLoadINI
+    End Object
+    ch_CookNade=moCheckBox'ScrnBalanceSrv.ScrnTab_UserSettings.CookNade'
+    strBoundToCook="'%s' key bound to 'Cook' grenade"
+    strBoundToThrow="'%s' key bound to Throw grenade"
+    strCantFindNade="Can't find a key set for throwing grenades. Please assign it in Settings->Controls."
+    
+    Begin Object Class=moCheckBox Name=PrioritizePerkedWeapons
+        Caption="Perked Weapons First"
+        Hint="If checked, perked weapons will be switched first in the inventory group"
+        bFlipped=False
+        CaptionWidth=0.955000
+        WinTop=0.33
+        WinLeft=0.015
+        WinWidth=0.288
+        TabOrder=12
+        RenderWeight=0.5
+        ComponentClassName="ScrnBalanceSrv.ScrnGUICheckBoxButton"
+        OnCreateComponent=PrioritizePerkedWeapons.InternalOnCreateComponent
+        IniOption="@Internal"
+        OnChange=ScrnTab_UserSettings.InternalOnChange
+        OnLoadINI=ScrnTab_UserSettings.InternalOnLoadINI
+    End Object
+    ch_PrioritizePerkedWeapons=moCheckBox'ScrnBalanceSrv.ScrnTab_UserSettings.PrioritizePerkedWeapons'	 
+
+    Begin Object Class=moCheckBox Name=PrioritizeBoomstick
+        Caption="Boomstick before AA12"
+        Hint="If checked, when pressing '4' Boomstick (Hunting Shotgun) will be switched before AA12"
+        bFlipped=False
+        CaptionWidth=0.955000
+        WinTop=0.38
+        WinLeft=0.015
+        WinWidth=0.288
+        TabOrder=13
+        RenderWeight=0.5
+        ComponentClassName="ScrnBalanceSrv.ScrnGUICheckBoxButton"
+        OnCreateComponent=PrioritizeBoomstick.InternalOnCreateComponent
+        IniOption="@Internal"
+        OnChange=ScrnTab_UserSettings.InternalOnChange
+        OnLoadINI=ScrnTab_UserSettings.InternalOnLoadINI
+    End Object
+    ch_PrioritizeBoomstick=moCheckBox'ScrnBalanceSrv.ScrnTab_UserSettings.PrioritizeBoomstick'	 
+    
+    
+    Begin Object Class=GUIButton Name=GunSkinButton
+        Caption="Gun Skin"
+        Hint="Toggles current weapon skin: normal / gold / camo / neon. Requires appropriate DLC(-s)."
+        bAutoSize=False
+        WinTop=0.2275
+        WinLeft=0.31
+        WinWidth=0.175
+        WinHeight=0.045
+        RenderWeight=1.0
+        TabOrder=14
+        bBoundToParent=True
+        bScaleToParent=True        
+        OnClick=ScrnTab_UserSettings.ButtonClicked
+    End Object
+    b_GunSkin=GUIButton'ScrnBalanceSrv.ScrnTab_UserSettings.GunSkinButton'	
+
+    Begin Object Class=GUIButton Name=WeaponLockButton
+        Caption="Lock Weapons"
+        Hint="Locks/Unlocks dropped weapons, so they can not be picked up by other players"
+        bAutoSize=False
+        WinTop=0.2775
+        WinLeft=0.31
+        WinWidth=0.175
+        WinHeight=0.045
+        RenderWeight=1.0
+        TabOrder=15
+        bBoundToParent=True
+        bScaleToParent=True        
+        OnClick=ScrnTab_UserSettings.ButtonClicked
+    End Object
+    b_WeaponLock=GUIButton'ScrnBalanceSrv.ScrnTab_UserSettings.WeaponLockButton'	
 	strLockWeapons="Lock Weapons"
 	strUnlockWeapons="Unlock Weapons"
-	
-	
-	
+    
+    Begin Object Class=GUIButton Name=PerkProgressButton
+        Caption="Perk Progress"
+        Hint="Prints perk progress and gained xp during this game to the console"
+        bAutoSize=False
+        WinTop=0.3275
+        WinLeft=0.31
+        WinWidth=0.175
+        WinHeight=0.045
+        RenderWeight=1.0
+        TabOrder=16
+        bBoundToParent=True
+        bScaleToParent=True        
+        OnClick=ScrnTab_UserSettings.ButtonClicked
+    End Object
+    b_PerkProgress=GUIButton'ScrnBalanceSrv.ScrnTab_UserSettings.PerkProgressButton'
 
-     strBoundToCook="'%s' key bound to 'Cook' grenade"
-     strBoundToThrow="'%s' key bound to Throw grenade"
-     strCantFindNade="Can't find a key set for throwing grenades. Please assign it in Settings->Controls."
-     strDisabledByServer="Disable on the Server side"
-     strForcedByServer="Forced by the Server"
+    
+    Begin Object Class=GUIButton Name=AccuracyButton
+        Caption="Show Accuracy"
+        Hint="Prints player accuracy to the console"
+        bAutoSize=False
+        WinTop=0.3775
+        WinLeft=0.31
+        WinWidth=0.175
+        WinHeight=0.045
+        RenderWeight=1.0
+        bBoundToParent=True
+        bScaleToParent=True        
+        TabOrder=17
+        OnClick=ScrnTab_UserSettings.ButtonClicked
+    End Object
+    b_Accuracy=GUIButton'ScrnBalanceSrv.ScrnTab_UserSettings.AccuracyButton'	
+    
+    
+    // HUD & INFO ----------------------------------------------------------------------
+    Begin Object Class=GUISectionBackground Name=HUDBG
+        Caption="HUD & Info"
+        WinTop=0.175000
+        WinLeft=0.505
+        WinWidth=0.49
+        WinHeight=0.315
+        RenderWeight=0.100100
+        OnPreDraw=WeaponsBG.InternalPreDraw
+    End Object
+    bg_HUD=GUISectionBackground'ScrnBalanceSrv.ScrnTab_UserSettings.HUDBG'
+    
+    Begin Object Class=moCheckBox Name=ShowDamages
+        Caption="Show Damages"
+        Hint="If checked, damage you're doing will popup on your screen"
+        bFlipped=False
+        CaptionWidth=0.955000
+        WinTop=0.23
+        WinLeft=0.515
+        WinWidth=0.288
+        TabOrder=20
+        RenderWeight=0.5
+        ComponentClassName="ScrnBalanceSrv.ScrnGUICheckBoxButton"
+        OnCreateComponent=ShowDamages.InternalOnCreateComponent
+        IniOption="@Internal"
+        OnChange=ScrnTab_UserSettings.InternalOnChange
+        OnLoadINI=ScrnTab_UserSettings.InternalOnLoadINI
+    End Object
+    ch_ShowDamages=moCheckBox'ScrnBalanceSrv.ScrnTab_UserSettings.ShowDamages'
+    
+    Begin Object Class=moCheckBox Name=ShowSpeed
+        Caption="Show Speed"
+        Hint="Toggles drawing of your movement speed on the HUD"
+        bFlipped=False
+        CaptionWidth=0.955000
+        WinTop=0.28
+        WinLeft=0.515
+        WinWidth=0.288
+        TabOrder=21
+        RenderWeight=0.5
+        ComponentClassName="ScrnBalanceSrv.ScrnGUICheckBoxButton"
+        OnCreateComponent=ShowSpeed.InternalOnCreateComponent
+        IniOption="@Internal"
+        OnChange=ScrnTab_UserSettings.InternalOnChange
+        OnLoadINI=ScrnTab_UserSettings.InternalOnLoadINI
+    End Object
+    ch_ShowSpeed=moCheckBox'ScrnBalanceSrv.ScrnTab_UserSettings.ShowSpeed'    
+
+    Begin Object Class=moCheckBox Name=ShowAchProgress
+        Caption="Achievement Progress"
+        Hint="If checked, you will always receive notification message on any achievement progress. If not, game will automatically decide when to show a notification."
+        bFlipped=False
+        CaptionWidth=0.955000
+        WinTop=0.33
+        WinLeft=0.515
+        WinWidth=0.288
+        TabOrder=22
+        RenderWeight=0.5
+        OnCreateComponent=ShowAchProgress.InternalOnCreateComponent
+        ComponentClassName="ScrnBalanceSrv.ScrnGUICheckBoxButton"
+        IniOption="@Internal"
+        OnChange=ScrnTab_UserSettings.InternalOnChange
+        OnLoadINI=ScrnTab_UserSettings.InternalOnLoadINI
+    End Object
+    ch_ShowAchProgress=moCheckBox'ScrnBalanceSrv.ScrnTab_UserSettings.ShowAchProgress'      
+  
+    Begin Object Class=moCheckBox Name=OldStyleIcons
+        Caption="Old Style Icons"
+        Hint="Toggles style of perk icons for levels 11+"
+        bFlipped=False
+        CaptionWidth=0.955000
+        WinTop=0.38
+        WinLeft=0.515
+        WinWidth=0.288
+        TabOrder=23
+        RenderWeight=0.5
+        ComponentClassName="ScrnBalanceSrv.ScrnGUICheckBoxButton"
+        OnCreateComponent=OldStyleIcons.InternalOnCreateComponent
+        IniOption="@Internal"
+        OnChange=ScrnTab_UserSettings.InternalOnChange
+        OnLoadINI=ScrnTab_UserSettings.InternalOnLoadINI
+    End Object
+    ch_OldStyleIcons=moCheckBox'ScrnBalanceSrv.ScrnTab_UserSettings.OldStyleIcons'  
+
+    Begin Object Class=moCheckBox Name=AllwaysDrawSpecialIcons
+        Caption="Player Avatars"
+        Hint="If checked, player avatars always will be drawn. If not, then avatars will be shown only during Trader Time."
+        bFlipped=False
+        CaptionWidth=0.955000
+        WinTop=0.43
+        WinLeft=0.515
+        WinWidth=0.288
+        TabOrder=24
+        RenderWeight=0.5
+        OnCreateComponent=AllwaysDrawSpecialIcons.InternalOnCreateComponent
+        ComponentClassName="ScrnBalanceSrv.ScrnGUICheckBoxButton"
+        IniOption="@Internal"
+        OnChange=ScrnTab_UserSettings.InternalOnChange
+        OnLoadINI=ScrnTab_UserSettings.InternalOnLoadINI
+    End Object
+    ch_AllwaysDrawSpecialIcons=moCheckBox'ScrnBalanceSrv.ScrnTab_UserSettings.AllwaysDrawSpecialIcons'      
+   
+    Begin Object Class=moCheckBox Name=PlayerInfoZoom
+        Caption="Old HP Bars"
+        Hint="If checked, player health and armor bars won't be scaled on distance."
+        bFlipped=False
+        CaptionWidth=0.955000
+        WinTop=0.43
+        WinLeft=0.81
+        WinWidth=0.175
+        TabOrder=29
+        RenderWeight=0.5
+        OnCreateComponent=PlayerInfoZoom.InternalOnCreateComponent
+        ComponentClassName="ScrnBalanceSrv.ScrnGUICheckBoxButton"
+        IniOption="@Internal"
+        OnChange=ScrnTab_UserSettings.InternalOnChange
+        OnLoadINI=ScrnTab_UserSettings.InternalOnLoadINI
+    End Object
+    ch_PlayerInfoZoom=moCheckBox'ScrnBalanceSrv.ScrnTab_UserSettings.PlayerInfoZoom'      
+
+
+    Begin Object Class=GUIButton Name=StatusButton
+        Caption="Server Status"
+        Hint="Prints ScrN server settings"
+        bAutoSize=False
+        WinTop=0.2275
+        WinLeft=0.81
+        WinWidth=0.175
+        WinHeight=0.045
+        RenderWeight=1.0
+        TabOrder=25
+        bBoundToParent=True
+        bScaleToParent=True        
+        OnClick=ScrnTab_UserSettings.ButtonClicked
+    End Object
+    b_Status=GUIButton'ScrnBalanceSrv.ScrnTab_UserSettings.StatusButton'	
+
+    Begin Object Class=GUIButton Name=HLButton
+        Caption="HL"
+        Hint="Prints Hardcore Level"
+        bAutoSize=False
+        WinTop=0.2775
+        WinLeft=0.81
+        WinWidth=0.175
+        WinHeight=0.045
+        RenderWeight=1.0
+        TabOrder=26
+        bBoundToParent=True
+        bScaleToParent=True        
+        OnClick=ScrnTab_UserSettings.ButtonClicked
+    End Object
+    b_HL=GUIButton'ScrnBalanceSrv.ScrnTab_UserSettings.HLButton'	
+    
+    Begin Object Class=GUIButton Name=ZedsButton
+        Caption="Zeds"
+        Hint="Prints current monster collection"
+        bAutoSize=False
+        WinTop=0.3275
+        WinLeft=0.81
+        WinWidth=0.175
+        WinHeight=0.045
+        RenderWeight=1.0
+        TabOrder=27
+        bBoundToParent=True
+        bScaleToParent=True        
+        OnClick=ScrnTab_UserSettings.ButtonClicked
+    End Object
+    b_Zeds=GUIButton'ScrnBalanceSrv.ScrnTab_UserSettings.ZedsButton'
+
+    
+    Begin Object Class=GUIButton Name=TourneyCheckButton
+        Caption="Tourney Check"
+        Hint="Executes Tourney Mode check and prints results to the console"
+        bAutoSize=False
+        WinTop=0.3775
+        WinLeft=0.81
+        WinWidth=0.175
+        WinHeight=0.045
+        RenderWeight=1.0
+        bBoundToParent=True
+        bScaleToParent=True        
+        TabOrder=28
+        OnClick=ScrnTab_UserSettings.ButtonClicked
+    End Object
+    b_TourneyCheck=GUIButton'ScrnBalanceSrv.ScrnTab_UserSettings.TourneyCheckButton'	   
+   
+   
+    // MVOTE ---------------------------------------------------------------------------
+    Begin Object Class=GUISectionBackground Name=PlayerBG
+        Caption="MVote"
+        WinTop=0.510
+        WinLeft=0.005
+        WinWidth=0.99
+        WinHeight=0.235
+        RenderWeight=0.100100
+        OnPreDraw=WeaponsBG.InternalPreDraw
+    End Object
+    bg_Players=GUISectionBackground'ScrnBalanceSrv.ScrnTab_UserSettings.PlayerBG'
+    
+     Begin Object Class=moComboBox Name=PlayerList
+         bReadOnly=True
+         CaptionWidth=0.18
+         Caption="Player:"
+         IniOption="@Internal"
+         Hint="Select a player from the list"
+         WinTop=0.575
+         WinLeft=0.015
+         WinWidth=0.46
+         TabOrder=50
+         RenderWeight=1.0
+         OnChange=ScrnTab_UserSettings.InternalOnChange
+         OnLoadINI=ScrnTab_UserSettings.InternalOnLoadINI
+         OnCreateComponent=PlayerList.InternalOnCreateComponent
+     End Object
+     cbx_Player=moComboBox'ScrnBalanceSrv.ScrnTab_UserSettings.PlayerList'    
+     
+    Begin Object Class=GUILabel Name=PlayerLabel
+        Caption=""
+        TextFont="UT2SmallFont"
+        FontScale=FNS_Small
+        TextAlign=TXTA_Left
+        TextColor=(R=200,G=200,B=200,A=255)
+        WinTop=0.570
+        WinLeft=0.49
+        WinWidth=0.800000
+        WinHeight=0.05
+        RenderWeight=0.2
+    End Object
+    lbl_PlayerID=GUILabel'ScrnBalanceSrv.ScrnTab_UserSettings.PlayerLabel'  
+
+    Begin Object Class=GUIButton Name=ProfileButton
+        Caption="Profile..."
+        Hint="Opens player's Steam profile in web browser (minimizes KF)"
+        bAutoSize=False
+        WinTop=0.58
+        WinLeft=0.79
+        WinWidth=0.095
+        WinHeight=0.045
+        RenderWeight=2.0
+        TabOrder=51
+        bBoundToParent=True
+        bScaleToParent=True        
+        OnClick=ScrnTab_UserSettings.ButtonClicked
+        OnKeyEvent=ProfileButton.InternalOnKeyEvent
+    End Object
+    b_Profile=GUIButton'ScrnBalanceSrv.ScrnTab_UserSettings.ProfileButton'   
+
+    Begin Object Class=GUIButton Name=PlayerListButton
+        Caption="List"
+        Hint="Writes player list into the console and KillingFloor.log"
+        bAutoSize=False
+        WinTop=0.58
+        WinLeft=0.89
+        WinWidth=0.095
+        WinHeight=0.045
+        RenderWeight=1.0
+        TabOrder=52
+        bBoundToParent=True
+        bScaleToParent=True        
+        OnClick=ScrnTab_UserSettings.ButtonClicked
+        OnKeyEvent=PlayerListButton.InternalOnKeyEvent
+    End Object
+    b_PlayerList=GUIButton'ScrnBalanceSrv.ScrnTab_UserSettings.PlayerListButton'  
+
+    Begin Object Class=moEditBox Name=ReasonTextBox
+        ComponentWidth=0.82
+        Caption="Reason:"
+        OnCreateComponent=ebName.InternalOnCreateComponent
+        WinTop=0.63
+        WinLeft=0.015
+        WinWidth=0.46
+        TabOrder=60
+    End Object
+    txt_Reason=moEditBox'ScrnBalanceSrv.ScrnTab_UserSettings.ReasonTextBox'  
+    strBadReason="Write a good reason for blaming"    
+     
+    Begin Object Class=GUIButton Name=BlameButton
+        Caption="Blame"
+        Hint="Click to start a Blame-vote on selected player for a 'Reason'"
+        bAutoSize=False
+        WinTop=0.63
+        WinLeft=0.49
+        WinWidth=0.095
+        WinHeight=0.045
+        RenderWeight=2.0
+        TabOrder=61
+        bBoundToParent=True
+        bScaleToParent=True        
+        OnClick=ScrnTab_UserSettings.PlayerVoteButtonClicked
+        OnKeyEvent=BlameButton.InternalOnKeyEvent
+    End Object
+    b_Blame=GUIButton'ScrnBalanceSrv.ScrnTab_UserSettings.BlameButton'     
+
+    Begin Object Class=GUIButton Name=SpecButton
+        Caption="Spec"
+        Hint="Click to start a vote to move selected player to spectators for a 'Reason'."
+        bAutoSize=False
+        WinTop=0.63
+        WinLeft=0.59
+        WinWidth=0.095
+        WinHeight=0.045
+        RenderWeight=2.0
+        TabOrder=62
+        bBoundToParent=True
+        bScaleToParent=True        
+        OnClick=ScrnTab_UserSettings.PlayerVoteButtonClicked
+        OnKeyEvent=SpecButton.InternalOnKeyEvent
+    End Object
+    b_Spec=GUIButton'ScrnBalanceSrv.ScrnTab_UserSettings.SpecButton'    
+
+    Begin Object Class=GUIButton Name=KickButton
+        Caption="Kick"
+        Hint="Click to start a kick-vote selected player for a 'Reason'."
+        bAutoSize=False
+        WinTop=0.63
+        WinLeft=0.69
+        WinWidth=0.095
+        WinHeight=0.045
+        RenderWeight=2.0
+        TabOrder=63
+        bBoundToParent=True
+        bScaleToParent=True        
+        OnClick=ScrnTab_UserSettings.PlayerVoteButtonClicked
+        OnKeyEvent=KickButton.InternalOnKeyEvent
+    End Object
+    b_Kick=GUIButton'ScrnBalanceSrv.ScrnTab_UserSettings.KickButton'    
+
+    Begin Object Class=GUIButton Name=TSC_C_Button
+        Caption="Captain"
+        Hint="Vote selected player to be a Team Captain"
+        bAutoSize=False
+        WinTop=0.63
+        WinLeft=0.79
+        WinWidth=0.095
+        WinHeight=0.045
+        RenderWeight=2.0
+        TabOrder=64
+        bBoundToParent=True
+        bScaleToParent=True        
+        bVisible = false        
+        OnClick=ScrnTab_UserSettings.PlayerVoteButtonClicked
+        OnKeyEvent=TSC_C_Button.InternalOnKeyEvent
+    End Object
+    b_TSC_C=GUIButton'ScrnBalanceSrv.ScrnTab_UserSettings.TSC_C_Button'   
+
+    Begin Object Class=GUIButton Name=TSC_A_Button
+        Caption="Carrier"
+        Hint="Vote selected player to be a Gnome Carrier. If voted, nobody but carrier or captain can pick up the Gnome."
+        bAutoSize=False
+        WinTop=0.63
+        WinLeft=0.89
+        WinWidth=0.095
+        WinHeight=0.045
+        RenderWeight=1.0
+        TabOrder=65
+        bBoundToParent=True
+        bScaleToParent=True   
+        bVisible = false        
+        OnClick=ScrnTab_UserSettings.PlayerVoteButtonClicked
+        OnKeyEvent=TSC_A_Button.InternalOnKeyEvent
+    End Object
+    b_TSC_A=GUIButton'ScrnBalanceSrv.ScrnTab_UserSettings.TSC_A_Button'     
+    
+    Begin Object Class=GUIButton Name=VoteYesButton
+        Caption="Vote YES"
+        Hint="Accept current vote in progress"
+        bAutoSize=False
+        WinTop=0.68
+        WinLeft=0.015
+        WinWidth=0.095
+        WinHeight=0.045
+        RenderWeight=1.0
+        TabOrder=70
+        bBoundToParent=True
+        bScaleToParent=True   
+        bVisible = false        
+        OnClick=ScrnTab_UserSettings.ButtonClicked
+        OnKeyEvent=VoteYesButton.InternalOnKeyEvent
+    End Object
+    b_MVOTE_Yes=GUIButton'ScrnBalanceSrv.ScrnTab_UserSettings.VoteYesButton'   
+
+    Begin Object Class=GUIButton Name=VoteNoButton
+        Caption="Vote NO"
+        Hint="Decline current vote in progress"
+        bAutoSize=False
+        WinTop=0.68
+        WinLeft=0.115
+        WinWidth=0.095
+        WinHeight=0.045
+        RenderWeight=1.0
+        TabOrder=71
+        bBoundToParent=True
+        bScaleToParent=True   
+        bVisible = false        
+        OnClick=ScrnTab_UserSettings.ButtonClicked
+        OnKeyEvent=VoteNoButton.InternalOnKeyEvent
+    End Object
+    b_MVOTE_No=GUIButton'ScrnBalanceSrv.ScrnTab_UserSettings.VoteNoButton'     
+    
+    Begin Object Class=GUIButton Name=BoringButton
+        Caption="Boring"
+        Hint="Boosts zed spawn rates, making game faster."
+        bAutoSize=False
+        WinTop=0.68
+        WinLeft=0.28
+        WinWidth=0.195
+        WinHeight=0.045
+        RenderWeight=2.0
+        TabOrder=72
+        bBoundToParent=True
+        bScaleToParent=True        
+        bVisible = false        
+        OnClick=ScrnTab_UserSettings.ButtonClicked
+        OnKeyEvent=BoringButton.InternalOnKeyEvent
+    End Object
+    b_MVOTE_Boring=GUIButton'ScrnBalanceSrv.ScrnTab_UserSettings.BoringButton' 
+
+    Begin Object Class=GUIButton Name=EndTradeButton
+        Caption="End Trade"
+        Hint="Skips Trader Time and starts next wave."
+        bAutoSize=False
+        WinTop=0.68
+        WinLeft=0.28
+        WinWidth=0.195
+        WinHeight=0.045
+        RenderWeight=2.0
+        TabOrder=72
+        bBoundToParent=True
+        bScaleToParent=True        
+        bVisible = false        
+        OnClick=ScrnTab_UserSettings.ButtonClicked
+        OnKeyEvent=EndTradeButton.InternalOnKeyEvent
+    End Object
+    b_MVOTE_EndTrade=GUIButton'ScrnBalanceSrv.ScrnTab_UserSettings.EndTradeButton'     
+    
+    Begin Object Class=GUIButton Name=TeamLockButton
+        Caption="Lock Team"
+        Hint="Locks teams, preventing uninvited players to join."
+        bAutoSize=False
+        WinTop=0.68
+        WinLeft=0.69
+        WinWidth=0.195
+        WinHeight=0.045
+        RenderWeight=2.0
+        TabOrder=73
+        bBoundToParent=True
+        bScaleToParent=True        
+        bVisible = false        
+        OnClick=ScrnTab_UserSettings.ButtonClicked
+        OnKeyEvent=TeamLockButton.InternalOnKeyEvent
+    End Object
+    b_TSC_Lock=GUIButton'ScrnBalanceSrv.ScrnTab_UserSettings.TeamLockButton'  
+    
+    Begin Object Class=GUIButton Name=TeamUnlockButton
+        Caption="Unlock Team"
+        Hint="Unlocks teams, allowing everybody to join."
+        bAutoSize=False
+        WinTop=0.68
+        WinLeft=0.69
+        WinWidth=0.195
+        WinHeight=0.045
+        RenderWeight=2.0
+        TabOrder=73
+        bBoundToParent=True
+        bScaleToParent=True        
+        bVisible = false        
+        OnClick=ScrnTab_UserSettings.ButtonClicked
+        OnKeyEvent=TeamUnlockButton.InternalOnKeyEvent
+    End Object
+    b_TSC_Unlock=GUIButton'ScrnBalanceSrv.ScrnTab_UserSettings.TeamUnlockButton'      
+
+    Begin Object Class=GUIButton Name=TeamInviteButton
+        Caption="Invite"
+        Hint="Invite player to the team (bypasses lock)."
+        bAutoSize=False
+        WinTop=0.68
+        WinLeft=0.89
+        WinWidth=0.095
+        WinHeight=0.045
+        RenderWeight=1.0
+        TabOrder=74
+        bBoundToParent=True
+        bScaleToParent=True   
+        bVisible = false        
+        OnClick=ScrnTab_UserSettings.PlayerVoteButtonClicked
+        OnKeyEvent=TeamInviteButton.InternalOnKeyEvent
+    End Object
+    b_TSC_Invite=GUIButton'ScrnBalanceSrv.ScrnTab_UserSettings.TeamInviteButton'      
+    
+    
+    // SERVER INFO ---------------------------------------------------------------------
+    Begin Object Class=GUILabel Name=ServerInfoLabel
+        Caption="Server status unavailable"
+        TextAlign=TXTA_Center
+        VertAlign=TSTA_Left
+        bMultiLine=True
+        TextColor=(R=192,G=192,B=192,A=255)
+        WinTop=0.755
+        WinLeft=0.01
+        WinWidth=0.98
+        WinHeight=0.24
+        bVisible=True
+    End Object
+    lbl_ServerInfo=GUILabel'ScrnBalanceSrv.ScrnTab_UserSettings.ServerInfoLabel'  
+    strServerInfoSeparator = "   "
+    strPerkRange="Perk Bonus Range: "
+    strPerkXPLevel="Your Perk Level = "
+    strPerkBonusLevel="Bonus Level = "
+    strSpawnBalance="Money Balance"
+    strWeaponFix="Weapon Balance"
+    strAltBurnMech="Alt.Burn"
+    strBeta="Beta"
+    strHardcore="Hardcore"
+    strNoPerkChanges="No Perk Changes"
+    StatusColor[0]=(R=100,A=255)
+    StatusColor[1]=(G=255,A=255)
 }

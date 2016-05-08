@@ -117,7 +117,7 @@ defaultproperties
 	AchDefs(70)=(id="Plus25Clots",DisplayName="+25 Clot kills",Description="Kill 25 clots having less than 4 seconds between subsequent kills.",Icon=Texture'ScrnAch_T.Master.Plus25Clots',MaxProgress=1,DataSize=1,Group="MASTER")
 	AchDefs(71)=(id="GetOffMyLawn",DisplayName="I said get off my Lawn!",Description="Kill %c Fleshpounds with the Boomstick or Combat Shotgun.",Icon=Texture'ScrnAch_T.Master.GetOffMyLawn',MaxProgress=15,DataSize=4,Group="MASTER")
 	AchDefs(72)=(id="Accuracy",DisplayName="Accuracy",Description="Finish %c waves with 75% headshot accuracy. At least 30 decapitations required per wave.",Icon=Texture'ScrnAch_T.Master.Accuracy',MaxProgress=10,DataSize=4,Group="MASTER")
-	AchDefs(73)=(id="SteampunkSniper",DisplayName="Steampunk Sniper",Description="Score 15 headshots in a row with Musket. Do it %c times.",Icon=Texture'KillingFloor2HUD.Achievements.Achievement_224',MaxProgress=4,DataSize=3,Group="MASTER")
+	AchDefs(73)=(id="SteampunkSniper",DisplayName="Steampunk Sniper",Description="Score 10 headshots in a row with Musket. Do it %c times.",Icon=Texture'KillingFloor2HUD.Achievements.Achievement_224',MaxProgress=4,DataSize=3,Group="MASTER")
 	AchDefs(74)=(id="MeleeGod",DisplayName="Melee God",Description="Kill %c Scrakes with only head-hits from melee weapons. Buzzsaw Bow excluding.",Icon=Texture'ScrnAch_T.Master.Gauntlet',MaxProgress=30,DataSize=5,Group="MASTER")
 
 	AchDefs(75)=(id="HuskGunSC",DisplayName="Weird but usefull",Description="Kill %c Scrakes with the Husk Gun.",Icon=Texture'ScrnAch_T.Exp.HuskGunSC',MaxProgress=30,DataSize=5,Group="EXP")
@@ -169,8 +169,10 @@ defaultproperties
 	AchDefs(118)=(id="SellCrap",DisplayName="Want Dosh? Sell THIS!",Description="Blame a player who is begging for money.",Icon=Texture'ScrnAch_T.Achievements.SellCrap',MaxProgress=1,DataSize=1,bForceShow=True)
 
 	AchDefs(119)=(id="GhostSmell",DisplayName="I Can Smell Ghosts",Description="Decapitate %c Ghosts with Sharpshooter's weapons from 20+ meters",Icon=Texture'ScrnAch_T.ScrnZeds.GhostSmell',MaxProgress=15,DataSize=4,FilterMaskAll=16,Group="EXP")
-	AchDefs(120)=(id="Ghostbuster",DisplayName="Ghostbuster",Description="As Commando, kill %c Ghosts within detection range without taking a damage.",Icon=Texture'ScrnAch_T.ScrnZeds.Ghostbuster',MaxProgress=100,DataSize=7,FilterMaskAll=16,Group="EXP")
+	AchDefs(120)=(id="Ghostbuster",DisplayName="Ghostbuster",Description="As Commando, kill %c Stalkers or Ghosts within detection range without taking a damage.",Icon=Texture'ScrnAch_T.ScrnZeds.Ghostbuster',MaxProgress=100,DataSize=7,FilterMaskAll=16,Group="EXP")
 	AchDefs(121)=(id="TeslaBomber",DisplayName="Tesla Bomber",Description="Kill %c ZEDs with Tesla Husks's self-destruct explosion.",Icon=Texture'ScrnAch_T.ScrnZeds.TeslaBomber',MaxProgress=30,DataSize=5,FilterMaskAll=16,Group="MASTER")
 	AchDefs(122)=(id="NikolaTesla",DisplayName="Nikola Tesla and You",Description="Kill %c Tesla Husks with close-combat weapons (melee or shotguns). But take some electrical damage before!",Icon=Texture'ScrnAch_T.ScrnZeds.NikolaTesla',MaxProgress=15,DataSize=4,FilterMaskAll=16)
 	AchDefs(123)=(id="TeslaChain",DisplayName="Chain Reaction",Description="Get connected to 2 other players with Tesla Beams",Icon=Texture'ScrnAch_T.ScrnZeds.TeslaChain',MaxProgress=1,DataSize=1,FilterMaskAll=16)
+
+	AchDefs(124)=(id="TSCT",DisplayName="TSC Tournament Member",Description="Participate in TSC Tournement and get into the Playoffs",Icon=Texture'ScrnTex.Tourney.TourneyMember64',MaxProgress=1,DataSize=1,FilterMaskAll=4096)
 }

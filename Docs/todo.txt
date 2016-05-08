@@ -1,0 +1,1 @@
+Replicate ColorTags via color string

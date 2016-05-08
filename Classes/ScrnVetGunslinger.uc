@@ -105,9 +105,11 @@ static function int ReduceDamage(KFPlayerReplicationInfo KFPRI, KFPawn Injured, 
 
 // v1.51 - weight cap increased  from 10 to 11
 // v2.31 - weight cap increased  from 11 to 12
+// v8.00 - weight cap increased  from 12 to 15
 static function int AddCarryMaxWeight(KFPlayerReplicationInfo KFPRI)
 {
-    return -3; // limit Gunslinger weight to 12 blocks
+    return 0;
+    //return -3; // limit Gunslinger weight to 12 blocks
 }
 
 static function float ModifyRecoilSpread(KFPlayerReplicationInfo KFPRI, WeaponFire Other, out float Recoil)
@@ -160,8 +162,9 @@ static function bool CheckCowboyMode(KFPlayerReplicationInfo KFPRI, class<Weapon
 // Modify fire speed
 static function float GetFireSpeedModStatic(KFPlayerReplicationInfo KFPRI, class<Weapon> Other)
 {
-	//don't increase fire rate with Dual-HC
-	if ( !ClassIsChildOf(Other, class'DualDeagle') && CheckCowboyMode(KFPRI, Other) ) 
+	//increase fire only with full-automatic pistols
+	if ( CheckCowboyMode(KFPRI, Other) && (Other.class == class'Dualies' || ClassIsChildOf(Other, class'ScrnDualies') 
+            || !Other.default.FireModeClass[0].default.bWaitForRelease) ) 
 	{
         if ( GetClientVeteranSkillLevel(KFPRI) <= 6 )
             return 1.0 + (0.10 * float(GetClientVeteranSkillLevel(KFPRI) - 3)); // Up to 30% faster fire rate with dualies in cowboy mode
@@ -184,7 +187,7 @@ static function float GetReloadSpeedModifierStatic(KFPlayerReplicationInfo KFPRI
 		result =  1.3 + (0.05 * float(GetClientVeteranSkillLevel(KFPRI))); // Up to 60% faster reload with pistols
 	// Level 6 Cowboys reload dualies in the same time as singles
 	if ( CheckCowboyMode(KFPRI, Other) ) 
-		result *= 1.0 + 0.25 * clamp(GetClientVeteranSkillLevel(KFPRI)-2, 1, 3); //up to 75% extra bonus for cowboys
+		result *= 1.05 + 0.10 * clamp(GetClientVeteranSkillLevel(KFPRI)-2, 1, 3); //up to 35% extra bonus for cowboys
 
 	return result;
 }
@@ -206,7 +209,8 @@ static function float GetCostScaling(KFPlayerReplicationInfo KFPRI, class<Pickup
 
     if ( ClassIsChildOf(Item,  class'DeaglePickup') || ClassIsChildOf(Item,  class'DualDeaglePickup')
             || ClassIsChildOf(Item, class'MK23Pickup') || ClassIsChildOf(Item, class'DualMK23Pickup') 
-            || ClassIsChildOf(Item,  class'Magnum44Pickup') || ClassIsChildOf(Item,  class'Dual44MagnumPickup')
+            || Item == class'Magnum44Pickup' || Item == class'Dual44MagnumPickup'
+            || ClassIsChildOf(Item, class'ScrnDual44MagnumLaserPickup')
             || ClassIsInArray(default.PerkedPickups, Item)
         )
     {
@@ -274,14 +278,14 @@ defaultproperties
      progressArray1(5)=3500000
      progressArray1(6)=5500000
 
-     CustomLevelInfo="*** BONUS LEVEL %L|35% more damage with 9mm|%s more damage with HC/44/MK23|70% less recoil with Pistols|%r faster reload with Pistols|60% larger 9mm magazine|%d discount on HC/44/MK23|Spawn with Dual 44 Magnums||Cowboy Mode (holding Dual Pistols, light armor max):|75% extra reload with Dual Pistols|20% movement speed bonus|%f faster fire rate"
+     CustomLevelInfo="*** BONUS LEVEL %L|35% more damage with 9mm|%s more damage with HC/44/MK23|70% less recoil with Pistols|%r faster reload with Pistols|60% larger 9mm magazine|%d discount on HC/44/MK23|Spawn with Dual 44 Magnums||Cowboy Mode (holding Dual Pistols, light armor max):|35% extra reload with Dual Pistols|20% movement speed bonus|%f faster fire rate with 9mm"
      SRLevelEffects(0)="*** BONUS LEVEL 0|5% more damage with 9mm|10% less recoil with Pistols|30% faster reload with Pistols|10% discount on HC/44/MK23"
      SRLevelEffects(1)="*** BONUS LEVEL 1|10% more damage with 9mm|10% more damage with HC/44/MK23|20% less recoil with Pistols|35% faster reload with Pistols|20% larger 9mm magazine|20% discount on HC/44/MK23"
      SRLevelEffects(2)="*** BONUS LEVEL 2|15% more damage with 9mm|20% more damage with HC/44/MK23|30% less recoil with Pistols|40% faster reload with Pistols|20% larger 9mm magazine|30% discount on HC/44/MK23"
-     SRLevelEffects(3)="*** BONUS LEVEL 3|20% more damage with 9mm|30% more damage with HC/44/MK23|40% less recoil with Pistols|45% faster reload with Pistols|40% larger 9mm magazine|40% discount on HC/44/MK23||Cowboy Mode (holding Dual Pistols, light armor max):|25% faster reload with Dual Pistols|5% movement speed bonus|"
-     SRLevelEffects(4)="*** BONUS LEVEL 4|25% more damage with 9mm|40% more damage with HC/44/MK23|50% less recoil with Pistols|50% faster reload with Pistols|40% larger 9mm magazine|50% discount on HC/44/MK23||Cowboy Mode (holding Dual Pistols, light armor max):|50% extra reload with Dual Pistols|10% movement speed bonus|10% faster fire rate with 9mm/44/MK23"
-     SRLevelEffects(5)="*** BONUS LEVEL 5|30% more damage with 9mm|50% more damage with HC/44/MK23|60% less recoil with Pistols|55% faster reload with Pistols|60% larger 9mm magazine|60% discount on HC/44/MK23|Spawn with Dual 9mm||Cowboy Mode (holding Dual Pistols, light armor max):|75% extra reload with Dual Pistols|15% movement speed bonus|20% faster fire rate with 9mm/44/MK23"
-     SRLevelEffects(6)="*** BONUS LEVEL 6|35% more damage with 9mm|50% more damage with HC/44/MK23|70% less recoil with Pistols|60% faster reload with Pistols|60% larger 9mm magazine|70% discount on HC/44/MK23|Spawn with Dual 44 Magnums||Cowboy Mode (holding Dual Pistols, light armor max):|75% extra reload with Dual Pistols|20% movement speed bonus|30% faster fire rate with 9mm/44/MK23"
+     SRLevelEffects(3)="*** BONUS LEVEL 3|20% more damage with 9mm|30% more damage with HC/44/MK23|40% less recoil with Pistols|45% faster reload with Pistols|40% larger 9mm magazine|40% discount on HC/44/MK23||Cowboy Mode (holding Dual Pistols, light armor max):|15% faster reload with Dual Pistols|5% movement speed bonus|"
+     SRLevelEffects(4)="*** BONUS LEVEL 4|25% more damage with 9mm|40% more damage with HC/44/MK23|50% less recoil with Pistols|50% faster reload with Pistols|40% larger 9mm magazine|50% discount on HC/44/MK23||Cowboy Mode (holding Dual Pistols, light armor max):|25% extra reload with Dual Pistols|10% movement speed bonus|10% faster fire rate with 9mm"
+     SRLevelEffects(5)="*** BONUS LEVEL 5|30% more damage with 9mm|50% more damage with HC/44/MK23|60% less recoil with Pistols|55% faster reload with Pistols|60% larger 9mm magazine|60% discount on HC/44/MK23|Spawn with Dual 9mm||Cowboy Mode (holding Dual Pistols, light armor max):|35% extra reload with Dual Pistols|15% movement speed bonus|20% faster fire rate with 9mm"
+     SRLevelEffects(6)="*** BONUS LEVEL 6|35% more damage with 9mm|50% more damage with HC/44/MK23|70% less recoil with Pistols|60% faster reload with Pistols|60% larger 9mm magazine|70% discount on HC/44/MK23|Spawn with Dual 44 Magnums||Cowboy Mode (holding Dual Pistols, light armor max):|35% extra reload with Dual Pistols|20% movement speed bonus|30% faster fire rate with 9mm"
      NumRequirements=1 // removed damage req. in v5.30 Beta 18
      PerkIndex=8
      OnHUDIcon=Texture'ScrnTex.Perks.Perk_Gunslinger'
@@ -294,6 +298,6 @@ defaultproperties
 	 OnHUDIcons(5)=(PerkIcon=Texture'ScrnTex.Perks.Perk_Gunslinger_Orange',StarIcon=Texture'ScrnTex.Perks.Hud_Perk_Star_Orange',DrawColor=(B=255,G=255,R=255,A=255))
 	 
      VeterancyName="Gunslinger"
-     Requirements(0)="Get %x kills with Dual Pistols"
+     Requirements(0)="Get %x kills with Pistols"
      Requirements(1)="Deal %x damage with Pistols"
 }

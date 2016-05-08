@@ -310,7 +310,7 @@ function int WRowHeadhots(ScrnPlayerInfo SPI, KFWeapon Weapon, class<KFWeaponDam
 		// Achievement has progress > 1, so need always need to return required value.
 		// Function will be called on 15, 16, 17 etc. headshots in a row and there is no way to
 		// reset it. But achievement can be earned only every 15 headshots (15, 30, 45 etc).
-		if ( Count >= 15 && Count % 15 == 0) {
+		if ( Count >= 10 && Count % 10 == 0) {
 			if ( !SPI.ProgressAchievement('SteampunkSniper', 1) )
 				return IGNORE_STAT; // if achievement already earned, then ProgressAchievement() returns false, meaning no need to track it anymore
 		}
@@ -474,7 +474,7 @@ function MonsterDamaged(int Damage, KFMonster Victim, ScrnPlayerInfo InstigatorI
         }
     }
     else if ( ZombieStalker(Victim) != none ) {
-        if ( Victim.class == GameRules.GhostClass ) {
+        if ( Victim.IsA('ZombieGhost') ) {
             if ( bIsHeadshot && Victim.bDecapitated && !bWasDecapitated ) {
                 if ( VSizeSquared(Victim.Location - InstigatorInfo.PlayerOwner.Pawn.Location) > 1000000 )
                     InstigatorInfo.ProgressAchievement('GhostSmell', 1); 

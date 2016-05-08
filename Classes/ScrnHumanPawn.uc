@@ -58,16 +58,15 @@ var byte SpecWeight, SpecMagAmmo, SpecMags, SpecSecAmmo, SpecNades;
 
 var     transient Frag          PlayerGrenade;
 
-
 replication
 {
     reliable if( bNetOwner && Role == ROLE_Authority )
-        ClientSetInventoryGroup, ClientSetWeaponPriority;
+        ClientSetInventoryGroup;
         
     reliable if( Role == ROLE_Authority )
         ClientSetVestClass; //send it to all clients, cuz they need to know max health and max shield
          
-    reliable if( bNetDirty  && Role == ROLE_Authority )
+    reliable if( bNetDirty && Role == ROLE_Authority )
         ClientHealthToGive, HealthBonus; // all clients  need to know it to properly display it on the hud
         
     reliable if( bNetDirty && bViewTarget && Role == ROLE_Authority )
@@ -244,31 +243,6 @@ simulated function ClientSetInventoryGroup( class<Inventory> NewInventoryClass, 
     }
 }
 
-
-simulated function ClientSetWeaponPriority( class<Weapon> NewWeaponClass, byte NewInventoryGroup, byte GroupOffset, byte Priority )
-{
-    local Inventory Inv;
-    local int Count;
-    
-    if ( Role < ROLE_Authority ) {
-        //need to change default value to, because it is using in some static functions
-        NewWeaponClass.default.InventoryGroup = NewInventoryGroup; 
-        NewWeaponClass.default.GroupOffset = GroupOffset; 
-        NewWeaponClass.default.Priority = Priority; 
-        //search the client inventory for the specified class and change its group
-        for ( Inv=Inventory; Inv!=None; Inv=Inv.Inventory ) {
-            if ( Inv.class == NewWeaponClass ) {
-                Inv.InventoryGroup = NewInventoryGroup;
-                Inv.GroupOffset = GroupOffset;
-                Weapon(Inv).Priority = Priority;
-                return;
-            }
-            if ( ++count > 1000 )
-                return; // circular loop prevention
-        }
-    }
-}
-
 // handle pickup
 // function HandlePickup(Pickup pick)
 // {
@@ -301,25 +275,12 @@ function bool AddInventory( inventory NewItem )
 				weap.bKFNeverThrow = false;
 		}
 		
-		// higher priority for perked weapons
-		if ( ScrnPlayerController(Controller) != none && ScrnPlayerController(Controller).bPrioritizePerkedWeapons 
-				&& KFPRI != none && KFPRI.ClientVeteranSkill != none && class<KFWeaponPickup>(weap.PickupClass) != none 
-				&& class<KFWeaponPickup>(weap.PickupClass).default.CorrespondingPerkIndex == KFPRI.ClientVeteranSkill.default.PerkIndex ) 
-		{
-			weap.Priority = 204 + weap.default.Priority / 5;
-			GroupChanged = true;
-		}
-		
 		weap.bIsTier3Weapon = true; // hack to set weap.Tier3WeaponGiver for all weapons
     }
     
-    if ( GroupChanged ) {
-        //replicate changes on the client side
-        if ( weap != none )
-            ClientSetWeaponPriority(weap.class, weap.InventoryGroup, weap.GroupOffset, weap.Priority); 
-        else 
-            ClientSetInventoryGroup(NewItem.class, NewItem.InventoryGroup); 
-    }    
+    //replicate changes on the client side
+    if ( GroupChanged ) 
+        ClientSetInventoryGroup(NewItem.class, NewItem.InventoryGroup); 
     
     if ( super.AddInventory(NewItem) ) {
 		// v6.22 - each weapon has own flashlight
@@ -330,9 +291,83 @@ function bool AddInventory( inventory NewItem )
     return false;
 }
 
+// The player wants to switch to weapon group number F.
+// Merged code from Pawn and KFHumanPawn + added ability to switch perked weapon first and empty guns last
+simulated function SwitchWeapon(byte F)
+{
+    local Inventory Inv;
+    local Weapon W;
+    local bool bPerkedFirst;
+    local array<Weapon> SortedGroupInv; // perked -> non-perked -> empy
+    local int NonPerkedIndex, EmptyIndex, i;
+    
+    if ( (Level.Pauser!=None) || (Inventory == None) )
+        return; 
+    if ( PendingWeapon != None && PendingWeapon.bForceSwitch )
+        return;        
+        
+    bPerkedFirst = ScrnPerk != none && ScrnPlayerController(Controller) != none && ScrnPlayerController(Controller).bPrioritizePerkedWeapons;
+    
+    // sort group inventory
+    for ( Inv = Inventory; Inv != none && ++i < 1000; Inv = Inv.Inventory ) {
+        W = Weapon(Inv);
+        if ( W != none && W.InventoryGroup == F && AllowHoldWeapon(W) ) {
+            if ( !W.HasAmmo() && (KFWeapon(W) == none || (KFWeapon(W).bConsumesPhysicalAmmo && !KFWeapon(W).bMeleeWeapon)) ) {
+                // weapon has no ammo
+                SortedGroupInv[SortedGroupInv.length] = W;
+            }
+            else if ( bPerkedFirst && (PipeBombExplosive(W) != none 
+                    || class<KFWeaponPickup>(W.PickupClass) == none 
+                    || class<KFWeaponPickup>(W.PickupClass).default.CorrespondingPerkIndex != ScrnPerk.default.PerkIndex) )
+            {
+                // non-perked weapon, has ammo
+                SortedGroupInv.insert(EmptyIndex, 1);
+                SortedGroupInv[EmptyIndex] = W;    
+                EmptyIndex++;
+            }
+            else {
+                // perked weapon, has ammo
+                if ( Boomstick(W) != none && ScrnPlayerController(Controller) != none && ScrnPlayerController(Controller).bPrioritizeBoomstick ) {
+                    SortedGroupInv.insert(0, 1);
+                    SortedGroupInv[0] = W;    
+                }
+                else {
+                    SortedGroupInv.insert(NonPerkedIndex, 1);
+                    SortedGroupInv[NonPerkedIndex] = W;    
+                }
+                NonPerkedIndex++;                
+                EmptyIndex++;                
+            }
+        }
+    }
+    
+    if ( SortedGroupInv.length == 0 )
+        return; // no weapons in current category
+    
+    if ( Weapon == none || Weapon.InventoryGroup != F || SortedGroupInv.length == 1 )
+        W = SortedGroupInv[0];
+    else {
+        for ( i=0; i<SortedGroupInv.length; ++i ) {
+            if ( Weapon == SortedGroupInv[i] ) {
+                i++; // switch to next weapon
+                break;
+            }
+        }
+        if ( i < SortedGroupInv.length )
+            W = SortedGroupInv[i];
+        else
+            W = SortedGroupInv[0];
+    }
+    
+    if ( W != none && W != Weapon ) {
+        PendingWeapon = W;
+        if ( Weapon != None )
+            Weapon.PutDown();
+        else
+            ChangedWeapon();
+    }
+}
 
-
-// Just changed to pendingWeapon
 simulated function ChangedWeapon()
 {
     super(KFPawn).ChangedWeapon();
@@ -340,10 +375,28 @@ simulated function ChangedWeapon()
     if (Role < ROLE_Authority) {
         ApplyWeaponStats(Weapon);
     }
+    
+    if ( IsLocallyControlled() && ScrnPlayerController(Controller) != none )
+        ScrnPlayerController(Controller).LoadGunSkinFromConfig();
 }
 
 function ServerChangedWeapon(Weapon OldWeapon, Weapon NewWeapon)
 {
+    local ScrnPlayerController PC;
+    local int i;
+    
+    PC = ScrnPlayerController(Controller);
+    if ( NewWeapon != none && PC != none) {
+        // set skinned attachment class
+        for ( i=0; i<PC.WeaponSettings.length; ++i ) {
+            if ( NewWeapon.class == PC.WeaponSettings[i].Weapon ) {
+                if ( PC.WeaponSettings[i].SkinnedWeapon != none )
+                    NewWeapon.AttachmentClass = PC.WeaponSettings[i].SkinnedWeapon.default.AttachmentClass;
+                break;
+            }
+        }
+    }
+
     super(KFPawn).ServerChangedWeapon(OldWeapon,NewWeapon);
     ApplyWeaponStats(NewWeapon);
 	ApplyWeaponFlashlight(false);
@@ -353,18 +406,13 @@ function FixOverweight()
 {
 	local Inventory I;
 	
-	if ( CurrentWeight > MaxCarryWeight ) // Now carrying too much, drop something.
-	{
-		for ( I = Inventory; I != none; I = I.Inventory )
-		{
-			if ( KFWeapon(I) != none && !KFWeapon(I).bKFNeverThrow )
-			{
+	if ( CurrentWeight > MaxCarryWeight ) {// Now carrying too much, drop something.
+		for ( I = Inventory; I != none; I = I.Inventory ) {
+			if ( KFWeapon(I) != none && KFWeapon(I).CanThrow() ) {
 				I.Velocity = Velocity;
 				I.DropFrom(Location + VRand() * 10);
 				if ( CurrentWeight <= MaxCarryWeight )
-				{
 					return; // Drop weapons until player is capable of carrying them all.
-				}
 			}
 		}
 	}
@@ -1298,16 +1346,19 @@ simulated function Tick(float DeltaTime)
     super.Tick(DeltaTime);
     
     bCowboyMode = bCowboyMode && ShieldStrength < 26;
-    if ( Role < Role_Authority ) {
+    if ( Role < ROLE_Authority ) {
         if ( KFPRI != none && PrevPerkClass != KFPRI.ClientVeteranSkill ) {
             ClientVeterancyChanged(PrevPerkClass);
             PrevPerkClass = KFPRI.ClientVeteranSkill;
         }
+
     }
     
     if ( bViewTarget )
         UpdateSpecInfo();    
+        
 }
+
    
 
 // each weapon has own light battery
@@ -1748,7 +1799,6 @@ function  float AssessThreatTo(KFMonsterController  Monster, optional bool Check
 {
 	local float DistancePart, RandomPart, TacticalPart;
 	local float DistanceSquared; // squared distance is calculated faster
-    // ScrnCustomPRI ScrnPRI;
     local bool bAttacker, bSeeMe; // this player attacks zed
     local int i;
 	
@@ -1760,15 +1810,10 @@ function  float AssessThreatTo(KFMonsterController  Monster, optional bool Check
     
     // Gorefasts love Baron :D
     // https://www.youtube.com/watch?v=vytEYKpFAwk
-    /*
-    if ( bAmIBaron && ZombieGorefast(Monster.Pawn) != none ) {
-        ScrnPRI = class'ScrnPlayerController'.static.FindScrnCustomPRI(PlayerReplicationInfo);
-        if ( ScrnPRI != none && ScrnPRI.BlameCounter >= 3 ) {
-            
-            return 1000.f; 
-        }
+    if ( bAmIBaron && ZombieGorefast(Monster.Pawn) != none && TSCGameReplicationInfoBase(Level.GRI) == none ) {
+        if ( class'ScrnCustomPRI'.static.FindMe(PlayerReplicationInfo).BlameCounter >= 5 )
+            return 100.f; 
     }
-    */
 	
 	if ( LastThreatMonster == Monster && Level.TimeSeconds - LastThreatTime < 2.0 )
 		return LastThreat; // keep threat level for next 2 seconds
@@ -1919,7 +1964,7 @@ static function DropAllWeapons(Pawn P)
 		while ( Inv != none ) {
 			Weap = KFWeapon(Inv);
 			Inv = Inv.Inventory;
-			if (Weap != none && !Weap.bKFNeverThrow /* && Weap.SellValue > 0 */ ) {
+			if (Weap != none && Weap.bCanThrow && !Weap.bKFNeverThrow /* && Weap.SellValue > 0 */ ) {
 				//PlayerController(P.Controller).ClientMessage("Dropping " $ GetItemName(String(Weap.class)) $ "...");
 				r.yaw += 4096 + 8192.0 * frand(); // 45 +/- 22.5 degrees
 				P.GetAxes(r,X,Y,Z);

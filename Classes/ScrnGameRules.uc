@@ -17,12 +17,13 @@ var localized string msgDoom3Monster, msgDoomPercent, msgDoom3Boss;
 var transient int WaveTotalKills, WaveDoom3Kills;
 var transient int DoomHardcorePointsGained;
 
-var class<KFMonster> ShiverClass, BruteClass, JasonClass, FemaleFPClass, TeslaHuskClass, GhostClass;
-var class<KFMonster> SuperFPClass, SuperScrakeClass, SuperHuskClass;
+// var class<KFMonster> ShiverClass, BruteClass, JasonClass, FemaleFPClass, TeslaHuskClass, GhostClass;
+// var class<KFMonster> SuperFPClass, SuperScrakeClass, SuperHuskClass;
+var transient bool bHasCustomZeds;
 
 var class<KFMonster> BossClass;
 var KFMonster Boss;
-var transient bool bSuperPat, bDoomPat;
+var transient bool bSuperPat, bDoomPat, bFemaleFP;
 var bool bFinalWave; // is this a final wave
 
 
@@ -110,7 +111,7 @@ function PostBeginPlay()
 	if ( Mut.bStoryMode )
 		HardcoreLevel += 3; // 3 extra hardcore points for playing objective mode
     else if ( Mut.bTSCGame )
-		HardcoreLevel += 8; // 8 extra hardcore points for playing Team Survival Competition
+		HardcoreLevel += 6; // 6 extra hardcore points for playing Team Survival Competition (-2 in v8)
         
     // + 3 points if perk levels are limited to 6, +1 point per each level limited below 6
     if ( Mut.MaxLevel < 9  )
@@ -344,9 +345,7 @@ function bool IsMapBlackListed(string MapName)
 //returns true if any custom or super specimens are found
 function bool HasCustomZeds()
 {
-    return ShiverClass != none || BruteClass != none || JasonClass != none 
-		|| FemaleFPClass != none || TeslaHuskClass != none
-        || SuperFPClass != none || SuperScrakeClass != none || SuperHuskClass != none;
+    return bHasCustomZeds;
 }
 
 function bool CheckMapAlias(out String MapName)
@@ -643,13 +642,6 @@ function int NetDamage( int OriginalDamage, int Damage, pawn injured, pawn insti
 		MonsterInfos[idx].HitCount++;
 		if ( MonsterInfos[idx].FirstHitTime == 0 )
 			MonsterInfos[idx].FirstHitTime = Level.TimeSeconds;
-            
-        // v7.52: no Zapped damage bonus for explosives
-        // if ( Mut.bWeaponFix && KFDamType.default.bIsExplosive && ZedVictim.bZapped && ZedVictim.ZappedDamageMod > 1 )
-        //    Damage /= ZedVictim.ZappedDamageMod;
-			
-		// PlayerController(instigatedBy.Controller).ClientMessage(
-			// ZedVictim.MenuName $ "'s Head Health = " $ ZedVictim.HeadHealth);
 		
 		MonsterInfos[idx].bHeadshot = !MonsterInfos[idx].bWasDecapitated && KFDamType.default.bCheckForHeadShots 
 			&& (ZedVictim.bDecapitated || int(ZedVictim.HeadHealth) < MonsterInfos[idx].HeadHealth);
@@ -742,7 +734,7 @@ function ScoreKill(Controller Killer, Controller Killed)
 		}	
 	}
     
-    if ( Killed.bIsPlayer && Killer != none && Killer != Killed )
+    if ( Killed.bIsPlayer && Mut.bPlayerZEDTime && Killer != none && Killer != Killed )
         Mut.KF.DramaticEvent(1.0); // always zed time on player death
 }
 
@@ -777,8 +769,12 @@ function bool PreventDeath(Pawn Killed, Controller Killer, class<DamageType> dam
 				if ( SPI != none ) 
 					SPI.Died(Killer, DamageType);		
 			}
-			if ( Mut.bSpawn0 || Mut.bStoryMode )
+			if ( Mut.bSpawn0 || Mut.bStoryMode ) {
+                idx = Killed.Health;
+                Killed.Health = max(Killed.Health, 1); // requires health to spawn second pistol
 				class'ScrnHumanPawn'.static.DropAllWeapons(Killed); // toss all weapons after death, if bSpawn0=true or in Story Mode
+                Killed.Health = idx;
+            }    
 		}
     }    
     return false;
@@ -930,61 +926,82 @@ function CheckNewMonster(KFMonster Monster)
 {
     if ( ZombieStalker(Monster) != none ) {
         if ( Monster.IsA('ZombieGhost') ) {
-            GhostClass = Monster.class;
+            bHasCustomZeds = true;
             RaiseHardcoreLevel(0.5, Monster.MenuName);
         }
-        else if ( Monster.IsA('ZombieSuperStalker')) 
-            RaiseHardcoreLevel(0.5, Monster.MenuName);
+        else if ( Monster.IsA('ZombieSuperStalker')) {
+            // bHasCustomZeds = true;
+            RaiseHardcoreLevel(0.3, Monster.MenuName);
+        }
     }
     else if ( ZombieGorefast(Monster) != none ) {
-        if ( Monster.IsA('ZombieSuperGorefast')) 
+        if ( Monster.IsA('ZombieSuperGorefast')) {
+            // bHasCustomZeds = true;
             RaiseHardcoreLevel(0.3, Monster.MenuName);
+        }
     }
     else if ( ZombieCrawler(Monster) != none ) {
-        if ( Monster.IsA('ZombieSuperCrawler')) 
-            RaiseHardcoreLevel(0.4, Monster.MenuName);
+        if ( Monster.IsA('ZombieSuperCrawler')) {
+            // bHasCustomZeds = true;
+            RaiseHardcoreLevel(0.3, Monster.MenuName);
+        }
+    }  
+    else if ( ZombieBloat(Monster) != none ) {
+        if ( Monster.IsA('ZombieSuperBloat')) {
+            // bHasCustomZeds = true;
+            RaiseHardcoreLevel(0.3, Monster.MenuName);
+        }
     }    
+    else if ( ZombieSiren(Monster) != none ) {
+        if ( Monster.IsA('ZombieSuperSiren')) {
+            bHasCustomZeds = true;
+            RaiseHardcoreLevel(1.0, Monster.MenuName);
+        }
+    }     
     else if ( ZombieHusk(Monster) != none ) {
         if ( Monster.IsA('ZombieSuperHusk') ) {
-            SuperHuskClass = Monster.class;
-            RaiseHardcoreLevel(1.8, Monster.MenuName);
+            bHasCustomZeds = true;
+            RaiseHardcoreLevel(1.4, Monster.MenuName);
         }
 		else if ( Monster.IsA('TeslaHusk') ) {
-			TeslaHuskClass = Monster.class;
+            bHasCustomZeds = true;
 			RaiseHardcoreLevel(1.5, Monster.MenuName);
 		}	
     }
     else if ( ZombieScrake(Monster) != none ) {
         if ( Monster.IsA('ZombieSuperScrake') ) {
-            SuperScrakeClass = Monster.class;
+            bHasCustomZeds = true;
             RaiseHardcoreLevel(1.4, Monster.MenuName);
         }
         else if ( Monster.IsA('ZombieJason') ) {
-            JasonClass = Monster.class;
+            bHasCustomZeds = true;
             RaiseHardcoreLevel(1.5, Monster.MenuName);
         }        
-    }    
+    }  
     else if ( ZombieFleshpound(Monster) != none ) {
         if ( Monster.IsA('ZombieSuperFP') ) {
-            SuperFPClass = Monster.class;
+            bHasCustomZeds = true;
             RaiseHardcoreLevel(1, Monster.MenuName);
         }
     }  
     else if ( Monster.IsA('ZombieShiver') ) {
-        ShiverClass = Monster.class;
+        bHasCustomZeds = true;
         RaiseHardcoreLevel(1, Monster.MenuName);
     }
     else if ( Monster.IsA('ZombieBrute') ) {
-        BruteClass = Monster.class;
+        bHasCustomZeds = true;
         RaiseHardcoreLevel(2, Monster.MenuName);
     }
     else if ( Monster.IsA('ZombieJason') ) {
-        JasonClass = Monster.class;
+            bHasCustomZeds = true;
         RaiseHardcoreLevel(1.5, Monster.MenuName);
     }
 	else if ( Monster.IsA('FemaleFP') ) {
-		FemaleFPClass = Monster.class;
-        RaiseHardcoreLevel(2.5, Monster.MenuName);
+        if ( !bFemaleFP ) {
+            bFemaleFP = true;
+            bHasCustomZeds = true;
+            RaiseHardcoreLevel(2.5, Monster.MenuName);
+        }
 	}
     else if ( Monster.IsA('DoomMonster') ) {
         if ( DoomHardcorePointsGained == 0 ) {
@@ -1374,4 +1391,7 @@ defaultproperties
 	MapAliases(11)=(FileName="KF-ZedDiscoThe1stFloor",AchName="KF-ZedDisco")
 	MapAliases(12)=(FileName="KF-ZedDiscoThe2ndFloor",AchName="KF-ZedDisco")
 	MapAliases(13)=(FileName="KF-Abandoned-Moonbase",AchName="KF-MoonBase")
+	MapAliases(14)=(FileName="KF-DepartedNight",AchName="KF-Departed")
+	MapAliases(15)=(FileName="KF-FoundryLightsOut",AchName="KF-Foundry")
+	MapAliases(16)=(FileName="KF-HospitalhorrorsLightsOut",AchName="KF-Hospitalhorrors")
 }

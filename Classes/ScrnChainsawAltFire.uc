@@ -40,9 +40,10 @@ function ModeDoFire()
 
 defaultproperties
 {
-     MaxChargeAmmo=10
-     MeleeDamage=330
-     weaponRange=100.000000
-     hitDamageClass=Class'ScrnBalanceSrv.ScrnDamTypeChainsawAlt'
-     AmmoClass=Class'ScrnBalanceSrv.ScrnChainsawAmmo'
+    MaxChargeAmmo=10
+    MeleeDamage=330
+    weaponRange=100.000000
+    hitDamageClass=Class'ScrnBalanceSrv.ScrnDamTypeChainsawAlt'
+    AmmoClass=Class'ScrnBalanceSrv.ScrnChainsawAmmo'
+    bWaitForRelease=True
 }

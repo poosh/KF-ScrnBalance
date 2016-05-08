@@ -174,8 +174,7 @@ static function float GetCostScaling(KFPlayerReplicationInfo KFPRI, class<Pickup
 	//buy-sell exploits
 	if ( ClassIsChildOf(Item, class'DeaglePickup') || ClassIsChildOf(Item, class'DualDeaglePickup')
             || ClassIsChildOf(Item, class'MK23Pickup') || ClassIsChildOf(Item, class'DualMK23Pickup') 
-            || ClassIsChildOf(Item, class'Magnum44Pickup') 
-            || (ClassIsChildOf(Item, class'Dual44MagnumPickup') && !ClassIsChildOf(Item, class'ScrnBalanceSrv.ScrnDual44MagnumLaserPickup'))
+            || Item == class'Magnum44Pickup' || Item == class'Dual44MagnumPickup'
             || ClassIsChildOf(Item, class'M14EBRPickup')
             || ClassIsChildOf(Item, class'M99Pickup')
             || ClassIsChildOf(Item, class'SPSniperPickup')
@@ -263,7 +262,7 @@ defaultproperties
      progressArray0(0)=10
      progressArray0(1)=30
      progressArray0(2)=100
-     progressArray0(3)=800
+     progressArray0(3)=775
      progressArray0(4)=2500
      progressArray0(5)=5500
      progressArray0(6)=8500

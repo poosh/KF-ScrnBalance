@@ -46,12 +46,19 @@ function ServerSelectPerkSE(Class<SRVeterancyTypes> VetType)
     if ( PC == none || KF == none || KF.bWaitingToStartMatch || class'ScrnBalance'.default.Mut.bAllowAlwaysPerkChanges )
         StatObject.ServerSelectPerk(VetType); // shouldn't happen, but just to be sure...
     else {
+        if ( PC.Mut.bNoPerkChanges && PC.bHadPawn 
+                && (!PC.Mut.bPerkChangeBoss || PC.Mut.bTSCGame || KF.WaveNum < KF.FinalWave) ) 
+        {
+            PC.ClientMessage(PC.strNoPerkChanges);
+            return;
+        }
+        
         if ( KF.WaveNum == PC.PerkChangeWave && !KF.bWaveInProgress ) {
             PC.ClientMessage(PC.PerkChangeOncePerWaveString);
             return;
         }
 
-        bDifferentPerk = VetType != OwnerPRI.ClientVeteranSkill;
+        bDifferentPerk = OwnerPRI != none && VetType != OwnerPRI.ClientVeteranSkill;
         StatObject.ServerSelectPerk(VetType);
         if ( bDifferentPerk && VetType == OwnerPRI.ClientVeteranSkill )
             PC.PerkChangeWave = KF.WaveNum;

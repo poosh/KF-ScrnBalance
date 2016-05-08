@@ -310,7 +310,7 @@ defaultproperties
      progressArray0(0)=10
      progressArray0(1)=30
      progressArray0(2)=100
-     progressArray0(3)=350
+     progressArray0(3)=325
      progressArray0(4)=1200
      progressArray0(5)=2400
      progressArray0(6)=3600

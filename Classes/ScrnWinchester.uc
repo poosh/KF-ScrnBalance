@@ -2,7 +2,13 @@ class ScrnWinchester extends Winchester;
 
 defaultproperties
 {
-     FireModeClass(0)=Class'ScrnBalanceSrv.ScrnWinchesterFire'
-     PickupClass=Class'ScrnBalanceSrv.ScrnWinchesterPickup'
-     ItemName="Lever Action Rifle SE"
+    MeshRef="KF_Weapons_Trip.Winchester_Trip"
+    SkinRefs(0)="KF_Weapons_Trip_T.Rifles.winchester_cmb"
+    HudImageRef="KillingFloorHUD.WeaponSelect.winchester_unselected"
+    SelectedHudImageRef="KillingFloorHUD.WeaponSelect.Winchester"
+    SelectSoundRef="KF_RifleSnd.Rifle_Select"
+    
+    FireModeClass(0)=Class'ScrnBalanceSrv.ScrnWinchesterFire'
+    PickupClass=Class'ScrnBalanceSrv.ScrnWinchesterPickup'
+    ItemName="Lever Action Rifle SE"
 }

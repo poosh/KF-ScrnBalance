@@ -26,16 +26,15 @@ state WaitingForFireButtonRelease
 
 state FireBurst
 {
-	// ingnore because we play an anbient fire sound
-	ignores PlayFiring, ServerPlayFiring;
-    ignores StopFiring;
+	ignores PlayFiring, ServerPlayFiring; // ingnore because we play an anbient fire sound
+    //ignores StopFiring;
 
     function BeginState()
     {
         //log ("ScrnM4Fire.FireBurst BEGIN STATE", class.outer.name);
     
         BurstShotCount = 0;
-		NextFireTime = Level.TimeSeconds - 0.0001; //fire now!
+		NextFireTime = Level.TimeSeconds - 0.000001; //fire now!
         FireBurstEndTime = Level.TimeSeconds + ( FireRate * BurstSize ) + 0.1; // if shit happens - get us out of this state when this time hits 
 		
         if( KFWeap.bAimingRifle )
@@ -76,6 +75,11 @@ state FireBurst
 	{
 		super(KFFire).StartFiring(); //bypass KFHighROFFire
 	}
+    
+    function StopFiring()
+    {
+        GotoState('');
+    }    
 
 
     function ModeTick(float dt)

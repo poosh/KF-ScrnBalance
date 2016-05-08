@@ -57,8 +57,8 @@ static function int AddDamage(KFPlayerReplicationInfo KFPRI, KFMonster Injured, 
         return InDamage;
 
 	if ( class<DamTypeBurned>(DmgType) != none || class<DamTypeFlamethrower>(DmgType) != none 
-		// || class<DamTypeFlareProjectileImpact>(DmgType) != none // removed in v6.02 (increased iDoT instead)
 		|| class<ScrnDamTypeTrenchgun>(DmgType) != none // only for SE version, cuz it has reduced base damage
+        || (!class'ScrnBalance'.default.Mut.bWeaponFix && (class<DamTypeHuskGunProjectileImpact>(DmgType) != none || class<DamTypeFlareProjectileImpact>(DmgType) != none))
 		|| ClassIsInArray(default.PerkedDamTypes, DmgType) //v3 - custom weapon support
 	) {
 		if ( GetClientVeteranSkillLevel(KFPRI) == 0 )

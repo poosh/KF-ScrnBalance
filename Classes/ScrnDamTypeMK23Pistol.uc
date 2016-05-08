@@ -1,6 +1,5 @@
 class ScrnDamTypeMK23Pistol extends DamTypeMK23Pistol;
 
-/*
 static function AwardKill(KFSteamStatsAndAchievements KFStatsAndAchievements, KFPlayerController Killer, KFMonster Killed )
 {
 	local SRStatsBase stats;
@@ -27,8 +26,6 @@ static function ScoredHeadshot(KFSteamStatsAndAchievements KFStatsAndAchievement
             stats.Rep.ProgressCustomValue(Class'ScrnBalanceSrv.ScrnPistolKillProgress',1);
     }
 }
-*/
-
 
 static function AwardDamage(KFSteamStatsAndAchievements KFStatsAndAchievements, int Amount)
 {

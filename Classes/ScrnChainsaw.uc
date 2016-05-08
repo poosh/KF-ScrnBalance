@@ -1,4 +1,4 @@
-class ScrnChainsaw extends GoldenChainsaw;
+class ScrnChainsaw extends Chainsaw;
 
 var float IdleFuelConsumeTime; // time between fuel consumption on idle
 

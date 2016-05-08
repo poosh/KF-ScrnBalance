@@ -4,7 +4,7 @@ rem DON'T FORGET to Duplicate HumanPawn and PlayerController class code to the S
 
 setlocal
 set KFDIR=d:\Games\kf
-set STEAMDIR=d:\Steam\steamapps\common\Killingfloor
+set STEAMDIR=c:\Steam\steamapps\common\KillingFloor
 set outputdir=D:\KFOut\ScrnBalance
 
 echo Removing previous release files...

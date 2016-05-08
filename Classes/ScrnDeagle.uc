@@ -1,5 +1,6 @@
 class ScrnDeagle extends Deagle;
 
+
 simulated function bool PutDown()
 {
 	if ( Instigator.PendingWeapon.class == class'ScrnBalanceSrv.ScrnDualDeagle' )

@@ -1,6 +1,7 @@
 class ScrnHUD extends SRHUDKillingFloor;
 
 #exec OBJ LOAD FILE=ScrnTex.utx
+#exec OBJ LOAD FILE=ScrnAch_T.utx
 
 //var byte colR, colG, colB;
 
@@ -18,17 +19,21 @@ var     float                   BlamedIconSize;
 var()   SpriteWidget            SingleNadeIcon;
 
 // configurable variables from ScrnBuyMenuSaleList
-var config color TraderGroupColor, TraderActiveGroupColor, TraderSelectedGroupColor;
-var config Color TraderPriceButtonColor, TraderPriceButtonDisabledColor, TraderPriceButtonSelectedColor;
+var globalconfig color TraderGroupColor, TraderActiveGroupColor, TraderSelectedGroupColor;
+var globalconfig Color TraderPriceButtonColor, TraderPriceButtonDisabledColor, TraderPriceButtonSelectedColor;
 
 var protected class<ScrnScoreBoard> ScrnScoreBoardClass; // modder friendly interface
 var protected transient class<ScrnVeterancyTypes> ScrnPerk;
 var private transient class<KFVeterancyTypes> PrevPerk;
+var protected transient ScrnCustomPRI ScrnPRI;
+var protected transient bool bSpecialPortrait; // if true, then player's avatar is drawn instead of character
 
 var HudOverlay PerkOverlay;
 
-var config byte SpecHeaderFont;
+var globalconfig byte SpecHeaderFont;
 var localized string strFollowing;
+
+var globalconfig bool bAllwaysDrawSpecialIcons, bPlayerInfoZoom;
 
 struct SHitInfo
 {
@@ -49,23 +54,35 @@ struct DamageInfo
 const DAMAGEPOPUP_COUNT = 32;
 var DamageInfo DamagePopups[32];
 var int NextDamagePopupIndex;
-var() config bool bShowDamages;
-var() config byte DamagePopupFont;
-var() config float DamagePopupFadeOutTime;
+var() globalconfig bool bShowDamages;
+var() globalconfig byte DamagePopupFont;
+var() globalconfig float DamagePopupFadeOutTime;
 
-var() config bool bShowSpeed;
-var() config float SpeedometerX, SpeedometerY; 
-var() config byte SpeedometerFont; 
+var() globalconfig bool bShowSpeed;
+var() globalconfig float SpeedometerX, SpeedometerY; 
+var() globalconfig byte SpeedometerFont; 
 
 var bool bHidePlayerInfo;
 
-var config bool bOldStyleIcons;
+var globalconfig bool bOldStyleIcons;
 
 var class<KFMonster> BlamedMonsterClass;
 var float BlameCountdown;
 var float BlameDrawDistance; // max distance to draw a turn on blamed pawn's head
 
 var config bool bDrawSpecDeaths;
+
+var array<color> PerkColors;
+var color TeamColors[2]; // moved from TSCHUD
+var color TextColors[2];
+
+
+var float TestC; // for debug purposes
+
+exec simulated function SetC(float Value)
+{
+    TestC = Value;
+}
 
 function PostBeginPlay()
 {
@@ -277,37 +294,6 @@ simulated function DrawEndGameHUD(Canvas C, bool bVictory)
     DisplayLocalMessages(C);
 }
 
-/*
-simulated function DrawMessage( Canvas C, int i, float PosX, float PosY, out float DX, out float DY )
-{
-    super.DrawMessage( C, i, PosX, PosY, DX, DY );
-    log("DrawMessage("$i$") Alpha=" $ C.DrawColor.A, class.outer.name);
-}
-
-simulated function DisplayLocalMessages( Canvas C )
-{
-    local int i;
-    
-    log("DisplayLocalMessages("$C$")", class.outer.name);
-    for ( i = 0; i < ArrayCount(LocalMessages); ++i ) {
-        log(i$". " $ LocalMessages[i].Message, class.outer.name);
-    }
-    super.DisplayLocalMessages(C);
-}
-
-simulated function LocalizedMessage( class<LocalMessage> Message, optional int Switch, optional PlayerReplicationInfo RelatedPRI_1, optional PlayerReplicationInfo RelatedPRI_2, optional Object OptionalObject, optional String CriticalString)
-{
-    local int i;
-    
-    super.LocalizedMessage(Message, Switch, RelatedPRI_1, RelatedPRI_2, OptionalObject, CriticalString);
-    log("LocalizedMessage: bIsCinematic="$bIsCinematic, class.outer.name);
-    
-    for ( i = 0; i < ArrayCount(LocalMessages); ++i ) {
-        log(i$". " $ LocalMessages[i].Message, class.outer.name);
-    }
-}
-*/
-
 final static function String FormatTime( int Seconds )
 {
     local int Minutes, Hours;
@@ -345,7 +331,7 @@ simulated function DrawHudPassA (Canvas C)
     local class<KFWeapon> WeaponClass;
     local Material TempMaterial, TempStarMaterial;
     local int i, TempLevel;
-    local float TempX, TempY, TempSize;
+    local float TempX, TempY, TempSize, BonusPerkX;
     local byte Counter;
     local class<SRVeterancyTypes> SV;
     local string s;
@@ -647,9 +633,11 @@ simulated function DrawHudPassA (Canvas C)
             DrawNumericWidget(C, CashDigits, DigitsBig);
         }
 
-        if( KFPRI != none )
+        if( KFPRI != none ) {
             SV = Class<SRVeterancyTypes>(KFPRI.ClientVeteranSkill);
+        }
 
+        
         if ( SV!=None ) {
             SV.Static.SpecialHUDInfo(KFPRI, C);
             //experience level
@@ -679,9 +667,8 @@ simulated function DrawHudPassA (Canvas C)
                 }
             }
 
-            C.DrawColor.A = 192;
+            C.DrawColor.A = KFHUDAlpha;
             TempLevel = SV.Static.PreDrawPerk(C,TempLevel,TempMaterial,TempStarMaterial);
-
             C.SetPos(TempX, TempY);
             C.DrawTile(TempMaterial, TempSize, TempSize, 0, 0, TempMaterial.MaterialUSize(), TempMaterial.MaterialVSize());
 
@@ -700,24 +687,21 @@ simulated function DrawHudPassA (Canvas C)
                 }
             }
             
+            BonusPerkX = TempX + VetStarSize; 
             // bonus level
             if (ScrnPerk != none && ScrnPerk.static.GetClientVeteranSkillLevel(KFPRI) != KFPRI.ClientVeteranSkillLevel) {
                 TempSize = 36 * VeterancyMatScaleFactor * 1.4;
-                //TempX = C.ClipX * 0.007 + (TempSize - VetStarSize) + 3*VetStarSize;
-                TempX += VetStarSize;
                 TempY = C.ClipY * 0.93 - TempSize;
                 C.DrawColor = WhiteColor;
                 Counter = 0;
 
                 TempLevel = ScrnPerk.static.GetClientVeteranSkillLevel(KFPRI);
-
-                C.DrawColor.A = 192;
+                C.DrawColor.A = KFHUDAlpha;
                 TempLevel = ScrnPerk.Static.PreDrawPerk(C,TempLevel,TempMaterial,TempStarMaterial);
-
-                C.SetPos(TempX, TempY);
+                C.SetPos(BonusPerkX, TempY);
                 C.DrawTile(TempMaterial, TempSize, TempSize, 0, 0, TempMaterial.MaterialUSize(), TempMaterial.MaterialVSize());
 
-                TempX += (TempSize - VetStarSize);
+                TempX = BonusPerkX + (TempSize - VetStarSize);
                 TempY += (TempSize - (2.0 * VetStarSize));
 
                 for ( i = 0; i < TempLevel; i++ )
@@ -731,7 +715,32 @@ simulated function DrawHudPassA (Canvas C)
                         TempX+=VetStarSize;
                     }
                 }
-            }        
+            } 
+            
+            
+            // debug
+            //DrawPlayerInfo(C, PawnOwner, 1000, 500); 
+            
+            if ( ScrnPRI != none ) {
+                if ( bAllwaysDrawSpecialIcons || (KFGRI != none && !KFGRI.bWaveInProgress) ) {
+                    TempMaterial = ScrnPRI.GetSpecialIcon();
+                    if ( TempMaterial != none ) {
+                        TempX = C.ClipX * 0.007;
+                        TempY = C.ClipY * 0.93 - 2.24*TempSize;
+                        // TempX += VetStarSize*2;
+                        // TempY = C.ClipY * 0.93 - TempSize;            
+                        C.SetPos(TempX, TempY);
+                        C.SetDrawColor(255,255,255,KFHUDAlpha);
+                        C.DrawTile(TempMaterial, TempSize, TempSize, 0, 0, TempMaterial.MaterialUSize(), TempMaterial.MaterialVSize());   
+
+                        if ( ScrnPRI.GetClanIcon() != TempMaterial ) {
+                            TempMaterial = ScrnPRI.GetClanIcon();
+                            C.SetPos(BonusPerkX, TempY);
+                            C.DrawTile(TempMaterial, TempSize, TempSize, 0, 0, TempMaterial.MaterialUSize(), TempMaterial.MaterialVSize());   
+                        }
+                    } 
+                }
+            }
         }
     }
 
@@ -777,15 +786,18 @@ simulated function DrawHudPassA (Canvas C)
             s = KFMonster(PawnOwner).MenuName;
             C.Font = LoadWaitingFont(1);
             C.SetDrawColor(100, 0, 0, KFHUDAlpha);
+            C.TextSize(s, TempX, TempSize);
+            c.SetPos((c.ClipX-TempX)/2, TempY);
+            c.DrawText(s);            
         }
         else {
             s = class'ScrnBalance'.default.Mut.ColoredPlayerName(PawnOwner.PlayerReplicationInfo);
             C.Font = GetFontSizeIndex(C, 0);
             C.SetDrawColor(255, 255, 255, KFHUDAlpha);
+            ScrnScoreBoardClass.Static.TextSizeCountrySE(C,PawnOwner.PlayerReplicationInfo,TempX,TempSize);
+            ScrnScoreBoardClass.Static.DrawCountryNameSE(C,PawnOwner.PlayerReplicationInfo,(c.ClipX-TempX)/2,TempY);
         }
-        C.TextSize(s, TempX, TempSize);
-        c.SetPos((c.ClipX-TempX)/2, TempY);
-        c.DrawText(s);
+
         
         C.SetDrawColor(255, 255, 255, KFHUDAlpha);
         // weapon icon
@@ -962,88 +974,123 @@ simulated function SetScoreBoardClass (class<Scoreboard> ScoreBoardClass)
         ScrnScoreBoardClass = class'ScrnScoreBoard';
 }
 
+
 function DrawPlayerInfo(Canvas C, Pawn P, float ScreenLocX, float ScreenLocY)
 {
     local float XL, YL, TempX, TempY, TempSize;
     local float Dist, OffsetX;
     local byte BeaconAlpha,Counter;
-    local float OldZ;
+    local float OldZ, fZoom;
     local Material TempMaterial, TempStarMaterial;
     local byte i, TempLevel;
     local ScrnHumanPawn ScrnPawn;
     local bool bSameTeam;
     local KFPlayerReplicationInfo EnemyPRI;
+    local ScrnCustomPRI EnemyScrnPRI;
 
     if ( bHidePlayerInfo )
         return;
     
     EnemyPRI = KFPlayerReplicationInfo(P.PlayerReplicationInfo);
     if ( P == none || EnemyPRI == none || KFPRI == none || KFPRI.bViewingMatineeCinematic )
-    {
         return;
-    }
-
-    Dist = vsize(P.Location - PlayerOwner.CalcViewLocation);
-    Dist -= HealthBarFullVisDist;
-    Dist = FClamp(Dist, 0, HealthBarCutoffDist-HealthBarFullVisDist);
-    Dist = Dist / (HealthBarCutoffDist - HealthBarFullVisDist);
-    BeaconAlpha = byte((1.f - Dist) * 255.f);
-
-    if ( BeaconAlpha == 0 )
-    {
-        return;
-    }
-
+        
     bSameTeam = KFPRI.Team == none || EnemyPRI.Team == none 
         || KFPRI.Team.TeamIndex == EnemyPRI.Team.TeamIndex;
-        
+    HealthBarFullVisDist = default.HealthBarFullVisDist;
+    if ( ScrnPerk != none )
+        HealthBarFullVisDist *= ScrnPerk.static.GetHealPotency(KFPRI); // medic see HP bars better
+    Dist = vsize(P.Location - PlayerOwner.CalcViewLocation);
+    if ( Dist <= HealthBarFullVisDist ) 
+        fZoom = 1.0; 
+    else {
+        if ( !bSameTeam )
+            return; // shorter distance on enemy team
+        fZoom = 1.0 - (Dist - HealthBarFullVisDist) / (HealthBarCutoffDist - HealthBarFullVisDist);
+        if ( fZoom < 0.01 )
+            return; // too far away
+    }
+    BeaconAlpha = clamp(255*fZoom, 50, KFHUDAlpha);
+    if ( bPlayerInfoZoom ) {
+        fZoom = 1.0 - 0.5*Dist/HealthBarCutoffDist;
+        if ( ScrnPerk != none )
+            fZoom *= fclamp(ScrnPerk.static.GetHealPotency(KFPRI), 1.0, 1.5); // larger HP bars for medic
+    }
+    else 
+        fZoom = 1.0;
+    
     OldZ = C.Z;
-    C.Z = 1.0;
+    C.Z = 1;
     C.Style = ERenderStyle.STY_Alpha;
+    
+    // zoom
+    BarLength = default.BarLength * fZoom;
+    BarHeight = default.BarHeight * fZoom;
+    HealthIconSize = default.HealthIconSize * fZoom;
+    ArmorIconSize = HealthIconSize;
+    TempSize = 36.f * VeterancyMatScaleFactor * fZoom;
+    VetStarSize = default.VetStarSize * fZoom;
+    OffsetX = (TempSize * 0.6) - (HealthIconSize + 2.0);
+
 
     // player name
-    C.Font = GetConsoleFont(C);
+    C.Font = GetFontSizeIndex(C, 4*fmin(fZoom,1.0)-8);
     if ( bSameTeam ) 
         C.SetDrawColor(255, 255, 255, BeaconAlpha);
-    else
-        C.SetDrawColor(255, 0, 0, BeaconAlpha);
-	ScrnScoreBoardClass.Static.TextSizeCountry(C,EnemyPRI,XL,YL);
-	ScrnScoreBoardClass.Static.DrawCountryNameSE(C,EnemyPRI,ScreenLocX-(XL * 0.5),ScreenLocY-(YL * 0.75), 0, !bSameTeam);
+    else {
+        C.DrawColor = TextColors[EnemyPRI.Team.TeamIndex];
+        C.DrawColor.A = BeaconAlpha;
+    }
+	ScrnScoreBoardClass.Static.TextSizeCountrySE(C,EnemyPRI,XL,YL);
+    TempX = ScreenLocX - OffsetX - (0.5 * BarLength) - HealthIconSize - 2.0; // left pos of health icon
+	ScrnScoreBoardClass.Static.DrawCountryNameSE(C, EnemyPRI, ScreenLocX - OffsetX - XL/2, ScreenLocY-(YL * 0.75), 0, !bSameTeam); // align center
 
-    OffsetX = (36.f * VeterancyMatScaleFactor * 0.6) - (HealthIconSize + 2.0);
-
-    if ( Class<SRVeterancyTypes>(EnemyPRI.ClientVeteranSkill)!=none 
-            && EnemyPRI.ClientVeteranSkill.default.OnHUDIcon!=none )
+    if ( bSameTeam || (ScrnPerk != none && ScrnPerk.static.ShowEnemyHealthBars(KFPRI, EnemyPRI))) 
     {
-        TempLevel = Class<SRVeterancyTypes>(KFPlayerReplicationInfo(P.PlayerReplicationInfo).ClientVeteranSkill).Static.PreDrawPerk(C,
-                    KFPlayerReplicationInfo(P.PlayerReplicationInfo).ClientVeteranSkillLevel,
-                    TempMaterial,TempStarMaterial);
+        ScrnPawn = ScrnHumanPawn(P);
 
-        TempSize = 36.f * VeterancyMatScaleFactor;
-        TempX = ScreenLocX + ((BarLength + HealthIconSize) * 0.5) - (TempSize * 0.25) - OffsetX;
-        TempY = ScreenLocY - YL - (TempSize * 0.75);
-
-        C.SetPos(TempX, TempY);
-        C.DrawTile(TempMaterial, TempSize, TempSize, 0, 0, TempMaterial.MaterialUSize(), TempMaterial.MaterialVSize());
-
-        TempX += (TempSize - (VetStarSize * 0.75));
-        TempY += (TempSize - (VetStarSize * 1.5));
-
-        for ( i = 0; i < TempLevel; i++ )
+        // Draw Tourney Icon only during trader time
+        if ( bAllwaysDrawSpecialIcons || (KFGRI != none && !KFGRI.bWaveInProgress) ) {
+            EnemyScrnPRI = class'ScrnCustomPRI'.static.FindMe(EnemyPRI);
+            if ( EnemyScrnPRI != none && EnemyScrnPRI.GetSpecialIcon() != none ) {
+                TempMaterial = EnemyScrnPRI.GetSpecialIcon();
+                TempX -= TempSize + 2.0;
+                TempY = ScreenLocY - YL*0.75 - TempSize; // just above the name
+                C.SetPos(TempX, TempY);
+                C.SetDrawColor(255,255,255,KFHUDAlpha);
+                C.DrawTile(TempMaterial, TempSize, TempSize, 0, 0, TempMaterial.MaterialUSize(), TempMaterial.MaterialVSize());                    
+            }
+        }  
+        
+        // perk
+        if ( Class<SRVeterancyTypes>(EnemyPRI.ClientVeteranSkill)!=none 
+                && EnemyPRI.ClientVeteranSkill.default.OnHUDIcon!=none )
         {
-            C.SetPos(TempX, TempY-(Counter*VetStarSize*0.7f));
-            C.DrawTile(TempStarMaterial, VetStarSize * 0.7, VetStarSize * 0.7, 0, 0, TempStarMaterial.MaterialUSize(), TempStarMaterial.MaterialVSize());
+            TempX = ScreenLocX + ((BarLength + HealthIconSize) * 0.5) - (TempSize * 0.25) - OffsetX;
+            TempY = ScreenLocY - YL - (TempSize * 0.75);
+            C.DrawColor.A = BeaconAlpha;        
+            TempLevel = Class<SRVeterancyTypes>(EnemyPRI.ClientVeteranSkill).Static.PreDrawPerk(C,
+                        EnemyPRI.ClientVeteranSkillLevel,
+                        TempMaterial,TempStarMaterial);
+            C.SetPos(TempX, TempY);
+            C.DrawTile(TempMaterial, TempSize, TempSize, 0, 0, TempMaterial.MaterialUSize(), TempMaterial.MaterialVSize());
 
-            if( ++Counter==5 )
+            TempX += (TempSize - (VetStarSize * 0.75));
+            TempY += (TempSize - (VetStarSize * 1.5));
+
+            for ( i = 0; i < TempLevel; i++ )
             {
-                Counter = 0;
-                TempX+=VetStarSize;
+                C.SetPos(TempX, TempY-(Counter*VetStarSize*0.7f));
+                C.DrawTile(TempStarMaterial, VetStarSize * 0.7, VetStarSize * 0.7, 0, 0, TempStarMaterial.MaterialUSize(), TempStarMaterial.MaterialVSize());
+
+                if( ++Counter==5 )
+                {
+                    Counter = 0;
+                    TempX+=VetStarSize;
+                }
             }
         }
-    }
 
-    ScrnPawn = ScrnHumanPawn(P);
-    if ( bSameTeam || (ScrnPerk != none && ScrnPerk.static.ShowEnemyHealthBars(KFPRI, EnemyPRI))) {
         // Health
         if ( P.Health > 0 ) {
             if ( ScrnPawn != none && ScrnPawn.ClientHealthToGive > 0 ) {
@@ -1051,7 +1098,7 @@ function DrawPlayerInfo(Canvas C, Pawn P, float ScreenLocX, float ScreenLocY)
                     FClamp(ScrnPawn.ClientHealthToGive / P.HealthMax, 0, 1.0 - P.Health / P.HealthMax));
             }
             else
-                DrawKFBarEx(C, ScreenLocX - OffsetX, (ScreenLocY - YL) - 0.4 * BarHeight, FClamp(P.Health / P.HealthMax, 0, 1), BeaconAlpha);
+                DrawKFBarEx(C, ScreenLocX - OffsetX, (ScreenLocY - YL) - 0.4 * BarHeight, FClamp(P.Health / P.HealthMax, 0, 1), BeaconAlpha, false);
         }
         // Armor
         if ( P.ShieldStrength > 0 )
@@ -1059,6 +1106,7 @@ function DrawPlayerInfo(Canvas C, Pawn P, float ScreenLocX, float ScreenLocY)
     }
     
     C.Z = OldZ;
+    VetStarSize = default.VetStarSize; // restore from drawing in other places
 }
 
 simulated function DrawKFBarEx(Canvas C, float XCentre, float YCentre, float BarPercentage, byte BarAlpha, optional bool bArmor, optional float BarPercentage2)
@@ -1242,21 +1290,37 @@ simulated function MyPerkChanged(class<KFVeterancyTypes> OldPerk)
 
 simulated function Tick(float deltaTime)
 {
+    // prevent square portrait of standard characters
+    bSpecialPortrait = bSpecialPortrait && PortraitPRI != None 
+        && (PortraitPRI.PlayerID == LastPlayerIDTalking || LastPlayerIDTalking == 0);
+
     super.Tick(deltaTime);
     
     // update KFPRI for spectators
-    if ( PawnOwner != none )
-        KFPRI = KFPlayerReplicationInfo(PawnOwner.PlayerReplicationInfo);
-    else if ( PlayerOwner != none )
-        KFPRI = KFPlayerReplicationInfo(PlayerOwner.PlayerReplicationInfo);
-    
-    if ( KFPRI != none && PawnOwner != none ) {
-        if ( PrevPerk != KFPRI.ClientVeteranSkill ) {
-            ScrnPerk = class<ScrnVeterancyTypes>(KFPRI.ClientVeteranSkill);
-            MyPerkChanged(PrevPerk);
-            PrevPerk = KFPRI.ClientVeteranSkill;
+    if ( PawnOwner != none ) {
+        if ( KFPRI != PawnOwner.PlayerReplicationInfo ) {
+            KFPRI = KFPlayerReplicationInfo(PawnOwner.PlayerReplicationInfo);
+            ScrnPRI = none; // it will be set later in this code
         }
-    }    
+    }
+    else if ( PlayerOwner != none ) {
+        if ( KFPRI != PlayerOwner.PlayerReplicationInfo ) {
+            KFPRI = KFPlayerReplicationInfo(PlayerOwner.PlayerReplicationInfo);
+            ScrnPRI = none; // it will be set later in this code
+        }
+    }
+    if ( KFPRI != none ) {
+        if ( ScrnPRI == none )
+            ScrnPRI = class'ScrnCustomPRI'.static.FindMe(KFPRI);
+    
+        if ( PawnOwner != none ) {
+            if ( PrevPerk != KFPRI.ClientVeteranSkill ) {
+                ScrnPerk = class<ScrnVeterancyTypes>(KFPRI.ClientVeteranSkill);
+                MyPerkChanged(PrevPerk);
+                PrevPerk = KFPRI.ClientVeteranSkill;
+            }
+        } 
+    }
     
     if ( BlamedMonsterClass != none ) {
         BlameCountdown -= deltaTime;
@@ -1265,7 +1329,6 @@ simulated function Tick(float deltaTime)
             BlameCountdown = default.BlameCountdown; // set for the next blame
         }
     }
-    
 }
 
 
@@ -1478,19 +1541,72 @@ protected simulated function DrawPointerDistance(Canvas C, Vector PointAt, strin
 }
 
 
+function DisplayPortrait(PlayerReplicationInfo PRI)
+{
+	local Material NewPortrait;
+    local ScrnCustomPRI CPRI;
+
+	if ( LastPlayerIDTalking > 0 )
+		return;
+
+    CPRI = class'ScrnCustomPRI'.static.FindMe(PRI);
+    if ( CPRI != none )
+        NewPortrait = CPRI.GetAvatar();
+        
+    if ( NewPortrait != none )
+        bSpecialPortrait = true;
+    else { 
+        NewPortrait = PRI.GetPortrait();
+        bSpecialPortrait = false;
+    }
+
+	if ( NewPortrait == None )
+		return;
+
+	if ( Portrait == None )
+		PortraitX = 1;
+
+	Portrait = NewPortrait;
+	PortraitTime = Level.TimeSeconds + 3;
+	PortraitPRI = PRI;
+}
+
 // seems like I'm the first who removed that bloody "final" mark  -- PooSH
 simulated function DrawPortraitSE( Canvas C )
 {
 	local float PortraitWidth, PortraitHeight, XL, YL;
-	local int Abbrev;
-    
+	local int FontIdx;
+    local ScrnCustomPRI PortraitScrnPRI;
+    local Material M;
     
 	PortraitWidth = 0.125 * C.ClipY;
-	PortraitHeight = 1.5 * PortraitWidth;
-	C.DrawColor = WhiteColor;
+    if ( bSpecialPortrait && Portrait != TraderPortrait )
+        PortraitHeight = PortraitWidth * Portrait.MaterialVSize() / Portrait.MaterialUSize();
+    else 
+        PortraitHeight = 1.5 * PortraitWidth;
+	
 
-	C.SetPos(-PortraitWidth * PortraitX + 0.025 * PortraitWidth, 0.5 * (C.ClipY - PortraitHeight) + 0.025 * PortraitHeight);
-	C.DrawTile(Portrait, PortraitWidth, PortraitHeight, 0, 0, 256, 384);
+    XL = -PortraitWidth * PortraitX + 0.025 * PortraitWidth;
+    YL = 0.5 * (C.ClipY - PortraitHeight) + 0.025 * PortraitHeight;
+    // black background prevents alpha/mask flickering on portraits
+	C.SetPos(XL, YL);
+    C.DrawColor = BlackColor;
+    C.DrawTileStretched(WhiteMaterial, PortraitWidth, PortraitHeight);
+    C.DrawColor = WhiteColor;
+    C.SetPos(XL, YL);
+	C.DrawTile(Portrait, PortraitWidth, PortraitHeight, 0, 0, Portrait.MaterialUSize(), Portrait.MaterialVSize());
+    
+    if ( !bSpecialPortrait ) {
+        PortraitScrnPRI = class'ScrnCustomPRI'.static.FindMe(PortraitPRI);
+        if ( PortraitScrnPRI != none )
+            M = PortraitScrnPRI.GetClanIcon();
+        if ( M != none && M != Portrait ) {
+            C.SetPos(XL + PortraitWidth/2, YL + PortraitHeight - PortraitWidth/2);
+            C.DrawColor.A = 160;
+            C.DrawTile(M, PortraitWidth/2, PortraitWidth/2, 0, 0, M.MaterialUSize(), M.MaterialVSize());
+            C.DrawColor.A = 255;            
+        }
+    }
 
 	C.SetPos(-PortraitWidth * PortraitX, 0.5 * (C.ClipY - PortraitHeight));
 	C.Font = GetFontSizeIndex(C, -2);
@@ -1505,31 +1621,23 @@ simulated function DrawPortraitSE( Canvas C )
 
 	if ( PortraitPRI != None )
 	{
-		if ( PortraitPRI.Team != None )
-		{
-			if ( PortraitPRI.Team.TeamIndex == 0 )
-				C.DrawColor = RedColor;
-			else C.DrawColor = TurqColor;
-		}
-
-		ScrnScoreBoardClass.Static.TextSizeCountry(C,PortraitPRI,XL,YL);
-		if ( XL > PortraitWidth )
-		{
-			C.Font = GetFontSizeIndex(C, -4);
-			ScrnScoreBoardClass.Static.TextSizeCountry(C,PortraitPRI,XL,YL);
-
-			if ( XL > PortraitWidth )
-			{
-				XL = float(Len(PortraitPRI.PlayerName)) * PortraitWidth / XL;
-				Abbrev = XL;
-				XL = PortraitWidth;
-			}
-		}
-        ScrnScoreBoardClass.Static.DrawCountryNameSE(C,PortraitPRI,C.ClipY / 256 - PortraitWidth * PortraitX + 0.5 * (PortraitWidth - XL), 0.5 * (C.ClipY + PortraitHeight) + 0.06 * PortraitHeight,Abbrev);
+		if ( PortraitPRI.Team != None && PortraitPRI.Team.TeamIndex < 2 )
+            C.DrawColor = TextColors[PortraitPRI.Team.TeamIndex];
+         
+        FontIdx = -2;
+        do {
+            C.Font = GetFontSizeIndex(C, FontIdx);
+            ScrnScoreBoardClass.Static.TextSizeCountrySE(C,PortraitPRI,XL,YL);
+        }until ( XL <= PortraitWidth || --FontIdx < -8 );
+        
+        if ( XL > PortraitWidth )
+            ScrnScoreBoardClass.Static.DrawCountryNameSE(C,PortraitPRI,C.ClipY / 256 - PortraitWidth * PortraitX, 0.5 * (C.ClipY + PortraitHeight) + 0.06 * PortraitHeight); // align left
+        else
+            ScrnScoreBoardClass.Static.DrawCountryNameSE(C,PortraitPRI,C.ClipY / 256 - PortraitWidth * PortraitX + 0.5 * (PortraitWidth - XL), 0.5 * (C.ClipY + PortraitHeight) + 0.06 * PortraitHeight); // align center
 	}
 	else if ( Portrait == TraderPortrait )
 	{
-		C.DrawColor = RedColor;
+		C.DrawColor = WhiteColor;
 		C.TextSize(TraderString, XL, YL);
 		C.SetPos(C.ClipY / 256 - PortraitWidth * PortraitX + 0.5 * (PortraitWidth - XL), 0.5 * (C.ClipY + PortraitHeight) + 0.06 * PortraitHeight);
 		C.DrawTextClipped(TraderString,true);
@@ -1556,7 +1664,7 @@ simulated function DrawSpectatingHud(Canvas C)
 	ViewDir = vector(CamRot);
 
 	// Draw the Name, Health, Armor, and Veterancy above other players (using this way to fix portal's beacon errors).
-	foreach VisibleCollidingActors(Class'KFPawn',KFBuddy,1000.f,CamPos)
+	foreach VisibleCollidingActors(Class'KFPawn',KFBuddy,HealthBarCutoffDist,CamPos)
 	{
 		KFBuddy.bNoTeamBeacon = true;
 		if ( KFBuddy.PlayerReplicationInfo!=None && KFBuddy.Health>0 && ((KFBuddy.Location - CamPos) Dot ViewDir)>0.8 )
@@ -1659,14 +1767,109 @@ simulated function DrawSpecialSpectatingHUD(Canvas C)
     }
 }
 
-//
+// color tar support
+simulated function LocalizedMessage( class<LocalMessage> Message, optional int Switch, optional PlayerReplicationInfo RelatedPRI_1, optional PlayerReplicationInfo RelatedPRI_2, optional Object OptionalObject, optional String CriticalString)
+{
+	local int i;
+	local PlayerReplicationInfo HUDPRI;
+
+    if( Message == None )
+        return;
+
+    if( bIsCinematic && !ClassIsChildOf(Message,class'ActionMessage') )
+		return;
+
+    if( CriticalString == "" )
+    {
+		if ( (PawnOwner != None) && (PawnOwner.PlayerReplicationInfo != None) )
+			HUDPRI = PawnOwner.PlayerReplicationInfo;
+		else
+			HUDPRI = PlayerOwner.PlayerReplicationInfo;
+		if ( HUDPRI == RelatedPRI_1 )
+			CriticalString = Message.static.GetRelatedString( Switch, RelatedPRI_1, RelatedPRI_2, OptionalObject );
+		else
+			CriticalString = Message.static.GetString( Switch, RelatedPRI_1, RelatedPRI_2, OptionalObject );
+	}
+
+	if( bMessageBeep && Message.default.bBeep )
+		PlayerOwner.PlayBeepSound();
+
+    if( !Message.default.bIsSpecial )
+    {
+		if ( PlayerOwner.bDemoOwner )
+		{
+			for( i=0; i<ConsoleMessageCount; i++ )
+				if ( i >= ArrayCount(TextMessages) || TextMessages[i].Text == "" )
+					break;
+
+			if ( i > 0 && TextMessages[i-1].Text == CriticalString )
+				return;
+		}
+	    AddTextMessage( CriticalString, Message,RelatedPRI_1 );
+        return;
+    }
+
+    i = ArrayCount(LocalMessages);
+	if( Message.default.bIsUnique )
+	{
+		for( i = 0; i < ArrayCount(LocalMessages); i++ )
+		{
+		    if( LocalMessages[i].Message == None )
+                continue;
+
+		    if( LocalMessages[i].Message == Message )
+                break;
+		}
+	}
+	else if ( Message.default.bIsPartiallyUnique || PlayerOwner.bDemoOwner )
+	{
+		for( i = 0; i < ArrayCount(LocalMessages); i++ )
+		{
+		    if( LocalMessages[i].Message == None )
+                continue;
+
+		    if( ( LocalMessages[i].Message == Message ) && ( LocalMessages[i].Switch == Switch ) )
+                break;
+        }
+	}
+
+    if( i == ArrayCount(LocalMessages) )
+    {
+	    for( i = 0; i < ArrayCount(LocalMessages); i++ )
+	    {
+		    if( LocalMessages[i].Message == None )
+                break;
+	    }
+    }
+
+    if( i == ArrayCount(LocalMessages) )
+    {
+	    for( i = 0; i < ArrayCount(LocalMessages) - 1; i++ )
+		    LocalMessages[i] = LocalMessages[i+1];
+    }
+
+    ClearMessage( LocalMessages[i] );
+
+	LocalMessages[i].Message = Message;
+	LocalMessages[i].Switch = Switch;
+	LocalMessages[i].RelatedPRI = RelatedPRI_1;
+	LocalMessages[i].RelatedPRI2 = RelatedPRI_2;
+	LocalMessages[i].OptionalObject = OptionalObject;
+	LocalMessages[i].EndOfLife = Message.static.GetLifetime(Switch) + Level.TimeSeconds;
+    if ( class'ScrnBalance'.default.Mut != none )
+        LocalMessages[i].StringMessage = class'ScrnBalance'.default.Mut.ParseColorTags(CriticalString, RelatedPRI_1);
+    else 
+        LocalMessages[i].StringMessage = CriticalString;
+	LocalMessages[i].LifeTime = Message.static.GetLifetime(Switch);
+}
+
 function AddTextMessage(string M, class<LocalMessage> MessageClass, PlayerReplicationInfo PRI)
 {
 	local int i;
     local bool bSetPRI;
     
     if ( class'ScrnBalance'.default.Mut != none ) {
-        M = class'ScrnBalance'.default.Mut.ParseColorTags(M);
+        M = class'ScrnBalance'.default.Mut.ParseColorTags(M, PRI);
         if ( MessageClass==class'SayMessagePlus' ) {
             MessageClass = class'ScrnSayMessagePlus';
             bSetPRI = true;                
@@ -1704,6 +1907,7 @@ function AddTextMessage(string M, class<LocalMessage> MessageClass, PlayerReplic
 	else 
         TextMessages[i].PRI = None;    
 }
+
 
 // added support of color messages
 function DisplayMessages(Canvas C)
@@ -1765,7 +1969,8 @@ function DisplayMessages(Canvas C)
 		}
 		if( SmileyMsgs.Length!=0 )
 			DrawSmileyText(TextMessages[i].Text,C,,YYL);
-		else C.DrawText(TextMessages[i].Text,false);
+		else 
+            C.DrawText(TextMessages[i].Text,false);
 		YPos += (YL+YYL);
 	}
 }
@@ -1856,6 +2061,25 @@ exec function SpecHeaderSize(byte size)
         PlayerOwner.ClientMessage("Header size must 0 (small) or 1 (big)");
 }
 
+final static function color PerkColor(int PerkLevel)
+{
+    if ( PerkLevel <= 0 )
+        return default.PerkColors[0];
+        
+    PerkLevel--;    
+    if ( class'ScrnBalance'.default.Mut.b10Stars )
+        PerkLevel /= 10;
+    else
+        PerkLevel /= 5;
+        
+    return default.PerkColors[min(PerkLevel, default.PerkColors.length-1)];
+}
+
+final static function string ColoredPerkLevel(int PerkLevel)
+{
+    return class'ScrnBalance'.static.ColorStringC(string(PerkLevel), PerkColor(PerkLevel));
+}
+
 defaultproperties
 {
     MinMagCapacity=5
@@ -1887,8 +2111,26 @@ defaultproperties
     TraderPriceButtonSelectedColor=(R=255,G=128,B=160,A=255)  
 
     bDrawSpecDeaths=True
+    bAllwaysDrawSpecialIcons=False
+    bPlayerInfoZoom=True
     
     strFollowing="FOLLOWING:"
     
     WeightDigits=(RenderStyle=STY_Alpha,TextureScale=0.300000,PosX=0.195000,PosY=0.942000,Tints[0]=(B=64,G=64,R=255,A=255),Tints[1]=(B=64,G=64,R=255,A=255))
+    
+    HealthBarCutoffDist=1000
+    HealthBarFullVisDist=350 // also max distance for enemy drawing
+    
+    TeamColors(0)=(R=255,G=64,B=64,A=255)
+    TeamColors(1)=(R=90,G=153,B=198,A=255)
+    TextColors(0)=(R=255,G=50,B=50,A=255)
+    TextColors(1)=(R=75,G=139,B=198,A=255)
+    PerkColors(0)=(R=200,G=0,B=0,A=255)
+    PerkColors(1)=(R=255,G=255,B=127,A=255)
+    PerkColors(2)=(R=0,G=225,B=0,A=255)
+    PerkColors(3)=(R=0,G=125,B=255,A=255)
+    PerkColors(4)=(R=178,G=0,B=255,A=255)
+    PerkColors(5)=(R=255,G=128,B=0,A=255)
+    
+    TestC=1.0
 }

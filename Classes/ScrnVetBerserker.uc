@@ -11,8 +11,8 @@ static function int AddDamage(KFPlayerReplicationInfo KFPRI, KFMonster Injured, 
     if ( DmgType == default.DefaultDamageTypeNoBonus )
         return InDamage;
 
-    if ( class'ScrnBalance'.default.Mut.bWeaponFix
-				&& KFPRI.Level.Game.GameDifficulty >= 5.0 && ZombieScrake(Injured) != none ) {
+    if ( class'ScrnBalance'.default.Mut.bWeaponFix && ZombieScrake(Injured) != none 
+				&& KFGameReplicationInfo(KFPRI.Level.GRI).GameDiff >= 5.0 ) {
         if ( ClassIsChildOf(DmgType, class'ScrnBalanceSrv.ScrnDamTypeCrossbuzzsaw') )
             InDamage *= 0.8; // 800 * 0.8 = 640
         else if ( DmgType == class'DamTypeCrossbuzzsaw' )

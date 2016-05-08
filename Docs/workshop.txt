@@ -1,6 +1,6 @@
 ﻿Total rebalance of the game. Adds new guns, Gunslinger perk and server-side achievements.
 Now it IS COMPATIBLE with Objective Mode! Select "Objective Mode [ScrN]" for a proper gameplay.
-Version 7.60.
+Version 8.01.
  
 Requires [url=http://steamcommunity.com/sharedfiles/filedetails/?id=97735200]ServerPerks v7[/url] to run.
 
@@ -10,11 +10,11 @@ Main features:
 [list]
 [*] New perk: [b]Gunslinger[/b] (pistols);
 [*] More than 300 custom [b]achievements[/b] can be earned;
-[*] New weapons: Golden M79 Incendiary, Namalm Thrower, MK23 with laser sights etc.;
+[*] New weapons: Golden M79 Incendiary, Napalm Thrower, MK23 with laser sights etc.;
 [*] Medic Grenade Launchers: M79M Medic GL, M4-203M Medic Rifle;
 [*] Chainsaw consumes fuel and brings real massacre to the game;
 [*] Perk bonuses for custom weapons (the ones you can get via workshop);
-[*] Each perk starts the game with same-worth guns (no more selling xbow for $600);
+[*] Changing gun skings "on-the-fly"
 [*] Balances weapons and perks, making each perk useful in the game;
 [*] Alternate Burning Mechanism makes Firebug awesome (but not OP);
 [*] Perks support custom weapons: install a new weapon, add it to the config and receive perk bonuses for that;
@@ -36,4 +36,4 @@ IMPORTANT NOTICE:
 [b][u]Make a backup of your ScrnBalance.ini and ServerPerks.ini files[/u][/b], if you make any changes to them. Otherwise they will be overwritten by the future releases.
 
 
-Copyright © 2012-2014 PU Developing IK, All Rights Reserved.
+Copyright © 2012-2015 PU Developing IK, All Rights Reserved.

@@ -63,11 +63,17 @@ simulated function StopFire(int Mode)
     // kind regards,
     // Client.
     bTriggerReleased = true;
+
+    // Always shoots full burt
+    // if ( FireMode[0].IsInState('WaitingForFireButtonRelease') )
+        // FireMode[0].GotoState('');
+    // else if ( !FireMode[0].IsInState('FireBurst') )
+        // super.StopFire(0);
         
-    if ( FireMode[0].IsInState('WaitingForFireButtonRelease') )
-        FireMode[0].GotoState('');
-    else if ( !FireMode[0].IsInState('FireBurst') )
-        super.StopFire(0);
+    // Allows stopping fire 
+    super.StopFire(Mode);
+    if (FireMode[Mode].IsInState('WaitingForFireButtonRelease'))
+        FireMode[Mode].GotoState('');
 }
 
 

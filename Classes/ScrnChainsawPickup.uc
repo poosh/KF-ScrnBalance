@@ -1,4 +1,4 @@
-class ScrnChainsawPickup extends GoldenChainsawPickup;
+class ScrnChainsawPickup extends ChainsawPickup;
 
 defaultproperties
 {

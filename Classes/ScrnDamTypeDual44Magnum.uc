@@ -42,6 +42,8 @@ static function AwardDamage(KFSteamStatsAndAchievements KFStatsAndAchievements, 
 
 defaultproperties
 {
+    HeadShotDamageMult=1.20 // v8: up from 1.1
+
      bSniperWeapon=False
      WeaponClass=Class'ScrnBalanceSrv.ScrnDual44Magnum'
 }
