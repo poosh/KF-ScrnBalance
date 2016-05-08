@@ -17,7 +17,7 @@ function DrawPerk(Canvas Canvas, int CurIndex, float X, float Y, float Width, fl
 	local ClientPerkRepLink ST;
 	local Material M,SM;
 
-	ST = Class'ClientPerkRepLink'.Static.FindStats(Canvas.Viewport.Actor);
+	ST = Class'ScrnClientPerkRepLink'.Static.FindMe(Canvas.Viewport.Actor);
 	if( ST==None )
 		return;
 

@@ -14,7 +14,8 @@ var bool bNeedRefresh;
 var	localized string	OutOfString;
 var	localized string	UnlockedString;
 
-var array<string> GroupNames, GroupCaptions;
+var array<name>         GroupNames;
+var array<string>       GroupCaptions;
 
 function InitComponent(GUIController MyController, GUIComponent MyOwner)
 {
@@ -33,9 +34,9 @@ function InitComponent(GUIController MyController, GUIComponent MyOwner)
 function LoadGroups()
 {
     local int i;
-	GroupNames[0] = ""; // just in case modders will screw up the achievement groups
+	GroupNames[0] = ''; // just in case modders will screw up the achievement groups
 	GroupCaptions[0] = "ALL";
-	class'ScrnBalanceSrv.ScrnAchievements'.static.RetrieveGroups(Class'ClientPerkRepLink'.Static.FindStats(PlayerOwner()), GroupNames, GroupCaptions);
+	class'ScrnBalanceSrv.ScrnAchievements'.static.RetrieveGroups(Class'ScrnClientPerkRepLink'.Static.FindMe(PlayerOwner()), GroupNames, GroupCaptions);
 	
 	co_Group.ResetComponent();
     for ( i = 0; i < GroupCaptions.length; ++i )
@@ -88,13 +89,13 @@ function LoadStats()
     local ScrnPlayerController PC;
 	local ClientPerkRepLink L;
 	local int CompletedCount, TotalCount;
-	local string GroupName;
+	local name GroupName;
 
     PC = ScrnPlayerController(PlayerOwner());
     if ( PC == none )
         return; // shouldn't happen
 
-    L = Class'ClientPerkRepLink'.Static.FindStats(PC);
+    L = Class'ScrnClientPerkRepLink'.Static.FindMe(PC);
     if ( L == none ) 
         return;
         

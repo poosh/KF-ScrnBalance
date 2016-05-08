@@ -1,1 +1,3 @@
 Replicate ColorTags via color string
+Chat icon
+DLCLock: LVL nad ACH

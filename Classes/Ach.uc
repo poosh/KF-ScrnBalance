@@ -83,8 +83,8 @@ defaultproperties
 	AchDefs(39)=(id="MadCowboy",DisplayName="Mad Cowboy",Description="Kill 8 zeds with Machine Pistols without releasing a trigger",Icon=Texture'ScrnAch_T.Achievements.CrazyCowboy',MaxProgress=1,DataSize=1,Group="MASTER",bForceShow=True)
 	AchDefs(40)=(id="M4203Kill50Zeds",DisplayName="#1 In Trash Cleaning",Description="Kill 50 zeds in one wave with M4-203 SE",Icon=Texture'KillingFloor2HUD.Achievements.Achievement_165',MaxProgress=1,DataSize=1,Group="EXP")
 	AchDefs(41)=(id="M99Kill3SC",DisplayName="Ain't Looking For Easy Ways",Description="Kill %c Raged Scrakes with M99 headshots",Icon=Texture'KillingFloor2HUD.Achievements.Achievement_180',MaxProgress=3,DataSize=2)
-	AchDefs(42)=(id="ExplosionLove",DisplayName="Explosion of Love",Description="Heal 6 players with one M79M or M203M medic grenade",Icon=Texture'KillingFloor2HUD.Achievements.Achievement_187',MaxProgress=1,DataSize=1)
-	AchDefs(43)=(id="iDoT",DisplayName="Power of iDoT",Description="Reach 300dps incremental Damage over Time (iDoT) with Flare Revolvers",Icon=Texture'ScrnAch_T.Achievements.iDoT',MaxProgress=1,DataSize=1)
+	AchDefs(42)=(id="ExplosionLove",DisplayName="Explosion of Love",Description="Heal 6 players with one medic grenade",Icon=Texture'KillingFloor2HUD.Achievements.Achievement_187',MaxProgress=1,DataSize=1)
+	AchDefs(43)=(id="iDoT",DisplayName="Power of iDoT",Description="Reach 300dps incremental Damage over Time (iDoT) with flares",Icon=Texture'ScrnAch_T.Achievements.iDoT',MaxProgress=1,DataSize=1)
 	AchDefs(44)=(id="Unassisted",DisplayName="Unassisted",Description="Solo-kill Fleshpound in 6+ player game",Icon=Texture'ScrnAch_T.Achievements.Unassisted',MaxProgress=1,bForceShow=True,DataSize=1,Group="MASTER")
 	AchDefs(45)=(id="TW_SC_LAWHSG",DisplayName="TeamWork: When Size Matters",Description="Finish %c LAW-stunned Scrakes with Hunting or Combat Shotgun",Icon=Texture'ScrnAch_T.Teamwork.SC_LAWHSG',MaxProgress=30,DataSize=5,Group="TW")
 	AchDefs(46)=(id="TW_SC_Instant",DisplayName="TeamWork: Instant Kill",Description="Kill %c Scrakes with two simultaneous Crossbow/M99 headshots",Icon=Texture'ScrnAch_T.Teamwork.SC_InstantKill',MaxProgress=30,bForceShow=True,DataSize=5,Group="TW")
@@ -107,15 +107,15 @@ defaultproperties
 	AchDefs(63)=(id="KillHuskHuskGun",DisplayName="Burning Irony",Description="Kill %c Husks with Husk Cannon",Icon=Texture'KillingFloor2HUD.Achievements.Achievement_57',MaxProgress=30,DataSize=5,Group="EXP")
 	AchDefs(64)=(id="HFC",DisplayName="Horzine Fried Crawler",Description="Recipe: Burn %c Crawlers at temp. below 80C until they die.",Icon=Texture'ScrnAch_T.Achievements.HFC',MaxProgress=999,DataSize=10,Group="EXP")
 	AchDefs(65)=(id="CarveRoast",DisplayName="Let Me Carve a Roast",Description="Kill %c crispified zeds with melee weapons.",Icon=Texture'ScrnAch_T.Achievements.CarveRoast',MaxProgress=30,DataSize=6)
-	AchDefs(66)=(id="DotOfDoom",DisplayName="Dot of Doom",Description="Get 25 headshots in a row with the M14EBR while using the Laser Sight.",Icon=Texture'KillingFloor2HUD.Achievements.Achievement_60',MaxProgress=1,bForceShow=True,DataSize=1,Group="MASTER")
-	AchDefs(67)=(id="Money10k",DisplayName="I Need DOSH!",Description="Start a wave having 10,000 pounds cash",Icon=Texture'KillingFloorHUD.Achievements.Achievement_37',MaxProgress=1,DataSize=1)
+	AchDefs(66)=(id="DotOfDoom",DisplayName="Dot of Doom",Description="Get 25 headshots in a row with the M14EBR.",Icon=Texture'KillingFloor2HUD.Achievements.Achievement_60',MaxProgress=1,bForceShow=True,DataSize=1,Group="MASTER")
+	AchDefs(67)=(id="Money10k",DisplayName="I Need DOSH!",Description="Start a wave having 10,000 pounds of cash",Icon=Texture'KillingFloorHUD.Achievements.Achievement_37',MaxProgress=1,DataSize=1)
 
 	// new achievements
 	AchDefs(68)=(id="Welcome",DisplayName="Welcome to ScrN Balance!",Description="Welcome to the ScrN Total Game Balance Community! Enjoy the best modification for Killing Floor.",Icon=Texture'ScrnAch_T.Achievements.PerfectBalance',MaxProgress=1,DataSize=1)
 
 	AchDefs(69)=(id="MedicOfDoom",DisplayName="Medic of Doom",Description="Kill 15 zeds with M4-203M Medic Rifle without reloading.",Icon=Texture'ScrnAch_T.Master.MedicOfDoom',MaxProgress=1,DataSize=1,Group="MASTER")
 	AchDefs(70)=(id="Plus25Clots",DisplayName="+25 Clot kills",Description="Kill 25 clots having less than 4 seconds between subsequent kills.",Icon=Texture'ScrnAch_T.Master.Plus25Clots',MaxProgress=1,DataSize=1,Group="MASTER")
-	AchDefs(71)=(id="GetOffMyLawn",DisplayName="I said get off my Lawn!",Description="Kill %c Fleshpounds with the Boomstick or Combat Shotgun.",Icon=Texture'ScrnAch_T.Master.GetOffMyLawn',MaxProgress=15,DataSize=4,Group="MASTER")
+	AchDefs(71)=(id="GetOffMyLawn",DisplayName="I said get off my Lawn!",Description="Kill %c Fleshpounds with the Boomstick or Combat Shotgun.",Icon=Texture'ScrnAch_T.Master.GetOffMyLawn',MaxProgress=15,DataSize=4,Group="EXP")
 	AchDefs(72)=(id="Accuracy",DisplayName="Accuracy",Description="Finish %c waves with 75% headshot accuracy. At least 30 decapitations required per wave.",Icon=Texture'ScrnAch_T.Master.Accuracy',MaxProgress=10,DataSize=4,Group="MASTER")
 	AchDefs(73)=(id="SteampunkSniper",DisplayName="Steampunk Sniper",Description="Score 10 headshots in a row with Musket. Do it %c times.",Icon=Texture'KillingFloor2HUD.Achievements.Achievement_224',MaxProgress=4,DataSize=3,Group="MASTER")
 	AchDefs(74)=(id="MeleeGod",DisplayName="Melee God",Description="Kill %c Scrakes with only head-hits from melee weapons. Buzzsaw Bow excluding.",Icon=Texture'ScrnAch_T.Master.Gauntlet',MaxProgress=30,DataSize=5,Group="MASTER")
@@ -127,7 +127,7 @@ defaultproperties
 	AchDefs(79)=(id="PrematureDetonation",DisplayName="Premature Detonation",Description="Kill %c zeds with undetonated grenades or rockets.",Icon=Texture'ScrnAch_T.Exp.PrematureDetonation',MaxProgress=15,DataSize=4,Group="EXP")
 	AchDefs(80)=(id="NoHeadshots",DisplayName="Hitboxes Are Overrated",Description="Kill %c big zeds without landing any headshot and taking damage.",Icon=Texture'ScrnAch_T.Exp.NoHeadshots',MaxProgress=62,DataSize=6,Group="EXP")
 	AchDefs(81)=(id="BitterIrony",DisplayName="Bitter Irony",Description="Kill %c Scrakes with a Chainsaw.",Icon=Texture'KillingFloorHUD.Achievements.Achievement_25',MaxProgress=62,DataSize=6,Group="EXP")
-	AchDefs(82)=(id="BallsOfSteel",DisplayName="Balls of Steel",Description="Survive an entire game without wearing an armor, damage resistance and dying.",Icon=Texture'ScrnAch_T.Exp.BallsOfSteel',MaxProgress=1,DataSize=1,Group="EXP")
+	AchDefs(82)=(id="BallsOfSteel",DisplayName="Balls of Steel",Description="Survive an entire game without wearing heavy armor, damage resistance and dying.",Icon=Texture'ScrnAch_T.Exp.BallsOfSteel',MaxProgress=1,DataSize=1,Group="EXP")
 	AchDefs(83)=(id="OutOfTheGum",DisplayName="Out of the Gum",Description="Kill 30 specimens with bullets, having less than 5 seconds betwen subsequent kills.",Icon=Texture'ScrnAch_T.Exp.OutOfTheGum',MaxProgress=1,DataSize=1,Group="EXP")
 	AchDefs(84)=(id="HorzineArmor",DisplayName="Good Defence Is NOT a Good Offence",Description="Survive %c times after taking a heavy damage, thanks to wearing a Horzine Armor.",Icon=Texture'ScrnAch_T.Exp.HorzineArmor',MaxProgress=7,DataSize=3,Group="EXP")
 	AchDefs(85)=(id="RocketBlow",DisplayName="I Love Rocket Blow",Description="Kill 10 specimens with a single rocket blow. Liked it? Then do it %c times.",Icon=Texture'ScrnAch_T.Exp.RocketBlow',MaxProgress=30,DataSize=5,Group="EXP")
@@ -137,7 +137,7 @@ defaultproperties
 
 	AchDefs(89)=(id="TW_PipeBlock",DisplayName="TeamWork: Hold On, The Big One! Take a Present.",Description="Block %c  big zeds on pipebombs without taking significant damage.",Icon=Texture'ScrnAch_T.Teamwork.PipeBlock',MaxProgress=30,DataSize=5,Group="TW")
 	AchDefs(90)=(id="TW_BackstabSC",DisplayName="TeamWork: Taking From Behind",Description="Attract %c Scrakes on yourself, allowing teammate to backstab him.",Icon=Texture'ScrnAch_T.Teamwork.BackstabScrakes',MaxProgress=30,DataSize=5,Group="TW")
-	AchDefs(91)=(id="NoI",DisplayName="There is no I in the TEAM",Description="Finish the game, where all (3+) players have almost the same kill count (+/-10%).",Icon=Texture'ScrnAch_T.Teamwork.NoI',MaxProgress=1,DataSize=1,Group="TW")
+	AchDefs(91)=(id="NoI",DisplayName="There is no I in the TEAM",Description="Finish the wave, where all (3+) players have almost the same kill count (+/-10%).",Icon=Texture'ScrnAch_T.Teamwork.NoI',MaxProgress=1,DataSize=1,Group="TW")
 	AchDefs(92)=(id="PatMelee",DisplayName="We Don't Give a **** About The Radial Attack",Description="Kill Patriarch with melee weapons only.",Icon=Texture'ScrnAch_T.Teamwork.PatMelee',MaxProgress=1,DataSize=1,Group="TW")
 	AchDefs(93)=(id="Pat9mm",DisplayName="Peashooters",Description="Kill End Game Boss with 9mm pistols only.",Icon=Texture'ScrnAch_T.Teamwork.Peashooters',MaxProgress=1,DataSize=1,Group="TW")
 	AchDefs(94)=(id="PatPrey",DisplayName="Hunting the Prey",Description="Hunt the Patriarch during his heal-runs and kill him in 2:00 without focusing on other specimens.",Icon=Texture'ScrnAch_T.Teamwork.PatPrey',MaxProgress=1,DataSize=1,Group="TW")
@@ -154,7 +154,7 @@ defaultproperties
 	AchDefs(104)=(id="KillWhore",DisplayName="KillWhore",Description="Get 2.5x more kills than any other player in your team (5+p).",Icon=Texture'ScrnAch_T.Achievements.KillWhore',MaxProgress=1,DataSize=1,bForceShow=True)
 	AchDefs(105)=(id="ComeatMe",DisplayName="Come at Me, Bro!",Description="Kill a Jason with a Machete.",Icon=Texture'ScrnAch_T.Achievements.ComeatMe',MaxProgress=1,DataSize=1,FilterMaskAll=32)
 	AchDefs(106)=(id="Friday13",DisplayName="Friday the 13th",Description="Survive the wave after 5 of your teammates got killed by Jason Voorhees.",Icon=Texture'ScrnAch_T.Achievements.Friday13',MaxProgress=1,DataSize=1,FilterMaskAll=32)
-	AchDefs(107)=(id="ClotHater",DisplayName="Clot Hater",Description="Kill 30 Clots in a row. Do it %c times. Cuz you really hate them.",Icon=Texture'ScrnAch_T.Achievements.ClotHater',MaxProgress=10,DataSize=4)
+	AchDefs(107)=(id="ClotHater",DisplayName="Clot Hater",Description="Kill 15 Clots in a row. Do it %c times. Cuz you really hate them.",Icon=Texture'ScrnAch_T.Achievements.ClotHater',MaxProgress=15,DataSize=4)
 	AchDefs(108)=(id="MadeinChina",DisplayName="Made in China",Description="Get blown up by your own Pipebomb.",Icon=Texture'ScrnAch_T.Achievements.MadeinChina',MaxProgress=1,DataSize=1)
 	AchDefs(109)=(id="FastVengeance",DisplayName="Fast Vengeance",Description="Kill a zed within 5 seconds of it killed a teammate.",Icon=Texture'KillingFloor2HUD.Achievements.Achievement_198',MaxProgress=1,DataSize=1)
 	AchDefs(110)=(id="Overkill1",DisplayName="Overkill vol.1",Description="Kill a Crawler with a headshot from fully-charged Husk Gun.",Icon=Texture'ScrnAch_T.Achievements.Overkill1',MaxProgress=1,DataSize=1)
@@ -174,5 +174,12 @@ defaultproperties
 	AchDefs(122)=(id="NikolaTesla",DisplayName="Nikola Tesla and You",Description="Kill %c Tesla Husks with close-combat weapons (melee or shotguns). But take some electrical damage before!",Icon=Texture'ScrnAch_T.ScrnZeds.NikolaTesla',MaxProgress=15,DataSize=4,FilterMaskAll=16)
 	AchDefs(123)=(id="TeslaChain",DisplayName="Chain Reaction",Description="Get connected to 2 other players with Tesla Beams",Icon=Texture'ScrnAch_T.ScrnZeds.TeslaChain',MaxProgress=1,DataSize=1,FilterMaskAll=16)
 
-	AchDefs(124)=(id="TSCT",DisplayName="TSC Tournament Member",Description="Participate in TSC Tournement and get into the Playoffs",Icon=Texture'ScrnTex.Tourney.TourneyMember64',MaxProgress=1,DataSize=1,FilterMaskAll=4096)
+	AchDefs(124)=(id="TSCT",DisplayName="TSC Tournament Member",Description="Participate in TSC Tournement and get into the Playoffs",Icon=Texture'ScrnTex.Tourney.TourneyMember64',MaxProgress=1,DataSize=1,Group="Hidden")
+	AchDefs(125)=(id="KFG1",DisplayName="'Consider this a warning'",Description="Kill a Husk with Crossbow in 2 seconds after killing another zed with Handcannon",Icon=Texture'ScrnAch_T.Achievements.Stupid',MaxProgress=1,DataSize=1)
+	AchDefs(126)=(id="KFG2",DisplayName="'Aimbot detected'",Description="Survive Wave 10 with at least 10% headshot accuracy",Icon=Texture'ScrnAch_T.Achievements.Stupid',MaxProgress=1,DataSize=1)
+
+	AchDefs(127)=(id="AchReset",DisplayName="Achievement Reset",Description="Reset your achievements (all but maps) by executing 'AchReset' console command.",Icon=Texture'ScrnAch_T.Achievements.AchReset',MaxProgress=1,DataSize=1)
+
+	AchDefs(128)=(id="MeleeKillMidairCrawlers",DisplayName="My Kung Fu is Awesome",Description="Melee-hit %c Crawlers in midair without taking damage",Icon=Texture'ScrnAch_T.Achievements.MeleeCrawler',MaxProgress=50,DataSize=6,Group="MASTER")
+	AchDefs(129)=(id="GunslingerSC",DisplayName="Two Bloody Handsome",Description="Kill %c Scrakes with Dual HC/.44 without taking damage",Icon=Texture'ScrnAch_T.Master.GunslingerSC',MaxProgress=50,DataSize=6,Group="MASTER")
 }

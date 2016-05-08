@@ -12,7 +12,7 @@ simulated function bool StartFire(int Mode)
 		if ( AmmoAmount(1) > 1 ) {
 			KFShotgunFire(FireMode[1]).FireAimedAnim='Fire_Iron_Secondary';
 			FireMode[1].FireAnim='Fire_Secondary';
-			FireMode[1].default.FireRate=3.33;
+			FireMode[1].default.FireRate=1.99;
 		}
 		else {
 			KFShotgunFire(FireMode[1]).FireAimedAnim='FireLast_Iron_Secondary';
@@ -48,7 +48,7 @@ simulated function ReallyStopFire(int Mode)
 
 simulated function StopFire(int Mode)
 {
-    //log("StopFire("$Mode$")", class.outer.name);
+    //log("StopFire("$Mode$")", 'ScrnBalance');
     if ( Mode > 0 ) {
         if ( FireMode[0].IsInState('WaitingForFireButtonRelease') ) //this shouldn't happed, but just to be sure
             FireMode[0].GotoState('');    
@@ -83,7 +83,7 @@ simulated exec function ReloadMeNow()
     if ( FireMode[0].IsInState('FireBurst') || FireMode[0].IsInState('WaitingForFireButtonRelease') )
         FireMode[0].GotoState('');
 
-    //log("ReloadMeNow()", class.outer.name);
+    //log("ReloadMeNow()", 'ScrnBalance');
         
     super.ReloadMeNow();
 }

@@ -33,6 +33,7 @@ mkdir %outputdir%\uz2
 
 
 copy /y %KFDIR%\system\ScrnBalanceSrv.* %outputdir%\System\
+copy /y %KFDIR%\system\ScrnSP.* %outputdir%\System\
 copy /y %KFDIR%\system\ScrnVotingHandlerV4.* %outputdir%\system\
 copy /y %STEAMDIR%\textures\ScrnTex.utx %outputdir%\Textures\
 copy /y %STEAMDIR%\textures\ScrnAch_T.utx %outputdir%\Textures\

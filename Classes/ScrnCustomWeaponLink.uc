@@ -110,7 +110,7 @@ simulated function LoadWeaponBonuses()
         }    
     } 
 
-    Log("Custom weapon" @ String(WeaponClass) @ "loaded for " @ String(Perk) @ "perk.", Class.Outer.Name);
+    Log("Custom weapon" @ String(WeaponClass) @ "loaded for " @ String(Perk) @ "perk.", 'ScrnBalance');
 }
 
 defaultproperties

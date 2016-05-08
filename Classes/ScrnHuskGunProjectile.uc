@@ -105,7 +105,7 @@ simulated function HurtRadius( float DamageAmount, float DamageRadius, class<Dam
 					// @ "Damage = " $ String(int(damageScale * DamageAmount)) 
 					// @ "("$damageScale$"*"$DamageAmount$")"
 					// @ "Perked Damage = " $ String(OldHealth-KFMonsterVictim.Health) @ "("$OldHealth$" - "$KFMonsterVictim.Health$")"
-					// ,class.outer.name);			
+					// ,'ScrnBalance');			
 			
             if (Vehicle(Victims) != None && Vehicle(Victims).Health > 0)
                 Vehicle(Victims).DriverRadiusDamage(DamageAmount, DamageRadius, InstigatorController, DamageType, Momentum, HitLocation);

@@ -11,6 +11,8 @@ var float LastTeslaChainTime;
 var int TeslaChainedPlayers;
 var ScrnPlayerInfo TeslaChainedP1, TeslaChainedP2;
 
+var int iDoT_Damage;
+
 function PlayerDamaged(int Damage, ScrnPlayerInfo VictimSPI, KFMonster InstigatedBy, class<DamageType> DamType) 
 {
 	bPerfectWave = false;
@@ -175,6 +177,8 @@ function WaveEnded(byte WaveNum)
 		
 		if ( SPI.DecapsPerWave >= 30 && SPI.GetAccuracyWave() >= 0.75 )
 			SPI.ProgressAchievement('Accuracy', 1);  
+        if ( WaveNum == 9 && SPI.DecapsPerWave >= 30 && SPI.GetAccuracyWave() >= 0.10 )
+			SPI.ProgressAchievement('KFG2', 1);  
 		
 		if ( SPI.KillsPerWave < MinKills )
 			MinKills = SPI.KillsPerWave;			
@@ -314,7 +318,7 @@ function int WRowHeadhots(ScrnPlayerInfo SPI, KFWeapon Weapon, class<KFWeaponDam
 			if ( !SPI.ProgressAchievement('SteampunkSniper', 1) )
 				return IGNORE_STAT; // if achievement already earned, then ProgressAchievement() returns false, meaning no need to track it anymore
 		}
-		return 15; // need 15 headshots for the achievement
+		return 10; // need 10 headshots for the achievement
 	} 
 	return IGNORE_STAT;
 }
@@ -445,15 +449,27 @@ function MonsterDamaged(int Damage, KFMonster Victim, ScrnPlayerInfo InstigatorI
 		
     index = GameRules.GetMonsterIndex(Victim);
         
-    if ( Damage >= 300 && ClassIsChildOf(DamType, class'DamTypeFlareRevolver') ) {
+    if ( Damage >= iDoT_Damage && ClassIsChildOf(DamType, class'DamTypeFlareRevolver') ) {
         InstigatorInfo.ProgressAchievement('iDoT', 1);  
     }
     else if ( DamType.default.bIsMeleeDamage ) {
         if ( Victim.bBackstabbed )
             InstigatorInfo.ProgressAchievement('MeleeHitBehind', 1); 
     }
+    else if ( bIsHeadshot && ClassIsChildOf(DamType, class'KFMod.DamTypeDeagle') )
+        InstigatorInfo.SetCustomFloat(self, 'LastDeagleHSTime', Level.TimeSeconds);
+        
+    
 	
-    if ( Victim.IsA('ZombieShiver') ) {
+    if ( ZombieCrawler(Victim) != none ) {
+        if ( !Victim.bDamagedAPlayer && DamType.default.bIsMeleeDamage && !ClassIsChildOf(DamType, class'DamTypeCrossbuzzsaw') ) {
+            if ( Damage >= Victim.Health )
+                InstigatorInfo.ProgressAchievement('MeleeKillCrawlers', 1); 
+            if ( Victim.Physics == PHYS_Falling )
+                InstigatorInfo.ProgressAchievement('MeleeKillMidairCrawlers', 1); 
+        }
+    }
+    else if ( Victim.IsA('ZombieShiver') ) {
         // TeamWork: TeamWork: Grilled Shiver Brains
         // KillAss1 must be set Shiver on fire
         // KillAss2 must decapitate Shiver with commando weapon
@@ -461,12 +477,14 @@ function MonsterDamaged(int Damage, KFMonster Victim, ScrnPlayerInfo InstigatorI
             if ( GameRules.MonsterInfos[index].DamType1 == none ) {
                 GameRules.MonsterInfos[index].KillAss1 = InstigatorInfo;
                 GameRules.MonsterInfos[index].DamType1 = DamType;             
+                GameRules.MonsterInfos[index].DamTime1 = Level.TimeSeconds;                
             }
         }
         else if ( Victim.bDecapitated && !bWasDecapitated ) {
             if ( GameRules.MonsterInfos[index].KillAss1 != none && IsAssaultRifleDamage(InstigatorInfo, DamType) ) {
                 GameRules.MonsterInfos[index].KillAss2 = InstigatorInfo;
                 GameRules.MonsterInfos[index].DamType2 = DamType;              
+                GameRules.MonsterInfos[index].DamTime2 = Level.TimeSeconds;                
                 GameRules.MonsterInfos[index].DamageFlags2 = GameRules.DF_DECAP;
             }
             else 
@@ -498,10 +516,12 @@ function MonsterDamaged(int Damage, KFMonster Victim, ScrnPlayerInfo InstigatorI
                 if ( GameRules.MonsterInfos[index].DamType1 == none ) {
                     GameRules.MonsterInfos[index].KillAss1 = InstigatorInfo;
                     GameRules.MonsterInfos[index].DamType1 = DamType;                
+                    GameRules.MonsterInfos[index].DamTime1 = Level.TimeSeconds;                
                 }
                 else if ( GameRules.MonsterInfos[index].KillAss1 != InstigatorInfo && GameRules.MonsterInfos[index].DamType2 == none ) {
                     GameRules.MonsterInfos[index].KillAss2 = InstigatorInfo;
                     GameRules.MonsterInfos[index].DamType2 = DamType;    
+                    GameRules.MonsterInfos[index].DamTime2 = Level.TimeSeconds;                
                 }
             }
             else if ( Damage > 50 || GetTotalDamageMadeC(MC, InstigatorInfo.PlayerOwner) > 100 )
@@ -512,6 +532,7 @@ function MonsterDamaged(int Damage, KFMonster Victim, ScrnPlayerInfo InstigatorI
         if (  Victim.bDecapitated && !bWasDecapitated && Damage < Victim.Health && Victim.IsA('TeslaHusk') ) {
             GameRules.MonsterInfos[index].KillAss1 = InstigatorInfo;
             GameRules.MonsterInfos[index].DamType1 = DamType;
+            GameRules.MonsterInfos[index].DamTime1 = Level.TimeSeconds;                
             GameRules.MonsterInfos[index].DamageFlags1 = DF_DECAP;
         }
         else if ( !Victim.bDecapitated && Damage < Victim.Health 
@@ -524,6 +545,7 @@ function MonsterDamaged(int Damage, KFMonster Victim, ScrnPlayerInfo InstigatorI
             if ( GameRules.MonsterInfos[index].DamType1 == none ) {
                 GameRules.MonsterInfos[index].KillAss1 = InstigatorInfo;
                 GameRules.MonsterInfos[index].DamType1 = DamType;
+                GameRules.MonsterInfos[index].DamTime1 = Level.TimeSeconds;                
                 GameRules.MonsterInfos[index].DamageFlags1 = DF_STUNNED;            
             }
         }
@@ -536,6 +558,7 @@ function MonsterDamaged(int Damage, KFMonster Victim, ScrnPlayerInfo InstigatorI
                         && GameRules.MonsterInfos[index].DamType2 != class'KFMod.DamTypeBenelli' ) {
                     GameRules.MonsterInfos[index].KillAss2 = InstigatorInfo;
                     GameRules.MonsterInfos[index].DamType2 = DamType;
+                    GameRules.MonsterInfos[index].DamTime2 = Level.TimeSeconds;                
                     GameRules.MonsterInfos[index].DamageFlags2 = 0;
                 }
             } 
@@ -544,6 +567,7 @@ function MonsterDamaged(int Damage, KFMonster Victim, ScrnPlayerInfo InstigatorI
                 if ( GameRules.MonsterInfos[index].DamType1 == none ) {
                     GameRules.MonsterInfos[index].KillAss1 = InstigatorInfo;
                     GameRules.MonsterInfos[index].DamType1 = DamType;
+                    GameRules.MonsterInfos[index].DamTime1 = Level.TimeSeconds;                
                     GameRules.MonsterInfos[index].DamageFlags1 = DF_STUNNED;
                     if ( bIsHeadshot )
                         GameRules.MonsterInfos[index].DamageFlags1 = GameRules.MonsterInfos[index].DamageFlags1 | DF_HEADSHOT;
@@ -570,6 +594,7 @@ function MonsterDamaged(int Damage, KFMonster Victim, ScrnPlayerInfo InstigatorI
 				if ( GameRules.MonsterInfos[index].DamType1 == none ) {
 					GameRules.MonsterInfos[index].KillAss1 = InstigatorInfo;
 					GameRules.MonsterInfos[index].DamType1 = DamType;
+                    GameRules.MonsterInfos[index].DamTime1 = Level.TimeSeconds;                
 					// FP can't be stunned, but DF_STUNNED flag is used to differ M99/xbow headshots from other damages 
 					GameRules.MonsterInfos[index].DamageFlags1 = DF_HEADSHOT | DF_STUNNED;
 					if ( !ZombieFleshpound(Victim).bChargingPlayer && !ZombieFleshpound(Victim).bFrustrated )
@@ -580,6 +605,7 @@ function MonsterDamaged(int Damage, KFMonster Victim, ScrnPlayerInfo InstigatorI
 					// M99/xbow headshots always override other assistances (which don't have DF_STUNNED flag)  
 					GameRules.MonsterInfos[index].KillAss2 = InstigatorInfo;
 					GameRules.MonsterInfos[index].DamType2 = DamType;
+                    GameRules.MonsterInfos[index].DamTime2 = Level.TimeSeconds;                
 					GameRules.MonsterInfos[index].DamageFlags2 = DF_HEADSHOT | DF_STUNNED;
 				}
             } 
@@ -593,6 +619,7 @@ function MonsterDamaged(int Damage, KFMonster Victim, ScrnPlayerInfo InstigatorI
                 if ( bIsHeadshot && GameRules.MonsterInfos[index].DamType2 == none && Damage >= 200 ) {
                     GameRules.MonsterInfos[index].KillAss2 = InstigatorInfo;
                     GameRules.MonsterInfos[index].DamType2 = DamType;
+                    GameRules.MonsterInfos[index].DamTime2 = Level.TimeSeconds;                
                     GameRules.MonsterInfos[index].DamageFlags2 = DF_HEADSHOT;                
                 }
             }
@@ -603,6 +630,7 @@ function MonsterDamaged(int Damage, KFMonster Victim, ScrnPlayerInfo InstigatorI
                 else if ( GameRules.MonsterInfos[index].DamType2 == none && TotalDamage > Victim.HealthMax * 0.1 ) {
                     GameRules.MonsterInfos[index].KillAss2 = InstigatorInfo;
                     GameRules.MonsterInfos[index].DamType2 = DamType;
+                    GameRules.MonsterInfos[index].DamTime2 = Level.TimeSeconds;                
 					GameRules.MonsterInfos[index].DamageFlags2 = 0;
                 }
             }
@@ -739,7 +767,7 @@ function MonsterKilled(KFMonster Victim, ScrnPlayerInfo KillerInfo, class<KFWeap
 		KillerInfo.SetCustomValue(self, 'RowClotKills', 0, false);
 	
 	if ( ZombieClot(Victim) != none ) {
-		if ( KillerInfo.IncCustomValue(self, 'RowClotKills', 1, false) == 30 ) {
+		if ( KillerInfo.IncCustomValue(self, 'RowClotKills', 1, false) == 15 ) {
 			KillerInfo.ProgressAchievement('ClotHater', 1);
 			KillerInfo.SetCustomValue(self, 'RowClotKills', 0, false);
 		}
@@ -753,11 +781,7 @@ function MonsterKilled(KFMonster Victim, ScrnPlayerInfo KillerInfo, class<KFWeap
 		KillerInfo.SetCustomFloat(self, 'LastClotKillTime', Level.TimeSeconds, true);
 	}
     else if ( ZombieCrawler(Victim) != none ) {
-        if ( DamType.default.bIsMeleeDamage && !ClassIsChildOf(DamType, class'DamTypeCrossbuzzsaw') ) {
-            if ( !Victim.bDamagedAPlayer )
-                KillerInfo.ProgressAchievement('MeleeKillCrawlers', 1); 
-        }
-        else if ( Victim.LastDamageAmount < 80 && (DamType == class'DamTypeFlamethrower' || DamType == class'DamTypeBurned') )
+        if ( Victim.LastDamageAmount < 80 && (DamType == class'DamTypeFlamethrower' || DamType == class'DamTypeBurned') )
             KillerInfo.ProgressAchievement('HFC', 1); 
 		else if ( IsPistolDamage(KillerInfo, DamType) ) {
 			if ( GameRules.MonsterInfos[index].Headshots + GameRules.MonsterInfos[index].Bodyshots == 1 )
@@ -805,6 +829,10 @@ function MonsterKilled(KFMonster Victim, ScrnPlayerInfo KillerInfo, class<KFWeap
     else if ( ZombieHusk(Victim) != none ) {
         if ( ClassIsChildOf(DamType, class'DamTypeHuskGun') || ClassIsChildOf(DamType, class'DamTypeHuskGunProjectileImpact') )
             KillerInfo.ProgressAchievement('KillHuskHuskGun', 1); 
+        else if ( DamType == class'DamTypeCrossbowHeadShot' ) {
+            if ( Level.TimeSeconds - KillerInfo.GetCustomFloat(self, 'LastDeagleHSTime') < 2.0 )
+                KillerInfo.ProgressAchievement('KFG1', 1); 
+        }            
         
         if ( !Victim.bDamagedAPlayer ) {
             // give Fast Shot achievement only if player killed Husk alone
@@ -841,12 +869,15 @@ function MonsterKilled(KFMonster Victim, ScrnPlayerInfo KillerInfo, class<KFWeap
                 GameRules.RewardTeamwork(KillerInfo, index, 'TW_SC_Instant');   
             }
         }
-        else if ( (DamType == class'KFMod.DamTypeDBShotgun' || DamType == class'KFMod.DamTypeBenelli') 
+        else if ( DamType.default.bIsPowerWeapon ) {
+            if ( (DamType == class'KFMod.DamTypeDBShotgun' || DamType == class'KFMod.DamTypeBenelli') 
                     && GameRules.MonsterInfos[index].DamType1.default.bIsExplosive 
                     && ClassIsChildOf(GameRules.MonsterInfos[index].DamType1, class'KFMod.DamTypeLAW') 
-                    && (GameRules.MonsterInfos[index].DamageFlags1 & DF_STUNNED) > 0 ) {
-            // TeamWork: LAW Stun + HSg finish
-            GameRules.RewardTeamwork(KillerInfo, index, 'TW_SC_LAWHSG');
+                    && (GameRules.MonsterInfos[index].DamageFlags1 & DF_STUNNED) > 0 )
+            {
+                // TeamWork: LAW Stun + HSg finish
+                GameRules.RewardTeamwork(KillerInfo, index, 'TW_SC_LAWHSG');
+            }
         }
 		else if ( DamType.default.bIsMeleeDamage ) {
 			if ( GameRules.MonsterInfos[index].BodyShots == 0 && !ClassIsChildOf(DamType, class'KFMod.DamTypeCrossbuzzsaw') )
@@ -859,6 +890,9 @@ function MonsterKilled(KFMonster Victim, ScrnPlayerInfo KillerInfo, class<KFWeap
 		else if ( ClassIsChildOf(DamType, class'KFMod.DamTypeHuskGunProjectileImpact') 
 				|| ClassIsChildOf(DamType, class'KFMod.DamTypeHuskGun') )
 			KillerInfo.ProgressAchievement('HuskGunSC', 1);  
+        else if ( !Victim.bDamagedAPlayer && (ClassIsChildOf(DamType, class'ScrnDamTypeDualDeagle') 
+				|| ClassIsChildOf(DamType, class'ScrnDamTypeDual44Magnum')) )
+           KillerInfo.ProgressAchievement('GunslingerSC', 1);  
     }
     else if ( ZombieFleshpound(Victim) != none ) {
         if ( ClassIsChildOf(DamType, class'DamTypeAxe') )
@@ -998,6 +1032,7 @@ function PickedCash(int CashAmount, ScrnPlayerInfo ReceiverInfo, ScrnPlayerInfo 
 
 defaultproperties
 {
+    iDoT_Damage=300
 	bOnePlayerPerPerk=true
     InstantKillTime=0.500000
 }

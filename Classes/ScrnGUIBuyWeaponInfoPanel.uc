@@ -306,6 +306,14 @@ function LoadStats(GUIBuyable NewBuyable, byte FireMode, optional bool bSetTopVa
 function Display(GUIBuyable NewBuyable)
 {
     local ScrnCustomPRI ScrnPRI;
+    
+    // just in case
+	b_power.SetVisibility(false);
+	b_speed.SetVisibility(false);
+	b_range.SetVisibility(false);
+	ItemPower.SetVisibility(false);
+	ItemRange.SetVisibility(false);
+	ItemSpeed.SetVisibility(false);    
 
 	LastBuyable = NewBuyable;
 	if ( NewBuyable != none ) {
@@ -394,6 +402,7 @@ function FireModeChange(GUIComponent Sender)
 			ch_FireMode1.Checked(!ch_FireMode0.IsChecked());
 		else if ( Sender == ch_FireMode1 )
 			ch_FireMode0.Checked(!ch_FireMode1.IsChecked());
+            
 		if ( ScrnTab_BuyMenu(MenuOwner) != none )
 			Display(ScrnTab_BuyMenu(MenuOwner).TheBuyable);
 		else

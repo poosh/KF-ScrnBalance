@@ -79,6 +79,10 @@ var color TextColors[2];
 
 var float TestC; // for debug purposes
 
+var localized string strPendingItems;
+
+var material ChatIcon;
+
 exec simulated function SetC(float Value)
 {
     TestC = Value;
@@ -626,8 +630,6 @@ simulated function DrawHudPassA (Canvas C)
             }
         }
 
-
-
         if ( KFGRI != none && KFGRI.bHUDShowCash ) {
             DrawSpriteWidget(C, CashIcon);
             DrawNumericWidget(C, CashDigits, DigitsBig);
@@ -735,8 +737,10 @@ simulated function DrawHudPassA (Canvas C)
 
                         if ( ScrnPRI.GetClanIcon() != TempMaterial ) {
                             TempMaterial = ScrnPRI.GetClanIcon();
-                            C.SetPos(BonusPerkX, TempY);
-                            C.DrawTile(TempMaterial, TempSize, TempSize, 0, 0, TempMaterial.MaterialUSize(), TempMaterial.MaterialVSize());   
+                            if ( TempMaterial != none ) {
+                                C.SetPos(BonusPerkX, TempY);
+                                C.DrawTile(TempMaterial, TempSize, TempSize, 0, 0, TempMaterial.MaterialUSize(), TempMaterial.MaterialVSize());   
+                            }
                         }
                     } 
                 }
@@ -772,8 +776,8 @@ simulated function DrawHudPassA (Canvas C)
         DrawDamage(C);    
         
     if ( bShowSpeed )
-        DrawSpeed(C);         
-    
+        DrawSpeed(C);
+
     if ( bSpectating || bSpectatingZED ) {
         // player name
         C.SetDrawColor(200, 200, 200, KFHUDAlpha);
@@ -811,6 +815,12 @@ simulated function DrawHudPassA (Canvas C)
         if ( ScrnPawn != none ) {
             DrawCookingBar(C);
         }
+        if ( Level.NetMode == NM_Client && ScrnClientPerkRepLink(ClientRep) != none && ScrnClientPerkRepLink(ClientRep).PendingItems > 0 ) {
+            C.Font = GetConsoleFont(C);
+            C.SetPos(0, 0);
+            C.SetDrawColor(160, 160, 160, 255);
+            C.DrawText(strPendingItems @ ScrnClientPerkRepLink(ClientRep).PendingItems);
+        }        
     }
 }
 
@@ -933,6 +943,7 @@ simulated function CalculateAmmo()
 	MaxAmmoPrimary = 1;
 	CurAmmoPrimary = 0;
     CurClipsSecondary = 0;
+    CurClipsPrimary = 0;
 
 	if ( PawnOwner == None  )
 		return;
@@ -942,18 +953,15 @@ simulated function CalculateAmmo()
     if ( W != none ) {
         W.GetAmmoCount(MaxAmmoPrimary,CurAmmoPrimary);
 
+        if ( CurAmmoPrimary <= 0 || CurAmmoPrimary <= W.MagAmmoRemaining )   
+            CurClipsPrimary = 0;
+        else if( W.bHoldToReload )
+            CurClipsPrimary = CurAmmoPrimary-W.MagAmmoRemaining; // Single rounds reload, just show the true ammo count.
+        else
+            CurClipsPrimary = ceil((CurAmmoPrimary - W.MagAmmoRemaining) / W.MagCapacity);
+            
         if( W.bHasSecondaryAmmo && W.FireModeClass[1].default.AmmoClass != none )
            CurClipsSecondary = W.AmmoAmount(1);
-
-        if( W.bHoldToReload ) {
-            CurClipsPrimary = Max(CurAmmoPrimary-W.MagAmmoRemaining,0); // Single rounds reload, just show the true ammo count.
-        }
-        else {
-            if ( CurAmmoPrimary <=  W.MagAmmoRemaining)
-                CurClipsPrimary = 0;
-            else
-                CurClipsPrimary = ceil((CurAmmoPrimary - W.MagAmmoRemaining) / W.MagCapacity);
-        }
     }
     else if ( ScrnPawn != none && PlayerOwner.Pawn != ScrnPawn && ScrnPawn.SpecWeapon != none ) {
         BulletsInClipDigits.Value = ScrnPawn.SpecMagAmmo;
@@ -1104,6 +1112,16 @@ function DrawPlayerInfo(Canvas C, Pawn P, float ScreenLocX, float ScreenLocY)
         if ( P.ShieldStrength > 0 )
             DrawKFBarEx(C, ScreenLocX - OffsetX, (ScreenLocY - YL) - 1.5 * BarHeight, FClamp(P.ShieldStrength / 100.f, 0, 3), BeaconAlpha, true);
     }
+    else
+        TempX = ScreenLocX + ((BarLength + HealthIconSize) * 0.5) - (TempSize * 0.25) - OffsetX;
+
+    if ( P.bIsTyping ) {
+        C.SetDrawColor(255, 255, 255, BeaconAlpha);
+        TempX+=VetStarSize;
+        TempY = ScreenLocY - YL - (TempSize * 0.75);
+        C.SetPos(TempX, TempY);
+        C.DrawTile(ChatIcon, TempSize, TempSize, 0, 0, ChatIcon.MaterialUSize(), ChatIcon.MaterialVSize());
+    }    
     
     C.Z = OldZ;
     VetStarSize = default.VetStarSize; // restore from drawing in other places
@@ -2080,6 +2098,24 @@ final static function string ColoredPerkLevel(int PerkLevel)
     return class'ScrnBalance'.static.ColorStringC(string(PerkLevel), PerkColor(PerkLevel));
 }
 
+function static Font GetStaticFontSizeIndex(Canvas C, int FontSize)
+{
+    if ( C.ClipY >= 384 )
+		FontSize++;
+	if ( C.ClipY >= 480 )
+		FontSize++;
+	if ( C.ClipY >= 600 )
+		FontSize++;
+	if ( C.ClipY >= 768 )
+		FontSize++;
+	if ( C.ClipY >= 900 )
+		FontSize++;
+	if ( C.ClipY >= 1024 )
+		FontSize++;
+
+	return LoadFontStatic(Clamp( 8-FontSize, 0, 8));
+}
+
 defaultproperties
 {
     MinMagCapacity=5
@@ -2094,6 +2130,7 @@ defaultproperties
     SpeedometerX=0.90
     SpeedometerY=0.00
     SpeedometerFont=5
+    ChatIcon=Texture'ScrnTex.HUD.ChatIcon'
      
     BlamedIcon=(WidgetTexture=Texture'ScrnTex.HUD.Crap64',RenderStyle=STY_Alpha,TextureCoords=(X2=64,Y2=64),TextureScale=0.500000,PosX=0.95,PosY=0.5,ScaleMode=SM_Right,Scale=1.000000,Tints[0]=(B=255,G=255,R=255,A=255),Tints[1]=(B=255,G=255,R=255,A=255))
     BlamedIconSize=32 
@@ -2115,6 +2152,7 @@ defaultproperties
     bPlayerInfoZoom=True
     
     strFollowing="FOLLOWING:"
+    strPendingItems="Waiting for shop items from server: "
     
     WeightDigits=(RenderStyle=STY_Alpha,TextureScale=0.300000,PosX=0.195000,PosY=0.942000,Tints[0]=(B=64,G=64,R=255,A=255),Tints[1]=(B=64,G=64,R=255,A=255))
     

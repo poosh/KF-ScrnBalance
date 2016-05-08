@@ -37,6 +37,8 @@ struct SDefaultInventory {
 	var int 			AmmoAmount; 	// initial ammo amount
 	var float 			AmmoPerLevel; 	// ammo amount per each perk level above MinPerkLevel (excluding)
 	var int 			SellValue;		// sell value of the inventory
+    var name            Achievement;    // Achievement that must be unlocked to get this weapon
+    var byte            X;              // exclusion index. DefaultInventory[i] is not given if DefaultInventory[i-X] exist in the inventory.
 };
 var array<SDefaultInventory> DefaultInventory;
 
@@ -154,7 +156,8 @@ static function int GetPerkProgressInt( ClientPerkRepLink StatOther, out int Fin
 
 static function AddCustomStats( ClientPerkRepLink Other )
 {
-    class'ScrnBalanceSrv.ScrnAchievements'.static.InitAchievements(Other);    
+    // v8: achievement init moved to ScrnBalance.SetupRepLink()
+    //class'ScrnBalanceSrv.ScrnAchievements'.static.InitAchievements(Other);    
 }    
 
 final static function float GetPost6RequirementScaling()
@@ -323,7 +326,8 @@ static function byte PreDrawPerk( Canvas C, byte Level, out Material PerkIcon, o
 		StarIcon = default.OnHUDIcons[idx].StarIcon;
 		C.SetDrawColor(default.OnHUDIcons[idx].DrawColor.R, default.OnHUDIcons[idx].DrawColor.G, default.OnHUDIcons[idx].DrawColor.B, C.DrawColor.A);		
 	}
-	return Min(Level,15); // max 15 stars to draw
+	//return Min(Level,15); // max 15 stars to draw
+	return Level;
 }
 
 
@@ -361,13 +365,28 @@ static function int ReduceDamage(KFPlayerReplicationInfo KFPRI, KFPawn Injured, 
 	return InDamage;
 }
 
+// checks if inventory already exists and exclusion index
+static protected function bool ShouldAddDefaultInventory(int i, KFPlayerReplicationInfo KFPRI, Pawn P)
+{
+    if ( i < 0 || i >= default.DefaultInventory.length 
+            || default.DefaultInventory[i].PickupClass.default.InventoryType == none )
+        return false;
+    if ( P.FindInventoryType(default.DefaultInventory[i].PickupClass.default.InventoryType) != none )
+        return false; // already exist
+    if ( default.DefaultInventory[i].X > 0 )
+        return ShouldAddDefaultInventory(i - default.DefaultInventory[i].X, KFPRI, P); // check exclusion index
+    return true;
+}
+
 static function AddDefaultInventory(KFPlayerReplicationInfo KFPRI, Pawn P)
 {
 	local KFHumanPawn KFP;
 	local ScrnHumanPawn ScrnPawn;
+    local ClientPerkRepLink L;
 	local int i;
 	local byte level;
 	local Weapon W;
+    local Ammunition AmmoInv;
 	local class<ScrnVestPickup> ScrnVest;
 	local int ExtraAmmo;
 	local float SellValue;
@@ -381,9 +400,13 @@ static function AddDefaultInventory(KFPlayerReplicationInfo KFPRI, Pawn P)
 	if ( KFP == none )
 		return; // OMG, some Stinky Clots are trying to use our perks!!! :O
 	ScrnPawn = ScrnHumanPawn(P);
+    L = Class'ScrnClientPerkRepLink'.Static.FindMe(PlayerController(KFP.Controller));
 		
 	for ( i=0; i<default.DefaultInventory.length; ++i ) {
-		if ( level >= default.DefaultInventory[i].MinPerkLevel && level <= default.DefaultInventory[i].MaxPerkLevel ) {
+		if ( level >= default.DefaultInventory[i].MinPerkLevel && level <= default.DefaultInventory[i].MaxPerkLevel 
+                && (default.DefaultInventory[i].Achievement == '' 
+                    || class'ScrnAchievements'.static.IsAchievementUnlocked(L, default.DefaultInventory[i].Achievement)) ) 
+        {
 			ExtraAmmo = max(0, default.DefaultInventory[i].AmmoPerLevel * (level - default.DefaultInventory[i].MinPerkLevel));
 			if ( !class'ScrnBalance'.default.Mut.bSpawn0 )
 				SellValue = default.DefaultInventory[i].SellValue;
@@ -391,16 +414,20 @@ static function AddDefaultInventory(KFPlayerReplicationInfo KFPRI, Pawn P)
 			if ( ScrnVest != none || class<ShieldPickup>(default.DefaultInventory[i].PickupClass) != none ) {
 				if ( ScrnVest != none && ScrnPawn != none )
 					ScrnPawn.SetVestClass(ScrnVest);
-				// make sure we cals AddShieldStrength() instead of simple value changing
-				// to set ShieldStrengthMax and Weght
-				KFP.ShieldStrength = 0;
+				// make sure we call AddShieldStrength() instead of simple value changing
+				// to set ShieldStrengthMax and Weight
 				KFP.AddShieldStrength(default.DefaultInventory[i].AmmoAmount + ExtraAmmo);
 			}
 			else if ( class<CashPickup>(default.DefaultInventory[i].PickupClass) != none ) {
 				if ( KFP.PlayerReplicationInfo != none )
-					KFP.PlayerReplicationInfo.Score = default.DefaultInventory[i].AmmoAmount + ExtraAmmo;
+					KFP.PlayerReplicationInfo.Score += default.DefaultInventory[i].AmmoAmount + ExtraAmmo;
 			}
-			else if ( default.DefaultInventory[i].PickupClass.default.InventoryType != none ) {
+            else if ( class<Ammo>(default.DefaultInventory[i].PickupClass) != none ) {
+                AmmoInv = Ammunition(KFP.FindInventoryType(default.DefaultInventory[i].PickupClass.default.InventoryType));
+                if ( AmmoInv != none )
+                    AmmoInv.AddAmmo(default.DefaultInventory[i].AmmoAmount + ExtraAmmo);
+            }
+			else if ( ShouldAddDefaultInventory(i, KFPRI, P) ) {
 				KFP.CreateInventoryVeterancy(string(default.DefaultInventory[i].PickupClass.default.InventoryType), SellValue);
 				if (  default.DefaultInventory[i].bSetAmmo ) {
 					W = Weapon(KFP.FindInventoryType(default.DefaultInventory[i].PickupClass.default.InventoryType));

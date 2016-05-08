@@ -32,7 +32,7 @@ function FindGameRules()
             return;
         }
     }
-    log(GetItemName(String(self)) $ ": unable to find ScrnGameRules. Trying again in 5 seconds.", class.outer.name);
+    log(GetItemName(String(self)) $ ": unable to find ScrnGameRules. Trying again in 5 seconds.", 'ScrnBalance');
     SetTimer(5.0, false);
 }
 
@@ -273,6 +273,26 @@ function int WRowHeadhots(ScrnPlayerInfo SPI, KFWeapon Weapon, class<KFWeaponDam
 {
     return IGNORE_STAT;
 }
+
+/**
+ * Triggers when player scored multiple headshots per single fire 
+ * (due to bullet penetration or F/A mode without releasing a trigger).
+ * @param SPI Intigator's ScrnPlayerInfo record
+ * @param Weapon Weapon that PROBABLY was used to produce this damage type
+ * @param DamType Damage type that was catched by GameRules
+ * @param Count Headhot count scored without releasing a fire trigger
+ * @return Minimal headshot count to be reached before the next call of this function
+ */
+function int WInstantHeadhots(ScrnPlayerInfo SPI, KFWeapon Weapon, class<KFWeaponDamageType> DamType, int Count)
+{
+    return IGNORE_STAT;
+}
+
+// Same as WInstantHeadhots, but triggers on headshots without reloading
+function int WHeadshotsPerMagazine(ScrnPlayerInfo SPI, KFWeapon Weapon, class<KFWeaponDamageType> DamType, int Count)
+{
+    return IGNORE_STAT;
+} 
     
 /**
  * Triggers when players scored multiple kills with one shot or without releasing a trigger 
@@ -300,17 +320,17 @@ function int WDecapsPerShot(ScrnPlayerInfo SPI, KFWeapon Weapon, class<KFWeaponD
 {
     return IGNORE_STAT;
 }    
-// Same as WKillsPerShot, but triggers on kills without reloading
+// Same as WDecapsPerShot, but triggers on kills without reloading
 function int WDecapsPerMagazine(ScrnPlayerInfo SPI, KFWeapon Weapon, class<KFWeaponDamageType> DamType, int Count)
 {
     return IGNORE_STAT;
 }
-// number of decapitaions per shot
+// amount of damage per shot
 function int WDamagePerShot(ScrnPlayerInfo SPI, KFWeapon Weapon, class<KFWeaponDamageType> DamType, int Damage, float DeltaTime)
 {
     return IGNORE_STAT;
 }    
-// Same as WKillsPerShot, but triggers on kills without reloading
+// Same as WDamagePerShot, but triggers on kills without reloading
 function int WDamagePerMagazine(ScrnPlayerInfo SPI, KFWeapon Weapon, class<KFWeaponDamageType> DamType, int Damage)
 {
     return IGNORE_STAT;
@@ -358,6 +378,14 @@ function PickedWeapon(ScrnPlayerInfo SPI, KFWeaponPickup WeaponPickup) {}
  * @param Item The item picked up by the player.
  */
 function PickedItem(ScrnPlayerInfo SPI, Pickup Item) {}
+
+/**
+ * Triggers every time players reloads weapon. 
+ * Per-magazine weapon stats are not nulled at this moment yet (e.g. KillsPerMagazine) 
+ * @param SPI Player's info, who picked up an item
+ * @param W Reloaded Weapon 
+ */
+function WeaponReloaded(ScrnPlayerInfo SPI, KFWeapon W) {}
     
 defaultproperties
 {

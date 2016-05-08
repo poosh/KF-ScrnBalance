@@ -17,7 +17,7 @@ function UpdateList()
 	local int i;
 	local ClientPerkRepLink KFLR;
 
-	KFLR = Class'ClientPerkRepLink'.Static.FindStats(PlayerOwner());
+	KFLR = Class'ScrnClientPerkRepLink'.Static.FindMe(PlayerOwner());
 
 	if ( MyBuyables.Length < 1 )
 	{
@@ -147,7 +147,7 @@ function UpdateMyBuyables()
     local class<ScrnVestPickup> VestClass;
 
 	KFPRI = KFPlayerReplicationInfo(PlayerOwner().PlayerReplicationInfo);
-	KFLR = Class'ClientPerkRepLink'.Static.FindStats(PlayerOwner());
+	KFLR = Class'ScrnClientPerkRepLink'.Static.FindMe(PlayerOwner());
 	if( KFLR==None || KFPRI==None )
 		return; // Hmmmm?
 

@@ -5,5 +5,5 @@ defaultproperties
 {
      FireModeClass(0)=Class'ScrnBalanceSrv.ScrnAK47Fire'
      PickupClass=Class'ScrnBalanceSrv.ScrnAK47Pickup'
-     ItemName="AK47 SE"
+     ItemName="AK-47 SE"
 }

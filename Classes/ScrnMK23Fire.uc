@@ -120,7 +120,7 @@ function DoTrace(Vector Start, Rotator Dir)
 				// if ( KFMonster(Other) != none )
 					// log(String(class) $ ": Damage("$PenCounter$") = " 
 						// $ int(HitDamage) $"/"$ (OldHealth-KFMonster(Other).Health)
-						// @ KFMonster(Other).MenuName , class.outer.name);
+						// @ KFMonster(Other).MenuName , 'ScrnBalance');
 			}
 			if( ++PenCounter > MaxPenetrations || DamagePawn==None )
 			{

@@ -49,7 +49,7 @@ simulated function PostNetReceive()
 {
     // log("ScrnM79MGrenadeProjectile.PostNetReceive():  bHasExploded=" $ bHasExploded @ "bHidden=" $bHidden
         // @ "ExplodeLocation=" $ExplodeLocation @ "Location=" $Location
-        // @ "AmmoAmount=" $ Instigator.Weapon.AmmoAmount(0), class.outer.name);
+        // @ "AmmoAmount=" $ Instigator.Weapon.AmmoAmount(0), 'ScrnBalance');
 
     // Level.GetLocalPlayerController().TeamMessage(Level.GetLocalPlayerController().PlayerReplicationInfo, "PostNetReceive: bHasExploded=" $ bHasExploded @ "bHidden=" $bHidden
         // @ "ExplodeLocation=" $ExplodeLocation @ "Location=" $Location

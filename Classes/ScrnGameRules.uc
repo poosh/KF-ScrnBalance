@@ -46,6 +46,7 @@ struct MonsterInfo {
 
     var ScrnPlayerInfo KillAss1, KillAss2; // who helped player to kill this monster
     var class<KFWeaponDamageType> DamType1, DamType2;
+    var float DamTime1, DamTime2;
     var int DamageFlags1, DamageFlags2;
     var bool TW_Ach_Failed; //if true, no TeamWork achievements can be earned on this zed
 	
@@ -80,9 +81,11 @@ var ScrnPlayerInfo PlayerInfo;
 var class<ScrnAchievements> AchClass;
 var class<ScrnMapAchievements> MapAchClass;
 
-var localized string strWeaponLocked, strWeaponLockedOwn;
+var localized string strWeaponLocked, strWeaponLockedOwn, strPerkedWeaponsOnly;
 var localized string strWaveAccuracy;
 
+// moved here from ScrnWeaponPack for extended compatibility with other muts
+var array< class<KFWeaponDamageType> > SovietDamageTypes;
 
 function PostBeginPlay()
 {
@@ -259,11 +262,11 @@ function WaveStarted()
 	}
 
 	if ( Mut.bStoryMode )
-		log("Wave "$(Mut.KF.WaveNum+1)$" started", class.outer.name);
+		log("Wave "$(Mut.KF.WaveNum+1)$" started", 'ScrnBalance');
 	else if (bFinalWave)
-		log("Final wave started", class.outer.name);
+		log("Final wave started", 'ScrnBalance');
 	else 
-		log("Wave "$(Mut.KF.WaveNum+1)$"/"$(Mut.KF.FinalWave)$" started", class.outer.name);
+		log("Wave "$(Mut.KF.WaveNum+1)$"/"$(Mut.KF.FinalWave)$" started", 'ScrnBalance');
         
     DestroyBuzzsawBlade(); // prevent cheating
 }
@@ -368,7 +371,7 @@ function bool CheckEndGame(PlayerReplicationInfo Winner, string Reason)
 	local int i;
     
     if ( Level.Game.bGameEnded ) {
-        log("Calling CheckEndGame() for already ended game!", class.outer.name);
+        log("Calling CheckEndGame() for already ended game!", 'ScrnBalance');
         return true;
     }
 	
@@ -393,12 +396,12 @@ function bool CheckEndGame(PlayerReplicationInfo Winner, string Reason)
             GiveMapAchievements(MapName);
 			for ( i=0; i<AchHandlers.length; ++i )
 				AchHandlers[i].GameWon(MapName);
-			GiveBonusStats();
             // no need to save stats at this moment, because Level.Game.bGameEnded=False yet, 
             // i.e. ServerPerks hasn't done the final save yet
-            Mut.bNeedToSaveStats = false;
 			//Mut.SaveStats();
         }
+        Mut.bNeedToSaveStats = false;
+        Mut.bSaveStatsOnAchievementEarned = false;
     }  
 	else {
         if ( Boss != none && Boss.Health > 0 )
@@ -415,10 +418,15 @@ function bool CheckEndGame(PlayerReplicationInfo Winner, string Reason)
 
 function GiveMapAchievements(optional String MapName)
 {
-    local bool bCustomMap, bGiveHardAch, bGiveSuiAch, bGiveHoeAch;
+    local bool bCustomMap, bGiveHardAch, bGiveSuiAch, bGiveHoeAch, bNewAch;
 	local ScrnPlayerInfo SPI;
-	local SRStatsBase Stats;
+    local ClientPerkRepLink PerkLink;
+    local TeamInfo WinnerTeam;
+    local float BonusMult;
+    local bool bGiveBonus;
+    local int i;
     
+    WinnerTeam = TeamInfo(Level.Game.GameReplicationInfo.Winner);
 	if ( Mut.bStoryMode ) {
 		bGiveHardAch = Level.Game.GameDifficulty >= 4;
 		bGiveSuiAch = Level.Game.GameDifficulty >= 5;
@@ -430,78 +438,65 @@ function GiveMapAchievements(optional String MapName)
 		bGiveHoeAch = HardcoreLevel >= 15 && DoomHardcorePointsGained > 0;    
 	}
     
+    // end game bonus
+	BonusMult = Mut.EndGameStatBonus;
+	if ( Mut.bStatBonusUsesHL )
+		BonusMult *= fmax(0, HardcoreLevel - Mut.StatBonusMinHL);
+	i = Mut.FindMapInfo();
+	if ( i != -1 )
+		BonusMult *= 1.0 + Mut.MapInfo[i].Difficulty;
+    bGiveBonus = BonusMult >= 0.1;
+    if ( bGiveBonus )
+        log("Giving bonus xp to winners (x"$BonusMult$")", 'ScrnBalance');    
+    
     for ( SPI=PlayerInfo; SPI!=none; SPI=SPI.NextPlayerInfo ) {
 		if ( SPI.PlayerOwner == none || SPI.PlayerOwner.PlayerReplicationInfo == none )
 			continue;
 			
-		Stats = SRStatsBase(SPI.PlayerOwner.SteamStatsAndAchievements);
-		if ( Stats == none )
+		PerkLink = SPI.GetRep();
+		if ( PerkLink == none )
 			continue;
             
-        if ( Level.GRI.Winner != none && Level.GRI.Winner != SPI.PlayerOwner.PlayerReplicationInfo 
-                && Level.GRI.Winner != SPI.PlayerOwner.PlayerReplicationInfo.Team )
-            continue; // skip losers
-			
+        if ( WinnerTeam != none && SPI.PlayerOwner.PlayerReplicationInfo.Team != WinnerTeam )
+            continue; // no candies for loosers  
+		
 		// additional achievements that are granted only when surviving the game
 		if ( ScrnPlayerController(SPI.PlayerOwner) != none && !ScrnPlayerController(SPI.PlayerOwner).bChangedPerkDuringGame )
 			SPI.ProgressAchievement('PerkFavorite', 1);  
 
 		//unlock "Normal" achievement and see if the map is found
-		bCustomMap = MapAchClass.static.UnlockMapAchievement(Stats.Rep, MapName, 0) == -2;  
+		bCustomMap = MapAchClass.static.UnlockMapAchievement(PerkLink, MapName, 0) == -2;  
+        bNewAch = false;
 		if ( bCustomMap ) {
 			//map not found - progress custom map achievements
 			if ( bGiveHardAch )
-				AchClass.static.ProgressAchievementByID(Stats.Rep, 'WinCustomMapsHard', 1);  
+				AchClass.static.ProgressAchievementByID(PerkLink, 'WinCustomMapsHard', 1);  
 			if ( bGiveSuiAch )
-				AchClass.static.ProgressAchievementByID(Stats.Rep, 'WinCustomMapsSui', 1);  
+				AchClass.static.ProgressAchievementByID(PerkLink, 'WinCustomMapsSui', 1);  
 			if ( bGiveHoeAch )
-				AchClass.static.ProgressAchievementByID(Stats.Rep, 'WinCustomMapsHoE', 1);  
-			AchClass.static.ProgressAchievementByID(Stats.Rep, 'WinCustomMapsNormal', 1);
-			AchClass.static.ProgressAchievementByID(Stats.Rep, 'WinCustomMaps', 1);  
+				AchClass.static.ProgressAchievementByID(PerkLink, 'WinCustomMapsHoE', 1);  
+			AchClass.static.ProgressAchievementByID(PerkLink, 'WinCustomMapsNormal', 1);
+			AchClass.static.ProgressAchievementByID(PerkLink, 'WinCustomMaps', 1);  
 		}   
 		else {
 			//map found - give related achievements
-			if ( bGiveHardAch )
-				MapAchClass.static.UnlockMapAchievement(Stats.Rep, MapName, 1);   
-			if ( bGiveSuiAch )
-				MapAchClass.static.UnlockMapAchievement(Stats.Rep, MapName, 2);  
-			if ( bGiveHoeAch )
-				MapAchClass.static.UnlockMapAchievement(Stats.Rep, MapName, 3);  
+			if ( bGiveHardAch && MapAchClass.static.UnlockMapAchievement(PerkLink, MapName, 1) == 1 )
+				bNewAch = true;   
+			if ( bGiveSuiAch && MapAchClass.static.UnlockMapAchievement(PerkLink, MapName, 2) == 1 )
+				bNewAch = true;  
+			if ( bGiveHoeAch && MapAchClass.static.UnlockMapAchievement(PerkLink, MapName, 3) == 1 )
+				bNewAch = true;
 		}
+        // END-GAME STAT BONUS
+        if ( bGiveBonus ) {
+            if ( bNewAch )
+                SPI.BonusStats(SPI.GameStartStats, BonusMult * fmax(1.0, Mut.FirstStatBonusMult));
+            else 
+                SPI.BonusStats(SPI.GameStartStats, BonusMult);
+        }    
     }
 }
 
-function GiveBonusStats(optional String MapName)
-{
-	local float mult;
-	local ScrnPlayerInfo SPI;
-	local int i;
-    local TeamInfo WinnerTeam;
-	
-	mult = Mut.EndGameStatBonus;
-	if ( Mut.bStatBonusUsesHL )
-		mult *= fmax(0, HardcoreLevel - Mut.StatBonusMinHL);
-		
-	i = Mut.FindMapInfo();
-	if ( i != -1 )
-		mult *= 1.0 + Mut.MapInfo[i].Difficulty;
-	
-	if ( mult < 0.1 )
-		return;
-        
-    WinnerTeam = TeamInfo(Level.Game.GameReplicationInfo.Winner);
-    log("Giving bonus xp to winners (x"$mult$")", class.outer.name);
-		
-    for ( SPI=PlayerInfo; SPI!=none; SPI=SPI.NextPlayerInfo ) {
-		if ( SPI.PlayerOwner == none )
-			continue;
-        
-        if ( WinnerTeam != none && SPI.PlayerOwner.PlayerReplicationInfo.Team != WinnerTeam )
-            continue; // no bonus stats for loosers            
-			
-		SPI.BonusStats(SPI.GameStartStats, mult);
-	}
-}
 
 
 static function TrimCollectionToDefault(out class<KFMonstersCollection> Collection, class<KFMonstersCollection> DefaultCollection)
@@ -606,8 +601,8 @@ static function ResetGameSquads(KFGameType Game, byte EventNum)
     Game.EndGameBossClass = DefaultCollection.default.EndGameBossClass;
     Game.StandardMonsterClasses.Length = 0; //fill MonstersCollection instead
     TrimCollectionToDefault(Game.MonsterCollection, DefaultCollection);
-    if ( Game.MonsterCollection != Game.default.MonsterCollection )
-        TrimCollectionToDefault(Game.default.MonsterCollection, DefaultCollection);
+    // if ( Game.MonsterCollection != Game.default.MonsterCollection )
+        // TrimCollectionToDefault(Game.default.MonsterCollection, DefaultCollection);
 }
 
 
@@ -622,7 +617,7 @@ function int NetDamage( int OriginalDamage, int Damage, pawn injured, pawn insti
     local ScrnPlayerController ScrnPC;
     local KFMonster ZedVictim;
     
-    // log("NetDamage: " $ injured $ " took damage from " $ instigatedBy $ " with " $ DamageType, class.outer.name);
+    // log("NetDamage: " $ injured $ " took damage from " $ instigatedBy $ " with " $ DamageType, 'ScrnBalance');
 
     // forward call to next rules
     if ( NextGameRules != None )
@@ -683,15 +678,23 @@ function int NetDamage( int OriginalDamage, int Damage, pawn injured, pawn insti
 		}
 	}
 	else if ( KFHumanPawn(injured) != none ) {
-        if ( KFMonster(instigatedBy) != none ) {
+        // game bug: Siren doesn't set herself as instigator when dealing screaming damage - sneaky bicth
+        if ( DamageType == class'KFMod.SirenScreamDamage' ) {
+            if ( bUseAchievements ) {
+                SPI = GetPlayerInfo(PlayerController(injured.Controller));
+                if ( SPI != none )
+                    SPI.TookDamage(Damage, none, DamageType);
+            }
+        }
+        else if ( KFMonster(instigatedBy) != none ) {
             // M2P damage
             idx = GetMonsterIndex(KFMonster(instigatedBy));
             MonsterInfos[idx].DamageCounter += Damage;
             if ( bUseAchievements ) {
-                SPI = GetPlayerInfo(PlayerController(injured.Controller));
                 // SPI.TookDamage() calls AchHandlers.PlayerDamaged()
+                SPI = GetPlayerInfo(PlayerController(injured.Controller));
                 if ( SPI != none )
-                    SPI.TookDamage(Damage, ZedVictim, DamageType);
+                    SPI.TookDamage(Damage, KFMonster(instigatedBy), DamageType);
             }
         }
         else if ( ScrnPC != none ) {
@@ -913,7 +916,7 @@ function RegisterMonster(KFMonster Monster)
 	if ( Mut.IsSquadWaitingToSpawn() )
 		return; // this monster is spawned by "mvote spawn", so ignore it in HL and achievement calculations
 	
-	//log("Monster=" $ String(Other) @ "Outer="$String(Other.outer) @ "OuterClass="$String(Other.class.outer), class.outer.name);
+	//log("Monster=" $ String(Other) @ "Outer="$String(Other.outer) @ "OuterClass="$String(Other.class.outer), 'ScrnBalance');
 	CheckedMonsterClasses[CheckedMonsterClasses.length] = Monster.class;
 	CheckNewMonster(Monster);
 	
@@ -1005,8 +1008,8 @@ function CheckNewMonster(KFMonster Monster)
 	}
     else if ( Monster.IsA('DoomMonster') ) {
         if ( DoomHardcorePointsGained == 0 ) {
-            log("Doom3 monster package name is " $ String(Monster.class.outer.name), class.outer.name);
-            bScrnDoom = left(String(Monster.class.outer.name), 4) ~= "Scrn";
+            log("Doom3 monster package name is " $ String(Monster.class.outer.name), 'ScrnBalance');
+            bScrnDoom = Monster.class.outer.name == 'ScrnDoom3KF';
             DoomHardcorePointsGained = 2;
             RaiseHardcoreLevel(2, msgDoom3Monster);
         }
@@ -1222,7 +1225,7 @@ function ScrnPlayerInfo CreatePlayerInfo(PlayerController PlayerOwner)
 	if ( SPI == none ) {
 		SPI = spawn(class'ScrnPlayerInfo');
 		if ( SPI == none ) {
-			log("Unable to spawn ScrnPlayerInfo!", class.outer.name);
+			log("Unable to spawn ScrnPlayerInfo!", 'ScrnBalance');
 			return none;
 		}
 
@@ -1259,12 +1262,22 @@ function bool OverridePickupQuery(Pawn Other, Pickup item, out byte bAllowPickup
 	}	
 	
 	Mut.ReplacePickup(item);	// replace pickup's inventory with ScrN version
-	
-	if ( NextGameRules != None )
+    WP = KFWeaponPickup(item);
+    if ( Mut.bPickPerkedWeaponsOnly && WP != none 
+        && WP.CorrespondingPerkIndex != 7
+        && KFPlayerReplicationInfo(Other.PlayerReplicationInfo) != none 
+        && KFPlayerReplicationInfo(Other.PlayerReplicationInfo).ClientVeteranSkill != none
+        && WP.CorrespondingPerkIndex != KFPlayerReplicationInfo(Other.PlayerReplicationInfo).ClientVeteranSkill.default.PerkIndex )
+    {
+        if ( PlayerController(Other.Controller) != none )
+            PlayerController(Other.Controller).ClientMessage(Mut.ColorString(strPerkedWeaponsOnly,192,100,1));
+        result = true;
+        bAllowPickup = 0;
+    }
+	else if ( NextGameRules != None )
 		result = NextGameRules.OverridePickupQuery(Other, item, bAllowPickup);
 	
 	if ( !result || bAllowPickup == 1 )	{
-		WP = KFWeaponPickup(item);
 		if ( WP != none ) {
 			// weapon lock and broadcast
 			if ( WP.SellValue > 0 && WP.DroppedBy != Other.Controller
@@ -1372,6 +1385,7 @@ defaultproperties
 	msgDoomPercent="Doom3 monster count in wave = %p%"
 	strWeaponLocked="%w locked by %o"
 	strWeaponLockedOwn="Can not pickup another's weapons while own are locked"
+	strPerkedWeaponsOnly="You can pickup perked weapons only"
     strWaveAccuracy="%p scored %a accuracy in this wave!"
 
 	AchClass=class'ScrnBalanceSrv.ScrnAchievements'
@@ -1394,4 +1408,11 @@ defaultproperties
 	MapAliases(14)=(FileName="KF-DepartedNight",AchName="KF-Departed")
 	MapAliases(15)=(FileName="KF-FoundryLightsOut",AchName="KF-Foundry")
 	MapAliases(16)=(FileName="KF-HospitalhorrorsLightsOut",AchName="KF-Hospitalhorrors")
+	MapAliases(17)=(FileName="KF-Doom2-SE",AchName="KF-D2M1")
+	MapAliases(18)=(FileName="KF-Icebreaker-SE",AchName="KF-Icebreaker")
+    
+    SovietDamageTypes(0)=class'KFMod.DamTypeKnife'
+    SovietDamageTypes(1)=class'KFMod.DamTypeFrag'
+    SovietDamageTypes(2)=class'KFMod.DamTypeAK47AssaultRifle'
+    SovietDamageTypes(3)=class'ScrnBalanceSrv.ScrnDamTypeAK47AssaultRifle'
 }

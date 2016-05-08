@@ -181,10 +181,8 @@ simulated function ModifyVelocity(float DeltaTime, vector OldVelocity)
         GroundSpeed *= WeightMod;
         GroundSpeed += InventorySpeedModifier;
 
-        if ( KFPlayerReplicationInfo(PlayerReplicationInfo) != none && KFPlayerReplicationInfo(PlayerReplicationInfo).ClientVeteranSkill != none )
-        {
-            GroundSpeed *= KFPlayerReplicationInfo(PlayerReplicationInfo).ClientVeteranSkill.static.GetMovementSpeedModifier(KFPlayerReplicationInfo(PlayerReplicationInfo), KFGameReplicationInfo(Level.GRI));
-        }
+        if ( KFPRI != none && KFPRI.ClientVeteranSkill != none )
+            GroundSpeed *= KFPRI.ClientVeteranSkill.static.GetMovementSpeedModifier(KFPRI, KFGameReplicationInfo(Level.GRI));
 		
         /* Give the pawn's inventory items a chance to modify his movement speed */
 		for( Inv=Inventory; Inv!=None; Inv=Inv.Inventory )
@@ -258,7 +256,7 @@ function bool AddInventory( inventory NewItem )
 
     weap = KFWeapon(NewItem);
     if( weap != none ) {
-		//log("AddInventory:" @ weap, class.outer.name);
+		//log("AddInventory:" @ weap, 'ScrnBalance');
 		if ( Dualies(weap) != none ) {
 			if ( (DualDeagle(weap) != none || Dual44Magnum(weap) != none || DualMK23Pistol(weap) != none)
 				  && weap.InventoryGroup != 4 ) { //skip special weapons like Laser-44
@@ -501,7 +499,7 @@ simulated function ApplyWeaponStats(Weapon NewWeapon)
         }
         
         // ScrN Armor can slow down players (or even boost) -- PooSH
-        InventorySpeedModifier -= default.GroundSpeed * fmin(CurrentVestClass.default.SpeedModifier, 0.50);
+        InventorySpeedModifier -= default.GroundSpeed * CurrentVestClass.default.SpeedModifier;
     }  
 
     //fix spawn offsets for projectile fire modes
@@ -632,7 +630,7 @@ simulated function bool CanUseVestClass(class<ScrnVestPickup> NewClass)
 
 function bool SetVestClass(class<ScrnVestPickup> NewClass)
 {
-    //log("SetVestClass("$NewClass$"), CurrentVestClass = " $ CurrentVestClass, class.outer.name);
+    //log("SetVestClass("$NewClass$"), CurrentVestClass = " $ CurrentVestClass, 'ScrnBalance');
     if ( !CanUseVestClass(NewClass) )
         return false;
         
@@ -706,12 +704,12 @@ function bool AddShieldStrength(int AmountToAdd)
         return false;
         
     ShieldStrength = clamp(ShieldStrength + AmountToAdd, 0, ShieldStrengthMax);
-	if ( ShieldStrength > 0 && ScrnPlayerController(Controller) != none )
-		ScrnPlayerController(Controller).bHadArmor = true;
-    
     SetShieldWeight();
-    if ( ShieldStrength >= 26)
+	if ( ShieldStrength >= 26 ) {
         bCowboyMode = false;
+        if ( ScrnPlayerController(Controller) != none )
+            ScrnPlayerController(Controller).bHadArmor = true;
+    }
 
     return true;
 }
@@ -833,7 +831,7 @@ function ServerBuyShield(class<ScrnVestPickup> VestClass)
     
     // log("ServerBuyShield: Current Vest = " $ GetItemName(String(CurrentVestClass)) $ ", " $ int(ShieldStrength) $"%."
         // @ "Vest to Buy = " $ GetItemName(String(VestClass))
-        // @ "Amount to Buy = " $ AmountToBuy $ " * " $ Price1p $ " = $" $ Cost, class.outer.name);
+        // @ "Amount to Buy = " $ AmountToBuy $ " * " $ Price1p $ " = $" $ Cost, 'ScrnBalance');
     
 	if ( CanBuyNow() && AmountToBuy > 0 ) {
         if ( PlayerReplicationInfo.Score >= Cost ) {
@@ -946,14 +944,16 @@ static function bool CalcAmmoCost(Pawn P, Class<Ammunition> AClass,
     bSecondaryAmmo = KW.bHasSecondaryAmmo 
                         && AClass != KW.FireModeClass[0].default.AmmoClass
                         && AClass == KW.FireModeClass[1].default.AmmoClass;
-        
+    
     MyAmmo.MaxAmmo = MyAmmo.default.MaxAmmo;
-    if ( Perk != none )
-        MyAmmo.MaxAmmo = int(float(MyAmmo.MaxAmmo) * Perk.static.AddExtraAmmoFor(KFPRI, AClass));
+    if ( bSecondaryAmmo && Perk != none)
+        MyAmmo.MaxAmmo = MyAmmo.default.MaxAmmo * Perk.static.AddExtraAmmoFor(KFPRI, AClass);
+    else 
+        MyAmmo.MaxAmmo  = MyAmmo.default.MaxAmmo * KW.GetAmmoMulti(); // allow weapons to hande ammo bonuses
     if ( MyAmmo.AmmoAmount > MyAmmo.MaxAmmo )
         MyAmmo.AmmoAmount = MyAmmo.MaxAmmo;
 
-    // Adding SecondaryAmmoCost variable to KFWeaponPickup would make things much easies, 
+    // Adding SecondaryAmmoCost variable to KFWeaponPickup would make things much easier, 
     // but Tripwire doesn't look for easy ways ;)
     // If weapon has secondary ammo and this isn't secondary ammo, then this is primary ammo,
     // and primary ammo's cost is stored inside PrimaryWeaponPickup class
@@ -1078,19 +1078,19 @@ function ServerSellWeapon( Class<Weapon> WClass ) {
                 
         }
         else if ( W.class==Class'Dualies' ) {
-            SinglePistol = Spawn(class'Single');
+            SinglePistol = Spawn(class'Single', self);
             SellValue *= 2; //cuz we can't sell 9mm
         }
         else if ( W.class==Class'DualDeagle' )
-            SinglePistol = Spawn(class'Deagle');
+            SinglePistol = Spawn(class'Deagle', self);
         else if ( W.class==Class'Dual44Magnum' )
-            SinglePistol = Spawn(class'Magnum44Pistol');
+            SinglePistol = Spawn(class'Magnum44Pistol', self);
         else if ( W.class==Class'DualMK23Pistol' )
-            SinglePistol = Spawn(class'MK23Pistol');
+            SinglePistol = Spawn(class'MK23Pistol', self);
         else if ( W.class==Class'DualFlareRevolver' )
-            SinglePistol = Spawn(class'FlareRevolver');
+            SinglePistol = Spawn(class'FlareRevolver', self);
         else if( Weapon(I).DemoReplacement!=None )
-            SinglePistol = KFWeapon(Spawn(W.DemoReplacement));
+            SinglePistol = KFWeapon(Spawn(W.DemoReplacement, self));
             
         if( SinglePistol!=None )
         {
@@ -1147,19 +1147,29 @@ function ServerBuyWeapon( Class<Weapon> WClass, float ItemWeight )
 {
     local float Price,Weight, SellValue, SingleSellValue, SingleWeight;
     local Inventory I;
+    local Class<KFWeaponPickup> WP;
 
-    if( !CanBuyNow() || Class<KFWeapon>(WClass)==None || Class<KFWeaponPickup>(WClass.Default.PickupClass)==None || HasWeaponClass(WClass) )
+    if( !CanBuyNow() || Class<KFWeapon>(WClass)==None || HasWeaponClass(WClass) )
         Return;
+     
+    WP = Class<KFWeaponPickup>(WClass.Default.PickupClass);
+    if ( WP == none )
+        return;
 
     // Validate if allowed to buy that weapon.
     if( PerkLink==None )
         PerkLink = FindStats();
-    if( PerkLink!=None && !PerkLink.CanBuyPickup(Class<KFWeaponPickup>(WClass.Default.PickupClass)) )
+    if( PerkLink!=None && !PerkLink.CanBuyPickup(WP) )
         return;
 
-    Price = class<KFWeaponPickup>(WClass.Default.PickupClass).Default.Cost;
-    if ( KFPlayerReplicationInfo(PlayerReplicationInfo).ClientVeteranSkill != none )
-        Price *= KFPlayerReplicationInfo(PlayerReplicationInfo).ClientVeteranSkill.static.GetCostScaling(KFPlayerReplicationInfo(PlayerReplicationInfo), WClass.Default.PickupClass);
+    Price = WP.Default.Cost;
+    if ( KFPlayerReplicationInfo(PlayerReplicationInfo).ClientVeteranSkill != none ) {
+        Price *= KFPlayerReplicationInfo(PlayerReplicationInfo).ClientVeteranSkill.static.GetCostScaling(KFPlayerReplicationInfo(PlayerReplicationInfo), WP);
+        if  (class'ScrnBalance'.default.Mut.bBuyPerkedWeaponsOnly 
+                && WP.default.CorrespondingPerkIndex != 7 
+                && WP.default.CorrespondingPerkIndex != KFPlayerReplicationInfo(PlayerReplicationInfo).ClientVeteranSkill.default.PerkIndex )
+            return;    
+    }    
     SellValue = Price * 0.75;
     Weight = Class<KFWeapon>(WClass).Default.Weight;
 
@@ -1212,7 +1222,7 @@ function ServerBuyWeapon( Class<Weapon> WClass, float ItemWeight )
     if ( (Weight>0 && !CanCarry(Weight)) || PlayerReplicationInfo.Score<Price )
         Return;
 
-    I = Spawn(WClass);
+    I = Spawn(WClass, self);
     if ( I != none )
     {
         if ( KFGameType(Level.Game) != none )
@@ -1343,6 +1353,7 @@ simulated function Tick(float DeltaTime)
     else if ( KFPRI == none )
         KFPRI = KFPlayerReplicationInfo(PlayerReplicationInfo);
     
+    AlphaAmount = 255; // hack to avoid KFHumanPawn of updating KFPRI.ThreeSecondScore
     super.Tick(DeltaTime);
     
     bCowboyMode = bCowboyMode && ShieldStrength < 26;
@@ -1351,7 +1362,6 @@ simulated function Tick(float DeltaTime)
             ClientVeterancyChanged(PrevPerkClass);
             PrevPerkClass = KFPRI.ClientVeteranSkill;
         }
-
     }
     
     if ( bViewTarget )
@@ -1497,12 +1507,14 @@ simulated function Fire( optional float F )
     local KFWeapon W;
     local ScrnPlayerController PC;
     
-    PC = ScrnPlayerController(Controller);
+    if ( Weapon == none )
+        return;
     
+    PC = ScrnPlayerController(Controller);
     W = KFWeapon(Weapon);
-    if ( W != none && !W.bMeleeWeapon && W.bConsumesPhysicalAmmo 
-            && W.MagCapacity > 1 && W.MagAmmoRemaining < 1 && !W.bIsReloading && !W.bHoldToReload	
-            && PC != none && PC.bManualReload) {
+    if ( PC != none && PC.bManualReload && W != none && !W.bMeleeWeapon && W.bConsumesPhysicalAmmo 
+            && !W.bIsReloading && !W.bHoldToReload
+            && W.MagCapacity > 1 && W.MagAmmoRemaining < W.GetFireMode(0).AmmoPerFire ) {
         if ( W.AmmoAmount(0) == 0 )
             PC.ReceiveLocalizedMessage(class'ScrnBalanceSrv.ScrnPlayerWarningMessage',1);        
         else
@@ -1511,15 +1523,37 @@ simulated function Fire( optional float F )
         return;
     }
     
-    Super.Fire(F);
-	if ( KFWeapon(Weapon) != none && Weapon.FireModeClass[0] != class'KFMod.NoFire' )
+    Weapon.Fire(F);
+    
+    if ( W != none && W.FireModeClass[0] != class'KFMod.NoFire' )
 		ServerFire(0);
 }
 
 simulated function AltFire( optional float F )
 {
-    super.AltFire(F);
-	if ( KFWeapon(Weapon) != none  && Weapon.FireModeClass[1] != class'KFMod.NoFire')
+    local KFWeapon W;
+    local ScrnPlayerController PC;
+    
+    if ( Weapon == none )
+        return;    
+    
+    PC = ScrnPlayerController(Controller);
+    W = KFWeapon(Weapon);
+    if ( PC != none && PC.bManualReload && W != none && !W.bMeleeWeapon && W.bConsumesPhysicalAmmo 
+            && W.bReduceMagAmmoOnSecondaryFire && KFMedicGun(W) == none
+            && !W.bIsReloading && !W.bHoldToReload 
+            && W.MagCapacity > 2 && W.MagAmmoRemaining < W.GetFireMode(1).AmmoPerFire ) {
+        if ( W.AmmoAmount(0) == 0 )
+            PC.ReceiveLocalizedMessage(class'ScrnBalanceSrv.ScrnPlayerWarningMessage',1);        
+        else
+            PC.ReceiveLocalizedMessage(class'ScrnBalanceSrv.ScrnPlayerWarningMessage',0);        
+        W.PlayOwnedSound(W.GetFireMode(0).NoAmmoSound, SLOT_None,2.0,,,,false);
+        return;
+    }
+    
+    Weapon.AltFire(F);
+    
+	if ( W != none  && W.FireModeClass[1] != class'KFMod.NoFire')
 		ServerFire(1);
 }
 

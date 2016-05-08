@@ -1,6 +1,6 @@
 class ScrnFlareCloud extends Emitter;
 
-var int FlareCount; // more flares = wider cloud
+var byte FlareCount; // more flares = wider cloud
 
 replication 
 {
@@ -29,7 +29,7 @@ simulated function AdjustCloudSize()
 	local float clound_size;
 	
 	// more flares = wider cloud
-	clound_size = 1.0 + 0.5 * min(5, FlareCount);
+	clound_size = 1.0 + 0.25 * min(10, FlareCount);
 	Emitters[0].StartSizeRange.X.Max = default.Emitters[0].StartSizeRange.X.Max * clound_size;
 	Emitters[0].StartSizeRange.Y.Max = default.Emitters[0].StartSizeRange.Y.Max * clound_size;	
 }

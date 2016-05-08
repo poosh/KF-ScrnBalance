@@ -46,7 +46,14 @@ final static function int SteamID64_to_32(string sid64)
         return 0;
     
     billions = int(left(sid64,8)) - SteamUID_Part1;
-    a = int(right(sid64,9)) - SteamUID_Part2;
+    a = int(right(sid64,9));
+
+    if ( a < SteamUID_Part2 ) {
+        billions--;
+        a += 1000000000;
+    }
+    a -= SteamUID_Part2;
+    
     
     if ( billions > 4 || (billions == 4 && a >= 294967296) ) { // 2^32
         log("Steam ID too high for 32-bit number: " $ sid64);
@@ -74,8 +81,8 @@ final static function string SteamID32_to_64(int sid32)
     if ( sid32 < 0 ) {
         // negative number mean highest int32 bit is 1 -> 2147483648
         a = sid32 & 0x7FFFFFFF; // unset sign bit
-        billions = a / 1000000000;
-        a -= billions;
+        billions =  a / 1000000000;
+        a -= billions * 1000000000;
         billions += SteamUID_Part1 + 2;
         a += SteamUID_Part2 + 147483648;
         if ( a > 1000000000 ) {
@@ -85,21 +92,20 @@ final static function string SteamID32_to_64(int sid32)
     }
     else {
         a = sid32;
-        billions = a / 1000000000;
-        a -= billions;
+        billions =  a / 1000000000;
+        a -= billions * 1000000000;
         billions += SteamUID_Part1;
         a += SteamUID_Part2;
         if ( a > 1000000000 ) {
-            billions ++;
+            billions++;
             a -= 1000000000;
         }        
     }
     result = string(a);
     while ( len(result) < 9 )
         result = "0" $ result;
-    result = string(billions) $ a;
+    result = string(billions) $ result;
     return result;
-
 } 
 
 final simulated function SetSteamID64(string value)
@@ -141,15 +147,15 @@ final simulated function LoadHighlyDecorated()
 final static function ScrnCustomPRI FindMe(PlayerReplicationInfo PRI)
 {
     local LinkedReplicationInfo L;
-    local ScrnCustomPRI result;
     
     if ( PRI == none )
         return none;
     
-    for( L = PRI.CustomReplicationInfo; L != none && result == none ; L = L.NextReplicationInfo )
-        result = ScrnCustomPRI(L);
-    
-    return result;
+    for( L = PRI.CustomReplicationInfo; L != none; L = L.NextReplicationInfo ) {
+        if ( ScrnCustomPRI(L) != none )
+            return ScrnCustomPRI(L);
+    }
+    return none;
 }
 
 final simulated function bool IsTourneyMember()

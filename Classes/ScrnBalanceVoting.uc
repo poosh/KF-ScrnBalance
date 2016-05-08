@@ -12,8 +12,9 @@ const VOTE_BORING  	 = 6;
 const VOTE_SPAWN  	 = 7;
 const VOTE_ENDWAVE   = 8;
 const VOTE_SPEC      = 9;
-const VOTE_READY     =  10;
-const VOTE_UNREADY   =  11;
+const VOTE_READY     = 10;
+const VOTE_UNREADY   = 11;
+const VOTE_RKILL     = 100;
 
 var localized string strCantEndTrade;
 var localized string strTooLate;
@@ -23,6 +24,7 @@ var localized string strZedSpawnsDoubled;
 var localized string strSquadNotFound, strCantSpawnSquadNow, strSquadList;
 var localized string strNotInStoryMode;
 var localized string strCantEndWaveNow, strEndWavePenalty;
+var localized string strRCommands;
 
 //variables for GamePaused state
 var int PauseTime;
@@ -40,7 +42,7 @@ function class<ScrnVeterancyTypes> FindPerkByName(PlayerController Sender, strin
     local class<ScrnVeterancyTypes> Perk;
     local string s1, s2;
     
-    // log("FindPerkByName("$Sender$", "$VeterancyName$")", class.outer.name);
+    // log("FindPerkByName("$Sender$", "$VeterancyName$")", 'ScrnBalance');
     
     if ( Sender == none || VeterancyName == "" || SRStatsBase(Sender.SteamStatsAndAchievements) == none )
         return none;
@@ -48,11 +50,11 @@ function class<ScrnVeterancyTypes> FindPerkByName(PlayerController Sender, strin
     if ( L == none )
         return none;
         
-    // log("CachePerks.Length="$L.CachePerks.Length, class.outer.name);
+    // log("CachePerks.Length="$L.CachePerks.Length, 'ScrnBalance');
     for ( i = 0; i < L.CachePerks.Length; ++i ) {
         Perk = class<ScrnVeterancyTypes>(L.CachePerks[i].PerkClass);
         if ( Perk != none ) {
-            // log(GetItemName(String(Perk.class)) @ Perk.default.VeterancyName, class.outer.name);
+            // log(GetItemName(String(Perk.class)) @ Perk.default.VeterancyName, 'ScrnBalance');
             if ( GetItemName(String(Perk.class)) ~= VeterancyName || Perk.default.VeterancyName ~= VeterancyName 
                     || (Divide(Perk.default.VeterancyName, " ", s1, s2) && (VeterancyName ~= s1 || VeterancyName ~= s2)) )
                 return Perk;
@@ -166,6 +168,7 @@ function int GetVoteIndex(PlayerController Sender, string Key, out string Value,
 			VotingHandler.VotedPlayer = none;
 			Value = Mid(Value, 1);
 			Divide(Value, "\"", Value, Reason);
+            VotingHandler.VotedPlayer = none;
 		}
 		else {
 			Divide(Value, " ", Value, Reason);
@@ -312,7 +315,30 @@ function int GetVoteIndex(PlayerController Sender, string Key, out string Value,
             return VOTE_NOEFECT;
             
         return VOTE_UNREADY;
-    }    
+    }   
+	else if ( Key == "R_KILL" ) {
+        if ( !Sender.PlayerReplicationInfo.bAdmin || Mut.SrvTourneyMode == 0 ) {
+			Sender.ClientMessage(strRCommands);
+			return VOTE_LOCAL;
+		}
+		
+		if ( Value == "" ) {
+			SendPlayerList(Sender);
+			return VOTE_LOCAL;
+		}
+		
+		Reason = "";
+		Divide(Value, " ", Value, Reason);
+		VotingHandler.VotedPlayer = FindPlayer(Value);
+		if ( VotingHandler.VotedPlayer == none ) {
+			Sender.ClientMessage(strPlayerNotFound);
+			SendPlayerList(Sender);
+			return VOTE_ILLEGAL;
+		}
+		Value = Mut.ColoredPlayerName(VotingHandler.VotedPlayer.PlayerReplicationInfo);
+		VoteInfo = "Referee KILL " $ Value;
+		result = VOTE_RKILL;
+	}     
     else
         return VOTE_UNKNOWN;
 
@@ -361,6 +387,8 @@ function ApplyVoteValue(int VoteIndex, string VoteValue)
             Mut.KF.WaveCountDown = 6; // need to left at least 6 to execute kfgametype.timer() events
             break;  
 		case VOTE_BLAME:
+            if ( VotingHandler.VotedPlayer != none )
+                VoteValue = Mut.ColoredPlayerName(VotingHandler.VotedPlayer.PlayerReplicationInfo);
             LastBlameVoteTime = Level.TimeSeconds;
 			if ( Reason == "" )
 				VotingHandler.BroadcastMessage(VoteValue $ " blamed");
@@ -418,7 +446,7 @@ function ApplyVoteValue(int VoteIndex, string VoteValue)
                     ApplyVoteValue(VoteIndex, VoteValue);                    
                 }
 			}
-			else if ( VoteValue ~= "TWI" || VoteValue ~= "Tripwire" || VoteValue ~= "Tripwire Interactive" ) {
+			else if ( VoteValue ~= "TWI" || VoteValue ~= "Tripwire" ) {
 				Mut.BroadcastFakedAchievement(3); // blame Tripwire :)
 			}
 			else 
@@ -470,6 +498,18 @@ function ApplyVoteValue(int VoteIndex, string VoteValue)
         case VOTE_UNREADY:
             SetReady(VotingHandler.VotedTeam.TeamIndex, false);
             break;            
+            
+		case VOTE_RKILL:
+			if ( VotingHandler.VotedPlayer != none && VotingHandler.VotedPlayer.Pawn != none ) {
+                VotingHandler.VotedPlayer.Pawn.Suicide();
+				if ( Reason == "" ) {
+					VotingHandler.BroadcastMessage(VoteValue $ " killed by referee");
+				}
+				else {
+					VotingHandler.BroadcastMessage(VoteValue $ " killed by referee for " $Reason);
+				}            
+            }
+			break;             
     }
 }
 
@@ -625,7 +665,7 @@ Begin:
                 VotingHandler.BroadcastMessage(String(PauseTime));
             else if ( (PauseTime%30 == 0) || (PauseTime < 30 && PauseTime%10 == 0) )
                 VotingHandler.BroadcastMessage(PauseTime @ strSecondsLeft);
-            //log(Level.TimeSeconds @ "Sleep", class.outer.name);
+            //log(Level.TimeSeconds @ "Sleep", 'ScrnBalance');
             sleep(1.0);
             PauseTime--;
         }
@@ -667,6 +707,7 @@ defaultproperties
 	strNotInStoryMode="Not avaliable in Story Mode"
 	strCantEndWaveNow="Can't end the wave now"
 	strEndWavePenalty="Team charged for premature wave end with $"
+    strRCommands="R_* commands can be executed only by Referee (Admin rights + Tourney Mode)"
 
     viResume="RESUME GAME"
     viEndTrade="END TRADER TIME"    

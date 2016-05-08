@@ -53,4 +53,5 @@ simulated function ProcessTouch(Actor Other, Vector HitLocation)
 defaultproperties
 {
      DamageRadius=450.000000
+     Damage=400
 }

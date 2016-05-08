@@ -24,7 +24,6 @@ echo.
 echo Copying release files...
 mkdir %outputdir%\System
 mkdir %outputdir%\Textures
-mkdir %outputdir%\uz2
 
 
 copy /y %KFDIR%\system\ScrnBalance.* %outputdir%\System\
@@ -40,17 +39,6 @@ rem For Workshop
 copy /y *.ini  ..\System\
 copy /y Copyright.txt  ..\Help\ScrnBalanceEULA.txt
 
-
-echo Compressing to .uz2...
-%KFDIR%\system\ucc compress %KFDIR%\system\ScrnBalance.u
-%KFDIR%\system\ucc compress %STEAMDIR%\textures\ScrnTex.utx
-%KFDIR%\system\ucc compress %STEAMDIR%\textures\ScrnAch_T.utx
-%KFDIR%\system\ucc compress %KFDIR%\system\ScrnVotingHandlerV4.u
-
-move /y %KFDIR%\system\ScrnBalance.u.uz2 %outputdir%\uz2
-move /y %STEAMDIR%\textures\ScrnTex.utx.uz2 %outputdir%\uz2
-move /y %STEAMDIR%\textures\ScrnAch_T.utx.uz2 %outputdir%\uz2
-move /y %KFDIR%\system\ScrnVotingHandlerV4.u.uz2 %outputdir%\uz2
 
 echo Release is ready!
 

@@ -58,7 +58,7 @@ struct AchDef
     var bool bUnlockedJustNow;
     var bool bDisplayFlag; // use to show/hime achievement from the list
 
-    var string Group;
+    var name Group;
 };
 var array<AchDef> AchDefs;
 var protected int VisibleAchCount; // achievement count with bDisplayFlag = true. Valid only after SetVisibility() call.
@@ -78,11 +78,11 @@ struct SysInfoRec
 };
 var private array<SysInfoRec> SysInfo;
 
-var string DefaultAchGroup; // default value to set to AchDefs.Group
+var name DefaultAchGroup; // default value to set to AchDefs.Group
 var private array< class<ScrnAchievements> > AchClassList; // add here custom achievement classes to load their data from SP custom progress
 
 struct AchGroupInfo {
-	var string 				Group; 		// AchDef.Group
+	var name 				Group; 		// AchDef.Group
 	var localized string 	Caption; 	// what player sees in GUI
 };
 var array<AchGroupInfo> GroupInfo;
@@ -103,23 +103,28 @@ simulated function InitData()
     local byte offset;
 
     if ( Role == ROLE_Authority )
-        log(GetItemName(String(class.name)) $ " - loading achievement data for "$PlayerController(Owner).PlayerReplicationInfo.PlayerName, class.outer.name);
+        log(GetItemName(String(class.name)) $ " - loading achievement data for "$PlayerController(Owner).PlayerReplicationInfo.PlayerName, 'ScrnBalance');
     else
-        log(GetItemName(String(class.name)) $ " - loading achievement my data", class.outer.name);
+        log(GetItemName(String(class.name)) $ " - loading achievement my data", 'ScrnBalance');
     StopWatch(false); // reset timer
 
     if ( default.bNeedToSetDefaultAchievementData ) {
         // since all instances of the same class have the same data, SetDefaultAchievementData() can be called only once
         // and then set to default values
+        SetDefaultAchievementData();
         for ( i = 0; i < AchDefs.Length; ++i ) {
-            SetDefaultAchievementData(i);
-
-            default.AchDefs[i].DisplayName = AchDefs[i].DisplayName;
-            default.AchDefs[i].Description = AchDefs[i].Description;
+            if ( AchDefs[i].Group == '' )
+                AchDefs[i].Group = DefaultAchGroup;
             default.AchDefs[i].Group = AchDefs[i].Group;
-            default.AchDefs[i].Icon = AchDefs[i].Icon;
             default.AchDefs[i].FilterMaskAny = AchDefs[i].FilterMaskAny;
             default.AchDefs[i].FilterMaskAll = AchDefs[i].FilterMaskAll;
+        }
+        if ( Level.NetMode != NM_DedicatedServer ) {
+            for ( i = 0; i < AchDefs.Length; ++i ) {
+                default.AchDefs[i].DisplayName = AchDefs[i].DisplayName;
+                default.AchDefs[i].Description = AchDefs[i].Description;
+                default.AchDefs[i].Icon = AchDefs[i].Icon;
+            }        
         }
         default.bNeedToSetDefaultAchievementData = false;
     }
@@ -165,12 +170,17 @@ simulated function InitData()
 
 
 
-simulated function SetDefaultAchievementData(int index)
+simulated function SetDefaultAchievementData()
 {
-    if (InStr(AchDefs[index].Description, "%c") != -1 )
-        ReplaceText(AchDefs[index].Description, "%c", string(AchDefs[index].MaxProgress));
-    if ( AchDefs[index].Group == "" )
-        AchDefs[index].Group = DefaultAchGroup;
+    local int i;
+    
+    if ( Level.NetMode == NM_DedicatedServer ) 
+        return;
+        
+    for ( i = 0; i < AchDefs.Length; ++i ) {
+        if (InStr(AchDefs[i].Description, "%c") != -1 )
+            ReplaceText(AchDefs[i].Description, "%c", string(AchDefs[i].MaxProgress));
+    }
 }
 
 simulated function int GetAchievementCount()
@@ -220,7 +230,7 @@ protected simulated function int ReadProgressFromData(int AchIndex)
         // @ "value_loaded="$result
         // @ "bits_loaded="$bits_loaded
         // @ "bits2load="$bits2load
-        // ,class.outer.name);
+        // ,'ScrnBalance');
 
     if (bits2load < 0) {
         //loaded too much - need to clear higher bits
@@ -236,7 +246,7 @@ protected simulated function int ReadProgressFromData(int AchIndex)
         }
     }
 
-    //log("result="$result,class.outer.name);
+    //log("result="$result,'ScrnBalance');
 
     return result;
 }
@@ -262,7 +272,7 @@ protected function WriteProgressToData(int AchIndex, int Value)
         // @ "index="$index
         // @ "offset="$offset
         // @ "bits2write_total="$bits2write_total
-        // ,class.outer.name);
+        // ,'ScrnBalance');
 
     while ( bits2write_total > 0 ) {
         bits2write_cur = min(bits2write_total, 8 - offset);
@@ -324,7 +334,7 @@ simulated protected function ClientSetAchProgress(int AchIndex, int NewValue, bo
 
     // debug
     // PC.ClientMessage(GetItemName(String(name)) $ "("$AchIndex$") = "$NewValue);
-    // log(GetItemName(String(name)) $ "("$AchIndex$") = "$NewValue, class.outer.name);
+    // log(GetItemName(String(name)) $ "("$AchIndex$") = "$NewValue, 'ScrnBalance');
 
     if ( !bSilent ) {
         // display achievement in the following circumtances:
@@ -375,6 +385,7 @@ function bool ProgressAchievement(int AchIndex, int Inc)
                 AchDefs[AchIndex].bUnlockedJustNow = true;
                 AchDefs[AchIndex].CurrentProgress = AchDefs[AchIndex].MaxProgress; // in case prevprogress + inc > max
 				class'ScrnBalance'.default.Mut.AchievementEarned(self, AchIndex);
+                AnnounceEarn(self, AchIndex, true);
             }
             ClientSetAchProgress(AchIndex, AchDefs[AchIndex].CurrentProgress, bSilent);
             bSilent = true; //show progress only for a first achievement, if more of them are sharing same data
@@ -384,6 +395,7 @@ function bool ProgressAchievement(int AchIndex, int Inc)
             AchDefs[AchIndex].bUnlockedJustNow = false;
             ClientSetAchProgress(AchIndex, AchDefs[AchIndex].MaxProgress, false);
             class'ScrnBalance'.default.Mut.AchievementEarned(self, AchIndex);
+            AnnounceEarn(self, AchIndex, false);
         }
         ProgressToWrite = max(ProgressToWrite, AchDefs[AchIndex].CurrentProgress);
         AchIndex++;
@@ -413,6 +425,21 @@ static final function bool ProgressAchievementByID(ClientPerkRepLink L, name ID,
         }
     }
     return false;
+}
+
+// override to handle achievement earning events
+function AchievementEarned(ScrnAchievements A, int Index, bool bFirstTimeEarned) {}
+
+static final private function AnnounceEarn(ScrnAchievements AchOwner, int AchIndex, bool bFirstTimeEarned)
+{
+    local SRCustomProgress S;
+    local ScrnAchievements A;
+
+    for( S = AchOwner.RepLink.CustomLink; S != none; S = S.NextLink ) {
+        A = ScrnAchievements(S);
+        if( A != none ) 
+            A.AchievementEarned(AchOwner, AchIndex, bFirstTimeEarned);
+    }
 }
 
 static final function bool ResetAchievementByID(ClientPerkRepLink L, name ID)
@@ -491,7 +518,7 @@ static final function ResetAchList()
 	class'ScrnAchievements'.default.AchClassList[1] = Class'ScrnBalanceSrv.AchMaps';
 }
 
-simulated function GetAchievementStats(out int Completed, out int Total, optional int AchievementFlags, optional string Group)
+simulated function GetAchievementStats(out int Completed, out int Total, optional int AchievementFlags, optional name Group)
 {
     local int i, count;
 
@@ -500,7 +527,7 @@ simulated function GetAchievementStats(out int Completed, out int Total, optiona
     count = GetAchievementCount();
 
     for ( i = 0; i < count; ++i ) {
-        if ( (Group == "" || Group == AchDefs[i].Group) && FilterMached(AchievementFlags, AchDefs[i].FilterMaskAll, AchDefs[i].FilterMaskAny) ) {
+        if ( (Group == '' || Group == AchDefs[i].Group) && FilterMached(AchievementFlags, AchDefs[i].FilterMaskAll, AchDefs[i].FilterMaskAny) ) {
             Total++;
             if ( AchDefs[i].CurrentProgress >= AchDefs[i].MaxProgress )
                 Completed++;
@@ -508,7 +535,7 @@ simulated function GetAchievementStats(out int Completed, out int Total, optiona
     }
 }
 
-static final function GetGlobalAchievementStats(ClientPerkRepLink L, out int Completed, out int Total, optional int AchievementFlags, optional string Group)
+static final function GetGlobalAchievementStats(ClientPerkRepLink L, out int Completed, out int Total, optional int AchievementFlags, optional name Group)
 {
     local SRCustomProgress S;
     local ScrnAchievements A;
@@ -539,7 +566,7 @@ simulated function string GetDisplayString()
 
 
 
-//returns true if Flags matched both FilterAll and FilterAny, of their values are 0
+//returns true if Flags matched both FilterAll and FilterAny, or their values are 0
 static function bool FilterMached(int Flags, int FilterMaskAll, int FilterMaskAny)
 {
     return Flags == 0 || (
@@ -574,7 +601,7 @@ simulated function int GetVisibleAchIndex(int VisibleIndex)
 }
 
 // sets bDisplayFlag of AchDefs
-simulated function SetVisibility(optional int AchievementFlags, optional string Group, optional bool bOnlyLocked)
+simulated function SetVisibility(optional int AchievementFlags, optional name Group, optional bool bOnlyLocked)
 {
     local int i;
 
@@ -582,13 +609,13 @@ simulated function SetVisibility(optional int AchievementFlags, optional string 
     for ( i = 0; i < AchDefs.length; ++i ) {
 
         AchDefs[i].bDisplayFlag = (!bOnlyLocked || !IsUnlocked(i) )
-                && (Group == "" || Group == AchDefs[i].Group)
+                && (Group == '' || Group == AchDefs[i].Group)
                 && FilterMached(AchievementFlags, AchDefs[i].FilterMaskAll, AchDefs[i].FilterMaskAny);
 
         if ( AchDefs[i].bDisplayFlag )
             VisibleAchCount++;
         // else
-            // log("Achievement "$AchDefs[i].ID $ " didn't pass filter " $ IntToHex(AchievementFlags), default.class.outer.name);
+            // log("Achievement "$AchDefs[i].ID $ " didn't pass filter " $ IntToHex(AchievementFlags), 'ScrnBalance');
     }
 }
 
@@ -635,7 +662,7 @@ static final function bool IsAchievementUnlocked(ClientPerkRepLink L, name ID)
 // sets list of all achievement handlers with bDisplayFlag set
 // returns visible achievement count
 static final function int GetAllAchievements(ClientPerkRepLink L, out array<ScrnAchievements> AchHandlers,
-    optional int AchievementFlags, optional string Group, optional bool bOnlyLocked )
+    optional int AchievementFlags, optional name Group, optional bool bOnlyLocked )
 {
     local SRCustomProgress S;
     local ScrnAchievements A;
@@ -657,7 +684,7 @@ static final function int GetAllAchievements(ClientPerkRepLink L, out array<Scrn
     return count;
 }
 
-static final function ResetAchievements(ClientPerkRepLink L, String Group)
+static final function ResetAchievements(ClientPerkRepLink L, name Group)
 {
     local SRCustomProgress S;
     local ScrnAchievements A;
@@ -693,7 +720,7 @@ simulated function bool IsUnlocked(int AchIndex)
 }
 
 
-static final function RetrieveGroups(ClientPerkRepLink L, out array<string> GroupNames, out array<string> GroupCaptions)
+static final function RetrieveGroups(ClientPerkRepLink L, out array<name> GroupNames, out array<string> GroupCaptions)
 {
     local SRCustomProgress S;
     local ScrnAchievements A;
@@ -727,34 +754,40 @@ static final function RetrieveGroups(ClientPerkRepLink L, out array<string> Grou
     }
 }
 
-private simulated function SetRepLink()
+simulated function string LocalGroupCaption(ClientPerkRepLink L, name GroupName)
 {
-    local PlayerController PC;
-    local LinkedReplicationInfo L;
+    local int i;
     
-    if ( RepLink != none )
-        return; // already set
-    if ( Role == ROLE_Authority )
-        return; // RepLink must be already set on server side
-    
-    PC = Level.GetLocalPlayerController(); // this class is relevant only to owner, so this is safe to use here
-    if ( PC == none )
-        return; // wtf?
-    
-      
-    if ( SRStatsBase(PC.SteamStatsAndAchievements) != none ) 
-        RepLink = SRStatsBase(PC.SteamStatsAndAchievements).Rep;
-    else if ( PC.PlayerReplicationInfo != none ) {
-        for( L=PC.PlayerReplicationInfo.CustomReplicationInfo; RepLink==none && L!=None; L=L.NextReplicationInfo )
-            RepLink = ClientPerkRepLink(L);
+    for ( i = 0; i < GroupInfo.length; ++i ) {
+        if ( GroupInfo[i].Group == GroupName )
+            return GroupInfo[i].Caption;
+    }    
+    return "";
+}
+
+static final function string GroupCaption(ClientPerkRepLink L, name GroupName)
+{
+    local SRCustomProgress S;
+    local ScrnAchievements A;
+    local string result;
+
+    if ( L != none ) {
+        for( S = L.CustomLink; S != none; S = S.NextLink ) {
+            A = ScrnAchievements(S);
+            if( A != none ) {
+                result = A.LocalGroupCaption(L, GroupName);
+                if ( result != ""  )
+                    return result;
+            }
+        }
     }
+    return string(GroupName);
 }
 
 simulated function ClientPerkRepLink GetRepLink()
 {
-    if ( RepLink == none )
-        SetRepLink();
-    
+    if ( RepLink == none && Level.NetMode == NM_Client )
+        RepLink = Class'ScrnClientPerkRepLink'.Static.FindMe(Level.GetLocalPlayerController());
     return RepLink;
 }
 

@@ -28,7 +28,7 @@ static function ClientReceive(
 {
 	if ( default.PromotedSnd == none )
 		PreloadAssets();
-	//log("PromotedSnd="$default.PromotedSnd, default.class.outer.name);
+	//log("PromotedSnd="$default.PromotedSnd, 'ScrnBalance');
 	if ( default.PromotedSnd != none ) {
 		P.ClientPlaySound(default.PromotedSnd,true,2.f,SLOT_Talk);
 		P.ClientPlaySound(default.PromotedSnd,true,2.f,SLOT_Interface);

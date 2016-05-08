@@ -3,31 +3,33 @@ dependson(ScrnBalance)
 abstract;
 
 var const array<localized string> UniversalDescriptions[4];
+var const array<int> UniversalFilters[4];
+var const array<localized string> MapDifficultyNames[4];
 
-simulated function SetDefaultAchievementData(int index) 
+simulated function SetDefaultAchievementData() 
 {
+    local int i;
+    local byte d;
     local string s;
-    local int diff_idx;
     
-    super.SetDefaultAchievementData(index);
-    
-    diff_idx = index%4;
-    switch ( diff_idx ) {
-        case 1:
-            AchDefs[index].FilterMaskAny = 0x0002;
-            break;
-        case 2:
-            AchDefs[index].FilterMaskAny = 0x0004; // Custom boss: Doom3 (SE), custom (HardPat) or super boss (SuperPat)
-            break;
-        case 3:
-            AchDefs[index].FilterMaskAll = 0x0008; // doom3
-            break;
-    }
+    super.SetDefaultAchievementData();
+        
+    for ( i = 0; i < AchDefs.Length; ++i ) {
+        AchDefs[i].FilterMaskAll = UniversalFilters[d];
+        if ( ++d > 3 )
+            d = 0;
+    }    
 
-    s = UniversalDescriptions[diff_idx];
-    if ( s != "" && InStr(s, "%m") != -1 ) {
-        ReplaceText(s, "%m", AchDefs[index].Description); 
-        AchDefs[index].Description = s;           
+    if ( Level.NetMode == NM_DedicatedServer ) 
+        return;
+
+    d = 0;
+    for ( i = 0; i < AchDefs.Length; ++i ) {
+        s = UniversalDescriptions[d];
+        ReplaceText(s, "%m", AchDefs[i].Description); 
+        AchDefs[i].Description = s; 
+        if ( ++d > 3 )
+            d = 0;
     }    
 }    
 
@@ -64,12 +66,76 @@ static final function int UnlockMapAchievement(ClientPerkRepLink L, string MapNa
     return -2;
 }
 
+// Added Support for special groups
+simulated function GetAchievementStats(out int Completed, out int Total, optional int AchievementFlags, optional name Group)
+{
+    local int i, count;
+    local byte MinDiff, Diff;
+
+    Completed = 0;
+    Total = 0;
+    count = GetAchievementCount();
+    
+    switch ( Group ) {
+        case 'MAP_Normal':    
+            MinDiff=0; 
+            Group='';
+            break;    
+        case 'MAP_Hard':    
+            MinDiff=1; 
+            Group='';
+            break;
+        case 'MAP_Sui':     
+            MinDiff=2; 
+            Group='';
+            break;
+        case 'MAP_HoE':     
+            MinDiff=3; 
+            Group='';
+            break;
+    }
+
+    for ( i = 0; i < count; ++i ) {
+        if ( (Group == '' || Group == AchDefs[i].Group) && Diff >= MinDiff && FilterMached(AchievementFlags, AchDefs[i].FilterMaskAll, AchDefs[i].FilterMaskAny) ) {
+            Total++;
+            if ( AchDefs[i].CurrentProgress >= AchDefs[i].MaxProgress )
+                Completed++;
+        }
+        if ( Diff == 3 )
+            Diff = 0;
+        else    
+            Diff++;
+    }
+}
+
+simulated function string LocalGroupCaption(ClientPerkRepLink L, name Group)
+{
+    switch ( Group ) {
+        case 'MAP_Normal':  return MapDifficultyNames[0];
+        case 'MAP_Hard':    return MapDifficultyNames[1];
+        case 'MAP_Sui':     return MapDifficultyNames[2];
+        case 'MAP_HoE':     return MapDifficultyNames[3];
+    }
+    return super.LocalGroupCaption(L, Group);
+    
+}
+
 defaultproperties
 {
 	UniversalDescriptions(0)="Survive on %m in ScrN Balance mode"
 	UniversalDescriptions(1)="Survive on %m against Super/Custom specimens and Hardcore Level 5+"
 	UniversalDescriptions(2)="Survive on %m against Custom end-game Boss and Hardcore Level 10+"
 	UniversalDescriptions(3)="Survive on %m against Doom3 monsters and Hardcore Level 15+"
+
+    UniversalFilters(0)=0
+    UniversalFilters(1)=2 // custom monsters
+    UniversalFilters(2)=4 // Custom boss: Doom3 (SE), custom (HardPat) or super boss (SuperPat)
+    UniversalFilters(3)=8 // doom3
+    
+	MapDifficultyNames(0)="Map"
+	MapDifficultyNames(1)="Hard+ Map"
+	MapDifficultyNames(2)="Suicidal+ Map"
+	MapDifficultyNames(3)="HoE Map"
 
 	DefaultAchGroup="MAP"
 	GroupInfo(1)=(Group="MAP",Caption="Maps")

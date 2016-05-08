@@ -6,4 +6,5 @@ defaultproperties
 
      DamageMin=90 //deprecated
      DamageMax=90 // 180
+     ShellEjectClass=None
 }

@@ -18,9 +18,9 @@ static function bool UnloadAssets()
 
 function TakeDamage( int Damage, Pawn InstigatedBy, Vector Hitlocation, Vector Momentum, class<DamageType> damageType, optional int HitIndex)
 {
-    if ( damageType == class'SirenScreamDamage' && (InstigatedBy == none || InstigatedBy.Health <= 0) )
-        return; // don't allo dead sirens to destroy pipes
-	
+    if ( Damage < 5 )
+        return;
+        
 	if ( Monster(InstigatedBy) == none && class<KFWeaponDamageType>(damageType) != none && class<KFWeaponDamageType>(damageType).default.bDealBurningDamage )
 		return; // make pipebombs immune to fire, unless instigated by monsters
         

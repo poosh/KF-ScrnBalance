@@ -1,6 +1,6 @@
 class ScrnTab_BuyMenu extends SRKFTab_BuyMenu;
 
-var protected int LastDosh, LastInvCount, LastAmmoCount, LastShieldStrength;
+var protected int LastDosh, LastInvCount, LastAmmoCount, LastShieldStrength,  LastPerkLevel;
 var protected class<KFVeterancyTypes> LastPerk;
 var protected class<ScrnVestPickup> LastVestClass;
 
@@ -10,6 +10,15 @@ var automated   GUIButton                       RefreshButton;
 
 var protected transient bool bJustOpened;
 
+var automated   ScrnTraderRequirementsListBox   ItemRequirements;
+var localized string strSelectedItemRequirements;
+var localized string strIntoScrnLocked;
+var byte InfoPageNum, ForceInfoPageNum;
+
+var transient ScrnClientPerkRepLink PerkLink;
+var transient KFPlayerReplicationInfo KFPRI;
+
+
 function ShowPanel(bool bShow)
 {
 	super(UT2K4TabPanel).ShowPanel(bShow);
@@ -18,7 +27,8 @@ function ShowPanel(bool bShow)
 		SetTimer(0, false);
         return;
 	}
-       
+    KFPRI = KFPlayerReplicationInfo(PlayerOwner().PlayerReplicationInfo);
+    PerkLink = Class'ScrnClientPerkRepLink'.Static.FindMe(PlayerOwner());  
 	bJustOpened = true;   
 	bClosed = false;
 	LastInvCount = -1; // force item update on timer
@@ -74,21 +84,23 @@ function SetInfoText()
 
 	if ( TheBuyable != none && OldPickupClass != TheBuyable.ItemPickupClass )
 	{
-		// Too expensive
-		if ( TheBuyable.ItemCost > PlayerOwner().PlayerReplicationInfo.Score && TheBuyable.bSaleList )
+        if ( InfoPageNum == 1 ) {
+            // Custom lock
+            InfoScrollText.SetContent(strIntoScrnLocked);
+        }
+		else if ( TheBuyable.ItemCost > PlayerOwner().PlayerReplicationInfo.Score && TheBuyable.bSaleList )
 		{
+            // Too expensive
 			InfoScrollText.SetContent(InfoText[2]);
 		}
-		// Too heavy
-		else if ( TheBuyable.ItemWeight + KFHumanPawn(PlayerOwner().Pawn).CurrentWeight > KFHumanPawn(PlayerOwner().Pawn).MaxCarryWeight && TheBuyable.bSaleList )
+		else if ( TheBuyable.bSaleList && TheBuyable.ItemWeight + KFHumanPawn(PlayerOwner().Pawn).CurrentWeight > KFHumanPawn(PlayerOwner().Pawn).MaxCarryWeight )
 		{
+            // Too heavy        
 			TempString = Repl(Infotext[1], "%1", int(TheBuyable.ItemWeight));
 			TempString = Repl(TempString, "%2", int(KFHumanPawn(PlayerOwner().Pawn).MaxCarryWeight - KFHumanPawn(PlayerOwner().Pawn).CurrentWeight));
 			InfoScrollText.SetContent(TempString);
 		}
-		// default
-		else
-		{
+		else {
             //show idem description, if it is avaliable for buying -- PooSH
 			InfoScrollText.SetContent(TheBuyable.ItemDescription);
 		}
@@ -146,6 +158,34 @@ function SaleChange(GUIComponent Sender)
 	OnAnychange();
 }
 
+function OnAnychange()
+{
+	RefreshSelection();
+    if ( LastBuyable != TheBuyable ) {
+        LastBuyable = TheBuyable;
+        ForceInfoPageNum = 255;
+    }
+    // ItemAmmoCurrent of items for sale stores DLCLocked value
+    // DLCLocked = 5 for ScrN locks
+    if ( TheBuyable != none && TheBuyable.bSaleList && ForceInfoPageNum != 0 && (ForceInfoPageNum == 1 || TheBuyable.ItemAmmoCurrent == 5) )  {
+        ItemRequirements.List.Display(TheBuyable);
+        ItemRequirements.SetVisibility(true);
+        ItemInfo.SetVisibility(false);
+        SelectedItemLabel.Caption = strSelectedItemRequirements;
+        InfoPageNum = 1;
+    }
+    else {
+        ItemInfo.Display(TheBuyable);
+        ItemRequirements.SetVisibility(false);
+        ItemInfo.SetVisibility(true);
+        SelectedItemLabel.Caption = default.SelectedItemLabel.Caption;
+        InfoPageNum = 0;
+    }
+    SetInfoText();
+    UpdatePanel();
+    UpdateBuySellButtons();
+}
+
 function ResetInfo()
 {
 	ScrnGUIBuyWeaponInfoPanel(ItemInfo).ResetValues();
@@ -199,7 +239,8 @@ function UpdateCheck()
 	MyInventoryStats(MyInvCount, MyAmmoCount);
 	// ignore KFPC.bDoTraderUpdate and do it the right way
 	if ( LastDosh != int(PlayerOwner().PlayerReplicationInfo.Score) 
-			|| LastPerk != KFPlayerReplicationInfo(PlayerOwner().PlayerReplicationInfo).ClientVeteranSkill
+			|| LastPerk != KFPRI.ClientVeteranSkill
+			|| LastPerkLevel != KFPRI.ClientVeteranSkillLevel
 			|| LastInvCount != MyInvCount 
 			|| (ScrnHumanPawn(PlayerOwner().Pawn) != none 
 				&& LastVestClass != ScrnHumanPawn(PlayerOwner().Pawn).GetCurrentVestClass()) ) 
@@ -212,13 +253,17 @@ function UpdateCheck()
 		LastAmmoCount = MyAmmoCount;
 		LastShieldStrength = PlayerOwner().Pawn.ShieldStrength;
 	}
+
 }
 
 function UpdateAll()
 {
+    if ( PerkLink != none )
+        PerkLink.ParseLocks();
 	super.UpdateAll();
 	LastDosh = int(PlayerOwner().PlayerReplicationInfo.Score);
-	LastPerk = KFPlayerReplicationInfo(PlayerOwner().PlayerReplicationInfo).ClientVeteranSkill;
+    LastPerk = KFPRI.ClientVeteranSkill;
+    LastPerkLevel = KFPRI.ClientVeteranSkillLevel;
 	MyInventoryStats(LastInvCount, LastAmmoCount);
 	LastShieldStrength = PlayerOwner().Pawn.ShieldStrength;
 	if ( ScrnHumanPawn(PlayerOwner().Pawn) != none ) 
@@ -317,6 +362,12 @@ function bool InternalOnKeyEvent(out byte Key, out byte State, float delta)
 					SaleSelect.List.SetIndex(0);
 				return true;
 				break;
+			case 0x72: // IK_F3
+				Controller.PlayInterfaceSound(CS_Click);
+                ForceInfoPageNum = 1 - InfoPageNum;
+                OnAnychange();
+				return true;
+				break;                
 			case 0x74: // IK_F5
 				Controller.PlayInterfaceSound(CS_Click);
 				RefreshButton.OnClick(RefreshButton);
@@ -329,6 +380,7 @@ function bool InternalOnKeyEvent(out byte Key, out byte State, float delta)
 				break;				
 		}
 	}
+    return false;
 }
 
 
@@ -362,6 +414,32 @@ defaultproperties
          WinHeight=0.489407
      End Object
      ItemInfo=ScrnGUIBuyWeaponInfoPanel'ScrnBalanceSrv.ScrnTab_BuyMenu.ItemInf'	 
+     
+     Begin Object Class=ScrnTraderRequirementsListBox Name=ItemReq
+         WinTop=0.183730
+         WinLeft=0.3335
+         WinWidth=0.33
+         WinHeight=0.529407
+         bVisible=False
+     End Object
+     ItemRequirements=ScrnTraderRequirementsListBox'ScrnBalanceSrv.ScrnTab_BuyMenu.ItemReq'	
+    ForceInfoPageNum=255
+     
+     Begin Object Class=GUILabel Name=SelectedItemL
+         Caption="Selected Item Info"
+         TextAlign=TXTA_Center
+         TextColor=(B=158,G=176,R=175)
+         TextFont="UT2SmallFont"
+         FontScale=FNS_Small
+         WinTop=0.138
+         WinLeft=0.332571
+         WinWidth=0.333947
+         WinHeight=20.000000
+         RenderWeight=0.510000
+     End Object
+     SelectedItemLabel=GUILabel'ScrnBalanceSrv.ScrnTab_BuyMenu.SelectedItemL'     
+     strSelectedItemRequirements="Requirements for Unlocking Selected Item"
+     strIntoScrnLocked="You have to meet the above requirements for unlocking the selected item. If multiple requirements have the same leading number in square brackets [X], then you need only one of those. Press F3 for item's description."
 	 
 	 
      Begin Object Class=GUIButton Name=SaleB
@@ -391,8 +469,6 @@ defaultproperties
 		 bTabStop=False
      End Object
      PurchaseButton=GUIButton'KFGui.KFTab_BuyMenu.PurchaseB'	 
-	 
-	 
 	 
      Begin Object Class=GUIButton Name=AutoFill
          Caption="[F8] Auto Fill Ammo"

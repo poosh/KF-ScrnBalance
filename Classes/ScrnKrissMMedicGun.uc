@@ -8,5 +8,6 @@ defaultproperties
      FireModeClass(0)=Class'ScrnBalanceSrv.ScrnKrissMFire'
      FireModeClass(1)=Class'ScrnBalanceSrv.ScrnKrissMAltFire'
      PickupClass=Class'ScrnBalanceSrv.ScrnKrissMPickup'
+     bReduceMagAmmoOnSecondaryFire=False
      ItemName="Schneidzekk Medic Gun SE"
 }

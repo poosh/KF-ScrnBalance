@@ -19,16 +19,13 @@ event PostLogin( PlayerController NewPlayer )
     super.PostLogin(NewPlayer);
     
     if ( ScrnPlayerController(NewPlayer) != none )
-        ScrnPlayerController(NewPlayer).ClientPostLogin();
-        
+        ScrnPlayerController(NewPlayer).PostLogin();
 }
 
 // fixed GameRules.NetDamage() call
 function int ReduceDamage(int Damage, pawn injured, pawn instigatedBy, vector HitLocation, out vector Momentum, class<DamageType> DamageType)
 {
-    local float InstigatorSkill;
     local KFPlayerController PC;
-    local float DamageBeforeSkillAdjust;
 
     if ( KFPawn(Injured) != none )
     {
@@ -38,13 +35,7 @@ function int ReduceDamage(int Damage, pawn injured, pawn instigatedBy, vector Hi
         }
     }
 
-    // This stuff cuts thru all the B.S
-    if ( DamageType == class'DamTypeVomit' || DamageType == class'DamTypeWelder' || DamageType == class'SirenScreamDamage' )
-    {
-        return damage;
-    }
-
-    if ( instigatedBy == None )
+    if ( instigatedBy == None || DamageType == class'DamTypeVomit' || DamageType == class'DamTypeWelder' || DamageType == class'SirenScreamDamage')
     {
         return Super(xTeamGame).ReduceDamage( Damage,injured,instigatedBy,HitLocation,Momentum,DamageType );
     }
@@ -64,19 +55,7 @@ function int ReduceDamage(int Damage, pawn injured, pawn instigatedBy, vector Hi
         return super(UnrealMPGameInfo).ReduceDamage( Damage, injured, InstigatedBy, HitLocation, Momentum, DamageType );
     }
 
-    if ( MonsterController(InstigatedBy.Controller) != None )
-    {
-        InstigatorSkill = MonsterController(instigatedBy.Controller).Skill;
-        if ( NumPlayers > 4 )
-            InstigatorSkill += 1.0;
-        if ( (InstigatorSkill < 7) && (Monster(Injured) == None) )
-        {
-            if ( InstigatorSkill <= 3 )
-                Damage = Damage;
-            else Damage = Damage;
-        }
-    }
-    else if ( KFFriendlyAI(InstigatedBy.Controller) != None && KFHumanPawn(Injured) != none  )
+    if ( KFFriendlyAI(InstigatedBy.Controller) != None && KFHumanPawn(Injured) != none  )
         Damage *= 0.25;
     else if ( injured == instigatedBy )
         Damage = Damage * 0.5;
@@ -131,8 +110,6 @@ function int ReduceDamage(int Damage, pawn injured, pawn instigatedBy, vector Hi
 
     if ( instigatedBy == None)
         return Damage;
-
-    DamageBeforeSkillAdjust = Damage;
 
     if ( Level.Game.GameDifficulty <= 3 )
     {

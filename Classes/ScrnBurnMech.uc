@@ -58,7 +58,7 @@ function FlareMonster(KFMonster Other)
 	local int i;
 	local KFMonster  M;
 	
-	//log("FlareMonster", class.outer.name);
+	//log("FlareMonster", 'ScrnBalance');
 	Other.AmbientSound = FlareSound;
 	
 	while ( i < FlareClouds.length ) {
@@ -75,7 +75,8 @@ function FlareMonster(KFMonster Other)
 			continue;
 		}
 		if ( M == Other ) {
-			FlareClouds[i].FlareCount++;
+            if ( FlareClouds[i].FlareCount < 10 )
+                FlareClouds[i].FlareCount++;
             FlareClouds[i].NetUpdateTime = Level.TimeSeconds - 1;
 			FlareClouds[i].AdjustCloudSize();
 			
@@ -153,7 +154,7 @@ function MakeBurnDamage(KFMonster Victim, int Damage, Pawn InstigatedBy, Vector 
 			// Need to check for damage value to ensure this is a direct hit, not a splash damage
 			if ( bFlareDamage && Damage >= 15 && DamType == Monsters[i].FireDamageClass ) {
 				Monsters[i].BurnDown = max(Monsters[i].BurnDown, BurnDuration); //flares don't use burn in
-				Monsters[i].Damage = Monsters[i].Damage + Damage / (1.0 + Monsters[i].FlareCount * 0.5); // 1st shot makes 30, 2nd +20, 3rd +15, 4rth +12 etc
+				Monsters[i].Damage = Monsters[i].Damage + max(1, Damage / (1.0 + Monsters[i].FlareCount * 0.5)); // 1st shot makes 30, 2nd +20, 3rd +15, 4rth +12 etc
 				Monsters[i].FlareCount++;
                 Monsters[i].InstigatedBy = instigatedBy;
 			}
@@ -280,7 +281,7 @@ function Tick(float DeltaTime)
 					Damage = GetAvgBurnDamage(Monsters[i].BurnDown, Monsters[i].Damage);
 					
 				OldHealth = Monsters[i].Victim.Health;
-				Monsters[i].Victim.TakeDamage(Damage, Monsters[i].InstigatedBy, Monsters[i].Victim.Location, 
+				Monsters[i].Victim.TakeDamage(Damage*BurnPeriod, Monsters[i].InstigatedBy, Monsters[i].Victim.Location, 
 					vect(0, 0, 0), Monsters[i].FireDamageClass);
 				Monsters[i].Victim.LastBurnDamage = -3; //reset to default
 				
@@ -294,7 +295,7 @@ function Tick(float DeltaTime)
 				Monsters[i].BurnTicks++;
 				Monsters[i].NextBurnTime += BurnPeriod;
 
-				if (Monsters[i].BurnTicks > 10 - Monsters[i].Victim.CrispUpThreshhold)
+				if (Monsters[i].BurnTicks * BurnPeriod > 10 - Monsters[i].Victim.CrispUpThreshhold)
 					Monsters[i].Victim.ZombieCrispUp(); // Melt em' :)
 
 				if (Monsters[i].BurnDown <= 0 || Monsters[i].Victim.Health <= 0) {
@@ -316,6 +317,6 @@ defaultproperties
 {
      BurnDuration=8
      BurnInCount=2
-     BurnPeriod=1.000000
+     BurnPeriod=1.0
      FlareSoundRef="KF_IJC_HalloweenSnd.KF_FlarePistol_Projectile_Loop"
 }

@@ -92,7 +92,7 @@ simulated function PostNetReceive()
 
     super.PostNetReceive();
     
-    //log ("Nail.PostNetReceive NailedMonster="$NailedMonster @ "NailHitDelta="$NailHitDelta, class.outer.name);
+    //log ("Nail.PostNetReceive NailedMonster="$NailedMonster @ "NailHitDelta="$NailHitDelta, 'ScrnBalance');
     
 
     if( Giblet == none && MonsterHeadAttached != none )

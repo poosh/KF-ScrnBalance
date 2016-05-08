@@ -10,6 +10,7 @@ defaultproperties
 {
      FireModeClass(0)=Class'ScrnBalanceSrv.ScrnThompsonDrumFire'
      PickupClass=Class'ScrnBalanceSrv.ScrnThompsonDrumPickup'
+     AttachmentClass=Class'ScrnBalanceSrv.ScrnThompsonDrumAttachment'
 
 	 Weight=6
      MagCapacity=50

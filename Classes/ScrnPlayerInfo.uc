@@ -38,16 +38,19 @@ var globalconfig array<string> ExcludeBonusStats;
 
 struct TWeapInfo {
 	var KFWeapon Weapon;
+    var class<KFWeapon> WeaponClass;
 	var class<KFWeaponDamageType> DamType;
 	var byte PickupWave; // wave number, when weapon was picked up
 	var	PlayerController PrevOwner; // player who owned this weapon before us 
 	var bool bPrevOwnerDead; // was PrevOwner dead when we picked up his weapon?
 
 	var float LastDmgTime, LastKillTime; // time when last damage was made
+    
+    var int TotalKills, TotalHeadshots, TotalDecaps, TotalDamage;
 	
 	var bool bHeadshot; // Was last damage made from this weapon a headshot?
 	var int RowHeadshots; //number of headshots in a row made from this weapon
-	var int HeadshotsPerWave; 
+	var int HeadshotsPerShot, HeadshotsPerMagazine, HeadshotsPerWave; 
 	
 	var int KillsPerShot; //number of kills made from this weapon without releasing the trigger or firing again
 	var int KillsPerMagazine; //number of kills made from this weapon without reloading
@@ -58,6 +61,7 @@ struct TWeapInfo {
 	
 	// Minimal values to trigger an event. If Value >= Trigger value, event will be called.
 	var int TriggerRowHeadshots, 
+        TriggerHeadshotsPerShot, TriggerHeadshotsPerMagazine,
 		TriggerKillsPerShot, TriggerKillsPerMagazine,
 		TriggerDecapsPerShot, TriggerDecapsPerMagazine, 
 		TriggerDamagePerShot, TriggerDamagePerMagazine;
@@ -110,9 +114,9 @@ var private int LastFoundCustomDataIndex;
 
 
 
-final function ClientPerkRepLink GetRep()
+function ClientPerkRepLink GetRep()
 {
-	return SRStatsBase(PlayerOwner.SteamStatsAndAchievements).Rep; 
+    return class'ScrnClientPerkRepLink'.static.FindMe(PlayerOwner);
 }
 
 function string PerkStatStr(out TPerkStats Stats)
@@ -204,7 +208,7 @@ function BonusStats(out TPerkStats InitialStats, float Mult)
 	local SRStatsBase SteamStats;
 	local int i, v;
 
-	if ( !InitialStats.bSet || Mult == 0 )
+	if ( !InitialStats.bSet || Mult <= 0 )
 		return;
 		
 	SteamStats = SRStatsBase(PlayerOwner.SteamStatsAndAchievements);
@@ -281,6 +285,48 @@ final function bool ProgressAchievement(name AchID, int Inc)
 	return class'ScrnBalanceSrv.ScrnAchievements'.static.ProgressAchievementByID(
 			SRStatsBase(PlayerOwner.SteamStatsAndAchievements).Rep, AchID, Inc); 
 }
+
+final function ScrnAchievements GetAchievementsByClass(class<ScrnAchievements> AchClass)
+{
+    local ClientPerkRepLink L;
+    local SRCustomProgress S;
+    
+    L = GetRep();
+    if ( L == none )
+        return none;
+        
+    for( S = L.CustomLink; S != none; S = S.NextLink ) {
+        if( ClassIsChildOf(S.Class, AchClass) ) 
+            return ScrnAchievements(S);
+    }
+    return none;    
+}
+
+final function ScrnAchievements GetAchievementsByID(name AchID, out int AchIndex)
+{
+    local ClientPerkRepLink L;
+    local SRCustomProgress S;
+    local ScrnAchievements A; 
+    local int i;
+    
+    L = GetRep();
+    if ( L == none )
+        return none;
+        
+    for( S = L.CustomLink; S != none; S = S.NextLink ) {
+        A = ScrnAchievements(S);
+        if( A != none ) {
+            for ( i = 0; i < A.AchDefs.length; ++i ) {
+                if ( A.AchDefs[i].ID == AchID ) {
+                    AchIndex = i;
+                    return A;
+                }
+            }
+        }
+    }
+    return none;    
+}
+
 
 // returns array index or -1, if record not found
 protected function int FindCustomData(ScrnAchHandlerBase AchHandler, name StatName, optional bool bCreate)
@@ -416,9 +462,11 @@ function int RegisterDamageType(KFWeapon Weapon, class<DamageType> DamType, bool
 		return -1;
 	
 	for ( i=0; i<WeapInfos.Length; ++i ) {
-		if ( WeapInfos[i].Weapon == Weapon && WeapInfos[i].DamType == KFDamType ) {
+		if ( WeapInfos[i].WeaponClass == Weapon.class && WeapInfos[i].DamType == KFDamType ) {
+            WeapInfos[i].Weapon = Weapon;
 			if ( bClearPerShotInfo ) {
 				WeapInfos[i].KillsPerShot = 0;
+				WeapInfos[i].HeadshotsPerShot = 0;
 				WeapInfos[i].DecapsPerShot = 0;
 				WeapInfos[i].DamagePerShot = 0;
 			}
@@ -427,6 +475,7 @@ function int RegisterDamageType(KFWeapon Weapon, class<DamageType> DamType, bool
 	}
 	WeapInfos.insert(i, 1);
 	WeapInfos[i].Weapon = Weapon;
+	WeapInfos[i].WeaponClass = Weapon.class;
 	WeapInfos[i].PickupWave = GameRules.Mut.KF.WaveNum;
 	// Hack in ScrnHumanPawn forces the game to set Tier3WeaponGiver for all weapons despite their tier.
 	// After player kills somebody with this weapon, Tier3WeaponGiver will be set to none in KFGameType.Killed()
@@ -437,6 +486,8 @@ function int RegisterDamageType(KFWeapon Weapon, class<DamageType> DamType, bool
 	}
 	WeapInfos[i].DamType = KFDamType;
 	WeapInfos[i].TriggerRowHeadshots = 2;
+	WeapInfos[i].TriggerHeadshotsPerShot = 2;
+	WeapInfos[i].TriggerHeadshotsPerMagazine = 2;
 	WeapInfos[i].TriggerKillsPerShot = 2;
 	WeapInfos[i].TriggerKillsPerMagazine = 2;
 	WeapInfos[i].TriggerDecapsPerShot = 2;
@@ -451,36 +502,35 @@ function ClearWeapInfos()
 	local int i;
 	
 	while ( i<WeapInfos.Length ) {
-		if ( WeapInfos[i].Weapon == none )
-			WeapInfos.remove(i, 1);
-		else {
-			WeapInfos[i].HeadshotsPerWave = 0;
-			WeapInfos[i].KillsPerWave = 0;
-			WeapInfos[i].DecapsPerWave = 0;
-			WeapInfos[i].DamagePerWave = 0;
-			i++;
-		}
+        WeapInfos[i].HeadshotsPerWave = 0;
+        WeapInfos[i].KillsPerWave = 0;
+        WeapInfos[i].DecapsPerWave = 0;
+        WeapInfos[i].DamagePerWave = 0;
+        i++;
 	}
 }
 
 // calculates all damage types together
-// bHeadshot and RowHeadshots not included and always be returned as false and 0
-function TWeapInfo GetFullWeaponInfo(KFWeapon W)
+// bHeadshot, RowHeadshots and per-shot stats not included and always be returned as 0
+function TWeapInfo GetFullWeaponInfo(class<KFWeapon> WC)
 {
 	local TWeapInfo result;
 	local int i;
 	
 	for ( i=0; i<WeapInfos.Length; ++i ) {
-		if ( WeapInfos[i].Weapon == W ) {
+		if ( WeapInfos[i].WeaponClass == WC ) {
 			if ( WeapInfos[i].LastDmgTime > result.LastDmgTime )
 				result.LastDmgTime = WeapInfos[i].LastDmgTime;
-			result.KillsPerShot += WeapInfos[i].KillsPerShot;
+			result.TotalKills += WeapInfos[i].TotalKills;
+			result.TotalHeadshots += WeapInfos[i].TotalHeadshots;
+			result.TotalDecaps += WeapInfos[i].TotalDecaps;
+			result.TotalDamage += WeapInfos[i].TotalDamage;
+			result.HeadshotsPerMagazine += WeapInfos[i].HeadshotsPerMagazine;
+			result.HeadshotsPerWave += WeapInfos[i].HeadshotsPerWave;
 			result.KillsPerMagazine += WeapInfos[i].KillsPerMagazine;
 			result.KillsPerWave += WeapInfos[i].KillsPerWave;
-			result.DecapsPerShot += WeapInfos[i].DecapsPerShot;
 			result.DecapsPerMagazine += WeapInfos[i].DecapsPerMagazine;
 			result.DecapsPerWave += WeapInfos[i].DecapsPerWave;
-			result.DamagePerShot += WeapInfos[i].DamagePerShot;
 			result.DamagePerMagazine += WeapInfos[i].DamagePerMagazine;
 			result.DamagePerWave += WeapInfos[i].DamagePerWave;
 		}
@@ -518,9 +568,13 @@ function WeaponFired(KFWeapon W, byte FireMode)
 function WeaponReloaded(KFWeapon W)
 {
 	local int i;
-	if ( W == none )
+	if ( W == none
+    )
 		return;
-	
+        
+    for ( i=0; i<GameRules.AchHandlers.length; ++i ) 
+        GameRules.AchHandlers[i].WeaponReloaded(self, W);
+        
 	for ( i=0; i<WeapInfos.Length; ++i ) {
 		if ( WeapInfos[i].Weapon == W ) {
 			WeapInfos[i].KillsPerShot = 0;
@@ -530,7 +584,10 @@ function WeaponReloaded(KFWeapon W)
 			WeapInfos[i].DecapsPerMagazine = 0;
 
 			WeapInfos[i].DamagePerShot = 0;			
-			WeapInfos[i].DamagePerMagazine = 0;			
+			WeapInfos[i].DamagePerMagazine = 0;		
+
+			WeapInfos[i].HeadshotsPerShot = 0;			
+			WeapInfos[i].HeadshotsPerMagazine = 0;	            
 		}
 	}
 }
@@ -644,14 +701,19 @@ function MadeDamage(int Damage, KFMonster Injured, class<KFWeaponDamageType> Dam
 		WeapInfos[LastWeapInfoIndex].DamagePerShot += Damage;
 		WeapInfos[LastWeapInfoIndex].DamagePerMagazine += Damage;
 		WeapInfos[LastWeapInfoIndex].DamagePerWave += Damage;
+		WeapInfos[LastWeapInfoIndex].TotalDamage += Damage;
 		WeapInfos[LastWeapInfoIndex].bHeadshot = bHeadshot;
 		if ( bHeadshot ) {
 			WeapInfos[LastWeapInfoIndex].RowHeadshots++;
+			WeapInfos[LastWeapInfoIndex].HeadshotsPerShot++;
+			WeapInfos[LastWeapInfoIndex].HeadshotsPerMagazine++;
 			WeapInfos[LastWeapInfoIndex].HeadshotsPerWave++;
+			WeapInfos[LastWeapInfoIndex].TotalHeadshots++;
 			if ( Injured.bDecapitated ) {
 				WeapInfos[LastWeapInfoIndex].DecapsPerShot++;
 				WeapInfos[LastWeapInfoIndex].DecapsPerMagazine++;
 				WeapInfos[LastWeapInfoIndex].DecapsPerWave++;
+				WeapInfos[LastWeapInfoIndex].TotalDecaps++;
 				// EVENT
 				if ( WeapInfos[LastWeapInfoIndex].DecapsPerShot >= WeapInfos[LastWeapInfoIndex].TriggerDecapsPerShot ) {
 					m = IGNORE_STAT; // next time trigger event when reaching minimal returned value
@@ -677,7 +739,21 @@ function MadeDamage(int Damage, KFMonster Injured, class<KFWeaponDamageType> Dam
 				for ( i=0; i<GameRules.AchHandlers.length; ++i ) 
 					m = min(m, GameRules.AchHandlers[i].WRowHeadhots(self, Weapon, DamType, v));
 				WeapInfos[LastWeapInfoIndex].TriggerRowHeadshots = m;
-			}	
+			}
+			if ( WeapInfos[LastWeapInfoIndex].HeadshotsPerShot >= WeapInfos[LastWeapInfoIndex].TriggerHeadshotsPerShot ) {
+				m = IGNORE_STAT; // next time trigger event when reaching minimal returned value
+				v = WeapInfos[LastWeapInfoIndex].HeadshotsPerShot;
+				for ( i=0; i<GameRules.AchHandlers.length; ++i ) 
+					m = min(m, GameRules.AchHandlers[i].WInstantHeadhots(self, Weapon, DamType, v));
+				WeapInfos[LastWeapInfoIndex].TriggerHeadshotsPerShot = m;
+			}
+			if ( WeapInfos[LastWeapInfoIndex].HeadshotsPerMagazine >= WeapInfos[LastWeapInfoIndex].TriggerHeadshotsPerMagazine ) {
+				m = IGNORE_STAT; // next time trigger event when reaching minimal returned value
+				v = WeapInfos[LastWeapInfoIndex].HeadshotsPerMagazine;
+				for ( i=0; i<GameRules.AchHandlers.length; ++i ) 
+					m = min(m, GameRules.AchHandlers[i].WHeadshotsPerMagazine(self, Weapon, DamType, v));
+				WeapInfos[LastWeapInfoIndex].TriggerHeadshotsPerMagazine = m;
+			}            
 			// END OF EVENT
 		}
 		else if ( !bWasDecapitated ) {
@@ -732,6 +808,7 @@ function KilledMonster(KFMonster Killed, class<KFWeaponDamageType> DamType)
 		WeapInfos[LastWeapInfoIndex].KillsPerShot++;
 		WeapInfos[LastWeapInfoIndex].KillsPerMagazine++;
 		WeapInfos[LastWeapInfoIndex].KillsPerWave++;	
+		WeapInfos[LastWeapInfoIndex].TotalKills++;	
 		
 		// EVENT
 		if ( WeapInfos[LastWeapInfoIndex].KillsPerShot >= WeapInfos[LastWeapInfoIndex].TriggerKillsPerShot ) {
@@ -815,6 +892,7 @@ function WaveStarted(byte WaveNum)
 	DecapsPerWave = 0;
 	DamagePerWave = 0;	
 	DamageReceivedPerWave = 0;
+    HealedPointsInWave = 0;
 	CashDonatedPerWave = 0;
 	CashReceivedPerWave = 0;
 	CashFoundPerWave = 0;	
@@ -888,4 +966,5 @@ function float GetAccuracyGame()
 defaultproperties
 {
 	TriggerRowHeadshots=2
+    RemoteRole=ROLE_None
 }

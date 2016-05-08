@@ -41,7 +41,7 @@ function SaveSettings()
 
 	PC = PlayerOwner();
     ScrnPC = ScrnPlayerController(PlayerOwner());
-	L = Class'ClientPerkRepLink'.Static.FindStats(PC);
+	L = Class'ScrnClientPerkRepLink'.Static.FindMe(PC);
 
 	if ( ChangedCharacter!="" )
 	{

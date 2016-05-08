@@ -5,13 +5,13 @@
  */
 
 class ScrnBalance extends Mutator
-    Config(ScrnBalance);
+    Config(ScrnBalanceSrv);
     
 #exec OBJ LOAD FILE=ScrnTex.utx
 #exec OBJ LOAD FILE=ScrnAch_T.utx    
 
 
-const VERSION = 80100;
+const VERSION = 82100;
 
 var ScrnBalance Mut; // pointer to self to use in default functions, i.e class'ScrnBalance'.default.Mut
 
@@ -26,7 +26,7 @@ var localized string strBetaOnly;
 // SRVFLAGS
 var transient int SrvFlags; // used for network replication of the values below
 var globalconfig bool bSpawnBalance, bSpawn0, bNoStartCashToss, bMedicRewardFromTeam;
-var globalconfig bool bWeaponFix, bAltBurnMech, bGunslinger;
+var globalconfig bool bWeaponFix, bAltBurnMech, bDoubleDoT, bGunslinger;
 var globalconfig bool bReplaceNades, bShieldWeight, bHardcore, bBeta;
 var globalconfig bool bShowDamages, bManualReload, bForceManualReload, bAllowWeaponLock;
 var globalconfig bool bNoPerkChanges, bPerkChangeBoss, b10Stars;
@@ -181,6 +181,7 @@ var globalconfig array<SMapInfo> MapInfo;
 var globalconfig byte FakedPlayers; // Min numbers of players to be used in calculation of zed count in wave
 
 var globalconfig float EndGameStatBonus;
+var globalconfig float FirstStatBonusMult;
 var globalconfig bool  bStatBonusUsesHL;
 var globalconfig int  StatBonusMinHL;
 
@@ -242,16 +243,13 @@ var array<SColorTag> ColorTags;
 var globalconfig bool bCloserZedSpawns;
 var globalconfig bool bServerInfoVeterancy;
 
-var globalconfig bool bScrnClientPerkRepLink;
-
 var transient array<KFUseTrigger> DoorKeys;
 
 var StaticMesh          AmmoBoxMesh;
 var float               AmmoBoxDrawScale;
 var vector              AmmoBoxDrawScale3D;
 
-struct SSpecialPlayers
-{
+struct SSpecialPlayers {
     var int SteamID32;
     var string AvatarRef, ClanIconRef, PreNameIconRef, PostNameIconRef;
     var Material Avatar, ClanIcon, PreNameIcon, PostNameIcon;
@@ -259,7 +257,38 @@ struct SSpecialPlayers
     var int Playoffs, TourneyWon;
 };
 var const private array<SSpecialPlayers> HighlyDecorated;
+var globalconfig string MySteamID64;
 
+enum ECustomLockType
+{
+    LOCK_Level,
+    LOCK_Ach,
+    LOCK_AchGroup
+};
+
+var name NameOfString; // used in StringToName()
+ 
+struct SDLCLock {
+    var String Item;
+    var byte Group;
+    var ECustomLockType Type;
+    var name ID;
+    var byte Value;
+    
+    // non-config stuff
+    var transient class<Pickup> PickupClass;
+};
+var globalconfig array<SDLCLock> DLCLocks; // replicated via ScrnClientPerkRepLink
+var globalconfig bool bUseDLCLocks,bUseDLCLevelLocks;
+var protected transient int LockCount;
+var globalconfig bool bBuyPerkedWeaponsOnly, bPickPerkedWeaponsOnly; 
+
+struct SNameValuePair {
+    var name ID;
+    var int Value;
+};
+
+var globalconfig bool bFixMusic;
 // TSC stuff
 var globalconfig bool bNoTeamSkins; 
 // SrvTourneyMode should be used for informative purposes only. 
@@ -457,6 +486,17 @@ simulated function InitSettings()
 
 simulated function EventZedNames()
 {
+  class'KFChar.ZombieClot_CIRCUS'.default.MenuName = "Strange Little Clot";
+  class'KFChar.ZombieBloat_CIRCUS'.default.MenuName = "Pukey the Clown";
+  class'KFChar.ZombieStalker_CIRCUS'.default.MenuName = "Assistant";
+  class'KFChar.ZombieCrawler_CIRCUS'.default.MenuName = "Two-Head Girl";
+  class'KFChar.ZombieGorefast_CIRCUS'.default.MenuName = "Sword Polisher";
+  class'KFChar.ZombieHusk_CIRCUS'.default.MenuName = "Mecha-Man";
+  class'KFChar.ZombieSiren_CIRCUS'.default.MenuName = "Bearded Beauty";
+  class'KFChar.ZombieScrake_CIRCUS'.default.MenuName = "Man Monkey";
+  class'KFChar.ZombieFleshpound_CIRCUS'.default.MenuName = "Flesh Clown";
+  class'KFChar.ZombieBoss_CIRCUS'.default.MenuName = "Ring Leader";  
+  
   class'KFChar.ZombieClot_HALLOWEEN'.default.MenuName = "Honey Biscuit";
   class'KFChar.ZombieBloat_HALLOWEEN'.default.MenuName = "Mama Bessie";
   class'KFChar.ZombieStalker_HALLOWEEN'.default.MenuName = "Maggie May";
@@ -482,7 +522,7 @@ simulated function EventZedNames()
 
 simulated function TimeLog(coerce string s)
 {
-    log("["$String(Level.TimeSeconds - FirstTickTime)$"s]" @ s, class.outer.name);
+    log("["$Level.TimeSeconds$"s]" @ s, 'ScrnBalance');
 }
 
 static function MessageBonusLevel(PlayerController KPC)
@@ -608,7 +648,7 @@ function BroadcastMessage(string Msg, optional bool bSaveToLog)
     local name MsgType;
     
     if ( bSaveToLog) {
-        log(Msg, class.outer.name);
+        log(Msg, 'ScrnBalance');
         MsgType = 'Log';
     }
 
@@ -743,7 +783,7 @@ function WelcomeMessage(PlayerController PC)
     if ( PC != none ) {
         MessageVersion(PC);
         MessageStatus(PC);
-        if ( (Level.NetMode == NM_Standalone || Level.NetMode == NM_ListenServer) && class.outer.name == 'ScrnBalanceSrv' ) {
+        if ( (Level.NetMode == NM_Standalone || Level.NetMode == NM_ListenServer) && 'ScrnBalance' == 'ScrnBalanceSrv' ) {
             PC.ClientMessage(strSrvWarning);
             PC.ClientMessage(strSrvWarning2);
         }
@@ -842,7 +882,7 @@ function SetupPickups()
 function ForceMaxPlayers()
 {
     if ( ForcedMaxPlayers > 0 && ForcedMaxPlayers != Level.Game.MaxPlayers ) {
-        Log("Forcing server max players from " $ Level.Game.MaxPlayers $ " to " $ ForcedMaxPlayers,Class.Outer.Name);
+        Log("Forcing server max players from " $ Level.Game.MaxPlayers $ " to " $ ForcedMaxPlayers,'ScrnBalance');
         Level.Game.MaxPlayers = ForcedMaxPlayers;
         Level.Game.Default.MaxPlayers = ForcedMaxPlayers;
     }
@@ -908,7 +948,7 @@ function Mutator FindServerPerksMut()
         }
     }
     if ( ServerPerksMut == none ) {
-        log("ServerPerksMut not found!", class.outer.name);
+        log("ServerPerksMut not found!", 'ScrnBalance');
     }
     
     return ServerPerksMut;
@@ -970,7 +1010,8 @@ function SaveStats()
         return;
 
     if ( Level.Game.bGameEnded ) {
-        GotoState('StatsSaving');
+        // v8.18 - do nothing, Serverperks will save game itself
+        // GotoState('StatsSaving');
         // goto EndGameTracker state again to force save perks
         // doing so will increment win/loose counter extra time - need to contact Marco about this
     }
@@ -981,20 +1022,22 @@ function SaveStats()
     }
 }
 
+/*
 state StatsSaving
 {
 Begin:
-    log("Saving stats...", class.outer.name);
+    log("Saving stats...", 'ScrnBalance');
     ServerPerksMut.GotoState('');
     sleep(1.0);
     if ( ServerPerksMut.IsInState('EndGameTracker') ) {
-        log("Can't save stats!", class.outer.name);
+        log("Can't save stats!", 'ScrnBalance');
     }
     else {
         ServerPerksMut.GotoState('EndGameTracker');
     }
     GotoState('');
 }
+*/
 
 function DynamicLevelCap()
 {
@@ -1123,6 +1166,20 @@ function Timer()
     }
 }
 
+function FixMusic()
+{
+    if ( KF.MapSongHandler == none )
+        KF.MapSongHandler = spawn(class'ScrnMusicTrigger');
+    // Allow L.D. to set boss battle song. 
+    // Don't use Dirge music as boss battle, because default KF_Abandon better.
+    if ( left(KF.MonsterCollection.default.EndGameBossClass, 
+            InStr(KF.MonsterCollection.default.EndGameBossClass,".")) ~= "ScrnDoom3KF" )
+        KF.BossBattleSong = "EGT-SignOfEvil"; // try this. If client doesn't have that song, then KF_Abandon will be played
+    else if ( KF.MapSongHandler.WaveBasedSongs.Length > 10 && KF.MapSongHandler.WaveBasedSongs[10].CombatSong != "" 
+            &&  !(left(KF.MapSongHandler.WaveBasedSongs[10].CombatSong, 5) ~= "Dirge") )
+        KF.BossBattleSong = KF.MapSongHandler.WaveBasedSongs[10].CombatSong;    
+}
+
 simulated function Tick( float DeltaTime )
 {
     if ( !bTickExecuted ) {
@@ -1136,6 +1193,8 @@ simulated function Tick( float DeltaTime )
 		if ( !bStoryMode ) {
             InitDoors();
 			SetStartCash();
+            if ( bFixMusic )
+                FixMusic(); 
         }
         if ( bTSCGame ) {
             Level.GRI.bNoTeamSkins = bNoTeamSkins && !ScrnGameType(Level.Game).IsTourney();
@@ -1589,8 +1648,11 @@ static function FillPlayInfo(PlayInfo PlayInfo)
     PlayInfo.AddSetting(default.BonusCapGroup,"bReplaceHUD","Replace HUD",1,0, "Check");
     PlayInfo.AddSetting(default.BonusCapGroup,"bNoPerkChanges","No Perk Changes",1,0, "Check");
 
-    PlayInfo.AddSetting(default.BonusCapGroup,"EventNum","Event", 0, 1, "Select", "0;Autodetect;255;Normal;1;Summer;2;Halloween;3;Xmas",,,True);
+    PlayInfo.AddSetting(default.BonusCapGroup,"EventNum","Event", 0, 1, "Select", "0;Autodetect;255;Normal;1;Summer;2;Halloween;3;Xmas;254;Random",,,True);
     PlayInfo.AddSetting(default.BonusCapGroup,"bForceEvent","Force Event",1,0, "Check");
+    
+    PlayInfo.AddSetting(default.BonusCapGroup,"bUseDLCLocks","Trader Requirements",1,0, "Check");
+    PlayInfo.AddSetting(default.BonusCapGroup,"bUseDLCLevelLocks","Perk Level Requirements",1,0, "Check");
 
     //PlayInfo.AddSetting(default.BonusCapGroup,"PerkedWeapons","Custom Perked Weapons",1,1,"Text","42",,,True);
     //PlayInfo.AddSetting(default.BonusCapGroup,"CustomPerks","Custom Perks",1,1,"Text","42",,,True);
@@ -1629,6 +1691,9 @@ static function string GetDescriptionText(string PropName)
         
         case "EventNum":                    return "Setup KF event zeds";
         case "bForceEvent":                 return "Check it to force selected event";
+        
+        case "bUseDLCLocks":                return "If checked, then trader items may have perk level or/and achievement requirements.";
+        case "bUseDLCLevelLocks":           return "Uncheck this to leave only achievement-specific trader requirements.";
 
         //case "PerkedWeapons":               return "List of perked custom weapons for perk bonuses in format '<PerkIndex>:<WeaponClassName>:<Bonuses>'";
         //case "CustomPerks":                 return "List of custom perks. Perks should be defined the same way as in Serverperks.ini";
@@ -1658,9 +1723,9 @@ function GetServerDetails( out GameInfo.ServerResponseLine ServerState )
     ServerState.ServerInfo[i].Key = "ScrN Balance";
     ServerState.ServerInfo[i++].Value = GetVersionStr();
 
-    ServerState.ServerInfo[i].Key = "Min Bonus Level";
+    ServerState.ServerInfo[i].Key = "Perk bonus level min";
     ServerState.ServerInfo[i++].Value = String(MinLevel);
-    ServerState.ServerInfo[i].Key = "Max Bonus Level";
+    ServerState.ServerInfo[i].Key = "Perk bonus level max";
     ServerState.ServerInfo[i++].Value = String(MaxLevel);
 
 
@@ -1745,6 +1810,7 @@ function SetReplicationData()
     if ( bNoPerkChanges )                   SrvFlags = SrvFlags | 0x00010000;
     if ( bPerkChangeBoss )                  SrvFlags = SrvFlags | 0x00020000;        
     if ( b10Stars )                         SrvFlags = SrvFlags | 0x00040000;  
+    if ( bBuyPerkedWeaponsOnly )            SrvFlags = SrvFlags | 0x00080000;  
 }
 
 simulated function LoadReplicationData()
@@ -1780,55 +1846,12 @@ simulated function LoadReplicationData()
     bNoPerkChanges                     = (SrvFlags & 0x00010000) > 0;
     bPerkChangeBoss                    = (SrvFlags & 0x00020000) > 0;        
     b10Stars                           = (SrvFlags & 0x00040000) > 0; 
+    bBuyPerkedWeaponsOnly              = (SrvFlags & 0x00080000) > 0; 
 }
 
 simulated function ApplySpawnBalance()
 {
-    if ( bSpawnBalance ) {
-        // todo: make derived classes of the weapons below and change default values there
-        class'CrossbowPickup'.default.cost = 1000; //increased from 800 and applied standard discount rate
-
-
-        // class'ScrnBalanceSrv.ScrnVetBerserker'.default.SRLevelEffects[5]="100% extra melee damage|20% faster melee attacks|20% faster melee movement|75% less damage from Bloat Bile|30% resistance to all damage|60% discount on Katana/Chainsaw/Sword|Spawn with an Axe|Can't be grabbed by Clots|Up to 4 Zed-Time Extensions";
-        // class'ScrnBalanceSrv.ScrnVetBerserker'.default.SRLevelEffects[6]="100% extra melee damage|25% faster melee attacks|30% faster melee movement|80% less damage from Bloat Bile|40% resistance to all damage|70% discount on Katana/Chainsaw/Sword|Spawn with a Chainsaw|Can't be grabbed by Clots|Up to 4 Zed-Time Extensions";
-        // class'ScrnBalanceSrv.ScrnVetBerserker'.default.CustomLevelInfo="%r extra melee damage|%s faster melee attacks|30% faster melee movement|80% less damage from Bloat Bile|40% resistance to all damage|%d discount on Katana/Chainsaw/Sword|Spawn with a Chainsaw|Can't be grabbed by Clots|Up to 4 Zed-Time Extensions";
-
-        // class'ScrnBalanceSrv.ScrnVetDemolitions'.default.SRLevelEffects[0]="5% extra Explosives damage|25% resistance to Explosives|10% discount on Explosives|52% off Remote Explosives and M79";
-        // class'ScrnBalanceSrv.ScrnVetDemolitions'.default.SRLevelEffects[1]="10% extra Explosives damage|30% resistance to Explosives|+1 Rocket, M203 and Hand Grenade capacity|Can carry 3 Remote Explosives|20% discount on Explosives|5% discount on Grenades and Rockets|56% off Remote Explosives and M79";
-        // class'ScrnBalanceSrv.ScrnVetDemolitions'.default.SRLevelEffects[2]="20% extra Explosives damage|35% resistance to Explosives|+2 Rocket, M203 and Hand Grenade capacity|Can carry 4 Remote Explosives|30% discount on Explosives|10% discount on Grenades and Rockets|60% off Remote Explosives and M79";
-        // class'ScrnBalanceSrv.ScrnVetDemolitions'.default.SRLevelEffects[3]="30% extra Explosives damage|40% resistance to Explosives|+3 Rocket, M203 and Hand Grenade capacity|Can carry 5 Remote Explosives|40% discount on Explosives|15% discount on Grenades and Rockets|64% off Remote Explosives and M79";
-        // class'ScrnBalanceSrv.ScrnVetDemolitions'.default.SRLevelEffects[4]="40% extra Explosives damage|45% resistance to Explosives|+4 Rocket, M203 and Hand Grenade capacity|Can carry 6 Remote Explosives|50% discount on Explosives|20% discount on Grenades and Rockets|68% off Remote Explosives and M79";
-        // class'ScrnBalanceSrv.ScrnVetDemolitions'.default.SRLevelEffects[5]="50% extra Explosives damage|50% resistance to Explosives|+5 Rocket, M203 and Hand Grenade capacity|Can carry 7 Remote Explosives|60% discount on Explosives|25% discount on Grenades and Rockets|72% off Remote Explosives and M79|Spawn with 10 hand grenades";
-        // class'ScrnBalanceSrv.ScrnVetDemolitions'.default.SRLevelEffects[6]="60% extra Explosives damage|55% resistance to Explosives|+6 Rocket, M203 and Hand Grenade capacity|Can carry 8 Remote Explosives|70% discount on Explosives|30% discount on Grenades and Rockets|76% off Remote Explosives and M79|Spawn with an M79";
-        // class'ScrnBalanceSrv.ScrnVetDemolitions'.default.CustomLevelInfo="%s extra Explosives damage|%r resistance to Explosives|+%g Rocket, M203 and Hand Grenade capacity|Can carry %x Remote Explosives|70% discount on Explosives|%n discount on Grenades and Rockets|76% off Remote Explosives and M79|Spawn with an M79";
-
-        // //class'FlamethrowerPickup'.default.cost = 1000; // up from 750 to match spawn value of other perks
-        // class'ScrnBalanceSrv.ScrnVetFirebug'.default.SRLevelEffects[5]="50% extra flame weapon damage|50% faster Flamethrower reload|25% faster MAC10 reload|50% faster Husk Gun charging|50% more flame weapon ammo|100% resistance to fire|100% extra Flamethrower range|Grenades set enemies on fire|60% discount on flame weapons|Spawn with a MAC10";
-        // class'ScrnBalanceSrv.ScrnVetFirebug'.default.SRLevelEffects[6]="60% extra flame weapon damage|60% faster Flamethrower reload|30% faster MAC10 reload|60% faster Husk Gun charging|60% more flame weapon ammo|100% resistance to fire|100% extra Flamethrower range|Grenades set enemies on fire|70% discount on flame weapons|Spawn with a Flamethrower";
-        // class'ScrnBalanceSrv.ScrnVetFirebug'.default.CustomLevelInfo="%s extra flame weapon damage|%m faster Flamethrower reload|%n faster MAC10 reload|%m faster Husk Gun charging|%s more flame weapon ammo|100% resistance to fire|100% extra Flamethrower range|Grenades set enemies on fire|%d discount on flame weapons|Spawn with a Flamethrower";
-    }
-    else
-    {
-        //restore default values
-        class'CrossbowPickup'.default.cost = 800; //let players suicide-cheat
-
-        // class'ScrnBalanceSrv.ScrnVetBerserker'.default.SRLevelEffects[5]="100% extra melee damage|20% faster melee attacks|20% faster melee movement|75% less damage from Bloat Bile|30% resistance to all damage|60% discount on Katana/Chainsaw/Sword|Spawn with a Chainsaw|Can't be grabbed by Clots|Up to 4 Zed-Time Extensions";
-        // class'ScrnBalanceSrv.ScrnVetBerserker'.default.SRLevelEffects[6]="100% extra melee damage|25% faster melee attacks|30% faster melee movement|80% less damage from Bloat Bile|40% resistance to all damage|70% discount on Katana/Chainsaw/Sword|Spawn with a Chainsaw and Body Armor|Can't be grabbed by Clots|Up to 4 Zed-Time Extensions";
-        // class'ScrnBalanceSrv.ScrnVetBerserker'.default.CustomLevelInfo="%r extra melee damage|%s faster melee attacks|30% faster melee movement|80% less damage from Bloat Bile|40% resistance to all damage|%d discount on Katana/Chainsaw/Sword|Spawn with a Chainsaw and Body Armor|Can't be grabbed by Clots|Up to 4 Zed-Time Extensions";
-
-        // class'ScrnBalanceSrv.ScrnVetDemolitions'.default.SRLevelEffects[0]="5% extra Explosives damage|25% resistance to Explosives|10% discount on Explosives|50% off Remote Explosives";
-        // class'ScrnBalanceSrv.ScrnVetDemolitions'.default.SRLevelEffects[1]="10% extra Explosives damage|30% resistance to Explosives|20% increase in Rocket, M203 and Hand Grenade capacity|Can carry 3 Remote Explosives|20% discount on Explosives|54% off Remote Explosives and M79|5% discount on Grenades and Rockets";
-        // class'ScrnBalanceSrv.ScrnVetDemolitions'.default.SRLevelEffects[2]="20% extra Explosives damage|35% resistance to Explosives|40% increase in Rocket, M203 and Hand Grenade capacity|Can carry 4 Remote Explosives|30% discount on Explosives|58% off Remote Explosives and M79|10% discount on Grenades and Rockets";
-        // class'ScrnBalanceSrv.ScrnVetDemolitions'.default.SRLevelEffects[3]="30% extra Explosives damage|40% resistance to Explosives|60% increase in Rocket, M203 and Hand Grenade capacity|Can carry 5 Remote Explosives|40% discount on Explosives|62% off Remote Explosives and M79|15% discount on Grenades and Rockets";
-        // class'ScrnBalanceSrv.ScrnVetDemolitions'.default.SRLevelEffects[4]="40% extra Explosives damage|45% resistance to Explosives|80% increase in Rocket, M203 and Hand Grenade capacity|Can carry 6 Remote Explosives|50% discount on Explosives|66% off Remote Explosives and M79|20% discount on Grenades and Rockets";
-        // class'ScrnBalanceSrv.ScrnVetDemolitions'.default.SRLevelEffects[5]="50% extra Explosives damage|50% resistance to Explosives|100% increase in Rocket, M203 and Hand Grenade capacity|Can carry 7 Remote Explosives|60% discount on Explosives|70% off Remote Explosives|25% discount on Grenades and Rockets|Spawn with a Pipe Bomb";
-        // class'ScrnBalanceSrv.ScrnVetDemolitions'.default.SRLevelEffects[6]="60% extra Explosives damage|55% resistance to Explosives|120% increase in Rocket, M203 and Hand Grenade capacity|Can carry 8 Remote Explosives|70% discount on Explosives|74% off Remote Explosives|30% discount on Grenades and Rockets|Spawn with an M79 and Pipe Bomb";
-        // class'ScrnBalanceSrv.ScrnVetDemolitions'.default.CustomLevelInfo="%s extra Explosives damage|%r resistance to Explosives|120% increase in Rocket, M203 and Hand Grenade capacity|Can carry %x Remote Explosives|%y discount on Explosives|%d off Remote Explosives|30% discount on Grenades and Rockets|Spawn with an M79 and Pipe Bomb";
-
-        // class'ScrnBalanceSrv.ScrnVetFirebug'.default.SRLevelEffects[5]="50% extra flame weapon damage|50% faster Flamethrower reload|25% faster MAC10 reload|50% more flame weapon ammo|100% resistance to fire|100% extra Flamethrower range|Grenades set enemies on fire|60% discount on flame weapons|Spawn with a Flamethrower";
-        // class'ScrnBalanceSrv.ScrnVetFirebug'.default.SRLevelEffects[6]="60% extra flame weapon damage|60% faster Flamethrower reload|30% faster MAC10 reload|60% more flame weapon ammo|100% resistance to fire|100% extra Flamethrower range|Grenades set enemies on fire|70% discount on flame weapons|Spawn with a Flamethrower and Body Armor";
-        // class'ScrnBalanceSrv.ScrnVetFirebug'.default.CustomLevelInfo="%s extra flame weapon damage|%m faster Flamethrower reload|%n faster MAC10 reload|%s more flame weapon ammo|100% resistance to fire|100% extra Flamethrower range|Grenades set enemies on fire|%d discount on flame weapons|Spawn with a Flamethrower and Body Armor";
-    }
+    // nothing left here
 }
 
 simulated function ApplyWeaponFix()
@@ -1897,9 +1920,6 @@ function LoadCustomWeapons()
     local ScrnCustomWeaponLink ClientLink;
 	local int ForcePrice;
     
-    if ( ScrnGT != none && ScrnGT.IsTourney() )
-        return; // no custom weapons in tourney mode
-
     // Load custom perks first
     MaxPerkIndex = 9;
     for( i = 0; i < CustomPerks.Length; i++ ) {
@@ -1908,7 +1928,7 @@ function LoadCustomWeapons()
         if ( j > 0 ) {
             PerkIndex = int(Left(S, j));
             if ( PerkIndex < 10 || PerkIndex > 255 ) {
-                log("Custom Perk index must be between 10 and 255! Perk '"$S$"' ignored", Class.Outer.Name);
+                log("Custom Perk index must be between 10 and 255! Perk '"$S$"' ignored", 'ScrnBalance');
                 continue;
             }
             S = Mid(S, j+1);
@@ -1922,10 +1942,10 @@ function LoadCustomWeapons()
             Perks[PerkIndex] = ScrnPerk;
             AddToPackageMap(String(ScrnPerk.Outer.Name));
             MaxPerkIndex = max(MaxPerkIndex, PerkIndex);
-            log("Perk: '" $ S $"' loaded with index = " $ String(PerkIndex), Class.Outer.Name);
+            log("Perk: '" $ S $"' loaded with index = " $ String(PerkIndex), 'ScrnBalance');
         }
         else
-            log("Unable to load custom perk: '" $ S $"'.", Class.Outer.Name);
+            log("Unable to load custom perk: '" $ S $"'.", 'ScrnBalance');
     }
 
     // Load weapon bonuses
@@ -1936,13 +1956,13 @@ function LoadCustomWeapons()
         S = PerkedWeapons[i];
         j = InStr(S,":");
         if( j <= 0 ) {
-            log("Illegal Custom Weapon definition: '" $ S $"'! Wrong perk index.", Class.Outer.Name);
+            log("Illegal Custom Weapon definition: '" $ S $"'! Wrong perk index.", 'ScrnBalance');
             continue;
         }
 
         PerkIndex = int(Left(S, j));
         if ( PerkIndex < 0 || PerkIndex >= Perks.length || Perks[PerkIndex] == none ) {
-            log("Illegal Custom Weapon definition: '" $ S $"'! Wrong perk index.", Class.Outer.Name);
+            log("Illegal Custom Weapon definition: '" $ S $"'! Wrong perk index.", 'ScrnBalance');
             continue;
         }
         ScrnPerk = Perks[PerkIndex];
@@ -1962,17 +1982,17 @@ function LoadCustomWeapons()
         }
 		AllBonuses = WeaponBonusStr == "";
 		ForcePrice = int(PriceStr);
-		//log("WeaponBonusStr="$WeaponBonusStr @ "ForcePrice="$ForcePrice  , Class.Outer.Name);
+		//log("WeaponBonusStr="$WeaponBonusStr @ "ForcePrice="$ForcePrice  , 'ScrnBalance');
 
         W = class<KFWeapon>(DynamicLoadObject(WeaponClassStr, Class'Class'));
         if( W == none ) {
-            log("Can't load Custom Weapon: '" $ WeaponClassStr $"'!", Class.Outer.Name);
+            log("Can't load Custom Weapon: '" $ WeaponClassStr $"'!", 'ScrnBalance');
             continue;
         }
 
         ClientLink = spawn(class'ScrnBalanceSrv.ScrnCustomWeaponLink', self);
         if ( ClientLink == none ) {
-            log("Can't load Client Replication Link for a Custom Weapon: '" $ W $"'!", Class.Outer.Name);
+            log("Can't load Client Replication Link for a Custom Weapon: '" $ W $"'!", 'ScrnBalance');
             continue;
         }
         //add to the begining
@@ -2008,29 +2028,56 @@ function LoadCustomWeapons()
 
 function LoadSpawnInventory()
 {
-	local int i, j, index;
-	local string S, PickupStr, LevelStr, AmmoStr, SellStr;
+	local int i, j, index, k;
+    local byte X;
+	local string S, PickupStr, LevelStr, AmmoStr, SellStr, AchStr;
 	local int PerkIndex;
 	local class<ScrnVeterancyTypes> ScrnPerk;
 	local class<Pickup> Pickup;
+    local bool bAllPerks;
+    local bool bTourney;
+    
+    bTourney = ScrnGT != none && ScrnGT.IsTourney();
+    
+    // clear old inventory left from previous map
+    for ( j=0; j<Perks.length; ++j )
+        if ( Perks[j] != none )
+            Perks[j].default.DefaultInventory.length = 0;
 	
 	for ( i=0; i<SpawnInventory.length; ++i ) {
+        bAllPerks = false;
 		LevelStr = "";
 		AmmoStr = "";
 		SellStr = "";
+		AchStr = "";
+        X = 0;
+        
 		S = SpawnInventory[i];
 		j = InStr(S,":");
         if( j <= 0 ) {
-            log("Illegal Spawn Inventory definition: '" $ S $"'! Wrong perk index.", Class.Outer.Name);
+            log("Illegal Spawn Inventory definition: '" $ S $"'! Wrong perk index.", 'ScrnBalance');
             continue;
-        }	
-        PerkIndex = int(Left(S, j));
+        }
+        PickupStr = Mid(S, j+1);
+        S = Left(S, j);
+        j = InStr(S,"-"); // "PerkIndex-X"
+        if ( j > 0 ) {
+            X = int(Mid(S, j+1));
+            S = Left(S, j);
+        } 
+        
+        if ( S == "*" ) {
+            bAllPerks = true;
+            PerkIndex = 0;
+        }
+        else
+            PerkIndex = int(S);
         if ( PerkIndex < 0 || PerkIndex >= Perks.length || Perks[PerkIndex] == none ) {
-            log("Illegal Spawn Inventory definition: '" $ S $"'! Wrong perk index.", Class.Outer.Name);
+            log("Illegal Spawn Inventory definition: '" $ S $"'! Wrong perk index.", 'ScrnBalance');
             continue;
         }	
 		ScrnPerk = Perks[PerkIndex];	
-		PickupStr = Mid(S, j+1);
+		
 		//pickup
 		j = InStr(PickupStr,":");
 		if ( j >= 0 ) {
@@ -2048,12 +2095,22 @@ function LoadSpawnInventory()
 				if ( j >= 0 ) {
 					SellStr = Mid(AmmoStr, j+1);
 					AmmoStr = Left(AmmoStr, j);
-				}				
+				}
+
+                // Achievement
+				j = InStr(SellStr,":");
+				if ( j >= 0 ) {
+					AchStr = Mid(SellStr, j+1);
+					SellStr = Left(SellStr, j);
+				}                
 			}			
 		}
+        if ( bTourney && AchStr != "" )
+            continue; // do not allow achievement-specific inventory in tournaments
+            
 		Pickup = class<Pickup>(DynamicLoadObject(PickupStr, Class'Class'));
         if( Pickup == none ) {
-            log("Can't load Spawn Inventory: '" $ PickupStr $"'!", Class.Outer.Name);
+            log("Can't load Spawn Inventory: '" $ PickupStr $"'!", 'ScrnBalance');
             continue;
         }	
 
@@ -2085,7 +2142,36 @@ function LoadSpawnInventory()
 		// SellValue
 		if ( SellStr != "" )
 			ScrnPerk.default.DefaultInventory[index].SellValue = int(SellStr);
+        if ( AchStr != "" )
+			ScrnPerk.default.DefaultInventory[index].Achievement = StringToName(AchStr);
+        ScrnPerk.default.DefaultInventory[index].X = X;
+            
+        if ( bAllPerks ) {
+            for ( j=1; j<Perks.length; ++j ) {
+                if ( Perks[j] != none && Perks[j] != ScrnPerk && Perks[j] != Class'ScrnVeterancyTypes' ) {
+                    k = Perks[j].default.DefaultInventory.length;
+                    Perks[j].default.DefaultInventory.insert(k, 1);
+                    Perks[j].default.DefaultInventory[k].PickupClass = ScrnPerk.default.DefaultInventory[index].PickupClass;
+                    Perks[j].default.DefaultInventory[k].MinPerkLevel = ScrnPerk.default.DefaultInventory[index].MinPerkLevel;
+                    Perks[j].default.DefaultInventory[k].MaxPerkLevel = ScrnPerk.default.DefaultInventory[index].MaxPerkLevel;
+                    Perks[j].default.DefaultInventory[k].bSetAmmo = ScrnPerk.default.DefaultInventory[index].bSetAmmo;
+                    Perks[j].default.DefaultInventory[k].AmmoAmount = ScrnPerk.default.DefaultInventory[index].AmmoAmount;
+                    Perks[j].default.DefaultInventory[k].AmmoPerLevel = ScrnPerk.default.DefaultInventory[index].AmmoPerLevel;
+                    Perks[j].default.DefaultInventory[k].SellValue = ScrnPerk.default.DefaultInventory[index].SellValue;
+                    Perks[j].default.DefaultInventory[k].Achievement = ScrnPerk.default.DefaultInventory[index].Achievement;
+                    Perks[j].default.DefaultInventory[k].X = ScrnPerk.default.DefaultInventory[index].X;
+                }
+            }
+        }
 	}
+}
+
+// UE2 doesn't support direct string to name typecasting
+// That's why need to use the following hack
+final function name StringToName(string str)
+{
+    SetPropertyText("NameOfString", str);
+    return NameOfString;
 }
 
 function SetupStoryRules(KFLevelRules_Story StoryRules)
@@ -2107,7 +2193,7 @@ function SetupStoryRules(KFLevelRules_Story StoryRules)
 function bool CheckReplacement(Actor Other, out byte bSuperRelevant)
 {
 	local int i;
-    //Log("CheckReplacement: " $ String(Other), Class.Outer.Name);
+    //Log("CheckReplacement: " $ String(Other), 'ScrnBalance');
     
     // first check classes that need to be replaced
 	if ( Other.class == class'KFRandomItemSpawn' ) {	
@@ -2152,7 +2238,6 @@ function bool CheckReplacement(Actor Other, out byte bSuperRelevant)
         GameRules.RegisterMonster(KFMonster(Other));
     }
     else if ( SRStatsBase(Other) != none ) {
-        class'ScrnAchievements'.static.InitAchievements(SRStatsBase(Other).Rep); 
         SetupRepLink(SRStatsBase(Other).Rep);
     }
     else if ( Other.class == class'ScrnAmmoPickup' ) {
@@ -2179,53 +2264,61 @@ function bool CheckReplacement(Actor Other, out byte bSuperRelevant)
 function SetupRepLink(ClientPerkRepLink R)
 {
     local ScrnClientPerkRepLink ScrnRep;
-    local PlayerReplicationInfo PRI;
-    local LinkedReplicationInfo L;
+    local int i, j;
     
     if ( R == none )
         return;
         
     // replace with ScrnClientPerkRepLink
-    ScrnRep = ScrnClientPerkRepLink(R);
-    if ( bScrnClientPerkRepLink && ScrnRep == none ) {
-        ScrnRep = Spawn(Class'ScrnClientPerkRepLink',R.Owner);
-        ScrnRep.StatObject = R.StatObject;
-        ScrnRep.StatObject.Rep = ScrnRep;
-        ScrnRep.NextReplicationInfo = R.NextReplicationInfo;
-        
-        ScrnRep.ServerWebSite = R.ServerWebSite;
-        ScrnRep.MinimumLevel = R.MinimumLevel;
-        ScrnRep.MaximumLevel = R.MaximumLevel;
-        ScrnRep.RequirementScaling = R.RequirementScaling;
-        ScrnRep.CachePerks = R.CachePerks;
-        
-        PRI = R.StatObject.PlayerOwner.PlayerReplicationInfo; 
-		if( PRI.CustomReplicationInfo==None || PRI.CustomReplicationInfo==R)
-			PRI.CustomReplicationInfo = ScrnRep;
-		else
-		{
-			for( L=PRI.CustomReplicationInfo; L!=None; L=L.NextReplicationInfo )
-				if( L.NextReplicationInfo==None || L.NextReplicationInfo==R)
-				{
-					L.NextReplicationInfo = ScrnRep;
-					break;
-				}
-		}        
-        
-        R.GotoState('');
-        R.Destroy();
-        R = ScrnRep;
+    if ( ScrnClientPerkRepLink(R) != none ) 
+        return; // already set up
+    
+    ScrnRep = Spawn(Class'ScrnClientPerkRepLink',R.Owner);
+    ScrnRep.StatObject = R.StatObject;
+    ScrnRep.StatObject.Rep = ScrnRep;
+    
+    ScrnRep.ServerWebSite = R.ServerWebSite;
+    ScrnRep.MinimumLevel = R.MinimumLevel;
+    ScrnRep.MaximumLevel = R.MaximumLevel;
+    ScrnRep.RequirementScaling = R.RequirementScaling;
+    ScrnRep.CachePerks = R.CachePerks;
+    
+    ScrnRep.OwnerPC = ScrnPlayerController(R.Owner);
+    ScrnRep.OwnerPRI = KFPlayerReplicationInfo(ScrnRep.OwnerPC.PlayerReplicationInfo);
+    log("Creating ScrnClientPerkRepLink for player " $ ScrnRep.OwnerPRI.PlayerName, 'ScrnBalance');
+    
+    R.GotoState('');
+    R.Destroy();
+    R = ScrnRep;
+    
+    class'ScrnAchievements'.static.InitAchievements(ScrnRep); 
+    
+    if ( bUseDLCLocks && !bTSCGame && (ScrnGT == none || !ScrnGT.IsTourney()) ) {
+        ScrnRep.Locks.Length = LockCount;
+        for( i=0; i<DLCLocks.Length; ++i) {
+            if ( DLCLocks[i].PickupClass != none 
+                    && (bUseDLCLevelLocks || DLCLocks[i].Type != LOCK_Level) )
+            {
+                ScrnRep.Locks[j].PickupClass = DLCLocks[i].PickupClass;
+                ScrnRep.Locks[j].Group       = DLCLocks[i].Group;
+                ScrnRep.Locks[j].Type        = DLCLocks[i].Type;
+                ScrnRep.Locks[j].ID          = DLCLocks[i].ID;
+                ScrnRep.Locks[j].MaxProgress = DLCLocks[i].Value;
+                ++j;
+            }
+        }
     }
     
     if ( ScrnGT != none )
-        ScrnGT.SetupRepLink(R);
+        ScrnGT.SetupRepLink(ScrnRep);
         
-    if ( ScrnRep != none ) {
-        // used for client replication
-        ScrnRep.TotalCategories = min(ScrnRep.ShopCategories.Length, 255);
-        ScrnRep.TotalWeapons = ScrnRep.ShopInventory.Length;
-        ScrnRep.TotalChars = ScrnRep.CustomChars.Length;    
-    }
+    // used for client replication
+    if ( ScrnRep.ShopCategories.Length > 250 )
+        ScrnRep.ShopCategories.Length = 250; //wtf?
+    ScrnRep.TotalCategories = ScrnRep.ShopCategories.Length;
+    ScrnRep.TotalWeapons = ScrnRep.ShopInventory.Length;
+    ScrnRep.TotalLocks = ScrnRep.Locks.Length;
+    ScrnRep.TotalChars = ScrnRep.CustomChars.Length;    
 }
 
 
@@ -2277,67 +2370,61 @@ function ForceEvent()
     local int i, j;
     local class<KFMonstersCollection> MC;
     
-    if ( EventNum == 255 ) {
-        // force regular zeds
-        log("Normal zeds forced by server setting (EventNum=255)", class.outer.name);
-        KF.MonsterCollection = class'KFMonstersCollection';
-        CurrentEventNum = 0;
-    }
-    else {
-        i = FindMapInfo();
-        if ( i != -1 && MapInfo[i].ForceEventNum > 0 ) 
-            CurrentEventNum = MapInfo[i].ForceEventNum;
-        else if ( EventNum == 0 )
-            CurrentEventNum = int(KF.GetSpecialEventType()); // autodetect event
-        else
-            CurrentEventNum = EventNum;
+    i = FindMapInfo();
+    if ( i != -1 && MapInfo[i].ForceEventNum > 0 ) 
+        CurrentEventNum = MapInfo[i].ForceEventNum;
+    else if ( EventNum == 0 )
+        CurrentEventNum = int(KF.GetSpecialEventType()); // autodetect event
+    else
+        CurrentEventNum = EventNum;
         
-        // custom events
-        if ( CurrentEventNum >= 100 && CurrentEventNum < 200 ) {
-            for ( i=0; i<CustomEvents.length; ++i ) {
-                if ( CustomEvents[i].EventNum == CurrentEventNum ) {
-                    MC = Class<KFMonstersCollection>(DynamicLoadObject(CustomEvents[i].MonstersCollection, Class'Class'));
-                    break;
-                }
+    // custom events
+    if ( CurrentEventNum >= 100 && CurrentEventNum < 200 ) {
+        for ( i=0; i<CustomEvents.length; ++i ) {
+            if ( CustomEvents[i].EventNum == CurrentEventNum ) {
+                MC = Class<KFMonstersCollection>(DynamicLoadObject(CustomEvents[i].MonstersCollection, Class'Class'));
+                break;
             }
-            if ( MC != none ) {
-                log("Custom zeds forced for this map: " $ MC, class.outer.name);
-                KF.MonsterCollection = MC;
-                for ( j=0; j<CustomEvents[i].ServerPackages.length; ++j ) {
-                    AddToPackageMap(CustomEvents[i].ServerPackages[j]);
-                    log(CustomEvents[i].ServerPackages[j] $ " added to ServerPackages", class.outer.name);
-                }
-            }
-            else {
-                log("Custom event ("$CurrentEventNum$") is illegal. Regular zeds will be used instead.", class.outer.name);
-                KF.MonsterCollection = class'KFMonstersCollection';
-                CurrentEventNum = 0;
+        }
+        if ( MC != none ) {
+            log("Custom zeds forced for this map: " $ MC, 'ScrnBalance');
+            KF.MonsterCollection = MC;
+            for ( j=0; j<CustomEvents[i].ServerPackages.length; ++j ) {
+                AddToPackageMap(CustomEvents[i].ServerPackages[j]);
+                log(CustomEvents[i].ServerPackages[j] $ " added to ServerPackages", 'ScrnBalance');
             }
         }
         else {
-            switch (CurrentEventNum) {
-                case 0: case 255: // force regular zeds
-                    log("Normal zeds forced for this map", class.outer.name);
-                    KF.MonsterCollection = class'KFMonstersCollection';
-                    CurrentEventNum = 0;
-                    break;
-                case 1:
-                    log("Summer zeds forced for this map", class.outer.name);
-                    KF.MonsterCollection = class'KFMonstersSummer';
-                    break;
-                case 2:
-                    log("Halloween zeds forced for this map", class.outer.name);
-                    KF.MonsterCollection = class'KFMonstersHalloween';
-                    break;
-                case 3:
-                    log("Xmas zeds forced for this map", class.outer.name);
-                    KF.MonsterCollection = class'KFMonstersXmas';
-                    break;
-                default:
-                    log("Unknown Event Number: "$CurrentEventNum, class.outer.name);
-                    CurrentEventNum = EventNum;
-                    return;
-            }
+            log("Custom event ("$CurrentEventNum$") is illegal. Regular zeds will be used instead.", 'ScrnBalance');
+            CurrentEventNum = 0;
+        }
+    }
+    else if ( CurrentEventNum == 254 )
+        CurrentEventNum = rand(4);    
+    
+    if ( MC == none ) {
+        switch (CurrentEventNum) {
+            case 0: case 255: // force regular zeds
+                log("Normal zeds forced for this map", 'ScrnBalance');
+                KF.MonsterCollection = class'KFMod.KFMonstersCollection';
+                CurrentEventNum = 0;
+                break;
+            case 1:
+                log("Summer zeds forced for this map", 'ScrnBalance');
+                KF.MonsterCollection = class'KFMod.KFMonstersSummer';
+                break;
+            case 2:
+                log("Halloween zeds forced for this map", 'ScrnBalance');
+                KF.MonsterCollection = class'KFMod.KFMonstersHalloween';
+                break;
+            case 3:
+                log("Xmas zeds forced for this map", 'ScrnBalance');
+                KF.MonsterCollection = class'KFMod.KFMonstersXmas';
+                break;
+            default:
+                log("Unknown Event Number: "$CurrentEventNum, 'ScrnBalance');
+                CurrentEventNum = EventNum;
+                return;
         }
     }
     KF.SpecialEventMonsterCollections[KF.GetSpecialEventType()] = KF.MonsterCollection;
@@ -2377,7 +2464,7 @@ function SetupVoteSquads()
             
         MC = Class<KFMonster>(DynamicLoadObject(VoteSquad[i].MonsterClass,Class'Class'));
         if ( MC == none ) {
-            log("SetupVoteSquad: Unable to load monster '"$VoteSquad[i].MonsterClass, class.outer.name);
+            log("SetupVoteSquad: Unable to load monster '"$VoteSquad[i].MonsterClass, 'ScrnBalance');
             continue;
         }
         
@@ -2386,7 +2473,7 @@ function SetupVoteSquads()
         pkg = MC.outer.name;
         if ( pkg != 'KFChar' ) {
             AddToPackageMap(String(pkg));
-            log(pkg $ " added to ServerPackages", class.outer.name);
+            log(pkg $ " added to ServerPackages", 'ScrnBalance');
         }
         
         q = FindSquad(VoteSquad[i].SquadName, true);
@@ -2444,11 +2531,12 @@ function SetMaxZombiesOnce()
 function PostBeginPlay()
 {
     local ScrnVotingHandlerMut VH;
+    local ScrnAchHandler AchHandler;
     local int i;
 
     KF = KFGameType(Level.Game);
     if (KF == none) {
-        Log("ERROR: Wrong GameType (requires KFGameType)", Class.Outer.Name);
+        Log("ERROR: Wrong GameType (requires KFGameType)", 'ScrnBalance');
         Destroy();
         return;
     }
@@ -2483,12 +2571,12 @@ function PostBeginPlay()
     GetRidOfMut('AliensKFServerPerksMut');
     FindServerPerksMut();
     if ( ServerPerksMut == none ) {
-        log("ServerPerksMut must be loaded before ScrN Balance! Loading it now...", class.outer.name);
+        log("ServerPerksMut must be loaded before ScrN Balance! Loading it now...", 'ScrnBalance');
         Level.Game.AddMutator(ServerPerksPkgName, false);
         //check again
         FindServerPerksMut();
         if ( ServerPerksMut == none )
-            log("Unable to spawn " $ ServerPerksPkgName, class.outer.name);
+            log("Unable to spawn " $ ServerPerksPkgName, 'ScrnBalance');
     }
     bAllowAlwaysPerkChanges = ServerPerksMut.GetPropertyText("bAllowAlwaysPerkChanges") ~= "True";
     bNoPerkChanges = bNoPerkChanges && !bAllowAlwaysPerkChanges;
@@ -2520,21 +2608,28 @@ function PostBeginPlay()
         GameRules.bUseAchievements = bUseAchievements && KF.GameDifficulty >= 2;
         if ( GameRules.bUseAchievements ) {
             // spawn achievement handlers
-            GameRules.Spawn(Class'ScrnBalanceSrv.ScrnAchHandler', GameRules);
+            AchHandler = GameRules.Spawn(Class'ScrnBalanceSrv.ScrnAchHandler', GameRules);
         }
         
-        if ( bResetSquadsAtStart ) {
+        if ( bResetSquadsAtStart || EventNum == 254 ) {
             GameRules.ResetGameSquads(KF, CurrentEventNum);
         }
     }
     else {
-        log("Unable to spawn Game Rules!", class.outer.name);
+        log("Unable to spawn Game Rules!", 'ScrnBalance');
     }
     
     if (bAltBurnMech) {
         BurnMech = spawn(class'ScrnBalanceSrv.ScrnBurnMech');
         default.BurnMech = BurnMech;
         class'ScrnBalance'.default.BurnMech = BurnMech;
+        if ( bDoubleDoT ) {
+            BurnMech.BurnPeriod = 0.5;
+            BurnMech.BurnDuration = 16;
+            BurnMech.BurnInCount = 4;  
+            if ( AchHandler != none )
+                AchHandler.iDoT_Damage = 150;
+        }
     }
 
     if ( bAllowVoting ) {
@@ -2550,10 +2645,18 @@ function PostBeginPlay()
             }
         }
         else
-            log("Unable to spawn voting handler mutator", class.outer.name);
+            log("Unable to spawn voting handler mutator", 'ScrnBalance');
     }
 
     LoadCustomWeapons();
+    // proceed DLCLocks
+    LockCount = 0;
+    for ( i=0; i<DLCLocks.length; ++i ) {
+        if ( DLCLocks[i].Item != "" )
+            DLCLocks[i].PickupClass = class<Pickup>(DynamicLoadObject(DLCLocks[i].Item, Class'Class'));
+        if ( DLCLocks[i].PickupClass != none && (bUseDLCLevelLocks || DLCLocks[i].Type != LOCK_Level) )
+            ++LockCount;
+    }    
     InitSettings();
 	LoadSpawnInventory();
     SetupVoteSquads();
@@ -2562,11 +2665,11 @@ function PostBeginPlay()
 		class'ScrnAchievements'.static.RegisterAchievements(class'AchObjMaps');
 	}
     
-    Log(FriendlyName @ GetVersionStr()$" loaded", class.outer.name);
+    Log(FriendlyName @ GetVersionStr()$" loaded", 'ScrnBalance');
     
     for ( i=0; i<AutoLoadMutators.length; ++i ) {
         if ( AutoLoadMutators[i] != "" )  {
-            Log("Loading additional mutator: " $ AutoLoadMutators[i], class.outer.name);
+            Log("Loading additional mutator: " $ AutoLoadMutators[i], 'ScrnBalance');
             KF.AddMutator(AutoLoadMutators[i], true);
         }
     }
@@ -2778,11 +2881,17 @@ function bool Doom3Check()
 
 function ServerTraveling(string URL, bool bItems)
 {
+    local int j;
+    
 	if (NextMutator != None)
     	NextMutator.ServerTraveling(URL,bItems);
     
     class'ScrnGameRules'.static.ResetGameSquads(KF, CurrentEventNum);
 	class'ScrnAchievements'.static.ResetAchList();
+    
+    for ( j=0; j<Perks.length; ++j )
+        if ( Perks[j] != none )
+            Perks[j].default.DefaultInventory.length = 0;    
 }
 
 // Limits placed pipebomb count to perk's capacity
@@ -2951,6 +3060,7 @@ defaultproperties
     pickupReplaceArray(44)=(oldClass=Class'KFMod.SyringePickup',NewClass=Class'ScrnBalanceSrv.ScrnSyringePickup')
     pickupReplaceArray(45)=(oldClass=Class'KFMod.FragPickup',NewClass=Class'ScrnBalanceSrv.ScrnFragPickup')
     pickupReplaceArray(46)=(oldClass=Class'KFMod.M79Pickup',NewClass=Class'ScrnBalanceSrv.ScrnM79Pickup')
+    pickupReplaceArray(47)=(oldClass=Class'KFMod.CrossbowPickup',NewClass=Class'ScrnBalanceSrv.ScrnCrossbowPickup')
 	FragReplacementIndex=45
 	
     Functions=Class'ScrnBalanceSrv.ScrnFunctions'
@@ -2962,7 +3072,7 @@ defaultproperties
     Perks(4)=Class'ScrnBalanceSrv.ScrnVetBerserker'
     Perks(5)=Class'ScrnBalanceSrv.ScrnVetFirebug'
     Perks(6)=Class'ScrnBalanceSrv.ScrnVetDemolitions'
-    Perks(7)=Class'ScrnBalanceSrv.ScrnVetGunslinger' // old one - just for backward compatibility
+    Perks(7)=Class'ScrnBalanceSrv.ScrnVeterancyTypes' 
     Perks(8)=Class'ScrnBalanceSrv.ScrnVetGunslinger' // new one
     Perks(9)=Class'ScrnBalanceSrv.ScrnVeterancyTypes'
     strAchEarn="%p earned an achievement: %a"
@@ -3005,7 +3115,7 @@ defaultproperties
 	SpawnInventory(2)="1:ScrnBalanceSrv.ScrnShotgunPickup:5:24:150"
 	SpawnInventory(3)="1:ScrnBalanceSrv.ScrnBoomStickPickup:6-255:24+6:225"
 	SpawnInventory(4)="2:ScrnBalanceSrv.ScrnWinchesterPickup:5:40:150"
-	SpawnInventory(5)="2:KFMod.CrossbowPickup:6-255:12+3:225"
+	SpawnInventory(5)="2:ScrnBalanceSrv.ScrnCrossbowPickup:6-255:12+3:225"
 	SpawnInventory(6)="3:ScrnBalanceSrv.ScrnBullpupPickup:5:200:150"
 	SpawnInventory(7)="3:ScrnBalanceSrv.ScrnAK47Pickup:6-255:150+30:225"
 	SpawnInventory(8)="4:ScrnBalanceSrv.ScrnAxePickup:5::150"
@@ -3042,8 +3152,10 @@ defaultproperties
     SharpProgMinDmg=1000
     bCloserZedSpawns=True
     bServerInfoVeterancy=True
-    bScrnClientPerkRepLink=True
     bPlayerZEDTime=True
+    bUseDLCLocks=False
+    bUseDLCLevelLocks=True
+    bFixMusic=True
 
     bAddToServerPackages=True
     bAlwaysRelevant=True
@@ -3051,73 +3163,78 @@ defaultproperties
     RemoteRole=ROLE_SimulatedProxy
     bNetNotify=True
     
-    HighlyDecorated(0)=(SteamID32=3907835,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
-    HighlyDecorated(1)=(SteamID32=4787302,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
-    HighlyDecorated(2)=(SteamID32=21825964,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
-    HighlyDecorated(3)=(SteamID32=26505257,Playoffs=1,AvatarRef="ScrnTex.Players.Duckbuster",ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PreNameIconRef="KillingFloor2HUD.PerkReset.PReset_Support_Grey",PrefixIconColor=(R=255,G=255,B=255,A=0)),PostfixIconColor=(R=255,G=255,B=255,A=255))
-    HighlyDecorated(4)=(SteamID32=27263782,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
-    HighlyDecorated(5)=(SteamID32=27784497,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
-    HighlyDecorated(6)=(SteamID32=32271863,AvatarRef="ScrnTex.Players.PooSH",PreNameIconRef="KillingFloor2HUD.PerkReset.PReset_Berserker_Grey",PostNameIconRef="KillingFloor2HUD.PerkReset.PReset_Berserker_Grey",PrefixIconColor=(R=255,G=255,B=255,A=1)),PostfixIconColor=(R=255,G=255,B=255,A=0))
-    HighlyDecorated(7)=(SteamID32=32279441,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
-    HighlyDecorated(8)=(SteamID32=32976519,Playoffs=1,ClanIconRef="ScrnTex.Players.Dosh",PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
-    HighlyDecorated(9)=(SteamID32=34308728,AvatarRef="ScrnTex.Players.Janitor",PreNameIconRef="KillingFloor2HUD.PerkReset.PReset_Firebug_Grey",PostNameIconRef="KillingFloor2HUD.PerkReset.PReset_Firebug_Grey",PrefixIconColor=(R=255,G=255,B=255,A=1)),PostfixIconColor=(R=255,G=255,B=255,A=0))
-    HighlyDecorated(10)=(SteamID32=37444251,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
-    HighlyDecorated(11)=(SteamID32=41734606,Playoffs=1,TourneyWon=1,ClanIconRef="ScrnTex.Tourney.TBN",PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
-    HighlyDecorated(12)=(SteamID32=43087787,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
-    HighlyDecorated(13)=(SteamID32=43944237,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
-    HighlyDecorated(14)=(SteamID32=44141219,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
-    HighlyDecorated(15)=(SteamID32=44328745,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
-    HighlyDecorated(16)=(SteamID32=45088649,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
-    HighlyDecorated(17)=(SteamID32=45352894,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
-    HighlyDecorated(18)=(SteamID32=46023864,AvatarRef="ScrnTex.Players.Baron",PreNameIconRef="KillingFloor2HUD.PerkReset.PReset_Medic_Grey",PostNameIconRef="ScrnAch_T.Achievements.Baron",PrefixIconColor=(R=255,G=255,B=255,A=1)),PostfixIconColor=(R=255,G=255,B=255,A=0))
-    HighlyDecorated(19)=(SteamID32=47199674,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
-    HighlyDecorated(20)=(SteamID32=47820768,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
-    HighlyDecorated(21)=(SteamID32=49361376,Playoffs=1,TourneyWon=1,ClanIconRef="ScrnTex.Tourney.TBN",PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
-    HighlyDecorated(22)=(SteamID32=51667940,Playoffs=1,TourneyWon=1,ClanIconRef="ScrnTex.Tourney.TBN",PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
-    HighlyDecorated(23)=(SteamID32=52109233,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
-    HighlyDecorated(24)=(SteamID32=53781980,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
-    HighlyDecorated(25)=(SteamID32=54179805,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
-    HighlyDecorated(26)=(SteamID32=54471316,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
-    HighlyDecorated(27)=(SteamID32=58813412,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
-    HighlyDecorated(28)=(SteamID32=59018230,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
-    HighlyDecorated(29)=(SteamID32=59344954,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
-    HighlyDecorated(30)=(SteamID32=59865355,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
-    HighlyDecorated(31)=(SteamID32=61480134,Playoffs=1,TourneyWon=1,ClanIconRef="ScrnTex.Tourney.TBN",PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
-    HighlyDecorated(32)=(SteamID32=63934831,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
-    HighlyDecorated(33)=(SteamID32=64861994,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
-    HighlyDecorated(34)=(SteamID32=66767874,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
-    HighlyDecorated(35)=(SteamID32=67141366,Playoffs=1,TourneyWon=1,ClanIconRef="ScrnTex.Tourney.TBN",PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
-    HighlyDecorated(36)=(SteamID32=68703215,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
-    HighlyDecorated(37)=(SteamID32=68932148,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
-    HighlyDecorated(38)=(SteamID32=71427768,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
-    HighlyDecorated(39)=(SteamID32=75600845,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
-    HighlyDecorated(40)=(SteamID32=76661591,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
-    HighlyDecorated(41)=(SteamID32=81947447,Playoffs=1,TourneyWon=1,ClanIconRef="ScrnTex.Tourney.TBN",PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
-    HighlyDecorated(42)=(SteamID32=83417929,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
-    HighlyDecorated(43)=(SteamID32=85142081,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
-    HighlyDecorated(44)=(SteamID32=89323130,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
-    HighlyDecorated(45)=(SteamID32=93919492,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
-    HighlyDecorated(46)=(SteamID32=95752287,AvatarRef="ScrnTex.Players.FosterKF2",PreNameIconRef="KillingFloor2HUD.PerkReset.PReset_Sharpshooter_Grey",PostNameIconRef="KillingFloor2HUD.PerkReset.PReset_Sharpshooter_Grey",PrefixIconColor=(R=255,G=255,B=255,A=1)),PostfixIconColor=(R=255,G=255,B=255,A=0))
-    HighlyDecorated(47)=(SteamID32=99293732,Playoffs=1,TourneyWon=1,ClanIconRef="ScrnTex.Tourney.TBN",PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
-    HighlyDecorated(48)=(SteamID32=102496714,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
-    HighlyDecorated(49)=(SteamID32=106835439,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
-    HighlyDecorated(50)=(SteamID32=107039826,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
-    HighlyDecorated(51)=(SteamID32=112564543,ClanIconRef="ScrnTex.Players.Dosh",PreNameIconRef="KillingFloor2HUD.PerkReset.PReset_Medic_Grey",PostNameIconRef="KillingFloor2HUD.PerkReset.PReset_Medic_Grey",PrefixIconColor=(R=255,G=255,B=255,A=1)),PostfixIconColor=(R=255,G=255,B=255,A=0))    HighlyDecorated(52)=(SteamID32=113961551,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
-    HighlyDecorated(53)=(SteamID32=114826433,Playoffs=1,AvatarRef="ScrnTex.Players.nmm",ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PreNameIconRef="KillingFloor2HUD.PerkReset.PReset_Sharpshooter_Grey",PrefixIconColor=(R=255,G=255,B=255,A=0)),PostfixIconColor=(R=255,G=255,B=255,A=255))
-    HighlyDecorated(54)=(SteamID32=121550025,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
-    HighlyDecorated(55)=(SteamID32=124874371,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
-    HighlyDecorated(56)=(SteamID32=128107383,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
-    HighlyDecorated(57)=(SteamID32=128199891,Playoffs=1,TourneyWon=1,ClanIconRef="ScrnTex.Tourney.TBN",PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
-    HighlyDecorated(58)=(SteamID32=134825301,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
-    HighlyDecorated(59)=(SteamID32=139723798,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
-    HighlyDecorated(60)=(SteamID32=143999622,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
-    HighlyDecorated(61)=(SteamID32=152138369,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
-    HighlyDecorated(62)=(SteamID32=152983683,Playoffs=1,TourneyWon=1,ClanIconRef="ScrnTex.Tourney.TBN",PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
-    HighlyDecorated(63)=(SteamID32=153788974,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
-    HighlyDecorated(64)=(SteamID32=160715546,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
-    HighlyDecorated(65)=(SteamID32=162712343,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
-    HighlyDecorated(66)=(SteamID32=192070782,Playoffs=1,TourneyWon=1,ClanIconRef="ScrnTex.Tourney.TBN",PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
-    
+HighlyDecorated(0)=(SteamID32=3907835,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(1)=(SteamID32=4787302,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(2)=(SteamID32=15243342,ClanIconRef="ScrnTex.Players.Code",PreNameIconRef="KillingFloor2HUD.PerkReset.PReset_Medic_Grey",PrefixIconColor=(R=255,G=255,B=255,A=1)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(3)=(SteamID32=21825964,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(4)=(SteamID32=26505257,Playoffs=1,AvatarRef="ScrnTex.Players.Duckbuster",ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PreNameIconRef="KillingFloor2HUD.PerkReset.PReset_Support_Grey",PrefixIconColor=(R=255,G=255,B=255,A=0)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(5)=(SteamID32=27263782,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(6)=(SteamID32=27784497,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(7)=(SteamID32=32271863,AvatarRef="ScrnTex.Players.PooSH",PreNameIconRef="KillingFloor2HUD.PerkReset.PReset_Berserker_Grey",PostNameIconRef="KillingFloor2HUD.PerkReset.PReset_Berserker_Grey",PrefixIconColor=(R=255,G=255,B=255,A=1)),PostfixIconColor=(R=255,G=255,B=255,A=0))
+HighlyDecorated(8)=(SteamID32=32279441,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(9)=(SteamID32=32976519,Playoffs=1,ClanIconRef="ScrnTex.Players.Dosh",PreNameIconRef="KillingFloor2HUD.PerkReset.PReset_Sharpshooter_Grey",PrefixIconColor=(R=255,G=255,B=255,A=0)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(10)=(SteamID32=34308728,AvatarRef="ScrnTex.Players.Janitor",PreNameIconRef="KillingFloor2HUD.PerkReset.PReset_Firebug_Grey",PostNameIconRef="KillingFloor2HUD.PerkReset.PReset_Firebug_Grey",PrefixIconColor=(R=255,G=255,B=255,A=1)),PostfixIconColor=(R=255,G=255,B=255,A=0))
+HighlyDecorated(11)=(SteamID32=37444251,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(12)=(SteamID32=41734606,Playoffs=1,TourneyWon=1,ClanIconRef="ScrnTex.Tourney.TBN",PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(13)=(SteamID32=43087787,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(14)=(SteamID32=43944237,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(15)=(SteamID32=44141219,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(16)=(SteamID32=44328745,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(17)=(SteamID32=44388687,AvatarRef="ScrnTex.Players.Aze",PreNameIconRef="KillingFloor2HUD.PerkReset.PReset_Commander_Grey",PrefixIconColor=(R=255,G=255,B=255,A=1)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(18)=(SteamID32=45088649,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(19)=(SteamID32=45352894,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(20)=(SteamID32=46023864,AvatarRef="ScrnTex.Players.Baron",PreNameIconRef="KillingFloor2HUD.PerkReset.PReset_Medic_Grey",PostNameIconRef="ScrnAch_T.Achievements.Baron",PrefixIconColor=(R=255,G=255,B=255,A=1)),PostfixIconColor=(R=255,G=255,B=255,A=0))
+HighlyDecorated(21)=(SteamID32=47199674,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(22)=(SteamID32=47820768,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(23)=(SteamID32=49361376,Playoffs=1,TourneyWon=1,ClanIconRef="ScrnTex.Tourney.TBN",PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(24)=(SteamID32=51667940,Playoffs=1,TourneyWon=1,ClanIconRef="ScrnTex.Tourney.TBN",PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(25)=(SteamID32=52109233,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PreNameIconRef="KillingFloor2HUD.PerkReset.PReset_Support_Grey",PrefixIconColor=(R=255,G=255,B=255,A=0)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(26)=(SteamID32=53781980,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(27)=(SteamID32=54179805,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(28)=(SteamID32=54471316,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(29)=(SteamID32=57193815,ClanIconRef="ScrnTex.Players.Dosh",PreNameIconRef="KillingFloor2HUD.PerkReset.PReset_Sharpshooter_Grey",PrefixIconColor=(R=255,G=255,B=255,A=0)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(30)=(SteamID32=58813412,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(31)=(SteamID32=59018230,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(32)=(SteamID32=59344954,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PreNameIconRef="KillingFloor2HUD.PerkReset.PReset_Support_Grey",PrefixIconColor=(R=255,G=255,B=255,A=0)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(33)=(SteamID32=59865355,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(34)=(SteamID32=61480134,Playoffs=1,TourneyWon=1,ClanIconRef="ScrnTex.Tourney.TBN",PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(35)=(SteamID32=63934831,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(36)=(SteamID32=64861994,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(37)=(SteamID32=66767874,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(38)=(SteamID32=67141366,Playoffs=1,TourneyWon=1,ClanIconRef="ScrnTex.Tourney.TBN",PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(39)=(SteamID32=68703215,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(40)=(SteamID32=68932148,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(41)=(SteamID32=71427768,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(42)=(SteamID32=75600845,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(43)=(SteamID32=76661591,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(44)=(SteamID32=81947447,Playoffs=1,TourneyWon=1,ClanIconRef="ScrnTex.Tourney.TBN",PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(45)=(SteamID32=83417929,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(46)=(SteamID32=85142081,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(47)=(SteamID32=87647886,ClanIconRef="ScrnTex.Players.Dosh",PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(48)=(SteamID32=89323130,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(49)=(SteamID32=93919492,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(50)=(SteamID32=95752287,AvatarRef="ScrnTex.Players.FosterKF2",PreNameIconRef="KillingFloor2HUD.PerkReset.PReset_Sharpshooter_Grey",PostNameIconRef="KillingFloor2HUD.PerkReset.PReset_Sharpshooter_Grey",PrefixIconColor=(R=255,G=255,B=255,A=1)),PostfixIconColor=(R=255,G=255,B=255,A=0))
+HighlyDecorated(51)=(SteamID32=99293732,Playoffs=1,TourneyWon=1,ClanIconRef="ScrnTex.Tourney.TBN",PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(52)=(SteamID32=102496714,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(53)=(SteamID32=106835439,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(54)=(SteamID32=107039826,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(55)=(SteamID32=112564543,ClanIconRef="ScrnTex.Players.Dosh",PreNameIconRef="KillingFloor2HUD.PerkReset.PReset_Medic_Grey",PostNameIconRef="KillingFloor2HUD.PerkReset.PReset_Medic_Grey",PrefixIconColor=(R=255,G=255,B=255,A=1)),PostfixIconColor=(R=255,G=255,B=255,A=0))
+HighlyDecorated(56)=(SteamID32=113961551,Playoffs=1,AvatarRef="ScrnTex.Players.Baffi",ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PreNameIconRef="KillingFloor2HUD.PerkReset.PReset_Demolition_Grey",PrefixIconColor=(R=255,G=255,B=255,A=0)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(57)=(SteamID32=114826433,Playoffs=1,AvatarRef="ScrnTex.Players.nmm",ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PreNameIconRef="KillingFloor2HUD.PerkReset.PReset_Sharpshooter_Grey",PrefixIconColor=(R=255,G=255,B=255,A=0)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(58)=(SteamID32=121550025,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(59)=(SteamID32=124874371,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(60)=(SteamID32=128107383,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(61)=(SteamID32=128199891,Playoffs=1,TourneyWon=1,ClanIconRef="ScrnTex.Tourney.TBN",PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(62)=(SteamID32=134825301,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(63)=(SteamID32=139723798,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(64)=(SteamID32=143999622,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(65)=(SteamID32=152138369,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(66)=(SteamID32=152983683,Playoffs=1,TourneyWon=1,ClanIconRef="ScrnTex.Tourney.TBN",PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(67)=(SteamID32=153788974,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(68)=(SteamID32=160715546,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(69)=(SteamID32=162712343,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(70)=(SteamID32=192070782,Playoffs=1,TourneyWon=1,ClanIconRef="ScrnTex.Tourney.TBN",PrefixIconColor=(R=255,G=255,B=255,A=255)),PostfixIconColor=(R=255,G=255,B=255,A=255))
+   
     GroupName="KF-Scrn"
 
     FriendlyName="The ScrN Balance Server"

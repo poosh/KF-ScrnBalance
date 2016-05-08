@@ -18,5 +18,6 @@ defaultproperties
      GroupOffset=19
      PickupClass=Class'ScrnBalanceSrv.ScrnSPThompsonPickup'
 	 FireModeClass(0)=Class'ScrnBalanceSrv.ScrnSPThompsonFire'
+     AttachmentClass=Class'ScrnBalanceSrv.ScrnSPThompsonAttachment'
      ItemName="Dr. T's Lead Delivery System SE"
 }

@@ -32,7 +32,7 @@ static function RenderComplexMessage(
     // log("RenderComplexMessage: "
         // @ "RelatedPRI_1="$RelatedPRI_1
         // @ "OptionalObject="$OptionalObject
-        // , default.class.outer.name);
+        // , 'ScrnBalance');
         
 
     ClipX = c.ClipX;

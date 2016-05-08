@@ -14,6 +14,7 @@ defaultproperties
      ItemName="Vest"
      ItemShortName="Vest"
      EquipmentCategoryID=5
+     CorrespondingPerkIndex=7
      PickupMessage="You got a Vest"
      PickupSound=Sound'KF_InventorySnd.Vest_Pickup'
      StaticMesh=StaticMesh'KillingFloorStatics.Vest'

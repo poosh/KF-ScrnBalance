@@ -5,6 +5,109 @@
 -------------------------------------------------------------------------------
 *** VERSION 8 *** 
 -------------------------------------------------------------------------------
+v8.21:
+- Fixed map achievements
+
+v8.20:
+- ScrnSP.ServerPerksMutSE - ScrN version of ServerPerksMut (server-side only)
+- Fixed boss battle music selection when bFixMusic=True
+- ToggleDoomMusic - allows to force EGT Doom Metal Soundtrack for all maps
+  Requires subscription to Doom2-SE map:
+  http://steamcommunity.com/sharedfiles/filedetails/?id=414181000
+- DooM boss battle song on any map changed to EGT-SingOfEvil if bFixMusic=True
+- Removed 15 perk star limit (except scoreboard)
+- Fixed 'OnlyHealer' achievement
+- Circus Zed names
+- Fixed bug which prevented setting normal zeds after event zeds
+
+
+v8.17:
+- bFixMusic (see ScrnBalanceSrv.ini for details)
+
+v8.15:
+- Fixed SpawnInventory being stacked from each map played
+- bBuyPerkedWeaponsOnly allows buying ZED guns, if there is no HTec perk
+
+v8.14:
+- Fixed bug in forcing event, when EventNum=254 or 255
+- Fixed custom events
+- New config variable: FirstStatBonusMult - additional end game stat bonus for 
+  winning the map for the first time
+
+CODE-BREAKING CHANGES:  
+  ScrnGameRules.GiveBonusStats() in incorporated into GiveMapAchievements()
+
+  
+v8.13:
+- bBuyPerkedWeaponsOnly allows buying off-perk items now
+
+v8.12:
+- bResetSquadsAtStart automatically set to True if EvenNum=254
+- Fixed Steampunk Sniper achievement
+- Fixed empty perk list in solo mode or listen server
+- Minor bugfixes
+
+v8.11:
+- Fixed missing RepLink ("perk bug")
+
+v8.10:
+- ScrnBalance.ini renamed to ScrnBalanceSrv.ini
+- Custom DLC Locks introduced
+- DLC Locks are automatically disabled in TSC or Tourney mode
+- Chat icon
+- bScrnClientPerkRepLink is forced to True and no longer configurable
+- Optimized weapon replication code in ScrnClientPerkRepLink
+- Fixed bug that prevented Sirens from destroying pipebombs
+- Fixed Manual Reload for IJC Cryo Mass Driver 14 (Freezer Gun)
+- A few new achievements
+- SpawnInventory suppors achievement requirement and inventory check (see ScrnBalanceSrv.ini for details)
+- SpawnInventory supports ammo pickups to give extra ammo for unlocking achievements (see ammo.txt)
+- Setting EventNum=255 doesn't ignore MapInfo anymore.
+- EventNum=254 - picks up random monster collection between regular, summer, halloween and xmas.
+
+
+MONEY AND WEAPON BALANCE:
+- ScrnCrossbow - last KFMod weapon ported to ScrnBalance :)
+- Crossbow's price raised up to $1600
+- M4-203 price lowered down to $1600
+- Faster M203 fire rate
+
+
+CONFIG VARIABLES (ScrnBalanceSrv.ini):
+- bDoubleDoT - doubles zed burn rate (twice per second) dealing half a damage per tick
+- MySteamID64 - for solo and listen servers
+- bBuyPerkedWeaponsOnly - limits trader inventory to perked weapons only
+- bPickPerkedWeaponsOnly - prohibits picking up off-perk weapons
+- [ScrnBalanceSrv.ScrnClientPerkRepLink] category, allowing advanced admins to control
+  network replication parameters.
+
+USER CONFIG VARIABLES (User.ini, ScrnPlayerController section):
+- bDebugRepLink - outputs every weapon, DLCLock etc. received from the server
+- bWaveGarbageCollection - turns on/off automatic garbage collection at the start of each wave. 
+  Clients can do manual garbage collection by executing console command OBJ GARBAGE.
+  But I see no reasons to do that, unless you are playing on toaster or want a crash.
+    
+CONSOLE COMMANDS:
+LogAch - prints all achievements into KillingFloor.log
+AchReset - resets player's achievements (all but maps) and gives special achevement for doing that.
+ResetMyAchievements <Group> - resets all achievements in the given group, i.e. "ResetMyAchievements MASTER"
+ResetMapAch <MapName> - resets all 4 map achievements, e.g. "ResetMapAch KF-Manor"
+RepLinkMessages TRUE|FALSE - turns on/off client debug output of received shop inventory items
+RestartRepLink - use it if you get stuck with "Waiting for shop items from server" message on the screen
+
+CODE-BREAKING CHANGES:
+Achievement group is now of type "Name" instead of "String"
+ScrnAchievements.SetDefaultAchievementData() - removed index and is called only once now
+ScrnClientPerkRepLink - changed almost everything
+
+
+
+v8.05:
+- In TSC Tourney mode free camera unlocks after team gets wiped.
+- Fixed camera shift while switching between chase and free modes.
+- Fixed several bugs in SteamID conversions.
+- Added MVOTE R_KILL command for Tournament Referees
+
 v8.01:
 - Beta finished
 - Minor bugfixes

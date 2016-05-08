@@ -109,7 +109,7 @@ function ShowPanel(bool bShow)
     img_TourneyLogo.SetVisibility(b);
     lbl_TourneyMember.SetVisibility(b);
     b_GetPrize.SetVisibility(b && !class'ScrnAchievements'.static.IsAchievementUnlocked(
-        Class'ClientPerkRepLink'.Static.FindStats(PC), 'TSCT')); 
+        Class'ScrnClientPerkRepLink'.Static.FindMe(PC), 'TSCT')); 
     
     // TSC
     b = TSCGameReplicationInfoBase(PC.Level.GRI) != none;

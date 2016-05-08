@@ -9,7 +9,7 @@ simulated function bool AllowFire()
 	
 	HSg = ScrnBoomStick(Weapon);
 	if (HSg == none) {
-        log("ScrnBoomStickAltFire's Weapon is " $ Weapon $ " not ScrnBoomStick!", class.outer.name);
+        log("ScrnBoomStickAltFire's Weapon is " $ Weapon $ " not ScrnBoomStick!", 'ScrnBalance');
 		return super.AllowFire(); // wtf?
     }
 	

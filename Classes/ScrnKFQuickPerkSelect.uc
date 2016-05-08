@@ -20,7 +20,7 @@ function bool MyOnDraw(Canvas C)
 	C.SetPos(WinLeft * C.ClipX , WinTop * C.ClipY);
 	C.DrawTileScaled(CurPerkBack, (WinHeight * C.ClipY) / CurPerkBack.USize, (WinHeight * C.ClipY) / CurPerkBack.USize);
 
-	S = Class'ClientPerkRepLink'.Static.FindStats(C.Viewport.Actor);
+	S = Class'ScrnClientPerkRepLink'.Static.FindMe(C.Viewport.Actor);
 	if( S!=None )
 	{
 		// check if the current perk has changed recently
@@ -61,7 +61,7 @@ function bool InternalOnClick(GUIComponent Sender)
 
 	if ( Sender.IsA('KFIndexedGUIImage') && KFIndexedGUIImage(Sender).Index>=0 )
 	{
-		L = Class'ClientPerkRepLink'.Static.FindStats(PlayerOwner());
+		L = Class'ScrnClientPerkRepLink'.Static.FindMe(PlayerOwner());
 		if ( L!=None ) {
             ScrnPlayerController(PlayerOwner()).SelectVeterancy(L.CachePerks[KFIndexedGUIImage(Sender).Index].PerkClass);
         }

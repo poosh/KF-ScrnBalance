@@ -4,7 +4,7 @@ function bool OnSaveButtonClicked(GUIComponent Sender)
 {
 	local ClientPerkRepLink L;
 
-	L = Class'ClientPerkRepLink'.Static.FindStats(PlayerOwner());
+	L = Class'ScrnClientPerkRepLink'.Static.FindMe(PlayerOwner());
 	if ( L!=None && lb_PerkSelect.GetIndex()>=0 ) {
         ScrnPlayerController(PlayerOwner()).SelectVeterancy(L.CachePerks[lb_PerkSelect.GetIndex()].PerkClass);
     }

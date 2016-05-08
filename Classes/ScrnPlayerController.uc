@@ -96,6 +96,8 @@ var transient Actor OldViewTarget;
 var transient rotator PrevRot;
 var transient int ab_warning;
 
+var globalconfig bool bDebugRepLink, bWaveGarbageCollection;
+
 // DLC checks
 struct SDLC {
     var int AppID;
@@ -103,6 +105,11 @@ struct SDLC {
     var bool bChecked;
 };
 var array<SDLC> DLC;
+
+var transient int AchResetPassword;
+
+var globalconfig bool bDoomMusic;
+var transient string PendingSong;
 
 
 replication
@@ -114,7 +121,7 @@ replication
         ClientPlayerDamaged;
 
     reliable if ( Role < ROLE_Authority )
-        ServerVeterancyLevelEarned, ResetMyAchievements, ResetMapAch,
+        ServerVeterancyLevelEarned, SrvAchReset, ResetMyAchievements, ResetMapAch,
 		ServerDropAllWeapons, ServerLockWeapons, ServerGunSkin,
         ServerAcknowledgeDamages,
         ServerDebugRepLink,
@@ -140,7 +147,8 @@ simulated function PreBeginPlay()
 }
 
 
-// this function is called only while using ScrnGameType, ScrnStoryGameInfo or descendants
+// this function is called on on server side only 
+// and only if using ScrnGameType, ScrnStoryGameInfo or descendants
 function PostLogin()
 {
     local ScrnCustomPRI ScrnPRI;
@@ -150,16 +158,20 @@ function PostLogin()
     ScrnPRI = class'ScrnCustomPRI'.static.FindMe(PlayerReplicationInfo);
     if  ( ScrnPRI != none ) {
         ScrnPRI.GotoState('');
-        ScrnPRI.SetSteamID64(GetPlayerIDHash());
+        if ( Level.NetMode == NM_Standalone || (Level.NetMode == NM_ListenServer && Viewport(Player) != None) )
+            ScrnPRI.SetSteamID64(Mut.MySteamID64);
+        else
+            ScrnPRI.SetSteamID64(GetPlayerIDHash());
         ScrnPRI.NetUpdateTime = Level.TimeSeconds - 1;
     }
 }
 
 simulated function ClientPostLogin()
 {
-    if ( Viewport(Player) != None )  {
-        CheckDLC();
-    }
+    // DLC check moved to ScrnClientPerkRepLink
+    // if ( Viewport(Player) != None )  {
+        // CheckDLC();
+    // }
 }
 
 
@@ -173,7 +185,7 @@ simulated function LoadMutSettings()
     }
     else { 
         //this shouldn't happen
-        log("Player Controller can not find ScrnBalance!", class.outer.name);
+        log("Player Controller can not find ScrnBalance!", 'ScrnBalance');
         if ( class'ScrnBalance'.default.Mut.bForceManualReload)
             bManualReload =  class'ScrnBalance'.default.bManualReload;
         if ( class'ScrnBalance'.default.Mut.bHardcore )
@@ -202,6 +214,15 @@ function InitPlayerReplicationInfo()
         L.NextReplicationInfo = ScrnPRI;
 }
 
+simulated function ClientForceCollectGarbage()
+{
+    ConsoleCommand("MEMSTAT", true); // write memory stats into log
+    if ( bWaveGarbageCollection ) {
+        super.ClientForceCollectGarbage();
+        ConsoleCommand("MEMSTAT", true);
+    }
+}
+
 final static function ScrnCustomPRI FindScrnCustomPRI(PlayerReplicationInfo PRI)
 {
     return class'ScrnCustomPRI'.static.FindMe(PRI);
@@ -209,7 +230,7 @@ final static function ScrnCustomPRI FindScrnCustomPRI(PlayerReplicationInfo PRI)
 
 simulated function PreloadFireModeAssetsSE(class<WeaponFire> WF, optional WeaponFire SpawnedFire)
 {
-    local class<Projectile> P;//log("ScrnPlayerController.PreloadFireModeAssets()" @ WF, default.class.outer.name);
+    local class<Projectile> P;//log("ScrnPlayerController.PreloadFireModeAssets()" @ WF, 'ScrnBalance');
 
     if ( WF == none || WF == Class'KFMod.NoFire' ) 
         return;
@@ -225,7 +246,7 @@ simulated function PreloadFireModeAssetsSE(class<WeaponFire> WF, optional Weapon
         
     // preload projectile assets    
     P = WF.default.ProjectileClass;
-    //log("Projectile =" @ P, default.class.outer.name);
+    //log("Projectile =" @ P, 'ScrnBalance');
     if ( P == none ) 
         return;
         
@@ -258,7 +279,7 @@ simulated function ClientWeaponSpawned(class<Weapon> WClass, Inventory Inv)
     local class<KFWeaponAttachment> Att;
     local Weapon Spawned;
     
-    //log("ScrnPlayerController.ClientWeaponSpawned()" @ WClass $ ". Default Mesh = " $ WClass.default.Mesh, default.class.outer.name);
+    //log("ScrnPlayerController.ClientWeaponSpawned()" @ WClass $ ". Default Mesh = " $ WClass.default.Mesh, 'ScrnBalance');
     //super.ClientWeaponSpawned(WClass, Inv);
 
     W = class<KFWeapon>(WClass);
@@ -439,7 +460,7 @@ simulated function PlayerTick( float DeltaTime )
     
     super.PlayerTick(DeltaTime);
     
-    //log("Player Controller Tick", class.outer.name);
+    //log("Player Controller Tick", 'ScrnBalance');
     if ( Viewport(Player) != None ) {
         AchievementDisplayCooldown -= DeltaTime;
         if ( PendingAchievements.Length > 0 && AchievementDisplayCooldown <= 0 ) {
@@ -462,8 +483,94 @@ simulated function PlayerTick( float DeltaTime )
             }
             PrevRot = Rotation;
         }
+        
+        // set typing to true also when console is open
+        if ( Player.Console != none ) {
+            bIsTyping = Player.Console.bVisible || Player.Console.bTyping || Player.GUIController.bActive;
+            if ( Pawn != none && bIsTyping != Pawn.bIsTyping )  
+                Typing(bIsTyping); // replicate state to server
+        }
+        
+        if ( KFInterAct != none && PendingSong != "" && PendingSong == KFInterAct.ActiveSong ) {
+            if ( KFInterAct.ActiveHandel == 0) {
+                // unable to start song - playe default one
+                log("Unable to play music file: '"$PendingSong$".ogg'. Playing default song instead.", 'ScrnBalance');
+                PlayDefaultMusic(class'ScrnMusicTrigger');
+            }
+            PendingSong = "";
+        }
     }
 }
+
+function string GetSong(class<KFMusicTrigger> M)
+{
+    local KFGameReplicationInfo KFGRI;
+    local string song;
+    local int w;
+    
+    KFGRI = KFGameReplicationInfo(Level.GRI);
+    if ( KFGRI == none )
+        return ""; // wtf?
+    if ( KF_StoryGRI(KFGRI) != none )
+        return ""; // story music must be set explicitly by L.D.   
+
+    w = KFGRI.WaveNumber;
+    if ( KFGRI.bWaveInProgress ) {
+        if ( w == KFGRI.FinalWave && M.default.WaveBasedSongs.length > 10 && TSCGameReplicationInfoBase(KFGRI) == none )
+            song = M.default.WaveBasedSongs[10].CombatSong; // boss battle song
+        else if ( w < M.default.WaveBasedSongs.length )
+            song = M.default.WaveBasedSongs[w].CombatSong;
+        else
+            song = M.default.CombatSong;
+    }
+    else {
+        if ( KFGRI.TimeToNextWave > 10 )
+            w++; // KFGRI.WaveNumber is updated only at the end of the trader time
+        if ( w < M.default.WaveBasedSongs.length )
+            song = M.default.WaveBasedSongs[w].CalmSong;
+        else
+            song = M.default.Song;    
+    }
+    return song;    
+}
+
+function PlayDefaultMusic(class<KFMusicTrigger> M)
+{
+    local string song;
+    
+    if ( KFInterAct == none )
+        return;
+        
+    song = GetSong(M);
+    if ( song != "" )
+        KFInterAct.SetSong(song, M.default.FadeInTime, M.default.FadeOutTime);
+}
+
+function NetPlayMusic( string Song, float FadeInTime, float FadeOutTime )
+{
+    local string DoomSong;
+    
+    if ( bDoomMusic ) {
+        DoomSong = GetSong(class'DoomMusicTrigger');
+        if ( DoomSong != "" )
+            Song = DoomSong;
+    }
+    PendingSong = Song;
+    super.NetPlayMusic(Song, FadeInTime, FadeOutTime);
+}
+
+exec function DoomMusic(bool bEnable)
+{
+    bDoomMusic = bEnable;
+    NetPlayMusic("ThisWillBeReplacedWithDefaultWaveTrack", 1, 1);
+    ClientMessage("Doom Metal Soundtrack " $ eval(bDoomMusic, "enabled", "disabled"));
+}
+
+exec function ToggleDoomMusic()
+{
+    DoomMusic(!bDoomMusic);
+}
+
 
 function bool IsAimingToZedHead()
 {
@@ -511,7 +618,7 @@ simulated function DisplayCurrentAchievement()
 {
     if ( Viewport(Player) == None )
         return;
-    //log("DisplayCurrentAchievement:" @CurrentAchievement.ID @ CurrentAchievement.CurrentProgress$"/"$ CurrentAchievement.MaxProgress ,class.outer.name);
+    //log("DisplayCurrentAchievement:" @CurrentAchievement.ID @ CurrentAchievement.CurrentProgress$"/"$ CurrentAchievement.MaxProgress ,'ScrnBalance');
     if ( CurrentAchHandler != none ) {
         if ( CurrentAchHandler.AchDefs[CurrentAchIndex].bUnlockedJustNow ) {
             //set cooldown only for earned achievements. Status updates can be immediately overrided 
@@ -578,7 +685,7 @@ event ClientMessage( coerce string S, optional Name Type )
 		return;
 
     if ( Type == 'Log' ) {
-        log(S, class.outer.name);
+        log(S, 'ScrnBalance');
         Type = '';
     }
         
@@ -663,9 +770,72 @@ function ResetWaveStats()
         ScrnHumanPawn(Pawn).ApplyWeaponStats(Pawn.Weapon);
 }
 
-exec function ResetMyAchievements(string group)
+exec function LogAch()
 {
-    class'ScrnAchievements'.static.ResetAchievements(SRStatsBase(SteamStatsAndAchievements).Rep, group);     
+    local ClientPerkRepLink L;
+    local SRCustomProgress S;
+    local ScrnAchievements A;
+    local int i, c;
+
+    L = class'ScrnClientPerkRepLink'.static.FindMe(self);
+
+    log("#;GROUP;ID;TITLE;DESCRIPTION", 'Achievement');
+    log("============================", 'Achievement');
+    for( S = L.CustomLink; S != none; S = S.NextLink ) {
+        A = ScrnAchievements(S);
+        if( A != none ) {
+            //log(A.class, 'Package');
+            for ( i = 0; i < A.AchDefs.length; ++i ) {
+                log(string(++c) 
+                    $";"$ A.AchDefs[i].Group
+                    $";"$ A.AchDefs[i].ID
+                    $";"$ A.AchDefs[i].DisplayName
+                    $";"$ A.AchDefs[i].Description
+                    , 'Achievement');
+            }
+        }
+    }
+    ConsoleMessage("Achievement list has been printed to the log file.", 0, 1, 200, 1);
+}
+
+
+exec function AchReset(optional int password)
+{
+    if ( class'ScrnAchievements'.static.IsAchievementUnlocked(class'ScrnClientPerkRepLink'.static.FindMe(self), 'AchReset') ) {
+        if ( AchResetPassword == 0 ) {
+            AchResetPassword = 10000 + rand(90000);
+            ConsoleMessage("You already have 'AchReset' achievement!", 0, 200, 100, 1);
+            ConsoleMessage("If sure you want to do this again, then enter the following command:", 0, 200, 100, 1);
+            ConsoleMessage("AchReset " $ AchResetPassword, 0, 200, 200, 1);
+            return;
+        }
+        else if ( AchResetPassword != password ) {
+            ConsoleMessage("Wrong reset password!", 0, 200, 100, 1);
+            return;
+        }
+    }
+    SrvAchReset();
+}
+
+function SrvAchReset()
+{
+    local ClientPerkRepLink L;
+    local array<name> GroupNames;
+    local array<string> GroupCaptions;
+    local int i;
+    
+    L = Class'ScrnClientPerkRepLink'.Static.FindMe(self);
+    class'ScrnAchievements'.static.RetrieveGroups(L, GroupNames, GroupCaptions);
+    for ( i=0; i<GroupNames.length; ++i ) {
+        if ( GroupNames[i] != 'MAP' )
+            class'ScrnAchievements'.static.ResetAchievements(L, GroupNames[i]);  
+    }
+    class'ScrnAchievements'.static.ProgressAchievementByID(L, 'AchReset', 1);
+}
+
+exec function ResetMyAchievements(name group)
+{
+    class'ScrnAchievements'.static.ResetAchievements(Class'ScrnClientPerkRepLink'.Static.FindMe(self), group);     
 }
 
 exec function ResetMapAch(string MapName)
@@ -675,7 +845,7 @@ exec function ResetMapAch(string MapName)
     local ScrnMapAchievements A;
     local int i, j;
     
-    L = SRStatsBase(SteamStatsAndAchievements).Rep;
+    L = Class'ScrnClientPerkRepLink'.Static.FindMe(self);
     if ( MapName == "" )
         MapName = Mut.KF.GetCurrentMapName(Level);
     
@@ -1002,18 +1172,18 @@ function ShowLobbyMenu()
  
 function LoadDualWieldables()
 {
-	local ClientPerkRepLink CPRL;
+	local ScrnClientPerkRepLink L;
 	local class<KFWeaponPickup> WP;
 	local class<KFWeapon> W;
 	local int i;
 	
-	CPRL = SRStatsBase(SteamStatsAndAchievements).Rep;
-	if( CPRL==None || CPRL.ShopInventory.Length == 0 )
+    L = class'ScrnClientPerkRepLink'.static.FindMe(self);
+	if( L==None || L.ShopInventory.Length == 0 )
 		return; // Hmmmm?	
 		
 		
-	for ( i=0; i<CPRL.ShopInventory.Length; ++i ) {
-		WP = class<KFWeaponPickup>(CPRL.ShopInventory[i].PC);
+	for ( i=0; i<L.ShopInventory.Length; ++i ) {
+		WP = class<KFWeaponPickup>(L.ShopInventory[i].PC);
 		if ( WP == none )
 			continue;
 		W = class<KFWeapon>(WP.default.InventoryType);
@@ -1021,7 +1191,7 @@ function LoadDualWieldables()
 			AddDualWieldable(class<KFWeapon>(W.Default.DemoReplacement), W);
 	}
 	
-	bDualWieldablesLoaded = !CPRL.IsInState('RepSetup');
+	bDualWieldablesLoaded = L.PendingWeapons == 0;
 }
 
 final function AddDualWieldable(class<KFWeapon> SingleWeapon, class<KFWeapon> DualWeapon)
@@ -1235,7 +1405,6 @@ simulated function bool IsBlueCharacter(string CharacterName)
     return false;
 }
 
-// bypass KFPCServ to avoid calling FindStats() on server side
 exec function ChangeCharacter(string newCharacter, optional string inClass)
 {
     local ClientPerkRepLink L;
@@ -1243,9 +1412,7 @@ exec function ChangeCharacter(string newCharacter, optional string inClass)
     if ( newCharacter == "" || !IsTeamCharacter(newCharacter) )
         return;
        
-    if ( SRStatsBase(SteamStatsAndAchievements) != none ) 
-        L = SRStatsBase(SteamStatsAndAchievements).Rep;
-        
+    L = class'ScrnClientPerkRepLink'.static.FindMe(self);
 	if( L!=None )
 		L.SelectedCharacter(newCharacter);
 	else 
@@ -1302,7 +1469,7 @@ function SelectVeterancy(class<KFVeterancyTypes> VetSkill, optional bool bForceC
     local ClientPerkRepLink L;
     
 	if( SRStatsBase(SteamStatsAndAchievements)!=none )
-        L = SRStatsBase(SteamStatsAndAchievements).Rep;
+        L = Class'ScrnClientPerkRepLink'.Static.FindMe(self);
         
     if ( L != none ) {
         if ( ScrnClientPerkRepLink(L) != none )
@@ -1631,9 +1798,11 @@ function ServerViewNextPlayer()
                 break;
             }
             else
-                bFound = ( (RealViewTarget == C) || (ViewTarget == C) );
+                bFound = RealViewTarget == C || ViewTarget == C;
         }
     }
+    if ( Pick == none )
+        Pick = self;
     SetViewTarget(Pick);
     ClientSetViewTarget(Pick);
     if ( (ViewTarget == self) || bWasSpec )
@@ -1646,6 +1815,10 @@ function ServerViewNextPlayer()
 
 function ServerViewSelf()
 {
+    local Actor A;
+    local vector Loc;
+    local rotator R;
+    
     if ( !PlayerReplicationInfo.bOnlySpectator && ScrnGameType(Level.Game) != none 
             && ScrnGameType(Level.Game).IsTourney() )
     {
@@ -1654,15 +1827,21 @@ function ServerViewSelf()
         return;
     }
         
-	SetLocation(ViewTarget.Location);
-	ClientSetLocation(ViewTarget.Location, Rotation);
+    if ( bBehindView ) {
+        PlayerCalcView(A, Loc, R);        
+    }
+    else {
+        Loc = ViewTarget.Location;
+        R = ViewTarget.Rotation;
+    }
+    SetLocation(Loc);
+    SetRotation(R);
+    ClientSetLocation(Loc, R);
 
     bBehindView = false;
     SetViewTarget(self);
     ClientSetViewTarget(self);
     ClientMessage(OwnCamera, 'Event');
-    
-    super.ServerViewSelf();
     ViewTargetChanged();    
 }
 
@@ -1840,9 +2019,9 @@ state Spectating
     {
         // free roaming is prohibited in tourney mode
         if ( !PlayerReplicationInfo.bOnlySpectator && Mut.SrvTourneyMode != 0 )
-            return;
-        
-        super.AltFire(F);
+            Fire(F);
+        else 
+            super.AltFire(F);
     }
     
     exec function SwitchWeapon(byte T) 
@@ -1898,13 +2077,24 @@ exec function MyTeam()
 }
 
 
+
 function DebugRepLink(string S)
 {
     local ClientPerkRepLink L;
     local ScrnClientPerkRepLink SL;
+    local int count;
     
     if ( Role < ROLE_Authority ) {
-        L = class'ClientPerkRepLink'.static.FindStats(self);
+        foreach DynamicActors(Class'ClientPerkRepLink',L) {
+            ++count;
+        }
+        if ( count != 1 ) {
+            if ( count == 0 )
+                ClientMessage(S @ "WARNING! No RepLink objects found!", 'Log');    
+            else
+                ClientMessage(S @ "WARNING! Multiple RepLink objects found! ("$count$")", 'Log');    
+        }
+        L = Class'ScrnClientPerkRepLink'.Static.FindMe(self);
         ClientMessage(S @ "RepLink: " $ L, 'Log');    
     }
     else {
@@ -1936,6 +2126,30 @@ exec function TestRepLink()
         ServerDebugRepLink();
 }
 
+exec function RestartRepLink()
+{
+    local ScrnClientPerkRepLink L;
+    
+    if ( KFGameReplicationInfo(Level.GRI).EndGameType > 0 ) {
+        ClientMessage("Unable to restart replication when game ended.");
+        return;
+    }
+    
+    L = Class'ScrnClientPerkRepLink'.Static.FindMe(self);
+    if ( L == none ) {  
+        ClientMessage("ScrnClientPerkRepLink not found");
+        return;
+    }
+    bDebugRepLink = true;
+    L.StartClientInitialReplication();
+}
+
+exec function RepLinkMessages(bool value)
+{
+    bDebugRepLink = value;
+    Class'ScrnClientPerkRepLink'.Static.FindMe(self).bClientDebug = bDebugRepLink;
+}
+
 
 
 
@@ -1952,13 +2166,42 @@ exec function TestRepLink()
 // }
 
 /*
-exec function PerkLevel(int level)
+exec function PerkLevel(int L)
 {
-    if ( Level.NetMode != NM_Standalone )
-        return;    
-        
-    KFPlayerReplicationInfo(PlayerReplicationInfo).ClientVeteranSkillLevel = level;
+    if ( Level.NetMode == NM_Standalone )
+        KFPlayerReplicationInfo(PlayerReplicationInfo).ClientVeteranSkillLevel = L;
 } 
+
+exec function IncAch(name AchID)
+{
+    if ( Level.NetMode == NM_Standalone )
+        class'ScrnAchievements'.static.ProgressAchievementByID(Class'ScrnClientPerkRepLink'.Static.FindMe(self), AchID, 1);
+}
+
+exec function GiveAch(name AchID)
+{
+    if ( Level.NetMode == NM_Standalone )
+        class'ScrnAchievements'.static.ProgressAchievementByID(Class'ScrnClientPerkRepLink'.Static.FindMe(self), AchID, 1000);
+}
+
+exec function BuyAll()
+{
+    local int i;
+    local ScrnClientPerkRepLink L;
+    local ScrnHumanPawn P;
+    
+    if ( Role < ROLE_Authority )
+        return;
+    
+    PlayerReplicationInfo.Score = 1000000;
+    P = ScrnHumanPawn(Pawn);
+    L = class'ScrnClientPerkRepLink'.static.FindMe(self);
+    for ( i=0; i<L.ShopInventory.length; ++i ) {
+        P.DropAllWeapons(P);
+        P.ServerBuyWeapon(class<Weapon>(L.ShopInventory[i].PC.default.InventoryType), 0);
+    }
+}
+
 
 exec function GiveSpawnInv()
 {
@@ -1966,8 +2209,7 @@ exec function GiveSpawnInv()
 		return;
 	
 	KFPlayerReplicationInfo(PlayerReplicationInfo).ClientVeteranSkill.static.AddDefaultInventory(KFPlayerReplicationInfo(PlayerReplicationInfo), Pawn);
-}
-
+} 
 
 exec function TestWaveSize(int PlayerCount) 
 {
@@ -2013,6 +2255,7 @@ defaultproperties
 	strLockDisabled="Weapon lock is disabled by server"
 	strAlreadySpectating="Already spectating. Type READY, if you want to join the game."
     strNoPerkChanges="Mid-game perk changes disabled"
+    bWaveGarbageCollection=False
 	
 	DualWieldables(0)=(Single=class'KFMod.Single',Dual=class'KFMod.Dualies')
 	DualWieldables(1)=(Single=class'KFMod.Deagle',Dual=class'KFMod.DualDeagle')

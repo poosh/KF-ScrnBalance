@@ -34,9 +34,9 @@ function Closed(GUIComponent Sender, bool bCancelled)
 	super.Closed(Sender, bCancelled);
 }
 
-function InitList(ClientPerkRepLink L, optional string GroupName, optional bool bOnlyLocked)
+function InitList(ClientPerkRepLink L, optional name GroupName, optional bool bOnlyLocked)
 {
-    //log("ScrnAchievementsList.InitList", class.outer.name);
+    //log("ScrnAchievementsList.InitList", 'ScrnBalance');
 	// Hold onto our reference
 	MyClientPerkRepLink = L;
 
@@ -181,11 +181,11 @@ defaultproperties
      TextTopOffset=0.082000
      ItemSpacing=3.000000
      IconToNameSpacing=0.018000
-     NameToDescriptionSpacing=0.060000
+     NameToDescriptionSpacing=0.040000
      ProgressBarWidth=0.227000
      ProgressBarHeight=0.35 // 0.225
      ProgressTextSpacing=0.009000
-     TextHeight=0.280000
+     TextHeight=0.300000
      TextWidth=0.850000
      ItemBackground=Texture'KF_InterfaceArt_tex.Menu.Thin_border_SlightTransparent'
      ProgressBarBackground=Texture'KF_InterfaceArt_tex.Menu.Innerborder'

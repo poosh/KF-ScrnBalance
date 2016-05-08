@@ -42,7 +42,7 @@ simulated function PostNetReceive()
 {
     super.PostNetReceive();
     if ( Role < Role_Authority && OldValueStr != CurrentValueStr ) {
-        //log(GetItemName(String(name))$".PostNetReceive()  OldValueStr="$OldValueStr $ " CurrentValueStr="$CurrentValueStr, class.outer.name);
+        //log(GetItemName(String(name))$".PostNetReceive()  OldValueStr="$OldValueStr $ " CurrentValueStr="$CurrentValueStr, 'ScrnBalance');
         UpdateData();
         OldValueStr = CurrentValueStr;
     }
@@ -79,11 +79,11 @@ simulated function string GetDisplayString()
 function SetProgress( string S )
 {
     if ( Len(S) > MAX_SIZE) {
-        log("ScrnCustomProgressBytes: Passed string is longer than " $ String(MAX_SIZE), class.outer.name);
+        log("ScrnCustomProgressBytes: Passed string is longer than " $ String(MAX_SIZE), 'ScrnBalance');
         S = left(S, MAX_SIZE); //trim long string
     }
 
-    //log("SetProgress("$S$")", class.outer.name);
+    //log("SetProgress("$S$")", 'ScrnBalance');
 
     CurrentValueStr = S;
     ValueSource = SRC_External;
@@ -190,13 +190,13 @@ static function LogBytes(array<byte> AValues)
         while ( len(i_str) < c_len )
             i_str = "0" $ i_str;
         a = AValues[i];
-        log("#"$i_str$"/"$count$":" @ ByteToBin(a) @ ByteToHex(a,true) @ a, default.class.outer.name);
+        log("#"$i_str$"/"$count$":" @ ByteToBin(a) @ ByteToHex(a,true) @ a, 'ScrnBalance');
     }
 }
 
 simulated function LogValues()
 {
-    log("ScrnCustomProgressBytes: Value of '"$CurrentValueStr$"':", class.outer.name);
+    log("ScrnCustomProgressBytes: Value of '"$CurrentValueStr$"':", 'ScrnBalance');
     LogBytes(Data);
 }
 
@@ -224,7 +224,7 @@ static function UnicodeStringToValues(string AString, out array<byte> AValues)
         val = asc(c) >>> CHR_1ST_BIT;
         if ( val>>>8 != CHR_CONTROL_VALUE ) {
             // in case server admin manually edits stat table and screws the data
-            log("ScrnCustomProgressBytes: Illegal Character #"$i$" '"$c$"' ("$asc(c)$") in string '"$AString$"'", default.class.outer.name);
+            log("ScrnCustomProgressBytes: Illegal Character #"$i$" '"$c$"' ("$asc(c)$") in string '"$AString$"'", 'ScrnBalance');
         }
         else {
             val = val & 0xFF; //clear a highest byte;

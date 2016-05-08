@@ -31,7 +31,7 @@ state FireBurst
 
     function BeginState()
     {
-        //log ("ScrnM4Fire.FireBurst BEGIN STATE", class.outer.name);
+        //log ("ScrnM4Fire.FireBurst BEGIN STATE", 'ScrnBalance');
     
         BurstShotCount = 0;
 		NextFireTime = Level.TimeSeconds - 0.000001; //fire now!
@@ -51,7 +51,7 @@ state FireBurst
 
     function EndState()
     {
-        //log ("ScrnM4Fire.FireBurst END STATE", class.outer.name);
+        //log ("ScrnM4Fire.FireBurst END STATE", 'ScrnBalance');
 
         super.PlayFireEnd();
         Weapon.AnimStopLooping();
@@ -84,14 +84,14 @@ state FireBurst
 
     function ModeTick(float dt)
     {
-        //log ("ScrnM4Fire.FireBurst.ModeTick()", class.outer.name);
+        //log ("ScrnM4Fire.FireBurst.ModeTick()", 'ScrnBalance');
 	    Super.ModeTick(dt);
         
 		if ( !bIsFiring || !AllowFire() )
             GotoState('');
         else if ( Level.TimeSeconds > FireBurstEndTime ) {
             GotoState('');
-            log("ScrnM4203BulletFire stuck inside FireBurst state after making "$BurstShotCount$" shots! Getting us out of it.", class.outer.name);
+            log("ScrnM4203BulletFire stuck inside FireBurst state after making "$BurstShotCount$" shots! Getting us out of it.", 'ScrnBalance');
         }
     }
 
@@ -109,7 +109,7 @@ state FireBurst
         if( Instigator==None || Instigator.Controller==none )
             return;
             
-        //log ("ScrnM4Fire.FireBurst.ModeDoFire()", class.outer.name);
+        //log ("ScrnM4Fire.FireBurst.ModeDoFire()", 'ScrnBalance');
 
         KFPRI = KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo);
 
@@ -155,7 +155,7 @@ state FireBurst
         }
         
         if ( ++BurstShotCount >= BurstSize ) {
-            //log ("ScrnM4203BulletFire.ChangeFireBurstState", class.outer.name);
+            //log ("ScrnM4203BulletFire.ChangeFireBurstState", 'ScrnBalance');
             //don't go to WaitingForFireButtonRelease state on server
             if ( Weapon.Instigator == none || Weapon.Instigator.Controller == none 
                     || !Weapon.Instigator.IsLocallyControlled() || Weapon.Instigator.Controller.bFire == 0
