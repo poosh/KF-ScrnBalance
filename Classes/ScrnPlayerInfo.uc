@@ -87,7 +87,8 @@ var int DamagePerWave, DamagePerGame;
 
 var int DamageReceivedPerWave, DamageReceivedPerGame; // damage received from monsters
 var int HealedPointsInWave;
-var int MedicDamagePerWave;
+var int MedicDamage;
+var int MEDICXP_PER_1000DMG;
 
 // Minimal values to trigger an event. If Value >= Trigger value, event will be called.
 var int TriggerRowHeadshots;
@@ -670,7 +671,12 @@ function MadeDamage(int Damage, KFMonster Injured, class<KFWeaponDamageType> Dam
 	local int i, m, v;
 	local float t;
 	local KFWeapon Weapon;
-	
+    local KFPlayerReplicationInfo KFPRI;
+    
+    if ( PlayerOwner == none )
+        return;    
+    KFPRI = KFPlayerReplicationInfo(PlayerOwner.PlayerReplicationInfo);    
+    
 	LastDamage = Damage;
     LastDamageType = DamType;
 	LastDamagedMonster = Injured;
@@ -704,8 +710,16 @@ function MadeDamage(int Damage, KFMonster Injured, class<KFWeaponDamageType> Dam
 	}
     
     // count medic damage
-    if ( ClassIsChildOf(DamType, class'ScrnDamTypeMedicBase') )
-        MedicDamagePerWave += min(Damage, Injured.Health);
+    if ( ClassIsChildOf(DamType, class'ScrnDamTypeMedicBase') 
+        || (ClassIsChildOf(DamType, class'DamTypeKatana') 
+            && KFPRI != none &&  ClassIsChildOf(KFPRI.ClientVeteranSkill, class'ScrnVetFieldMedic')) ) 
+    {
+        MedicDamage += min(Damage, Injured.Health);
+        if ( MedicDamage >= 1000 ) {
+            SRStatsBase(PlayerOwner.SteamStatsAndAchievements).AddDamageHealed(MedicDamage / 1000 * MEDICXP_PER_1000DMG);
+            MedicDamage = MedicDamage % 1000;
+        }
+    }
 	
 	LastWeapInfoIndex = FindWeaponInfoByDamType(DamType);
 	for ( i=0; i<GameRules.AchHandlers.length; ++i ) {
@@ -917,10 +931,6 @@ function WaveStarted(byte WaveNum)
 
 function WaveEnded(byte WaveNum)
 {
-    if ( MedicDamagePerWave > 0 && PlayerOwner != none ) {
-        SRStatsBase(PlayerOwner.SteamStatsAndAchievements).AddDamageHealed(MedicDamagePerWave*GameRules.Mut.MedicDamageToXPRatio);
-        MedicDamagePerWave = 0;
-    }
 }
 
 // backup vital player data from KFPRI
@@ -1049,6 +1059,7 @@ function float GetAccuracyGame()
 
 defaultproperties
 {
+    MEDICXP_PER_1000DMG=20
 	TriggerRowHeadshots=2
     RemoteRole=ROLE_None
 }

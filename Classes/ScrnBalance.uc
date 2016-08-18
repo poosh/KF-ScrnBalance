@@ -11,7 +11,7 @@ class ScrnBalance extends Mutator
 #exec OBJ LOAD FILE=ScrnAch_T.utx    
 
 
-const VERSION = 91400;
+const VERSION = 92000;
 
 var ScrnBalance Mut; // pointer to self to use in default functions, i.e class'ScrnBalance'.default.Mut
 
@@ -34,7 +34,7 @@ VAR globalconfig bool bTraderSpeedBoost;
 // END OF SRVFLAGS
 var transient byte HardcoreLevel; // set from ScrnGameRules. Used for replication purposes only.
 
-var globalconfig byte ReqBalanceMode;
+var deprecated byte ReqBalanceMode;
 var transient byte SrvReqBalanceMode;
 
 var globalconfig int ForcedMaxPlayers;
@@ -117,6 +117,7 @@ var transient bool bPickupSetupReduced;
 
 var ScrnMapInfo MapInfo;
 var ScrnGameRules GameRules;
+var ScrnSrvReplInfo SrvInfo;
 
 var localized string strAchEarn;
 var globalconfig bool bBroadcastAchievementEarn; //tell other players that somebody earned an achievement (excluding map achs)
@@ -163,6 +164,7 @@ var globalconfig byte MaxVoteKillMonsters;
 var globalconfig int  MaxVoteKillHP;
 var globalconfig bool bVoteKillCheckVisibility;
 var globalconfig float VoteKillPenaltyMult;
+var globalconfig byte MinVoteFF, MaxVoteFF;
 
 var globalconfig bool bDynamicLevelCap;
 var int OriginalMaxLevel;
@@ -291,13 +293,13 @@ struct SNameValuePair {
 
 var globalconfig bool bFixMusic;
 
-var const float MedicDamageToXPRatio; // Damage made by medic guns is multiplied by this number before adding to XP progress
-var float MedicDamagePenalty; // Every player death drops down medic xp damage by this value
-
 var globalconfig bool bRespawnDoors;
 
 var transient bool bTeamsLocked; // Set by ScrnGameType. Used for replication purposes. 
 var globalconfig float LockTeamMinWave, LockTeamAutoWave;
+var globalconfig bool bForceSteamNames;
+
+var globalconfig bool bLogObjectsAtMapStart, bLogObjectsAtMapEnd;
 
 // MutateCommands must be in UPPERCASE and sorted
 var const array<string> MutateCommands;
@@ -342,7 +344,7 @@ replication
         
     // non-config vars and configs vars which seem to replicate fine
     reliable if ( bNetInitial && Role == ROLE_Authority ) 
-        CustomWeaponLink, SrvTourneyMode,
+        CustomWeaponLink, SrvTourneyMode, bTSCGame,
         Post6RequirementScaling, WeldingRequirementScaling, StalkerRequirementScaling;
         
 }
@@ -380,7 +382,6 @@ simulated function ClientInitSettings()
     default.Mut = self;
     class'ScrnBalance'.default.Mut = self;
     bStoryMode = KF_StoryGRI(Level.GRI) != none;
-    bTSCGame = TSCGameReplicationInfoBase(Level.GRI) != none;
     LoadReplicationData();
         
     LocalPlayer = ScrnPlayerController(Level.GetLocalPlayerController());
@@ -398,44 +399,12 @@ simulated function ClientInitSettings()
 /*
 simulated function ClientInitStaticSettings(class<ScrnBalance> MyBalanceClass)
 {
-    if ( Role == ROLE_Authority )
-        return;
-        
-    MyBalanceClass.default.Mut = self;  
-
-    
-    MyBalanceClass.default.MinLevel = SrvMinLevel;
-    MyBalanceClass.default.MaxLevel = SrvMaxLevel;
-
-    MyBalanceClass.default.bSpawnBalance = bSpawnBalance;
-    MyBalanceClass.default.bWeaponFix = bWeaponFix;
-    MyBalanceClass.default.bGunslinger = bGunslinger;
-    MyBalanceClass.default.bShowDamages = bShowDamages;
-    MyBalanceClass.default.bShieldWeight = bShieldWeight;
-    MyBalanceClass.default.bReplaceNades = bReplaceNades;
-    MyBalanceClass.default.WeldingRequirementScaling = WeldingRequirementScaling;
-    MyBalanceClass.default.StalkerRequirementScaling = StalkerRequirementScaling;
-    MyBalanceClass.default.Post6RequirementScaling = Post6RequirementScaling;
-    MyBalanceClass.default.ReqBalanceMode = ReqBalanceMode;
-
-    MyBalanceClass.default.AchievementFlags = AchievementFlags;
-
-    MyBalanceClass.default.bManualReload = bManualReload;
-    MyBalanceClass.default.bForceManualReload = bForceManualReload;
-    MyBalanceClass.default.bHardcore = bHardcore;
-    MyBalanceClass.default.bBeta = bBeta;
-    MyBalanceClass.default.bAllowWeaponLock = bAllowWeaponLock;
-    MyBalanceClass.default.bNoStartCashToss = bNoStartCashToss;
-    MyBalanceClass.default.bMedicRewardFromTeam = bMedicRewardFromTeam;
-    MyBalanceClass.default.b10Stars = b10Stars;
 }
 */
 
 // client & server side
 simulated function InitSettings()
 {
-    local int i;
-    
     ApplySpawnBalance();
     ApplyWeaponFix();
 
@@ -455,37 +424,6 @@ simulated function InitSettings()
     class'ScrnVetCommando'.default.progressArray0[5]=2400.0 * StalkerRequirementScaling;
     class'ScrnVetCommando'.default.progressArray0[6]=3600.0 * StalkerRequirementScaling;
 
-    class'ScrnVetGunslinger'.default.progressArray0[0]=20;
-    class'ScrnVetGunslinger'.default.progressArray0[1]=50;
-    class'ScrnVetGunslinger'.default.progressArray0[2]=200;
-    class'ScrnVetGunslinger'.default.progressArray0[3]=1000;
-    class'ScrnVetGunslinger'.default.progressArray0[4]=3000;
-    class'ScrnVetGunslinger'.default.progressArray0[5]=7000;
-    class'ScrnVetGunslinger'.default.progressArray0[6]=11000;
-    if ( (ReqBalanceMode & 4) > 0 ) {
-        for ( i=0; i<class'ScrnVetGunslinger'.default.progressArray0.length; ++i )
-            class'ScrnVetGunslinger'.default.progressArray0[i] = 1.5 * class'ScrnVetGunslinger'.default.progressArray0[i];
-    }
-
-    if ( (ReqBalanceMode & 1) > 0 ) {
-        class'ScrnVetSharpshooter'.default.progressArray0[3] = 775;
-
-        class'ScrnVetFieldMedic'.default.progressArray0[1] = 450;
-        class'ScrnVetFieldMedic'.default.progressArray0[2] = 1750;
-        class'ScrnVetFieldMedic'.default.progressArray0[3] = 9000;
-        class'ScrnVetFieldMedic'.default.progressArray0[4] = 25000;
-        class'ScrnVetFieldMedic'.default.progressArray0[5] = 50000;
-    }
-    else {
-        class'ScrnVetSharpshooter'.default.progressArray0[3] = 700;
-
-        class'ScrnVetFieldMedic'.default.progressArray0[1] = 200;
-        class'ScrnVetFieldMedic'.default.progressArray0[2] = 750;
-        class'ScrnVetFieldMedic'.default.progressArray0[3] = 4000;
-        class'ScrnVetFieldMedic'.default.progressArray0[4] = 12000;
-        class'ScrnVetFieldMedic'.default.progressArray0[5] = 25000;
-    }
-
     if (bShieldWeight) {
         bReplaceNades = true;
         default.bReplaceNades = true;
@@ -500,7 +438,6 @@ simulated function InitSettings()
     class'ScrnFragPickup'.default.Weight = class'ScrnFrag'.default.Weight;
     RecalcAllPawnWeight();
     
-    class'KFMod.Knife'.default.Priority = 2; // set lowest priority
 	class'KFMod.CrossbowArrow'.default.DamageRadius = 0; // isn't used anywhere. Set to 0 to fix description
 
     // Achievements
@@ -679,7 +616,6 @@ function BroadcastBonusLevels()
     }
 }
 
-
 function BroadcastMessage(string Msg, optional bool bSaveToLog)
 {
     local Controller P;
@@ -697,6 +633,12 @@ function BroadcastMessage(string Msg, optional bool bSaveToLog)
             Player.ClientMessage(Msg, MsgType);
         }
     }
+}
+
+function SendFriendlyFireWarning(PlayerController Player)
+{
+    if ( !bTSCGame )
+        Player.ClientMessage(ColorString("FRIENDLY FIRE " $int(KF.FriendlyFireScale*100)$"% !!!", 255, 127, 1));
 }
 
 
@@ -1862,8 +1804,8 @@ function GetServerDetails( out GameInfo.ServerResponseLine ServerState )
     super.GetServerDetails(ServerState);
     
     if ( !bServerInfoVeterancy ) {
-        for ( i=0; i<ServerState.ServerInfo.Length; i++ ) {
-            if ( ServerState.ServerInfo[i].Key == "Veterancy" )
+        for ( i=0; i<ServerState.ServerInfo.Length; ++i ) {
+            if ( ServerState.ServerInfo[i].Key == "Veterancy" || Left(ServerState.ServerInfo[i].Key, 9) == "SP: Perk " )
                 ServerState.ServerInfo.remove(i--, 1);
         }
     }
@@ -1878,7 +1820,6 @@ function GetServerDetails( out GameInfo.ServerResponseLine ServerState )
     ServerState.ServerInfo[i++].Value = String(MinLevel);
     ServerState.ServerInfo[i].Key = "Perk bonus level max";
     ServerState.ServerInfo[i++].Value = String(MaxLevel);
-
 
     if ( KF.IsInState('PendingMatch') )
         wave_status = "LOBBY";
@@ -1935,7 +1876,6 @@ function SetReplicationData()
     SrvMinLevel = MinLevel;
     SrvMaxLevel = MaxLevel;
     SrvAchievementFlags = AchievementFlags;
-    SrvReqBalanceMode = ReqBalanceMode;
     
     SrvFlags = 0;
     if ( bSpawnBalance )                    SrvFlags = SrvFlags | 0x00000001;
@@ -1972,7 +1912,6 @@ simulated function LoadReplicationData()
     MinLevel = SrvMinLevel;
     MaxLevel = SrvMaxLevel;
     AchievementFlags = SrvAchievementFlags;
-    ReqBalanceMode = SrvReqBalanceMode;        
         
     bSpawnBalance                      = (SrvFlags & 0x00000001) > 0;
     bSpawn0                            = (SrvFlags & 0x00000002) > 0;        
@@ -2482,50 +2421,6 @@ function SetupRepLink(ClientPerkRepLink R)
     ScrnRep.TotalChars = ScrnRep.CustomChars.Length;    
 }
 
-
-
-static function ModifyGameHints()
-{
-    local int i;
-
-    class'KFMod.KFGameType'.default.KFHints[i++] = "ScrN Balance: You can reload a single shell into Hunting Shotgun.";
-    class'KFMod.KFGameType'.default.KFHints[i++] = "ScrN Balance: You can't skip Hunting Shotgun's reload. So use it with caution.";
-    class'KFMod.KFGameType'.default.KFHints[i++] = "ScrN Balance: Combat Shotgun is made much better. Give it a try.";
-    class'KFMod.KFGameType'.default.KFHints[i++] = "ScrN Balance: Shotguns, except Combat and Hunting, penetrate fat bodies worse than small enemies.";
-    class'KFMod.KFGameType'.default.KFHints[i++] = "ScrN Balance: M99 can't stun Scrake with a body-shot. Crossbow has no fire speed bonus as in original game before v1035.";
-    class'KFMod.KFGameType'.default.KFHints[i++] = "ScrN Balance: M14EBR has different laser sights. Choose the color you like!";
-    class'KFMod.KFGameType'.default.KFHints[i++] = "ScrN Balance: Hand grenades can be 'cooked'. You can enable this on 'Scrn Balance' settings page in the Main Menu.";
-    class'KFMod.KFGameType'.default.KFHints[i++] = "ScrN Balance: Husk Gun's secondary fire acts as Napalm Thrower. You should definitely try it out!";
-    class'KFMod.KFGameType'.default.KFHints[i++] = "ScrN Balance: Gunslinger has bonuses both for single and dual pistols. But real Cowboys use only dualies.";
-    class'KFMod.KFGameType'.default.KFHints[i++] = "ScrN Balance: Gunslinger becomes a Cowboy while using dual pistols without wearing an armor (except jacket). Cowboy moves, shoots and reloads his pistols much faster. From the other side, he dies faster too..";
-    class'KFMod.KFGameType'.default.KFHints[i++] = "ScrN Balance: Berserker, while holding non-melee weapons, moves slower than other perks.";
-    class'KFMod.KFGameType'.default.KFHints[i++] = "ScrN Balance: Chaisaw's secondary fire can stun Scrakes the same way as an Axe.";
-    class'KFMod.KFGameType'.default.KFHints[i++] = "ScrN Balance: Chainsaw consumes fuel. Raised power makes it a beast... until you need to refill";
-    class'KFMod.KFGameType'.default.KFHints[i++] = "ScrN Balance: Medic, while holding a syringe, runs same fast as while holding a knife.";
-    class'KFMod.KFGameType'.default.KFHints[i++] = "ScrN Balance: Medics can heal much faster than other perks. If you aren't a Medic, don't screw up the healing process with your lame injection.";
-    class'KFMod.KFGameType'.default.KFHints[i++] = "ScrN Balance: FN-FAL has bullet penetration and 2-bullet fixed burst mode.";
-    class'KFMod.KFGameType'.default.KFHints[i++] = "ScrN Balance: MK23 has no bullet penetration but double size of magazine, comparing to Magnum .44";
-    class'KFMod.KFGameType'.default.KFHints[i++] = "ScrN Balance: Your experience and perk bonus levels can be different. If they are, you'll see 2 perk icons on your HUD.";
-    class'KFMod.KFGameType'.default.KFHints[i++] = "ScrN Balance: If you see two perk icons on your HUD, left one shows your experience level, right - actual level of perk bonuses you gain.";
-    class'KFMod.KFGameType'.default.KFHints[i++] = "ScrN Balance: Flare pistol has an incremental burn DoT (iDoT). The more you shoot the more damage zeds take from burning.";
-    class'KFMod.KFGameType'.default.KFHints[i++] = "ScrN Balance: Medic nades are for healing only. Zeds are not taking damage neither fear them";
-    class'KFMod.KFGameType'.default.KFHints[i++] = "ScrN Balance: If you have just joined the game and got blamed - maybe it is just a welcome gift. Don't worry - shit happens.";
-    class'KFMod.KFGameType'.default.KFHints[i++] = "ScrN Balance: Nailgun can nail enemies to walls... nail them alive! Crucify your ZED!";
-    class'KFMod.KFGameType'.default.KFHints[i++] = "ScrN Console Command: TOGGLEPLAYERINFO - hides health bars while keeping the rest of the HUD.";
-    class'KFMod.KFGameType'.default.KFHints[i++] = "ScrN Console Command: MVOTE - access to ScrN Voting. Type MVOTE HELP for more info.";
-    class'KFMod.KFGameType'.default.KFHints[i++] = "ScrN Console Command: DROPALLWEAPONS - drops all your weapons to the ground. What else did you expected?";
-    class'KFMod.KFGameType'.default.KFHints[i++] = "ScrN Console Command: TOGGLEWEAPONLOCK - lock/unlocks your weapons on the ground.";
-}
-
-simulated function PreBeginPlay()
-{
-    super.PreBeginPlay();
-
-    // v7.31: do not modify KFGameType's hints, if other game type is in place (e.g. ScrnStoryGame)
-    if ( Level.GetGameClass() == class'KFMod.KFGameType' )
-        ModifyGameHints();
-}
-
 function ForceEvent()
 {
     local int i, j;
@@ -2689,6 +2584,12 @@ function SetMaxZombiesOnce()
     KF.MaxMonsters = Clamp(KF.TotalMaxMonsters,5,value);
 }
 
+function LogObjects()
+{
+    log("LIST OF LOADED OBJECTS:");
+    ConsoleCommand("OBJ LIST", true);
+}
+
 function PostBeginPlay()
 {
     local ScrnVotingHandlerMut VH;
@@ -2702,6 +2603,9 @@ function PostBeginPlay()
         return;
     }
     
+    if ( bLogObjectsAtMapStart )
+        LogObjects();
+    
     Mut = self;
     default.Mut = self;
     class'ScrnBalance'.default.Mut = self; // in case of classes extended from ScrnBalance
@@ -2709,11 +2613,14 @@ function PostBeginPlay()
     KF.MonsterCollection = KF.SpecialEventMonsterCollections[KF.GetSpecialEventType()]; // v1061 fix
     KF.bUseZEDThreatAssessment = true; // always use ScrnHumanPawn.AssessThreatTo()
     bStoryMode = KFStoryGameInfo(KF) != none;
-    bTSCGame = KF.IsA('TSCGame');
+    bTSCGame = KF.bTeamGame && KF.IsA('TSCGame');
     ScrnGT = ScrnGameType(KF);
     if ( ScrnGT != none ) {
         ScrnGT.ScrnBalanceMut = self;
         ScrnGT.bCloserZedSpawns = bCloserZedSpawns;
+    }
+    else if ( ScrnStoryGameInfo(KF) != none ) {
+        ScrnStoryGameInfo(KF).ScrnBalanceMut = self;
     }
     MapInfo = Spawn(Class'ScrnBalanceSrv.ScrnMapInfo');
 
@@ -2785,7 +2692,6 @@ function PostBeginPlay()
     if (bAltBurnMech) {
         BurnMech = spawn(class'ScrnBalanceSrv.ScrnBurnMech');
         default.BurnMech = BurnMech;
-        class'ScrnBalance'.default.BurnMech = BurnMech;
         if ( bDoubleDoT ) {
             BurnMech.BurnPeriod = 0.5;
             BurnMech.BurnDuration = 16;
@@ -2823,6 +2729,7 @@ function PostBeginPlay()
     InitSettings();
 	LoadSpawnInventory();
     SetupVoteSquads();
+    SetupSrvInfo();
 
 	if ( bStoryMode ) {
 		class'ScrnAchievements'.static.RegisterAchievements(class'AchObjMaps');
@@ -2837,6 +2744,15 @@ function PostBeginPlay()
         }
     }
 }
+
+function SetupSrvInfo()
+{
+    if ( SrvInfo == none )
+        SrvInfo = Spawn(Class'ScrnBalanceSrv.ScrnSrvReplInfo');
+        
+    SrvInfo.bForceSteamNames = bForceSteamNames;
+}
+
 
 function InitDoors()
 {
@@ -2986,25 +2902,62 @@ function bool Doom3Check()
 	return GameRules.GameDoom3Kills > 0;
 }
 
+static function DestroyLinkedInfo( LinkedReplicationInfo EntryLink )
+{
+    local LinkedReplicationInfo CurrentLink, NextLink;
+
+    for ( CurrentLink = EntryLink; CurrentLink != none; CurrentLink = NextLink ) {
+        NextLink = CurrentLink.NextReplicationInfo;
+        CurrentLink.Destroy();
+    }
+    EntryLink = none;
+}
+
 function ServerTraveling(string URL, bool bItems)
 {
     local int j;
     
+    log("ServerTraveling", 'ScrnBalance');
+    if ( bLogObjectsAtMapEnd )
+        LogObjects();
+        
 	if (NextMutator != None)
     	NextMutator.ServerTraveling(URL,bItems);
     
     class'ScrnGameRules'.static.ResetGameSquads(KF, CurrentEventNum);
 	class'ScrnAchievements'.static.ResetAchList();
     
+    // break links to self
+    Mut = none;
+    default.Mut = none;
+    class'ScrnBalance'.default.Mut = none;
+    
     for ( j=0; j<Perks.length; ++j )
         if ( Perks[j] != none )
             Perks[j].default.DefaultInventory.length = 0;   
+         
+    DestroyLinkedInfo(CustomWeaponLink);
+    CustomWeaponLink = none;
 
     // destroy local objects
     if ( MapInfo != none ) {
         MapInfo.Destroy();  
         MapInfo = none;
     }
+    if ( BurnMech != none ) {
+        BurnMech.Destroy();
+        BurnMech = none;
+    }
+    if ( SrvInfo != none ) {
+        SrvInfo.Destroy();
+        SrvInfo = none;
+    }
+}
+
+simulated function Destroyed()
+{
+    super.Destroyed();
+    log("ScrnBalance destroyed", 'ScrnBalance');
 }
 
 // Limits placed pipebomb count to perk's capacity
@@ -3052,7 +3005,7 @@ final static function bool GetHighlyDecorated(int SteamID32,
     start = 0;
     end = default.HighlyDecorated.length;
     
-    while ( start <= end ) {
+    while ( start < end ) {
         i = start + ((end - start)>>1);
         if ( SteamID32 == default.HighlyDecorated[i].SteamID32 ) {
             if ( default.HighlyDecorated[i].Avatar == none && default.HighlyDecorated[i].AvatarRef != "" )
@@ -3074,7 +3027,7 @@ final static function bool GetHighlyDecorated(int SteamID32,
             return true;
         }
         else if ( SteamID32 < default.HighlyDecorated[i].SteamID32 )
-            end = i - 1;
+            end = i;
         else 
             start = i + 1;
     }
@@ -3099,12 +3052,12 @@ final static function int BinarySearch(out array<int> arr, int val)
     
     start = 0;
     end = arr.length;    
-    while ( start <= end ) {
+    while ( start < end ) {
         i = start + ((end - start)>>1);
         if ( arr[i] == val )
             return i;
         else if ( val < arr[i] )
-            end = i - 1;
+            end = i;
         else 
             start = i + 1;
     }
@@ -3117,12 +3070,12 @@ final static function int BinarySearchStr(out array<string> arr, string val)
     
     start = 0;
     end = arr.length;    
-    while ( start <= end ) {
+    while ( start < end ) {
         i = start + ((end - start)>>1);
         if ( arr[i] == val )
             return i;
         else if ( val < arr[i] )
-            end = i - 1;
+            end = i;
         else 
             start = i + 1;
     }
@@ -3161,7 +3114,6 @@ defaultproperties
 	VoteKillPenaltyMult=5.0
     bTraderSpeedBoost=True
 	
-    ReqBalanceMode=5
     BonusLevelNormalMax=3
     BonusLevelHardMax=4
     BonusLevelSuiMin=4
@@ -3231,7 +3183,7 @@ defaultproperties
     Perks(6)=Class'ScrnBalanceSrv.ScrnVetDemolitions'
     Perks(7)=Class'ScrnBalanceSrv.ScrnVeterancyTypes' 
     Perks(8)=Class'ScrnBalanceSrv.ScrnVetGunslinger' // new one
-    Perks(9)=Class'ScrnBalanceSrv.ScrnVeterancyTypes'
+    Perks(9)=Class'ScrnBalanceSrv.ScrnVetCombatMedic'
     strAchEarn="%p earned an achievement: %a"
     bBroadcastAchievementEarn=True
     AchievementFlags=255
@@ -3313,10 +3265,9 @@ defaultproperties
     bUseDLCLocks=False
     bUseDLCLevelLocks=True
     bFixMusic=True
-    MedicDamagePenalty=0.5
-    MedicDamageToXPRatio=0.03
     LockTeamMinWave=7.0
     LockTeamAutoWave=8.5
+    bForceSteamNames=True
     
     EndGameStatBonus=0.5
     bStatBonusUsesHL=True

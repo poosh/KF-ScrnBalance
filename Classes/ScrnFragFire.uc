@@ -1,19 +1,5 @@
 class ScrnFragFire extends FragFire;
 
-var float PrevAmmo;
-
-// C&P from ServerPerks
-function DoFireEffect()
-{
-	local float MaxAmmo,CurAmmo;
-
-	Weapon.GetAmmoCount(MaxAmmo,CurAmmo);
-	if (CurAmmo==0 && PrevAmmo==0)
-		return;
-	PrevAmmo=CurAmmo;
-	Super.DoFireEffect();
-}
-
 function projectile SpawnProjectile(Vector Start, Rotator Dir)
 {
 	local Grenade gProj;

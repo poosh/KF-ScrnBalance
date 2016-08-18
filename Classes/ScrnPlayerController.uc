@@ -15,6 +15,9 @@ ScrnAchievementEarnedMsg - requires ScrnAchievement object to be passed as optio
 
 class ScrnPlayerController extends KFPCServ;
 
+var ScrnBalance Mut;
+var transient bool bHadPawn;
+
 var byte VeterancyChangeWave; // wave number, when player has changed his perk 
 
 var globalconfig bool bManualReload, bOtherPlayerLasersBlue;
@@ -32,20 +35,19 @@ struct SWeaponSetting
 };
 var globalconfig array<SWeaponSetting> WeaponSettings;
 
-var ScrnBalance Mut;
-
 
 var transient array<ScrnAchievements.AchStrInfo>PendingAchievements; //earned achievements waiting to be displayed on the HUD
 //current achievement object and index to display on the HUD
 var transient ScrnAchievements CurrentAchHandler; 
 var transient int CurrentAchIndex;
-
 var float AchievementDisplayCooldown; // time to wait between displaying achievements, if multiple achievements were earned
 
 var transient class<KFVeterancyTypes> InitialPerkClass;
 var bool bChangedPerkDuringGame; // player changed his perk during a game 
 var transient bool bCowboyForWave;
 var transient byte BeggingForMoney; // how many times player asked for money during this wave
+var transient bool bShoppedThisWave;
+var byte PathDestination; // 0 - trader, 255 - TSC base
 
 var byte MaxVoiceMsgIn10s; // maximum number of voice messages during 10 seconds
 var bool bZEDTimeActive;
@@ -61,7 +63,6 @@ var localized string strAlreadySpectating;
 var globalconfig bool bPrioritizePerkedWeapons, bPrioritizeBoomstick;
 
 var int StartCash; // amount of cash given to this pawn on game/wave start
-var transient bool bHadPawn;
 
 struct SDualWieldable {
 	var class<KFWeapon> Single, Dual;
@@ -98,6 +99,7 @@ var transient rotator PrevRot;
 var transient int ab_warning;
 
 var globalconfig bool bDebugRepLink, bWaveGarbageCollection;
+var globalconfig string PlayerName;
 
 // DLC checks
 struct SDLC {
@@ -138,7 +140,7 @@ replication
     reliable if ( Role < ROLE_Authority )
         ServerVeterancyLevelEarned, SrvAchReset, ResetMyAchievements, ResetMapAch,
 		ServerDropAllWeapons, ServerLockWeapons, ServerGunSkin,
-        ServerAcknowledgeDamages,
+        ServerAcknowledgeDamages, ServerShowPathTo,
         ServerDebugRepLink,
         ServerTourneyCheck, ServerKillMut, ServerKillRules,
         ServerSwitchViewMode, ServerSetViewTarget;
@@ -174,6 +176,9 @@ function PostLogin()
     else
         ScrnCustomPRI.SetSteamID64(GetPlayerIDHash());
     ScrnCustomPRI.NetUpdateTime = Level.TimeSeconds - 1;
+    
+    if ( PlayerName != "" )
+        SetName(PlayerName);
     
     Mut.GameRules.PlayerEntering(self);
 }
@@ -355,13 +360,6 @@ function ServerAcknowledgePossession(Pawn P, float NewHand, bool bNewAutoTaunt)
     super.ServerAcknowledgePossession(P, NewHand, bNewAutoTaunt);
 }
 
-function UnPossess()
-{
-    super.UnPossess();
-    Mut.GameRules.CheckPlayersAlive();
-}
-
-
 */
 
 function PawnDied(Pawn P)
@@ -517,6 +515,69 @@ simulated function PlayerTick( float DeltaTime )
             PendingSong = "";
         }
     }
+}
+
+// TraderMenuOpened and TraderMenuClosed execute on client-side only
+simulated function TraderMenuOpened()
+{
+    bShopping = true;
+}
+
+simulated function TraderMenuClosed()
+{
+    if ( Mut.bTSCGame )
+        ServerShowPathTo(1); // go to TSC base
+    bShopping = false;
+}
+
+function SetShowPathToTrader(bool bShouldShowPath)
+{
+    if ( bShouldShowPath )
+        PathDestination = 0; // trader
+    else if ( PathDestination == 0)
+        PathDestination = 255; // turn off only if we are showing path to trader (PathDestination = 0)
+    ServerShowPathTo(PathDestination);
+}
+
+exec function TogglePathToTrader()
+{
+    switch (PathDestination) {
+        case 0: 
+            PathDestination = 1; // TSC base
+            if ( Mut.bTSCGame )
+                break; // otherwise go to next steap
+        case 1: 
+            PathDestination = 255; // hide
+            break;
+        default:
+            PathDestination = 0; // trader
+    }
+	ServerShowPathTo(PathDestination);
+}
+
+function ServerShowPathTo(byte NewDestination)
+{
+    PathDestination = NewDestination;
+    SetTimer(TraderPathInterval, true);
+    Timer();
+}
+
+// Show the path the trader
+function Timer()
+{
+    if( Role < ROLE_Authority )
+    {
+        SetTimer(0, false);
+    }
+    else if ( bWantsTraderPath && PathDestination != 255 )
+    {
+        UnrealMPGameInfo(Level.Game).ShowPathTo(Self, PathDestination);
+    }
+	else
+	{
+        bShowTraderPath = false;
+        SetTimer(0, false);
+	}
 }
 
 event SongPlaying(String Song, int MyIndex)
@@ -765,6 +826,26 @@ function float GetMusicVolume()
     return float(ConsoleCommand("get ini:Engine.Engine.AudioDevice MusicVolume"));
 }
 
+exec function MusicVolume(coerce string vol)
+{
+    if ( vol == "" ) 
+        ClientMessage("Music Volume = " $ ConsoleCommand("get ini:Engine.Engine.AudioDevice MusicVolume"));
+    else {
+        ConsoleCommand("set ini:Engine.Engine.AudioDevice MusicVolume" @ vol);
+        ClientMessage("Music Volume set to " $ ConsoleCommand("get ini:Engine.Engine.AudioDevice MusicVolume"));
+    }
+}
+
+exec function SoundVolume(coerce string vol)
+{
+    if ( vol == "" ) 
+        ClientMessage("Sound Volume = " $ ConsoleCommand("get ini:Engine.Engine.AudioDevice SoundVolume"));
+    else {
+        ConsoleCommand("set ini:Engine.Engine.AudioDevice SoundVolume" @ vol);
+        ClientMessage("Sound Volume set to " $ ConsoleCommand("get ini:Engine.Engine.AudioDevice SoundVolume"));
+    }
+}
+
 
 function bool IsAimingToZedHead()
 {
@@ -940,13 +1021,21 @@ simulated function ReceiveLocalizedMessage( class<LocalMessage> Message, optiona
 		// I didn't found any better way to track perk leveling up
     	super.ReceiveLocalizedMessage(class'KFVetEarnedMessageScrn', Switch, RelatedPRI_1, RelatedPRI_2, OptionalObject);
 		ServerVeterancyLevelEarned();
+        return;
 	}
-	else {
-        if ( Switch == 1 && Message == class'TSCSharedMessages' )
-            ClientCloseMenu(true, true); // trying to shop in enemy trader
-        
-    	super.ReceiveLocalizedMessage(Message, Switch, RelatedPRI_1, RelatedPRI_2, OptionalObject);
+	
+    if ( Message == class'TSCSharedMessages' ) {
+        switch (Switch) {
+            case 1:     // trying to shop in enemy trader
+                ClientCloseMenu(true, true); 
+                break;
+            case 211:   // loosing base means wipe
+                if ( ScrnHUD(myHUD) != none )
+                    ScrnHUD(myHUD).CriticalOverlayTimer = Level.TimeSeconds + 3.0;
+                break;
+        }
     }
+    super.ReceiveLocalizedMessage(Message, Switch, RelatedPRI_1, RelatedPRI_2, OptionalObject);
 }
 
 function ResetWaveStats()
@@ -957,6 +1046,7 @@ function ResetWaveStats()
 	
     bCowboyForWave = true;
 	BeggingForMoney = 0;
+    bShoppedThisWave = false;
 	bHadArmor = bHadArmor || (KFPRI != none	&& KFPRI.ClientVeteranSkill != none 
 		&& KFPRI.ClientVeteranSkill.static.ReduceDamage(KFPRI, KFPawn(Pawn), none, 100, none) < 100);
     
@@ -1157,6 +1247,7 @@ function BecomeActivePlayer()
 				Mut.DynamicLevelCap();    
 		}
 		StartCash = PlayerReplicationInfo.Score;
+        Mut.GameRules.PlayerEntering(self);
 	}
 }
 
@@ -1172,6 +1263,9 @@ function Possess(Pawn aPawn)
 	}
     
 	super.Possess(aPawn);
+    // show path to trader if respawned during the trader time
+    if ( Role == ROLE_Authority && Pawn != none && Mut != none && Mut.KF.bTradingDoorsOpen )
+        SetShowPathToTrader(true);
     
 	bHadPawn = bHadPawn || Pawn != none;
 }
@@ -1359,7 +1453,7 @@ function ShowLobbyMenu()
 	bPendingLobbyDisplay = false;
 
 	// Open menu
-    if ( TSCGameReplicationInfoBase(Level.GRI) != none )
+    if ( Level.GRI.bTeamGame && TSCGameReplicationInfoBase(Level.GRI) != none )
         ClientOpenMenu(TSCLobbyMenuClassString);
     else
         ClientOpenMenu(LobbyMenuClassString);
@@ -1485,6 +1579,40 @@ function bool IsInInventory(class<Pickup> PickupToCheck, bool bCheckForEquivalen
 	}
 
     return false;
+}
+
+exec function SetName(coerce string S)
+{
+    if ( S == "#" )
+        S = PlayerName;
+        
+    if ( S == "" || (class'ScrnSrvReplInfo'.static.Instance().bForceSteamNames
+                    && Player.GUIController.SteamGetUserName() != Mut.StripColorTags(S)) )
+    {
+        S = Player.GUIController.SteamGetUserName();
+        if ( S == "" )
+            PlayerName = "";
+    }
+    else {
+        PlayerName = S;
+    }
+	ChangeName(S);
+	UpdateURL("Name", S, true);
+	SaveConfig();
+}
+
+function ChangeName( coerce string S )
+{
+    local string PlainName;
+    
+    ReplaceText(S, " ", "_");
+    ReplaceText(S, "\"", "");
+    
+    PlainName = Mut.StripColorTags(S);
+    if ( len(PlainName) > 20 )
+        S = left(PlainName, 20);
+        
+    Level.Game.ChangeName( self, S, true );
 }
 
 // TSC stuff
@@ -2167,7 +2295,7 @@ function ServerSetViewTarget(Actor NewViewTarget)
 {
     local bool bWasSpec;
 
-    if ( !IsInState('Spectating') || !PlayerReplicationInfo.bOnlySpectator )
+    if ( !IsInState('Spectating') || (!PlayerReplicationInfo.bOnlySpectator && Mut.SrvTourneyMode > 0) )
         return;
         
     bWasSpec = !bBehindView && ViewTarget != Pawn && ViewTarget != self;
@@ -2188,7 +2316,7 @@ function ViewTargetChanged()
     
     //log("ViewTargetChanged("$OldViewTarget$")", 'ScrnBalance');
     
-    if ( Role < ROLE_Authority || !PlayerReplicationInfo.bOnlySpectator )
+    if ( Role < ROLE_Authority || (!PlayerReplicationInfo.bOnlySpectator && Mut.SrvTourneyMode > 0) )
         return;
 
     ScrnVT = ScrnHumanPawn(OldViewTarget);
@@ -2235,6 +2363,14 @@ exec function FreeCamera( bool B )
 
 state Spectating
 {
+    function BeginState()
+    {
+        super.BeginState();
+        if ( Role == ROLE_Authority ) {
+            Mut.GameRules.PlayerLeaving(self);
+        }
+    }
+
    // Return to spectator's own camera.
     exec function AltFire( optional float F )
     {
@@ -2247,7 +2383,8 @@ state Spectating
     
     exec function SwitchWeapon(byte T) 
     {
-        ServerSwitchViewMode(T);
+        if ( PlayerReplicationInfo.bOnlySpectator )
+            ServerSwitchViewMode(T);
     } 
     
     exec function Use()
@@ -2255,9 +2392,6 @@ state Spectating
         local vector HitLocation, HitNormal, TraceEnd, TraceStart;
         local rotator R;
         local Actor A;
-        
-        if( !PlayerReplicationInfo.bOnlySpectator )
-            return;
 
         PlayerCalcView(A, TraceStart, R);
         TraceEnd = TraceStart + 1000 * Vector(R);
@@ -2394,7 +2528,6 @@ exec function TestQuickMelee()
     }
 }
 
-
 // ======================== COMMENT BEFORE RELEASE !!! =====================
 // exec function WaveNum(byte w)
 // {
@@ -2424,16 +2557,16 @@ exec function TestQuickMelee()
     // SetSID64("76561197992537591");
 // }
 
-
 // exec function PerkLevel(int L)
 // {
-    // if ( Level.NetMode == NM_Standalone )
+    // if ( Role == ROLE_Authority )
         // KFPlayerReplicationInfo(PlayerReplicationInfo).ClientVeteranSkillLevel = L;
 // } 
 
-
-
-
+// exec function TestZedTime(optional float DesiredZedTimeDuration)
+// {
+    // KFGameType(Level.Game).DramaticEvent(1.0, DesiredZedTimeDuration);
+// }
 
 
 /*
@@ -2453,17 +2586,16 @@ exec function BuyAll()
 {
     local int i;
     local ScrnClientPerkRepLink L;
-    local ScrnHumanPawn P;
     
     if ( Role < ROLE_Authority )
         return;
     
     PlayerReplicationInfo.Score = 1000000;
-    P = ScrnHumanPawn(Pawn);
+    ScrnPawn = ScrnHumanPawn(Pawn);
     L = class'ScrnClientPerkRepLink'.static.FindMe(self);
     for ( i=0; i<L.ShopInventory.length; ++i ) {
-        P.DropAllWeapons(P);
-        P.ServerBuyWeapon(class<Weapon>(L.ShopInventory[i].PC.default.InventoryType), 0);
+        ScrnPawn.DropAllWeapons(ScrnPawn);
+        ScrnPawn.ServerBuyWeapon(class<Weapon>(L.ShopInventory[i].PC.default.InventoryType), 0);
     }
 }
 

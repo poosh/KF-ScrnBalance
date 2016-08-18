@@ -127,19 +127,19 @@ function SendClientPerksSE()
 {
 	local int i;
     local class<ScrnVeterancyTypes> Perk;
-    local byte Level;
+    local byte lvl;
 
 	for( i=0; i<CachePerks.Length; i++ ) {
         Perk = class<ScrnVeterancyTypes>(CachePerks[i].PerkClass);
         if ( Perk.default.bLocked )
-            Level = 255;
+            lvl = 255;
         else 
-            Level = 0x80 | CachePerks[i].CurrentLevel;
-		ClientReceivePerk(i, Perk, Level);
+            lvl = 0x80 | CachePerks[i].CurrentLevel;
+		ClientReceivePerk(i, Perk, lvl);
     }
 }
 
-simulated function ClientReceivePerk( int Index, class<SRVeterancyTypes> V, byte Level )
+simulated function ClientReceivePerk( int Index, class<SRVeterancyTypes> V, byte lvl )
 {
     
 	// Setup correct icon for trader.
@@ -153,7 +153,7 @@ simulated function ClientReceivePerk( int Index, class<SRVeterancyTypes> V, byte
 	if( CachePerks.Length <= Index )
 		CachePerks.Length = Index+1;
 	CachePerks[Index].PerkClass = V;
-    ClientPerkLevel(Index, Level);
+    ClientPerkLevel(Index, lvl);
 }
 
 simulated function ClientPerkLevel( int Index, byte NewLevel )

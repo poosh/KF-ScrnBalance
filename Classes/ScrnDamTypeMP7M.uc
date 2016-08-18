@@ -1,4 +1,4 @@
-class ScrnDamTypeMP7M extends ScrnDamTypeMedicBase
+class ScrnDamTypeMP7M extends ScrnDamTypeMedic
 	abstract;
 
 defaultproperties

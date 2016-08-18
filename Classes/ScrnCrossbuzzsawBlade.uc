@@ -35,6 +35,7 @@ simulated function ReplicatedDestroy()
 	}
 	else {
 		bHidden = true;
+        SetCollision(false, false);
         SetPhysics(PHYS_None);
         Velocity = vect(0,0,0);
         Speed = 0;
@@ -83,7 +84,7 @@ simulated state OnWall
 	{
 		local Inventory inv;
 
-		if( Pawn(Other)!=None && Pawn(Other).Inventory!=None )
+		if( !bHidden && Pawn(Other)!=None && Pawn(Other).Inventory!=None )
 		{
 			for( inv=Pawn(Other).Inventory; inv!=None; inv=inv.Inventory )
 			{

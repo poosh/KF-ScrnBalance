@@ -2,22 +2,23 @@ class ScrnBalanceVoting extends ScrnVotingOptions;
 
 var ScrnBalance Mut;
 
-const VOTE_PERKLOCK  = 0;
-const VOTE_PERKUNLOCK= 1;
-const VOTE_PAUSE     = 2;
-const VOTE_ENDTRADE  = 3;
-const VOTE_BLAME  	 = 4;
-const VOTE_KICK  	 = 5;
-const VOTE_BORING  	 = 6;
-const VOTE_SPAWN  	 = 7;
-const VOTE_ENDWAVE   = 8;
-const VOTE_SPEC      = 9;
-const VOTE_READY     = 10;
-const VOTE_UNREADY   = 11;
-const VOTE_TEAMLOCK  = 12;
-const VOTE_TEAMUNLOCK= 13;
-const VOTE_INVITE    = 14;
-const VOTE_RKILL     = 100;
+const VOTE_PERKLOCK     = 0;
+const VOTE_PERKUNLOCK   = 1;
+const VOTE_PAUSE        = 2;
+const VOTE_ENDTRADE     = 3;
+const VOTE_BLAME  	    = 4;
+const VOTE_KICK  	    = 5;
+const VOTE_BORING  	    = 6;
+const VOTE_SPAWN  	    = 7;
+const VOTE_ENDWAVE      = 8;
+const VOTE_SPEC         = 9;
+const VOTE_READY        = 10;
+const VOTE_UNREADY      = 11;
+const VOTE_TEAMLOCK     = 12;
+const VOTE_TEAMUNLOCK   = 13;
+const VOTE_INVITE       = 14;
+const VOTE_FF           = 15;
+const VOTE_RKILL        = 100;
 
 var localized string strCantEndTrade;
 var localized string strTooLate;
@@ -25,7 +26,7 @@ var localized string strGamePaused, strSecondsLeft, strGameUnPaused, strPauseTra
 var localized string viResume, viEndTrade;
 var localized string strZedSpawnsDoubled;
 var localized string strSquadNotFound, strCantSpawnSquadNow, strSquadList;
-var localized string strNotInStoryMode;
+var localized string strNotInStoryMode, strNotInTSC;
 var localized string strCantEndWaveNow, strEndWavePenalty;
 var localized string strRCommands;
 
@@ -89,6 +90,11 @@ function SendSquadList(PlayerController Sender)
 	Sender.ClientMessage(s);
 }
 
+static function bool TryStrToInt(string str, out int val)
+{
+    val = int(str);
+    return val != 0 || str == "0";
+}
 
 function int GetVoteIndex(PlayerController Sender, string Key, out string Value, out string VoteInfo)
 {
@@ -201,8 +207,9 @@ function int GetVoteIndex(PlayerController Sender, string Key, out string Value,
 		result = VOTE_BLAME;
 	}
 	else if ( Key == "SPEC" ) {
-		if ( !Mut.bAllowKickVote || Level.Game.AccessControl == none 
-                || Level.Game.NumSpectators > Level.Game.MaxSpectators ) 
+		if ( Level.Game.AccessControl == none 
+                || Level.Game.NumSpectators > Level.Game.MaxSpectators 
+                || (!Mut.bAllowKickVote && !Sender.PlayerReplicationInfo.bAdmin) ) 
         {
 			Sender.ClientMessage(strOptionDisabled);
 			return VOTE_NOEFECT;
@@ -226,7 +233,7 @@ function int GetVoteIndex(PlayerController Sender, string Key, out string Value,
 		result = VOTE_SPEC;
 	}    
 	else if ( Key == "KICK" ) {
-		if ( !Mut.bAllowKickVote || Level.Game.AccessControl == none ) {
+		if ( Level.Game.AccessControl == none || (!Mut.bAllowKickVote && !Sender.PlayerReplicationInfo.bAdmin) ) {
 			Sender.ClientMessage(strOptionDisabled);
 			return VOTE_NOEFECT;
 		}
@@ -282,11 +289,10 @@ function int GetVoteIndex(PlayerController Sender, string Key, out string Value,
 			Sender.ClientMessage(strOptionDisabled);
 			return VOTE_LOCAL;
 		}	
-        else if ( Mut.KF.KFLRules.WaveSpawnPeriod < 0.5 ) {
+        else if ( Mut.KF.bTradingDoorsOpen || Mut.KF.KFLRules.WaveSpawnPeriod < 0.5 ) {
 			Sender.ClientMessage(strNotAvaliableATM);
 			return VOTE_LOCAL;        
         }
-        
        
 		Value = "";
 		VoteInfo = "Game is BORING";
@@ -364,7 +370,28 @@ function int GetVoteIndex(PlayerController Sender, string Key, out string Value,
         else if ( !Mut.bTeamsLocked )
             return VOTE_NOEFECT;
         return VOTE_TEAMUNLOCK;        
-    }    
+    }   
+    else if ( Key == "FF" ) {
+		if ( Mut.bTSCGame ) {
+            Sender.ClientMessage(strNotInTSC);
+            return VOTE_NOEFECT;		
+		}    
+        if ( Level.GRI.bMatchHasBegun ) {
+            Sender.ClientMessage(strNotAvaliableATM);
+            return VOTE_LOCAL;
+        }
+        if ( right(Value, 1) == "%" )
+            Value = left(Value, len(Value)-1);
+        if ( !TryStrToInt(Value, v) || v < Mut.MinVoteFF || v > Mut.MaxVoteFF )
+            return VOTE_ILLEGAL;
+        if ( v == int(Mut.KF.FriendlyFireScale*100) )
+            return VOTE_NOEFECT;
+        if ( v == 0 )
+            VoteInfo = "Friendly Fire OFF";
+        else 
+            VoteInfo = "Friendly Fire "$v$"%";
+        return VOTE_FF;
+    }
 	else if ( Key == "R_KILL" ) {
         if ( !Sender.PlayerReplicationInfo.bAdmin || Mut.SrvTourneyMode == 0 ) {
 			Sender.ClientMessage(strRCommands);
@@ -560,7 +587,10 @@ function ApplyVoteValue(int VoteIndex, string VoteValue)
             break;
         case VOTE_INVITE:
             Mut.ScrnGT.InvitePlayer(VotingHandler.VotedPlayer);
-			break;          
+			break;   
+        case VOTE_FF:
+            Mut.KF.FriendlyFireScale = float(VoteValue)/100.0;
+            break;
             
 		case VOTE_RKILL:
 			if ( VotingHandler.VotedPlayer != none && VotingHandler.VotedPlayer.Pawn != none ) {
@@ -757,6 +787,7 @@ defaultproperties
     HelpInfo(9)="%gBORING %w Doubles ZED spawn rate"
     HelpInfo(10)="%gSPAWN %y<squad_name> %w Spawns zed squad"
     HelpInfo(11)="%gREADY%w|%gUNREADY %w Makes everybody ready/unready to play"
+    HelpInfo(12)="%gFF %yX %w Set Friendly Fire to X%"
     
     strCantEndTrade="Can not end trade time at the current moment"
     strTooLate="Too late"
@@ -769,6 +800,7 @@ defaultproperties
 	strCantSpawnSquadNow="Can not spawn monsters at this moment"
 	strSquadList="Avaliable Squads:"
 	strNotInStoryMode="Not avaliable in Story Mode"
+	strNotInTSC="Not avaliable in TSC"
 	strCantEndWaveNow="Can't end the wave now"
 	strEndWavePenalty="Team charged for premature wave end with $"
     strRCommands="R_* commands can be executed only by Referee (Admin rights + Tourney Mode)"

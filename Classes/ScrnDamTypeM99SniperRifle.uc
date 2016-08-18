@@ -3,7 +3,7 @@ class ScrnDamTypeM99SniperRifle extends DamTypeM99SniperRifle
 
 defaultproperties
 {
-    KDamageImpulse=12500
-    KDeathVel=1750
+    KDamageImpulse=10000
+    KDeathVel=1500
     KDeathUpKick=250
 }

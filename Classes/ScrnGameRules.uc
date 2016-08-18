@@ -1,9 +1,8 @@
 class ScrnGameRules extends GameRules
-    Config(ScrnBalance);
+    Config(ScrnBalanceSrv);
 
 var ScrnBalance Mut;
 var KFGameType KF;
-
 
 var bool bShowDamages;
 
@@ -97,6 +96,7 @@ var config float HL_Normal, HLMult_Normal, HL_Hard, HLMult_Hard, HL_Suicidal, HL
 var config float HL_Hardcore, HL_Story, HL_TSC;
 var config array<SHardcoreMonster> HardcoreZeds, HardcoreBosses;
 var transient float ZedHLMult;
+var config bool bBroadcastHL;
 
 function PostBeginPlay()
 {
@@ -115,7 +115,9 @@ function PostBeginPlay()
 event Destroyed()
 {
     local ScrnPlayerInfo SPI;
+	local int i;
     
+    log("ScrnGameRules destroyed", 'ScrnBalance');
     // clear all ScrnPlayerInfo objects
     while ( PlayerInfo != none ) {
         SPI = PlayerInfo;
@@ -128,7 +130,16 @@ event Destroyed()
         SPI.Destroy();
     }
     
+    // destroy all ach handlers
+	for ( i=0; i<AchHandlers.length; ++i ) {
+		if ( AchHandlers[i] != none )
+            AchHandlers[i].Destroy();
+	}    
+    AchHandlers.length = 0;
+    
     super.Destroyed();
+    
+    log("ScrnGameRules destroyed", 'ScrnBalance');
 }
 
 
@@ -253,7 +264,7 @@ function WaveStarted()
             ++WavePlayerCount;
 			if ( ScrnPlayerController(PC) != none )
 				ScrnPlayerController(PC).ResetWaveStats();
-			SPI = CreatePlayerInfo(PC);
+			SPI = CreatePlayerInfo(PC, false);
             // in case when stats were created before ClientReplLink created
             if ( !SPI.GameStartStats.bSet )
                 SPI.BackupStats(SPI.GameStartStats);            
@@ -781,6 +792,10 @@ function bool PreventDeath(Pawn Killed, Controller Killer, class<DamageType> dam
         ++WaveDoom3Kills;
         ++GameDoom3Kills;
     }
+    
+    if ( Killer != none && ScrnHumanPawn(Killer.Pawn) != none ) {
+        ScrnHumanPawn(Killer.Pawn).MacheteResetTime += 3;
+    }
 
     if ( bUseAchievements ) {
 		if ( KFMonster(Killed) != none && PlayerController(Killer) != none && class<KFWeaponDamageType>(DamageType) != none ) {
@@ -795,12 +810,6 @@ function bool PreventDeath(Pawn Killed, Controller Killer, class<DamageType> dam
 				idx = GetMonsterIndex(KFMonster(Killer.Pawn));
 				MonsterInfos[idx].PlayerKillCounter++;
 				MonsterInfos[idx].PlayerKillTime = Level.TimeSeconds;
-                
-                // decrease XP for all medics for not keeping teammate alive
-                for ( SPI=PlayerInfo; SPI!=none; SPI=SPI.NextPlayerInfo ) {
-                    if ( SPI.PlayerOwner != Killed.Controller && !SPI.bDied )
-                        SPI.MedicDamagePerWave *= Mut.MedicDamagePenalty;
-                }                
 			}
 			// don't count suicide deaths during trader time
 			if ( !Mut.KF.bTradingDoorsOpen ) {
@@ -816,7 +825,8 @@ function bool PreventDeath(Pawn Killed, Controller Killer, class<DamageType> dam
                 Killed.Health = idx;
             }    
 		}
-    }    
+    }  
+
     return false;
 }
 
@@ -1049,8 +1059,6 @@ function protected InitHardcoreLevel()
 function RaiseHardcoreLevel(float inc, string reason)
 {
     local string s;
-    local Controller P;
-    local PlayerController Player;
     
     if ( HardcoreLevelFloat < HardcoreLevel )
         HardcoreLevelFloat = HardcoreLevel; // just to be sure
@@ -1061,17 +1069,12 @@ function RaiseHardcoreLevel(float inc, string reason)
     Mut.HardcoreLevel = clamp(HardcoreLevel,0,255); 
     Mut.NetUpdateTime = Level.TimeSeconds - 1;
     
-    s = msgHardcore;
-    ReplaceText(s, "%a", String(HardcoreLevel));
-    ReplaceText(s, "%i", String(inc));
-    ReplaceText(s, "%r", reason);
-
-
-    for ( P = Level.ControllerList; P != none; P = P.nextController ) {
-        Player = PlayerController(P);
-        if ( Player != none ) {
-            Player.ClientMessage(s);
-        }
+    if ( bBroadcastHL ) {
+        s = msgHardcore;
+        ReplaceText(s, "%a", String(HardcoreLevel));
+        ReplaceText(s, "%i", String(inc));
+        ReplaceText(s, "%r", reason);
+        Mut.BroadcastMessage(s, true);
     }
 }
 
@@ -1334,19 +1337,21 @@ function bool OverridePickupQuery(Pawn Other, Pickup item, out byte bAllowPickup
 	local KFWeaponPickup WP;
 	local ScrnPlayerInfo SPI;
 	local string str;
+    local ScrnHumanPawn ScrnPawn;
 	
 	if ( Other.Health <= 0 ) {
 		bAllowPickup = 0; // prevent dying bodies of picking up items
 		return true;
 	}	
+    
+    ScrnPawn = ScrnHumanPawn(Other);
 	
 	Mut.ReplacePickup(item);	// replace pickup's inventory with ScrN version
     WP = KFWeaponPickup(item);
-    if ( Mut.bPickPerkedWeaponsOnly && WP != none 
-        && WP.CorrespondingPerkIndex != 7
-        && KFPlayerReplicationInfo(Other.PlayerReplicationInfo) != none 
-        && KFPlayerReplicationInfo(Other.PlayerReplicationInfo).ClientVeteranSkill != none
-        && WP.CorrespondingPerkIndex != KFPlayerReplicationInfo(Other.PlayerReplicationInfo).ClientVeteranSkill.default.PerkIndex )
+    if ( Mut.bPickPerkedWeaponsOnly && WP != none && ScrnPawn != none
+        && WP.CorrespondingPerkIndex != 7 //off-perk
+        && WP.CorrespondingPerkIndex != ScrnPawn.ScrnPerk.default.PerkIndex
+        && !ScrnPawn.ScrnPerk.static.OverridePerkIndex(WP.class) )
     {
         if ( PlayerController(Other.Controller) != none )
             PlayerController(Other.Controller).ClientMessage(Mut.ColorString(strPerkedWeaponsOnly,192,100,1));
@@ -1497,6 +1502,7 @@ defaultproperties
     SovietDamageTypes(2)=class'KFMod.DamTypeAK47AssaultRifle'
     SovietDamageTypes(3)=class'ScrnBalanceSrv.ScrnDamTypeAK47AssaultRifle'
     
+    bBroadcastHL=true
     HL_Normal=0
     HLMult_Normal=0.5
     HL_Hard=2
@@ -1504,7 +1510,7 @@ defaultproperties
     HL_Suicidal=5
     HLMult_Suicidal=1.0
     HL_HoE=7
-    HLMult_HoE=1.0
+    HLMult_HoE=1.25
     HL_Hardcore=2
     HL_Story=3
     HL_TSC=6

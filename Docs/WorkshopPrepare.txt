@@ -2,7 +2,6 @@
 2. Rename ScrnBalanceSrv.ini to ScrnBalance.ini.
 3. Replace "ScrnBalanceSrv." with "ScrnBalance." in ScrnBalance.ini and Serverperks.ini.
 4. Replace edit package ScrnBalanceSrv with ScrnBalance in KillingFloor.ini
-5. Replace config(ScrnBalanceSrv) with config(ScrnBalance).
+5. Replace config(ScrnBalanceSrv) with config(ScrnBalance) in ScrnBalance and ScrnGameRules.
 6. Replace "ScrnBalanceSrv." with "ScrnBalance." in all classes.
 7. Uncomment ScrnBalanceSrv.FriendlyName and Description
-8. Rename ScrnBalanceSrv.ini to ScrnBalance.ini.

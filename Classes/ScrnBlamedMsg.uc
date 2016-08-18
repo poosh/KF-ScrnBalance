@@ -18,21 +18,22 @@ static function RenderComplexMessage(
 {
 	local float TextWidth, TextHeight;
 	local float IconSize;
-	local float y;
+	local float y, ty;
 	local int i;
 	
-	IconSize = C.ClipY * fmin(0.5, 0.25 + Switch*0.05);
+	IconSize = C.ClipY * fmin(0.9, 0.25 + Switch*0.05);
 	C.Style = ERenderStyle.STY_Alpha;
 	
 	C.Font = class'ScrnBalanceSrv.ScrnHUD'.static.LoadSmallFontStatic(7);
 	C.StrLen(default.Messages[0], TextWidth, TextHeight);
-	y = (C.ClipY - IconSize - TextHeight * default.Messages.Length) * 0.5;
-	
+	y = max( (C.ClipY - IconSize ) / 2, 0 );
+    ty = max( y - TextHeight * default.Messages.Length, C.ClipY * 0.12 );
+    
 	for ( i = 0; i < default.Messages.Length; ++i ) {
 		C.StrLen(default.Messages[i], TextWidth, TextHeight);
-		C.SetPos(c.ClipX - TextWidth, y);
+		C.SetPos(c.ClipX - TextWidth - 4, ty);
 		C.DrawTextClipped(default.Messages[i]);
-		y += TextHeight;
+		ty += TextHeight;
 	}
 	
 	C.SetPos(C.ClipX - IconSize, y);
@@ -63,7 +64,7 @@ defaultproperties
      DrawColor=(B=64,G=64,R=255)
      PosY=0.800000
      FontSize=5
-	 Messages(0)="You're blamed by the team!"
+	 Messages(0)="You are blamed by the team!"
 	 Messages(1)="As a punishment you have to"
 	 Messages(2)="look at this for 2 minutes:"
 	 PictureRef="ScrnTex.HUD.Crap256"

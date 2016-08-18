@@ -1,4 +1,4 @@
-class ScrnDamTypeM4203M extends ScrnDamTypeMedicBase
+class ScrnDamTypeM4203M extends ScrnDamTypeMedic
 	abstract;
     
 // Award also Shiver kills with 2x Stalker progress 

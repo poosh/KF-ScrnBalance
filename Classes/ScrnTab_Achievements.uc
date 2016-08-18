@@ -104,7 +104,7 @@ function LoadStats()
 
     // Initialize Achievement Progress
     class'ScrnBalanceSrv.ScrnAchievements'.static.GetGlobalAchievementStats(L, CompletedCount, TotalCount, 
-		class'ScrnBalance'.default.AchievementFlags, GroupName);
+		class'ScrnBalance'.default.Mut.AchievementFlags, GroupName);
     pb_AchievementProgress.Value = CompletedCount;
     pb_AchievementProgress.High = TotalCount;
     l_AchievementProgress.Caption = CompletedCount @ OutOfString @ TotalCount @ UnlockedString;

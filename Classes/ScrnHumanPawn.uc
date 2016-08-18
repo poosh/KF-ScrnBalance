@@ -180,7 +180,7 @@ function RecalcWeight()
 // Other code strings are just copy-pasted
 simulated function ModifyVelocity(float DeltaTime, vector OldVelocity)
 {
-    local float WeightMod, HealthMod;
+    local float WeightMod, HealthMod, MovementMod;
     local float EncumbrancePercentage;
 	local Inventory Inv;
 	local KF_StoryInventoryItem StoryInv;
@@ -202,7 +202,12 @@ simulated function ModifyVelocity(float DeltaTime, vector OldVelocity)
         GroundSpeed += InventorySpeedModifier;
 
         if ( KFPRI != none && KFPRI.ClientVeteranSkill != none )
-            GroundSpeed *= KFPRI.ClientVeteranSkill.static.GetMovementSpeedModifier(KFPRI, KFGameReplicationInfo(Level.GRI));
+            MovementMod = KFPRI.ClientVeteranSkill.static.GetMovementSpeedModifier(KFPRI, KFGameReplicationInfo(Level.GRI));
+        else
+            MovementMod = 1.0;
+        GroundSpeed *= MovementMod;
+        AccelRate = default.AccelRate * MovementMod;
+        
 		
         /* Give the pawn's inventory items a chance to modify his movement speed */
 		for( Inv=Inventory; Inv!=None; Inv=Inv.Inventory )
@@ -1268,11 +1273,12 @@ function ServerBuyWeapon( Class<Weapon> WClass, float ItemWeight )
         return;
 
     Price = WP.Default.Cost;
-    if ( KFPlayerReplicationInfo(PlayerReplicationInfo).ClientVeteranSkill != none ) {
-        Price *= KFPlayerReplicationInfo(PlayerReplicationInfo).ClientVeteranSkill.static.GetCostScaling(KFPlayerReplicationInfo(PlayerReplicationInfo), WP);
+    if ( ScrnPerk != none ) {
+        Price *= ScrnPerk.static.GetCostScaling(KFPRI, WP);
         if  (class'ScrnBalance'.default.Mut.bBuyPerkedWeaponsOnly 
                 && WP.default.CorrespondingPerkIndex != 7 
-                && WP.default.CorrespondingPerkIndex != KFPlayerReplicationInfo(PlayerReplicationInfo).ClientVeteranSkill.default.PerkIndex )
+                && WP.default.CorrespondingPerkIndex != ScrnPerk.default.PerkIndex 
+                && !ScrnPerk.static.OverridePerkIndex(WP) )
             return;    
     }    
     SellValue = Price * 0.75;
@@ -1880,28 +1886,38 @@ simulated function TakeDamage( int Damage, Pawn InstigatedBy, Vector Hitlocation
     
     if ( Damage <= 0 )
         return; // just in case
-        
 	// copy-pasted from KFHumanPawn to check for nones
 	if( Controller!=None && Controller.bGodMode )
 		return;
-
-	if ( KFMonster(InstigatedBy) != none )
-	{
-		KFMonster(InstigatedBy).bDamagedAPlayer = true;
-	}
-
-	// Don't allow momentum from a player shooting a player
-	if( KFHumanPawn(InstigatedBy) != none )
-		Momentum = vect(0,0,0);
+        
+    KFDamType = class<KFWeaponDamageType>(damageType);
+    if ( InstigatedBy == none ) {
+        // Player received non-zombie KF damage from unknown source.
+        // Let's assume that it is friendly damage, e.g. from just disconnected/crashed/cheating teammate
+        // and ignore it.
+        if ( KFDamType != none && class<DamTypeZombieAttack>(KFDamType) == none )
+            return;
+    }
+    else {
+        if ( KFMonster(InstigatedBy) != none )
+        {
+            KFMonster(InstigatedBy).bDamagedAPlayer = true;
+        }
+        else if( KFHumanPawn(InstigatedBy) != none ) {
+             // Don't allow momentum from a player shooting a player
+            Momentum = vect(0,0,0);
+            // no damage from spectators (i.e. fire missile -> spectate -> missile hits player
+            if ( InstigatedBy.PlayerReplicationInfo != none && InstigatedBy.PlayerReplicationInfo.bOnlySpectator )
+                return; 
+        }
+    }
     
     OriginalDamage = Damage;
     OldHealth = Health;
-    
     // copied from KFPawn to adjust player-to-player damage -- PooSH
     LastHitDamType = damageType;
     LastDamagedBy = instigatedBy;
     LastDamageTime = Level.TimeSeconds;
-    KFDamType = class<KFWeaponDamageType>(damageType);
     
     if ( KFDamType != none && KFDamType.default.bDealBurningDamage && class<DamTypeMAC10MPInc>(KFDamType) == none && KFPawn(instigatedBy) != none )
         Damage *= 1.5; // Increase burn damage 1.5 times, except MAC10.
@@ -1995,7 +2011,8 @@ simulated function TakeDamage( int Damage, Pawn InstigatedBy, Vector Hitlocation
         else if ( Health < HealthBeforeHealing )  
             HealthBeforeHealing = Health;
     }
-    if ( ScrnChainsaw(Weapon) != none )
+    // ScrN 9.15: allow weapon handle damage
+    if ( Weapon != none )
         Weapon.TakeDamage(Damage, InstigatedBy, Hitlocation, Momentum, damageType, HitIndex);
 }
 
@@ -2428,8 +2445,10 @@ function bool CanBuyNow()
     }
         
     foreach TouchingActors(Class'ShopVolume',Shop) {
-        if ( Shop == MyShop || (Shop.bAlwaysEnabled && Shop != EnemyShop) )
+        if ( Shop == MyShop || (Shop.bAlwaysEnabled && Shop != EnemyShop) ) {
+            ScrnPlayerController(Controller).bShoppedThisWave = true;
             return True;
+        }
         bAtEnemyShop = bAtEnemyShop || Shop == EnemyShop; 
     }
     
@@ -2440,7 +2459,7 @@ function bool CanBuyNow()
             EnemyShop.InitTeleports();        
         if ( EnemyShop.TelList.Length > 0 ) 
             EnemyShop.TelList[EnemyShop.TelList.Length-1].Accept(self, EnemyShop);
-    }    
+    }   
         
     Return False;
 }

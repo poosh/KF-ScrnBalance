@@ -41,7 +41,8 @@ function InitList(ClientPerkRepLink L, optional name GroupName, optional bool bO
 	MyClientPerkRepLink = L;
 
 	// Update the ItemCount and select the first item
-	ItemCount = class'ScrnBalanceSrv.ScrnAchievements'.static.GetAllAchievements(L, AchievementHandlers, class'ScrnBalance'.default.AchievementFlags
+	ItemCount = class'ScrnBalanceSrv.ScrnAchievements'.static.GetAllAchievements(
+        L, AchievementHandlers, class'ScrnBalance'.default.Mut.AchievementFlags
         ,GroupName, bOnlyLocked);
 	SetIndex(0);
 

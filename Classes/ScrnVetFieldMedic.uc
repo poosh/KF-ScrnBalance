@@ -7,16 +7,6 @@ static function int GetStatValueInt(ClientPerkRepLink StatOther, byte ReqNum)
   return StatOther.RDamageHealedStat;
 }
 
-static function array<int> GetProgressArray(byte ReqNum, optional out int DoubleScalingBase)
-{
-    if ( class'ScrnBalance'.default.Mut.ReqBalanceMode == 2 )
-        DoubleScalingBase = 20000; // ServerPerks value
-    else
-        DoubleScalingBase = default.progressArray0[3];
-    return default.progressArray0;
-}
-
-
 // Give Medic normal hand nades again - he should buy medic nade lauchers for healing nades
 static function class<Grenade> GetNadeType(KFPlayerReplicationInfo KFPRI)
 {
@@ -30,8 +20,6 @@ static function bool CanCookNade(KFPlayerReplicationInfo KFPRI, Weapon Weap)
 {
   return GetNadeType(KFPRI) != class'MedicNade';
 }
-
-
 
 static function float GetSyringeChargeRate(KFPlayerReplicationInfo KFPRI)
 {
@@ -128,12 +116,11 @@ static function int ReduceDamage(KFPlayerReplicationInfo KFPRI, KFPawn Injured, 
 
 
 //v2.55 up to 50% faster reload with MP5/MP7
+//v9.17: removed reload bonus; base reloads made faster; short reloads introduced
 static function float GetReloadSpeedModifierStatic(KFPlayerReplicationInfo KFPRI, class<KFWeapon> Other)
 {
-    if ( (class'ScrnBalance'.default.Mut.bWeaponFix 
-                && (ClassIsChildOf(Other, class'ScrnMP5MMedicGun') || ClassIsChildOf(Other, class'ScrnMP7MMedicGun')))
-            || ClassIsInArray(default.PerkedWeapons, Other) )
-        return 1.0 + (0.1 * fmin(5, float(GetClientVeteranSkillLevel(KFPRI)))); // Up to 50% faster reload speed for medic guns rifles
+    if ( ClassIsInArray(default.PerkedWeapons, Other) )
+        return 1.0 + (0.1 * fmin(5, float(GetClientVeteranSkillLevel(KFPRI))));
 
 	return 1.0;
 }
@@ -312,36 +299,43 @@ static function bool ShowEnemyHealthBars(KFPlayerReplicationInfo KFPRI, KFPlayer
     return true;
 }
 
+static function bool OverridePerkIndex( class<KFWeaponPickup> Pickup )
+{
+    // Field Medic and Combat medic share the same iventory
+    return Pickup.default.CorrespondingPerkIndex == 9 || super.OverridePerkIndex(Pickup); 
+}
+
 defaultproperties
 {
-     DefaultDamageType=Class'ScrnBalanceSrv.ScrnDamTypeMedicBase'
-     DefaultDamageTypeNoBonus=Class'ScrnBalanceSrv.ScrnDamTypeMedicBase'
-     
-     progressArray0(0)=100
-     progressArray0(1)=450
-     progressArray0(2)=1750
-     progressArray0(3)=9000
-     progressArray0(4)=25000
-     progressArray0(5)=50000
-     progressArray0(6)=100000
-     SRLevelEffects(0)="*** BONUS LEVEL 0|10% faster Syringe recharge|10% more potent medical injections|10% less damage from Bloat Bile|10% discount on Medic Guns and Armor"
-     SRLevelEffects(1)="*** BONUS LEVEL 1|25% faster Syringe recharge|25% more potent medical injections|25% less damage from Bloat Bile|3% faster movement speed|20% larger Medic Gun clip|10% faster reload with MP5/MP7|10% better Body Armor|20% discount on Medic Guns and Armor"
-     SRLevelEffects(2)="*** BONUS LEVEL 2|50% faster Syringe recharge|25% more potent medical injections|50% less damage from Bloat Bile|6% faster movement speed|40% larger Medic Gun clip|20% faster reload with MP5/MP7|20% better Body Armor|30% discount on Medic Guns and Armor"
-     SRLevelEffects(3)="*** BONUS LEVEL 3|75% faster Syringe recharge|50% more potent medical injections|50% less damage from Bloat Bile|9% faster movement speed|60% larger Medic Gun clip|30% faster reload with MP5/MP7|30% better Body Armor|40% discount on Medic Guns and Armor"
-     SRLevelEffects(4)="*** BONUS LEVEL 4|100% faster Syringe recharge|50% more potent medical injections|50% less damage from Bloat Bile|12% faster movement speed|80% larger Medic Gun clip|40% faster reload with MP5/MP7|40% better Body Armor|50% discount on Medic Guns and Armor"
-     SRLevelEffects(5)="*** BONUS LEVEL 5|150% faster Syringe recharge|50% more potent medical injections|75% less damage from Bloat Bile|15% faster movement speed|100% larger Medic Gun clip|50% faster reload with MP5/MP7|50% better Body Armor|60% discount on Medic Guns and Armor|Spawn with Body Armor"
-     SRLevelEffects(6)="*** BONUS LEVEL 6|200% faster Syringe recharge|75% more potent medical injections|75% less damage from Bloat Bile|18% faster movement speed|100% larger Medic Gun clip|50% faster reload with MP5/MP7|60% better Body Armor|70% discount on Medic Guns and Armor|Spawn with Body Armor and MP7M"
-     CustomLevelInfo="*** BONUS LEVEL %L|%s faster Syringe recharge|75% more potent medical injections|75% less damage from Bloat Bile|%m faster movement speed|100% larger Medic Gun clip|50% faster reload with MP5/MP7|%a better Body Armor|%d discount on Medic Guns and Armor|Spawn with Body Armor and MP7M"
-     PerkIndex=0
-     OnHUDIcon=Texture'KillingFloorHUD.Perks.Perk_Medic'
-     OnHUDGoldIcon=Texture'KillingFloor2HUD.Perk_Icons.Perk_Medic_Gold'
-	 OnHUDIcons(0)=(PerkIcon=Texture'KillingFloorHUD.Perks.Perk_Medic',StarIcon=Texture'KillingFloorHUD.HUD.Hud_Perk_Star',DrawColor=(B=255,G=255,R=255,A=255))
-	 OnHUDIcons(1)=(PerkIcon=Texture'KillingFloor2HUD.Perk_Icons.Perk_Medic_Gold',StarIcon=Texture'KillingFloor2HUD.Perk_Icons.Hud_Perk_Star_Gold',DrawColor=(B=255,G=255,R=255,A=255))
-	 OnHUDIcons(2)=(PerkIcon=Texture'ScrnTex.Perks.Perk_Medic_Green',StarIcon=Texture'ScrnTex.Perks.Hud_Perk_Star_Green',DrawColor=(B=255,G=255,R=255,A=255))
-	 OnHUDIcons(3)=(PerkIcon=Texture'ScrnTex.Perks.Perk_Medic_Blue',StarIcon=Texture'ScrnTex.Perks.Hud_Perk_Star_Blue',DrawColor=(B=255,G=255,R=255,A=255))
-	 OnHUDIcons(4)=(PerkIcon=Texture'ScrnTex.Perks.Perk_Medic_Purple',StarIcon=Texture'ScrnTex.Perks.Hud_Perk_Star_Purple',DrawColor=(B=255,G=255,R=255,A=255))
-	 OnHUDIcons(5)=(PerkIcon=Texture'ScrnTex.Perks.Perk_Medic_Orange',StarIcon=Texture'ScrnTex.Perks.Hud_Perk_Star_Orange',DrawColor=(B=255,G=255,R=255,A=255))
-	 OnHUDIcons(6)=(PerkIcon=Texture'ScrnTex.Perks.Perk_Medic_Blood',StarIcon=Texture'ScrnTex.Perks.Hud_Perk_Star_Blood',DrawColor=(B=255,G=255,R=255,A=255))
-     VeterancyName="Field Medic"
-     Requirements(0)="Heal %x HP on your teammates"
+    DefaultDamageType=Class'ScrnBalanceSrv.ScrnDamTypeMedic'
+    DefaultDamageTypeNoBonus=Class'ScrnBalanceSrv.ScrnDamTypeMedicBase'
+
+    progressArray0(0)=100
+    progressArray0(1)=500
+    progressArray0(2)=2000
+    progressArray0(3)=10000
+    progressArray0(4)=30000
+    progressArray0(5)=70000
+    progressArray0(6)=110000
+
+    SRLevelEffects(0)="*** BONUS LEVEL 0| 10% faster Syringe recharge|10% more potent medical injections|10% less damage from Bloat Bile|10% discount on Medic Guns and Armor"
+    SRLevelEffects(1)="*** BONUS LEVEL 1| 25% faster Syringe recharge|25% more potent medical injections|25% less damage from Bloat Bile| 3% faster movement speed| 20% larger Medic Gun clip|10% better Body Armor|20% discount on Medic Guns and Armor"
+    SRLevelEffects(2)="*** BONUS LEVEL 2| 50% faster Syringe recharge|25% more potent medical injections|50% less damage from Bloat Bile| 6% faster movement speed| 40% larger Medic Gun clip|20% better Body Armor|30% discount on Medic Guns and Armor"
+    SRLevelEffects(3)="*** BONUS LEVEL 3| 75% faster Syringe recharge|50% more potent medical injections|50% less damage from Bloat Bile| 9% faster movement speed| 60% larger Medic Gun clip|30% better Body Armor|40% discount on Medic Guns and Armor"
+    SRLevelEffects(4)="*** BONUS LEVEL 4|100% faster Syringe recharge|50% more potent medical injections|50% less damage from Bloat Bile|12% faster movement speed| 80% larger Medic Gun clip|40% better Body Armor|50% discount on Medic Guns and Armor"
+    SRLevelEffects(5)="*** BONUS LEVEL 5|150% faster Syringe recharge|50% more potent medical injections|75% less damage from Bloat Bile|15% faster movement speed|100% larger Medic Gun clip|50% better Body Armor|60% discount on Medic Guns and Armor|Spawn with Body Armor"
+    SRLevelEffects(6)="*** BONUS LEVEL 6|200% faster Syringe recharge|75% more potent medical injections|75% less damage from Bloat Bile|18% faster movement speed|100% larger Medic Gun clip|60% better Body Armor|70% discount on Medic Guns and Armor|Spawn with Body Armor and MP7M"
+    CustomLevelInfo="*** BONUS LEVEL %L|%s faster Syringe recharge|75% more potent medical injections|75% less damage from Bloat Bile|%m faster movement speed|100% larger Medic Gun clip|%a better Body Armor|%d discount on Medic Guns and Armor|Spawn with Body Armor and MP7M"
+    PerkIndex=0
+    OnHUDIcon=Texture'KillingFloorHUD.Perks.Perk_Medic'
+    OnHUDGoldIcon=Texture'KillingFloor2HUD.Perk_Icons.Perk_Medic_Gold'
+    OnHUDIcons(0)=(PerkIcon=Texture'ScrnTex.Perks.Perk_Medic_Gray',StarIcon=Texture'ScrnTex.Perks.Hud_Perk_Star_Gray',DrawColor=(B=255,G=255,R=255,A=255))
+    OnHUDIcons(1)=(PerkIcon=Texture'KillingFloor2HUD.Perk_Icons.Perk_Medic_Gold',StarIcon=Texture'KillingFloor2HUD.Perk_Icons.Hud_Perk_Star_Gold',DrawColor=(B=255,G=255,R=255,A=255))
+    OnHUDIcons(2)=(PerkIcon=Texture'ScrnTex.Perks.Perk_Medic_Green',StarIcon=Texture'ScrnTex.Perks.Hud_Perk_Star_Green',DrawColor=(B=255,G=255,R=255,A=255))
+    OnHUDIcons(3)=(PerkIcon=Texture'ScrnTex.Perks.Perk_Medic_Blue',StarIcon=Texture'ScrnTex.Perks.Hud_Perk_Star_Blue',DrawColor=(B=255,G=255,R=255,A=255))
+    OnHUDIcons(4)=(PerkIcon=Texture'ScrnTex.Perks.Perk_Medic_Purple',StarIcon=Texture'ScrnTex.Perks.Hud_Perk_Star_Purple',DrawColor=(B=255,G=255,R=255,A=255))
+    OnHUDIcons(5)=(PerkIcon=Texture'ScrnTex.Perks.Perk_Medic_Orange',StarIcon=Texture'ScrnTex.Perks.Hud_Perk_Star_Orange',DrawColor=(B=255,G=255,R=255,A=255))
+    OnHUDIcons(6)=(PerkIcon=Texture'ScrnTex.Perks.Perk_Medic_Blood',StarIcon=Texture'ScrnTex.Perks.Hud_Perk_Star_Blood',DrawColor=(B=255,G=255,R=255,A=255))
+    VeterancyName="Field Medic"
+    Requirements(0)="Heal %x HP on your teammates"
 }

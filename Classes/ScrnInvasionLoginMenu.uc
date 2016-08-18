@@ -2,6 +2,31 @@ class ScrnInvasionLoginMenu extends SRInvasionLoginMenu;
 
 var automated   GUIButton               b_TeamSwitch;
 
+/*
+function ActivatePerkTab()
+{
+    local int index;
+
+    index = c_Main.TabIndex(Class'KFInvasionLoginMenu'.Default.Panels[1].Caption);
+    if ( index != -1 )
+        c_Main.ActivateTab(c_Main.TabStack[index], false);
+    else 
+        log("ScrnInvasionLoginMenu: Unable to find Perk Tab!", 'ScrnBalance');
+    
+}
+
+function InternalOnClose(optional Bool bCanceled)
+{
+    // Game sometimes crashes when showing mid game menu with "ScrN Features" tab active.
+    // Temporary workaround: change to other tab on close
+    if ( c_Main.ActiveTab.Caption == "ScrN Features" )
+        ActivatePerkTab();
+
+	Super.InternalOnClose(bCanceled);
+}
+*/
+
+
 // copy-pasted from SRInvasionLoginMenu to change SRTab_MidGamePerks with ScrnTab_MidGamePerks
 function InitComponent(GUIController MyController, GUIComponent MyOwner)
 {
@@ -97,6 +122,8 @@ function bool ButtonClicked(GUIComponent Sender)
 
 defaultproperties
 {
+    OnClose=ScrnInvasionLoginMenu.InternalOnClose
+
     Panels(5)=(ClassName="ScrnBalanceSrv.ScrnTab_Achievements",Caption="Achievements",Hint="ScrN server-side achievements")
     Panels(6)=(ClassName="ScrnBalanceSrv.ScrnTab_UserSettings",Caption="ScrN Features",Hint="ScrN Balance features, settings and info")
 

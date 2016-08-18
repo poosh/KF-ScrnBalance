@@ -6,15 +6,6 @@ static function int GetStatValueInt(ClientPerkRepLink StatOther, byte ReqNum)
   return StatOther.RHeadshotKillsStat;
 }
 
-static function array<int> GetProgressArray(byte ReqNum, optional out int DoubleScalingBase)
-{
-    if ( class'ScrnBalance'.default.Mut.ReqBalanceMode == 2 )
-        DoubleScalingBase = 2500; // ServerPerks value
-    else
-        DoubleScalingBase = default.progressArray0[3];
-    return default.progressArray0;
-}
-
 //add SC and FP same resistance to M99 as Crossbow
 static function int AddDamage(KFPlayerReplicationInfo KFPRI, KFMonster Injured, KFPawn Instigator, int InDamage, class<DamageType> DmgType)
 {
@@ -277,7 +268,7 @@ defaultproperties
     PerkIndex=2
     OnHUDIcon=Texture'KillingFloorHUD.Perks.Perk_SharpShooter'
     OnHUDGoldIcon=Texture'KillingFloor2HUD.Perk_Icons.Perk_SharpShooter_Gold'
-    OnHUDIcons(0)=(PerkIcon=Texture'KillingFloorHUD.Perks.Perk_SharpShooter',StarIcon=Texture'KillingFloorHUD.HUD.Hud_Perk_Star',DrawColor=(B=255,G=255,R=255,A=255))
+    OnHUDIcons(0)=(PerkIcon=Texture'ScrnTex.Perks.Perk_SharpShooter_Gray',StarIcon=Texture'ScrnTex.Perks.Hud_Perk_Star_Gray',DrawColor=(B=255,G=255,R=255,A=255))
     OnHUDIcons(1)=(PerkIcon=Texture'KillingFloor2HUD.Perk_Icons.Perk_SharpShooter_Gold',StarIcon=Texture'KillingFloor2HUD.Perk_Icons.Hud_Perk_Star_Gold',DrawColor=(B=255,G=255,R=255,A=255))
     OnHUDIcons(2)=(PerkIcon=Texture'ScrnTex.Perks.Perk_SharpShooter_Green',StarIcon=Texture'ScrnTex.Perks.Hud_Perk_Star_Green',DrawColor=(B=255,G=255,R=255,A=255))
     OnHUDIcons(3)=(PerkIcon=Texture'ScrnTex.Perks.Perk_SharpShooter_Blue',StarIcon=Texture'ScrnTex.Perks.Hud_Perk_Star_Blue',DrawColor=(B=255,G=255,R=255,A=255))

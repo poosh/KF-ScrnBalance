@@ -33,9 +33,14 @@ function Charge()
         if (AmmoShouldConsumed - AmmoInCharge > Weapon.AmmoAmount(ThisModeNum)) 
             AmmoShouldConsumed = Weapon.AmmoAmount(ThisModeNum) + AmmoInCharge;
         Weapon.ConsumeAmmo(ThisModeNum, AmmoShouldConsumed - AmmoInCharge);
-        AmmoInCharge = AmmoShouldConsumed;
-        ScrnHuskGun(Weapon).ChargeAmount = GetChargeAmount(); 
+        SetChargeAmount(AmmoShouldConsumed);
     }
+}
+
+function SetChargeAmount(int amount)
+{
+    AmmoInCharge = amount;
+    ScrnHuskGun(Weapon).ChargeAmount = GetChargeAmount(); 
 }
 
 function float GetChargeAmount()
@@ -70,8 +75,7 @@ function PostSpawnProjectile(Projectile P)
             HGP.Damage *= 2.0; // up from 2x
             HGP.DamageRadius *= 2.0; // down from x3
         }
-        AmmoInCharge = 0; //reset charge after spawning a projectile
-        ScrnHuskGun(Weapon).ChargeAmount = 0; 
+        SetChargeAmount(0);
     }
 }
 
@@ -119,6 +123,7 @@ function ModeDoFire()
 
         DoFireEffect();
 		HoldTime = 0;	// if bot decides to stop firing, HoldTime must be reset first
+        SetChargeAmount(0);
         if ( (Instigator == None) || (Instigator.Controller == None) )
 			return;
 
@@ -159,7 +164,7 @@ function ModeDoFire()
 
     Load = AmmoPerFire;
     HoldTime = 0;
-	AmmoInCharge = 0;
+    SetChargeAmount(0);
 
     if (Instigator.PendingWeapon != Weapon && Instigator.PendingWeapon != None)
     {
@@ -172,6 +177,12 @@ function ModeDoFire()
     {
         HandleRecoil(Rec);
     }
+}
+
+function StopFiring()
+{
+    super.StopFiring();
+    SetChargeAmount(0);
 }
 
 defaultproperties

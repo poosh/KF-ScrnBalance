@@ -17,7 +17,8 @@ replication
 //executed on client-side only
 simulated function CookNade()
 {
-    if( !Instigator.IsLocallyControlled() ) return;
+    if( !Instigator.IsLocallyControlled() ) 
+        return;
     
 	HandleSleeveSwapping(); // use proper arms
 	
@@ -81,6 +82,15 @@ function ServerStartThrow()
         bThrowingCooked = bCooking;
     }
     super.ServerStartThrow();
+}
+
+function ServerThrow()
+{
+    if ( HasAmmo() ) {
+        ConsumeAmmo(0, 1);
+        FireMode[0].DoFireEffect();
+        PlaySound(ThrowSound,SLOT_Interact,2.0);
+    }
 }
 
 defaultproperties

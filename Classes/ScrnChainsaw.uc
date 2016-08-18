@@ -269,9 +269,6 @@ simulated state Reloading
     }
 }
 
-function TakeDamage(int Damage, Pawn EventInstigator, vector HitLocation, vector Momentum, class<DamageType> DamageType, optional int HitIndex) {}
-
-
 simulated function PlayIdle()
 {
     if ( MagAmmoRemaining > 0 )

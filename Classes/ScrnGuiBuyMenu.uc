@@ -10,6 +10,18 @@ function InitTabs()
     SRBuyMenuFilter(BuyMenuFilter).SaleListBox = SRBuyMenuSaleList(B.SaleSelect.List);
 }
 
+event Opened(GUIComponent Sender)
+{
+    super.Opened(Sender);
+    ScrnPlayerController(PlayerOwner()).TraderMenuOpened();
+}
+
+function KFBuyMenuClosed(optional bool bCanceled)
+{
+    super.KFBuyMenuClosed(bCanceled);
+    ScrnPlayerController(PlayerOwner()).TraderMenuClosed();
+}
+
 defaultproperties
 {
      Begin Object Class=ScrnKFQuickPerkSelect Name=QS

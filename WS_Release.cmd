@@ -1,7 +1,5 @@
 @echo off
 
-rem DON'T FORGET to Duplicate HumanPawn and PlayerController class code to the SZ_ScrnBalance!
-
 setlocal
 set KFDIR=d:\Games\kf
 set STEAMDIR=c:\Steam\steamapps\common\KillingFloor
@@ -37,7 +35,7 @@ copy /y *.ini  %outputdir%
 
 rem For Workshop
 copy /y *.ini  ..\System\
-copy /y Copyright.txt  ..\Help\ScrnBalanceEULA.txt
+copy /y LICENSE  ..\Help\ScrnBalanceEULA.txt
 
 
 echo Release is ready!

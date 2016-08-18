@@ -1,4 +1,4 @@
-class ScrnTab_UserSettings extends Settings_Tabs;
+class ScrnTab_UserSettings extends UT2K4TabPanel;
 
 var localized string strDisabledByServer, strForcedByServer;
 var localized string strLock, strUnlock;
@@ -83,7 +83,9 @@ var automated   GUILabel                lbl_ServerInfo;
 var localized string strServerInfoSeparator;
 var localized string strPerkRange, strPerkXPLevel, strPerkBonusLevel;
 var localized string strSpawnBalance, strWeaponFix, strAltBurnMech, strBeta, strHardcore, strNoPerkChanges;
-var color StatusColor[2];             
+var color StatusColor[2];        
+
+var transient KFPlayerReplicationInfo SelectedPRI;
 
 // event ResolutionChanged( int ResX, int ResY )
 
@@ -120,6 +122,7 @@ function ShowPanel(bool bShow)
     local ScrnCustomPRI ScrnPRI;
     local bool b;
 	    
+    log("ShowPanel("$bShow$")", class.name);
 	Super.ShowPanel(bShow);
 
 	if ( !bShow ) {
@@ -127,9 +130,9 @@ function ShowPanel(bool bShow)
         return;
     }
     
-        
+    log("ShowPanel: Set button visibility", class.name);
     lbl_Version.Caption = class'ScrnBalance'.default.FriendlyName @ class'ScrnBalance'.static.GetVersionStr();
-    lbl_CR.Caption = "Copyright (c) 2012-2015 PU Developing IK, Latvia. All Rights Reserved.";
+    lbl_CR.Caption = "Copyright (c) 2012-2016 PU Developing IK, Latvia. All Rights Reserved.";
     ServerStatus();
     
     PC = ScrnPlayerController(PlayerOwner());
@@ -170,6 +173,7 @@ function ShowPanel(bool bShow)
     FillPlayerList();
 
     SetTimer(1, true);
+    log("ShowPanel: EOF", class.name);
 }
 
 
@@ -182,6 +186,7 @@ function RefreshInfo()
 {
 	local ScrnPlayerController PC;
 
+    log("RefreshInfo", class.name);
 	PC = ScrnPlayerController(PlayerOwner());
     if ( PC == none )
         return;
@@ -282,64 +287,77 @@ function FillPlayerList()
     if ( GRI == none )
         return;
         
+    log("FillPlayerList", class.name);
     // sort list by Red Players -> Blue Players -> Spectators
 	for ( i = 0; i < GRI.PRIArray.Length; i++) {
+        log("FillPlayerList: Loading PRI: " $i$"/"$GRI.PRIArray.Length, class.name);
 		KFPRI = KFPlayerReplicationInfo(GRI.PRIArray[i]);
         if ( KFPRI == none || KFPRI.PlayerID == 0 ) 
             continue;
-        if ( KFPRI.bOnlySpectator || KFPRI.Team == none )    
+        log("FillPlayerList: PRI["$i$"] loaded", class.name);
+        if ( KFPRI.bOnlySpectator || KFPRI.Team == none ) {
             PRIs[PRIs.length] = KFPRI; // add to the end
+            log("FillPlayerList: PRI["$i$"] added to spectators", class.name);
+        }
         else if ( KFPRI.Team.TeamIndex == 0 ) {
             PRIs.insert(0,1);
-            PRIs[0] = KFPRI; // add to the end
+            PRIs[0] = KFPRI; // add to the beginning
             BlueIndex++;
+            log("FillPlayerList: PRI["$i$"] added to red team", class.name);
         }
         else {
             PRIs.insert(BlueIndex,1);
-            PRIs[BlueIndex] = KFPRI; // add to the end
+            PRIs[BlueIndex] = KFPRI; // add to the beginning of blue team
+            log("FillPlayerList: PRI["$i$"] added to blue team", class.name);
         }
     }
     
-    KFPRI = KFPlayerReplicationInfo(cbx_Player.GetObject());
     cbx_Player.ResetComponent();
     for ( i = 0; i < PRIs.Length; i++) {
         cbx_Player.AddItem(class'ScrnBalance'.default.Mut.ColoredPlayerName(PRIs[i]), PRIs[i]);
-        if ( PRIs[i] == KFPRI )
+        if ( PRIs[i] == SelectedPRI )
             idx = i;            
     }
     if ( PRIs.Length > 0 )
-        cbx_Player.SetIndex(idx);
-    LoadPlayerData();
+        cbx_Player.SetIndex(idx); // this in turn calls LoadPlayerData()
+    else 
+        LoadPlayerData();
+    log("FillPlayerList: EOF", class.name);
 }
 
 function LoadPlayerData()
 {
-    local KFPlayerReplicationInfo KFPRI; 
     local ScrnCustomPRI ScrnPRI;
     local string s;
     
-    KFPRI = KFPlayerReplicationInfo(cbx_Player.GetObject());
+    log("LoadPlayerData: about to call GetObject()", class.name);
+    if ( cbx_Player.ItemCount() > 0 )
+        SelectedPRI = KFPlayerReplicationInfo(cbx_Player.GetObject());
+    else 
+        SelectedPRI = none;
+    log("LoadPlayerData: SelectedPRI = " $ SelectedPRI, class.name);
     
     PlayerLocalID = 0;
     PlayerSteamID64 = "";
-    if ( KFPRI == none ) {
+    if ( SelectedPRI == none ) {
         lbl_PlayerID.Caption = "";
     }
     else {
-        PlayerLocalID = KFPRI.PlayerID;
-        ScrnPRI = class'ScrnCustomPRI'.static.FindMe(KFPRI);
+        PlayerLocalID = SelectedPRI.PlayerID;
+        ScrnPRI = class'ScrnCustomPRI'.static.FindMe(SelectedPRI);
         
-        s = "ID="$KFPRI.PlayerID;
+        s = "ID="$SelectedPRI.PlayerID;
         if ( ScrnPRI != none ) {
             PlayerSteamID64 = ScrnPRI.GetSteamID64();
             s $= "  SID64="$ PlayerSteamID64;
         }
         lbl_PlayerID.Caption = s;
-        if ( KFPRI.Team == none || KFPRI.Team.TeamIndex > 1 )
+        if ( SelectedPRI.Team == none || SelectedPRI.Team.TeamIndex > 1 )
             lbl_PlayerID.TextColor = lbl_ServerInfo.TextColor;
         else
-            lbl_PlayerID.TextColor = class'ScrnHUD'.default.TextColors[KFPRI.Team.TeamIndex];
+            lbl_PlayerID.TextColor = class'ScrnHUD'.default.TextColors[SelectedPRI.Team.TeamIndex];
     }
+    log("LoadPlayerData: EOF", class.name);
 }
 
 
@@ -472,8 +490,6 @@ function InternalOnChange(GUIComponent Sender)
 {
     local ScrnPlayerController PC;
     local ScrnHUD H;
-
-    Super.InternalOnChange(Sender);
 
     PC = ScrnPlayerController(PlayerOwner());
     H = ScrnHUD(PC.myHUD);

@@ -9,6 +9,102 @@
 -------------------------------------------------------------------------------
 *** VERSION 9 *** 
 -------------------------------------------------------------------------------
+v9.20:
+NEW PERK: COMBAT MEDIC
+- Combat Medic gains damage bonus with Medic Guns and faster attacks with light 
+  melee weapons (knife, machete, katana - up to 75% faster).
+- Combat Medic retains full movement speed during ZED Time 
+- Both medic perks share the same xp which can be gained by healing people or killing 
+  zeds with medic guns.
+- Medics gain 20xp per each 1000 damage dealt with medic guns.
+- Medics gain xp immediately after reaching 1000 damage, not at the end of the wave.
+- No more Medic XP penalty for teammates' deaths.
+- Field Medic's perk requiremends adjusted to be exactly 1/50 or standard damage req.
+- ReqBalanceMode marked as deprecated and is not in use anymore.
+- Short Reloads for MP7M, KrissM and M7A3M.
+- Removed Medic's reload speed bonus for MP7M and MP5M.
+- Base reload speed for MP7M made 40% faster, MP5M - 50% faster.
+
+WEAPON BALANCE:
+- SE version of MKb42 included (made by Duckbuster)
+- Fixed exploit when the same Buzzsaw Blade could be picked up multiple times.
+- Fixed point-blank hit detection for Crossbow, M99 and VSS (last requires latest version of ScrnWeaponPack)
+
+MULTI-PERK WEAPON SUPPORT:
+- Weapon is considered "perked" if it is added to PerkedWeapons with W or $ switch;
+- bBuyPerkedWeaponsOnly and bPickPerkedWeaponsOnly now properly handle multi-perked weapons;
+- Weapon's icon in the trader menu automatically changes to the current perk, if weapon
+  is multi-perked and it is assigned to the current perk.
+- Field Medic and Combat Medic share the same inventory, i.e. all medic weapons
+  are treated multi-perked by default.
+
+FEATURES AND IMPROVEMENTS:
+- Level 0-5 perks now have gray icons (instead of red)
+- Game name placed on a scoreboard
+- Max name length is limited to default 20 characters but now excluding color tags
+- MVOTE FF - Friendly Fire voting. Disabled by default.
+- Admins now allowed to MVOTE SPEC | MVOTE KICK even if such option is disabled on the server.
+- Death- and blame-counters do not reset anymore when switching to spectator mode.
+- Removed blame-counter's cap (now player can be blamed more than 5 times)
+- Changed HUD settings from globalconfig to config, i.e. each players can use individual 
+  HUD configuration settings in each game type.
+- Each kill adds +3s to Machete Reset Time
+- Allowed dead players to spectate zeds (not available in Tourney Mode)
+- Fixed bug when weapon icon was drawn while spectating zeds
+
+BUGFIXES:
+- Fixed some Tripwire's nonsense in Boss's spawn code which sometimes prevented HardPat 
+  from spawing.
+- Fixed duplicates in favorite weapon list  
+- Added log debug output to help identify crash problem on opening ScrN Settings menu.
+  When your game crashes on ScrN Features tab please submit client's KillingFloor.log.
+- Fixed bServerInfoVeterancy for ServerPerks v7.50
+- Fixed a few minor memory leaks.
+- [TSC] Restored door respawn in TSC
+- [TSC] Fixed crash on map end (error related to RespawnDoors)
+- [Story Game] Fixed Remaining Time in Trader Menu
+- fixed Binary Search algorithm
+- Fixed pickup message for Crossbow arrow [thanks to NikC-]
+- Life span of Crossbow arrows raised to 60s (up from 10)
+- Fixed (maybe) weird hand nade behavior after picking up an ammo box [NikC-]
+- Fixed Husk Gun's charge update after getting hit by an enemy
+- Fixed M99 Bullet's sticking to doors / movers
+  
+ScrnSP:
+- SP WebAdmin is disabled by default (it doesn't work well with ScrnBalance anyway)
+- Removed duplicate info from Server Browser
+
+CONSOLE COMMANDS:
+- "SetName #" sets your PlayerName from user.ini ("#" in this case is a literal not a placeholder)
+  * if bForceSteamNames=false, allows setting any custom player name;
+  * if bForceSteamNames=true, allows only applying different color.
+  For example, if player's Steam name is "FreshMeat", then he can execute:
+      SetName ^1Fresh^2Meat
+  without violating bForceSteamNames.
+- SoundVolume, MusicVolume: get/set sound/music volume    
+- Fixed TogglePathToTrader not working on server
+- [TSC] TSC TogglePathToTrader switches between PathToTrader|PathToBase|Off
+
+CONFIG VARIABLES (ScrnBalance.ini):
+- bForceSteamNames - controls custom player names via SetName command
+- MinVoteFF, MaxVoteFF (see MVOTE FF)
+- bLogObjectsAtMapStart, bLogObjectsAtMapEnd - prints all loaded objects into log file. 
+  Useful to find memory leaks.
+- [ScrnGameRules] Fixed bug in config read
+- [ScrnGameRules] bBroadcastHL - allows to disable broadcasts of Hardcore Level changes
+
+
+
+v9.15:
+- Removed player auto-joining the game and bypassing team lock
+- Fixed player inventory in Trader Menu, when all guns are sold
+- Removed player damage from spectators, 
+  i.e. Shoot missile -> Spectate -> Missile damages teammate(-s)
+- Removed damage from non-zombie KF damage dealt by unknown sources,
+  e.g. Shoot missile -> Disconnect -> Missile damages teammate(-s).
+  Environmental damage still works, unless it is a child of KFWeaponDamageType.
+
+  
 v9.14:
 - Fixed weird rotation of stunned zeds
 - Fixed MVOTE INVITE <player>

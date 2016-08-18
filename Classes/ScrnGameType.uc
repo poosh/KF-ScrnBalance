@@ -13,6 +13,8 @@ var transient int CurrentAmmoBoxCount, DesiredAmmoBoxCount;
 
 var array<string> InviteList; // contains players' steam IDs
 
+var protected float TurboScale;
+
 event InitGame( string Options, out string Error )
 {
     local int ConfigMaxPlayers;
@@ -49,6 +51,54 @@ static event class<GameInfo> SetGameType( string MapName )
 		return default.class;        
 		
     return super.SetGameType( MapName );
+}
+
+function SetTurboScale(float NewScale)
+{
+    if ( IsTourney() )
+        return;
+        
+    TurboScale = fmax( NewScale, 0.2 );
+}
+
+// Overriden to handle ZEDTime zombie death slomo system
+event Tick(float DeltaTime)
+{
+    local float TrueTimeFactor;
+    local Controller C;
+
+    if( bZEDTimeActive )
+    {
+        TrueTimeFactor = 1.1/Level.TimeDilation;
+        CurrentZEDTimeDuration -= DeltaTime * TrueTimeFactor;
+
+        if( CurrentZEDTimeDuration < (ZEDTimeDuration*0.166) && CurrentZEDTimeDuration > 0 )
+        {
+            if( !bSpeedingBackUp )
+            {
+                bSpeedingBackUp = true;
+
+                for( C=Level.ControllerList;C!=None;C=C.NextController )
+                {
+                    if (KFPlayerController(C)!= none)
+                    {
+                        KFPlayerController(C).ClientExitZedTime();
+                    }
+                }
+            }
+
+            SetGameSpeed(Lerp( (TurboScale * CurrentZEDTimeDuration/(ZEDTimeDuration*0.166)),TurboScale, ZedTimeSlomoScale ));
+        }
+
+
+        if( CurrentZEDTimeDuration <= 0 )
+        {
+            bZEDTimeActive = false;
+            bSpeedingBackUp = false;
+            SetGameSpeed(TurboScale);
+            ZedTimeExtensionsUsed = 0;
+        }
+    }
 }
 
 function int ReduceDamage(int Damage, pawn injured, pawn instigatedBy, vector HitLocation, out vector Momentum, class<DamageType> DamageType)
@@ -160,9 +210,10 @@ function Killed(Controller Killer, Controller Killed, Pawn KilledPawn, class<Dam
                     && KFPRI.ClientVeteranSkill.static.ZedTimeExtensions(KFPRI) > ZedTimeExtensionsUsed )
             {
                 // Force Zed Time extension for every kill as long as the Player's Perk has Extensions left
-                DramaticEvent(1.0);
-
-                ZedTimeExtensionsUsed++;
+                if ( Level.TimeSeconds - LastZedTimeEvent > 0.05 ) {
+                    DramaticEvent(1.0);
+                    ZedTimeExtensionsUsed++;
+                }
             }
             else if ( Level.TimeSeconds - LastZedTimeEvent > 0.1 ) {
                 // Possibly do a slomo event when a zombie dies, with a higher chance if the zombie is closer to a player
@@ -415,10 +466,18 @@ function bool ShouldKillOnTeamChange(Pawn TeamChanger)
     return true;
 }
 
-function ShowPathTo(PlayerController P, int TeamNum)
+function ShowPathTo(PlayerController P, int DestinationIndex)
 {
     local ShopVolume shop;
     local class<WillowWhisp>	WWclass;
+    local byte TeamNum;
+    
+    // DestinationIndex is used by TSC to show path to base
+    if ( bWaveInProgress && DestinationIndex == 0 )
+    {
+        ScrnPlayerController(P).ServerShowPathTo(255); // turn off
+        return;
+    }
     
     if ( TSCGameReplicationInfoBase(GameReplicationInfo) != none )
         shop = TSCGameReplicationInfoBase(GameReplicationInfo).GetPlayerShop(P.PlayerReplicationInfo);
@@ -500,6 +559,7 @@ protected function StartTourney()
         KFGameReplicationInfo(GameReplicationInfo).GameDiff = GameDifficulty;
         ScrnBalanceMut.SetLevels();
     }
+    TurboScale = 1.0;
     ScrnBalanceMut.SrvTourneyMode = TourneyMode;
     ScrnBalanceMut.bSpawnBalance = !bVanilla;
     ScrnBalanceMut.bWeaponFix = !bVanilla;
@@ -719,6 +779,31 @@ function UninvitePlayer(PlayerController PC)
     }    
 }
 
+function RestartPlayer( Controller aPlayer )
+{
+    local PlayerController P;
+    
+    P = PlayerController(aPlayer);
+    if ( P != none && P.PlayerReplicationInfo != none && ScrnBalanceMut.bTeamsLocked && !IsInvited(P) ) {
+        P.ReceiveLocalizedMessage(class'ScrnGameMessages', 243);
+        if ( !P.PlayerReplicationInfo.bOnlySpectator && !BecomeSpectator(P) )
+        {
+            // Max spectators reached. Leave player as dead body.
+            P.PlayerReplicationInfo.bOutOfLives = True;
+            P.PlayerReplicationInfo.NumLives = 1;
+            P.GoToState('Spectating');            
+        }
+        return;
+    }
+    
+    super.RestartPlayer(aPlayer);
+    
+    if ( P != none && P.Pawn != none ) {
+        if ( FriendlyFireScale > 0 )
+            ScrnBalanceMut.SendFriendlyFireWarning(P);
+    }
+}
+
 function bool AllowBecomeActivePlayer(PlayerController P)
 {
     if( P.PlayerReplicationInfo==None || !P.PlayerReplicationInfo.bOnlySpectator )
@@ -764,6 +849,86 @@ function GiveStartingCash(PlayerController PC)
         ScrnPlayerController(PC).StartCash = PC.PlayerReplicationInfo.Score; // prevent tossing bonus too
 }
 
+// C&P from Deathmatch strip color tags before name length check 
+function ChangeName(Controller Other, string S, bool bNameChange)
+{
+    local Controller APlayer,C, P;
+
+    if ( S == "" )
+        return;
+
+	S = StripColor(s);	// Stip out color codes
+
+    if (Other.PlayerReplicationInfo.playername~=S)
+        return;
+
+    if ( len(ScrnBalanceMut.StripColorTags(S)) > 20 )
+        S = Left( ScrnBalanceMut.StripColorTags(S), 20 );
+    ReplaceText(S, " ", "_");
+    ReplaceText(S, "|", "I");
+
+	if ( bEpicNames && (Bot(Other) != None) )
+	{
+		if ( TotalEpic < 21 )
+		{
+			S = EpicNames[EpicOffset % 21];
+			EpicOffset++;
+			TotalEpic++;
+		}
+		else
+		{
+			S = NamePrefixes[NameNumber%10]$"CliffyB"$NameSuffixes[NameNumber%10];
+			NameNumber++;
+		}
+	}
+
+    for( APlayer=Level.ControllerList; APlayer!=None; APlayer=APlayer.nextController )
+        if ( APlayer.bIsPlayer && (APlayer.PlayerReplicationInfo.playername~=S) )
+        {
+            if ( Other.IsA('PlayerController') )
+            {
+                PlayerController(Other).ReceiveLocalizedMessage( GameMessageClass, 8 );
+				return;
+			}
+			else
+			{
+				if ( Other.PlayerReplicationInfo.bIsFemale )
+				{
+					S = FemaleBackupNames[FemaleBackupNameOffset%32];
+					FemaleBackupNameOffset++;
+				}
+				else
+				{
+					S = MaleBackupNames[MaleBackupNameOffset%32];
+					MaleBackupNameOffset++;
+				}
+				for( P=Level.ControllerList; P!=None; P=P.nextController )
+					if ( P.bIsPlayer && (P.PlayerReplicationInfo.playername~=S) )
+					{
+						S = NamePrefixes[NameNumber%10]$S$NameSuffixes[NameNumber%10];
+						NameNumber++;
+						break;
+					}
+				break;
+			}
+            S = NamePrefixes[NameNumber%10]$S$NameSuffixes[NameNumber%10];
+            NameNumber++;
+            break;
+        }
+
+	if( bNameChange )
+		GameEvent("NameChange",s,Other.PlayerReplicationInfo);
+
+	if ( S ~= "CliffyB" )
+		bEpicNames = true;
+    Other.PlayerReplicationInfo.SetPlayerName(S);
+    // notify local players
+    if  ( bNameChange )
+		for ( C=Level.ControllerList; C!=None; C=C.NextController )
+			if ( (PlayerController(C) != None) && (Viewport(PlayerController(C).Player) != None) )
+				PlayerController(C).ReceiveLocalizedMessage( class'GameMessage', 2, Other.PlayerReplicationInfo );
+}
+
 // used by TSC
 function int CalcStartingCashBonus(PlayerController PC)
 {
@@ -806,6 +971,52 @@ function AmmoPickedUp(KFAmmoPickup PickedUp)
         }
         else 
             PickedUp.GotoState('Sleeping', 'DelayedSpawn');
+    }
+}
+
+function RespawnDoors()
+{
+    local KFDoorMover KFDM;
+    
+    if ( ScrnBalanceMut.bRespawnDoors || ScrnBalanceMut.bTSCGame ) {
+        foreach DynamicActors(class'KFDoorMover', KFDM)
+            KFDM.RespawnDoor();    
+    }
+}
+
+// removed setting NextSpawnSquad, because it already has been set in StartWaveBoss()
+function bool AddBoss()
+{
+    local int numspawned;
+    local class<KFMonster> BossClass;
+    
+    BossClass = NextSpawnSquad[0];
+    if( LastZVol == none )
+    {
+        LastZVol = FindSpawningVolume(false, true);
+        if( LastZVol == none ) {
+            LastZVol = FindSpawningVolume(true, true);
+            if( LastZVol == none ) {
+                log("Couldn't find a place for the Boss ("$BossClass$")after 2 tries, trying again later!!!", class.name);
+                TryToSpawnInAnotherVolume(true);
+                return false;
+            }
+        }
+    }
+    // How many zombies can we have left to spawn at once
+    LastSpawningVolume = LastZVol;
+    if(LastZVol.SpawnInHere(NextSpawnSquad,,numspawned,TotalMaxMonsters,32,,true))
+    {
+        log("Boss spawned: "$BossClass $ " (x"$numspawned$")", class.name);
+        NumMonsters+=numspawned;
+        WaveMonsters+=numspawned;
+        return true;
+    }
+    else
+    {
+        log("Failed to spawn the Boss: "$BossClass, class.name);
+        TryToSpawnInAnotherVolume(true);
+        return false;
     }
 }
 
@@ -1035,16 +1246,15 @@ State MatchInProgress
         RespawnDoors();
     }
     
-    function RespawnDoors()
+    function StartWaveBoss()
     {
-        local KFDoorMover KFDM;
-        
-        if ( ScrnBalanceMut.bRespawnDoors && !ScrnBalanceMut.bTSCGame ) {
-            foreach DynamicActors(class'KFDoorMover', KFDM)
-                KFDM.RespawnDoor();    
-        }
+        // reset spawn volumes
+        LastZVol = none;
+        LastSpawningVolume = none;
+        // moved from AddBoss()
+        FinalSquadNum = 0;
+        super.StartWaveBoss();
     }
-    
 }
 
 defaultproperties
@@ -1057,12 +1267,11 @@ defaultproperties
     PathWhisps(1)="KFMod.RedWhisp"
     
     bCloserZedSpawns=True
+    TurboScale=1.0
     
     // copied from last two LongWaves
     NormalWaves(5)=(WaveMask=75393519,WaveMaxMonsters=40,WaveDuration=255,WaveDifficulty=0.300000)
     NormalWaves(6)=(WaveMask=90171865,WaveMaxMonsters=45,WaveDuration=255,WaveDifficulty=0.300000)
-    
-    
     
     KFHints[0]="ScrN Balance: You can reload a single shell into Hunting Shotgun."
     KFHints[1]="ScrN Balance: You can't skip Hunting Shotgun's reload. So use it with caution."

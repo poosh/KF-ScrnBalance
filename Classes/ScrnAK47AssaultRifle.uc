@@ -92,12 +92,6 @@ function AddReloadedAmmo()
     else
         MagAmmoRemaining = AmmoAmount(0);
 
-    // this seems redudant -- PooSH
-	// if( !bHoldToReload )
-	// {
-		// ClientForceKFAmmoUpdate(MagAmmoRemaining,AmmoAmount(0));
-	// }
-
 	if ( PlayerController(Instigator.Controller) != none && KFSteamStatsAndAchievements(PlayerController(Instigator.Controller).SteamStatsAndAchievements) != none )
 	{
 		KFSteamStatsAndAchievements(PlayerController(Instigator.Controller).SteamStatsAndAchievements).OnWeaponReloaded();

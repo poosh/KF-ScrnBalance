@@ -1,7 +1,5 @@
 @echo off
 
-rem DON'T FORGET to Duplicate HumanPawn and PlayerController class code to the SZ_ScrnBalance!
-
 setlocal
 set KFDIR=d:\Games\kf
 set STEAMDIR=c:\Steam\steamapps\common\KillingFloor

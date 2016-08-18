@@ -85,10 +85,11 @@ final static function bool ClassIsInArray(out array <class> AArray, class AClass
     
     if ( AClass == none )
         return false;
-        
-    while ( i < AArray.length )    
-        if ( AArray[i++] == AClass )
+    
+    for ( i = 0; i < AArray.length; ++i ) {
+        if ( AArray[i] == AClass )
             return true;
+    }
     return false;
 }
 
@@ -100,9 +101,10 @@ final static function bool ClassChildIsInArray(out array <class> AArray, class A
     if ( AClass == none )
         return false;
         
-    while ( i < AArray.length )    
-        if ( ClassIsChildOf(AClass, AArray[i++]) )
+    for ( i = 0; i < AArray.length; ++i ) {
+        if ( ClassIsChildOf(AClass, AArray[i]) )
             return true;
+    }        
     return false;
 }
 
@@ -250,13 +252,13 @@ static function float GetWeaponMovementSpeedBonus(KFPlayerReplicationInfo KFPRI,
 //Weap indicates current weapon player holds (not the Frag!) 
 static function bool CanCookNade(KFPlayerReplicationInfo KFPRI, Weapon Weap)
 {
-  return true;
+    return true;
 }
 
 //Do perk bonuses allow to display progress bar showing current grenade cooking state
 static function bool CanShowNadeCookingBar(KFPlayerReplicationInfo KFPRI)
 {
-  return true;
+    return true;
 }
 
 // allows to adjust player's max health
@@ -493,13 +495,27 @@ static function bool ShowEnemyHealthBars(KFPlayerReplicationInfo KFPRI, KFPlayer
     return false;
 }
 
+/** Allows overriding item's corresponding perk index with perk's index. 
+ *  This can be used for  multi-perk items.
+ *  By default perk index is overriden if a given pickup is in perked weapons or pickups arrays. 
+ *  @param Pickup : pickup class to check (must not be none!)
+ *  @return true if Pickup.CorrespondingPerkIndex should be overrided with PerkIndex.
+ *          false if Pickup.CorrespondingPerkIndex should stay intact.
+ */
+static function bool OverridePerkIndex( class<KFWeaponPickup> Pickup )
+{
+    return Pickup.default.CorrespondingPerkIndex == default.PerkIndex
+            || ClassIsInArray(default.PerkedWeapons, Pickup.default.InventoryType)
+            || ClassIsInArray(default.PerkedPickups, Pickup);
+}
+
 defaultproperties
 {
-     progressArray0(0)=5000
-     progressArray0(1)=25000
-     progressArray0(2)=100000
-     progressArray0(3)=500000
-     progressArray0(4)=1500000
-     progressArray0(5)=3500000
-     progressArray0(6)=5500000
+    progressArray0(0)=5000
+    progressArray0(1)=25000
+    progressArray0(2)=100000
+    progressArray0(3)=500000
+    progressArray0(4)=1500000
+    progressArray0(5)=3500000
+    progressArray0(6)=5500000
 }

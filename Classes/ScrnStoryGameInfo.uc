@@ -1,9 +1,13 @@
 class ScrnStoryGameInfo extends KFStoryGameInfo;
 
+var ScrnBalance ScrnBalanceMut;
+var protected transient int ObjTraderIndex;
+
 event InitGame( string Options, out string Error )
 {
     local int ConfigMaxPlayers;
     
+    ObjTraderIndex = -1;
     ConfigMaxPlayers = default.MaxPlayers;
     
     super.InitGame(Options, Error);
@@ -20,6 +24,95 @@ event PostLogin( PlayerController NewPlayer )
     
     if ( ScrnPlayerController(NewPlayer) != none )
         ScrnPlayerController(NewPlayer).PostLogin();
+}
+
+function RestartPlayer( Controller aPlayer )
+{
+    super.RestartPlayer(aPlayer);
+    
+    if ( FriendlyFireScale > 0 && aPlayer.Pawn != none && PlayerController(aPlayer) != none ) {
+        ScrnBalanceMut.SendFriendlyFireWarning(PlayerController(aPlayer));
+    }
+}
+
+// C&P from Deathmatch strip color tags before name length check 
+function ChangeName(Controller Other, string S, bool bNameChange)
+{
+    local Controller APlayer,C, P;
+
+    if ( S == "" )
+        return;
+
+	S = StripColor(s);	// Stip out color codes
+
+    if (Other.PlayerReplicationInfo.playername~=S)
+        return;
+
+    if ( len(ScrnBalanceMut.StripColorTags(S)) > 20 )
+        S = Left( ScrnBalanceMut.StripColorTags(S), 20 );
+    ReplaceText(S, " ", "_");
+    ReplaceText(S, "|", "I");
+
+	if ( bEpicNames && (Bot(Other) != None) )
+	{
+		if ( TotalEpic < 21 )
+		{
+			S = EpicNames[EpicOffset % 21];
+			EpicOffset++;
+			TotalEpic++;
+		}
+		else
+		{
+			S = NamePrefixes[NameNumber%10]$"CliffyB"$NameSuffixes[NameNumber%10];
+			NameNumber++;
+		}
+	}
+
+    for( APlayer=Level.ControllerList; APlayer!=None; APlayer=APlayer.nextController )
+        if ( APlayer.bIsPlayer && (APlayer.PlayerReplicationInfo.playername~=S) )
+        {
+            if ( Other.IsA('PlayerController') )
+            {
+                PlayerController(Other).ReceiveLocalizedMessage( GameMessageClass, 8 );
+				return;
+			}
+			else
+			{
+				if ( Other.PlayerReplicationInfo.bIsFemale )
+				{
+					S = FemaleBackupNames[FemaleBackupNameOffset%32];
+					FemaleBackupNameOffset++;
+				}
+				else
+				{
+					S = MaleBackupNames[MaleBackupNameOffset%32];
+					MaleBackupNameOffset++;
+				}
+				for( P=Level.ControllerList; P!=None; P=P.nextController )
+					if ( P.bIsPlayer && (P.PlayerReplicationInfo.playername~=S) )
+					{
+						S = NamePrefixes[NameNumber%10]$S$NameSuffixes[NameNumber%10];
+						NameNumber++;
+						break;
+					}
+				break;
+			}
+            S = NamePrefixes[NameNumber%10]$S$NameSuffixes[NameNumber%10];
+            NameNumber++;
+            break;
+        }
+
+	if( bNameChange )
+		GameEvent("NameChange",s,Other.PlayerReplicationInfo);
+
+	if ( S ~= "CliffyB" )
+		bEpicNames = true;
+    Other.PlayerReplicationInfo.SetPlayerName(S);
+    // notify local players
+    if  ( bNameChange )
+		for ( C=Level.ControllerList; C!=None; C=C.NextController )
+			if ( (PlayerController(C) != None) && (Viewport(PlayerController(C).Player) != None) )
+				PlayerController(C).ReceiveLocalizedMessage( class'GameMessage', 2, Other.PlayerReplicationInfo );
 }
 
 // fixed GameRules.NetDamage() call
@@ -298,9 +391,39 @@ static event class<GameInfo> SetGameType( string MapName )
 // NumMonsters check replaced with bTradingDoorsOpen
 function bool IsTraderTime()
 {
-	bWaveInProgress = !bTradingDoorsOpen && NumMonsters > 0 && CurrentObjective != none && !CurrentObjective.IsTraderObj();
+	bWaveInProgress = !bTradingDoorsOpen && NumMonsters > 0 && ObjTraderIndex != -1 
+        && CurrentObjective != none && CurrentObjective.IsTraderObj();
 	KFGameReplicationInfo(Level.GRI).bWaveInProgress = bWaveInProgress;
 	return !bWaveInProgress;
+}
+
+function SetActiveObjective( KF_StoryObjective NewObjective, optional pawn ObjInstigator)
+{
+    local int i;
+    
+    super.SetActiveObjective(NewObjective, ObjInstigator);
+    
+    ObjTraderIndex = -1;
+    if ( CurrentObjective != none ) {
+        for(i = 0 ; i < CurrentObjective.SuccessConditions.length ; ++i) {
+            if( ObjCondition_TraderTime(CurrentObjective.SuccessConditions[i]) != none ) {
+                ObjTraderIndex = i;
+                break;
+            }
+        }  
+    }    
+}
+
+State MatchInProgress
+{
+    function Timer()
+    {
+        super.Timer();
+        if ( CurrentObjective != none && ObjTraderIndex != -1 ) {
+            KFGameReplicationInfo(GameReplicationInfo).TimeToNextWave = 
+                ObjCondition_Timed(CurrentObjective.SuccessConditions[ObjTraderIndex]).RemainingSeconds;        
+        }
+    }
 }
 
 
