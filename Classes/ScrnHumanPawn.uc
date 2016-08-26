@@ -390,6 +390,7 @@ simulated function SwitchWeapon(byte F)
     local bool bPerkedFirst;
     local array<Weapon> SortedGroupInv; // perked -> non-perked -> empy
     local int NonPerkedIndex, EmptyIndex, i;
+    local class<KFWeaponPickup> WP;
     
     if ( (Level.Pauser!=None) || (Inventory == None) )
         return; 
@@ -402,13 +403,15 @@ simulated function SwitchWeapon(byte F)
     for ( Inv = Inventory; Inv != none && ++i < 1000; Inv = Inv.Inventory ) {
         W = Weapon(Inv);
         if ( W != none && W.InventoryGroup == F && AllowHoldWeapon(W) ) {
+            WP = class<KFWeaponPickup>(W.PickupClass);
             if ( !W.HasAmmo() && (KFWeapon(W) == none || (KFWeapon(W).bConsumesPhysicalAmmo && !KFWeapon(W).bMeleeWeapon)) ) {
                 // weapon has no ammo
                 SortedGroupInv[SortedGroupInv.length] = W;
             }
             else if ( bPerkedFirst && (PipeBombExplosive(W) != none || Knife(W) != none 
-                    || class<KFWeaponPickup>(W.PickupClass) == none 
-                    || class<KFWeaponPickup>(W.PickupClass).default.CorrespondingPerkIndex != ScrnPerk.default.PerkIndex) )
+                    || WP == none 
+                    || (WP.default.CorrespondingPerkIndex != ScrnPerk.default.PerkIndex
+                        && !ScrnPerk.static.OverridePerkIndex(WP))) )
             {
                 // non-perked weapon, has ammo
                 SortedGroupInv.insert(EmptyIndex, 1);

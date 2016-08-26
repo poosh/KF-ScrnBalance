@@ -16,15 +16,16 @@ static function string GetString(
         case 211:   return default.strGetBackToBase;
     }
     return "";
-}    
+}
 
 defaultproperties
 {
-    DrawColor=(R=255,G=200,B=0,A=255)
+    DrawColor=(R=255,G=128,B=0,A=255)
     PosX=0.500000
-    PosY=0.85
+    PosY=0.55
     FontSize=3
+    Lifetime=5
 
     strEnemyShop="Can not trade in enemy shop!"
     strGetBackToBase="GET BACK TO THE BASE OR DIE!"
-}    
+}

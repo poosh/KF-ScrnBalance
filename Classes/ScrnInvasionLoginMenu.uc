@@ -10,9 +10,9 @@ function ActivatePerkTab()
     index = c_Main.TabIndex(Class'KFInvasionLoginMenu'.Default.Panels[1].Caption);
     if ( index != -1 )
         c_Main.ActivateTab(c_Main.TabStack[index], false);
-    else 
+    else
         log("ScrnInvasionLoginMenu: Unable to find Perk Tab!", 'ScrnBalance');
-    
+
 }
 
 function InternalOnClose(optional Bool bCanceled)
@@ -89,14 +89,7 @@ function InitComponent(GUIController MyController, GUIComponent MyOwner)
 function InitGRI()
 {
     super.InitGRI();
-    
-    if ( TSCGameReplicationInfoBase(GetGRI()) != none ) {
-        // TSC Mode
-        b_TeamSwitch.bVisible = true;
-    }
-    else {
-        b_TeamSwitch.bVisible = false;
-    }
+    b_TeamSwitch.bVisible = GetGRI().bTeamGame;
 }
 
 function bool ButtonClicked(GUIComponent Sender)
@@ -108,16 +101,24 @@ function bool ButtonClicked(GUIComponent Sender)
             else
                 Controller.OpenMenu(string(Class'ScrnProfilePage'));
             break;
-            
+
         case b_TeamSwitch:
             PlayerOwner().SwitchTeam();
             break;
-            
+
         default:
             return super.ButtonClicked(Sender);
 	}
 }
 
+function bool InternalOnPreDraw(Canvas C)
+{
+    local bool result;
+
+    result = super.InternalOnPreDraw(C);
+    EnableComponent(b_Spec); // always allow Spec/Join button. Let the game decide if this is allowed or not
+    return result;
+}
 
 
 defaultproperties
@@ -140,5 +141,5 @@ defaultproperties
         OnClick=ScrnInvasionLoginMenu.ButtonClicked
         OnKeyEvent=TeamSwitchButton.InternalOnKeyEvent
     End Object
-    b_TeamSwitch=GUIButton'ScrnBalanceSrv.ScrnInvasionLoginMenu.TeamSwitchButton'     
+    b_TeamSwitch=GUIButton'ScrnBalanceSrv.ScrnInvasionLoginMenu.TeamSwitchButton'
 }

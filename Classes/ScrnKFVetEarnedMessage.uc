@@ -1,18 +1,18 @@
-class KFVetEarnedMessageScrn extends KFVetEarnedMessageSR
+class ScrnKFVetEarnedMessage extends KFVetEarnedMessageSR
 	abstract;
 
 var Sound PromotedSnd;
 var String PromotedSndRef;
 var String PromotedSndRefDef;
 
-static function PreloadAssets() 
+static function PreloadAssets()
 {
 	default.PromotedSnd = sound(DynamicLoadObject(default.PromotedSndRef, class'Sound', true));
 	if ( default.PromotedSnd == none )
 		default.PromotedSnd = sound(DynamicLoadObject(default.PromotedSndRefDef, class'Sound', true));
 }
 
-static function UnloadAssets() 
+static function UnloadAssets()
 {
 	default.PromotedSnd = none;
 }
@@ -35,17 +35,19 @@ static function ClientReceive(
 	}
 
 	if( SRHUDKillingFloor(P.myHUD)!=None && KFPlayerReplicationInfo(P.PlayerReplicationInfo)!=None
-	 && OptionalObject!=None && KFPlayerReplicationInfo(P.PlayerReplicationInfo).ClientVeteranSkill==OptionalObject )
+        && OptionalObject!=None && KFPlayerReplicationInfo(P.PlayerReplicationInfo).ClientVeteranSkill==OptionalObject )
 	{
 		// Temporarly fill the bar.
 		SRHUDKillingFloor(P.myHUD).LevelProgressBar = 1.f;
 		SRHUDKillingFloor(P.myHUD).NextLevelTimer = P.Level.TimeSeconds+1.f;
 	}
+    default.DrawColor = class'ScrnHUD'.static.PerkColor(Switch);
 	Super(CriticalEventPlus).ClientReceive(P,Switch,RelatedPRI_1,RelatedPRI_2,OptionalObject);
 }
 
 defaultproperties
 {
-	PromotedSndRef="ScrnSnd.Perks.Promoted"
+	//PromotedSnd=Sound'ScrnSnd.Promoted'
+	PromotedSndRef="ScrnSnd.Promoted"
 	PromotedSndRefDef="KF_InterfaceSnd.Perks.PerkAchieved"
 }

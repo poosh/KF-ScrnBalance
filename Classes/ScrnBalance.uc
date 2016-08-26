@@ -6,12 +6,12 @@
 
 class ScrnBalance extends Mutator
     Config(ScrnBalanceSrv);
-    
+
 #exec OBJ LOAD FILE=ScrnTex.utx
-#exec OBJ LOAD FILE=ScrnAch_T.utx    
+#exec OBJ LOAD FILE=ScrnAch_T.utx
 
 
-const VERSION = 92000;
+const VERSION = 92500;
 
 var ScrnBalance Mut; // pointer to self to use in default functions, i.e class'ScrnBalance'.default.Mut
 
@@ -217,7 +217,7 @@ var array<SSquad> Squads;
 // KF.WaveMonsters value after all zeds added by SpawnSquad() are spawned
 // if ( SquadSpawnedMonsters > 0 && KF.WaveMonsters < SquadSpawnedMonsters )
 // then those zeds are still waiting in spawn queue
-var int SquadSpawnedMonsters; 
+var int SquadSpawnedMonsters;
 
 struct SCustomEvent {
     var byte EventNum;
@@ -270,21 +270,21 @@ enum ECustomLockType
 };
 
 var name NameOfString; // used in StringToName()
- 
+
 struct SDLCLock {
     var String Item;
     var byte Group;
     var ECustomLockType Type;
     var name ID;
     var byte Value;
-    
+
     // non-config stuff
     var transient class<Pickup> PickupClass;
 };
 var globalconfig array<SDLCLock> DLCLocks; // replicated via ScrnClientPerkRepLink
 var globalconfig bool bUseDLCLocks,bUseDLCLevelLocks;
 var protected transient int LockCount;
-var globalconfig bool bBuyPerkedWeaponsOnly, bPickPerkedWeaponsOnly; 
+var globalconfig bool bBuyPerkedWeaponsOnly, bPickPerkedWeaponsOnly;
 
 struct SNameValuePair {
     var name ID;
@@ -295,7 +295,7 @@ var globalconfig bool bFixMusic;
 
 var globalconfig bool bRespawnDoors;
 
-var transient bool bTeamsLocked; // Set by ScrnGameType. Used for replication purposes. 
+var transient bool bTeamsLocked; // Set by ScrnGameType. Used for replication purposes.
 var globalconfig float LockTeamMinWave, LockTeamAutoWave;
 var globalconfig bool bForceSteamNames;
 
@@ -327,10 +327,10 @@ enum EMutateCommand
 };
 
 // TSC stuff
-var globalconfig bool bNoTeamSkins; 
-// SrvTourneyMode should be used for informative purposes only. 
+var globalconfig bool bNoTeamSkins;
+// SrvTourneyMode should be used for informative purposes only.
 // All real checks must be done server-side only to prevent cheating.
-var transient byte SrvTourneyMode; 
+var transient byte SrvTourneyMode;
 // END OF TSC STUFF
 
 replication
@@ -341,12 +341,12 @@ replication
         // flags to replicate config variables
     reliable if ( bNetInitial && Role == ROLE_Authority )
         SrvFlags, SrvAchievementFlags, SrvReqBalanceMode;
-        
+
     // non-config vars and configs vars which seem to replicate fine
-    reliable if ( bNetInitial && Role == ROLE_Authority ) 
+    reliable if ( bNetInitial && Role == ROLE_Authority )
         CustomWeaponLink, SrvTourneyMode, bTSCGame,
         Post6RequirementScaling, WeldingRequirementScaling, StalkerRequirementScaling;
-        
+
 }
 
 // ======================================= FUNCTIONS =======================================
@@ -383,12 +383,12 @@ simulated function ClientInitSettings()
     class'ScrnBalance'.default.Mut = self;
     bStoryMode = KF_StoryGRI(Level.GRI) != none;
     LoadReplicationData();
-        
+
     LocalPlayer = ScrnPlayerController(Level.GetLocalPlayerController());
     if ( LocalPlayer != none && LocalPlayer.Mut == none ) {
         LocalPlayer.Mut = self;
         LocalPlayer.LoadMutSettings();
-    }  
+    }
 
     InitSettings();
 }
@@ -437,24 +437,24 @@ simulated function InitSettings()
     }
     class'ScrnFragPickup'.default.Weight = class'ScrnFrag'.default.Weight;
     RecalcAllPawnWeight();
-    
+
 	class'KFMod.CrossbowArrow'.default.DamageRadius = 0; // isn't used anywhere. Set to 0 to fix description
 
     // Achievements
     bUseAchievements = bool(AchievementFlags & ACH_ENABLE);
     default.bUseAchievements = bUseAchievements;
-    
+
     default.bStoryMode = bStoryMode;
     default.bTSCGame = bTSCGame;
 
     // fixes critical bug:
     // Assertion failed: inst->KPhysRootIndex != INDEX_NONE && inst->KPhysLastIndex != INDEX_NONE [File:.\KSkeletal.cpp] [Line: 595]
     class'FellLava'.default.bSkeletize = false;
-    
+
     // Fix missing textures
     class'Welder'.default.TraderInfoTexture = texture(class'Welder'.default.SelectedHudImage);
     class'Syringe'.default.TraderInfoTexture = texture(class'Syringe'.default.SelectedHudImage);
-    
+
     EventZedNames();
 
     bInitialized = true;
@@ -471,8 +471,8 @@ simulated function EventZedNames()
   class'KFChar.ZombieSiren_CIRCUS'.default.MenuName = "Bearded Beauty";
   class'KFChar.ZombieScrake_CIRCUS'.default.MenuName = "Man Monkey";
   class'KFChar.ZombieFleshpound_CIRCUS'.default.MenuName = "Flesh Clown";
-  class'KFChar.ZombieBoss_CIRCUS'.default.MenuName = "Ring Leader";  
-  
+  class'KFChar.ZombieBoss_CIRCUS'.default.MenuName = "Ring Leader";
+
   class'KFChar.ZombieClot_HALLOWEEN'.default.MenuName = "Honey Biscuit";
   class'KFChar.ZombieBloat_HALLOWEEN'.default.MenuName = "Mama Bessie";
   class'KFChar.ZombieStalker_HALLOWEEN'.default.MenuName = "Maggie May";
@@ -483,7 +483,7 @@ simulated function EventZedNames()
   class'KFChar.ZombieScrake_HALLOWEEN'.default.MenuName = "Cousin Otis";
   class'KFChar.ZombieFleshpound_HALLOWEEN'.default.MenuName = "Bubba";
   class'KFChar.ZombieBoss_HALLOWEEN'.default.MenuName = "Sheriff Wade";
-  
+
   class'KFChar.ZombieClot_XMAS'.default.MenuName = "Elf";
   class'KFChar.ZombieBloat_XMAS'.default.MenuName = "Fake Santa";
   class'KFChar.ZombieStalker_XMAS'.default.MenuName = "Mrs. Claws";
@@ -493,7 +493,7 @@ simulated function EventZedNames()
   class'KFChar.ZombieSiren_XMAS'.default.MenuName = "Screaming Tree";
   class'KFChar.ZombieScrake_XMAS'.default.MenuName = "Jack Frost";
   class'KFChar.ZombieFleshpound_XMAS'.default.MenuName = "Nutcracker";
-  class'KFChar.ZombieBoss_XMAS'.default.MenuName = "Santriarch";  
+  class'KFChar.ZombieBoss_XMAS'.default.MenuName = "Santriarch";
 }
 
 simulated function TimeLog(coerce string s)
@@ -561,7 +561,7 @@ function MessageStatus(PlayerController PC)
 
     if ( ScrnGT != none && ScrnGT.IsTourney() )
         PC.ClientMessage("*** TOURNEY MODE ***", 'Log');
-    
+
     msg = strStatus;
     ReplaceText(msg, "%v", String(KFPRI.ClientVeteranSkillLevel));
     ReplaceText(msg, "%b", String(class'ScrnBalanceSrv.ScrnVeterancyTypes'.static.GetClientVeteranSkillLevel(KFPRI)));
@@ -576,7 +576,7 @@ function MessageStatus(PlayerController PC)
     ReplaceText(msg, "%a", String(bAltBurnMech));
     ReplaceText(msg, "%m", String(KF.MaxZombiesOnce));
     PC.ClientMessage(msg, 'Log');
-    
+
     R = SRStatsBase(PC.SteamStatsAndAchievements).Rep;
     if ( R != none ) {
         msg = "Weapon Packages:";
@@ -621,7 +621,7 @@ function BroadcastMessage(string Msg, optional bool bSaveToLog)
     local Controller P;
     local PlayerController Player;
     local name MsgType;
-    
+
     if ( bSaveToLog) {
         log(Msg, 'ScrnBalance');
         MsgType = 'Log';
@@ -682,9 +682,9 @@ static final function string LeftCol(string ColoredString, int i)
     while ( p >=0 && p < i ) {
         c+=4; // add 4 more characters due to color code
         s = left(s, p) $ mid(s, p+4);
-        p = InStr(s,Chr(27));        
+        p = InStr(s,Chr(27));
     }
-    
+
     return Left(ColoredString, c);
 }
 
@@ -692,25 +692,25 @@ simulated function string ParseColorTags(string ColoredText, optional PlayerRepl
 {
     local int i;
     local string s;
-    
+
     s = ColoredText;
     if ( PRI != none && PRI.Team != none )
         ReplaceText(s, "^t", ColorStringC("", class'ScrnHUD'.default.TextColors[PRI.Team.TeamIndex]));
     else
-        ReplaceText(s, "^t", "");    
-        
+        ReplaceText(s, "^t", "");
+
     if ( KFPlayerReplicationInfo(PRI) != none )
         ReplaceText(s, "^p", ColorStringC("", class'ScrnHUD'.static.PerkColor(KFPlayerReplicationInfo(PRI).ClientVeteranSkillLevel)));
     else
         ReplaceText(s, "^p", "");
-        
-    
+
+
     for ( i=0; i<ColorTags.Length; ++i ) {
         if ( InStr(s, ColorTags[i].T) != -1 )
-            ReplaceText(s, ColorTags[i].T, ColorString("", 
+            ReplaceText(s, ColorTags[i].T, ColorString("",
                 ColorTags[i].R, ColorTags[i].G, ColorTags[i].B));
     }
-    
+
     return s;
 }
 
@@ -718,7 +718,7 @@ simulated function string StripColorTags(string ColoredText)
 {
     local int i;
     local string s;
-    
+
     s = ColoredText;
     ReplaceText(s, "^p", "");
     ReplaceText(s, "^t", "");
@@ -726,7 +726,7 @@ simulated function string StripColorTags(string ColoredText)
         if ( InStr(s, ColorTags[i].T) != -1 )
             ReplaceText(s, ColorTags[i].T, "");
     }
-    
+
     return s;
 }
 
@@ -734,14 +734,14 @@ simulated function string ColoredPlayerName(PlayerReplicationInfo PRI)
 {
     if ( PRI == none )
         return "";
-        
+
     return ParseColorTags(PRI.PlayerName, PRI);
 }
 
 function StolenWeapon(Pawn NewOwner, KFWeaponPickup WP)
 {
     local string str;
-    
+
     str = BroadcastPickupText;
     ReplaceText(str, "%p", ColorString(ParseColorTags(NewOwner.GetHumanReadableName(), NewOwner.PlayerReplicationInfo), 192, 1, 1) $ ColorString("", 192, 192, 192));
     ReplaceText(str, "%o", ColorString(ColoredPlayerName(WP.DroppedBy.PlayerReplicationInfo), 1, 192, 1) $ ColorString("", 192, 192, 192));
@@ -778,15 +778,15 @@ function SetupPickups(optional bool bReduceAmount)
     local float W, A; //chance of spawning weapon / ammo box
     local bool bSpawned;
     local int i;
-    local int CurrentAmmoBoxCount, DesiredAmmoBoxCount; 
+    local int CurrentAmmoBoxCount, DesiredAmmoBoxCount;
     local array<KFAmmoPickup> AvailableAmmoBoxes;
 
-    // randomize remaining monster count, when pickups are reset to avoid players expliting this 
+    // randomize remaining monster count, when pickups are reset to avoid players expliting this
     // knowledge
     PickupSetupMonsters = 10 + rand(10);
     bPickupSetupReduced = bReduceAmount;
-    
-    // starting with v9.05, amount of pickup is constant accross the difficulties: 
+
+    // starting with v9.05, amount of pickup is constant accross the difficulties:
     // 35% during the wave, 10% during the trader time.
 
     // Except the beginner, where all pickups are still spawned
@@ -797,13 +797,13 @@ function SetupPickups(optional bool bReduceAmount)
             KF.AmmoPickups[i].GotoState('Pickup');
         return;
     }
-    
+
     // Randomize Available Ammo Pickups
     if ( bReduceAmount ) {
         W = 0.10;
         A = 0.10;
     }
-    else if ( KF.GameDifficulty >= 5.0 ) { 
+    else if ( KF.GameDifficulty >= 5.0 ) {
         // Suicidal and Hell on Earth
         W = 0.15;
         A = 0.33;
@@ -818,9 +818,9 @@ function SetupPickups(optional bool bReduceAmount)
         W = 0.35;
         A = 0.50;
     }
-    
+
     if ( KF.NumPlayers > 6 )
-        A *= 1.0 + float(KF.NumPlayers - 6)*Post6AmmoSpawnInc; 
+        A *= 1.0 + float(KF.NumPlayers - 6)*Post6AmmoSpawnInc;
 
     if ( KF.WeaponPickups.Length > 0 ) {
         for ( i = 0; i < KF.WeaponPickups.Length ; i++ )
@@ -836,19 +836,19 @@ function SetupPickups(optional bool bReduceAmount)
         if ( !bSpawned )
             KF.WeaponPickups[rand(KF.WeaponPickups.Length)].EnableMe();
     }
-       
+
     DesiredAmmoBoxCount = ceil(A * KF.AmmoPickups.Length);
     for ( i = 0; i < KF.AmmoPickups.Length ; i++ ) {
         if ( !KF.AmmoPickups[i].bSleeping )
             ++CurrentAmmoBoxCount;
     }
-    
+
     if ( CurrentAmmoBoxCount < DesiredAmmoBoxCount ) {
         // not enough ammo on the map - spawn more
         for ( i = 0; i < KF.AmmoPickups.Length ; i++ ) {
             if ( KF.AmmoPickups[i].bSleeping )
                 AvailableAmmoBoxes[AvailableAmmoBoxes.Length] = KF.AmmoPickups[i];
-        }        
+        }
         while ( CurrentAmmoBoxCount < DesiredAmmoBoxCount && AvailableAmmoBoxes.Length > 0 ) {
             i = rand(AvailableAmmoBoxes.Length);
             AvailableAmmoBoxes[i].GotoState('Pickup');
@@ -861,37 +861,37 @@ function SetupPickups(optional bool bReduceAmount)
         for ( i = 0; i < KF.AmmoPickups.Length ; i++ ) {
             if ( !KF.AmmoPickups[i].bSleeping && !KF.AmmoPickups[i].PlayerCanSeeMe() )
                 AvailableAmmoBoxes[AvailableAmmoBoxes.Length] = KF.AmmoPickups[i];
-        }        
+        }
         while ( CurrentAmmoBoxCount > DesiredAmmoBoxCount && AvailableAmmoBoxes.Length > 0 ) {
             i = rand(AvailableAmmoBoxes.Length);
             AvailableAmmoBoxes[i].GotoState('Sleeping', 'Begin');
             AvailableAmmoBoxes.remove(i, 1);
             --CurrentAmmoBoxCount;
-        }  
+        }
     }
-    
+
     if ( ScrnGT != none ) {
         ScrnGT.DesiredAmmoBoxCount = DesiredAmmoBoxCount;
-    }    
+    }
 }
 
 function MessagePickups(PlayerController Sender)
 {
     local int i, a, w;
     local String msg;
-    
+
     a = KF.AmmoPickups.length;
     for ( i = 0; i < KF.AmmoPickups.length; ++i ) {
-        if ( KF.AmmoPickups[i].bSleeping ) 
+        if ( KF.AmmoPickups[i].bSleeping )
             --a;
     }
-    
+
     w = KF.WeaponPickups.length;
     for ( i = 0; i < KF.WeaponPickups.length; ++i ) {
-        if ( !KF.WeaponPickups[i].bIsEnabledNow ) 
+        if ( !KF.WeaponPickups[i].bIsEnabledNow )
             --w;
     }
-    
+
     msg = "Ammo boxes Spawned/Total: "  $ a $ "/" $ KF.AmmoPickups.length;
     if ( ScrnGT != none ) {
         msg $= "; Current/Desired: " $ ScrnGT.CurrentAmmoBoxCount $ "/" $ ScrnGT.DesiredAmmoBoxCount;
@@ -935,7 +935,7 @@ function BroadcastAchEarn(ScrnAchievements AchHandler, int AchIndex)
 
     for (C = Level.ControllerList; C != None; C = C.NextController) {
         if ( !C.bIsPlayer )
-            continue;    
+            continue;
         ScrnPlayer = ScrnPlayerController(C);
         if ( ScrnPlayer != None && ScrnPlayer != AchHandler.Owner ) {
             ScrnPlayer.ClientMessage(ColorString(s, 1, 150, 255));
@@ -949,7 +949,7 @@ function BroadcastFakedAchievement(int AchIndex)
 
     for (C = Level.ControllerList; C != None; C = C.NextController) {
         if ( !C.bIsPlayer )
-            continue;    
+            continue;
         if ( PlayerController(C) != none)
             PlayerController(C).ReceiveLocalizedMessage(class'ScrnBalanceSrv.ScrnFakedAchMsg', AchIndex);
     }
@@ -958,7 +958,7 @@ function BroadcastFakedAchievement(int AchIndex)
 function Mutator FindServerPerksMut()
 {
     local Mutator M;
-    
+
     if ( ServerPerksMut != none )
         return ServerPerksMut;
 
@@ -972,7 +972,7 @@ function Mutator FindServerPerksMut()
     if ( ServerPerksMut == none ) {
         log("ServerPerksMut not found!", 'ScrnBalance');
     }
-    
+
     return ServerPerksMut;
 }
 
@@ -984,9 +984,9 @@ static final function ScrnBalance Myself(LevelInfo Level)
 
     if ( default.Mut != none )
         return default.Mut;
-    
+
     // shouldn't reach here
-        
+
     // server-side
     if ( Level.Game != none ) {
         for ( M = Level.Game.BaseMutator; M != None; M = M.NextMutator ) {
@@ -997,13 +997,13 @@ static final function ScrnBalance Myself(LevelInfo Level)
             }
         }
     }
-    
+
     // clien-side
     foreach Level.DynamicActors(class'ScrnBalance', SBM) {
         default.Mut = SBM;
         return SBM;
     }
-    
+
     log("Unable to find myself :(", 'ScrnBalance');
     return none;
 }
@@ -1071,9 +1071,9 @@ function DynamicLevelCap()
     m = OriginalMaxLevel;
     if ( bTSCGame )
         num = max(KF.Teams[0].Size, KF.Teams[1].Size);
-    else 
+    else
         num = KF.NumPlayers;
-    
+
     if (num > 6)
         m += num-6; //extra level per player
 
@@ -1091,21 +1091,21 @@ function KickOffPerkPlayers()
     local KFPlayerController KFPC;
     local KFPlayerReplicationInfo KFPRI;
 
-        
+
     for ( C = Level.ControllerList; C != none; C = C.nextController ) {
         if ( !C.bIsPlayer )
             continue;
-            
+
         KFPC = KFPlayerController(C);
         KFPRI = KFPlayerReplicationInfo(C.PlayerReplicationInfo);
-        if ( KFPC != none && KFPC.Pawn != none && NetConnection(KFPC.Player)!=None  
-                && KFPRI != none && KFPRI.ClientVeteranSkill == none  
+        if ( KFPC != none && KFPC.Pawn != none && NetConnection(KFPC.Player)!=None
+                && KFPRI != none && KFPRI.ClientVeteranSkill == none
                 && !KFPRI.bOnlySpectator && !KFPRI.bIsSpectator )
         {
             KFPC.ClientNetworkMessage("AC_Kicked", strAutoKickOffPerk);
             if ( KFPC.Pawn != none && Vehicle(KFPC.Pawn) == none )
                 KFPC.Pawn.Destroy();
-            KFPC.Destroy();                
+            KFPC.Destroy();
         }
     }
 }
@@ -1116,20 +1116,20 @@ function GameTimer()
     // check for wave start/end
     if ( bTradingDoorsOpen != KF.bTradingDoorsOpen ) {
         bTradingDoorsOpen = KF.bTradingDoorsOpen;
-		
+
 		if ( bStoryMode ) {
 			// by default, story game doesn't set bWaveInProgress, and this screws up perk selection in ServerPerks
-			KF.bWaveInProgress = !KFStoryGameInfo(KF).IsTraderTime(); 
+			KF.bWaveInProgress = !KFStoryGameInfo(KF).IsTraderTime();
 			KFGameReplicationInfo(Level.GRI).bWaveInProgress = KF.bWaveInProgress;
-		}	
-			
+		}
+
         if ( bTradingDoorsOpen ) {
 			// Trader Time
 			if ( bStoryMode && KF.WaveNum == CurWave ) {
 				// seems like story game doesn't increment wave counter
 				KF.WaveNum++;
 			}
-			
+
             GameRules.WaveEnded();
 
             KF.WaveCountDown += TradeTimeAddSeconds;
@@ -1138,43 +1138,43 @@ function GameTimer()
         else {
 			// Wave in Progress
 			CurWave = KF.WaveNum;
-			
+
             if ( bAutoKickOffPerkPlayers )
                 KickOffPerkPlayers();
             SquadSpawnedMonsters = 0;
-            
+
             GameRules.WaveStarted();
 
             if ( MyVotingOptions != none && MyVotingOptions.VotingHandler.IsMyVotingRunning(MyVotingOptions, MyVotingOptions.VOTE_ENDTRADE) )
                 MyVotingOptions.VotingHandler.VoteFailed();
-                
+
             if ( bWeaponFix ) {
                 DestroyExtraPipebombs();
             }
 
-            // call SetupPickups only when playing non-ScrnGameType mode. 
+            // call SetupPickups only when playing non-ScrnGameType mode.
             // ScrnGameType automatically calls SetupPickups() during wave begin.
             if ( ScrnGT == none && !bStoryMode )
                 SetupPickups(false);
         }
-        
+
         if ( bDynamicLevelCap )
             DynamicLevelCap();
     }
-    
-    
-	
-	// in story mode check bWaveInProgress every seconds, if if trader door are closed but wave is not in progress 
+
+
+
+	// in story mode check bWaveInProgress every seconds, if if trader door are closed but wave is not in progress
 	if ( bStoryMode ) {
         if ( !bTradingDoorsOpen && !KF.bWaveInProgress ) {
             // by default, story game doesn't set bWaveInProgress, and this screws up perk selection in ServerPerks
-            KF.bWaveInProgress = !KFStoryGameInfo(KF).IsTraderTime(); 
+            KF.bWaveInProgress = !KFStoryGameInfo(KF).IsTraderTime();
             KFGameReplicationInfo(Level.GRI).bWaveInProgress = KF.bWaveInProgress;
         }
-	}	
+	}
     else {
         CheckDoors();
-        
+
         if ( !bPickupSetupReduced && KF.TotalMaxMonsters <= 0 && KF.NumMonsters < PickupSetupMonsters )
             SetupPickups(true);
     }
@@ -1199,14 +1199,14 @@ function FixMusic()
 {
     if ( KF.MapSongHandler == none )
         KF.MapSongHandler = spawn(class'ScrnMusicTrigger');
-    // Allow L.D. to set boss battle song. 
+    // Allow L.D. to set boss battle song.
     // Don't use Dirge music as boss battle, because default KF_Abandon better.
-    if ( left(KF.MonsterCollection.default.EndGameBossClass, 
+    if ( left(KF.MonsterCollection.default.EndGameBossClass,
             InStr(KF.MonsterCollection.default.EndGameBossClass,".")) ~= "ScrnDoom3KF" )
         KF.BossBattleSong = "EGT-SignOfEvil"; // try this. If client doesn't have that song, then KF_Abandon will be played
-    else if ( KF.MapSongHandler.WaveBasedSongs.Length > 10 && KF.MapSongHandler.WaveBasedSongs[10].CombatSong != "" 
+    else if ( KF.MapSongHandler.WaveBasedSongs.Length > 10 && KF.MapSongHandler.WaveBasedSongs[10].CombatSong != ""
             &&  !(left(KF.MapSongHandler.WaveBasedSongs[10].CombatSong, 5) ~= "Dirge") )
-        KF.BossBattleSong = KF.MapSongHandler.WaveBasedSongs[10].CombatSong;    
+        KF.BossBattleSong = KF.MapSongHandler.WaveBasedSongs[10].CombatSong;
 }
 
 simulated function Tick( float DeltaTime )
@@ -1223,7 +1223,7 @@ simulated function Tick( float DeltaTime )
             InitDoors();
 			SetStartCash();
             if ( bFixMusic )
-                FixMusic(); 
+                FixMusic();
         }
         if ( bTSCGame ) {
             Level.GRI.bNoTeamSkins = bNoTeamSkins && !ScrnGameType(Level.Game).IsTourney();
@@ -1269,10 +1269,10 @@ function SetStartCash()
 		KF.StartingCash = StartCashNormal;
 		KF.MinRespawnCash = MinRespawnCashNormal;
     }
-	
+
     for ( C = Level.ControllerList; C != none; C = C.nextController ) {
 		if ( C.PlayerReplicationInfo != none )
-			C.PlayerReplicationInfo.Score = KF.StartingCash;	
+			C.PlayerReplicationInfo.Score = KF.StartingCash;
 	}
 }
 
@@ -1292,28 +1292,28 @@ function DebugArmor(PlayerController Sender)
 function MessagePerkStats(PlayerController Sender)
 {
     local ScrnPlayerInfo SPI;
-    
+
     SPI = GameRules.GetPlayerInfo(Sender);
-    
+
     if ( SPI == none )
         Sender.ClientMessage("No player info record found");
     else {
-        Sender.ClientMessage(ColorString("Initial Perk Stats: " $ SPI.PerkStatStr(SPI.GameStartStats), 255, 1, 200));    
-        Sender.ClientMessage(ColorString("Perk Progression:   " $ SPI.PerkProgressStr(SPI.GameStartStats), 255, 1, 200));    
+        Sender.ClientMessage(ColorString("Initial Perk Stats: " $ SPI.PerkStatStr(SPI.GameStartStats), 255, 1, 200));
+        Sender.ClientMessage(ColorString("Perk Progression:   " $ SPI.PerkProgressStr(SPI.GameStartStats), 255, 1, 200));
     }
-}    
+}
 
 // returns number of zeds, which have Other as enemy
-function MsgEnemies(PlayerController Sender)    
+function MsgEnemies(PlayerController Sender)
 {
     local Controller C;
     local PlayerController PC;
     local array<PlayerController> Players;
     local array<int> Enemies;
     local int i;
-        
+
     for ( C = Level.ControllerList; C != none; C = C.nextController ) {
-        if ( !C.bIsPlayer && C.Enemy != none ) { 
+        if ( !C.bIsPlayer && C.Enemy != none ) {
             PC = PlayerController(C.Enemy.Controller);
             if ( PC != none ) {
                 for ( i=0; i<Players.length; ++i ) {
@@ -1335,9 +1335,9 @@ function MsgEnemies(PlayerController Sender)
 }
 
 /** Splits long message on short ones before sending it to client.
- *  @param   Sender     Player, who will receive message(-s).  
+ *  @param   Sender     Player, who will receive message(-s).
  *  @param   S          String to send.
- *  @param   MaxLen     Max length of one string. Default: 80. If S is longer than this value, 
+ *  @param   MaxLen     Max length of one string. Default: 80. If S is longer than this value,
  *                      then it will be splitted on serveral messages.
  *  @param  Divider     Character to be used as divider. Default: Space. String is splitted
  *                      at last divder's position before MaxLen is reached.
@@ -1346,19 +1346,19 @@ static function LongMessage(PlayerController Sender, string S, optional int MaxL
 {
     local int pos;
     local string part;
-    
+
     if ( Sender == none )
         return;
-    if ( MaxLen == 0 ) 
+    if ( MaxLen == 0 )
         MaxLen = 80;
     if ( Divider == "" )
         Divider = " ";
-        
+
     while ( len(part) + len(S) > MaxLen ) {
         pos = InStr(S, Divider);
         if ( pos == -1 )
             break; // no more dividers
-        
+
         if ( part != "" && len(part) + pos + 1 > MaxLen) {
             Sender.ClientMessage(part);
             part = "";
@@ -1378,7 +1378,7 @@ function bool CheckAdmin(PlayerController Sender)
     if ( (Sender.PlayerReplicationInfo != none && Sender.PlayerReplicationInfo.bAdmin)
             || Level.NetMode == NM_Standalone || Level.NetMode == NM_ListenServer )
         return true;
-        
+
     Sender.ClientMessage("Requires ADMIN priviledges");
     return false;
 }
@@ -1387,7 +1387,7 @@ function bool CheckScrnGT(PlayerController Sender)
 {
     if ( ScrnGT != none )
         return true;
-        
+
     Sender.ClientMessage("Avaliable in ScrnGameType only!");
     return false;
 }
@@ -1396,7 +1396,7 @@ function bool CheckNotTourney(PlayerController Sender)
 {
     if ( ScrnGT == none || !ScrnGT.IsTourney() )
         return true;
-        
+
     Sender.ClientMessage("Not Available in TOURNEY mode");
     return false;
 }
@@ -1405,88 +1405,88 @@ function Mutate(string MutateString, PlayerController Sender)
 {
     local string Value;
     local int cmd;
-    
+
     if ( MutateString == "" )
         return;
-    
+
     super.Mutate(MutateString, Sender);
-    
+
     Divide(MutateString, " ", MutateString, Value);
     MutateString = caps(MutateString);
     cmd = BinarySearchStr(MutateCommands, MutateString);
     if ( cmd == -1 )
         return; //unknown command
-        
+
     switch ( EMutateCommand(cmd) ) {
-        case MUTATE_ACCURACY: 
-            SendAccuracy(Sender); 
+        case MUTATE_ACCURACY:
+            SendAccuracy(Sender);
             break;
-        case MUTATE_CHECK: 
+        case MUTATE_CHECK:
             Sender.ClientMessage(FriendlyName);
-            break;            
-        case MUTATE_CMDLINE: 
+            break;
+        case MUTATE_CMDLINE:
             if ( CheckAdmin(Sender) && CheckScrnGT(Sender) )
                 LongMessage(Sender, ScrnGT.GetCmdLine(), 80, "?");
-            break;            
-        case MUTATE_DEBUGGAME: 
+            break;
+        case MUTATE_DEBUGGAME:
             if ( CheckAdmin(Sender) )
                 Sender.ClientMessage("Game=" $ KF.class.name
                     @ "EventNum=" $ CurrentEventNum
                     @ "MonsterCollection=" $ KF.MonsterCollection
                     @ "Boss=" $ KF.MonsterCollection.default.EndGameBossClass);
-            break;            
-        case MUTATE_DEBUGPICKUPS: 
+            break;
+        case MUTATE_DEBUGPICKUPS:
             MessagePickups(Sender);
-            break;            
-        case MUTATE_DEBUGSPI: 
+            break;
+        case MUTATE_DEBUGSPI:
             GameRules.DebugSPI(Sender);
-            break;            
-        case MUTATE_ENEMIES: 
+            break;
+        case MUTATE_ENEMIES:
             if ( CheckAdmin(Sender) )
                 MsgEnemies(Sender);
-            break;            
-        case MUTATE_GIMMECOOKIES: 
+            break;
+        case MUTATE_GIMMECOOKIES:
             XPBoost(Sender, 'TSCT', 6);
-            break;            
+            break;
         case MUTATE_HELP:
             MessageMutateCommands(Sender);
             break;
         case MUTATE_HL:
             Sender.ClientMessage("Hardcore Level = " $ GameRules.HardcoreLevel);
-            break;            
+            break;
         case MUTATE_LEVEL:
             MessageBonusLevel(Sender);
-            break;            
-        case MUTATE_MAPDIFF: 
+            break;
+        case MUTATE_MAPDIFF:
             if ( CheckAdmin(Sender) )
                 MapInfo.SetMapDifficulty(Value, Sender);
-            break;            
-        case MUTATE_MAPZEDS: 
+            break;
+        case MUTATE_MAPZEDS:
             if ( CheckAdmin(Sender) && CheckNotTourney(Sender) ) {
                 if ( MapInfo.SetMapZeds(int(Value), Sender) ) {
                     SetMaxZombiesOnce();
                     BroadcastMessage("Max zeds at once set to " $ KF.MaxZombiesOnce);
-                }                
+                }
             }
-            break;            
+            break;
         case MUTATE_MUTLIST:
             Sender.ClientMessage(MutatorList());
-            break;            
-        case MUTATE_PERKSTATS: 
+            break;
+        case MUTATE_PERKSTATS:
             MessagePerkStats(Sender);
-            break;            
-        case MUTATE_PLAYERLIST: 
+            break;
+        case MUTATE_PLAYERLIST:
             SendPlayerList(Sender);
-            break;            
-        case MUTATE_STATUS: 
+            break;
+        case MUTATE_STATUS:
             MessageStatus(Sender);
-            break;            
-        case MUTATE_VERSION: 
+            break;
+        case MUTATE_VERSION:
             MessageVersion(Sender);
-            break;            
-        case MUTATE_ZEDLIST: 
+            break;
+        case MUTATE_ZEDLIST:
             SendZedList(Sender);
-            break;            
+            break;
     }
 }
 
@@ -1497,10 +1497,10 @@ private final function DebugDoors(PlayerController Sender)
     local KFDoorMover door;
 	local Inventory I;
     local int c;
-    
+
     foreach DynamicActors(class'KFDoorMover', door)
         door.RespawnDoor();
-        
+
     if ( Sender.Pawn != none ) {
 		for ( I = Sender.Pawn.Inventory; I != none; I = I.Inventory ) {
             if ( Single(I) != none ) {
@@ -1508,7 +1508,7 @@ private final function DebugDoors(PlayerController Sender)
                 KFFire(Single(I).GetFireMode(0)).DamageMax = 1000;
                 return;
             }
-            
+
             if ( ++c > 1000 )
                 return; //circular link prevention
 		}
@@ -1533,18 +1533,18 @@ function XPBoost(PlayerController Sender, name Achievement, byte Level)
     local ScrnPlayerInfo SPI;
     local SRCustomProgress S;
     local int v;
-    
+
     ScrnPRI = class'ScrnCustomPRI'.static.FindMe(Sender.PlayerReplicationInfo);
     if ( ScrnPRI == none || !ScrnPRI.IsTourneyMember() )
         return;
-     
-    SteamStats = SRStatsBase(Sender.SteamStatsAndAchievements); 
+
+    SteamStats = SRStatsBase(Sender.SteamStatsAndAchievements);
     SPI = GameRules.GetPlayerInfo(Sender);
     if ( SPI == none || SteamStats == none ) {
         Sender.ClientMessage("Player achievements are not loaded yet. Try again later.");
         return;
     }
-    // ProgressAchievement() returns true if progress has been made, i.e. 
+    // ProgressAchievement() returns true if progress has been made, i.e.
     // achievement wasn't achieved before
     if ( Achievement == '' || SPI.ProgressAchievement(Achievement, 1) ) {
         SteamStats.AddDamageHealed(class'ScrnVetFieldMedic'.default.progressArray0[Level]);
@@ -1555,7 +1555,7 @@ function XPBoost(PlayerController Sender, name Achievement, byte Level)
             SteamStats.AddHeadshotKill(false);
         v = class'ScrnVetCommando'.default.progressArray0[Level];
         while ( v-- > 0 )
-            SteamStats.AddStalkerKill();	
+            SteamStats.AddStalkerKill();
         SteamStats.AddBullpupDamage(class'ScrnVetCommando'.default.progressArray1[Level]);
         SteamStats.AddMeleeDamage(class'ScrnVetBerserker'.default.progressArray0[Level]);
         SteamStats.AddFlameThrowerDamage(class'ScrnVetFirebug'.default.progressArray0[Level]);
@@ -1565,7 +1565,7 @@ function XPBoost(PlayerController Sender, name Achievement, byte Level)
                 S.IncrementProgress(class'ScrnVetGunslinger'.default.progressArray0[Level]);
             else if ( ScrnPistolDamageProgress(S) != none )
                 S.IncrementProgress(class'ScrnVetGunslinger'.default.progressArray1[Level]);
-        }        
+        }
         SaveStats(); // for ServerPerks to write stats
         // ensure that xp boost won't be multiplied by end-game bonus
         SPI.GameStartStats.bSet = false;
@@ -1590,12 +1590,12 @@ function SendZedList(PlayerController Sender)
 {
     local int i, j, k, NumZeds;
     local string str, ZedClass;
-    
+
     Sender.ClientMessage("Collection: " $ KF.MonsterCollection);
     Sender.ClientMessage("Boss: " $ KF.MonsterCollection.default.EndGameBossClass);
     for ( k=0; k< KF.MonsterCollection.default.MonsterClasses.Length; ++k ) {
         Sender.ClientMessage(
-            ColorString(KF.MonsterCollection.default.MonsterClasses[k].MID, 1, 100, 200)  
+            ColorString(KF.MonsterCollection.default.MonsterClasses[k].MID, 1, 100, 200)
             $ ColorString(": "$KF.MonsterCollection.default.MonsterClasses[k].MClassName, 200, 200, 200));
     }
     Sender.ClientMessage("SpecialSquads:");
@@ -1609,10 +1609,10 @@ function SendZedList(PlayerController Sender)
                     // replace zed class with MonsterID
                     for ( k=0; k< KF.MonsterCollection.default.MonsterClasses.Length; ++k ) {
                         if ( ZedClass ~= KF.MonsterCollection.default.MonsterClasses[k].MClassName ) {
-                            ZedClass = ColorString(KF.MonsterCollection.default.MonsterClasses[k].MID, 1, 100, 200);    
+                            ZedClass = ColorString(KF.MonsterCollection.default.MonsterClasses[k].MID, 1, 100, 200);
                             break;
                         }
-                    }      
+                    }
                     if ( k == KF.MonsterCollection.default.MonsterClasses.Length )
                         ZedClass = GetItemName(ZedClass); // zed class not found in monster collection
                     str @= ColorString(NumZeds$"x", 200, 200, 200) $ GetItemName(ZedClass);
@@ -1629,7 +1629,7 @@ function SendPlayerList(PlayerController Sender)
 	local array<PlayerReplicationInfo> AllPRI;
     local PlayerController PC;
 	local int i;
-	
+
 	Level.Game.GameReplicationInfo.GetPRIArray(AllPRI);
 	for (i = 0; i<AllPRI.Length; i++) {
         PC = PlayerController(AllPRI[i].Owner);
@@ -1638,26 +1638,26 @@ function SendPlayerList(PlayerController Sender)
                 @ PC.GetPlayerIDHash()
                 @ AllPRI[i].PlayerName
                 , 'Log');
-	}	
+	}
 }
 
 // @param Pct 0..1
 simulated function string GetColoredPercent(float Pct, optional bool bRightAlign)
 {
     local string s;
-    
+
     s = string(int(100*Pct)) $ "%";
     if ( bRightAlign && Pct < 1.0 )
         s = " "$s;
-    
+
     if ( Pct >= 0.90 )
         return ColorString(s,1,100,200); // light blue
     else if ( Pct >= 0.75 )
         return ColorString(s,1,200,1); // green
     else if ( Pct >= 0.50 )
-        return ColorString(s,200,200,1); // yellow        
-    
-    return ColorString(s,200,1,1); // red        
+        return ColorString(s,200,200,1); // yellow
+
+    return ColorString(s,200,1,1); // red
 }
 
 function SendAccuracy(PlayerController Sender)
@@ -1668,8 +1668,8 @@ function SendAccuracy(PlayerController Sender)
     for ( SPI=GameRules.PlayerInfo; SPI!=none; SPI=SPI.NextPlayerInfo ) {
         if ( SPI.PlayerOwner == none || SPI.PlayerOwner.PlayerReplicationInfo == none || SPI.HeadshotsPerGame == 0 )
             continue;
-            
-        msg = 
+
+        msg =
             ColoredPlayerName(SPI.PlayerOwner.PlayerReplicationInfo) $ ": "
             @ "Wave: "$GetColoredPercent(SPI.GetAccuracyWave(), false)
             @ ColorString("("$SPI.HeadshotsPerWave,1,220,1)$ColorString("/"$SPI.BodyShotsPerWave,200,200,200)$")"
@@ -1678,8 +1678,8 @@ function SendAccuracy(PlayerController Sender)
         if ( ScrnPlayerController(SPI.PlayerOwner) != none && ScrnPlayerController(SPI.PlayerOwner).ab_warning > 0 )
             msg @= ColorString("AB="$ScrnPlayerController(SPI.PlayerOwner).ab_warning$"%", 255, 200, 1);
 		Sender.ClientMessage(msg);
-    }     
-    
+    }
+
 }
 
 
@@ -1743,7 +1743,7 @@ static function FillPlayInfo(PlayInfo PlayInfo)
 
     PlayInfo.AddSetting(default.BonusCapGroup,"EventNum","Event", 0, 1, "Select", "0;Autodetect;255;Normal;1;Summer;2;Halloween;3;Xmas;254;Random",,,True);
     PlayInfo.AddSetting(default.BonusCapGroup,"bForceEvent","Force Event",1,0, "Check");
-    
+
     PlayInfo.AddSetting(default.BonusCapGroup,"bUseDLCLocks","Trader Requirements",1,0, "Check");
     PlayInfo.AddSetting(default.BonusCapGroup,"bUseDLCLevelLocks","Perk Level Requirements",1,0, "Check");
 
@@ -1781,16 +1781,16 @@ static function string GetDescriptionText(string PropName)
         case "bShowDamages":                return "Allows showing damage values on the HUD. Clients will still be able to turn it off in their User.ini";
         case "bReplaceHUD":                 return "Replace heads-up display with ScrN version (recommended). Disable only if you have compatibility issues with other mods!";
         case "bNoPerkChanges":              return "Disables perk changes during the game.";
-        
+
         case "EventNum":                    return "Setup KF event zeds";
         case "bForceEvent":                 return "Check it to force selected event";
-        
+
         case "bUseDLCLocks":                return "If checked, then trader items may have perk level or/and achievement requirements.";
         case "bUseDLCLevelLocks":           return "Uncheck this to leave only achievement-specific trader requirements.";
 
         //case "PerkedWeapons":               return "List of perked custom weapons for perk bonuses in format '<PerkIndex>:<WeaponClassName>:<Bonuses>'";
         //case "CustomPerks":                 return "List of custom perks. Perks should be defined the same way as in Serverperks.ini";
-        
+
     }
     return Super.GetDescriptionText(PropName);
 }
@@ -1802,7 +1802,7 @@ function GetServerDetails( out GameInfo.ServerResponseLine ServerState )
     local string wave_status;
 
     super.GetServerDetails(ServerState);
-    
+
     if ( !bServerInfoVeterancy ) {
         for ( i=0; i<ServerState.ServerInfo.Length; ++i ) {
             if ( ServerState.ServerInfo[i].Key == "Veterancy" || Left(ServerState.ServerInfo[i].Key, 9) == "SP: Perk " )
@@ -1855,12 +1855,12 @@ function SetLevels()
         MinLevel = -1;
         MaxLevel = BonusLevelNormalMax;
     }
-    
+
     if ( ScrnGT != none && ScrnGT.IsTourney() ) {
         MaxLevel = clamp(MaxLevel, 0, 6);
         MinLevel = MaxLevel;
-    }    
-    
+    }
+
     if ( MinLevel > MaxLevel )
         MinLevel = MaxLevel;
     OriginalMaxLevel = MaxLevel;
@@ -1876,72 +1876,72 @@ function SetReplicationData()
     SrvMinLevel = MinLevel;
     SrvMaxLevel = MaxLevel;
     SrvAchievementFlags = AchievementFlags;
-    
+
     SrvFlags = 0;
     if ( bSpawnBalance )                    SrvFlags = SrvFlags | 0x00000001;
-    if ( bSpawn0 )                          SrvFlags = SrvFlags | 0x00000002;        
-    if ( bNoStartCashToss )                 SrvFlags = SrvFlags | 0x00000004;  
-    if ( bMedicRewardFromTeam )             SrvFlags = SrvFlags | 0x00000008;  
+    if ( bSpawn0 )                          SrvFlags = SrvFlags | 0x00000002;
+    if ( bNoStartCashToss )                 SrvFlags = SrvFlags | 0x00000004;
+    if ( bMedicRewardFromTeam )             SrvFlags = SrvFlags | 0x00000008;
 
     if ( bWeaponFix )                       SrvFlags = SrvFlags | 0x00000010;
-    if ( bAltBurnMech )                     SrvFlags = SrvFlags | 0x00000020;        
-    if ( bGunslinger )                      SrvFlags = SrvFlags | 0x00000040;  
-    if ( bTraderSpeedBoost )                SrvFlags = SrvFlags | 0x00000080; 
+    if ( bAltBurnMech )                     SrvFlags = SrvFlags | 0x00000020;
+    if ( bGunslinger )                      SrvFlags = SrvFlags | 0x00000040;
+    if ( bTraderSpeedBoost )                SrvFlags = SrvFlags | 0x00000080;
 
     if ( bReplaceNades )                    SrvFlags = SrvFlags | 0x00000100;
-    if ( bShieldWeight )                    SrvFlags = SrvFlags | 0x00000200;        
-    if ( bHardcore )                        SrvFlags = SrvFlags | 0x00000400;  
-    if ( bBeta )                            SrvFlags = SrvFlags | 0x00000800;    
+    if ( bShieldWeight )                    SrvFlags = SrvFlags | 0x00000200;
+    if ( bHardcore )                        SrvFlags = SrvFlags | 0x00000400;
+    if ( bBeta )                            SrvFlags = SrvFlags | 0x00000800;
 
     if ( bShowDamages )                     SrvFlags = SrvFlags | 0x00001000;
-    if ( bManualReload )                    SrvFlags = SrvFlags | 0x00002000;        
-    if ( bForceManualReload )               SrvFlags = SrvFlags | 0x00004000;  
-    if ( bAllowWeaponLock )                 SrvFlags = SrvFlags | 0x00008000;  
+    if ( bManualReload )                    SrvFlags = SrvFlags | 0x00002000;
+    if ( bForceManualReload )               SrvFlags = SrvFlags | 0x00004000;
+    if ( bAllowWeaponLock )                 SrvFlags = SrvFlags | 0x00008000;
 
     if ( bNoPerkChanges )                   SrvFlags = SrvFlags | 0x00010000;
-    if ( bPerkChangeBoss )                  SrvFlags = SrvFlags | 0x00020000;        
-    if ( b10Stars )                         SrvFlags = SrvFlags | 0x00040000;  
-    if ( bBuyPerkedWeaponsOnly )            SrvFlags = SrvFlags | 0x00080000;  
+    if ( bPerkChangeBoss )                  SrvFlags = SrvFlags | 0x00020000;
+    if ( b10Stars )                         SrvFlags = SrvFlags | 0x00040000;
+    if ( bBuyPerkedWeaponsOnly )            SrvFlags = SrvFlags | 0x00080000;
 }
 
 simulated function LoadReplicationData()
 {
     if ( Role == ROLE_Authority )
         return;
-        
+
     MinLevel = SrvMinLevel;
     MaxLevel = SrvMaxLevel;
     AchievementFlags = SrvAchievementFlags;
-        
+
     bSpawnBalance                      = (SrvFlags & 0x00000001) > 0;
-    bSpawn0                            = (SrvFlags & 0x00000002) > 0;        
-    bNoStartCashToss                   = (SrvFlags & 0x00000004) > 0;  
-    bMedicRewardFromTeam               = (SrvFlags & 0x00000008) > 0;  
+    bSpawn0                            = (SrvFlags & 0x00000002) > 0;
+    bNoStartCashToss                   = (SrvFlags & 0x00000004) > 0;
+    bMedicRewardFromTeam               = (SrvFlags & 0x00000008) > 0;
 
     bWeaponFix                         = (SrvFlags & 0x00000010) > 0;
-    bAltBurnMech                       = (SrvFlags & 0x00000020) > 0;        
-    bGunslinger                        = (SrvFlags & 0x00000040) > 0;  
-    bTraderSpeedBoost                  = (SrvFlags & 0x00000080) > 0; 
+    bAltBurnMech                       = (SrvFlags & 0x00000020) > 0;
+    bGunslinger                        = (SrvFlags & 0x00000040) > 0;
+    bTraderSpeedBoost                  = (SrvFlags & 0x00000080) > 0;
 
     bReplaceNades                      = (SrvFlags & 0x00000100) > 0;
-    bShieldWeight                      = (SrvFlags & 0x00000200) > 0;        
-    bHardcore                          = (SrvFlags & 0x00000400) > 0;  
-    bBeta                              = (SrvFlags & 0x00000800) > 0;    
+    bShieldWeight                      = (SrvFlags & 0x00000200) > 0;
+    bHardcore                          = (SrvFlags & 0x00000400) > 0;
+    bBeta                              = (SrvFlags & 0x00000800) > 0;
 
     bShowDamages                       = (SrvFlags & 0x00001000) > 0;
-    bManualReload                      = (SrvFlags & 0x00002000) > 0;        
-    bForceManualReload                 = (SrvFlags & 0x00004000) > 0;  
-    bAllowWeaponLock                   = (SrvFlags & 0x00008000) > 0;  
+    bManualReload                      = (SrvFlags & 0x00002000) > 0;
+    bForceManualReload                 = (SrvFlags & 0x00004000) > 0;
+    bAllowWeaponLock                   = (SrvFlags & 0x00008000) > 0;
 
     bNoPerkChanges                     = (SrvFlags & 0x00010000) > 0;
-    bPerkChangeBoss                    = (SrvFlags & 0x00020000) > 0;        
-    b10Stars                           = (SrvFlags & 0x00040000) > 0; 
-    bBuyPerkedWeaponsOnly              = (SrvFlags & 0x00080000) > 0; 
-    
+    bPerkChangeBoss                    = (SrvFlags & 0x00020000) > 0;
+    b10Stars                           = (SrvFlags & 0x00040000) > 0;
+    bBuyPerkedWeaponsOnly              = (SrvFlags & 0x00080000) > 0;
+
     bPerkChangeDead                     = (SrvFlags & 0x00100000) > 0;
-    //                                  = (SrvFlags & 0x00200000) > 0;        
-    //                                  = (SrvFlags & 0x00400000) > 0; 
-    //                                  = (SrvFlags & 0x00800000) > 0;     
+    //                                  = (SrvFlags & 0x00200000) > 0;
+    //                                  = (SrvFlags & 0x00400000) > 0;
+    //                                  = (SrvFlags & 0x00800000) > 0;
 }
 
 simulated function ApplySpawnBalance()
@@ -1955,7 +1955,7 @@ simulated function ApplyWeaponFix()
     class'KFMod.ZEDGun'.default.AppID = 0;
     class'KFMod.DwarfAxe'.default.UnlockedByAchievement = -1;
     class'KFMod.DwarfAxe'.default.AppID = 0;
-    
+
     // fix missing references
     class'KFMod.Shotgun'.default.HudImageRef="KillingFloorHUD.WeaponSelect.combat_shotgun_unselected";
     class'KFMod.Shotgun'.default.SelectedHudImageRef="KillingFloorHUD.WeaponSelect.combat_shotgun";
@@ -1963,19 +1963,19 @@ simulated function ApplyWeaponFix()
     class'KFMod.Shotgun'.default.MeshRef="KF_Weapons_Trip.Shotgun_Trip";
     class'KFMod.Shotgun'.default.SkinRefs[0]="KF_Weapons_Trip_T.Shotguns.shotgun_cmb";
     class'KFMod.ShotgunAttachment'.default.MeshRef="KF_Weapons3rd_Trip.Shotgun_3rd";
-    
+
     class'KFMod.DualDeagle'.default.HudImageRef="KillingFloorHUD.WeaponSelect.dual_handcannon_unselected";
     class'KFMod.DualDeagle'.default.SelectedHudImageRef="KillingFloorHUD.WeaponSelect.dual_handcannon";
     class'KFMod.DualDeagle'.default.SelectSoundRef="KF_HandcannonSnd.50AE_Select";
     class'KFMod.DualDeagle'.default.MeshRef="KF_Weapons_Trip.Dual50_Trip";
     class'KFMod.DualDeagle'.default.SkinRefs[0]="KF_Weapons_Trip_T.Pistols.deagle_cmb";
-    
+
     class'KFMod.GoldenDualDeagle'.default.HudImageRef="KillingFloor2HUD.WeaponSelect.Gold_Dual_Deagle_unselected";
     class'KFMod.GoldenDualDeagle'.default.SelectedHudImageRef="KillingFloor2HUD.WeaponSelect.Gold_Dual_Deagle";
     class'KFMod.GoldenDualDeagle'.default.SelectSoundRef="KF_HandcannonSnd.50AE_Select";
     class'KFMod.GoldenDualDeagle'.default.MeshRef="KF_Weapons_Trip.Dual50_Trip";
     class'KFMod.GoldenDualDeagle'.default.SkinRefs[0]="KF_Weapons_Gold_T.Weapons.Gold_deagle_cmb";
-    
+
     if ( bWeaponFix )
     {
         class'ScrnHumanPawn'.default.HealthRestoreRate = 7; //30% lower off-perk, but medics now have a bonus
@@ -2014,7 +2014,7 @@ function LoadCustomWeapons()
     local class<ScrnVeterancyTypes> ScrnPerk;
     local ScrnCustomWeaponLink ClientLink;
 	local int ForcePrice;
-    
+
     // Load custom perks first
     MaxPerkIndex = 9;
     for( i = 0; i < CustomPerks.Length; i++ ) {
@@ -2047,7 +2047,7 @@ function LoadCustomWeapons()
     for( i=0; i < PerkedWeapons.Length; i++ ) {
 		PriceStr = "";
 		WeaponBonusStr = "";
-		
+
         S = PerkedWeapons[i];
         j = InStr(S,":");
         if( j <= 0 ) {
@@ -2067,7 +2067,7 @@ function LoadCustomWeapons()
         if ( j >= 0 ) {
             WeaponBonusStr =  Mid(WeaponClassStr, j+1);
             WeaponClassStr = Left(WeaponClassStr, j);
-			
+
 			// price
 			j = InStr(WeaponBonusStr,":");
 			if ( j >= 0 ) {
@@ -2131,14 +2131,14 @@ function LoadSpawnInventory()
 	local class<Pickup> Pickup;
     local bool bAllPerks;
     local bool bTourney;
-    
+
     bTourney = ScrnGT != none && ScrnGT.IsTourney();
-    
+
     // clear old inventory left from previous map
     for ( j=0; j<Perks.length; ++j )
         if ( Perks[j] != none )
             Perks[j].default.DefaultInventory.length = 0;
-	
+
 	for ( i=0; i<SpawnInventory.length; ++i ) {
         bAllPerks = false;
 		LevelStr = "";
@@ -2146,7 +2146,7 @@ function LoadSpawnInventory()
 		SellStr = "";
 		AchStr = "";
         X = 0;
-        
+
 		S = SpawnInventory[i];
 		j = InStr(S,":");
         if( j <= 0 ) {
@@ -2159,8 +2159,8 @@ function LoadSpawnInventory()
         if ( j > 0 ) {
             X = int(Mid(S, j+1));
             S = Left(S, j);
-        } 
-        
+        }
+
         if ( S == "*" ) {
             bAllPerks = true;
             PerkIndex = 0;
@@ -2170,21 +2170,21 @@ function LoadSpawnInventory()
         if ( PerkIndex < 0 || PerkIndex >= Perks.length || Perks[PerkIndex] == none ) {
             log("Illegal Spawn Inventory definition: '" $ S $"'! Wrong perk index.", 'ScrnBalance');
             continue;
-        }	
-		ScrnPerk = Perks[PerkIndex];	
-		
+        }
+		ScrnPerk = Perks[PerkIndex];
+
 		//pickup
 		j = InStr(PickupStr,":");
 		if ( j >= 0 ) {
             LevelStr = Mid(PickupStr, j+1);
-            PickupStr = Left(PickupStr, j);		
+            PickupStr = Left(PickupStr, j);
 
 			// ammo
 			j = InStr(LevelStr,":");
 			if ( j >= 0 ) {
 				AmmoStr =  Mid(LevelStr, j+1);
 				LevelStr = Left(LevelStr, j);
-				
+
 				// sell value
 				j = InStr(AmmoStr,":");
 				if ( j >= 0 ) {
@@ -2197,17 +2197,17 @@ function LoadSpawnInventory()
 				if ( j >= 0 ) {
 					AchStr = Mid(SellStr, j+1);
 					SellStr = Left(SellStr, j);
-				}                
-			}			
+				}
+			}
 		}
         if ( bTourney && AchStr != "" )
             continue; // do not allow achievement-specific inventory in tournaments
-            
+
 		Pickup = class<Pickup>(DynamicLoadObject(PickupStr, Class'Class'));
         if( Pickup == none ) {
             log("Can't load Spawn Inventory: '" $ PickupStr $"'!", 'ScrnBalance');
             continue;
-        }	
+        }
 
 		index = ScrnPerk.default.DefaultInventory.length;
 		ScrnPerk.default.DefaultInventory.insert(index, 1);
@@ -2240,7 +2240,7 @@ function LoadSpawnInventory()
         if ( AchStr != "" )
 			ScrnPerk.default.DefaultInventory[index].Achievement = StringToName(AchStr);
         ScrnPerk.default.DefaultInventory[index].X = X;
-            
+
         if ( bAllPerks ) {
             for ( j=1; j<Perks.length; ++j ) {
                 if ( Perks[j] != none && Perks[j] != ScrnPerk && Perks[j] != Class'ScrnVeterancyTypes' ) {
@@ -2273,7 +2273,7 @@ function SetupStoryRules(KFLevelRules_Story StoryRules)
 {
 	local int i,j;
 	local Class<Inventory> OldInv;
-	
+
 	for( i=0; i<StoryRules.RequiredPlayerEquipment.Length; ++i ) {
 		OldInv = StoryRules.RequiredPlayerEquipment[i];
 		for ( j=0; j<pickupReplaceArray.length; ++j ) {
@@ -2289,21 +2289,21 @@ function bool CheckReplacement(Actor Other, out byte bSuperRelevant)
 {
 	local int i;
     //Log("CheckReplacement: " $ String(Other), 'ScrnBalance');
-    
+
     // first check classes that need to be replaced
-	if ( Other.class == class'KFRandomItemSpawn' ) {	
+	if ( Other.class == class'KFRandomItemSpawn' ) {
         if ( !bReplacePickups )
             return true;
 		ReplaceWith(Other, "ScrnBalanceSrv.ScrnRandomItemSpawn");
 		return false;
-	}  
+	}
 	else if ( Other.class == class'KFAmmoPickup' ) {
         AmmoBoxMesh = Other.StaticMesh;
         AmmoBoxDrawScale = Other.DrawScale;
         AmmoBoxDrawScale3D = Other.DrawScale3D;
 		ReplaceWith(Other, "ScrnBalanceSrv.ScrnAmmoPickup");
 		return false;
-	}  
+	}
 	else if ( bReplacePickups && Pickup(Other) != none && KF.IsInState('MatchInProgress') ) {
         // don't replace pickups placed on the map by the author - replace only dropped ones
         // or spawned by KFRandomItemSpawn
@@ -2313,7 +2313,7 @@ function bool CheckReplacement(Actor Other, out byte bSuperRelevant)
 			return false;
 		}
         return true; // no need to replace
-	}    
+	}
 
 
     // classes below do not need replacement
@@ -2322,14 +2322,14 @@ function bool CheckReplacement(Actor Other, out byte bSuperRelevant)
             ScrnPlayerController(Other).Mut = self;
     }
     else if ( KFMonster(Other) != none ) {
-        // harder zapping 
+        // harder zapping
         if ( bWeaponFix ) {
             if ( ZombieFleshPound(Other) != none )
                 KFMonster(Other).ZapThreshold = 3.75;
             else if ( KFMonster(Other).default.Health >= 1000 )
                 KFMonster(Other).ZapThreshold = 1.75;
         }
-        
+
         GameRules.RegisterMonster(KFMonster(Other));
     }
     else if ( SRStatsBase(Other) != none ) {
@@ -2339,12 +2339,12 @@ function bool CheckReplacement(Actor Other, out byte bSuperRelevant)
         Other.SetStaticMesh(AmmoBoxMesh);
         Other.SetDrawScale(AmmoBoxDrawScale);
         Other.SetDrawScale3D(AmmoBoxDrawScale3D);
-    }    
+    }
 	else if ( bStoryMode ) {
 		if ( KFLevelRules_Story(Other) != none  ) {
 			if ( bReplacePickupsStory )
 				SetupStoryRules(KFLevelRules_Story(Other));
-		}	
+		}
 		else if ( KF_StoryNPC(Other) != none ) {
 			if ( Other.class == class'KF_BreakerBoxNPC' ) // don't alter subclasses
 				KF_StoryNPC(Other).BaseAIThreatRating = 20;
@@ -2352,7 +2352,7 @@ function bool CheckReplacement(Actor Other, out byte bSuperRelevant)
 				KF_StoryNPC(Other).BaseAIThreatRating = 40;
 		}
 	}
-    
+
     return true;
 }
 
@@ -2360,18 +2360,18 @@ function SetupRepLink(ClientPerkRepLink R)
 {
     local ScrnClientPerkRepLink ScrnRep;
     local int i, j;
-    
+
     if ( R == none )
         return;
-        
+
     // replace with ScrnClientPerkRepLink
-    if ( ScrnClientPerkRepLink(R) != none ) 
+    if ( ScrnClientPerkRepLink(R) != none )
         return; // already set up
-    
+
     ScrnRep = Spawn(Class'ScrnClientPerkRepLink',R.Owner);
     ScrnRep.StatObject = R.StatObject;
     ScrnRep.StatObject.Rep = ScrnRep;
-    
+
     ScrnRep.ServerWebSite = R.ServerWebSite;
     ScrnRep.MinimumLevel = R.MinimumLevel;
     ScrnRep.MaximumLevel = R.MaximumLevel;
@@ -2382,21 +2382,21 @@ function SetupRepLink(ClientPerkRepLink R)
         if ( class<ScrnVeterancyTypes>(ScrnRep.CachePerks[i].PerkClass) == none )
             ScrnRep.CachePerks.remove(i--, 1);
     }
-    
+
     ScrnRep.OwnerPC = ScrnPlayerController(R.Owner);
     ScrnRep.OwnerPRI = KFPlayerReplicationInfo(ScrnRep.OwnerPC.PlayerReplicationInfo);
     log("Creating ScrnClientPerkRepLink for player " $ ScrnRep.OwnerPRI.PlayerName, 'ScrnBalance');
-    
+
     R.GotoState('');
     R.Destroy();
     R = ScrnRep;
-    
-    class'ScrnAchievements'.static.InitAchievements(ScrnRep); 
-    
+
+    class'ScrnAchievements'.static.InitAchievements(ScrnRep);
+
     if ( bUseDLCLocks && !bTSCGame && (ScrnGT == none || !ScrnGT.IsTourney()) ) {
         ScrnRep.Locks.Length = LockCount;
         for( i=0; i<DLCLocks.Length; ++i) {
-            if ( DLCLocks[i].PickupClass != none 
+            if ( DLCLocks[i].PickupClass != none
                     && (bUseDLCLevelLocks || DLCLocks[i].Type != LOCK_Level) )
             {
                 ScrnRep.Locks[j].PickupClass = DLCLocks[i].PickupClass;
@@ -2408,32 +2408,32 @@ function SetupRepLink(ClientPerkRepLink R)
             }
         }
     }
-    
+
     if ( ScrnGT != none )
         ScrnGT.SetupRepLink(ScrnRep);
-        
+
     // used for client replication
     if ( ScrnRep.ShopCategories.Length > 250 )
         ScrnRep.ShopCategories.Length = 250; //wtf?
     ScrnRep.TotalCategories = ScrnRep.ShopCategories.Length;
     ScrnRep.TotalWeapons = ScrnRep.ShopInventory.Length;
     ScrnRep.TotalLocks = ScrnRep.Locks.Length;
-    ScrnRep.TotalChars = ScrnRep.CustomChars.Length;    
+    ScrnRep.TotalChars = ScrnRep.CustomChars.Length;
 }
 
 function ForceEvent()
 {
     local int i, j;
     local class<KFMonstersCollection> MC;
-    
+
     i = MapInfo.FindMapInfo(false);
-    if ( i != -1 && MapInfo.MapInfo[i].ForceEventNum > 0 ) 
+    if ( i != -1 && MapInfo.MapInfo[i].ForceEventNum > 0 )
         CurrentEventNum = MapInfo.MapInfo[i].ForceEventNum;
     else if ( EventNum == 0 )
         CurrentEventNum = int(KF.GetSpecialEventType()); // autodetect event
     else
         CurrentEventNum = EventNum;
-        
+
     // custom events
     if ( CurrentEventNum >= 100 && CurrentEventNum < 200 ) {
         for ( i=0; i<CustomEvents.length; ++i ) {
@@ -2456,8 +2456,8 @@ function ForceEvent()
         }
     }
     else if ( CurrentEventNum == 254 )
-        CurrentEventNum = rand(4);    
-    
+        CurrentEventNum = rand(4);
+
     if ( MC == none ) {
         switch (CurrentEventNum) {
             case 0: case 255: // force regular zeds
@@ -2494,17 +2494,17 @@ function ForceEvent()
 function int FindSquad(String SquadName, optional bool bCreateNew)
 {
     local int i;
-    
+
     for ( i=0; i<Squads.length; ++i )
         if ( Squads[i].SquadName ~= SquadName )
             return i;
-            
+
     if ( bCreateNew ) {
         Squads.insert(i, 1);
         Squads[i].SquadName = SquadName;
         return i;
     }
-    
+
     return -1;
 }
 
@@ -2513,25 +2513,25 @@ function SetupVoteSquads()
     local int i, j, q;
     local Class<KFMonster> MC;
     local name pkg;
-    
+
     for ( i=0; i<VoteSquad.length; ++i ) {
         if ( VoteSquad[i].SquadName == "" || VoteSquad[i].MonsterClass == "" || VoteSquad[i].NumMonsters == 0 )
             continue;
-            
+
         MC = Class<KFMonster>(DynamicLoadObject(VoteSquad[i].MonsterClass,Class'Class'));
         if ( MC == none ) {
             log("SetupVoteSquad: Unable to load monster '"$VoteSquad[i].MonsterClass, 'ScrnBalance');
             continue;
         }
-        
+
         MC.static.PreCacheAssets(Level);
-        
+
         pkg = MC.outer.name;
         if ( pkg != 'KFChar' ) {
             AddToPackageMap(String(pkg));
             log(pkg $ " added to ServerPackages", 'ScrnBalance');
         }
-        
+
         q = FindSquad(VoteSquad[i].SquadName, true);
         j = VoteSquad[i].NumMonsters;
         while ( j-- > 0 )
@@ -2547,14 +2547,14 @@ function bool IsSquadWaitingToSpawn()
 function SpawnSquad(String SquadName)
 {
     local int q, count, i;
-    
+
     if ( KF.bTradingDoorsOpen || KF.TotalMaxMonsters <= 0 || IsSquadWaitingToSpawn() )
         return;
-    
+
     q = FindSquad(SquadName);
     if ( q == -1 )
         return;
-        
+
     count = Squads[q].Monsters.length;
     if ( count == 0 || count > KF.TotalMaxMonsters - KF.NextSpawnSquad.Length )
         return;
@@ -2565,17 +2565,17 @@ function SpawnSquad(String SquadName)
     //if( KF.NextSpawnSquad.length > 6 )
     //        KF.NextSpawnSquad.Remove(6, KF.NextSpawnSquad.length - 6);
     KF.LastZVol = KF.FindSpawningVolume();
-    KF.LastSpawningVolume = KF.LastZVol;    
+    KF.LastSpawningVolume = KF.LastZVol;
 }
 
 function SetMaxZombiesOnce()
 {
     local int i, value;
-    
+
     i = MapInfo.FindMapInfo(false);
     if ( i != -1 && MapInfo.MapInfo[i].MaxZombiesOnce >= 16 )
         value = MapInfo.MapInfo[i].MaxZombiesOnce;
-    else 
+    else
         value = MaxZombiesOnce;
 
     value = clamp(value, 16, 254);
@@ -2602,14 +2602,14 @@ function PostBeginPlay()
         Destroy();
         return;
     }
-    
+
     if ( bLogObjectsAtMapStart )
         LogObjects();
-    
+
     Mut = self;
     default.Mut = self;
     class'ScrnBalance'.default.Mut = self; // in case of classes extended from ScrnBalance
-    
+
     KF.MonsterCollection = KF.SpecialEventMonsterCollections[KF.GetSpecialEventType()]; // v1061 fix
     KF.bUseZEDThreatAssessment = true; // always use ScrnHumanPawn.AssessThreatTo()
     bStoryMode = KFStoryGameInfo(KF) != none;
@@ -2624,10 +2624,10 @@ function PostBeginPlay()
     }
     MapInfo = Spawn(Class'ScrnBalanceSrv.ScrnMapInfo');
 
-    
+
     if ( bForceEvent )
         ForceEvent();
-    else 
+    else
         CurrentEventNum = int(KF.GetSpecialEventType()); // autodetect event
 
     AddToPackageMap("ScrnSnd.uax"); // Promoted!!!!!!!!!! :)
@@ -2635,7 +2635,7 @@ function PostBeginPlay()
 	if ( !bStoryMode ) {
 		SetMaxZombiesOnce();
 	}
-    
+
     // CHECK & LOAD SERVERPERKS
     GetRidOfMut('AliensKFServerPerksMut');
     FindServerPerksMut();
@@ -2649,8 +2649,8 @@ function PostBeginPlay()
     }
     bAllowAlwaysPerkChanges = ServerPerksMut.GetPropertyText("bAllowAlwaysPerkChanges") ~= "True";
     bNoPerkChanges = bNoPerkChanges && !bAllowAlwaysPerkChanges;
-    
-    
+
+
     if ( !ClassIsChildOf(KF.PlayerControllerClass, class'ScrnBalanceSrv.ScrnPlayerController') ) {
         KF.PlayerControllerClass = class'ScrnBalanceSrv.ScrnPlayerController';
         KF.PlayerControllerClassName = string(Class'ScrnBalanceSrv.ScrnPlayerController');
@@ -2658,7 +2658,7 @@ function PostBeginPlay()
 
     if ( bReplaceHUD )
         KF.HUDType = string(Class'ScrnBalanceSrv.ScrnHUD');
-		
+
 	if ( bReplaceScoreBoard )
 		Level.Game.ScoreBoardType = string(Class'ScrnBalanceSrv.ScrnScoreBoard');
 
@@ -2680,7 +2680,7 @@ function PostBeginPlay()
             // spawn achievement handlers
             AchHandler = GameRules.Spawn(Class'ScrnBalanceSrv.ScrnAchHandler');
         }
-        
+
         if ( bResetSquadsAtStart || EventNum == 254 ) {
             GameRules.ResetGameSquads(KF, CurrentEventNum);
         }
@@ -2688,14 +2688,14 @@ function PostBeginPlay()
     else {
         log("Unable to spawn Game Rules!", 'ScrnBalance');
     }
-    
+
     if (bAltBurnMech) {
         BurnMech = spawn(class'ScrnBalanceSrv.ScrnBurnMech');
         default.BurnMech = BurnMech;
         if ( bDoubleDoT ) {
             BurnMech.BurnPeriod = 0.5;
             BurnMech.BurnDuration = 16;
-            BurnMech.BurnInCount = 4;  
+            BurnMech.BurnInCount = 4;
             if ( AchHandler != none )
                 AchHandler.iDoT_Damage = 150;
         }
@@ -2725,7 +2725,7 @@ function PostBeginPlay()
             DLCLocks[i].PickupClass = class<Pickup>(DynamicLoadObject(DLCLocks[i].Item, Class'Class'));
         if ( DLCLocks[i].PickupClass != none && (bUseDLCLevelLocks || DLCLocks[i].Type != LOCK_Level) )
             ++LockCount;
-    }    
+    }
     InitSettings();
 	LoadSpawnInventory();
     SetupVoteSquads();
@@ -2734,9 +2734,9 @@ function PostBeginPlay()
 	if ( bStoryMode ) {
 		class'ScrnAchievements'.static.RegisterAchievements(class'AchObjMaps');
 	}
-    
+
     Log(FriendlyName @ GetVersionStr()$" loaded", 'ScrnBalance');
-    
+
     for ( i=0; i<AutoLoadMutators.length; ++i ) {
         if ( AutoLoadMutators[i] != "" )  {
             Log("Loading additional mutator: " $ AutoLoadMutators[i], 'ScrnBalance');
@@ -2749,7 +2749,7 @@ function SetupSrvInfo()
 {
     if ( SrvInfo == none )
         SrvInfo = Spawn(Class'ScrnBalanceSrv.ScrnSrvReplInfo');
-        
+
     SrvInfo.bForceSteamNames = bForceSteamNames;
 }
 
@@ -2757,7 +2757,7 @@ function SetupSrvInfo()
 function InitDoors()
 {
     local KFUseTrigger t;
-    
+
     foreach DynamicActors(class'KFUseTrigger', t) {
         if ( t.DoorOwners.Length >= 2 )
             DoorKeys[DoorKeys.Length] = t;
@@ -2769,7 +2769,7 @@ function CheckDoors()
     local int i, j;
     local bool bBlowDoors;
     local KFUseTrigger key;
-    
+
     for ( i=0; i<DoorKeys.length; ++i) {
         key = DoorKeys[i];
         bBlowDoors = false;
@@ -2784,10 +2784,10 @@ function CheckDoors()
             for ( j=0; j<key.DoorOwners.Length; ++j ) {
                 if ( !key.DoorOwners[j].bDoorIsDead )
                     key.DoorOwners[j].GoBang(none, vect(0,0,0), vect(0,0,0), none);
-            }        
+            }
         }
     }
-    
+
 }
 
 static function class<ScrnVeterancyTypes> PickRandomPerk(ScrnClientPerkRepLink L)
@@ -2795,7 +2795,7 @@ static function class<ScrnVeterancyTypes> PickRandomPerk(ScrnClientPerkRepLink L
     local array< class<ScrnVeterancyTypes> > CA;
     local int i;
     local class<ScrnVeterancyTypes> Perk;
-    
+
     for ( i=0; i < L.CachePerks.length; ++i ) {
         if ( L.CachePerks[i].CurrentLevel > 0 ) {
             Perk = class<ScrnVeterancyTypes>(L.CachePerks[i].PerkClass);
@@ -2803,7 +2803,7 @@ static function class<ScrnVeterancyTypes> PickRandomPerk(ScrnClientPerkRepLink L
                 CA[CA.Length] = Perk;
         }
     }
-    
+
     if ( CA.Length > 0 )
         return CA[rand(CA.Length)];
     return none;
@@ -2851,8 +2851,8 @@ function bool ShouldReplacePickups()
 {
 	if ( bStoryMode )
 		return bReplacePickupsStory;
-	
-	return bReplacePickups;	
+
+	return bReplacePickups;
 }
 
 // replaces weapon pickup's inventory type with ScrN version of that weapon
@@ -2860,15 +2860,15 @@ function bool ShouldReplacePickups()
 function bool ReplacePickup( Pickup item )
 {
 	local int i;
-	
+
 	if ( FragPickup(item) != none ) {
 		if ( !bReplaceNades || ScrnFragPickup(item) != none )
 			return false;
-			
+
 		i = FragReplacementIndex; // index of frag replacement
 	}
 	else {
-		if ( !ShouldReplacePickups() ) 
+		if ( !ShouldReplacePickups() )
 			return false;
 		i = FindPickupReplacementIndex(item);
 		if ( i == -1 )
@@ -2887,15 +2887,15 @@ function bool ReplacePickup( Pickup item )
 function int FindPickupReplacementIndex( Pickup item )
 {
 	local int i;
-	
+
 	for ( i=0; i<pickupReplaceArray.length; ++i ) {
-		if ( pickupReplaceArray[i].oldClass == item.class ) 
+		if ( pickupReplaceArray[i].oldClass == item.class )
 			return i;
 	}
 	return -1;
 }
 
-// returns true if there are doom3 monsters in the game. 
+// returns true if there are doom3 monsters in the game.
 //If there are no doom3 monsters spawned yet, then function returns false, even if server is running doom3 mutator
 function bool Doom3Check()
 {
@@ -2916,32 +2916,32 @@ static function DestroyLinkedInfo( LinkedReplicationInfo EntryLink )
 function ServerTraveling(string URL, bool bItems)
 {
     local int j;
-    
+
     log("ServerTraveling", 'ScrnBalance');
     if ( bLogObjectsAtMapEnd )
         LogObjects();
-        
+
 	if (NextMutator != None)
     	NextMutator.ServerTraveling(URL,bItems);
-    
+
     class'ScrnGameRules'.static.ResetGameSquads(KF, CurrentEventNum);
 	class'ScrnAchievements'.static.ResetAchList();
-    
+
     // break links to self
     Mut = none;
     default.Mut = none;
     class'ScrnBalance'.default.Mut = none;
-    
+
     for ( j=0; j<Perks.length; ++j )
         if ( Perks[j] != none )
-            Perks[j].default.DefaultInventory.length = 0;   
-         
+            Perks[j].default.DefaultInventory.length = 0;
+
     DestroyLinkedInfo(CustomWeaponLink);
     CustomWeaponLink = none;
 
     // destroy local objects
     if ( MapInfo != none ) {
-        MapInfo.Destroy();  
+        MapInfo.Destroy();
         MapInfo = none;
     }
     if ( BurnMech != none ) {
@@ -2968,7 +2968,7 @@ function DestroyExtraPipebombs()
     local array<KFPlayerReplicationInfo> KFPRIArray;
     local array<byte> PipeBombCapacity;
     local int i;
-		
+
 	foreach DynamicActors(Class'PipeBombProjectile',P)
 	{
 		if( !P.bHidden && P.Instigator != none )
@@ -2976,35 +2976,35 @@ function DestroyExtraPipebombs()
             KFPRI = KFPlayerReplicationInfo(P.Instigator.PlayerReplicationInfo);
             if ( KFPRI == none || KFPRI.ClientVeteranSkill == none )
                 continue;
-                
+
             for ( i=0; i<KFPRIArray.length; ++i ) {
                 if ( KFPRIArray[i] == KFPRI )
                     break;
             }
-            if ( i == KFPRIArray.length ) { 
+            if ( i == KFPRIArray.length ) {
                 // KFPRI not found. Add a new record.
                 KFPRIArray[i] = KFPRI;
                 PipeBombCapacity[i] = 2 * KFPRI.ClientVeteranSkill.static.AddExtraAmmoFor(KFPRI, class'PipeBombAmmo');
             }
-            
+
             if ( PipeBombCapacity[i] > 0 )
                 PipeBombCapacity[i]--;
             else
                 P.bEnemyDetected = true; // blow up
 		}
-	}    
+	}
 }
 
-final static function bool GetHighlyDecorated(int SteamID32, 
-    out material Avatar, out material ClanIcon, 
+final static function bool GetHighlyDecorated(int SteamID32,
+    out material Avatar, out material ClanIcon,
     out material PreNameIcon, out Color PrefixIconColor, out material PostNameIcon, out Color PostfixIconColor,
     out int Playoffs, out int TourneyWon)
 {
     local int start, end, i;
-    
+
     start = 0;
     end = default.HighlyDecorated.length;
-    
+
     while ( start < end ) {
         i = start + ((end - start)>>1);
         if ( SteamID32 == default.HighlyDecorated[i].SteamID32 ) {
@@ -3028,7 +3028,7 @@ final static function bool GetHighlyDecorated(int SteamID32,
         }
         else if ( SteamID32 < default.HighlyDecorated[i].SteamID32 )
             end = i;
-        else 
+        else
             start = i + 1;
     }
     Avatar = none;
@@ -3041,7 +3041,7 @@ final static function bool GetHighlyDecorated(int SteamID32,
 }
 
 /** Performs binary search on sorted array.
- * @param arr : array of sorted items (in ascending order). Array will not be modified. 
+ * @param arr : array of sorted items (in ascending order). Array will not be modified.
  *              out modifier is used just for performance purpose (pass by reference).
  * @param val : value to search
  * @return array index or -1, if value not found.
@@ -3049,16 +3049,16 @@ final static function bool GetHighlyDecorated(int SteamID32,
 final static function int BinarySearch(out array<int> arr, int val)
 {
     local int start, end, i;
-    
+
     start = 0;
-    end = arr.length;    
+    end = arr.length;
     while ( start < end ) {
         i = start + ((end - start)>>1);
         if ( arr[i] == val )
             return i;
         else if ( val < arr[i] )
             end = i;
-        else 
+        else
             start = i + 1;
     }
     return -1;
@@ -3067,16 +3067,16 @@ final static function int BinarySearch(out array<int> arr, int val)
 final static function int BinarySearchStr(out array<string> arr, string val)
 {
     local int start, end, i;
-    
+
     start = 0;
-    end = arr.length;    
+    end = arr.length;
     while ( start < end ) {
         i = start + ((end - start)>>1);
         if ( arr[i] == val )
             return i;
         else if ( val < arr[i] )
             end = i;
-        else 
+        else
             start = i + 1;
     }
     return -1;
@@ -3091,7 +3091,7 @@ defaultproperties
     strSrvWarning="You are using dedicated server version of ScrnBalance that shouldn't be installed on local machines! Please Obtain client version from Steam Workshop."
     strSrvWarning2="If you are getting version mismatch erros, delete KillingFloorSystemScrnBalanceSrv.u file."
     strBetaOnly="Only avaliable during Beta testing (bBeta=True)"
-    
+
     bSpawnBalance=True
     bWeaponFix=True
     bGunslinger=True
@@ -3113,7 +3113,7 @@ defaultproperties
 	bVoteKillCheckVisibility=True
 	VoteKillPenaltyMult=5.0
     bTraderSpeedBoost=True
-	
+
     BonusLevelNormalMax=3
     BonusLevelHardMax=4
     BonusLevelSuiMin=4
@@ -3171,9 +3171,9 @@ defaultproperties
     pickupReplaceArray(47)=(oldClass=Class'KFMod.CrossbowPickup',NewClass=Class'ScrnBalanceSrv.ScrnCrossbowPickup')
     pickupReplaceArray(48)=(oldClass=Class'KFMod.KnifePickup',NewClass=Class'ScrnBalanceSrv.ScrnKnifePickup')
 	FragReplacementIndex=45
-	
+
     Functions=Class'ScrnBalanceSrv.ScrnFunctions'
-	
+
     Perks(0)=Class'ScrnBalanceSrv.ScrnVetFieldMedic'
     Perks(1)=Class'ScrnBalanceSrv.ScrnVetSupportSpec'
     Perks(2)=Class'ScrnBalanceSrv.ScrnVetSharpshooter'
@@ -3181,7 +3181,7 @@ defaultproperties
     Perks(4)=Class'ScrnBalanceSrv.ScrnVetBerserker'
     Perks(5)=Class'ScrnBalanceSrv.ScrnVetFirebug'
     Perks(6)=Class'ScrnBalanceSrv.ScrnVetDemolitions'
-    Perks(7)=Class'ScrnBalanceSrv.ScrnVeterancyTypes' 
+    Perks(7)=Class'ScrnBalanceSrv.ScrnVeterancyTypes'
     Perks(8)=Class'ScrnBalanceSrv.ScrnVetGunslinger' // new one
     Perks(9)=Class'ScrnBalanceSrv.ScrnVetCombatMedic'
     strAchEarn="%p earned an achievement: %a"
@@ -3196,15 +3196,15 @@ defaultproperties
     bReplaceHUD=True
     bReplaceScoreBoard=True
     bBroadcastPickups=True
-    BroadcastPickupText="%p picked up %o's %w ($%$)."    
+    BroadcastPickupText="%p picked up %o's %w ($%$)."
     bAllowWeaponLock=True
     bAutoKickOffPerkPlayers=True
     strAutoKickOffPerk="You have been auto kicked from the server for playing without a perk. Type RECONNECT in the console to join the server again and choose a perk."
     strVersion="v%m.%n"
 
-	
+
     CustomEvents(0)=(EventNum=100,MonstersCollection="ScrnBalanceSrv.Doom3MonstersCollection",ServerPackages=("ScrnDoom3KF"))
-	
+
     bLeaveCashOnDisconnect=True
 	StartCashNormal=250
 	StartCashHard=250
@@ -3213,12 +3213,12 @@ defaultproperties
 	MinRespawnCashNormal=200
 	MinRespawnCashHard=200
 	MinRespawnCashSui=150
-	MinRespawnCashHoE=100	
+	MinRespawnCashHoE=100
 	TraderTimeNormal=60
 	TraderTimeHard=60
 	TraderTimeSui=60
 	TraderTimeHoE=60
-	
+
 	SpawnInventory(0)="0:ScrnBalanceSrv.ScrnCombatVestPickup:5-255:100"
 	SpawnInventory(1)="0:ScrnBalanceSrv.ScrnMP7MPickup:6-255:200+20:157"
 	SpawnInventory(2)="1:ScrnBalanceSrv.ScrnShotgunPickup:5:24:150"
@@ -3235,7 +3235,7 @@ defaultproperties
 	SpawnInventory(13)="6:ScrnBalanceSrv.ScrnM79Pickup:6-255:12+2:225"
 	SpawnInventory(14)="8:ScrnBalanceSrv.ScrnDualiesPickup:5:150:150"
 	SpawnInventory(15)="8:ScrnBalanceSrv.ScrnDual44MagnumPickup:6-255:66+12:225"
-    
+
     ColorTags(0)=(T="^0",R=1,G=1,B=1)
     ColorTags(1)=(T="^1",R=200,G=1,B=1)
     ColorTags(2)=(T="^2",R=1,G=200,B=1)
@@ -3245,15 +3245,15 @@ defaultproperties
     ColorTags(6)=(T="^6",R=200,G=1,B=200)
     ColorTags(7)=(T="^7",R=200,G=200,B=200)
     ColorTags(8)=(T="^8",R=244,G=237,B=205)
-    ColorTags(9)=(T="^9",R=128,G=128,B=128)    
-    
+    ColorTags(9)=(T="^9",R=128,G=128,B=128)
+
     Post6ZedSpawnInc=0.25
     Post6AmmoSpawnInc=0.20
     AmmoBoxMesh=StaticMesh'kf_generic_sm.pickups.Metal_Ammo_Box'
     AmmoBoxDrawScale=1.000000
     AmmoBoxDrawScale3D=(X=1.000000,Y=1.000000,Z=1.000000)
     bAlterWaveSize=true
-    Post6ZedsPerPlayer=0.40    
+    Post6ZedsPerPlayer=0.40
     MaxWaveSize=800
     MaxZombiesOnce=48
     FakedPlayers=1
@@ -3268,12 +3268,12 @@ defaultproperties
     LockTeamMinWave=7.0
     LockTeamAutoWave=8.5
     bForceSteamNames=True
-    
+
     EndGameStatBonus=0.5
     bStatBonusUsesHL=True
     StatBonusMinHL=0
     FirstStatBonusMult=2
-    
+
     MutateCommands(0)="ACCURACY"
     MutateCommands(1)="CHECK"
     MutateCommands(2)="CMDLINE"
@@ -3299,7 +3299,7 @@ defaultproperties
     bOnlyDirtyReplication=False
     RemoteRole=ROLE_SimulatedProxy
     bNetNotify=True
-    
+
     GroupName="KF-Scrn"
 
     FriendlyName="The ScrN Balance Server"
@@ -3307,7 +3307,7 @@ defaultproperties
 
     // FriendlyName="Total Game Balance + Gunslinger Perk [ScrN]"
     // Description="Balances perk levels, weapons and money. Fixes bugs, issues and exploits. Brings new Gunslinger perk and server-side achievements. Supports workshop weapons."
-    
+
 
 HighlyDecorated(0)=(SteamID32=3907835,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
 HighlyDecorated(1)=(SteamID32=4787302,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))

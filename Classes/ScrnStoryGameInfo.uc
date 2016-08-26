@@ -6,12 +6,12 @@ var protected transient int ObjTraderIndex;
 event InitGame( string Options, out string Error )
 {
     local int ConfigMaxPlayers;
-    
+
     ObjTraderIndex = -1;
     ConfigMaxPlayers = default.MaxPlayers;
-    
+
     super.InitGame(Options, Error);
-    
+
     MaxPlayers = Clamp(GetIntOption( Options, "MaxPlayers", MaxPlayers ),0,32);
     default.MaxPlayers = Clamp( ConfigMaxPlayers, 0, 32 );
 
@@ -21,7 +21,7 @@ event InitGame( string Options, out string Error )
 event PostLogin( PlayerController NewPlayer )
 {
     super.PostLogin(NewPlayer);
-    
+
     if ( ScrnPlayerController(NewPlayer) != none )
         ScrnPlayerController(NewPlayer).PostLogin();
 }
@@ -29,13 +29,13 @@ event PostLogin( PlayerController NewPlayer )
 function RestartPlayer( Controller aPlayer )
 {
     super.RestartPlayer(aPlayer);
-    
+
     if ( FriendlyFireScale > 0 && aPlayer.Pawn != none && PlayerController(aPlayer) != none ) {
         ScrnBalanceMut.SendFriendlyFireWarning(PlayerController(aPlayer));
     }
 }
 
-// C&P from Deathmatch strip color tags before name length check 
+// C&P from Deathmatch strip color tags before name length check
 function ChangeName(Controller Other, string S, bool bNameChange)
 {
     local Controller APlayer,C, P;
@@ -298,7 +298,7 @@ function bool CheckMaxLives(PlayerReplicationInfo Scorer)
 {
     local KF_StoryCheckPointVolume    RespawnPoint;
     local Controller Failer;
-    
+
 
     /* Team respawn is already taking place .. Don't bother checking anything else*/
     if(bPendingTeamRespawn)
@@ -342,7 +342,7 @@ function bool CheckEndGame(PlayerReplicationInfo Winner, string Reason)
 {
     if ( bGameEnded )
         return true; // this shouldn't happen, but you know TWIs coding style ;)
-    
+
     // Set EndGameType and Winner before calling GameRules
     switch(Reason) {
         case "LoseAction" :
@@ -356,13 +356,13 @@ function bool CheckEndGame(PlayerReplicationInfo Winner, string Reason)
             KFGameReplicationInfo(GameReplicationInfo).EndGameType = 1;
             break;
     }
-    
+
     if ( !super(TeamGame).CheckEndGame(Winner,Reason) ) {
         GameReplicationInfo.Winner = none;
         KFGameReplicationInfo(GameReplicationInfo).EndGameType = 0;
         return false;
     }
-    
+
     return true;
 }
 
@@ -370,20 +370,20 @@ function bool CheckEndGame(PlayerReplicationInfo Winner, string Reason)
 // {
     // if ( bGameEnded )
         // return; // this shouldn't happen...
-        
+
     // super.EndGame(Winner, Reason);
 // }
 
 static event class<GameInfo> SetGameType( string MapName )
 {
     local string prefix;
-    
+
     prefix = Caps(Left(MapName, InStr(MapName, "-")));
 	if ( prefix == "KFO")
 		return default.class;
 	else if ( prefix == "KF" )
-		return Class'ScrnBalanceSrv.ScrnGameType';        
-		
+		return Class'ScrnBalanceSrv.ScrnGameType';
+
     return super.SetGameType( MapName );
 }
 
@@ -391,7 +391,7 @@ static event class<GameInfo> SetGameType( string MapName )
 // NumMonsters check replaced with bTradingDoorsOpen
 function bool IsTraderTime()
 {
-	bWaveInProgress = !bTradingDoorsOpen && NumMonsters > 0 && ObjTraderIndex != -1 
+	bWaveInProgress = !bTradingDoorsOpen && NumMonsters > 0 && ObjTraderIndex != -1
         && CurrentObjective != none && CurrentObjective.IsTraderObj();
 	KFGameReplicationInfo(Level.GRI).bWaveInProgress = bWaveInProgress;
 	return !bWaveInProgress;
@@ -400,9 +400,9 @@ function bool IsTraderTime()
 function SetActiveObjective( KF_StoryObjective NewObjective, optional pawn ObjInstigator)
 {
     local int i;
-    
+
     super.SetActiveObjective(NewObjective, ObjInstigator);
-    
+
     ObjTraderIndex = -1;
     if ( CurrentObjective != none ) {
         for(i = 0 ; i < CurrentObjective.SuccessConditions.length ; ++i) {
@@ -410,8 +410,8 @@ function SetActiveObjective( KF_StoryObjective NewObjective, optional pawn ObjIn
                 ObjTraderIndex = i;
                 break;
             }
-        }  
-    }    
+        }
+    }
 }
 
 State MatchInProgress
@@ -420,8 +420,8 @@ State MatchInProgress
     {
         super.Timer();
         if ( CurrentObjective != none && ObjTraderIndex != -1 ) {
-            KFGameReplicationInfo(GameReplicationInfo).TimeToNextWave = 
-                ObjCondition_Timed(CurrentObjective.SuccessConditions[ObjTraderIndex]).RemainingSeconds;        
+            KFGameReplicationInfo(GameReplicationInfo).TimeToNextWave =
+                ObjCondition_Timed(CurrentObjective.SuccessConditions[ObjTraderIndex]).RemainingSeconds;
         }
     }
 }
@@ -430,4 +430,5 @@ State MatchInProgress
 defaultproperties
 {
     GameName="ScrN Objective Mode"
+    bTeamGame=False
 }

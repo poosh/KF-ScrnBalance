@@ -15,41 +15,43 @@ var array<string> InviteList; // contains players' steam IDs
 
 var protected float TurboScale;
 
+var transient int WavePlayerCount; // alive player count at the beginning of the wave
+
 event InitGame( string Options, out string Error )
 {
     local int ConfigMaxPlayers;
-    
+
     CmdLine = Options;
-    
+
     KFGameLength = GetIntOption(Options, "GameLength", KFGameLength);
     if ( KFGameLength < 0 || KFGameLength > 3) {
         log("GameLength must be in [0..3]: 0-short, 1-medium, 2-long, 3-custom");
         KFGameLength = GL_Long;
     }
-    
+
     TourneyMode = GetIntOption(Options, "Tourney", TourneyMode);
     PreStartTourney(TourneyMode);
-    
+
     ConfigMaxPlayers = default.MaxPlayers;
     super.InitGame(Options, Error);
     MaxPlayers = Clamp(GetIntOption( Options, "MaxPlayers", ConfigMaxPlayers ),0,32);
     default.MaxPlayers = Clamp( ConfigMaxPlayers, 0, 32 );
-    
+
     log("MonsterCollection = " $ MonsterCollection);
-    
+
     if ( TourneyMode > 0 )
         StartTourney();
 }
 static event class<GameInfo> SetGameType( string MapName )
 {
     local string prefix;
-    
+
     prefix = Caps(Left(MapName, InStr(MapName, "-")));
 	if ( prefix == "KFO")
 		return Class'ScrnBalanceSrv.ScrnStoryGameInfo';
 	else if ( prefix == "KF" )
-		return default.class;        
-		
+		return default.class;
+
     return super.SetGameType( MapName );
 }
 
@@ -57,7 +59,7 @@ function SetTurboScale(float NewScale)
 {
     if ( IsTourney() )
         return;
-        
+
     TurboScale = fmax( NewScale, 0.2 );
 }
 
@@ -206,7 +208,7 @@ function Killed(Controller Killer, Controller Killed, Pawn KilledPawn, class<Dam
     if ( PlayerController(Killer) != none ) {
         KFPRI = KFPlayerReplicationInfo(Killer.PlayerReplicationInfo);
         if ( KFMonster(KilledPawn) != None && Killed != Killer ) {
-            if ( bZEDTimeActive && KFPRI != none && KFPRI.ClientVeteranSkill != none 
+            if ( bZEDTimeActive && KFPRI != none && KFPRI.ClientVeteranSkill != none
                     && KFPRI.ClientVeteranSkill.static.ZedTimeExtensions(KFPRI) > ZedTimeExtensionsUsed )
             {
                 // Force Zed Time extension for every kill as long as the Player's Perk has Extensions left
@@ -222,13 +224,13 @@ function Killed(Controller Killer, Controller Killed, Pawn KilledPawn, class<Dam
                 else
                     DramaticEvent(0.025);
             }
-            
+
             StatsAndAchievements = KFSteamStatsAndAchievements(PlayerController(Killer).SteamStatsAndAchievements);
             if ( StatsAndAchievements != none ) {
                 if ( class<KFWeaponDamageType>(damageType) != none ) {
                     class<KFWeaponDamageType>(damageType).Static.AwardKill(StatsAndAchievements,KFPlayerController(Killer),KFMonster(KilledPawn));
                 }
-                
+
                 StatsAndAchievements.AddKill(false, false, false, false, false, false, false, false, false, "");
             }
 
@@ -292,10 +294,10 @@ exec function KillZeds()
     // fill the array first, because direct M killing may screw up DynamicActors() iteration
     // -- PooSH
     foreach DynamicActors(class 'KFMonster', M) {
-        if(M.Health > 0 && !M.bDeleteMe) 
+        if(M.Health > 0 && !M.bDeleteMe)
             Monsters[Monsters.length] = M;
     }
-    
+
     PC = Level.GetLocalPlayerController();
     for ( i=0; i<Monsters.length; ++i )
         Monsters[i].Died(PC, class'DamageType', M.Location);
@@ -317,17 +319,17 @@ function float RateZombieVolume(ZombieVolume ZVol, Controller SpawnCloseTo, opti
 
     if ( ZVol == none )
         return -1;
-        
+
     if( !bIgnoreFailedSpawnTime && Level.TimeSeconds - ZVol.LastFailedSpawnTime < 5.0 )
         return -1;
 
     // check doors
 	for( i=0; i<ZVol.RoomDoorsList.Length; ++i ) {
-		if ( ZVol.RoomDoorsList[i].DoorActor!=None && (ZVol.RoomDoorsList[i].DoorActor.bSealed 
+		if ( ZVol.RoomDoorsList[i].DoorActor!=None && (ZVol.RoomDoorsList[i].DoorActor.bSealed
                 || (!ZVol.RoomDoorsList[i].bOnlyWhenWelded && ZVol.RoomDoorsList[i].DoorActor.KeyNum==0)) )
         	return -1;
 	}
-    
+
     // can this volume spawn this squad?
 	if( !ZVol.CanSpawnInHere(NextSpawnSquad) )
     	return -1;
@@ -337,9 +339,9 @@ function float RateZombieVolume(ZombieVolume ZVol, Controller SpawnCloseTo, opti
     MinDistanceToPlayerSquared = ZVol.MinDistanceToPlayer**2;
 	for ( C=Level.ControllerList; C!=None; C=C.NextController ) {
 		if( C.bIsPlayer && C.Pawn!=none && C.Pawn.Health>0 ) {
-            if( ZVol.Encompasses(C.Pawn) ) 
+            if( ZVol.Encompasses(C.Pawn) )
                 return -1; // player inside this volume
-                
+
             DistSquared = VSizeSquared(ZVol.Location - C.Pawn.Location);
             if( DistSquared < MinDistanceToPlayerSquared )
             	return -1;
@@ -348,13 +350,13 @@ function float RateZombieVolume(ZombieVolume ZVol, Controller SpawnCloseTo, opti
                 bTooCloseToPlayer = true;
 			// Do individual checks for spawn locations now, maybe add this back in later as an optimization
             // if fog doesn't hide spawn & lineofsight possible
-			if( !ZVol.bAllowPlainSightSpawns     
-                    && (!C.Pawn.Region.Zone.bDistanceFog || (DistSquared < C.Pawn.Region.Zone.DistanceFogEnd**2)) 
+			if( !ZVol.bAllowPlainSightSpawns
+                    && (!C.Pawn.Region.Zone.bDistanceFog || (DistSquared < C.Pawn.Region.Zone.DistanceFogEnd**2))
                     && FastTrace(ZVol.Location, C.Pawn.Location + C.Pawn.EyePosition()) )
                 return -1; // can be seen by player
 		}
 	}
-    
+
     // Start score with Spawn desirability
 	Score = ZVol.SpawnDesirability;
     // Rate how long its been since this spawn was used
@@ -369,18 +371,18 @@ function float RateZombieVolume(ZombieVolume ZVol, Controller SpawnCloseTo, opti
     // 4000000 = 2000^2 = 40 meters
     PlayerDistScoreZ = fmax(1.0 - abs(SpawnCloseTo.Pawn.Location.Z - ZVol.Location.Z)/250.0, 0.0);
     PlayerDistScoreXY = fmax(1.0 - VSizeSquared(TestLocationXY-LocationXY)/4000000.0, 0.0);
-    // Weight the XY distance much higher than the Z dist. 
+    // Weight the XY distance much higher than the Z dist.
     // This gets zombies spawning more on the same level as the player.
     if( ZVol.bNoZAxisDistPenalty )
         TotalPlayerDistScore = PlayerDistScoreXY;
     else
         TotalPlayerDistScore = 0.3*PlayerDistScoreZ + 0.7*PlayerDistScoreXY;
-    
+
 	// Tripwire: Spawning score is 30% SpawnDesirability, 30% Distance from players, 30% when the spawn was last used, 10% random
     // PooSH: Distance now is more important than time to prevent far spawns as much as possible
     // PooSH: and somebody should learn basic math...
     Score *= 0.30 + 0.35*TotalPlayerDistScore + 0.25*UsageScore + 0.1*frand();
-    
+
     if( bTooCloseToPlayer )
         Score*=0.2;
 
@@ -397,15 +399,15 @@ function Controller FindSquadTarget()
 {
     local array<Controller> CL;
     local Controller C;
-    
+
     for( C=Level.ControllerList; C!=None; C=C.NextController ) {
         if( C.bIsPlayer && C.Pawn!=None && C.Pawn.Health>0 )
             CL[CL.Length] = C;
     }
     if( CL.Length>0 )
         return CL[Rand(CL.Length)];
-    
-    return none;    
+
+    return none;
 }
 
 // added ZombieFlag check  -- PooSH
@@ -430,10 +432,10 @@ function ZombieVolume FindSpawningVolume(optional bool bIgnoreFailedSpawnTime, o
         if ( !CurZ.bNormalZeds || !CurZ.bRangedZeds || !CurZ.bLeapingZeds || !CurZ.bMassiveZeds ) {
             bCanSpawnAll = true;
             for ( j=0; bCanSpawnAll && j<NextSpawnSquad.length; ++j ) {
-                ZombieFlag = NextSpawnSquad[j].default.ZombieFlag; 
-                if( (!CurZ.bNormalZeds && ZombieFlag==0) 
-                    || (!CurZ.bRangedZeds && ZombieFlag==1) 
-                    || (!CurZ.bLeapingZeds && ZombieFlag==2) 
+                ZombieFlag = NextSpawnSquad[j].default.ZombieFlag;
+                if( (!CurZ.bNormalZeds && ZombieFlag==0)
+                    || (!CurZ.bRangedZeds && ZombieFlag==1)
+                    || (!CurZ.bLeapingZeds && ZombieFlag==2)
                     || (!CurZ.bMassiveZeds && ZombieFlag==3) )
                 {
                     bCanSpawnAll = false;
@@ -442,12 +444,12 @@ function ZombieVolume FindSpawningVolume(optional bool bIgnoreFailedSpawnTime, o
             if ( !bCanSpawnAll )
                 continue;
         }
-        
+
         if ( bCloserZedSpawns )
             tScore = RateZombieVolume(CurZ,C,bIgnoreFailedSpawnTime, bBossSpawning);
         else
             tScore = CurZ.RateZombieVolume(Self,LastSpawningVolume,C,bIgnoreFailedSpawnTime, bBossSpawning);
-            
+
         if( tScore > BestScore || (BestZ == None && tScore > 0) ) {
             BestScore = tScore;
             BestZ = CurZ;
@@ -456,7 +458,7 @@ function ZombieVolume FindSpawningVolume(optional bool bIgnoreFailedSpawnTime, o
     // just in case when map contains only zed-specific volumes  -- PooSH
     if ( BestZ == none )
         return super.FindSpawningVolume(bIgnoreFailedSpawnTime, bBossSpawning);
-    
+
     return BestZ;
 }
 
@@ -466,73 +468,73 @@ function bool ShouldKillOnTeamChange(Pawn TeamChanger)
     return true;
 }
 
-function ShowPathTo(PlayerController P, int DestinationIndex)
+function ShowPathTo(PlayerController CI, int DestinationIndex)
 {
     local ShopVolume shop;
     local class<WillowWhisp>	WWclass;
     local byte TeamNum;
-    
+
     // DestinationIndex is used by TSC to show path to base
     if ( bWaveInProgress && DestinationIndex == 0 )
     {
-        ScrnPlayerController(P).ServerShowPathTo(255); // turn off
+        ScrnPlayerController(CI).ServerShowPathTo(255); // turn off
         return;
     }
-    
+
     if ( TSCGameReplicationInfoBase(GameReplicationInfo) != none )
-        shop = TSCGameReplicationInfoBase(GameReplicationInfo).GetPlayerShop(P.PlayerReplicationInfo);
-    else 
+        shop = TSCGameReplicationInfoBase(GameReplicationInfo).GetPlayerShop(CI.PlayerReplicationInfo);
+    else
         shop = KFGameReplicationInfo(GameReplicationInfo).CurrentShop;
-        
+
     if( shop == none )
         return;
 
     if ( !shop.bTelsInit )
         shop.InitTeleports();
-    
+
     // take TeamNum from PRI, because KFMod hard-codes it to 0
-    TeamNum = P.PlayerReplicationInfo.Team.TeamIndex;
-        
-    if ( shop.TelList[0] != None && P.FindPathToward(shop.TelList[0], false) != None ) {
+    TeamNum = CI.PlayerReplicationInfo.Team.TeamIndex;
+
+    if ( shop.TelList[0] != None && CI.FindPathToward(shop.TelList[0], false) != None ) {
 		WWclass = class<WillowWhisp>(DynamicLoadObject(PathWhisps[TeamNum], class'Class'));
-		Spawn(WWclass, P,, P.Pawn.Location);    
+		Spawn(WWclass, CI,, CI.Pawn.Location);
     }
 }
 
-// entire C&P from parent classes to clear garbage
+// entire C&CI from parent classes to clear garbage
 function GetServerDetails( out ServerResponseLine ServerState )
 {
     local int i;
-    
+
     Super(GameInfo).GetServerDetails( ServerState );
-    
+
     if ( ScrnBalanceMut != none && !ScrnBalanceMut.bServerInfoVeterancy ) {
         for ( i=0; i<ServerState.ServerInfo.Length; i++ ) {
             if ( ServerState.ServerInfo[i].Key == "Veterancy" )
                 ServerState.ServerInfo.remove(i--, 1);
         }
-    }    
+    }
 
     // skip UnrealMPGameInfo
 	// AddServerDetail( ServerState, "MinPlayers", MinPlayers );
-	// AddServerDetail( ServerState, "EndTimeDelay", EndTimeDelay );    
+	// AddServerDetail( ServerState, "EndTimeDelay", EndTimeDelay );
 
     // skip DeathMatch
 	// AddServerDetail( ServerState, "GoalScore", GoalScore );
 	// AddServerDetail( ServerState, "TimeLimit", TimeLimit );
 	// AddServerDetail( ServerState, "Translocator", bAllowTrans );
 	// AddServerDetail( ServerState, "WeaponStay", bWeaponStay );
-	// AddServerDetail( ServerState, "ForceRespawn", bForceRespawn );    
-    
+	// AddServerDetail( ServerState, "ForceRespawn", bForceRespawn );
+
     // Invasion
     if ( InitialWave > 0 )
         AddServerDetail( ServerState, "InitialWave", InitialWave );
 	// AddServerDetail( ServerState, "FinalWave", FinalWave );
-    
+
     //KFGameType
     AddServerDetail( ServerState, "Max runtime zombies", MaxZombiesOnce );
     AddServerDetail( ServerState, "Starting cash", StartingCash );
-    
+
     // ScrnGameType
     if ( TourneyMode > 0 )
         AddServerDetail( ServerState, "ScrN Tourney Mode", TourneyMode );
@@ -540,22 +542,22 @@ function GetServerDetails( out ServerResponseLine ServerState )
 
 // Called before spawning mutators.
 // This is the only place where TourneyMode can be changed by descendants.
-protected function PreStartTourney(out int TourneyMode) 
+protected function PreStartTourney(out int TourneyMode)
 {
 }
 
 // called at the end of InitGame(), when mutators have been spawned already
-protected function StartTourney() 
-{ 
+protected function StartTourney()
+{
     local bool bVanilla, bNoStartCash;
 
     log("Starting TOURNEY MODE " $ TourneyMode, 'ScrnBalance');
     bVanilla = (TourneyMode&2) > 0;
     bNoStartCash = (TourneyMode&4) > 0;
-    
+
     if ( GameDifficulty < 4 ) {
         // hard difficulty at least
-        GameDifficulty = 4; 
+        GameDifficulty = 4;
         KFGameReplicationInfo(GameReplicationInfo).GameDiff = GameDifficulty;
         ScrnBalanceMut.SetLevels();
     }
@@ -575,7 +577,7 @@ protected function StartTourney()
     ScrnBalanceMut.Post6ZedSpawnInc=0.25;
     ScrnBalanceMut.Post6AmmoSpawnInc=0.20;
     //ScrnBalanceMut.FakedPlayers = 6;
-    
+
     ScrnBalanceMut.bUseExpLevelForSpawnInventory = false;
     ScrnBalanceMut.bSpawn0 = true;
     ScrnBalanceMut.bNoStartCashToss = true;
@@ -586,7 +588,7 @@ protected function StartTourney()
         ScrnBalanceMut.StartCashHoE = 0;
         ScrnBalanceMut.MinRespawnCashHard = 0;
         ScrnBalanceMut.MinRespawnCashSui = 0;
-        ScrnBalanceMut.MinRespawnCashHoE = 0;    
+        ScrnBalanceMut.MinRespawnCashHoE = 0;
     }
     else {
         ScrnBalanceMut.StartCashHard = 200;
@@ -594,9 +596,9 @@ protected function StartTourney()
         ScrnBalanceMut.StartCashHoE = 200;
         ScrnBalanceMut.MinRespawnCashHard = 100;
         ScrnBalanceMut.MinRespawnCashSui = 100;
-        ScrnBalanceMut.MinRespawnCashHoE = 100;    
+        ScrnBalanceMut.MinRespawnCashHoE = 100;
     }
-    
+
     ScrnBalanceMut.InitSettings();
     ScrnBalanceMut.SetReplicationData();
 }
@@ -622,10 +624,10 @@ function SetupRepLink(ClientPerkRepLink R)
     local int i;
     local bool bVanillaTourney;
     local class<Pickup> PC;
-    
+
     if ( R == none )
         return; // wtf?
-    
+
     if ( TourneyMode > 0 ) {
         bVanillaTourney = (TourneyMode&2)  > 0;
         // allow only stock or SE weapons in tourney mode
@@ -647,7 +649,7 @@ function SetupRepLink(ClientPerkRepLink R)
 function InitPlacedBot(Controller C, RosterEntry R)
 {
     local UnrealTeamInfo BotTeam;
-    
+
 	log("Init placed bot "$C $ ", pawn = "$C.Pawn);
 
     BotTeam = FindTeamFor(C);
@@ -657,11 +659,11 @@ function InitPlacedBot(Controller C, RosterEntry R)
 		if ( R != None )
 			R.InitBot(Bot(C));
 	}
-    
+
     // no team for Breaker Boxes  -- PooSH
     if ( BotTeam != none && C.PlayerReplicationInfo != none )
         BotTeam.AddToTeam(C);
-    
+
 	if ( R != None )
 		ChangeName(C, R.PlayerName, false);
 }
@@ -671,14 +673,14 @@ function bool CanSpectate( PlayerController Viewer, bool bOnlySpectator, actor V
 {
 	if ( (ViewTarget == None) )
 		return false;
-        
+
 	if ( Controller(ViewTarget) != None ) {
 		if ( Controller(ViewTarget).Pawn == None )
 			return false;
 		return Controller(ViewTarget).PlayerReplicationInfo != None && ViewTarget != Viewer
 				&& (bOnlySpectator || Controller(ViewTarget).PlayerReplicationInfo.Team == Viewer.PlayerReplicationInfo.Team);
 	}
-    
+
 	return Pawn(ViewTarget) != None && Pawn(ViewTarget).IsPlayerPawn()
 		&& (bOnlySpectator || Pawn(ViewTarget).PlayerReplicationInfo.Team == Viewer.PlayerReplicationInfo.Team);
 }
@@ -686,7 +688,7 @@ function bool CanSpectate( PlayerController Viewer, bool bOnlySpectator, actor V
 event PostLogin( PlayerController NewPlayer )
 {
     super.PostLogin(NewPlayer);
-    GiveStartingCash(NewPlayer);    
+    GiveStartingCash(NewPlayer);
     if ( ScrnPlayerController(NewPlayer) != none )
         ScrnPlayerController(NewPlayer).PostLogin();
 }
@@ -695,10 +697,10 @@ function LockTeams()
 {
     local Controller C;
     local PlayerController PC;
-    
+
     if ( ScrnBalanceMut.bTeamsLocked )
         return;
-    
+
     ScrnBalanceMut.bTeamsLocked = true;
     BroadcastLocalizedMessage(class'ScrnGameMessages', 243);
     // auto-invite all current players
@@ -706,7 +708,7 @@ function LockTeams()
         PC = PlayerController(C);
         if ( PC != none && PC.PlayerReplicationInfo != none && !PC.PlayerReplicationInfo.bOnlySpectator )
             InvitePlayer(PC);
-    }    
+    }
 }
 
 function UnlockTeams()
@@ -720,7 +722,7 @@ function UnlockTeams()
 static function string GetPlayerID(PlayerController PC)
 {
     local string ID;
-    
+
     if ( PC != none && PC.PlayerReplicationInfo != none ) {
         ID = PC.GetPlayerIDHash();
         if ( ID == "" )
@@ -730,10 +732,10 @@ static function string GetPlayerID(PlayerController PC)
 }
 
 function bool IsInvited(PlayerController PC)
-{   
+{
     local int i;
     local string ID;
-    
+
     if ( InviteList.length == 0 )
         return false;
 
@@ -752,14 +754,14 @@ function InvitePlayer(PlayerController PC)
 {
     local string ID;
     local int i;
-    
+
     ID = GetPlayerID(PC);
     if ( ID == "" )
         return;
     for ( i=0; i<InviteList.length; ++i ) {
         if ( InviteList[i] == ID )
             return; // already invited
-    }    
+    }
     InviteList[InviteList.length] = ID;
 }
 
@@ -767,7 +769,7 @@ function UninvitePlayer(PlayerController PC)
 {
     local string ID;
     local int i;
-    
+
     ID = GetPlayerID(PC);
     if ( ID == "" )
         return;
@@ -776,69 +778,69 @@ function UninvitePlayer(PlayerController PC)
             InviteList.remove(i, 1);
             return;
         }
-    }    
+    }
 }
 
 function RestartPlayer( Controller aPlayer )
 {
-    local PlayerController P;
-    
-    P = PlayerController(aPlayer);
-    if ( P != none && P.PlayerReplicationInfo != none && ScrnBalanceMut.bTeamsLocked && !IsInvited(P) ) {
-        P.ReceiveLocalizedMessage(class'ScrnGameMessages', 243);
-        if ( !P.PlayerReplicationInfo.bOnlySpectator && !BecomeSpectator(P) )
+    local PlayerController CI;
+
+    CI = PlayerController(aPlayer);
+    if ( CI != none && CI.PlayerReplicationInfo != none && ScrnBalanceMut.bTeamsLocked && !IsInvited(CI) ) {
+        CI.ReceiveLocalizedMessage(class'ScrnGameMessages', 243);
+        if ( !CI.PlayerReplicationInfo.bOnlySpectator && !BecomeSpectator(CI) )
         {
             // Max spectators reached. Leave player as dead body.
-            P.PlayerReplicationInfo.bOutOfLives = True;
-            P.PlayerReplicationInfo.NumLives = 1;
-            P.GoToState('Spectating');            
+            CI.PlayerReplicationInfo.bOutOfLives = True;
+            CI.PlayerReplicationInfo.NumLives = 1;
+            CI.GoToState('Spectating');
         }
         return;
     }
-    
+
     super.RestartPlayer(aPlayer);
-    
-    if ( P != none && P.Pawn != none ) {
+
+    if ( CI != none && CI.Pawn != none ) {
         if ( FriendlyFireScale > 0 )
-            ScrnBalanceMut.SendFriendlyFireWarning(P);
+            ScrnBalanceMut.SendFriendlyFireWarning(CI);
     }
 }
 
-function bool AllowBecomeActivePlayer(PlayerController P)
+function bool AllowBecomeActivePlayer(PlayerController CI)
 {
-    if( P.PlayerReplicationInfo==None || !P.PlayerReplicationInfo.bOnlySpectator )
+    if( CI.PlayerReplicationInfo==None || !CI.PlayerReplicationInfo.bOnlySpectator )
         Return False; // Already is an active player
-        
-    if ( ScrnBalanceMut.bTeamsLocked && !IsInvited(P) ) {
-        P.ReceiveLocalizedMessage(class'ScrnGameMessages', 243);
+
+    if ( ScrnBalanceMut.bTeamsLocked && !IsInvited(CI) ) {
+        CI.ReceiveLocalizedMessage(class'ScrnGameMessages', 243);
         return false;
     }
-        
+
     if ( /*!GameReplicationInfo.bMatchHasBegun ||*/ NumPlayers >= MaxPlayers
-        || P.IsInState('GameEnded') || P.IsInState('RoundEnded') )
+        || CI.IsInState('GameEnded') || CI.IsInState('RoundEnded') )
     {
-        P.ReceiveLocalizedMessage(GameMessageClass, 13);
-        
+        CI.ReceiveLocalizedMessage(GameMessageClass, 13);
+
         // debug info
         // if ( !GameReplicationInfo.bMatchHasBegun )
-            // P.ClientMessage("Reason: Match has not begun yet");
-        // else 
+            // CI.ClientMessage("Reason: Match has not begun yet");
+        // else
         if ( NumPlayers >= MaxPlayers )
-            P.ClientMessage("Reason: MaxPlayers reached ("$MaxPlayers$")");
-        else if ( P.IsInState('GameEnded') )
-            P.ClientMessage("Reason: You are in GameEnded state");
-        else if ( P.IsInState('RoundEnded') )
-            P.ClientMessage("Reason: You are in RoundEnded state");
-            
+            CI.ClientMessage("Reason: MaxPlayers reached ("$MaxPlayers$")");
+        else if ( CI.IsInState('GameEnded') )
+            CI.ClientMessage("Reason: You are in GameEnded state");
+        else if ( CI.IsInState('RoundEnded') )
+            CI.ClientMessage("Reason: You are in RoundEnded state");
+
         return false;
     }
-    
+
     if ( (Level.NetMode==NM_Standalone) && (NumBots>InitialBots) )
     {
         RemainingBots--;
         bPlayerBecameActive = true;
     }
-    GiveStartingCash(P);
+    GiveStartingCash(CI);
     return true;
 }
 
@@ -849,10 +851,10 @@ function GiveStartingCash(PlayerController PC)
         ScrnPlayerController(PC).StartCash = PC.PlayerReplicationInfo.Score; // prevent tossing bonus too
 }
 
-// C&P from Deathmatch strip color tags before name length check 
+// C&CI from Deathmatch strip color tags before name length check
 function ChangeName(Controller Other, string S, bool bNameChange)
 {
-    local Controller APlayer,C, P;
+    local Controller APlayer,C, CI;
 
     if ( S == "" )
         return;
@@ -902,8 +904,8 @@ function ChangeName(Controller Other, string S, bool bNameChange)
 					S = MaleBackupNames[MaleBackupNameOffset%32];
 					MaleBackupNameOffset++;
 				}
-				for( P=Level.ControllerList; P!=None; P=P.nextController )
-					if ( P.bIsPlayer && (P.PlayerReplicationInfo.playername~=S) )
+				for( CI=Level.ControllerList; CI!=None; CI=CI.nextController )
+					if ( CI.bIsPlayer && (CI.PlayerReplicationInfo.playername~=S) )
 					{
 						S = NamePrefixes[NameNumber%10]$S$NameSuffixes[NameNumber%10];
 						NameNumber++;
@@ -938,14 +940,75 @@ function int CalcStartingCashBonus(PlayerController PC)
 // returns wave number relative to the current game length
 function byte RelativeWaveNum(float LongGameWaveNum)
 {
-    if ( FinalWave == 10 ) 
+    if ( FinalWave == 10 )
         return ceil(LongGameWaveNum);
     return ceil(LongGameWaveNum * FinalWave / 10.0);
 }
 
 function SetupWave()
 {
+	local float NewMaxMonsters;
+	local float DifficultyMod, NumPlayersMod;
+	local int UsedNumPlayers;
+    local Controller C;
+
+    WavePlayerCount = 0;
+    for ( C = Level.ControllerList; C != none; C = C.nextController ) {
+        if ( C.bIsPlayer && C.Pawn != none && C.Pawn.Health > 0 ) {
+            ++WavePlayerCount;
+		}
+    }
+
     super.SetupWave();
+
+    // adjust wave size
+	NewMaxMonsters = Waves[min(WaveNum,15)].WaveMaxMonsters;
+
+    // scale number of zombies by difficulty
+    if ( GameDifficulty >= 7.0 ) // Hell on Earth
+    	DifficultyMod=1.7;
+    else if ( GameDifficulty >= 5.0 ) // Suicidal
+    	DifficultyMod=1.5;
+    else if ( GameDifficulty >= 4.0 ) // Hard
+    	DifficultyMod=1.3;
+    else
+    	DifficultyMod=1.0;            // Normal and below
+
+    UsedNumPlayers = max( max(ScrnBalanceMut.FakedPlayers,1), WavePlayerCount );
+    // Scale the number of zombies by the number of players. Don't want to
+    // do this exactly linear, or it just gets to be too many zombies and too
+    // long of waves at higher levels - Ramm
+	// Yeah, yeah, then why did you increased that number for 7+ player game, huh? - PooSH
+	switch ( UsedNumPlayers )
+	{
+		case 1:
+			NumPlayersMod=1;
+			break;
+		case 2:
+			NumPlayersMod=2;
+			break;
+		case 3:
+			NumPlayersMod=2.75;
+			break;
+		case 4:
+			NumPlayersMod=3.5;
+			break;
+		case 5:
+			NumPlayersMod=4;
+			break;
+		case 6:
+			NumPlayersMod=4.5;
+			break;
+        default:
+            NumPlayersMod = 4.5 + (UsedNumPlayers-6)*ScrnBalanceMut.Post6ZedsPerPlayer; // 7+ player game
+	}
+
+    NewMaxMonsters = Clamp(NewMaxMonsters * DifficultyMod * NumPlayersMod, 5, ScrnBalanceMut.MaxWaveSize);
+	TotalMaxMonsters = NewMaxMonsters;  // num monsters in wave
+	KFGameReplicationInfo(GameReplicationInfo).MaxMonsters = NewMaxMonsters; // num monsters in wave replicated to clients
+	MaxMonsters = Clamp(TotalMaxMonsters,5,MaxZombiesOnce); // max monsters that can be spawned
+
+    // auto lock teams
     if ( (WaveNum+1) == RelativeWaveNum(ScrnBalanceMut.LockTeamAutoWave) )
         LockTeams();
 }
@@ -953,7 +1016,7 @@ function SetupWave()
 function AmmoPickedUp(KFAmmoPickup PickedUp)
 {
     local int i;
-    
+
     // CurrentAmmoBoxCount is set in ScrnAmmoPickup
     // DesiredAmmoBoxCount is set in ScrnBalance
     if ( CurrentAmmoBoxCount < DesiredAmmoBoxCount ) {
@@ -963,13 +1026,13 @@ function AmmoPickedUp(KFAmmoPickup PickedUp)
                     SleepingAmmo[SleepingAmmo.length] = AmmoPickups[i];
             }
         }
-        
+
         if ( SleepingAmmo.length > 0 ) {
             i = rand(SleepingAmmo.Length);
             SleepingAmmo[i].GotoState('Sleeping', 'DelayedSpawn');
             SleepingAmmo.remove(i, 1);
         }
-        else 
+        else
             PickedUp.GotoState('Sleeping', 'DelayedSpawn');
     }
 }
@@ -977,10 +1040,10 @@ function AmmoPickedUp(KFAmmoPickup PickedUp)
 function RespawnDoors()
 {
     local KFDoorMover KFDM;
-    
+
     if ( ScrnBalanceMut.bRespawnDoors || ScrnBalanceMut.bTSCGame ) {
         foreach DynamicActors(class'KFDoorMover', KFDM)
-            KFDM.RespawnDoor();    
+            KFDM.RespawnDoor();
     }
 }
 
@@ -989,7 +1052,7 @@ function bool AddBoss()
 {
     local int numspawned;
     local class<KFMonster> BossClass;
-    
+
     BossClass = NextSpawnSquad[0];
     if( LastZVol == none )
     {
@@ -1026,7 +1089,7 @@ auto State PendingMatch
     // overrided to require at least 1 player to be ready to start LobbyTimeout
     function Timer()
     {
-        local Controller P;
+        local Controller CI;
         local bool bReady;
         local int PlayerCount, ReadyCount;
 
@@ -1065,14 +1128,14 @@ auto State PendingMatch
         bReady = true;
         StartupStage = 1;
 
-        for ( P = Level.ControllerList; P != None; P = P.NextController )
+        for ( CI = Level.ControllerList; CI != None; CI = CI.NextController )
         {
-            if ( P.IsA('PlayerController') && P.PlayerReplicationInfo != none && P.bIsPlayer && P.PlayerReplicationInfo.Team != none &&
-                P.PlayerReplicationInfo.bWaitingPlayer && !P.PlayerReplicationInfo.bOnlySpectator)
+            if ( CI.IsA('PlayerController') && CI.PlayerReplicationInfo != none && CI.bIsPlayer && CI.PlayerReplicationInfo.Team != none &&
+                CI.PlayerReplicationInfo.bWaitingPlayer && !CI.PlayerReplicationInfo.bOnlySpectator)
             {
                 PlayerCount++;
 
-                if ( !P.PlayerReplicationInfo.bReadyToPlay )
+                if ( !CI.PlayerReplicationInfo.bReadyToPlay )
                     bReady = false;
                 else
                     ReadyCount++;
@@ -1092,10 +1155,10 @@ auto State PendingMatch
         {
             if ( LobbyTimeout <= 1 )
             {
-                for ( P = Level.ControllerList; P != None; P = P.NextController )
+                for ( CI = Level.ControllerList; CI != None; CI = CI.NextController )
                 {
-                    if ( P.IsA('PlayerController') && P.PlayerReplicationInfo != none )
-                        P.PlayerReplicationInfo.bReadyToPlay = True;
+                    if ( CI.IsA('PlayerController') && CI.PlayerReplicationInfo != none )
+                        CI.PlayerReplicationInfo.bReadyToPlay = True;
                 }
 
                 LobbyTimeout = 0;
@@ -1119,17 +1182,17 @@ State MatchInProgress
     function SetupPickups()
     {
         local int i, j;
-        
+
         // let mutator do the job
         ScrnBalanceMut.SetupPickups(false);
-        
+
         for ( i = 0; i < AmmoPickups.length; ++i ) {
             if ( AmmoPickups[i].bSleeping )
                 SleepingAmmo[j++] = AmmoPickups[i];
         }
         SleepingAmmo.length = j;
     }
-    
+
     function DoWaveEnd()
     {
         local Controller C;
@@ -1242,10 +1305,10 @@ State MatchInProgress
         }
 
         bUpdateViewTargs = True;
-        
+
         RespawnDoors();
     }
-    
+
     function StartWaveBoss()
     {
         // reset spawn volumes
@@ -1260,19 +1323,20 @@ State MatchInProgress
 defaultproperties
 {
     GameName="ScrN Floor"
-    
+
     Description="ScrN Edition of Killing Floor game mode (KFGameType)."
-    
+
     PathWhisps(0)="KFMod.RedWhisp"
     PathWhisps(1)="KFMod.RedWhisp"
-    
+
+    bTeamGame=False
     bCloserZedSpawns=True
     TurboScale=1.0
-    
+
     // copied from last two LongWaves
     NormalWaves(5)=(WaveMask=75393519,WaveMaxMonsters=40,WaveDuration=255,WaveDifficulty=0.300000)
     NormalWaves(6)=(WaveMask=90171865,WaveMaxMonsters=45,WaveDuration=255,WaveDifficulty=0.300000)
-    
+
     KFHints[0]="ScrN Balance: You can reload a single shell into Hunting Shotgun."
     KFHints[1]="ScrN Balance: You can't skip Hunting Shotgun's reload. So use it with caution."
     KFHints[2]="ScrN Balance: Combat Shotgun is made much better. Give it a try."

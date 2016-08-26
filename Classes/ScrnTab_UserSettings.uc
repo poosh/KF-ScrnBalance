@@ -86,6 +86,8 @@ var localized string strSpawnBalance, strWeaponFix, strAltBurnMech, strBeta, str
 var color StatusColor[2];        
 
 var transient KFPlayerReplicationInfo SelectedPRI;
+var transient array<KFPlayerReplicationInfo> PRIs;
+
 
 // event ResolutionChanged( int ResX, int ResY )
 
@@ -280,13 +282,13 @@ function FillPlayerList()
     local int i, idx;
     local KFPlayerReplicationInfo KFPRI; 
     local int BlueIndex; 
-    local array<KFPlayerReplicationInfo> PRIs;
     local GameReplicationInfo GRI;
     
     GRI = PlayerOwner().Level.GRI;
     if ( GRI == none )
         return;
         
+    PRIs.length = 0;
     log("FillPlayerList", class.name);
     // sort list by Red Players -> Blue Players -> Spectators
 	for ( i = 0; i < GRI.PRIArray.Length; i++) {
@@ -314,25 +316,25 @@ function FillPlayerList()
     
     cbx_Player.ResetComponent();
     for ( i = 0; i < PRIs.Length; i++) {
-        cbx_Player.AddItem(class'ScrnBalance'.default.Mut.ColoredPlayerName(PRIs[i]), PRIs[i]);
+        cbx_Player.AddItem(class'ScrnBalance'.default.Mut.ColoredPlayerName(PRIs[i]));
         if ( PRIs[i] == SelectedPRI )
             idx = i;            
     }
     if ( PRIs.Length > 0 )
         cbx_Player.SetIndex(idx); // this in turn calls LoadPlayerData()
     else 
-        LoadPlayerData();
+        LoadPlayerData(-1);
     log("FillPlayerList: EOF", class.name);
 }
 
-function LoadPlayerData()
+function LoadPlayerData( int index)
 {
     local ScrnCustomPRI ScrnPRI;
     local string s;
     
     log("LoadPlayerData: about to call GetObject()", class.name);
-    if ( cbx_Player.ItemCount() > 0 )
-        SelectedPRI = KFPlayerReplicationInfo(cbx_Player.GetObject());
+    if ( index >= 0 && index < PRIs.Length )
+        SelectedPRI = PRIs[index];
     else 
         SelectedPRI = none;
     log("LoadPlayerData: SelectedPRI = " $ SelectedPRI, class.name);
@@ -605,7 +607,7 @@ function InternalOnChange(GUIComponent Sender)
             break;   
             
         case cbx_Player:
-            LoadPlayerData();
+            LoadPlayerData(cbx_Player.GetIndex());
             break;
     }
 }
