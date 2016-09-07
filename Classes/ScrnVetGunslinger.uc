@@ -16,7 +16,7 @@ static function int GetStatValueInt(ClientPerkRepLink StatOther, byte ReqNum)
 static function AddCustomStats( ClientPerkRepLink Other )
 {
     super.AddCustomStats(Other); //init achievements
-    
+
 	Other.AddCustomValue(Class'ScrnBalanceSrv.ScrnPistolKillProgress');
 	Other.AddCustomValue(Class'ScrnBalanceSrv.ScrnPistolDamageProgress');
 }
@@ -25,12 +25,12 @@ static function AddCustomStats( ClientPerkRepLink Other )
 static function float GetMagCapacityModStatic(KFPlayerReplicationInfo KFPRI, class<KFWeapon> Other)
 {
 	if (GetClientVeteranSkillLevel(KFPRI) > 0) {
-	
+
         // 18, 21, 24 magazine ammo on level 1, 3, 5
         if ( ClassIsChildOf(Other, class'ScrnSingle') || ClassIsChildOf(Other, class'ScrnDualies') )
             return 1.0 + 0.20 * ((GetClientVeteranSkillLevel(KFPRI)+1) / 2) ;
     }
-	
+
 	return 1.0;
 }
 
@@ -54,8 +54,8 @@ static function float GetAmmoPickupMod(KFPlayerReplicationInfo KFPRI, KFAmmuniti
 
 static function float AddExtraAmmoFor(KFPlayerReplicationInfo KFPRI, Class<Ammunition> AmmoType)
 {
-	if ( ClassIsChildOf(AmmoType, class'SingleAmmo') || ClassIsChildOf(AmmoType, class'DualiesAmmo') 
-            || ClassIsChildOf(AmmoType, class'Magnum44Ammo') 
+	if ( ClassIsChildOf(AmmoType, class'SingleAmmo') || ClassIsChildOf(AmmoType, class'DualiesAmmo')
+            || ClassIsChildOf(AmmoType, class'Magnum44Ammo')
             || ClassIsChildOf(AmmoType, class'MK23Ammo')
 			|| ClassIsChildOf(AmmoType, class'DeagleAmmo')
             || ClassIsInArray(default.PerkedAmmo, AmmoType)  //v3 - custom weapon support
@@ -74,9 +74,9 @@ static function int AddDamage(KFPlayerReplicationInfo KFPRI, KFMonster Injured, 
     // up to 50% damage for other pistols
     // Dual HC and 44 damage types are derived from singles, so no need to specify all of them here
 	if (  DmgType == default.DefaultDamageType
-            || ClassIsChildOf(DmgType, class'KFMod.DamTypeDeagle') 
-            || ClassIsChildOf(DmgType, class'KFMod.DamTypeMagnum44Pistol ') 
-            || ClassIsChildOf(DmgType, class'KFMod.DamTypeMK23Pistol') 
+            || ClassIsChildOf(DmgType, class'KFMod.DamTypeDeagle')
+            || ClassIsChildOf(DmgType, class'KFMod.DamTypeMagnum44Pistol ')
+            || ClassIsChildOf(DmgType, class'KFMod.DamTypeMK23Pistol')
             || ClassIsInArray(default.PerkedDamTypes, DmgType) //v3 - custom weapon support
         ) {
 		if ( GetClientVeteranSkillLevel(KFPRI) == 0 )
@@ -89,7 +89,7 @@ static function int AddDamage(KFPlayerReplicationInfo KFPRI, KFMonster Injured, 
     if ( ClassIsChildOf(DmgType, class'KFMod.DamTypeDualies') ) {
 		return float(InDamage) * (1.05 + (0.05 * float(Min(GetClientVeteranSkillLevel(KFPRI), 6)))); // Up to 35% increase in Damage with 9mm
 	}
-    
+
 	return InDamage;
 }
 
@@ -98,7 +98,7 @@ static function int ReduceDamage(KFPlayerReplicationInfo KFPRI, KFPawn Injured, 
 	if ( class'ScrnBalance'.default.Mut.bHardcore && ZombieCrawler(Instigator) != none ) {
         return InDamage * 2; // double damage from crawlers in hardcore mode
     }
-    
+
     return InDamage;
 }
 
@@ -117,13 +117,13 @@ static function float ModifyRecoilSpread(KFPlayerReplicationInfo KFPRI, WeaponFi
 	if ( Single(Other.Weapon) != none || Dualies(Other.Weapon) != none
             || Deagle(Other.Weapon) != none || DualDeagle(Other.Weapon) != none
             || MK23Pistol(Other.Weapon) != none || DualMK23Pistol(Other.Weapon) != none
-            || Magnum44Pistol(Other.Weapon) != none || Dual44Magnum(Other.Weapon) != none 
+            || Magnum44Pistol(Other.Weapon) != none || Dual44Magnum(Other.Weapon) != none
             || ClassIsInArray(default.PerkedWeapons, Other.Weapon.Class) //v3 - custom weapon support
         )
         Recoil = 0.9 - (0.1 * Min(6, (GetClientVeteranSkillLevel(KFPRI)))); //up to 70% recoil reduction
 	else Recoil = 1.0;
 
-	
+
 	Return Recoil;
 }
 
@@ -135,27 +135,27 @@ static function float ModifyRecoilSpread(KFPlayerReplicationInfo KFPRI, WeaponFi
 static function bool CheckCowboyMode(KFPlayerReplicationInfo KFPRI, class<Weapon> WeapClass)
 {
     local Pawn p;
-    
+
     if ( GetClientVeteranSkillLevel(KFPRI) < 3 )
         return false;
-        
+
     // doesn't work on client side, unless pawn is locally controlled
     if ( Controller(KFPRI.Owner) != none ) {
-        p = Controller(KFPRI.Owner).Pawn; 
+        p = Controller(KFPRI.Owner).Pawn;
     }
 
-    // assume that player is not so stupid to trade Cowboy Mode for an armor 
+    // assume that player is not so stupid to trade Cowboy Mode for an armor
     // Calling FindPawn() is too slow for such minor case
     if ( p != none && p.ShieldStrength >= 26 )
 		return false;
-    
+
     if ( WeapClass == none )
         return false;
-    
+
     // if custom weapon has "*" bonus switch
     if ( ClassIsInArray(default.SpecialWeapons, WeapClass ) )
         return true;
-	
+
     return ClassIsChildOf(WeapClass, class'Dualies');
 }
 
@@ -163,13 +163,13 @@ static function bool CheckCowboyMode(KFPlayerReplicationInfo KFPRI, class<Weapon
 static function float GetFireSpeedModStatic(KFPlayerReplicationInfo KFPRI, class<Weapon> Other)
 {
 	//increase fire only with full-automatic pistols
-	if ( CheckCowboyMode(KFPRI, Other) && (Other.class == class'Dualies' || ClassIsChildOf(Other, class'ScrnDualies') 
-            || !Other.default.FireModeClass[0].default.bWaitForRelease) ) 
+	if ( CheckCowboyMode(KFPRI, Other) && (Other.class == class'Dualies' || ClassIsChildOf(Other, class'ScrnDualies')
+            || !Other.default.FireModeClass[0].default.bWaitForRelease) )
 	{
         if ( GetClientVeteranSkillLevel(KFPRI) <= 6 )
             return 1.0 + (0.10 * float(GetClientVeteranSkillLevel(KFPRI) - 3)); // Up to 30% faster fire rate with dualies in cowboy mode
         // level 7+
-        return 1.3 + (0.05 * float(GetClientVeteranSkillLevel(KFPRI) - 6)); // 
+        return 1.3 + (0.05 * float(GetClientVeteranSkillLevel(KFPRI) - 6)); //
 	}
 	return 1.0;
 }
@@ -177,7 +177,7 @@ static function float GetFireSpeedModStatic(KFPlayerReplicationInfo KFPRI, class
 static function float GetReloadSpeedModifierStatic(KFPlayerReplicationInfo KFPRI, class<KFWeapon> Other)
 {
     local float result;
-    
+
     result = 1.0;
 	if ( ClassIsChildOf(Other, class'Dualies') // all dual pistols classes extend this
 			|| ClassIsChildOf(Other, class'Single') || ClassIsChildOf(Other, class'Deagle')
@@ -186,7 +186,7 @@ static function float GetReloadSpeedModifierStatic(KFPlayerReplicationInfo KFPRI
 		)
 		result =  1.3 + (0.05 * float(GetClientVeteranSkillLevel(KFPRI))); // Up to 60% faster reload with pistols
 	// Level 6 Cowboys reload dualies in the same time as singles
-	if ( CheckCowboyMode(KFPRI, Other) ) 
+	if ( CheckCowboyMode(KFPRI, Other) )
 		result *= 1.05 + 0.10 * clamp(GetClientVeteranSkillLevel(KFPRI)-2, 1, 3); //up to 35% extra bonus for cowboys
 
 	return result;
@@ -208,7 +208,7 @@ static function float GetCostScaling(KFPlayerReplicationInfo KFPRI, class<Pickup
         return 1.0;
 
     if ( ClassIsChildOf(Item,  class'DeaglePickup') || ClassIsChildOf(Item,  class'DualDeaglePickup')
-            || ClassIsChildOf(Item, class'MK23Pickup') || ClassIsChildOf(Item, class'DualMK23Pickup') 
+            || ClassIsChildOf(Item, class'MK23Pickup') || ClassIsChildOf(Item, class'DualMK23Pickup')
             || Item == class'Magnum44Pickup' || Item == class'Dual44MagnumPickup'
             || ClassIsChildOf(Item, class'ScrnDual44MagnumLaserPickup')
             || ClassIsInArray(default.PerkedPickups, Item)
@@ -236,7 +236,7 @@ static function AddDefaultInventory(KFPlayerReplicationInfo KFPRI, Pawn P)
 	// If Level 6, give them Dual-Magnum
 	if ( GetClientVeteranSkillLevel(KFPRI) >= 6 )
 		KFHumanPawn(P).CreateInventoryVeterancy("ScrnBalanceSrv.ScrnDual44Magnum", GetInitialCostScaling(KFPRI, class'ScrnBalanceSrv.ScrnDual44MagnumPickup'));
-		
+
 }
 */
 
@@ -247,13 +247,13 @@ static function string GetCustomLevelInfo( byte Level )
 
 	S = Default.CustomLevelInfo;
 	BonusLevel = GetBonusLevel(Level)-6;
-	
+
 	ReplaceText(S,"%L",string(BonusLevel+6));
 	ReplaceText(S,"%s",GetPercentStr(0.5 + 0.05*BonusLevel));
 	ReplaceText(S,"%r",GetPercentStr(0.6 + 0.05*BonusLevel));
 	ReplaceText(S,"%d",GetPercentStr(0.7 + fmin(0.2, 0.05*BonusLevel)));
 	ReplaceText(S,"%f",GetPercentStr(0.3 + 0.05*BonusLevel));
-    
+
 	return S;
 }
 
@@ -261,6 +261,7 @@ defaultproperties
 {
      DefaultDamageType=Class'ScrnBalanceSrv.ScrnDamTypeDefaultGunslinger'
      DefaultDamageTypeNoBonus=Class'ScrnBalanceSrv.ScrnDamTypeDefaultGunslingerBase'
+     SamePerkAch="OP_Gunslinger"
 
      progressArray0(0)=20
      progressArray0(1)=50
@@ -269,7 +270,7 @@ defaultproperties
      progressArray0(4)=3000
      progressArray0(5)=7000
      progressArray0(6)=11000
-	 
+
      progressArray1(0)=10000
      progressArray1(1)=25000
      progressArray1(2)=100000
@@ -297,7 +298,7 @@ defaultproperties
 	 OnHUDIcons(4)=(PerkIcon=Texture'ScrnTex.Perks.Perk_Gunslinger_Purple',StarIcon=Texture'ScrnTex.Perks.Hud_Perk_Star_Purple',DrawColor=(B=255,G=255,R=255,A=255))
 	 OnHUDIcons(5)=(PerkIcon=Texture'ScrnTex.Perks.Perk_Gunslinger_Orange',StarIcon=Texture'ScrnTex.Perks.Hud_Perk_Star_Orange',DrawColor=(B=255,G=255,R=255,A=255))
 	 OnHUDIcons(6)=(PerkIcon=Texture'ScrnTex.Perks.Perk_Gunslinger_Blood',StarIcon=Texture'ScrnTex.Perks.Hud_Perk_Star_Blood',DrawColor=(B=255,G=255,R=255,A=255))
-	 
+
      VeterancyName="Gunslinger"
      Requirements(0)="Get %x kills with Pistols"
      Requirements(1)="Deal %x damage with Pistols"

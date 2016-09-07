@@ -22,12 +22,12 @@ struct TCustomStat {
 
 struct TPerkStats {
 	var bool bSet;
-	
-	var int RDamageHealedStat, 
-		RWeldingPointsStat, RShotgunDamageStat, 
-		RHeadshotKillsStat, 
-		RStalkerKillsStat, RBullpupDamageStat, 
-		RMeleeDamageStat, 
+
+	var int RDamageHealedStat,
+		RWeldingPointsStat, RShotgunDamageStat,
+		RHeadshotKillsStat,
+		RStalkerKillsStat, RBullpupDamageStat,
+		RMeleeDamageStat,
 		RFlameThrowerDamageStat,
 		RExplosivesDamageStat;
 	var array<TCustomStat> CustomStats;
@@ -41,29 +41,29 @@ struct TWeapInfo {
     var class<KFWeapon> WeaponClass;
 	var class<KFWeaponDamageType> DamType;
 	var byte PickupWave; // wave number, when weapon was picked up
-	var	PlayerController PrevOwner; // player who owned this weapon before us 
+	var	PlayerController PrevOwner; // player who owned this weapon before us
 	var bool bPrevOwnerDead; // was PrevOwner dead when we picked up his weapon?
 
 	var float LastDmgTime, LastKillTime; // time when last damage was made
-    
+
     var int TotalKills, TotalHeadshots, TotalDecaps, TotalDamage;
-	
+
 	var bool bHeadshot; // Was last damage made from this weapon a headshot?
 	var int RowHeadshots; //number of headshots in a row made from this weapon
-	var int HeadshotsPerShot, HeadshotsPerMagazine, HeadshotsPerWave; 
-	
+	var int HeadshotsPerShot, HeadshotsPerMagazine, HeadshotsPerWave;
+
 	var int KillsPerShot; //number of kills made from this weapon without releasing the trigger or firing again
 	var int KillsPerMagazine; //number of kills made from this weapon without reloading
 	var int KillsPerWave; //number of kills made from this weapon in wave
-	
+
 	var int DecapsPerShot, DecapsPerMagazine, DecapsPerWave; // decapitations
 	var int DamagePerShot, DamagePerMagazine, DamagePerWave; // damages
-	
+
 	// Minimal values to trigger an event. If Value >= Trigger value, event will be called.
-	var int TriggerRowHeadshots, 
+	var int TriggerRowHeadshots,
         TriggerHeadshotsPerShot, TriggerHeadshotsPerMagazine,
 		TriggerKillsPerShot, TriggerKillsPerMagazine,
-		TriggerDecapsPerShot, TriggerDecapsPerMagazine, 
+		TriggerDecapsPerShot, TriggerDecapsPerMagazine,
 		TriggerDamagePerShot, TriggerDamagePerMagazine;
 };
 var array<TWeapInfo> WeapInfos;
@@ -93,20 +93,20 @@ var int MEDICXP_PER_1000DMG;
 // Minimal values to trigger an event. If Value >= Trigger value, event will be called.
 var int TriggerRowHeadshots;
 
-var KFWeapon LastFiredWeapon; 
+var KFWeapon LastFiredWeapon;
 var int LastWeapInfoIndex; // index in WeapInfos array of last updated record
 
-// how much dosh player donated to teammates and how much he received back. 
+// how much dosh player donated to teammates and how much he received back.
 // CashFound - cash spawned on the map (wasn't dropped by a player)
-var int CashDonated, CashReceived, CashFound; 
-var int CashDonatedPerWave, CashReceivedPerWave, CashFoundPerWave; 
+var int CashDonated, CashReceived, CashFound;
+var int CashDonatedPerWave, CashReceivedPerWave, CashFoundPerWave;
 
 //stuctures to store custom data form achievement handlers
 struct TCustomData {
 	var ScrnAchHandlerBase AchHandler;
 	var name StatName;
 	var bool bWaveReset; // if true, stat will be automatically reset at the new wave begin
-	var String StrVal;	
+	var String StrVal;
 	var int IntVal;
 	var float FloatVal;
 };
@@ -132,9 +132,9 @@ function string PerkStatStr(out TPerkStats Stats)
 {
 	return "MEDIC"$Stats.RDamageHealedStat
 		@"SUP"$Stats.RWeldingPointsStat$"/"$Stats.RShotgunDamageStat
-		@"SS"$Stats.RHeadshotKillsStat 
+		@"SS"$Stats.RHeadshotKillsStat
 		@"CMD"$Stats.RStalkerKillsStat$"/"$Stats.RBullpupDamageStat
-		@"ZERK"$Stats.RMeleeDamageStat 
+		@"ZERK"$Stats.RMeleeDamageStat
 		@"FB"$Stats.RFlameThrowerDamageStat
 		@"DEMO"$Stats.RExplosivesDamageStat;
 }
@@ -142,14 +142,14 @@ function string PerkStatStr(out TPerkStats Stats)
 function string PerkProgressStr(out TPerkStats InitialStats)
 {
 	local ClientPerkRepLink L;
-	
+
 	L = GetRep();
 	if ( L == none )
 		return "";
-		
+
 	return "MEDIC"$(L.RDamageHealedStat - InitialStats.RDamageHealedStat)
 		@"SUP"$(L.RWeldingPointsStat - InitialStats.RWeldingPointsStat)$"/"$(L.RShotgunDamageStat - InitialStats.RShotgunDamageStat)
-		@"SS"$(L.RHeadshotKillsStat - InitialStats.RHeadshotKillsStat) 
+		@"SS"$(L.RHeadshotKillsStat - InitialStats.RHeadshotKillsStat)
 		@"CMD"$(L.RStalkerKillsStat - InitialStats.RStalkerKillsStat)$"/"$(L.RBullpupDamageStat - InitialStats.RBullpupDamageStat)
 		@"ZERK"$(L.RMeleeDamageStat - InitialStats.RMeleeDamageStat )
 		@"FB"$(L.RFlameThrowerDamageStat - InitialStats.RFlameThrowerDamageStat)
@@ -163,14 +163,14 @@ function BackupStats(out TPerkStats Stats)
 	local SRCustomProgress S;
 	local int i;
 	local string ClassName;
-	
+
 	if ( Stats.bSet )
 		return;
-		
+
 	L = GetRep();
 	if ( L == none )
 		return;
-		
+
 	Stats.bSet = true;
 	Stats.RDamageHealedStat        = L.RDamageHealedStat;
 	Stats.RWeldingPointsStat       = L.RWeldingPointsStat;
@@ -181,29 +181,29 @@ function BackupStats(out TPerkStats Stats)
 	Stats.RMeleeDamageStat         = L.RMeleeDamageStat;
 	Stats.RFlameThrowerDamageStat  = L.RFlameThrowerDamageStat;
 	Stats.RExplosivesDamageStat    = L.RExplosivesDamageStat;
-	
-	Stats.CustomStats.length = 0;	
+
+	Stats.CustomStats.length = 0;
 	for ( S=L.CustomLink; S!=none; S=S.NextLink ) {
 		if ( SRCustomProgressInt(S) == none && SRCustomProgressFloat(S) == none )
 			continue; // store only int values
-			
-		ClassName = GetItemName(String(S.class));	
+
+		ClassName = GetItemName(String(S.class));
 		for ( i=0; i<ExcludeBonusStats.length; ++i ) {
 			if ( ClassName ~= ExcludeBonusStats[i] ) {
 				i = -1;
 				break;
 			}
 		}
-		if ( i == -1 ) 
+		if ( i == -1 )
 			continue;
-			
-		i = Stats.CustomStats.length;	
+
+		i = Stats.CustomStats.length;
 		Stats.CustomStats.insert(i, 1);
 		Stats.CustomStats[i].CustomStatClass = S.class;
 		Stats.CustomStats[i].Progress = S.GetProgressInt();
 	}
 	//PlayerOwner.ClientMessage(class'ScrnPlayerController'.static.ConsoleColorString("Initial Perks Stats: " $ PerkStatStr(Stats), 255, 1, 200));
-	
+
 }
 
 // add bonus values to all stats by multiplying gained progress with Mult, e.g.:
@@ -223,44 +223,44 @@ function BonusStats(out TPerkStats InitialStats, float Mult)
         PlayerOwner.ClientMessage(class'ScrnPlayerController'.static.ConsoleColorString("Unable to give end game bonus! No stat backup found", 255, 1, 1));
 		return;
     }
-		
+
 	SteamStats = SRStatsBase(PlayerOwner.SteamStatsAndAchievements);
 	if ( SteamStats == none )
 		return;
-		
+
 	L = SteamStats.Rep;
 	if ( L == none )
 		return;
-		
+
 	PlayerOwner.ClientMessage(class'ScrnPlayerController'.static.ConsoleColorString("Stat Bonus (x"$Mult$"): " $ PerkProgressStr(InitialStats), 255, 1, 200));
-		
+
 	v = Mult * (L.RDamageHealedStat - InitialStats.RDamageHealedStat);
 	if ( v > 0 )
 		SteamStats.AddDamageHealed(v);
-		
+
 	v = Mult * (L.RWeldingPointsStat - InitialStats.RWeldingPointsStat);
 	if ( v > 0 )
 		SteamStats.AddWeldingPoints(v);
 	v = Mult * (L.RShotgunDamageStat - InitialStats.RShotgunDamageStat);
 	if ( v > 0 )
 		SteamStats.AddShotgunDamage(v);
-	
+
 	// that is fucking gay, dude!
 	v = Mult * (L.RHeadshotKillsStat - InitialStats.RHeadshotKillsStat);
 	while ( v-- > 0 )
 		SteamStats.AddHeadshotKill(false);
-	
+
 	v = Mult * (L.RStalkerKillsStat - InitialStats.RStalkerKillsStat);
 	while ( v-- > 0 )
-		SteamStats.AddStalkerKill();		
+		SteamStats.AddStalkerKill();
 	v = Mult * (L.RBullpupDamageStat - InitialStats.RBullpupDamageStat);
 	if ( v > 0 )
 		SteamStats.AddBullpupDamage(v);
-		
+
 	v = Mult * (L.RMeleeDamageStat - InitialStats.RMeleeDamageStat);
 	if ( v > 0 )
 		SteamStats.AddMeleeDamage(v);
-		
+
 	v = Mult * (L.RFlameThrowerDamageStat - InitialStats.RFlameThrowerDamageStat);
 	if ( v > 0 )
 		SteamStats.AddFlameThrowerDamage(v);
@@ -268,7 +268,7 @@ function BonusStats(out TPerkStats InitialStats, float Mult)
 	v = Mult * (L.RExplosivesDamageStat - InitialStats.RExplosivesDamageStat);
 	if ( v > 0 )
 		SteamStats.AddExplosivesDamage(v);
-		
+
 	for ( S=L.CustomLink; S!=none; S=S.NextLink ) {
 		if ( SRCustomProgressInt(S) == none && SRCustomProgressFloat(S) == none )
 			continue; // proceed only int and float values
@@ -282,8 +282,8 @@ function BonusStats(out TPerkStats InitialStats, float Mult)
 				break;
 			}
 		}
-	}		
-		
+	}
+
 	// store modified stats to prevent multiple bonuses
 	InitialStats.bSet = false;
 	BackupStats(InitialStats);
@@ -294,38 +294,38 @@ final function bool ProgressAchievement(name AchID, int Inc)
 {
 	if ( SRStatsBase(PlayerOwner.SteamStatsAndAchievements) == none )
 		return false;
-		
+
 	return class'ScrnBalanceSrv.ScrnAchievements'.static.ProgressAchievementByID(
-			SRStatsBase(PlayerOwner.SteamStatsAndAchievements).Rep, AchID, Inc); 
+			SRStatsBase(PlayerOwner.SteamStatsAndAchievements).Rep, AchID, Inc);
 }
 
 final function ScrnAchievements GetAchievementsByClass(class<ScrnAchievements> AchClass)
 {
     local ClientPerkRepLink L;
     local SRCustomProgress S;
-    
+
     L = GetRep();
     if ( L == none )
         return none;
-        
+
     for( S = L.CustomLink; S != none; S = S.NextLink ) {
-        if( ClassIsChildOf(S.Class, AchClass) ) 
+        if( ClassIsChildOf(S.Class, AchClass) )
             return ScrnAchievements(S);
     }
-    return none;    
+    return none;
 }
 
 final function ScrnAchievements GetAchievementsByID(name AchID, out int AchIndex)
 {
     local ClientPerkRepLink L;
     local SRCustomProgress S;
-    local ScrnAchievements A; 
+    local ScrnAchievements A;
     local int i;
-    
+
     L = GetRep();
     if ( L == none )
         return none;
-        
+
     for( S = L.CustomLink; S != none; S = S.NextLink ) {
         A = ScrnAchievements(S);
         if( A != none ) {
@@ -337,7 +337,7 @@ final function ScrnAchievements GetAchievementsByID(name AchID, out int AchIndex
             }
         }
     }
-    return none;    
+    return none;
 }
 
 
@@ -345,10 +345,10 @@ final function ScrnAchievements GetAchievementsByID(name AchID, out int AchIndex
 protected function int FindCustomData(ScrnAchHandlerBase AchHandler, name StatName, optional bool bCreate)
 {
 	local int i;
-	
+
 	if ( AchHandler == LastSearchedAchHandler && StatName == LastSearchedStatName )
 		return LastFoundCustomDataIndex;
-	
+
 	for ( i=0; i<CustomData.length; ++i ) {
 		if ( CustomData[i].AchHandler == AchHandler && CustomData[i].StatName == StatName ) {
 			LastSearchedAchHandler = AchHandler;
@@ -363,7 +363,7 @@ protected function int FindCustomData(ScrnAchHandlerBase AchHandler, name StatNa
 		CustomData[i].StatName = StatName;
 		LastSearchedAchHandler = AchHandler;
 		LastSearchedStatName = StatName;
-		LastFoundCustomDataIndex = i;		
+		LastFoundCustomDataIndex = i;
 		return i;
 	}
 	return -1;
@@ -377,7 +377,7 @@ function bool HasCustomValue(ScrnAchHandlerBase AchHandler, name StatName)
 function string GetCustomString(ScrnAchHandlerBase AchHandler, name StatName)
 {
 	local int idx;
-	
+
 	idx = FindCustomData(AchHandler, StatName);
 	if (idx != -1)
 		return CustomData[idx].StrVal;
@@ -387,7 +387,7 @@ function string GetCustomString(ScrnAchHandlerBase AchHandler, name StatName)
 function int GetCustomValue(ScrnAchHandlerBase AchHandler, name StatName)
 {
 	local int idx;
-	
+
 	idx = FindCustomData(AchHandler, StatName);
 	if (idx != -1)
 		return CustomData[idx].IntVal;
@@ -397,7 +397,7 @@ function int GetCustomValue(ScrnAchHandlerBase AchHandler, name StatName)
 function float GetCustomFloat(ScrnAchHandlerBase AchHandler, name StatName)
 {
 	local int idx;
-	
+
 	idx = FindCustomData(AchHandler, StatName);
 	if (idx != -1)
 		return CustomData[idx].FloatVal;
@@ -407,7 +407,7 @@ function float GetCustomFloat(ScrnAchHandlerBase AchHandler, name StatName)
 function SetCustomString(ScrnAchHandlerBase AchHandler, name StatName, string Value, optional bool bWaveReset)
 {
 	local int idx;
-	
+
 	idx = FindCustomData(AchHandler, StatName, true);
 	CustomData[idx].bWaveReset = bWaveReset;
 	CustomData[idx].StrVal = Value;
@@ -418,7 +418,7 @@ function SetCustomString(ScrnAchHandlerBase AchHandler, name StatName, string Va
 function SetCustomValue(ScrnAchHandlerBase AchHandler, name StatName, int Value, optional bool bWaveReset)
 {
 	local int idx;
-	
+
 	idx = FindCustomData(AchHandler, StatName, true);
 	CustomData[idx].bWaveReset = bWaveReset;
 	CustomData[idx].StrVal = string(Value);
@@ -429,7 +429,7 @@ function SetCustomValue(ScrnAchHandlerBase AchHandler, name StatName, int Value,
 function SetCustomFloat(ScrnAchHandlerBase AchHandler, name StatName, float Value, optional bool bWaveReset)
 {
 	local int idx;
-	
+
 	idx = FindCustomData(AchHandler, StatName, true);
 	CustomData[idx].bWaveReset = bWaveReset;
 	CustomData[idx].StrVal = string(Value);
@@ -441,7 +441,7 @@ function SetCustomFloat(ScrnAchHandlerBase AchHandler, name StatName, float Valu
 function int IncCustomValue(ScrnAchHandlerBase AchHandler, name StatName, int Inc, optional bool bWaveReset)
 {
 	local int idx;
-	
+
 	idx = FindCustomData(AchHandler, StatName, true);
 	CustomData[idx].bWaveReset = bWaveReset;
 	CustomData[idx].IntVal += Inc;
@@ -453,7 +453,7 @@ function int IncCustomValue(ScrnAchHandlerBase AchHandler, name StatName, int In
 function int IncCustomFloat(ScrnAchHandlerBase AchHandler, name StatName, float Inc, optional bool bWaveReset)
 {
 	local int idx;
-	
+
 	idx = FindCustomData(AchHandler, StatName, true);
 	CustomData[idx].bWaveReset = bWaveReset;
 	CustomData[idx].FloatVal += Inc;
@@ -468,12 +468,12 @@ function int RegisterDamageType(KFWeapon Weapon, class<DamageType> DamType, bool
 {
 	local int i;
 	local class<KFWeaponDamageType> KFDamType;
-	
+
 	KFDamType = class<KFWeaponDamageType>(DamType);
-	
+
 	if ( Weapon == none || KFDamType == none )
 		return -1;
-	
+
 	for ( i=0; i<WeapInfos.Length; ++i ) {
 		if ( WeapInfos[i].WeaponClass == Weapon.class && WeapInfos[i].DamType == KFDamType ) {
             WeapInfos[i].Weapon = Weapon;
@@ -492,9 +492,9 @@ function int RegisterDamageType(KFWeapon Weapon, class<DamageType> DamType, bool
 	WeapInfos[i].PickupWave = GameRules.Mut.KF.WaveNum;
 	// Hack in ScrnHumanPawn forces the game to set Tier3WeaponGiver for all weapons despite their tier.
 	// After player kills somebody with this weapon, Tier3WeaponGiver will be set to none in KFGameType.Killed()
-	// So only PrevOwner can be used to identify origonal owner 
+	// So only PrevOwner can be used to identify origonal owner
 	if ( Weapon.Tier3WeaponGiver != none && Weapon.Tier3WeaponGiver != self ) {
-		WeapInfos[i].PrevOwner = Weapon.Tier3WeaponGiver; 
+		WeapInfos[i].PrevOwner = Weapon.Tier3WeaponGiver;
 		WeapInfos[i].bPrevOwnerDead = Weapon.Tier3WeaponGiver.IsDead();
 	}
 	WeapInfos[i].DamType = KFDamType;
@@ -506,14 +506,14 @@ function int RegisterDamageType(KFWeapon Weapon, class<DamageType> DamType, bool
 	WeapInfos[i].TriggerDecapsPerShot = 2;
 	WeapInfos[i].TriggerDecapsPerMagazine = 2;
 	WeapInfos[i].TriggerDamagePerShot = 2;
-	WeapInfos[i].TriggerDamagePerMagazine = 2;;	
-	return i;	
+	WeapInfos[i].TriggerDamagePerMagazine = 2;;
+	return i;
 }
 
 function ClearWeapInfos()
 {
 	local int i;
-	
+
 	while ( i<WeapInfos.Length ) {
         WeapInfos[i].HeadshotsPerWave = 0;
         WeapInfos[i].KillsPerWave = 0;
@@ -529,7 +529,7 @@ function TWeapInfo GetFullWeaponInfo(class<KFWeapon> WC)
 {
 	local TWeapInfo result;
 	local int i;
-	
+
 	for ( i=0; i<WeapInfos.Length; ++i ) {
 		if ( WeapInfos[i].WeaponClass == WC ) {
 			if ( WeapInfos[i].LastDmgTime > result.LastDmgTime )
@@ -547,7 +547,7 @@ function TWeapInfo GetFullWeaponInfo(class<KFWeapon> WC)
 			result.DamagePerMagazine += WeapInfos[i].DamagePerMagazine;
 			result.DamagePerWave += WeapInfos[i].DamagePerWave;
 		}
-	}	
+	}
 	return result;
 }
 
@@ -555,15 +555,15 @@ function WeaponFired(KFWeapon W, byte FireMode)
 {
     local WeaponFire WF;
 	local class<Projectile> proj;
-	
+
 	if ( W == none )
 		return;
-		
+
 	LastFiredWeapon = W;
 	WF = W.GetFireMode(FireMode);
 	if ( WF == none || WF.class == Class'KFMod.NoFire' )
 		return;
-	
+
 	proj = WF.default.ProjectileClass;
 	if ( proj != none ) {
 		RegisterDamageType(W, proj.default.MyDamageType, true);
@@ -573,7 +573,7 @@ function WeaponFired(KFWeapon W, byte FireMode)
 			RegisterDamageType(W, class<M79GrenadeProjectile>(proj).default.ImpactDamageType, true);
 	}
 	if ( InstantFire(WF) != none )
-		RegisterDamageType(W, InstantFire(WF).DamageType, true);	
+		RegisterDamageType(W, InstantFire(WF).DamageType, true);
 	else if ( KFMeleeFire(WF) != none )
 		RegisterDamageType(W, KFMeleeFire(WF).hitDamageClass, true);
 }
@@ -584,23 +584,23 @@ function WeaponReloaded(KFWeapon W)
 	if ( W == none
     )
 		return;
-        
-    for ( i=0; i<GameRules.AchHandlers.length; ++i ) 
+
+    for ( i=0; i<GameRules.AchHandlers.length; ++i )
         GameRules.AchHandlers[i].WeaponReloaded(self, W);
-        
+
 	for ( i=0; i<WeapInfos.Length; ++i ) {
 		if ( WeapInfos[i].Weapon == W ) {
 			WeapInfos[i].KillsPerShot = 0;
 			WeapInfos[i].KillsPerMagazine = 0;
-			
+
 			WeapInfos[i].DecapsPerShot = 0;
 			WeapInfos[i].DecapsPerMagazine = 0;
 
-			WeapInfos[i].DamagePerShot = 0;			
-			WeapInfos[i].DamagePerMagazine = 0;		
+			WeapInfos[i].DamagePerShot = 0;
+			WeapInfos[i].DamagePerMagazine = 0;
 
-			WeapInfos[i].HeadshotsPerShot = 0;			
-			WeapInfos[i].HeadshotsPerMagazine = 0;	            
+			WeapInfos[i].HeadshotsPerShot = 0;
+			WeapInfos[i].HeadshotsPerMagazine = 0;
 		}
 	}
 }
@@ -609,13 +609,13 @@ function KFWeapon GetCurrentWeapon()
 {
 	if ( PlayerOwner.Pawn == none || PlayerOwner.Pawn.Health <= 0 )
 		return none;
-	
+
 	return KFWeapon(PlayerOwner.Pawn.Weapon);
 }
 
 
-/** Locates WeapInfos record by a given damage type. If there are multiple records with the same 
- * damage type, looks for a match with LastFiredWeapon. If such not found, returns last record with 
+/** Locates WeapInfos record by a given damage type. If there are multiple records with the same
+ * damage type, looks for a match with LastFiredWeapon. If such not found, returns last record with
  * matched damage type
  *
  * @param DamType weapon damage type to search
@@ -624,19 +624,19 @@ function KFWeapon GetCurrentWeapon()
 function int FindWeaponInfoByDamType(class<KFWeaponDamageType> DamType)
 {
 	local int i, idx;
-	
-	if (  LastWeapInfoIndex >= 0 && LastWeapInfoIndex < WeapInfos.Length 
+
+	if (  LastWeapInfoIndex >= 0 && LastWeapInfoIndex < WeapInfos.Length
 			&&  WeapInfos[LastWeapInfoIndex].DamType == DamType )
 		return LastWeapInfoIndex;
-		
+
 	idx = -1;
 	for ( i=0; i<WeapInfos.Length; ++i ) {
 		if ( WeapInfos[i].DamType == DamType ) {
-			// if this damage type can be delivered by last fired weapon, then use it. 
+			// if this damage type can be delivered by last fired weapon, then use it.
 			// Otherwice use last registered record with this damage type
 			idx = i;
 			if ( WeapInfos[i].Weapon == LastFiredWeapon )
-				break; 
+				break;
 		}
 	}
 	return idx;
@@ -646,12 +646,12 @@ function int FindWeaponInfoByDamType(class<KFWeaponDamageType> DamType)
 function KFWeapon FindWeaponByDamType(class<KFWeaponDamageType> DamType)
 {
 	local int idx;
-	
+
 	idx = FindWeaponInfoByDamType(DamType);
-	
+
 	if ( idx != -1 )
 		return WeapInfos[idx].Weapon;
-	
+
 	return none;
 }
 
@@ -660,7 +660,7 @@ function KFWeapon FindWeaponByDamType(class<KFWeaponDamageType> DamType)
  * made by non-KFWeaponDamageType aren't triggered here.
  *
  * @param Damage damage delivered (including perk bonuses, resistance etc.).
- * @param Injured Monster that took damage. Note that Monster.Health isn't touched yet, i.e. 
+ * @param Injured Monster that took damage. Note that Monster.Health isn't touched yet, i.e.
  *		  Damage isn't subtracted yet, but Monster.HeadHealth already has actual value.
  * @param DamType damage type.
  * @param bHeadshot is this damage acquired by a headshot? False for any shot made to already decapitaded enemy.
@@ -672,11 +672,11 @@ function MadeDamage(int Damage, KFMonster Injured, class<KFWeaponDamageType> Dam
 	local float t;
 	local KFWeapon Weapon;
     local KFPlayerReplicationInfo KFPRI;
-    
+
     if ( PlayerOwner == none )
-        return;    
-    KFPRI = KFPlayerReplicationInfo(PlayerOwner.PlayerReplicationInfo);    
-    
+        return;
+    KFPRI = KFPlayerReplicationInfo(PlayerOwner.PlayerReplicationInfo);
+
 	LastDamage = Damage;
     LastDamageType = DamType;
 	LastDamagedMonster = Injured;
@@ -695,7 +695,7 @@ function MadeDamage(int Damage, KFMonster Injured, class<KFWeaponDamageType> Dam
 		// EVENT
 		if ( RowHeadshots >= TriggerRowHeadshots ) {
 			m = IGNORE_STAT; // next time trigger event when reaching minimal returned value
-			for ( i=0; i<GameRules.AchHandlers.length; ++i ) 
+			for ( i=0; i<GameRules.AchHandlers.length; ++i )
 				m = min(m, GameRules.AchHandlers[i].RowHeadhots(self, RowHeadshots));
 			TriggerRowHeadshots = m;
 		}
@@ -708,11 +708,11 @@ function MadeDamage(int Damage, KFMonster Injured, class<KFWeaponDamageType> Dam
 			BodyshotsPerGame++;
 		}
 	}
-    
+
     // count medic damage
-    if ( ClassIsChildOf(DamType, class'ScrnDamTypeMedicBase') 
-        || (ClassIsChildOf(DamType, class'DamTypeKatana') 
-            && KFPRI != none &&  ClassIsChildOf(KFPRI.ClientVeteranSkill, class'ScrnVetFieldMedic')) ) 
+    if ( ClassIsChildOf(DamType, class'ScrnDamTypeMedicBase')
+        || (ClassIsChildOf(DamType, class'DamTypeKatana')
+            && KFPRI != none &&  ClassIsChildOf(KFPRI.ClientVeteranSkill, class'ScrnVetFieldMedic')) )
     {
         MedicDamage += min(Damage, Injured.Health);
         if ( MedicDamage >= 1000 ) {
@@ -720,12 +720,12 @@ function MadeDamage(int Damage, KFMonster Injured, class<KFWeaponDamageType> Dam
             MedicDamage = MedicDamage % 1000;
         }
     }
-	
+
 	LastWeapInfoIndex = FindWeaponInfoByDamType(DamType);
 	for ( i=0; i<GameRules.AchHandlers.length; ++i ) {
 		GameRules.AchHandlers[i].MonsterDamaged(Damage, Injured, self, DamType, bHeadshot, bWasDecapitated);
 	}
-	
+
 
 	if ( LastWeapInfoIndex != -1 ) {
 		Weapon = WeapInfos[LastWeapInfoIndex].Weapon;
@@ -750,41 +750,41 @@ function MadeDamage(int Damage, KFMonster Injured, class<KFWeaponDamageType> Dam
 					m = IGNORE_STAT; // next time trigger event when reaching minimal returned value
 					v = WeapInfos[LastWeapInfoIndex].DecapsPerShot;
 					t = Level.TimeSeconds - WeapInfos[LastWeapInfoIndex].LastDmgTime;
-					for ( i=0; i<GameRules.AchHandlers.length; ++i ) 
+					for ( i=0; i<GameRules.AchHandlers.length; ++i )
 						m = min(m, GameRules.AchHandlers[i].WDecapsPerShot(self, Weapon, DamType, v, t));
 					WeapInfos[LastWeapInfoIndex].TriggerDecapsPerShot = m;
 				}
 				if ( WeapInfos[LastWeapInfoIndex].DecapsPerMagazine >= WeapInfos[LastWeapInfoIndex].TriggerDecapsPerMagazine ) {
 					m = IGNORE_STAT; // next time trigger event when reaching minimal returned value
 					v = WeapInfos[LastWeapInfoIndex].DecapsPerMagazine;
-					for ( i=0; i<GameRules.AchHandlers.length; ++i ) 
+					for ( i=0; i<GameRules.AchHandlers.length; ++i )
 						m = min(m, GameRules.AchHandlers[i].WDecapsPerMagazine(self, Weapon, DamType, v));
 					WeapInfos[LastWeapInfoIndex].TriggerDecapsPerMagazine = m;
-				}				
-				// END OF EVENT				
-			}	
+				}
+				// END OF EVENT
+			}
 			// EVENT
 			if ( WeapInfos[LastWeapInfoIndex].RowHeadshots >= WeapInfos[LastWeapInfoIndex].TriggerRowHeadshots ) {
 				m = IGNORE_STAT; // next time trigger event when reaching minimal returned value
 				v = WeapInfos[LastWeapInfoIndex].RowHeadshots;
-				for ( i=0; i<GameRules.AchHandlers.length; ++i ) 
+				for ( i=0; i<GameRules.AchHandlers.length; ++i )
 					m = min(m, GameRules.AchHandlers[i].WRowHeadhots(self, Weapon, DamType, v));
 				WeapInfos[LastWeapInfoIndex].TriggerRowHeadshots = m;
 			}
 			if ( WeapInfos[LastWeapInfoIndex].HeadshotsPerShot >= WeapInfos[LastWeapInfoIndex].TriggerHeadshotsPerShot ) {
 				m = IGNORE_STAT; // next time trigger event when reaching minimal returned value
 				v = WeapInfos[LastWeapInfoIndex].HeadshotsPerShot;
-				for ( i=0; i<GameRules.AchHandlers.length; ++i ) 
+				for ( i=0; i<GameRules.AchHandlers.length; ++i )
 					m = min(m, GameRules.AchHandlers[i].WInstantHeadhots(self, Weapon, DamType, v));
 				WeapInfos[LastWeapInfoIndex].TriggerHeadshotsPerShot = m;
 			}
 			if ( WeapInfos[LastWeapInfoIndex].HeadshotsPerMagazine >= WeapInfos[LastWeapInfoIndex].TriggerHeadshotsPerMagazine ) {
 				m = IGNORE_STAT; // next time trigger event when reaching minimal returned value
 				v = WeapInfos[LastWeapInfoIndex].HeadshotsPerMagazine;
-				for ( i=0; i<GameRules.AchHandlers.length; ++i ) 
+				for ( i=0; i<GameRules.AchHandlers.length; ++i )
 					m = min(m, GameRules.AchHandlers[i].WHeadshotsPerMagazine(self, Weapon, DamType, v));
 				WeapInfos[LastWeapInfoIndex].TriggerHeadshotsPerMagazine = m;
-			}            
+			}
 			// END OF EVENT
 		}
 		else if ( !bWasDecapitated ) {
@@ -795,18 +795,18 @@ function MadeDamage(int Damage, KFMonster Injured, class<KFWeaponDamageType> Dam
 			m = IGNORE_STAT; // next time trigger event when reaching minimal returned value
 			v = WeapInfos[LastWeapInfoIndex].DamagePerShot;
 			t = Level.TimeSeconds - WeapInfos[LastWeapInfoIndex].LastDmgTime;
-			for ( i=0; i<GameRules.AchHandlers.length; ++i ) 
+			for ( i=0; i<GameRules.AchHandlers.length; ++i )
 				m = min(m, GameRules.AchHandlers[i].WDamagePerShot(self, Weapon, DamType, v, t));
 			WeapInfos[LastWeapInfoIndex].TriggerDamagePerShot = m;
 		}
 		if ( WeapInfos[LastWeapInfoIndex].DamagePerMagazine >= WeapInfos[LastWeapInfoIndex].TriggerDamagePerMagazine ) {
 			m = IGNORE_STAT; // next time trigger event when reaching minimal returned value
 			v = WeapInfos[LastWeapInfoIndex].DamagePerMagazine;
-			for ( i=0; i<GameRules.AchHandlers.length; ++i ) 
+			for ( i=0; i<GameRules.AchHandlers.length; ++i )
 				m = min(m, GameRules.AchHandlers[i].WDamagePerMagazine(self, Weapon, DamType, v));
 			WeapInfos[LastWeapInfoIndex].TriggerDamagePerMagazine = m;
-		}				
-		// END OF EVENT			
+		}
+		// END OF EVENT
 
 		WeapInfos[LastWeapInfoIndex].LastDmgTime = Level.TimeSeconds;
 	}
@@ -817,13 +817,13 @@ function MadeDamage(int Damage, KFMonster Injured, class<KFWeaponDamageType> Dam
 function TookDamage(int Damage, KFMonster InstigatedBy, class<DamageType> DamType)
 {
 	local int i;
-	
+
 	DamageReceivedPerWave += Damage;
 	DamageReceivedPerGame += Damage;
-	
+
 	for ( i=0; i<GameRules.AchHandlers.length; ++i ) {
 		GameRules.AchHandlers[i].PlayerDamaged(Damage, self, InstigatedBy, DamType);
-	}	
+	}
 }
 
 function KilledMonster(KFMonster Killed, class<KFWeaponDamageType> DamType)
@@ -831,46 +831,46 @@ function KilledMonster(KFMonster Killed, class<KFWeaponDamageType> DamType)
 	local int i, m, v;
 	local float t;
 	local KFWeapon Weapon;
-	
+
 	KillsPerWave++;
 	LastWeapInfoIndex = FindWeaponInfoByDamType(DamType);
 	if ( LastWeapInfoIndex != -1 ) {
 		Weapon = WeapInfos[LastWeapInfoIndex].Weapon;
 		WeapInfos[LastWeapInfoIndex].KillsPerShot++;
 		WeapInfos[LastWeapInfoIndex].KillsPerMagazine++;
-		WeapInfos[LastWeapInfoIndex].KillsPerWave++;	
-		WeapInfos[LastWeapInfoIndex].TotalKills++;	
-		
+		WeapInfos[LastWeapInfoIndex].KillsPerWave++;
+		WeapInfos[LastWeapInfoIndex].TotalKills++;
+
 		// EVENT
 		if ( WeapInfos[LastWeapInfoIndex].KillsPerShot >= WeapInfos[LastWeapInfoIndex].TriggerKillsPerShot ) {
 			m = IGNORE_STAT; // next time trigger event when reaching minimal returned value
 			v = WeapInfos[LastWeapInfoIndex].KillsPerShot;
 			t = Level.TimeSeconds - WeapInfos[LastWeapInfoIndex].LastKillTime;
-			for ( i=0; i<GameRules.AchHandlers.length; ++i ) 
+			for ( i=0; i<GameRules.AchHandlers.length; ++i )
 				m = min(m, GameRules.AchHandlers[i].WKillsPerShot(self, Weapon, DamType, v, t));
 			WeapInfos[LastWeapInfoIndex].TriggerKillsPerShot = m;
 		}
 		if ( WeapInfos[LastWeapInfoIndex].KillsPerMagazine >= WeapInfos[LastWeapInfoIndex].TriggerKillsPerMagazine ) {
 			m = IGNORE_STAT; // next time trigger event when reaching minimal returned value
 			v = WeapInfos[LastWeapInfoIndex].KillsPerMagazine;
-			for ( i=0; i<GameRules.AchHandlers.length; ++i ) 
+			for ( i=0; i<GameRules.AchHandlers.length; ++i )
 				m = min(m, GameRules.AchHandlers[i].WKillsPerMagazine(self, Weapon, DamType, v));
 			WeapInfos[LastWeapInfoIndex].TriggerKillsPerMagazine = m;
-		}				
-		// END OF EVENT		
-		
+		}
+		// END OF EVENT
+
 		WeapInfos[LastWeapInfoIndex].LastKillTime = Level.TimeSeconds;
 	}
 	for ( i=0; i<GameRules.AchHandlers.length; ++i ) {
 		GameRules.AchHandlers[i].MonsterKilled(Killed, self, DamType);
-	}	
+	}
 	LastKillTime = Level.TimeSeconds;
 }
 
 function Died(Controller Killer, class<DamageType> DamType)
 {
 	local int i;
-	
+
 	if ( !bDied ) {
 		bDied = true;
 		Deaths++;
@@ -879,7 +879,7 @@ function Died(Controller Killer, class<DamageType> DamType)
 			DeathsByMonster++;
 		for ( i=0; i<GameRules.AchHandlers.length; ++i ) {
 			GameRules.AchHandlers[i].PlayerDied(self, Killer, DamType);
-		}		
+		}
 	}
 }
 
@@ -891,11 +891,11 @@ function Died(Controller Killer, class<DamageType> DamType)
 function Healed(int HealAmount, ScrnHumanPawn Patient, KFWeapon MedicGun)
 {
 	local int i;
-	
+
 	HealedPointsInWave += HealAmount;
-	
+
 	for ( i=0; i<GameRules.AchHandlers.length; ++i )
-		GameRules.AchHandlers[i].HealingMade(HealAmount, Patient, self, MedicGun);	
+		GameRules.AchHandlers[i].HealingMade(HealAmount, Patient, self, MedicGun);
 }
 
 /**
@@ -905,9 +905,9 @@ function Healed(int HealAmount, ScrnHumanPawn Patient, KFWeapon MedicGun)
 function WaveStarted(byte WaveNum)
 {
 	local int i;
-	
+
 	ClearWeapInfos();
-	
+
 	for ( i=0; i<CustomData.length; ++i ) {
 		if ( CustomData[i].bWaveReset ) {
 			CustomData[i].StrVal = "";
@@ -915,18 +915,18 @@ function WaveStarted(byte WaveNum)
 			CustomData[i].FloatVal = 0;
 		}
 	}
-	
+
 	bDied = PlayerOwner.Pawn == none || PlayerOwner.Pawn.Health <= 0;
 	HeadshotsPerWave = 0;
 	BodyshotsPerWave = 0;
 	KillsPerWave = 0;
 	DecapsPerWave = 0;
-	DamagePerWave = 0;	
+	DamagePerWave = 0;
 	DamageReceivedPerWave = 0;
     HealedPointsInWave = 0;
 	CashDonatedPerWave = 0;
 	CashReceivedPerWave = 0;
-	CashFoundPerWave = 0;	
+	CashFoundPerWave = 0;
 }
 
 function WaveEnded(byte WaveNum)
@@ -938,15 +938,15 @@ function BackupPRI()
 {
     local KFPlayerReplicationInfo KFPRI;
     local ScrnCustomPRI ScrnPRI;
-    
+
     if ( PlayerOwner == none )
         return;
-    
+
     KFPRI = KFPlayerReplicationInfo(PlayerOwner.PlayerReplicationInfo);
     if ( KFPRI == none )
         return;
     ScrnPRI = class'ScrnCustomPRI'.static.FindMe(KFPRI);
-     
+
     if ( !GameRules.Mut.bLeaveCashOnDisconnect )
         PRI_Score = KFPRI.Score;
     PRI_Kills = KFPRI.Kills;
@@ -954,12 +954,12 @@ function BackupPRI()
     PRI_Deaths = KFPRI.Deaths;
     PRI_StartTime = KFPRI.StartTime;
     PRI_ClientVeteranSkill = KFPRI.ClientVeteranSkill;
-    
+
     if ( KFPRI.Team == none )
         PRI_TeamIndex = 255;
     else
         PRI_TeamIndex = KFPRI.Team.TeamIndex;
-    
+
     if ( ScrnPRI != none ) {
         PRI_BlameCounter = ScrnPRI.BlameCounter;
     }
@@ -969,31 +969,32 @@ function RestorePRI()
 {
     local KFPlayerReplicationInfo KFPRI;
     local ScrnCustomPRI ScrnPRI;
-    
+
     if ( PlayerOwner == none )
         return;
-    
+
     KFPRI = KFPlayerReplicationInfo(PlayerOwner.PlayerReplicationInfo);
     if ( KFPRI == none )
         return;
     ScrnPRI = class'ScrnCustomPRI'.static.FindMe(KFPRI);
-        
+
+    if ( KFPRI.Kills == 0 && KFPRI.KillAssists == 0 && KFPRI.Deaths == 0 ) {
+        if ( PRI_ClientVeteranSkill != none )
+            KFPRI.ClientVeteranSkill = PRI_ClientVeteranSkill;
+        if ( PRI_TeamIndex < 2 && ( KFPRI.Team == none || KFPRI.Team.TeamIndex != PRI_TeamIndex ) )
+            Level.Game.ChangeTeam( PlayerOwner, PRI_TeamIndex, true );
+    }
+
     if ( !GameRules.Mut.bLeaveCashOnDisconnect )
         KFPRI.Score = max(PRI_Score, KFPRI.Score);
     KFPRI.Kills = max(PRI_Kills, KFPRI.Kills);
     KFPRI.KillAssists = max(PRI_KillAssists, KFPRI.KillAssists);
     KFPRI.Deaths = max(PRI_Deaths, KFPRI.Deaths);
     KFPRI.StartTime = min(PRI_StartTime, KFPRI.StartTime);
-    if ( PRI_ClientVeteranSkill != none )
-        KFPRI.ClientVeteranSkill = PRI_ClientVeteranSkill;
-        
-    if ( PRI_TeamIndex < 2 && ( KFPRI.Team == none || KFPRI.Team.TeamIndex != PRI_TeamIndex ) ) {
-        Level.Game.ChangeTeam( PlayerOwner, PRI_TeamIndex, true );
-    }
-        
+
     if ( ScrnPRI != none ) {
         ScrnPRI.BlameCounter = max(PRI_BlameCounter, ScrnPRI.BlameCounter);
-    }        
+    }
 }
 
 
@@ -1001,10 +1002,10 @@ function PickedCash(CashPickup Dosh)
 {
 	local ScrnPlayerInfo DonatorSPI;
 	local int i;
-	
+
 	if ( Dosh.CashAmount == 0 )
 		return;
-		
+
 	if ( Dosh.bDroppedCash ) {
 		DonatorSPI = GameRules.GetPlayerInfo(PlayerController(Dosh.DroppedBy));
 		if ( DonatorSPI == self )
@@ -1024,23 +1025,23 @@ function PickedCash(CashPickup Dosh)
 	}
 	// achievements
 	for ( i=0; i<GameRules.AchHandlers.length; ++i )
-		GameRules.AchHandlers[i].PickedCash(Dosh.CashAmount, self, DonatorSPI, Dosh.bDroppedCash);		
+		GameRules.AchHandlers[i].PickedCash(Dosh.CashAmount, self, DonatorSPI, Dosh.bDroppedCash);
 }
 
 function PickedWeapon(KFWeaponPickup WeaponPickup)
 {
 	local int i;
-	
+
 	for ( i=0; i<GameRules.AchHandlers.length; ++i )
-		GameRules.AchHandlers[i].PickedWeapon(self, WeaponPickup);		
+		GameRules.AchHandlers[i].PickedWeapon(self, WeaponPickup);
 }
 
 function PickedItem(Pickup Item)
 {
 	local int i;
-	
+
 	for ( i=0; i<GameRules.AchHandlers.length; ++i )
-		GameRules.AchHandlers[i].PickedItem(self, Item);		
+		GameRules.AchHandlers[i].PickedItem(self, Item);
 }
 
 function float GetAccuracyWave()
@@ -1062,4 +1063,5 @@ defaultproperties
     MEDICXP_PER_1000DMG=20
 	TriggerRowHeadshots=2
     RemoteRole=ROLE_None
+    PRI_TeamIndex=255
 }

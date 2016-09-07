@@ -10,7 +10,7 @@ var array<int> progressArray1;
 
 var array< class<Weapon> > PerkedWeapons; // W
 var array< class<DamageType> > PerkedDamTypes; // P, S
-var array< class<Pickup> > PerkedPickups; // $ 
+var array< class<Pickup> > PerkedPickups; // $
 var array< class<Ammunition> > PerkedAmmo; // A, B
 var array< class<Weapon> > SpecialWeapons; // *
 
@@ -18,15 +18,15 @@ var class<KFWeaponDamageType> DefaultDamageType; // used for custom weapons to o
 												 // DefaultDamageType must be granted with perk bonuses insed the perk class!
 var class<KFWeaponDamageType> DefaultDamageTypeNoBonus; // this damage type should allow perk progress, but not damage bonus. Don't put it to AddDamage()!
 
-var bool bLocked;   
+var bool bLocked;
 
 struct PerkIconData {
 	var texture PerkIcon;
 	var texture StarIcon;
 	var color DrawColor;
-};   
+};
 
-var array<PerkIconData> OnHUDIcons;                                          
+var array<PerkIconData> OnHUDIcons;
 var bool bOldStyleIcons;
 
 struct SDefaultInventory {
@@ -45,29 +45,30 @@ var array<SDefaultInventory> DefaultInventory;
 var class<HUDOverlay> HUDOverlay;
 
 var Material HighDecMat;
+var name SamePerkAch; // achievement to give when game is won by everybody are playing this perk only
 
 // ==================================================  FUNCTIONS  ==================================================
-      
-// try to avoid using this function on client-side, except for bNetOwner      
+
+// try to avoid using this function on client-side, except for bNetOwner
 final static function Pawn FindPawn(PlayerReplicationInfo PRI)
 {
     local Pawn P;
-    
+
     if ( PRI == none )
         return none;
-    
+
     // Owner is set only on server-side or bNetOwner
     if ( Controller(PRI.Owner) != none )
         return Controller(PRI.Owner).Pawn;
-    
+
     foreach PRI.DynamicActors(class'Pawn', P) {
         if ( P.PlayerReplicationInfo == PRI )
             return P;
     }
-        
-    return none;    
+
+    return none;
 }
-      
+
 // Adds class to array. Doesn't add none or classes, which already are stored in array.
 final static function bool ClassAddToArrayUnique( out array <class> AArray, class AClass )
 {
@@ -78,14 +79,14 @@ final static function bool ClassAddToArrayUnique( out array <class> AArray, clas
     return true;
 }
 
-// returns true if an array contains a given class 
+// returns true if an array contains a given class
 final static function bool ClassIsInArray(out array <class> AArray, class AClass)
 {
     local int i;
-    
+
     if ( AClass == none )
         return false;
-    
+
     for ( i = 0; i < AArray.length; ++i ) {
         if ( AArray[i] == AClass )
             return true;
@@ -97,14 +98,14 @@ final static function bool ClassIsInArray(out array <class> AArray, class AClass
 final static function bool ClassChildIsInArray(out array <class> AArray, class AClass)
 {
     local int i;
-    
+
     if ( AClass == none )
         return false;
-        
+
     for ( i = 0; i < AArray.length; ++i ) {
         if ( ClassIsChildOf(AClass, AArray[i]) )
             return true;
-    }        
+    }
     return false;
 }
 
@@ -112,12 +113,12 @@ final static function bool ClassChildIsInArray(out array <class> AArray, class A
 final static function LogArray(out array <class> AArray)
 {
     local int i;
-    
+
     if ( AArray.length == 0 )
         Log("Array is empty!");
     else {
         Log("Array elements:");
-        while ( i < AArray.length )    
+        while ( i < AArray.length )
             Log(String(AArray[i++]));
         Log("End of array");
     }
@@ -142,25 +143,25 @@ static function array<int> GetProgressArray(byte ReqNum, optional out int Double
 }
 
 
-static function int GetPerkProgressInt( ClientPerkRepLink StatOther, out int FinalInt, byte CurLevel, byte ReqNum ) 
+static function int GetPerkProgressInt( ClientPerkRepLink StatOther, out int FinalInt, byte CurLevel, byte ReqNum )
 {
     local array<int> ProgressArray;
     local int DoubleScalingBase;
-    
+
     ProgressArray = GetProgressArray(ReqNum, DoubleScalingBase);
-    if ( CurLevel < ProgressArray.Length ) 
+    if ( CurLevel < ProgressArray.Length )
         FinalInt= ProgressArray[curLevel];
-    else 
+    else
         FinalInt = ProgressArray[ProgressArray.Length-1]+GetDoubleScaling(CurLevel,DoubleScalingBase)*GetPost6RequirementScaling();
-    
+
 	return Min(GetStatValueInt(StatOther, ReqNum),FinalInt);
 }
 
 static function AddCustomStats( ClientPerkRepLink Other )
 {
     // v8: achievement init moved to ScrnBalance.SetupRepLink()
-    //class'ScrnBalanceSrv.ScrnAchievements'.static.InitAchievements(Other);    
-}    
+    //class'ScrnBalanceSrv.ScrnAchievements'.static.InitAchievements(Other);
+}
 
 final static function float GetPost6RequirementScaling()
 {
@@ -172,7 +173,7 @@ final static function byte GetBonusLevel(int level)
 {
     return Clamp(level, class'ScrnBalance'.default.Mut.MinLevel, class'ScrnBalance'.default.Mut.MaxLevel);
 }
-    
+
 final static function byte GetClientVeteranSkillLevel(KFPlayerReplicationInfo KFPRI)
 {
     // c&p from GetBonusLevel() to reduce function calls  -- PooSH
@@ -189,7 +190,7 @@ final static function bool IsGunslingerEnabled()
 static function float GetInitialCostScaling(KFPlayerReplicationInfo KFPRI, class<Pickup> Item)
 {
 	local byte level;
-	
+
     if ( !class'ScrnBalance'.default.Mut.bSpawn0 ) {
 		level = GetClientVeteranSkillLevel(KFPRI);
 		if ( level >= 6 )
@@ -197,7 +198,7 @@ static function float GetInitialCostScaling(KFPlayerReplicationInfo KFPRI, class
 		if ( level == 5 )
 			return default.StartingWeaponSellPriceLevel5;
 	}
-		
+
     return 0;
 }
 
@@ -208,25 +209,25 @@ static function float GetDoorHealthVisibilityScaling(KFPlayerReplicationInfo KFP
 }
 
 
-// Adds Amount of nades to player's inventory 
+// Adds Amount of nades to player's inventory
 // (c) PooSH, 2012
 static function GiveNades(KFHumanPawn P, int Amount)
 {
     local inventory inv;
     local Frag aFrag;
 
-    //can't use FindInventoryType, cuz need to search also subclasses (ScrnFrag) 
+    //can't use FindInventoryType, cuz need to search also subclasses (ScrnFrag)
     //aFrag = Frag(P.FindInventoryType(class'Frag'));
     for ( inv = P.inventory; inv != none && aFrag == none ; inv = inv.Inventory )
         aFrag = Frag(inv);
-    
+
     //if initial inventory doesn't exist yet - create it
     if ( aFrag == none ) {
-        P.CreateInventoryVeterancy(P.RequiredEquipment[2], 0); 
+        P.CreateInventoryVeterancy(P.RequiredEquipment[2], 0);
         for ( inv = P.inventory; inv != none && aFrag == none ; inv = inv.Inventory )
-            aFrag = Frag(inv);    
+            aFrag = Frag(inv);
     }
-    
+
     if ( aFrag != none)
         aFrag.ConsumeAmmo(0, -Amount);
 }
@@ -249,7 +250,7 @@ static function float GetWeaponMovementSpeedBonus(KFPlayerReplicationInfo KFPRI,
 }
 
 //returns true if perk can "cook" nade, i.e. hold the trigger and throw nade on button release
-//Weap indicates current weapon player holds (not the Frag!) 
+//Weap indicates current weapon player holds (not the Frag!)
 static function bool CanCookNade(KFPlayerReplicationInfo KFPRI, Weapon Weap)
 {
     return true;
@@ -271,12 +272,12 @@ static function byte PreDrawPerk( Canvas C, byte Level, out Material PerkIcon, o
 {
 	local int idx;
     local byte SPM; // stars per medal
-	
+
     if ( class'ScrnBalance'.default.Mut.b10Stars )
         SPM = 10;
     else
         SPM = 5;
-        
+
 	if ( class'ScrnVeterancyTypes'.default.bOldStyleIcons || default.OnHUDIcons.Length <= 2 ) {
 		// old system
 		if ( Level > (5*SPM) ) {
@@ -284,7 +285,7 @@ static function byte PreDrawPerk( Canvas C, byte Level, out Material PerkIcon, o
 			StarIcon = Class'HUDKillingFloor'.Default.VetStarMaterial;
 			C.SetDrawColor(255, 255, 0, C.DrawColor.A); //orange
 			Level-=5*SPM;
-		}	
+		}
 		else if ( Level > (4*SPM) ) {
 			PerkIcon = Default.OnHUDGoldIcon;
 			StarIcon = Class'HUDKillingFloor'.Default.VetStarGoldMaterial;
@@ -339,7 +340,7 @@ static function byte PreDrawPerk( Canvas C, byte Level, out Material PerkIcon, o
 
 static function class<Grenade> GetNadeType(KFPlayerReplicationInfo KFPRI)
 {
-	if ( class'ScrnBalance'.default.Mut.bReplaceNades ) 
+	if ( class'ScrnBalance'.default.Mut.bReplaceNades )
         return class'ScrnBalanceSrv.ScrnNade';
 
 	return super.GetNadeType(KFPRI);
@@ -360,7 +361,7 @@ static function byte PerkIsAvailable(ClientPerkRepLink StatOther)
 {
     if ( default.bLocked )
         return 0;
-        
+
 	return super.PerkIsAvailable(StatOther);
 }
 
@@ -368,7 +369,7 @@ static function bool LevelIsFinished(ClientPerkRepLink StatOther, byte CurLevel)
 {
     if ( default.bLocked )
         return false;
-        
+
     return super.LevelIsFinished(StatOther, CurLevel);
 }
 
@@ -381,7 +382,7 @@ static function int ReduceDamage(KFPlayerReplicationInfo KFPRI, KFPawn Injured, 
 // checks if inventory already exists and exclusion index
 static protected function bool ShouldAddDefaultInventory(int i, KFPlayerReplicationInfo KFPRI, Pawn P)
 {
-    if ( i < 0 || i >= default.DefaultInventory.length 
+    if ( i < 0 || i >= default.DefaultInventory.length
             || default.DefaultInventory[i].PickupClass.default.InventoryType == none )
         return false;
     if ( P.FindInventoryType(default.DefaultInventory[i].PickupClass.default.InventoryType) != none )
@@ -403,22 +404,22 @@ static function AddDefaultInventory(KFPlayerReplicationInfo KFPRI, Pawn P)
 	local class<ScrnVestPickup> ScrnVest;
 	local int ExtraAmmo;
 	local float SellValue;
-	
+
 	if ( class'ScrnBalance'.default.Mut.bUseExpLevelForSpawnInventory )
 		level = KFPRI.ClientVeteranSkillLevel;
 	else
 		level = GetBonusLevel(KFPRI.ClientVeteranSkillLevel);
-	
+
 	KFP = KFHumanPawn(P);
 	if ( KFP == none )
 		return; // OMG, some Stinky Clots are trying to use our perks!!! :O
 	ScrnPawn = ScrnHumanPawn(P);
     L = Class'ScrnClientPerkRepLink'.Static.FindMe(PlayerController(KFP.Controller));
-		
+
 	for ( i=0; i<default.DefaultInventory.length; ++i ) {
-		if ( level >= default.DefaultInventory[i].MinPerkLevel && level <= default.DefaultInventory[i].MaxPerkLevel 
-                && (default.DefaultInventory[i].Achievement == '' 
-                    || class'ScrnAchievements'.static.IsAchievementUnlocked(L, default.DefaultInventory[i].Achievement)) ) 
+		if ( level >= default.DefaultInventory[i].MinPerkLevel && level <= default.DefaultInventory[i].MaxPerkLevel
+                && (default.DefaultInventory[i].Achievement == ''
+                    || class'ScrnAchievements'.static.IsAchievementUnlocked(L, default.DefaultInventory[i].Achievement)) )
         {
 			ExtraAmmo = max(0, default.DefaultInventory[i].AmmoPerLevel * (level - default.DefaultInventory[i].MinPerkLevel));
 			if ( !class'ScrnBalance'.default.Mut.bSpawn0 )
@@ -495,9 +496,9 @@ static function bool ShowEnemyHealthBars(KFPlayerReplicationInfo KFPRI, KFPlayer
     return false;
 }
 
-/** Allows overriding item's corresponding perk index with perk's index. 
+/** Allows overriding item's corresponding perk index with perk's index.
  *  This can be used for  multi-perk items.
- *  By default perk index is overriden if a given pickup is in perked weapons or pickups arrays. 
+ *  By default perk index is overriden if a given pickup is in perked weapons or pickups arrays.
  *  @param Pickup : pickup class to check (must not be none!)
  *  @return true if Pickup.CorrespondingPerkIndex should be overrided with PerkIndex.
  *          false if Pickup.CorrespondingPerkIndex should stay intact.

@@ -27,6 +27,7 @@ mkdir %outputdir%\Textures
 copy /y %KFDIR%\system\ScrnBalance.* %outputdir%\System\
 copy /y %STEAMDIR%\textures\ScrnTex.utx %outputdir%\Textures\
 copy /y %STEAMDIR%\textures\ScrnAch_T.utx %outputdir%\Textures\
+copy /y %STEAMDIR%\Textures\TSC_T.utx %outputdir%\Textures\
 copy /y %KFDIR%\system\ScrnVotingHandlerMut*.* %outputdir%\system\
 copy /y readme.txt  %outputdir%
 copy /y changes.txt  %outputdir%

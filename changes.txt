@@ -9,6 +9,48 @@
 -------------------------------------------------------------------------------
 *** VERSION 9 ***
 -------------------------------------------------------------------------------
+v9.30:
+- TSC and ScrnBonusGames packages incorporated into ScrnBalanceSrv
+- Fixed bug in quick melee
+- Optimized perk change / level up procedure
+- Fixed bug when dead player sometimes dropped one pistol instead of two
+- MACHETE-SPRINTING IS TEMPORARY DISABLED due to network replication.
+- [OBJ] Fixed Trader Time detection in Objective Mode
+- Fixed "TeamSay" in regular modes (%H,%W etc.)
+- Fixed "mvote BORING" was kept between waves
+- Fixed perk switching bug while dead
+- Player health limited to 250hp (in case of overcharge)
+
+HUMAN DAMAGE (HDMG):
+- Perk damage bonus now is applied on HDMG too
+- Restored Medic's armor bonus against HDMG damage to compensate perk damage bonus.
+- Medic's armor bonus capped at 40% against HDMG (standard - 60%).
+- Berserker's HDMG bonus capped at 50% (down from 100%)
+- Sharpshooter's headshot HDMG bonus capped at 2.0 (down from 2.4)
+- Players now have 30% HDMG resistance from any explosives but hand nades
+- Explosion radius for dealing Human Damage is limited to 4m.
+- Players now have 20% HDMG resistance from Buzzsaw blades
+- HDMG minimal headshot multiplier set to 2.0 for all weapons but shotguns.
+  For example,
+  Crossbow does 30 base damage, 60 off-perk headshot damage and 120 perked damage.
+  Previosuly Crossbow did 90 hs dmg no matter of perk.
+- Damage amount after applying HDMG now is rounded instead of floored
+  (e.g. 6.3 -> 6, 6.7 -> 7)
+
+TSC:
+- Base Guardian can be stunned by hand-nading or dealing 700 cumulative damage points
+- Cumulative stun damage points fade out at rate 50dmg/s
+- Stunned Guardian does not protect from FF neither it does damage to enemy players
+- Base Guardian automatically wakes up from stun after 25 seconds
+
+FTG:
+- Fixeg bug when players joined from spectators didn't get a proper team
+
+USER.INI:
+- bTSCAutoDetectKeys (true by default): automatically enables bTSCAdvancedKeyBindings
+  if there is a key bound to "SetupBase" command.
+
+
 v9.25:
 - Fixed bTSCAdvancedKeyBindings behavior for ThrowWeapon
 - Wave size calculation moved from ScrnGameRules to ScrnGameType

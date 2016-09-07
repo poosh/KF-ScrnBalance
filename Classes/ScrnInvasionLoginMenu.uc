@@ -88,8 +88,9 @@ function InitComponent(GUIController MyController, GUIComponent MyOwner)
 
 function InitGRI()
 {
+    local TSCGameReplicationInfo TSCGRI;
     super.InitGRI();
-    b_TeamSwitch.bVisible = GetGRI().bTeamGame;
+    b_TeamSwitch.bVisible = TSCGRI != none && !TSCGRI.bSingleTeamGame;
 }
 
 function bool ButtonClicked(GUIComponent Sender)

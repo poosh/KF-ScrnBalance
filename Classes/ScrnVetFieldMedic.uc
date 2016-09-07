@@ -10,7 +10,7 @@ static function int GetStatValueInt(ClientPerkRepLink StatOther, byte ReqNum)
 // Give Medic normal hand nades again - he should buy medic nade lauchers for healing nades
 static function class<Grenade> GetNadeType(KFPlayerReplicationInfo KFPRI)
 {
-	if ( !class'ScrnBalance'.default.Mut.bWeaponFix ) 
+	if ( !class'ScrnBalance'.default.Mut.bWeaponFix )
         return class'MedicNade'; // Grenade detonations heal nearby teammates, and cause enemies to be poisoned
 
 	return super.GetNadeType(KFPRI);
@@ -55,28 +55,28 @@ static function float GetFireSpeedModStatic(KFPlayerReplicationInfo KFPRI, class
 	return 1.0;
 }
 
-// give medic speed bonus while holding syringe 
+// give medic speed bonus while holding syringe
 static function float GetWeaponMovementSpeedBonus(KFPlayerReplicationInfo KFPRI, Weapon Weap)
 {
 	if ( class'ScrnBalance'.default.Mut.bWeaponFix )
 	{
 		if ( Syringe(Weap) != none )
 			return class'ScrnBalanceSrv.ScrnHumanPawn'.default.BaseMeleeIncrease;
-	}	
+	}
     return 0.0;
 }
 
 static function float GetMovementSpeedModifier(KFPlayerReplicationInfo KFPRI, KFGameReplicationInfo KFGRI)
 {
 	// (c) PooSH, 2012
-	//if ( class'ScrnBalance'.default.Mut.bWeaponFix ) SetSyringeSpeed(KFHumanPawn(P), true); 
+	//if ( class'ScrnBalance'.default.Mut.bWeaponFix ) SetSyringeSpeed(KFHumanPawn(P), true);
 
 	if ( class'ScrnBalance'.default.Mut.bWeaponFix )
 	{
 		//reduce speed bonus to 18% max no matter of difficulty
 		return 1.0 + fmin(0.3, 0.03 * GetClientVeteranSkillLevel(KFPRI));
 	}
-	
+
 	// Medic movement speed reduced in Balance Round 2(limited to Suicidal and HoE in Round 7)
 	if ( KFGRI.GameDiff >= 5.0 )
 	{
@@ -102,7 +102,7 @@ static function int ReduceDamage(KFPlayerReplicationInfo KFPRI, KFPawn Injured, 
 		{
             return 0;
 		}
-		
+
 		if ( GetClientVeteranSkillLevel(KFPRI) == 0 )
 			return float(InDamage) * 0.90;
 		else if ( GetClientVeteranSkillLevel(KFPRI) == 1 )
@@ -133,7 +133,7 @@ static function float GetMagCapacityModStatic(KFPlayerReplicationInfo KFPRI, cla
 				|| ClassIsChildOf(Other, class'ScrnM4203MMedicGun')
                 || ClassIsInArray(default.PerkedAmmo, Other.default.FiremodeClass[0].default.AmmoClass) ) //v3 - custom weapon support
             return 1.0 + (0.20 * FMin(GetClientVeteranSkillLevel(KFPRI), 5.0)); // up to 100% increase in Medic weapon ammo carry
-    }        
+    }
 	return 1.0;
 }
 
@@ -161,11 +161,11 @@ static function float AddExtraAmmoFor(KFPlayerReplicationInfo KFPRI, Class<Ammun
             || ClassIsChildOf(AmmoType, class'KrissMAmmo')
             || ClassIsChildOf(AmmoType, class'BlowerThrowerAmmo')
             || ClassIsChildOf(AmmoType, class'M4203Ammo')
-            || ClassIsInArray(default.PerkedAmmo, AmmoType) )) 
+            || ClassIsInArray(default.PerkedAmmo, AmmoType) ))
     {
         return 1.0 + 0.05 * float(GetClientVeteranSkillLevel(KFPRI)-6); // +5% per level above 6
-    }    
-    
+    }
+
 	return 1.0;
 }
 
@@ -174,14 +174,14 @@ static function float AddExtraAmmoFor(KFPlayerReplicationInfo KFPRI, Class<Ammun
 static function float GetCostScaling(KFPlayerReplicationInfo KFPRI, class<Pickup> Item)
 {
 	if ( Item == class'Vest' || ClassIsChildOf(Item, class'ScrnBalanceSrv.ScrnVestPickup')
-				|| ClassIsChildOf(Item, class'MP7MPickup') 
-                || ClassIsChildOf(Item, class'MP5MPickup') 
+				|| ClassIsChildOf(Item, class'MP7MPickup')
+                || ClassIsChildOf(Item, class'MP5MPickup')
                 || ClassIsChildOf(Item, class'M7A3MPickup')
                 || ClassIsChildOf(Item, class'KrissMPickup')
                 || ClassIsChildOf(Item, class'BlowerThrowerPickup')
                 || ClassIsChildOf(Item, class'ScrnBalanceSrv.ScrnM79MPickup')
-                || ClassIsChildOf(Item, class'ScrnBalanceSrv.ScrnM4203MPickup') 
-            || ClassIsInArray(default.PerkedPickups, Item) ) 
+                || ClassIsChildOf(Item, class'ScrnBalanceSrv.ScrnM4203MPickup')
+            || ClassIsInArray(default.PerkedPickups, Item) )
     {
         if ( GetClientVeteranSkillLevel(KFPRI) <= 6 )
             return 0.9 - 0.10 * float(GetClientVeteranSkillLevel(KFPRI)); // 10% perk level up to 6
@@ -195,12 +195,12 @@ static function float GetCostScaling(KFPlayerReplicationInfo KFPRI, class<Pickup
 static function float GetBodyArmorDamageModifier(KFPlayerReplicationInfo KFPRI)
 {
     local float MinValue;
-    
+
     if ( class'ScrnBalance'.default.Mut.bHardcore )
         MinValue = 0.50; // limit armor mod to 50%
-    else 
+    else
         MinValue = 0.25; // up to 75% Better Body Armor
-        
+
     if ( class'ScrnBalance'.default.Mut.bWeaponFix ) {
         if (GetClientVeteranSkillLevel(KFPRI) <= 6) //
             return  fmax(MinValue, 1.0 - (0.10 * float(GetClientVeteranSkillLevel(KFPRI)))); // Up to 60% improvement of Body Armor
@@ -228,10 +228,7 @@ static function AddDefaultInventory(KFPlayerReplicationInfo KFPRI, Pawn P)
 		else
             KFHumanPawn(P).CreateInventoryVeterancy("KFMod.MP7MMedicGun", GetInitialCostScaling(KFPRI, class'MP7MPickup'));
     }
-    //REMOVE BEFORE RELEASE!!!
-    // if ( class'ScrnBalance'.default.bBeta )
-        //KFHumanPawn(P).CreateInventoryVeterancy("ScrnBalanceSrv.ScrnM79M", 0);
-        
+
     super.AddDefaultInventory(KFPRI, P);
 }
 */
@@ -243,12 +240,12 @@ static function string GetCustomLevelInfo( byte Level )
 
 	S = Default.CustomLevelInfo;
 	BonusLevel = GetBonusLevel(Level)-6;
-	
+
 	ReplaceText(S,"%L",string(BonusLevel+6));
 	ReplaceText(S,"%s",GetPercentStr(2.0 + 0.1*BonusLevel));
 	ReplaceText(S,"%m",GetPercentStr(fmin(0.3, 0.18 + 0.03*BonusLevel)));
 	ReplaceText(S,"%a",GetPercentStr(fmin(0.75, 0.6 + 0.05*BonusLevel)));
-	ReplaceText(S,"%d",GetPercentStr(0.7 + fmin(0.2, 0.05*BonusLevel)));    
+	ReplaceText(S,"%d",GetPercentStr(0.7 + fmin(0.2, 0.05*BonusLevel)));
 	ReplaceText(S,"%f",GetPercentStr(fmin(0.95, 0.87 + 0.01*BonusLevel)));
 	return S;
 }
@@ -302,13 +299,14 @@ static function bool ShowEnemyHealthBars(KFPlayerReplicationInfo KFPRI, KFPlayer
 static function bool OverridePerkIndex( class<KFWeaponPickup> Pickup )
 {
     // Field Medic and Combat medic share the same iventory
-    return Pickup.default.CorrespondingPerkIndex == 9 || super.OverridePerkIndex(Pickup); 
+    return Pickup.default.CorrespondingPerkIndex == 9 || super.OverridePerkIndex(Pickup);
 }
 
 defaultproperties
 {
     DefaultDamageType=Class'ScrnBalanceSrv.ScrnDamTypeMedic'
     DefaultDamageTypeNoBonus=Class'ScrnBalanceSrv.ScrnDamTypeMedicBase'
+    SamePerkAch="OP_Medic"
 
     progressArray0(0)=100
     progressArray0(1)=500

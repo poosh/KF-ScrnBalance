@@ -11,10 +11,10 @@ static function float AddExtraAmmoFor(KFPlayerReplicationInfo KFPRI, Class<Ammun
 {
     if ( ClassIsChildOf(AmmoType, class'ScrnBalanceSrv.ScrnM203MAmmo') )
         return 1.0; // no extra medic grenades
-   
+
 	if ( ClassIsChildOf(AmmoType, class'FragAmmo') ) {
     // Up to 6 extra Grenades
-		return 1.0 + (0.20 * float(GetClientVeteranSkillLevel(KFPRI))); 
+		return 1.0 + (0.20 * float(GetClientVeteranSkillLevel(KFPRI)));
     }
     else if ( ClassIsChildOf(AmmoType, class'PipeBombAmmo') ) {
 		// Up to 6 extra for a total of 8 Remote Explosive Devices
@@ -35,7 +35,7 @@ static function float AddExtraAmmoFor(KFPlayerReplicationInfo KFPRI, Class<Ammun
 		return 1.0 + (0.083334 * float(GetClientVeteranSkillLevel(KFPRI))); //1 extra nade per level [Aze]
     }
     else if ( GetClientVeteranSkillLevel(KFPRI) > 6 ) {
-		if ( ClassIsChildOf(AmmoType, class'M79Ammo') || ClassIsChildOf(AmmoType, class'M32Ammo') 
+		if ( ClassIsChildOf(AmmoType, class'M79Ammo') || ClassIsChildOf(AmmoType, class'M32Ammo')
 				|| ClassIsChildOf(AmmoType, class'M203Ammo') )
             return 1.0 + (0.083334 * float(GetClientVeteranSkillLevel(KFPRI)-6)); //+1 M203 or +2 M79 or +3 M32 nades post level 6
     }
@@ -48,7 +48,7 @@ static function int AddDamage(KFPlayerReplicationInfo KFPRI, KFMonster Injured, 
     if ( DmgType == default.DefaultDamageTypeNoBonus )
         return InDamage;
 
-	if ( (class<KFWeaponDamageType>(DmgType) != none && class<KFWeaponDamageType>(DmgType).default.bIsExplosive) 
+	if ( (class<KFWeaponDamageType>(DmgType) != none && class<KFWeaponDamageType>(DmgType).default.bIsExplosive)
             || class<DamTypeRocketImpact>(DmgType) != none )
 	{
 		if ( GetClientVeteranSkillLevel(KFPRI) == 0 )
@@ -63,7 +63,7 @@ static function int AddDamage(KFPlayerReplicationInfo KFPRI, KFMonster Injured, 
 
 static function int ReduceDamage(KFPlayerReplicationInfo KFPRI, KFPawn Injured, Pawn Instigator, int InDamage, class<DamageType> DmgType)
 {
-	if ( (class<KFWeaponDamageType>(DmgType) != none && class<KFWeaponDamageType>(DmgType).default.bIsExplosive) 
+	if ( (class<KFWeaponDamageType>(DmgType) != none && class<KFWeaponDamageType>(DmgType).default.bIsExplosive)
             || class<DamTypeRocketImpact>(DmgType) != none )
 		return float(InDamage) * fmax(0.75 - (0.05 * float(GetClientVeteranSkillLevel(KFPRI))),0.05f);
 
@@ -76,10 +76,10 @@ static function float GetCostScaling(KFPlayerReplicationInfo KFPRI, class<Pickup
 {
     if ( ClassIsChildOf(Item, class'ScrnBalanceSrv.ScrnM4203MPickup') || ClassIsChildOf(Item, class'ScrnBalanceSrv.ScrnM79MPickup') )
         return 1.0; //no discount on medic nade launchers
-        
+
     if ( class'ScrnBalance'.default.Mut.bSpawnBalance ) {
         // Applied pipebomb discount to M79 (c) PooSH, 2012
-        if ( ClassIsChildOf(Item, class'PipeBombPickup') 
+        if ( ClassIsChildOf(Item, class'PipeBombPickup')
             || (ClassIsChildOf(Item, class'M79Pickup') && !ClassIsChildOf(Item, class'ScrnM79IncPickup')) )
         {
             if ( GetClientVeteranSkillLevel(KFPRI) <= 6 )
@@ -87,15 +87,15 @@ static function float GetCostScaling(KFPlayerReplicationInfo KFPRI, class<Pickup
             return fmax(0.1, 0.24 - (0.02 * float(GetClientVeteranSkillLevel(KFPRI)-6))); // Up to 76% discount on M79 to match spawn value [Aze]
         }
         else if ( ClassIsChildOf(Item, class 'M32Pickup')
-                    || ClassIsChildOf(Item, class 'LawPickup') 
-                    || ClassIsChildOf(Item, class 'M4203Pickup') 
-                    || ClassIsChildOf(Item, class 'SPGrenadePickup')  
+                    || ClassIsChildOf(Item, class 'LawPickup')
+                    || ClassIsChildOf(Item, class 'M4203Pickup')
+                    || ClassIsChildOf(Item, class 'SPGrenadePickup')
                     || ClassIsChildOf(Item, class 'SealSquealPickup') || ClassIsChildOf(Item, class 'SeekerSixPickup')
-                    || ClassIsInArray(default.PerkedPickups, Item) ) 
+                    || ClassIsInArray(default.PerkedPickups, Item) )
         {
             if ( GetClientVeteranSkillLevel(KFPRI) <= 6 )
                 return 0.9 - 0.10 * float(GetClientVeteranSkillLevel(KFPRI)); // 10% perk level up to 6
-            else 
+            else
                 return FMax(0.3 - (0.05 * float(GetClientVeteranSkillLevel(KFPRI)-6)),0.1); // 5% post level 6
         }
     }
@@ -106,10 +106,10 @@ static function float GetCostScaling(KFPlayerReplicationInfo KFPRI, class<Pickup
             return fmax(0.1, 0.5 - (0.04 * GetClientVeteranSkillLevel(KFPRI))); // Up to 74% discount on PipeBomb(changed to 68% in Balance Round 1, upped to 74% in Round 4)
         }
         else if ( Item == class'M79Pickup' || ClassIsChildOf(Item, class 'M32Pickup')
-            || ClassIsChildOf(Item, class 'LawPickup') 
-			|| ClassIsChildOf(Item, class 'M4203Pickup')  
-			|| ClassIsChildOf(Item, class 'SPGrenadePickup')  
-			|| ClassIsChildOf(Item, class 'SealSquealPickup') || ClassIsChildOf(Item, class 'SeekerSixPickup')			
+            || ClassIsChildOf(Item, class 'LawPickup')
+			|| ClassIsChildOf(Item, class 'M4203Pickup')
+			|| ClassIsChildOf(Item, class 'SPGrenadePickup')
+			|| ClassIsChildOf(Item, class 'SealSquealPickup') || ClassIsChildOf(Item, class 'SeekerSixPickup')
 			|| ClassIsInArray(default.PerkedPickups, Item) )
         {
             return fmax(0.1, 0.90 - (0.10 * GetClientVeteranSkillLevel(KFPRI))); // Up to 70% discount on M79/M32
@@ -125,20 +125,20 @@ static function float GetAmmoCostScaling(KFPlayerReplicationInfo KFPRI, class<Pi
 {
     if ( ClassIsChildOf(Item, class'ScrnBalanceSrv.ScrnM4203MPickup') || ClassIsChildOf(Item, class'ScrnBalanceSrv.ScrnM79MPickup') )
         return 1.0; //no discount on medic nade launchers
-        
+
 	if ( ClassIsChildOf(Item, class'PipeBombPickup') )
 	{
         if ( class'ScrnBalance'.default.Mut.bSpawnBalance )
             return fmax(0.1, 0.48 - (0.04 * GetClientVeteranSkillLevel(KFPRI))); // Up to 76% discount on PipeBomb
-        else    
+        else
             return fmax(0.1, 0.5 - (0.04 * GetClientVeteranSkillLevel(KFPRI))); // Up to 74% discount on PipeBomb(changed to 68% in Balance Round 3, upped to 74% in Round 4)
 	}
 	else if ( ClassIsChildOf(Item, class'M79Pickup') || ClassIsChildOf(Item, class'M32Pickup')
-            || ClassIsChildOf(Item, class'LAWPickup') || ClassIsChildOf(Item, class'M4203Pickup') 
+            || ClassIsChildOf(Item, class'LAWPickup') || ClassIsChildOf(Item, class'M4203Pickup')
             || ClassIsChildOf(Item, class'SPGrenadePickup')
-            || ClassIsChildOf(Item, class'SealSquealPickup') || ClassIsChildOf(Item, class'SeekerSixPickup') 
+            || ClassIsChildOf(Item, class'SealSquealPickup') || ClassIsChildOf(Item, class'SeekerSixPickup')
             || (class'ScrnBalance'.default.Mut.bSpawnBalance && ClassIsChildOf(Item, class'FragPickup'))
-            || ClassIsInArray(default.PerkedPickups, Item)  
+            || ClassIsInArray(default.PerkedPickups, Item)
         ) {
 		return fmax(0.5, 1.0 - (0.05 * GetClientVeteranSkillLevel(KFPRI))); // Up to 30% discount on Grenade Launcher and LAW Ammo(Balance Round 5)
 	}
@@ -153,7 +153,7 @@ static function float GetAmmoCostScaling(KFPlayerReplicationInfo KFPRI, class<Pi
  * Level 6: M79 + 5 nades
  * @author PooSH
  */
-/* 
+/*
 static function AddDefaultInventory(KFPlayerReplicationInfo KFPRI, Pawn P)
 {
 	local KFHumanPawn HP;
@@ -164,10 +164,10 @@ static function AddDefaultInventory(KFPlayerReplicationInfo KFPRI, Pawn P)
 
 		if ( GetClientVeteranSkillLevel(KFPRI) == 5 )
 			GiveNades(HP, 7);
-		if ( GetClientVeteranSkillLevel(KFPRI) >= 6) 
+		if ( GetClientVeteranSkillLevel(KFPRI) >= 6)
 			HP.CreateInventoryVeterancy("KFMod.M79GrenadeLauncher", GetInitialCostScaling(KFPRI, class'M79Pickup'));
 	}
-	else 
+	else
 	{
 		// If Level 5, give them a pipe bomb
 		if ( GetClientVeteranSkillLevel(KFPRI) >= 5 ) {
@@ -205,7 +205,7 @@ static function string GetCustomLevelInfo( byte Level )
 static function bool KilledShouldExplode(KFPlayerReplicationInfo KFPRI, KFPawn P)
 {
     local class<KFWeaponDamageType> DT;
-    
+
     if ( ScrnHumanPawn(P) != none )
         DT = class<KFWeaponDamageType>(ScrnHumanPawn(P).LastDamageTypeMade);
                        // explosions can't cause another explosion
@@ -220,7 +220,8 @@ defaultproperties
 {
      DefaultDamageType=Class'KFMod.DamTypeLAW'
      DefaultDamageTypeNoBonus=Class'ScrnBalanceSrv.ScrnDamTypeDefaultDemoBase'
-     
+     SamePerkAch="OP_Demo"
+
      CustomLevelInfo="*** BONUS LEVEL %L|%s extra Explosives damage|%r resistance to Explosives|+%g Rocket, M203 and Hand Grenade capacity|Can carry %x Remote Explosives|%y discount on Explosives|%d off Remote Explosives|30% discount on Grenades and Rockets|Spawn with a M79"
      SRLevelEffects(0)="*** BONUS LEVEL 0|5% extra Explosives damage|25% resistance to Explosives|10% discount on Explosives|50% off Remote Explosives"
      SRLevelEffects(1)="*** BONUS LEVEL 1|10% extra Explosives damage|30% resistance to Explosives|+1 Rocket, M203 and Hand Grenade capacity|Can carry 3 Remote Explosives|20% discount on Explosives|54% off Remote Explosives and M79|5% discount on Grenades and Rockets"

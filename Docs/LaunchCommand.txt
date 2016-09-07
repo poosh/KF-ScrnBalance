@@ -1,2 +1,3 @@
 KF-ScrnTestGrounds.rom?Listen?Game=ScrnBalanceSrv.ScrnGameType?Difficulty=7?GameLength=2?VACSecured=true?MaxPlayers=6?Mutator=ScrnSP.ServerPerksMutSE,ScrnBalanceSrv.ScrnBalance
-KF-BioticsLab.rom?Listen?Game=ScrnBonusGames.FscGame?Difficulty=2?GameLength=2?VACSecured=true?MaxPlayers=6?Mutator=ScrnSP.ServerPerksMutSE,ScrnBalanceSrv.ScrnBalance
+KF-BioticsLab.rom?Listen?Game=ScrnBalanceSrv.FscGame?Difficulty=2?GameLength=2?VACSecured=true?MaxPlayers=6?Mutator=ScrnSP.ServerPerksMutSE,ScrnBalanceSrv.ScrnBalance
+KF-BioticsLab.rom?Listen?Game=ScrnBalanceSrv.TSCGame?Difficulty=2?GameLength=2?VACSecured=true?MaxPlayers=6?Mutator=ScrnSP.ServerPerksMutSE,ScrnBalanceSrv.ScrnBalance

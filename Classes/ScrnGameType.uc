@@ -175,7 +175,7 @@ function int ReduceDamage(int Damage, pawn injured, pawn instigatedBy, vector Hi
                 return GameRulesModifiers.NetDamage( Damage, 0,injured,instigatedBy,HitLocation,Momentum,DamageType );
             else return 0;
         }
-        Damage *= FriendlyFireScale;
+        Damage = round( Damage * FriendlyFireScale );
     }
 
     // Start code from DeathMatch.uc - Had to override this here because it was reducing
@@ -481,8 +481,8 @@ function ShowPathTo(PlayerController CI, int DestinationIndex)
         return;
     }
 
-    if ( TSCGameReplicationInfoBase(GameReplicationInfo) != none )
-        shop = TSCGameReplicationInfoBase(GameReplicationInfo).GetPlayerShop(CI.PlayerReplicationInfo);
+    if ( TSCGameReplicationInfo(GameReplicationInfo) != none )
+        shop = TSCGameReplicationInfo(GameReplicationInfo).GetPlayerShop(CI.PlayerReplicationInfo);
     else
         shop = KFGameReplicationInfo(GameReplicationInfo).CurrentShop;
 
@@ -1329,7 +1329,6 @@ defaultproperties
     PathWhisps(0)="KFMod.RedWhisp"
     PathWhisps(1)="KFMod.RedWhisp"
 
-    bTeamGame=False
     bCloserZedSpawns=True
     TurboScale=1.0
 

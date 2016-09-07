@@ -42,9 +42,9 @@ static function SpecialHUDInfo(KFPlayerReplicationInfo KFPRI, Canvas C)
 				MaxDistance = 800; // 100% (800 units)
 				break;
 		}
-        
+
         if ( class'ScrnBalance'.default.Mut.bHardcore )
-            MaxDistance *= 0.75;        
+            MaxDistance *= 0.75;
 
 		foreach C.ViewPort.Actor.VisibleCollidingActors(class'KFMonster',KFEnemy,MaxDistance,C.ViewPort.Actor.CalcViewLocation)
 		{
@@ -62,7 +62,7 @@ static function bool ShowStalkers(KFPlayerReplicationInfo KFPRI)
 static function float GetStalkerViewDistanceMulti(KFPlayerReplicationInfo KFPRI)
 {
     local float result;
-    
+
 	switch ( GetClientVeteranSkillLevel(KFPRI) )
 	{
 		case 0:
@@ -80,7 +80,7 @@ static function float GetStalkerViewDistanceMulti(KFPlayerReplicationInfo KFPRI)
         default:
             result = 1.0 + 0.0625 * (GetClientVeteranSkillLevel(KFPRI) - 6); // 1m per each next level
 	}
-    
+
     if ( class'ScrnBalance'.default.Mut.bHardcore )
         result *= 0.75;
 
@@ -96,7 +96,7 @@ static function float GetMagCapacityModStatic(KFPlayerReplicationInfo KFPRI, cla
 				|| ClassIsChildOf(Other, class'SCARMK17AssaultRifle') || ClassIsChildOf(Other, class'FNFAL_ACOG_AssaultRifle')
 				|| ClassIsChildOf(Other, class'ThompsonSMG')
                 || ClassIsInArray(default.PerkedAmmo, Other.default.FiremodeClass[0].default.AmmoClass)  //v3 - custom weapon support
-            ) 
+            )
 		{
             if ( GetClientVeteranSkillLevel(KFPRI) == 1 )
                 return 1.10;
@@ -117,19 +117,19 @@ static function float AddExtraAmmoFor(KFPlayerReplicationInfo KFPRI, Class<Ammun
 {
     if ( ClassIsChildOf(AmmoType, class'ScrnBalanceSrv.ScrnM203MAmmo') )
         return 1.0; // no extra medic grenades
-        
+
     if ( GetClientVeteranSkillLevel(KFPRI) > 0 ) {
-        if ( ClassIsChildOf(AmmoType, class'BullpupAmmo') 
-                || ClassIsChildOf(AmmoType, class'AK47Ammo') 
+        if ( ClassIsChildOf(AmmoType, class'BullpupAmmo')
+                || ClassIsChildOf(AmmoType, class'AK47Ammo')
                 || ClassIsChildOf(AmmoType, class'SCARMK17Ammo' )
                 || ClassIsChildOf(AmmoType, class'M4Ammo')
                 || ClassIsChildOf(AmmoType, class'FNFALAmmo')
-                || ClassIsChildOf(AmmoType, class'MKb42Ammo') 
+                || ClassIsChildOf(AmmoType, class'MKb42Ammo')
                 || ClassIsChildOf(AmmoType, class'ThompsonAmmo')
                 || ClassIsChildOf(AmmoType, class'ThompsonDrumAmmo')
                 || ClassIsChildOf(AmmoType, class'SPThompsonAmmo')
                 || ClassIsInArray(default.PerkedAmmo, AmmoType)  //v3 - custom weapon support
-            ) 
+            )
 		{
             if ( GetClientVeteranSkillLevel(KFPRI) == 1 )
                 return 1.10;
@@ -137,7 +137,7 @@ static function float AddExtraAmmoFor(KFPlayerReplicationInfo KFPRI, Class<Ammun
                 return 1.20;
             else if ( GetClientVeteranSkillLevel(KFPRI) <= 6 )
                 return 1.25; // 25% increase in assault rifle ammo carry
-            else 
+            else
                 return 1.25 + 0.05 * float(GetClientVeteranSkillLevel(KFPRI)-6); // +10% per level above 6
         }
     }
@@ -148,11 +148,11 @@ static function int AddDamage(KFPlayerReplicationInfo KFPRI, KFMonster Injured, 
     if ( DmgType == default.DefaultDamageTypeNoBonus )
         return InDamage;
 
-    if ( DmgType == default.DefaultDamageType 
-            || ClassIsChildOf(DmgType, class'DamTypeBullpup') 
+    if ( DmgType == default.DefaultDamageType
+            || ClassIsChildOf(DmgType, class'DamTypeBullpup')
             || ClassIsChildOf(DmgType, class'DamTypeAK47AssaultRifle')
             || ClassIsChildOf(DmgType, class'DamTypeSCARMK17AssaultRifle')
-            || ClassIsChildOf(DmgType, class'DamTypeM4AssaultRifle') 
+            || ClassIsChildOf(DmgType, class'DamTypeM4AssaultRifle')
             || ClassIsChildOf(DmgType, class'DamTypeFNFALAssaultRifle')
             || ClassIsChildOf(DmgType, class'DamTypeMKb42AssaultRifle')
             || ClassIsChildOf(DmgType, class'DamTypeThompson')
@@ -174,7 +174,7 @@ static function int ReduceDamage(KFPlayerReplicationInfo KFPRI, KFPawn Injured, 
 	if ( class'ScrnBalance'.default.Mut.bHardcore && DmgType == class'DamTypeSlashingAttack' ) {
         return InDamage * 3.5; // quad damage from Stalkers in hardcore mode
     }
-    
+
     return InDamage;
 }
 
@@ -184,8 +184,8 @@ static function float ModifyRecoilSpread(KFPlayerReplicationInfo KFPRI, WeaponFi
 {
     Recoil = 1.0;
 	if ( Bullpup(Other.Weapon) != none || AK47AssaultRifle(Other.Weapon) != none
-            || SCARMK17AssaultRifle(Other.Weapon) != none || M4AssaultRifle(Other.Weapon) != none 
-            || FNFAL_ACOG_AssaultRifle(Other.Weapon) != none 
+            || SCARMK17AssaultRifle(Other.Weapon) != none || M4AssaultRifle(Other.Weapon) != none
+            || FNFAL_ACOG_AssaultRifle(Other.Weapon) != none
             || MKb42AssaultRifle(Other.Weapon) != none || ThompsonSMG(Other.Weapon) != none
             || ClassIsInArray(default.PerkedWeapons, Other.Weapon.Class) //v3 - custom weapon support
         ) {
@@ -228,10 +228,10 @@ static function float GetCostScaling(KFPlayerReplicationInfo KFPRI, class<Pickup
     if ( ClassIsChildOf(Item, class'ScrnBalanceSrv.ScrnM4203MPickup') )
         return 1.0; //no discount on medic M4-203
 
-	if ( ClassIsChildOf(Item, class'BullpupPickup') 
+	if ( ClassIsChildOf(Item, class'BullpupPickup')
             || ClassIsChildOf(Item, class'AK47Pickup' )
             || ClassIsChildOf(Item, class'SCARMK17Pickup')
-            || ClassIsChildOf(Item, class'M4Pickup') 
+            || ClassIsChildOf(Item, class'M4Pickup')
             || ClassIsChildOf(Item, class'FNFAL_ACOG_Pickup')
             || ClassIsChildOf(Item, class'MKb42Pickup')
             || ClassIsChildOf(Item, class'ThompsonPickup')
@@ -277,16 +277,16 @@ static function string GetCustomLevelInfo( byte Level )
 
 	S = Default.CustomLevelInfo;
 	BonusLevel = GetBonusLevel(Level)-6;
-    
+
 	ReplaceText(S,"%L",string(BonusLevel+6));
 	ReplaceText(S,"%s",GetPercentStr(0.5 + 0.05*BonusLevel));
 	//ReplaceText(S,"%a",GetPercentStr(0.5 + 0.05*BonusLevel));
 	//ReplaceText(S,"%r",GetPercentStr(0.35 + 0.05*BonusLevel));
 	ReplaceText(S,"%c",GetPercentStr(0.4 + fmin(0.5, 0.05*BonusLevel)));
 	ReplaceText(S,"%z",string(BonusLevel/3+4));
-	ReplaceText(S,"%d",GetPercentStr(0.7 + fmin(0.2, 0.05*BonusLevel)));    
+	ReplaceText(S,"%d",GetPercentStr(0.7 + fmin(0.2, 0.05*BonusLevel)));
 	ReplaceText(S,"%v",string(BonusLevel+16));
-    
+
 	return S;
 }
 
@@ -294,6 +294,7 @@ defaultproperties
 {
      DefaultDamageType=Class'ScrnBalanceSrv.ScrnDamTypeCommando'
      DefaultDamageTypeNoBonus=Class'ScrnBalanceSrv.ScrnDamTypeCommandoBase'
+     SamePerkAch="OP_Commando"
 
      progressArray0(0)=10
      progressArray0(1)=30
@@ -302,7 +303,7 @@ defaultproperties
      progressArray0(4)=1200
      progressArray0(5)=2400
      progressArray0(6)=3600
-	 
+
      progressArray1(0)=10000
      progressArray1(1)=25000
      progressArray1(2)=100000
@@ -310,7 +311,7 @@ defaultproperties
      progressArray1(4)=1500000
      progressArray1(5)=3500000
      progressArray1(6)=5500000
-	 
+
      CustomLevelInfo="*** BONUS LEVEL %L|%s more damage with Assaut Rifles|%c less recoil with Assaut Rifles|25% larger Assaut Rifles clip|60% faster reload with Tommy Guns|35% faster reload with all weapons|%d discount on Assaut Rifles|Can see cloaked Stalkers from %vm|Can see enemy health from 16m|Up to %z Zed-Time Extensions|Spawn with an AK47"
      SRLevelEffects(0)="*** BONUS LEVEL 0|5% more damage with Assaut Rifles|5% less recoil with Assaut Rifles|5% faster reload with all weapons|10% discount on Assaut Rifles|Can see cloaked Stalkers from 4 meters"
      SRLevelEffects(1)="*** BONUS LEVEL 1|10% more damage with Assaut Rifles|10% less recoil with Assaut Rifles|10% larger Assaut Rifles clip|10% faster reload with Tommy Guns|10% faster reload with all weapons|20% discount on Assaut Rifles|Can see cloaked Stalkers from 8m|Can see enemy health from 4m"
@@ -330,7 +331,7 @@ defaultproperties
 	 OnHUDIcons(4)=(PerkIcon=Texture'ScrnTex.Perks.Perk_Commando_Purple',StarIcon=Texture'ScrnTex.Perks.Hud_Perk_Star_Purple',DrawColor=(B=255,G=255,R=255,A=255))
 	 OnHUDIcons(5)=(PerkIcon=Texture'ScrnTex.Perks.Perk_Commando_Orange',StarIcon=Texture'ScrnTex.Perks.Hud_Perk_Star_Orange',DrawColor=(B=255,G=255,R=255,A=255))
 	 OnHUDIcons(6)=(PerkIcon=Texture'ScrnTex.Perks.Perk_Commando_Blood',StarIcon=Texture'ScrnTex.Perks.Hud_Perk_Star_Blood',DrawColor=(B=255,G=255,R=255,A=255))
-	 
+
      VeterancyName="Commando"
      Requirements(0)="Kill %x Stalkers/Shivers with Assault Rifles"
      Requirements(1)="Deal %x damage with Assault Rifles"

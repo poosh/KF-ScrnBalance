@@ -141,7 +141,6 @@ function SendClientPerksSE()
 
 simulated function ClientReceivePerk( int Index, class<SRVeterancyTypes> V, byte lvl )
 {
-
 	// Setup correct icon for trader.
 	if( V.Default.PerkIndex<255 && V.Default.OnHUDIcon!=None )
 	{
@@ -169,7 +168,7 @@ simulated function ClientPerkLevel( int Index, byte NewLevel )
     }
     else if ( class<ScrnVeterancyTypes>(CachePerks[Index].PerkClass).default.bLocked == false ) {
         if ( CachePerks[Index].CurrentLevel > 0 && NewLevel > CachePerks[Index].CurrentLevel )
-            Level.GetLocalPlayerController().ReceiveLocalizedMessage(Class'ScrnKFVetEarnedMessage',(NewLevel-1),,,CachePerks[Index].PerkClass);
+            Level.GetLocalPlayerController().ReceiveLocalizedMessage(Class'ScrnPromotedMessage',(NewLevel-1),,,CachePerks[Index].PerkClass);
         CachePerks[Index].CurrentLevel = NewLevel;
     }
 }

@@ -1,4 +1,4 @@
-class ScrnKFVetEarnedMessage extends KFVetEarnedMessageSR
+class ScrnPromotedMessage extends KFVetEarnedMessageSR
 	abstract;
 
 var Sound PromotedSnd;
@@ -47,6 +47,7 @@ static function ClientReceive(
 
 defaultproperties
 {
+    EarnedString="You have promoted to %v level %l!"
 	//PromotedSnd=Sound'ScrnSnd.Promoted'
 	PromotedSndRef="ScrnSnd.Promoted"
 	PromotedSndRefDef="KF_InterfaceSnd.Perks.PerkAchieved"

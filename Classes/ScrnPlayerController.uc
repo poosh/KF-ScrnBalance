@@ -76,8 +76,8 @@ var private transient bool bDualWieldablesLoaded;
 var string ProfilePageClassString;
 var	string	TSCLobbyMenuClassString;
 var config bool bTSCAdvancedKeyBindings; // pressing altfire while carrying the guardian gnome, sets up the base
+var config bool bTSCAutoDetectKeys; // turns off bTSCAdvancedKeyBindings if a dedicated key is bound for SetupBase
 var config string RedCharacter, BlueCharacter;
-var localized string strCantShopInEnemyTrader;
 
 // not replicated yet
 // todo: find an efficient way to replicate
@@ -139,7 +139,7 @@ replication
         ClientPlayerDamaged;
 
     reliable if ( Role < ROLE_Authority )
-        ServerVeterancyLevelEarned, SrvAchReset, ResetMyAchievements, ResetMapAch,
+        SrvAchReset, ResetMyAchievements, ResetMapAch,
 		ServerDropAllWeapons, ServerLockWeapons, ServerGunSkin,
         ServerAcknowledgeDamages, ServerShowPathTo,
         ServerDebugRepLink,
@@ -698,7 +698,7 @@ function int GetMyActiveSongIndex()
 
     w = KFGRI.WaveNumber;
     if ( KFGRI.bWaveInProgress ) {
-        if ( w == KFGRI.FinalWave && TSCGameReplicationInfoBase(KFGRI) == none )
+        if ( w == KFGRI.FinalWave && TSCGameReplicationInfo(KFGRI) == none )
             w = 10; // boss battle song
     }
     else {
@@ -734,7 +734,7 @@ function string GetSongFromMusicTrigger(class<KFMusicTrigger> M)
 
     w = KFGRI.WaveNumber;
     if ( KFGRI.bWaveInProgress ) {
-        if ( w == KFGRI.FinalWave && M.default.WaveBasedSongs.length > 10 && TSCGameReplicationInfoBase(KFGRI) == none )
+        if ( w == KFGRI.FinalWave && M.default.WaveBasedSongs.length > 10 && TSCGameReplicationInfo(KFGRI) == none )
             sng = M.default.WaveBasedSongs[10].CombatSong; // boss battle song
         else if ( w < M.default.WaveBasedSongs.length )
             sng = M.default.WaveBasedSongs[w].CombatSong;
@@ -1009,27 +1009,18 @@ event TeamMessage( PlayerReplicationInfo PRI, coerce string S, name Type  )
 	}
 }
 
-function ServerVeterancyLevelEarned()
-{
-    if ( ScrnHumanPawn(Pawn) != none )
-        ScrnHumanPawn(Pawn).VeterancyChanged();
-}
-
-
 simulated function ReceiveLocalizedMessage( class<LocalMessage> Message, optional int Switch, optional PlayerReplicationInfo RelatedPRI_1, optional PlayerReplicationInfo RelatedPRI_2, optional Object OptionalObject )
 {
-	if ( Message == class'KFVetEarnedMessageSR' ||  Message == class'ScrnKFVetEarnedMessage'
+	if ( Message == class'KFVetEarnedMessageSR' ||  Message == class'ScrnPromotedMessage'
             || (Message == class'KFVetEarnedMessagePL' && RelatedPRI_1 == PlayerReplicationInfo) ) {
-		// I didn't found any better way to track perk leveling up
-		ServerVeterancyLevelEarned();
-        Message = class'ScrnKFVetEarnedMessage';
+        Message = class'ScrnPromotedMessage';
 	}
-    else if ( Message == class'TSCSharedMessages' ) {
+    else if ( Message == class'TSCMessages' ) {
         switch (Switch) {
-            case 1:     // trying to shop in enemy trader
+            case 300:     // trying to shop in enemy trader
                 ClientCloseMenu(true, true);
                 break;
-            case 211:   // loosing base means wipe
+            case 311:   // loosing base means wipe
                 if ( ScrnHUD(myHUD) != none )
                     ScrnHUD(myHUD).CriticalOverlayTimer = Level.TimeSeconds + 3.0;
                 break;
@@ -1225,10 +1216,16 @@ function bool SetPause( BOOL bPause )
 
 function BecomeSpectator()
 {
+    local bool bWasOnlySpectator;
+
+    bWasOnlySpectator = PlayerReplicationInfo.bOnlySpectator;
     super.BecomeSpectator();
 
 	if (Role < ROLE_Authority)
 		return;
+
+    if ( PlayerReplicationInfo.bOnlySpectator && !bWasOnlySpectator )
+        Mut.GameRules.PlayerLeaving(self);
 
     if ( Mut.bDynamicLevelCap && Mut.KF.bTradingDoorsOpen )
         Mut.DynamicLevelCap();
@@ -1236,6 +1233,9 @@ function BecomeSpectator()
 
 function BecomeActivePlayer()
 {
+    local bool bWasOnlySpectator;
+
+    bWasOnlySpectator = PlayerReplicationInfo.bOnlySpectator;
     super.BecomeActivePlayer();
 
 	if (Role < ROLE_Authority)
@@ -1247,7 +1247,8 @@ function BecomeActivePlayer()
 				Mut.DynamicLevelCap();
 		}
 		StartCash = PlayerReplicationInfo.Score;
-        Mut.GameRules.PlayerEntering(self);
+        if ( bWasOnlySpectator )
+            Mut.GameRules.PlayerEntering(self);
 	}
 }
 
@@ -1281,11 +1282,13 @@ simulated event Destroyed()
         RemoveVotingMsg(); // delete voting interactions
 
     if ( Role == ROLE_Authority ) {
-        if ( Mut != none && Mut.bLeaveCashOnDisconnect && PlayerReplicationInfo != none && PlayerReplicationInfo.Team != none
+        if ( Mut != none &&  PlayerReplicationInfo != none ) {
+            if ( Mut.bLeaveCashOnDisconnect && PlayerReplicationInfo.Team != none
                 && PlayerReplicationInfo.Score > StartCash )
-        {
-            PlayerReplicationInfo.Team.Score += PlayerReplicationInfo.Score - StartCash;
-            PlayerReplicationInfo.Score = StartCash; // just in case
+            {
+                PlayerReplicationInfo.Team.Score += PlayerReplicationInfo.Score - StartCash;
+                PlayerReplicationInfo.Score = StartCash; // just in case
+            }
             if ( Mut.GameRules != none )
                 Mut.GameRules.PlayerLeaving(self);
         }
@@ -1453,7 +1456,7 @@ function ShowLobbyMenu()
 	bPendingLobbyDisplay = false;
 
 	// Open menu
-    if ( Level.GRI.bTeamGame && TSCGameReplicationInfoBase(Level.GRI) != none )
+    if (  TSCGameReplicationInfo(Level.GRI) != none && !TSCGameReplicationInfo(Level.GRI).bSingleTeamGame )
         ClientOpenMenu(TSCLobbyMenuClassString);
     else
         ClientOpenMenu(LobbyMenuClassString);
@@ -1668,9 +1671,14 @@ exec function AltFire( optional float F )
 
     if ( !bTSCAdvancedKeyBindings && PlayerReplicationInfo.HasFlag != none
             && GameObject(PlayerReplicationInfo.HasFlag) != none
-            && TSCGameReplicationInfoBase(Level.GRI) != none )  {
-        ServerScoreFlag();
-        return;
+            && TSCGameReplicationInfo(Level.GRI) != none )
+    {
+        if ( bTSCAutoDetectKeys )
+            bTSCAdvancedKeyBindings = ConsoleCommand("BINDINGTOKEY SetupBase") != "";
+        if ( !bTSCAdvancedKeyBindings ) {
+            SetupBase();
+            return;
+        }
     }
 
     super.AltFire(F);
@@ -1678,10 +1686,15 @@ exec function AltFire( optional float F )
 
 exec function ThrowWeapon()
 {
-    if ( !bTSCAdvancedKeyBindings && GameObject(PlayerReplicationInfo.HasFlag) != none )
-        ServerDropFlag();
-    else
-        ServerThrowWeapon();
+    if ( !bTSCAdvancedKeyBindings && GameObject(PlayerReplicationInfo.HasFlag) != none ) {
+        if ( bTSCAutoDetectKeys )
+            bTSCAdvancedKeyBindings = ConsoleCommand("BINDINGTOKEY DropFlag") != "";
+        if ( !bTSCAdvancedKeyBindings ) {
+            DropFlag();
+            return;
+        }
+    }
+    ServerThrowWeapon();
 }
 
 // character selection
@@ -1690,7 +1703,7 @@ simulated function bool IsTeamCharacter(string CharacterName)
     if ( CharacterName == "" )
         return false;
 
-    if ( Level.GRI.bNoTeamSkins || TSCGameReplicationInfoBase(Level.GRI) == none || PlayerReplicationInfo == none || PlayerReplicationInfo.Team == none )
+    if ( Level.GRI.bNoTeamSkins || TSCGameReplicationInfo(Level.GRI) == none || PlayerReplicationInfo == none || PlayerReplicationInfo.Team == none )
         return true; // no team = any character can be used
 
     if ( PlayerReplicationInfo.Team.TeamIndex == 0 )
@@ -2363,14 +2376,6 @@ exec function FreeCamera( bool B )
 
 state Spectating
 {
-    function BeginState()
-    {
-        super.BeginState();
-        if ( Role == ROLE_Authority ) {
-            Mut.GameRules.PlayerLeaving(self);
-        }
-    }
-
    // Return to spectator's own camera.
     exec function AltFire( optional float F )
     {
@@ -2528,6 +2533,12 @@ exec function TestQuickMelee()
     }
 }
 
+exec function FixQuickMelee()
+{
+    if ( Pawn != none && Pawn.Weapon != none && Pawn.Weapon.ClientState == WS_Hidden )
+        Pawn.Weapon.BringUp();
+}
+
 // ======================== COMMENT BEFORE RELEASE !!! =====================
 // exec function WaveNum(byte w)
 // {
@@ -2637,7 +2648,7 @@ defaultproperties
     bChangedPerkDuringGame=True
     ProfilePageClassString="ScrnBalanceSrv.ScrnProfilePage"
     LobbyMenuClassString="ScrnBalanceSrv.ScrnLobbyMenu"
-    TSCLobbyMenuClassString="TSC.TSCLobbyMenu"
+    TSCLobbyMenuClassString="ScrnBalanceSrv.TSCLobbyMenu"
     PawnClass=Class'ScrnBalanceSrv.ScrnHumanPawn'
     CustomPlayerReplicationInfoClass=class'ScrnBalanceSrv.ScrnCustomPRI'
     bSpeechVote=true
@@ -2719,10 +2730,10 @@ defaultproperties
     MyMusic(39)=(PL=2,Wave=11,Song="EGT-SignOfEvil",Artist="elguitarTom",Title="Sign Of Evil")
 
     // TSC
-    strCantShopInEnemyTrader="You can not trade with enemy trader!"
     RedCharacter="Pyro_Red"
     BlueCharacter="Pyro_Blue"
     bNotifyLocalPlayerTeamReceived=True
+    bTSCAutoDetectKeys=true
 
     RedCharacters(0)="Pyro_Red"
     RedCharacters(1)="Agent_Wilkes"

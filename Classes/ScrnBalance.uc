@@ -11,7 +11,7 @@ class ScrnBalance extends Mutator
 #exec OBJ LOAD FILE=ScrnAch_T.utx
 
 
-const VERSION = 92500;
+const VERSION = 93000;
 
 var ScrnBalance Mut; // pointer to self to use in default functions, i.e class'ScrnBalance'.default.Mut
 
@@ -1113,16 +1113,15 @@ function KickOffPerkPlayers()
 // executes each second while match is in progress
 function GameTimer()
 {
+	if ( bStoryMode ) {
+        KF.bWaveInProgress = !KFStoryGameInfo(KF).IsTraderTime();
+        KFGameReplicationInfo(Level.GRI).bWaveInProgress = KF.bWaveInProgress;
+    }
+
     // check for wave start/end
-    if ( bTradingDoorsOpen != KF.bTradingDoorsOpen ) {
+    if ( bTradingDoorsOpen != KF.bTradingDoorsOpen )
+    {
         bTradingDoorsOpen = KF.bTradingDoorsOpen;
-
-		if ( bStoryMode ) {
-			// by default, story game doesn't set bWaveInProgress, and this screws up perk selection in ServerPerks
-			KF.bWaveInProgress = !KFStoryGameInfo(KF).IsTraderTime();
-			KFGameReplicationInfo(Level.GRI).bWaveInProgress = KF.bWaveInProgress;
-		}
-
         if ( bTradingDoorsOpen ) {
 			// Trader Time
 			if ( bStoryMode && KF.WaveNum == CurWave ) {
@@ -1162,17 +1161,7 @@ function GameTimer()
             DynamicLevelCap();
     }
 
-
-
-	// in story mode check bWaveInProgress every seconds, if if trader door are closed but wave is not in progress
-	if ( bStoryMode ) {
-        if ( !bTradingDoorsOpen && !KF.bWaveInProgress ) {
-            // by default, story game doesn't set bWaveInProgress, and this screws up perk selection in ServerPerks
-            KF.bWaveInProgress = !KFStoryGameInfo(KF).IsTraderTime();
-            KFGameReplicationInfo(Level.GRI).bWaveInProgress = KF.bWaveInProgress;
-        }
-	}
-    else {
+	if ( !bStoryMode ) {
         CheckDoors();
 
         if ( !bPickupSetupReduced && KF.TotalMaxMonsters <= 0 && KF.NumMonsters < PickupSetupMonsters )
@@ -2613,7 +2602,7 @@ function PostBeginPlay()
     KF.MonsterCollection = KF.SpecialEventMonsterCollections[KF.GetSpecialEventType()]; // v1061 fix
     KF.bUseZEDThreatAssessment = true; // always use ScrnHumanPawn.AssessThreatTo()
     bStoryMode = KFStoryGameInfo(KF) != none;
-    bTSCGame = KF.bTeamGame && KF.IsA('TSCGame');
+    bTSCGame = TSCGame(KF) != none && !TSCGame(KF).bSingleTeamGame;
     ScrnGT = ScrnGameType(KF);
     if ( ScrnGT != none ) {
         ScrnGT.ScrnBalanceMut = self;
@@ -3349,50 +3338,51 @@ HighlyDecorated(36)=(SteamID32=59018230,Playoffs=1,ClanIcon=Texture'ScrnTex.Tour
 HighlyDecorated(37)=(SteamID32=59344954,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PreNameIconRef="KillingFloor2HUD.PerkReset.PReset_Support_Grey",PrefixIconColor=(R=255,G=255,B=255,A=0),PostfixIconColor=(R=255,G=255,B=255,A=255))
 HighlyDecorated(38)=(SteamID32=59865355,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
 HighlyDecorated(39)=(SteamID32=61480134,Playoffs=1,TourneyWon=1,ClanIconRef="ScrnTex.Tourney.TBN",PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
-HighlyDecorated(40)=(SteamID32=63934831,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
-HighlyDecorated(41)=(SteamID32=64861994,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
-HighlyDecorated(42)=(SteamID32=66725591,ClanIconRef="ScrnTex.Players.SALTY",PreNameIconRef="KillingFloor2HUD.PerkReset.PReset_Medic_Grey",PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-HighlyDecorated(43)=(SteamID32=66767874,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
-HighlyDecorated(44)=(SteamID32=67141366,Playoffs=1,TourneyWon=1,ClanIconRef="ScrnTex.Tourney.TBN",PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
-HighlyDecorated(45)=(SteamID32=68703215,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
-HighlyDecorated(46)=(SteamID32=68932148,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
-HighlyDecorated(47)=(SteamID32=70606615,AvatarRef="ScrnTex.Players.aaa",PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
-HighlyDecorated(48)=(SteamID32=71427768,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
-HighlyDecorated(49)=(SteamID32=75600845,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
-HighlyDecorated(50)=(SteamID32=76661591,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
-HighlyDecorated(51)=(SteamID32=77967745,ClanIconRef="ScrnTex.Players.SALTY",PreNameIconRef="KillingFloor2HUD.PerkReset.PReset_Demolition_Grey",PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-HighlyDecorated(52)=(SteamID32=81279347,ClanIconRef="ScrnTex.Players.Dosh",PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
-HighlyDecorated(53)=(SteamID32=81947447,Playoffs=1,TourneyWon=1,ClanIconRef="ScrnTex.Tourney.TBN",PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
-HighlyDecorated(54)=(SteamID32=83417929,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
-HighlyDecorated(55)=(SteamID32=85142081,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
-HighlyDecorated(56)=(SteamID32=87647886,ClanIconRef="ScrnTex.Players.Dosh",PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
-HighlyDecorated(57)=(SteamID32=89323130,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
-HighlyDecorated(58)=(SteamID32=93919492,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
-HighlyDecorated(59)=(SteamID32=95752287,AvatarRef="ScrnTex.Players.FosterKF2",PreNameIconRef="KillingFloor2HUD.PerkReset.PReset_Sharpshooter_Grey",PostNameIconRef="KillingFloor2HUD.PerkReset.PReset_Sharpshooter_Grey",PrefixIconColor=(R=255,G=255,B=255,A=1),PostfixIconColor=(R=255,G=255,B=255,A=0))
-HighlyDecorated(60)=(SteamID32=99293732,Playoffs=1,TourneyWon=1,ClanIconRef="ScrnTex.Tourney.TBN",PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
-HighlyDecorated(61)=(SteamID32=102496714,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
-HighlyDecorated(62)=(SteamID32=106835439,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
-HighlyDecorated(63)=(SteamID32=107039826,Playoffs=1,AvatarRef="ScrnTex.Players.Seely",ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
-HighlyDecorated(64)=(SteamID32=109654784,AvatarRef="ScrnTex.Players.BertieDastard",PreNameIconRef="KillingFloor2HUD.PerkReset.PReset_Support_Grey",PrefixIconColor=(R=255,G=255,B=255,A=0),PostfixIconColor=(R=255,G=255,B=255,A=255))
-HighlyDecorated(65)=(SteamID32=112564543,ClanIconRef="ScrnTex.Players.Dosh",PreNameIconRef="ScrnTex.Perks.Hud_Perk_Star_Gray",PostNameIconRef="ScrnTex.Perks.Hud_Perk_Star_Gray",PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-HighlyDecorated(66)=(SteamID32=113961551,Playoffs=1,AvatarRef="ScrnTex.Players.Baffi",ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PreNameIconRef="KillingFloor2HUD.PerkReset.PReset_Demolition_Grey",PrefixIconColor=(R=255,G=255,B=255,A=0),PostfixIconColor=(R=255,G=255,B=255,A=255))
-HighlyDecorated(67)=(SteamID32=114826433,Playoffs=1,AvatarRef="ScrnTex.Players.nmm",ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PreNameIconRef="KillingFloor2HUD.PerkReset.PReset_Sharpshooter_Grey",PrefixIconColor=(R=255,G=255,B=255,A=0),PostfixIconColor=(R=255,G=255,B=255,A=255))
-HighlyDecorated(68)=(SteamID32=121550025,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
-HighlyDecorated(69)=(SteamID32=124874371,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
-HighlyDecorated(70)=(SteamID32=127624729,AvatarRef="ScrnTex.Players.Scrublord",PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
-HighlyDecorated(71)=(SteamID32=128107383,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
-HighlyDecorated(72)=(SteamID32=128199891,Playoffs=1,TourneyWon=1,ClanIconRef="ScrnTex.Tourney.TBN",PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
-HighlyDecorated(73)=(SteamID32=134825301,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
-HighlyDecorated(74)=(SteamID32=136078273,ClanIconRef="ScrnTex.Players.SALTY",PreNameIconRef="KillingFloor2HUD.PerkReset.PReset_Firebug_Grey",PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-HighlyDecorated(75)=(SteamID32=139723798,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
-HighlyDecorated(76)=(SteamID32=143999622,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
-HighlyDecorated(77)=(SteamID32=150832205,AvatarRef="ScrnTex.Players.Taloril",PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
-HighlyDecorated(78)=(SteamID32=152138369,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
-HighlyDecorated(79)=(SteamID32=152983683,Playoffs=1,TourneyWon=1,ClanIconRef="ScrnTex.Tourney.TBN",PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
-HighlyDecorated(80)=(SteamID32=153788974,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
-HighlyDecorated(81)=(SteamID32=160715546,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
-HighlyDecorated(82)=(SteamID32=162712343,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
-HighlyDecorated(83)=(SteamID32=192070782,Playoffs=1,TourneyWon=1,ClanIconRef="ScrnTex.Tourney.TBN",PrefixIconColor=(R=255,G=255,B=255,A=0),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(40)=(SteamID32=61647562,ClanIconRef="ScrnTex.Players.Dosh",PreNameIconRef="KillingFloor2HUD.PerkReset.PReset_Demolition_Grey",PrefixIconColor=(R=255,G=255,B=255,A=0),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(41)=(SteamID32=63934831,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(42)=(SteamID32=64861994,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(43)=(SteamID32=66725591,ClanIconRef="ScrnTex.Players.SALTY",PreNameIconRef="KillingFloor2HUD.PerkReset.PReset_Medic_Grey",PrefixIconColor=(A=0),PostfixIconColor=(A=0))
+HighlyDecorated(44)=(SteamID32=66767874,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(45)=(SteamID32=67141366,Playoffs=1,TourneyWon=1,ClanIconRef="ScrnTex.Tourney.TBN",PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(46)=(SteamID32=68703215,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(47)=(SteamID32=68932148,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(48)=(SteamID32=70606615,AvatarRef="ScrnTex.Players.aaa",PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(49)=(SteamID32=71427768,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(50)=(SteamID32=75600845,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(51)=(SteamID32=76661591,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(52)=(SteamID32=77967745,ClanIconRef="ScrnTex.Players.SALTY",PreNameIconRef="KillingFloor2HUD.PerkReset.PReset_Demolition_Grey",PrefixIconColor=(A=0),PostfixIconColor=(A=0))
+HighlyDecorated(53)=(SteamID32=81279347,ClanIconRef="ScrnTex.Players.Dosh",PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(54)=(SteamID32=81947447,Playoffs=1,TourneyWon=1,ClanIconRef="ScrnTex.Tourney.TBN",PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(55)=(SteamID32=83417929,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(56)=(SteamID32=85142081,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(57)=(SteamID32=87647886,ClanIconRef="ScrnTex.Players.Dosh",PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(58)=(SteamID32=89323130,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(59)=(SteamID32=93919492,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(60)=(SteamID32=95752287,AvatarRef="ScrnTex.Players.FosterKF2",PreNameIconRef="KillingFloor2HUD.PerkReset.PReset_Sharpshooter_Grey",PostNameIconRef="KillingFloor2HUD.PerkReset.PReset_Sharpshooter_Grey",PrefixIconColor=(R=255,G=255,B=255,A=1),PostfixIconColor=(R=255,G=255,B=255,A=0))
+HighlyDecorated(61)=(SteamID32=99293732,Playoffs=1,TourneyWon=1,ClanIconRef="ScrnTex.Tourney.TBN",PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(62)=(SteamID32=102496714,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(63)=(SteamID32=106835439,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(64)=(SteamID32=107039826,Playoffs=1,AvatarRef="ScrnTex.Players.Seely",ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(65)=(SteamID32=109654784,AvatarRef="ScrnTex.Players.BertieDastard",PreNameIconRef="KillingFloor2HUD.PerkReset.PReset_Support_Grey",PrefixIconColor=(R=255,G=255,B=255,A=0),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(66)=(SteamID32=112564543,ClanIconRef="ScrnTex.Players.Dosh",PreNameIconRef="ScrnTex.Perks.Hud_Perk_Star_Gray",PostNameIconRef="ScrnTex.Perks.Hud_Perk_Star_Gray",PrefixIconColor=(A=0),PostfixIconColor=(A=0))
+HighlyDecorated(67)=(SteamID32=113961551,Playoffs=1,AvatarRef="ScrnTex.Players.Baffi",ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PreNameIconRef="KillingFloor2HUD.PerkReset.PReset_Demolition_Grey",PrefixIconColor=(R=255,G=255,B=255,A=0),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(68)=(SteamID32=114826433,Playoffs=1,AvatarRef="ScrnTex.Players.nmm",ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PreNameIconRef="KillingFloor2HUD.PerkReset.PReset_Sharpshooter_Grey",PrefixIconColor=(R=255,G=255,B=255,A=0),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(69)=(SteamID32=121550025,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(70)=(SteamID32=124874371,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(71)=(SteamID32=127624729,AvatarRef="ScrnTex.Players.Scrublord",PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(72)=(SteamID32=128107383,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(73)=(SteamID32=128199891,Playoffs=1,TourneyWon=1,ClanIconRef="ScrnTex.Tourney.TBN",PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(74)=(SteamID32=134825301,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(75)=(SteamID32=136078273,ClanIconRef="ScrnTex.Players.SALTY",PreNameIconRef="KillingFloor2HUD.PerkReset.PReset_Firebug_Grey",PrefixIconColor=(A=0),PostfixIconColor=(A=0))
+HighlyDecorated(76)=(SteamID32=139723798,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(77)=(SteamID32=143999622,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(78)=(SteamID32=150832205,AvatarRef="ScrnTex.Players.Taloril",PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(79)=(SteamID32=152138369,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(80)=(SteamID32=152983683,Playoffs=1,TourneyWon=1,ClanIconRef="ScrnTex.Tourney.TBN",PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(81)=(SteamID32=153788974,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(82)=(SteamID32=160715546,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(83)=(SteamID32=162712343,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
+HighlyDecorated(84)=(SteamID32=192070782,Playoffs=1,TourneyWon=1,ClanIconRef="ScrnTex.Tourney.TBN",PrefixIconColor=(R=255,G=255,B=255,A=0),PostfixIconColor=(R=255,G=255,B=255,A=255))
 
 }
 

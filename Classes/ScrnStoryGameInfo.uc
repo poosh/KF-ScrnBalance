@@ -391,8 +391,8 @@ static event class<GameInfo> SetGameType( string MapName )
 // NumMonsters check replaced with bTradingDoorsOpen
 function bool IsTraderTime()
 {
-	bWaveInProgress = !bTradingDoorsOpen && NumMonsters > 0 && ObjTraderIndex != -1
-        && CurrentObjective != none && CurrentObjective.IsTraderObj();
+	bWaveInProgress = !bTradingDoorsOpen && NumMonsters > 0 && ObjTraderIndex == -1;
+        //&& CurrentObjective != none && !CurrentObjective.IsTraderObj();
 	KFGameReplicationInfo(Level.GRI).bWaveInProgress = bWaveInProgress;
 	return !bWaveInProgress;
 }
@@ -430,5 +430,4 @@ State MatchInProgress
 defaultproperties
 {
     GameName="ScrN Objective Mode"
-    bTeamGame=False
 }

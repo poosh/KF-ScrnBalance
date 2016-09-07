@@ -17,12 +17,12 @@ protected simulated function int ReadProgressFromData(int AchIndex)
 simulated function Tick(float DeltaTime)
 {
     if ( Role < ROLE_Authority ) {
-        if ( GetRepLink() == none ) 
+        if ( GetRepLink() == none )
             return; // RepLink isn't set yet
-        
+
         if ( RepLink.RKillsStat <= 0 )
             return; // initial replication data is not received yet
-        
+
         ClientSetAchProgress(19, ReadProgressFromData(19), true);
         ClientSetAchProgress(20, ReadProgressFromData(20), true);
         ClientSetAchProgress(21, ReadProgressFromData(21), true);
@@ -40,7 +40,7 @@ defaultproperties
 	GroupInfo(3)=(Group="MASTER",Caption="Master Skills")
 	GroupInfo(4)=(Group="TW",Caption="Teamwork")
 	GroupInfo(5)=(Group="MISC",Caption="Miscellaneous")
-	 
+
 	AchDefs(0)=(id="WinCustomMaps",DisplayName="Curious",Description="Survive on %c community-made maps",Icon=Texture'KillingFloorHUD.Achievements.Achievement_5',MaxProgress=10,DataSize=6,Group="MAP")
 	AchDefs(1)=(id="WinCustomMaps1",DisplayName="Wanderer",Description="Survive on %c community-made maps",Icon=Texture'KillingFloorHUD.Achievements.Achievement_11',MaxProgress=25,DataSize=-1,Group="MAP")
 	AchDefs(2)=(id="WinCustomMaps2",DisplayName="Explorer",Description="Survive on %c community-made maps",Icon=Texture'KillingFloorHUD.Achievements.Achievement_17',MaxProgress=50,DataSize=-1,Group="MAP")
@@ -196,6 +196,6 @@ defaultproperties
     AchDefs(140)=(id="OP_Gunslinger",DisplayName="Is Gunslinger OP?",Description="Survive 3+player game where everybody is playing Gunslinger",Icon=Texture'ScrnAch_T.Teamwork.OP_Gunslinger',MaxProgress=1,DataSize=1,Group="TW")
     // v9.10
     AchDefs(141)=(id="MacheteKillMidairCrawler",DisplayName="Machete Master",Description="Use Machete to melee-kill Crawler in midair without taking damage",Icon=Texture'ScrnAch_T.Master.MacheteCrawlerCut',MaxProgress=1,DataSize=1,Group="MASTER")
-    AchDefs(142)=(id="MacheteStunSC",DisplayName="Machete Stuns!",Description="Stun Scrake with Machete",Icon=Texture'ScrnAch_T.Master.MacheteScrake',MaxProgress=1,DataSize=1,Group="MASTER")
-    AchDefs(143)=(id="MacheteWalker",DisplayName="Machete Marathon",Description="Perform 'Machete-sprint': drop/pickup Machete 422 times while running in a single game",Icon=Texture'ScrnAch_T.Achievements.MacheteWalker',MaxProgress=1,DataSize=1,bForceShow=True)
+    AchDefs(142)=(id="MacheteStunSC",DisplayName="Machete Stuns!",Description="Stun Scrake with Machete",Icon=Texture'ScrnAch_T.Master.MacheteScrake',MaxProgress=1,DataSize=1,Group="MASTER",Group="Hidden")
+    AchDefs(143)=(id="MacheteWalker",DisplayName="Machete Marathon",Description="Perform 'Machete-sprint': drop/pickup Machete 422 times while running in a single game",Icon=Texture'ScrnAch_T.Achievements.MacheteWalker',MaxProgress=1,DataSize=1,bForceShow=True,Group="Hidden")
 }

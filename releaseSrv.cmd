@@ -35,6 +35,7 @@ copy /y %KFDIR%\system\ScrnSP.* %outputdir%\System\
 copy /y %KFDIR%\system\ScrnVotingHandlerV4.* %outputdir%\system\
 copy /y %STEAMDIR%\textures\ScrnTex.utx %outputdir%\Textures\
 copy /y %STEAMDIR%\textures\ScrnAch_T.utx %outputdir%\Textures\
+copy /y %STEAMDIR%\Textures\TSC_T.utx %outputdir%\Textures\
 copy /y %STEAMDIR%\sounds\ScrnSnd.uax %outputdir%\Sounds\
 copy /y *.txt  %outputdir%
 copy /y changes.txt  D:\Dropbox\Public\KFSrc\ScrnBalanceVersionHistory.txt
@@ -46,13 +47,16 @@ echo Compressing to .uz2...
 %KFDIR%\system\ucc compress %KFDIR%\system\ScrnBalanceSrv.u
 %KFDIR%\system\ucc compress %STEAMDIR%\textures\ScrnTex.utx
 %KFDIR%\system\ucc compress %STEAMDIR%\textures\ScrnAch_T.utx
+%KFDIR%\System\ucc compress %STEAMDIR%\Textures\TSC_T.utx
 %KFDIR%\system\ucc compress %STEAMDIR%\sounds\ScrnSnd.uax
 %KFDIR%\system\ucc compress %KFDIR%\system\ScrnVotingHandlerV4.u
 
-move /y %KFDIR%\system\*ScrnBalance*.uz2 %outputdir%\uz2
+move /y %KFDIR%\system\ScrnBalanceSrv.u.uz2 %outputdir%\uz2
 move /y %KFDIR%\system\ScrnVotingHandlerV4.u.uz2 %outputdir%\uz2
-move /y %STEAMDIR%\textures\Scrn*.uz2 %outputdir%\uz2
-move /y %STEAMDIR%\sounds\Scrn*.uz2 %outputdir%\uz2
+move /y %STEAMDIR%\textures\ScrnTex.utx.uz2 %outputdir%\uz2
+move /y %STEAMDIR%\textures\ScrnAch_T.utx.uz2 %outputdir%\uz2
+move /y %STEAMDIR%\Textures\TSC_T.utx.uz2 %outputdir%\uz2
+move /y %STEAMDIR%\sounds\ScrnSnd.uax.uz2 %outputdir%\uz2
 
 echo Release is ready!
 

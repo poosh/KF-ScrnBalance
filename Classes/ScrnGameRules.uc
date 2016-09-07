@@ -163,9 +163,6 @@ function AdjustZedSpawnRate()
 {
 	local int PlayerCount;
 
-	if ( Mut.bStoryMode )
-		return;
-
 	Mut.KF.KFLRules.WaveSpawnPeriod = Mut.OriginalWaveSpawnPeriod;
 
     // TSC adjusts spawn period itself
@@ -218,6 +215,10 @@ function WaveStarted()
             SPI.ProgressAchievement('Welcome', 1);
 		}
     }
+
+	if ( !Mut.bStoryMode ) {
+		AdjustZedSpawnRate();
+	}
 
 	for ( i=0; i<AchHandlers.length; ++i ) {
 		AchHandlers[i].WaveStarted(Mut.KF.WaveNum);

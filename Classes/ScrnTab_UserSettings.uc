@@ -157,7 +157,7 @@ function ShowPanel(bool bShow)
     b_Team_Invite.SetVisibility(true); 
         
     // TSC
-    b = TSCGameReplicationInfoBase(PC.Level.GRI) != none;
+    b = TSCGameReplicationInfo(PC.Level.GRI) != none;
     b_TSC_C.SetVisibility(b);
     b_TSC_A.SetVisibility(b); 
     
