@@ -9,6 +9,15 @@
 -------------------------------------------------------------------------------
 *** VERSION 9 ***
 -------------------------------------------------------------------------------
+v9.31:
+- Fixed a few warnings in client log
+- Another attempt to fix crash when opening ScrN Features tab
+- Admins can do MVOTE BORING even if it is disabled on the server
+
+WEAPON BALANCE:
+- Bullpup's damage raised to 28 (up from 26).
+- Added 1 bullet over-penetration to Bullpup vs small zeds.
+
 v9.30:
 - TSC and ScrnBonusGames packages incorporated into ScrnBalanceSrv
 - Fixed bug in quick melee

@@ -285,7 +285,7 @@ function int GetVoteIndex(PlayerController Sender, string Key, out string Value,
             Sender.ClientMessage(strNotInStoryMode);
             return VOTE_LOCAL;
 		}
-		else if ( !Mut.bAllowBoringVote ) {
+		else if ( !Mut.bAllowBoringVote && !Sender.PlayerReplicationInfo.bAdmin ) {
 			Sender.ClientMessage(strOptionDisabled);
 			return VOTE_LOCAL;
 		}
