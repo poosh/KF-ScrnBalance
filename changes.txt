@@ -9,6 +9,9 @@
 -------------------------------------------------------------------------------
 *** VERSION 9 ***
 -------------------------------------------------------------------------------
+v9.32:
+- Yet another attempt to fix crash when opening ScrN Features tab
+
 v9.31:
 - Fixed a few warnings in client log
 - Another attempt to fix crash when opening ScrN Features tab

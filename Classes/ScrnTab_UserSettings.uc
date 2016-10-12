@@ -87,6 +87,7 @@ var color StatusColor[2];
 
 var transient KFPlayerReplicationInfo SelectedPRI;
 var transient array<KFPlayerReplicationInfo> PRIs;
+var transient bool bFillPlayerList;
 
 
 // event ResolutionChanged( int ResX, int ResY )
@@ -172,7 +173,7 @@ function ShowPanel(bool bShow)
     sl_HudY.SetValue(H.CoolHudAmmoOffsetY);
 
     RefreshInfo();
-    FillPlayerList();
+    bFillPlayerList = true; // fill player list in 1s
 
     SetTimer(1, true);
     log("ShowPanel: EOF", class.name);
@@ -182,6 +183,10 @@ function ShowPanel(bool bShow)
 function Timer()
 {
     RefreshInfo();
+    if ( bFillPlayerList )
+    {
+        FillPlayerList();
+    }
 }
 
 function RefreshInfo()
@@ -287,6 +292,7 @@ function FillPlayerList()
     GRI = PlayerOwner().Level.GRI;
     if ( GRI == none )
         return;
+    bFillPlayerList = false;
 
     PRIs.length = 0;
     log("FillPlayerList", class.name);
