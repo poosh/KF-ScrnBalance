@@ -11,7 +11,7 @@ class ScrnBalance extends Mutator
 #exec OBJ LOAD FILE=ScrnAch_T.utx
 
 
-const VERSION = 93200;
+const VERSION = 93300;
 
 var ScrnBalance Mut; // pointer to self to use in default functions, i.e class'ScrnBalance'.default.Mut
 
@@ -3309,7 +3309,7 @@ HighlyDecorated(8)=(SteamID32=27263782,Playoffs=1,AvatarRef="ScrnTex.Players.Ter
 HighlyDecorated(9)=(SteamID32=27784497,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
 HighlyDecorated(10)=(SteamID32=32271863,AvatarRef="ScrnTex.Players.PooSH",PreNameIconRef="ScrnTex.Perks.Hud_Perk_Star_Gray",PostNameIconRef="ScrnTex.Perks.Hud_Perk_Star_Gray",PrefixIconColor=(A=0),PostfixIconColor=(A=0))
 HighlyDecorated(11)=(SteamID32=32279441,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(R=255,G=255,B=255,A=255),PostfixIconColor=(R=255,G=255,B=255,A=255))
-HighlyDecorated(12)=(SteamID32=32708029,ClanIconRef="ScrnTex.Players.Dosh",PrefixIconColor=(A=0),PostfixIconColor=(A=0))
+HighlyDecorated(12)=(SteamID32=32708029,ClanIconRef="ScrnTex.Players.Dosh",PreNameIconRef="KillingFloor2HUD.PerkReset.PReset_Firebug_Grey",PrefixIconColor=(A=0),PostfixIconColor=(A=0))
 HighlyDecorated(13)=(SteamID32=32779545,ClanIconRef="ScrnTex.Players.SALTY",PreNameIconRef="KillingFloor2HUD.PerkReset.PReset_Support_Grey",PrefixIconColor=(A=0),PostfixIconColor=(A=0))
 HighlyDecorated(14)=(SteamID32=32976519,Playoffs=1,ClanIconRef="ScrnTex.Players.Dosh",PreNameIconRef="KillingFloor2HUD.PerkReset.PReset_Sharpshooter_Grey",PrefixIconColor=(R=255,G=255,B=255,A=0),PostfixIconColor=(R=255,G=255,B=255,A=255))
 HighlyDecorated(15)=(SteamID32=34308728,AvatarRef="ScrnTex.Players.Janitor",PreNameIconRef="KillingFloor2HUD.PerkReset.PReset_Firebug_Grey",PostNameIconRef="KillingFloor2HUD.PerkReset.PReset_Firebug_Grey",PrefixIconColor=(A=0),PostfixIconColor=(A=0))

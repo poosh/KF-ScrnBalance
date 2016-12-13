@@ -320,17 +320,17 @@ function bool AddInventory( inventory NewItem )
             if ( weap.bTorchEnabled )
                 AddToFlashlightArray(weap.class); // v6.22 - each weapon has own flashlight
             CheckQuickMeleeWeapon(KFMeleeGun(weap));
-            // if ( class'ScrnBalance'.default.Mut.bWeaponFix && class'ScrnBalance'.default.Mut.SrvTourneyMode == 0 && Machete(weap) != none ) {
-                // if ( MacheteBoost < 250 && VSizeSquared(Velocity) > 10000 ) {
-                    // if ( MacheteBoost < 48 )
-                        // MacheteBoost += 3;
-                    // else if ( MacheteBoost < 100 )
-                        // MacheteBoost += 2;
-                    // else
-                        // MacheteBoost++;
-                // }
-                // MacheteResetTime = Level.TimeSeconds + 5.0;
-            // }
+            if ( class'ScrnBalance'.default.Mut.bWeaponFix && class'ScrnBalance'.default.Mut.SrvTourneyMode == 0 && Machete(weap) != none ) {
+                if ( MacheteBoost < 250 && VSizeSquared(Velocity) > 10000 ) {
+                    if ( MacheteBoost < 50 )
+                        MacheteBoost += 3;
+                    else if ( MacheteBoost < 100 )
+                        MacheteBoost += 2;
+                    else
+                        MacheteBoost++;
+                }
+                MacheteResetTime = Level.TimeSeconds + 5.0;
+            }
         }
         return true;
     }

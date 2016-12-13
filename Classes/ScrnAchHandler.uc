@@ -147,7 +147,7 @@ function WaveStarted(byte WaveNum)
 		bPerfectGame = true;
 	}
 	else {
-		bPerfectGame = bPerfectGame && TotalPlayers >= 5; // each wave must have 5+ players for perfect game
+		bPerfectGame = bPerfectGame && TotalPlayers >= 3; // each wave must have 3+ players for perfect game
 		bPerfectWave = WaveNum > 0; // can't score perfect wave in wave 1
 	}
 }
@@ -458,7 +458,7 @@ function int WDecapsPerMagazine(ScrnPlayerInfo SPI, KFWeapon Weapon, class<KFWea
 function MonsterDamaged(int Damage, KFMonster Victim, ScrnPlayerInfo InstigatorInfo,
 	class<KFWeaponDamageType> DamType, bool bIsHeadshot, bool bWasDecapitated)
 {
-    local int index, TotalDamage;
+    local int index, TotalDamage, df;
 	local KFMonsterController MC;
 
     if ( Victim.Health <= 0 || Victim.IsInState('ZombieDying') )
@@ -565,8 +565,9 @@ function MonsterDamaged(int Damage, KFMonster Victim, ScrnPlayerInfo InstigatorI
         else if ( !Victim.bDecapitated && Damage < Victim.Health
                 && (Damage > Victim.default.Health/1.5
                     || (Damage > 200 && !Victim.IsA('TeslaHusk')
-                        && (DamType == class'DamTypeCrossbow' || DamType == class'DamTypeWinchester'
-                            || DamType == class'DamTypeM14EBR'))) )
+                        && ( ClassIsChildOf(DamType, class'DamTypeCrossbow')
+                            || ClassIsChildOf(DamType, class'DamTypeWinchester')
+                            || ClassIsChildOf(DamType, class'DamTypeM14EBR')))) )
         {
             // track only stun damage
             if ( GameRules.MonsterInfos[index].DamType1 == none ) {
@@ -618,27 +619,36 @@ function MonsterDamaged(int Damage, KFMonster Victim, ScrnPlayerInfo InstigatorI
     else if ( ZombieFleshpound(Victim) != none ) {
         if ( Victim.bDecapitated && !bWasDecapitated && ClassIsChildOf(DamType, class'DamTypeAxe') )
             InstigatorInfo.ProgressAchievement('OldSchoolKiting', 1);
-        // both TW FP achievements requires first shot from xbow or m99
+        // both TW FP achievements requires first rage shot to be from heavy sniper rifgle: Xbow, M99, HR or 2xSVD
         // Pipe achievement also requires it to be a rage shot.
-        // M14 ach alows to shoot already raged FP.
+        // M14 ach allows to shoot already raged FP.
         if ( !Victim.bDecapitated && Damage < Victim.Health && !GameRules.MonsterInfos[index].TW_Ach_Failed ) {
-            if ( bIsHeadshot && Damage >= 900 ) {
+            if ( bIsHeadshot && Damage >= 600 ) {
+                df = DF_HEADSHOT;
+                // FP can't be stunned, but DF_STUNNED flag is used to differ heavy headshots from other damages
+                if ( Damage >= 800 )
+                    df = df | DF_STUNNED;
+
 				if ( GameRules.MonsterInfos[index].DamType1 == none ) {
 					GameRules.MonsterInfos[index].KillAss1 = InstigatorInfo;
 					GameRules.MonsterInfos[index].DamType1 = DamType;
                     GameRules.MonsterInfos[index].DamTime1 = Level.TimeSeconds;
-					// FP can't be stunned, but DF_STUNNED flag is used to differ M99/xbow headshots from other damages
-					GameRules.MonsterInfos[index].DamageFlags1 = DF_HEADSHOT | DF_STUNNED;
 					if ( !ZombieFleshpound(Victim).bChargingPlayer && !ZombieFleshpound(Victim).bFrustrated )
-						GameRules.MonsterInfos[index].DamageFlags1 = GameRules.MonsterInfos[index].DamageFlags1 | DF_RAGED;
+						df = df | DF_RAGED;
+                    GameRules.MonsterInfos[index].DamageFlags1 = df;
 				}
-				else if ( GameRules.MonsterInfos[index].KillAss1 != InstigatorInfo
-						&& (GameRules.MonsterInfos[index].DamageFlags2 & DF_STUNNED) == 0 ) {
-					// M99/xbow headshots always override other assistances (which don't have DF_STUNNED flag)
+				else if ( GameRules.MonsterInfos[index].KillAss1 == InstigatorInfo ) {
+                    GameRules.MonsterInfos[index].DamageFlags1 = GameRules.MonsterInfos[index].DamageFlags1 | DF_STUNNED; // in case of 2xSVD
+                }
+				else if ( GameRules.MonsterInfos[index].KillAss2 == InstigatorInfo ) {
+                    GameRules.MonsterInfos[index].DamageFlags2 = GameRules.MonsterInfos[index].DamageFlags2 | DF_STUNNED; // in case of 2xSVD
+                }
+                else if ( (GameRules.MonsterInfos[index].DamageFlags2 & DF_STUNNED) == 0 ) {
+					// heavy headshots always override other assistances (which don't have DF_STUNNED flag)
 					GameRules.MonsterInfos[index].KillAss2 = InstigatorInfo;
 					GameRules.MonsterInfos[index].DamType2 = DamType;
                     GameRules.MonsterInfos[index].DamTime2 = Level.TimeSeconds;
-					GameRules.MonsterInfos[index].DamageFlags2 = DF_HEADSHOT | DF_STUNNED;
+					GameRules.MonsterInfos[index].DamageFlags2 = df;
 				}
             }
             else if ( GameRules.MonsterInfos[index].DamType1 == none ) {
@@ -658,7 +668,7 @@ function MonsterDamaged(int Damage, KFMonster Victim, ScrnPlayerInfo InstigatorI
             else {
                 TotalDamage = GetTotalDamageMadeC(MC, InstigatorInfo.PlayerOwner);
                 if ( TotalDamage > Victim.HealthMax * 0.5 )
-                    GameRules.MonsterInfos[index].TW_Ach_Failed = true; // why need teamwork, if this player just spams his ammo?
+                    GameRules.MonsterInfos[index].TW_Ach_Failed = true; // why need teamwork, if this player just spams at FP?
                 else if ( GameRules.MonsterInfos[index].DamType2 == none && TotalDamage > Victim.HealthMax * 0.1 ) {
                     GameRules.MonsterInfos[index].KillAss2 = InstigatorInfo;
                     GameRules.MonsterInfos[index].DamType2 = DamType;
@@ -821,7 +831,7 @@ function MonsterKilled(KFMonster Victim, ScrnPlayerInfo KillerInfo, class<KFWeap
 		}
         else if ( GameRules.MonsterInfos[index].bHeadshot ) {
 			// Overkills
-			if ( DamType == class'KFMod.DamTypeM99HeadShot' )
+			if (  ClassIsChildOf(DamType, class'KFMod.DamTypeM99HeadShot') )
 				KillerInfo.ProgressAchievement('Overkill', 1);
 			else if ( Victim.LastDamageAmount > 6950 && ClassIsChildOf(DamType, class'KFMod.DamTypeHuskGunProjectileImpact') )
 				KillerInfo.ProgressAchievement('Overkill1', 1);
@@ -861,7 +871,7 @@ function MonsterKilled(KFMonster Victim, ScrnPlayerInfo KillerInfo, class<KFWeap
     else if ( ZombieHusk(Victim) != none ) {
         if ( ClassIsChildOf(DamType, class'DamTypeHuskGun') || ClassIsChildOf(DamType, class'DamTypeHuskGunProjectileImpact') )
             KillerInfo.ProgressAchievement('KillHuskHuskGun', 1);
-        else if ( DamType == class'DamTypeCrossbowHeadShot' ) {
+        else if ( ClassIsChildOf(DamType, class'DamTypeCrossbowHeadShot') ) {
             if ( Level.TimeSeconds - KillerInfo.GetCustomFloat(self, 'LastDeagleHSTime') < 2.0 )
                 KillerInfo.ProgressAchievement('KFG1', 1);
         }
@@ -950,7 +960,7 @@ function MonsterKilled(KFMonster Victim, ScrnPlayerInfo KillerInfo, class<KFWeap
 				if ( DamType == class'KFMod.DamTypePipeBomb'
 						&& (GameRules.MonsterInfos[index].DamageFlags1 & DF_RAGED) != 0 )
 					GameRules.RewardTeamwork(KillerInfo, index, 'TW_FP_Pipe');
-				else if ( ClassIsChildOf(DamType, class'DamTypeM14EBR') || ClassIsChildOf(DamType, class'DamTypeSPSniper') ) {
+				else if ( DamType.default.bSniperWeapon ) {
 					// ensure that second assistant used sniper headshots too
 					if ( (GameRules.MonsterInfos[index].DamageFlags2 & DF_HEADSHOT) == 0 )
 						GameRules.MonsterInfos[index].KillAss2 = none;
@@ -974,7 +984,7 @@ function MonsterKilled(KFMonster Victim, ScrnPlayerInfo KillerInfo, class<KFWeap
         if ( !Victim.bDamagedAPlayer ) {
             if ( ClassIsChildOf(DamType, class'KFMod.DamTypeM14EBR') )
                 KillerInfo.ProgressAchievement('BruteM14', 1);
-            else if ( DamType == class'KFMod.DamTypeM99HeadShot' || DamType == class'KFMod.DamTypeCrossbowHeadShot' )
+            else if ( ClassIsChildOf(DamType, class'KFMod.DamTypeM99HeadShot') || ClassIsChildOf(DamType, class'KFMod.DamTypeCrossbowHeadShot') )
                 KillerInfo.ProgressAchievement('BruteXbow', 1);
             else if ( ClassIsChildOf(DamType, class'KFMod.DamTypeSCARMK17AssaultRifle') )
                 KillerInfo.ProgressAchievement('BruteSCAR', 1);
@@ -1078,7 +1088,7 @@ defaultproperties
     iDoT_Damage=300
 	bOnePlayerPerPerk=true
 	bAllSamePerk=true
-    InstantKillTime=0.500000
+    InstantKillTime=0.70
     bNoHeadshots=True
     bAllCanDoHeadshots=True
 }

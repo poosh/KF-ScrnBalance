@@ -326,7 +326,8 @@ function FillPlayerList()
     idx = -1;
     log("FillPlayerList: FillingPlayer List", class.name);
     for ( i = 0; i < PRIs.Length; i++) {
-        cbx_Player.AddItem(class'ScrnBalance'.default.Mut.ColoredPlayerName(PRIs[i]));
+        cbx_Player.AddItem( class'ScrnBalance'.default.Mut.StripColorTags(PRIs[i].PlayerName) );
+        //ColoredPlayerName(PRIs[i]));
         if ( PRIs[i] == SelectedPRI )
             idx = i;
     }

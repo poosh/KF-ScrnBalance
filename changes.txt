@@ -9,6 +9,14 @@
 -------------------------------------------------------------------------------
 *** VERSION 9 ***
 -------------------------------------------------------------------------------
+v9.33:
+- HoE map achievements are given for FTG mode too (even without Doom3 mode)
+- Sui map achievements are given in Turbo mode too
+- Changed some achievement requirements
+- ScrnGameRules.MapAliases made configurable (ScrnBalance.ini).
+  Now server admins can link custom maps to existing map achievements.
+
+
 v9.32:
 - Yet another attempt to fix crash when opening ScrN Features tab
 

@@ -91,7 +91,7 @@ defaultproperties
 	AchDefs(47)=(id="TW_Siren",DisplayName="TeamWork: No Big Guns on Skinny Bitches",Description="Kill %c Sirens with Pistols + Assault Rifles",Icon=Texture'ScrnAch_T.Teamwork.siren',MaxProgress=100,DataSize=7,Group="TW")
 	AchDefs(48)=(id="TW_Shiver",DisplayName="TeamWork: Grilled Shiver Brains",Description="Decapitate %c burning Shivers with Assault Rifles",Icon=Texture'ScrnAch_T.Teamwork.Shiver',MaxProgress=250,FilterMaskAll=32,DataSize=8,Group="TW")
 	AchDefs(49)=(id="TW_Husk_Stun",DisplayName="TeamWork: Stunning Shot, Mate!",Description="Finish %c stunned Husks with Shotguns",Icon=Texture'ScrnAch_T.Teamwork.Husk_Stun',MaxProgress=30,DataSize=6,Group="TW")
-	AchDefs(50)=(id="TW_FP_Snipe",DisplayName="TeamWork: Sharpened Flesh",Description="Finish %c Fleshpounds with M14/Musket after Crossbow/M99 headshot(-s)",Icon=Texture'ScrnAch_T.Teamwork.FP_XBOWM14',MaxProgress=15,DataSize=4,Group="TW")
+	AchDefs(50)=(id="TW_FP_Snipe",DisplayName="TeamWork: Sharpened Flesh",Description="Headshot-kill %c Fleshpounds by 2+ Sharpshooters",Icon=Texture'ScrnAch_T.Teamwork.FP_XBOWM14',MaxProgress=15,DataSize=4,Group="TW")
 	AchDefs(51)=(id="TW_FP_Pipe",DisplayName="TeamWork: Sniper Blow",Description="Rage %c Fleshpounds directly on a pipebomb with Crossbow/M99",Icon=Texture'ScrnAch_T.Teamwork.FP_M99Pipe',MaxProgress=15,DataSize=4,Group="TW")
 	AchDefs(52)=(id="ScrakeNader",DisplayName="Scrake Nader",Description="Rage %c stunned Scrakes with hand grenades",Icon=Texture'ScrnAch_T.Achievements.ScrakeNaders',MaxProgress=50,DataSize=8)
 	AchDefs(53)=(id="ScrakeUnnader",DisplayName="Why the Hell Are You Nading Scrakes?!",Description="Kill %c naded Scrakes with sniper weapons, before they do any damage to your retarded teammates.",Icon=Texture'ScrnAch_T.Achievements.ScrakeUnnader',MaxProgress=50,DataSize=8)
@@ -142,7 +142,7 @@ defaultproperties
 	AchDefs(93)=(id="Pat9mm",DisplayName="Peashooters",Description="Kill End Game Boss with 9mm pistols only.",Icon=Texture'ScrnAch_T.Teamwork.Peashooters',MaxProgress=1,DataSize=1,Group="TW")
 	AchDefs(94)=(id="PatPrey",DisplayName="Hunting the Prey",Description="Hunt the Patriarch during his heal-runs and kill him in 2:00 without focusing on other specimens.",Icon=Texture'ScrnAch_T.Teamwork.PatPrey',MaxProgress=1,DataSize=1,Group="TW")
 	AchDefs(95)=(id="PerfectWave",DisplayName="Perfect Wave",Description="Survive %c waves in 3+ player game without anybody taking a damage. Wave 1 excluding.",Icon=Texture'ScrnAch_T.Teamwork.PerfectWave',MaxProgress=15,DataSize=4,Group="TW")
-	AchDefs(96)=(id="PerfectGame",DisplayName="Perfect Game",Description="Survive 5+ player game without a single player death.",Icon=Texture'ScrnAch_T.Teamwork.PerfectGame',MaxProgress=1,DataSize=1,Group="TW")
+	AchDefs(96)=(id="PerfectGame",DisplayName="Perfect Game",Description="Survive 3+ player game without a single player death.",Icon=Texture'ScrnAch_T.Teamwork.PerfectGame',MaxProgress=1,DataSize=1,Group="TW")
 	AchDefs(97)=(id="SpeedrunBronze",DisplayName="Speedrun Bronze",Description="Win a long game in 45 minutes. Map should have at least 3 traders.",Icon=Texture'ScrnAch_T.Teamwork.SpeedrunBronze',MaxProgress=1,DataSize=1,Group="TW")
 	AchDefs(98)=(id="SpeedrunSilver",DisplayName="Speedrun Silver",Description="Win a long game in 40 minutes. Map should have at least 3 traders.",Icon=Texture'ScrnAch_T.Teamwork.SpeedrunSilver',MaxProgress=1,DataSize=1,Group="TW")
 	AchDefs(99)=(id="SpeedrunGold",DisplayName="Speedrun Gold",Description="Win a long game in 33 minutes. Map should have at least 3 traders.",Icon=Texture'ScrnAch_T.Teamwork.SpeedrunGold',MaxProgress=1,DataSize=1,Group="TW")
@@ -178,7 +178,7 @@ defaultproperties
 	AchDefs(125)=(id="KFG1",DisplayName="'Consider this a warning'",Description="Kill a Husk with Crossbow in 2 seconds after killing another zed with Handcannon",Icon=Texture'ScrnAch_T.Achievements.Stupid',MaxProgress=1,DataSize=1)
 	AchDefs(126)=(id="KFG2",DisplayName="'Aimbot detected'",Description="Survive Wave 10 with at least 10% headshot accuracy",Icon=Texture'ScrnAch_T.Achievements.Stupid',MaxProgress=1,DataSize=1)
 
-	AchDefs(127)=(id="AchReset",DisplayName="Achievement Reset",Description="Reset your achievements (all but maps) by executing 'AchReset' console command.",Icon=Texture'ScrnAch_T.Achievements.AchReset',MaxProgress=1,DataSize=1)
+	AchDefs(127)=(id="AchReset",DisplayName="Achievement Reset",Description="Reset your achievements (all but maps) by executing 'AchReset' console command.",Icon=Texture'ScrnAch_T.Achievements.AchReset',MaxProgress=1,DataSize=1,bForceShow=True)
 
 	AchDefs(128)=(id="MeleeKillMidairCrawlers",DisplayName="My Kung Fu is Awesome",Description="Melee-hit %c Crawlers in midair without taking damage",Icon=Texture'ScrnAch_T.Achievements.MeleeCrawler',MaxProgress=50,DataSize=6,Group="MASTER")
 	AchDefs(129)=(id="GunslingerSC",DisplayName="Two Bloody Handsome",Description="Kill %c Scrakes with Dual HC/.44 without taking damage",Icon=Texture'ScrnAch_T.Master.GunslingerSC',MaxProgress=50,DataSize=6,Group="MASTER")

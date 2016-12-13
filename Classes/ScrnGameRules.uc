@@ -69,7 +69,7 @@ struct MapAlias {
     var string FileName;
     var string AchName;
 };
-var array<MapAlias> MapAliases;
+var config array<MapAlias> MapAliases;
 
 var array< class<KFMonster> > CheckedMonsterClasses;
 
@@ -402,8 +402,8 @@ function GiveMapAchievements(optional String MapName)
 	}
 	else {
 		bGiveHardAch = HardcoreLevel >= 5 && HasCustomZeds();
-		bGiveSuiAch = HardcoreLevel >= 10 && (bDoomPat || bSuperPat);
-		bGiveHoeAch = HardcoreLevel >= 15 && GameDoom3Kills > 0;
+		bGiveSuiAch = HardcoreLevel >= 10 && (bDoomPat || bSuperPat) || Mut.KF.IsA('TurboGame') ;
+		bGiveHoeAch = HardcoreLevel >= 15 && ( GameDoom3Kills > 0 ) || Mut.KF.IsA('FtgGame');
 	}
 
     // end game bonus
@@ -1445,6 +1445,7 @@ defaultproperties
 	MapAliases(19)=(FileName="KF-HellFreezesOver1-2",AchName="KF-Hell")
 	MapAliases(20)=(FileName="KF-Train-fix",AchName="KF-Train")
 	MapAliases(21)=(FileName="KF-PandorasBoxV2-fix",AchName="KF-PandorasBox")
+	MapAliases(22)=(FileName="KF-Constriction-SE",AchName="KF-Constriction")
 
     SovietDamageTypes(0)=class'KFMod.DamTypeKnife'
     SovietDamageTypes(1)=class'KFMod.DamTypeFrag'
