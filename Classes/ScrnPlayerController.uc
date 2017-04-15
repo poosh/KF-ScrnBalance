@@ -701,10 +701,6 @@ function int GetMyActiveSongIndex()
         if ( w == KFGRI.FinalWave && TSCGameReplicationInfo(KFGRI) == none )
             w = 10; // boss battle song
     }
-    else {
-        if ( KFGRI.TimeToNextWave > 10 )
-            ++w; // KFGRI.WaveNumber is updated only at the end of the trader time
-    }
     return GetMySongIndex(ActiveMusicPlaylist, w+1, !KFGRI.bWaveInProgress);
 }
 
@@ -2540,6 +2536,7 @@ exec function FixQuickMelee()
 }
 
 // ======================== COMMENT BEFORE RELEASE !!! =====================
+
 // exec function WaveNum(byte w)
 // {
     // if ( Level.NetMode == NM_Standalone ) {

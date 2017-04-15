@@ -1,4 +1,4 @@
-class TSCGameReplicationInfo extends KFGameReplicationInfo;
+class TSCGameReplicationInfo extends ScrnGameReplicationInfo;
 
 var bool bSingleTeamGame;
 var ShopVolume BlueShop;

@@ -230,8 +230,10 @@ function WaveEnded(byte WaveNum)
 
     if ( OnlyHealerSPI != none && TotalPlayers >= 4 )
         OnlyHealerSPI.ProgressAchievement('OnlyHealer', 1);
-	if ( AlivePlayers == 1 && TotalPlayers >= 4)
+	if ( AlivePlayers == 1 && TotalPlayers >= 4) {
 		LastAliveSPI.ProgressAchievement('ThinIcePirouette', 1);
+        KFSteamStatsAndAchievements(SPI.PlayerOwner.SteamStatsAndAchievements).AddOnlySurvivorOfWave();
+    }
 
 	if ( TotalPlayers >= 3 && MinKills > max(1, MaxKills * 0.9) )
 		Ach2All('NoI', 1);
@@ -913,7 +915,7 @@ function MonsterKilled(KFMonster Victim, ScrnPlayerInfo KillerInfo, class<KFWeap
         }
         else if ( DamType.default.bIsPowerWeapon ) {
             if ( (DamType == class'KFMod.DamTypeDBShotgun' || DamType == class'KFMod.DamTypeBenelli')
-                    && GameRules.MonsterInfos[index].DamType1.default.bIsExplosive
+                    && GameRules.MonsterInfos[index].DamType1 != none && GameRules.MonsterInfos[index].DamType1.default.bIsExplosive
                     && ClassIsChildOf(GameRules.MonsterInfos[index].DamType1, class'KFMod.DamTypeLAW')
                     && (GameRules.MonsterInfos[index].DamageFlags1 & DF_STUNNED) > 0 )
             {

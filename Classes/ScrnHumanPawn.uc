@@ -549,7 +549,7 @@ simulated function ApplyWeaponStats(Weapon NewWeapon)
         bCowboyMode = ScrnPerk != none && Weap != none && ScrnPerk.static.CheckCowboyMode(KFPRI, Weap.class);
 
         if ( Weap != none ) {
-            if ( Weap.class == class'Dualies' || Weap.class == class'ScrnDualies' ) {
+            if ( Weap.class == class'Dualies' || ClassIsChildOf(Weap.class, class'ScrnDualies') ) {
                 // Machine Pistols for Cowboy!
                 Weap.GetFireMode(0).bWaitForRelease = !bCowboyMode;
                 Weap.GetFireMode(0).bNowWaiting = Weap.GetFireMode(0).bWaitForRelease;
@@ -1887,7 +1887,6 @@ function ProcessLocationalDamage(int Damage, Pawn instigatedBy, Vector hitlocati
 // this is used by explosive projectiles to scale damage
 function float GetExposureTo(vector TestLocation)
 {
-    local float DistanceSquared;
     local float PercentExposed;
 
     if( FastTrace(GetBoneCoords(HeadBone).Origin,TestLocation))
@@ -2133,10 +2132,13 @@ function  float AssessThreatTo(KFMonsterController  Monster, optional bool Check
     local int i;
 
     if( bHidden || bDeleteMe || Health <= 0
-		|| Monster == none || KFMonster(Monster.Pawn) == none)
+            || Monster == none || KFMonster(Monster.Pawn) == none)
     {
         return -1.f;
     }
+
+    if ( Level.TimeSeconds - SpawnTime < 10 )
+        return 0.01; // very minor chance to attack players who just spawned
 
     // Gorefasts love Baron :D
     // https://www.youtube.com/watch?v=vytEYKpFAwk
@@ -2162,7 +2164,7 @@ function  float AssessThreatTo(KFMonsterController  Monster, optional bool Check
         }
     }
 
-	DistancePart = 65.0;
+	DistancePart = 50.0;
 	RandomPart = 100.0 - DistancePart;
 	// let zeds smell blood within 15m radius - wounded players attract more zeds
 	if ( Health < 80 && DistanceSquared < 562500.0 )
@@ -2177,9 +2179,9 @@ function  float AssessThreatTo(KFMonsterController  Monster, optional bool Check
             TacticalPart += RandomPart * 0.60;
     }
 	else if ( bAttacker )
-		TacticalPart += RandomPart * 0.40; // more chance to focus on the player, who are attacking the monster
+		TacticalPart += RandomPart * 0.50; // more chance to focus on the player, who are attacking the monster
     else if ( bSeeMe )
-		TacticalPart += RandomPart * 0.20; // zed can see player
+		TacticalPart += RandomPart * 0.30; // zed can see player
 	RandomPart -= TacticalPart;
 
 
@@ -2194,6 +2196,10 @@ function  float AssessThreatTo(KFMonsterController  Monster, optional bool Check
 	LastThreatMonster = Monster;
 	LastThreatTime = Level.TimeSeconds;
 	LastThreat = DistancePart + TacticalPart + RandomPart;
+    // less chance to attach jsut-spawned players
+    if ( Level.TimeSeconds - SpawnTime < 30 )
+        LastThreat *= lerp( (Level.TimeSeconds - SpawnTime) / 30.0, 1.0, 0.01 );
+
 	if ( KFStoryGameInfo(Level.Game) != none )
 		LastThreat *= InventoryThreatModifier();
     return LastThreat;

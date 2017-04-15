@@ -2,7 +2,11 @@
 class ScrnGameType extends KFGameType;
 
 var ScrnBalance ScrnBalanceMut;
+var ScrnGameReplicationInfo ScrnGRI;
+
+
 var bool bCloserZedSpawns; // if true uses modified RateZombieVolume() function to get closer volumes for zeds
+var ScrnGameLength ScrnGameLength;
 var private string CmdLine;
 
 var private int TourneyMode;
@@ -16,6 +20,11 @@ var array<string> InviteList; // contains players' steam IDs
 var protected float TurboScale;
 
 var transient int WavePlayerCount; // alive player count at the beginning of the wave
+var transient int AlivePlayerCount, AliveTeamPlayerCount[2];
+var array<KFMonster> Bosses;
+var transient bool bBossSpawned;
+var int MaxSpawnAttempts, MaxSpecialSpawnAttempts; // maximum spawn attempts before deleting the squad
+
 
 event InitGame( string Options, out string Error )
 {
@@ -24,10 +33,6 @@ event InitGame( string Options, out string Error )
     CmdLine = Options;
 
     KFGameLength = GetIntOption(Options, "GameLength", KFGameLength);
-    if ( KFGameLength < 0 || KFGameLength > 3) {
-        log("GameLength must be in [0..3]: 0-short, 1-medium, 2-long, 3-custom");
-        KFGameLength = GL_Long;
-    }
 
     TourneyMode = GetIntOption(Options, "Tourney", TourneyMode);
     PreStartTourney(TourneyMode);
@@ -37,11 +42,34 @@ event InitGame( string Options, out string Error )
     MaxPlayers = Clamp(GetIntOption( Options, "MaxPlayers", ConfigMaxPlayers ),0,32);
     default.MaxPlayers = Clamp( ConfigMaxPlayers, 0, 32 );
 
-    log("MonsterCollection = " $ MonsterCollection);
+    if ( ScrnBalanceMut.bScrnWaves ) {
+        if (ScrnGameLength == none ) // mutators might already load this
+            ScrnGameLength = new(none, string(KFGameLength)) class'ScrnGameLength';
+        ScrnGameLength.LoadGame(self);
+        FinalWave = ScrnGameLength.Waves.length - 1;
+    }
+    else {
+        if ( KFGameLength < 0 || KFGameLength > 3) {
+            log("GameLength must be in [0..3]: 0-short, 1-medium, 2-long, 3-custom");
+            KFGameLength = GL_Long;
+        }
+        log("MonsterCollection = " $ MonsterCollection);
+    }
 
     if ( TourneyMode > 0 )
         StartTourney();
 }
+
+// this one is called from PreBeginPlay()
+function InitGameReplicationInfo()
+{
+    Super.InitGameReplicationInfo();
+
+    ScrnGRI = ScrnGameReplicationInfo(GameReplicationInfo);
+    if ( ScrnGRI == none )
+        Warn("Wrong GameReplicationInfo class: " $ GameReplicationInfo);
+}
+
 static event class<GameInfo> SetGameType( string MapName )
 {
     local string prefix;
@@ -53,6 +81,18 @@ static event class<GameInfo> SetGameType( string MapName )
 		return default.class;
 
     return super.SetGameType( MapName );
+}
+
+function LoadUpMonsterList()
+{
+    if ( !ScrnBalanceMut.bScrnWaves )
+        super.LoadUpMonsterList();
+}
+
+function PrepareSpecialSquads()
+{
+    if ( !ScrnBalanceMut.bScrnWaves )
+        super.PrepareSpecialSquads();
 }
 
 function SetTurboScale(float NewScale)
@@ -69,29 +109,9 @@ event Tick(float DeltaTime)
     local float TrueTimeFactor;
     local Controller C;
 
-    if( bZEDTimeActive )
-    {
+    if( bZEDTimeActive ) {
         TrueTimeFactor = 1.1/Level.TimeDilation;
         CurrentZEDTimeDuration -= DeltaTime * TrueTimeFactor;
-
-        if( CurrentZEDTimeDuration < (ZEDTimeDuration*0.166) && CurrentZEDTimeDuration > 0 )
-        {
-            if( !bSpeedingBackUp )
-            {
-                bSpeedingBackUp = true;
-
-                for( C=Level.ControllerList;C!=None;C=C.NextController )
-                {
-                    if (KFPlayerController(C)!= none)
-                    {
-                        KFPlayerController(C).ClientExitZedTime();
-                    }
-                }
-            }
-
-            SetGameSpeed(Lerp( (TurboScale * CurrentZEDTimeDuration/(ZEDTimeDuration*0.166)),TurboScale, ZedTimeSlomoScale ));
-        }
-
 
         if( CurrentZEDTimeDuration <= 0 )
         {
@@ -99,6 +119,16 @@ event Tick(float DeltaTime)
             bSpeedingBackUp = false;
             SetGameSpeed(TurboScale);
             ZedTimeExtensionsUsed = 0;
+        }
+        else if( CurrentZEDTimeDuration < (ZEDTimeDuration*0.166) ) {
+            if( !bSpeedingBackUp ) {
+                bSpeedingBackUp = true;
+                for( C=Level.ControllerList;C!=None;C=C.NextController ) {
+                    if (KFPlayerController(C)!= none)
+                        KFPlayerController(C).ClientExitZedTime();
+                }
+            }
+            SetGameSpeed(Lerp( (TurboScale * CurrentZEDTimeDuration/(ZEDTimeDuration*0.166)),TurboScale, ZedTimeSlomoScale ));
         }
     }
 }
@@ -190,7 +220,7 @@ function int ReduceDamage(int Damage, pawn injured, pawn instigatedBy, vector Hi
     if ( instigatedBy == None)
         return Damage;
 
-    if ( Level.Game.GameDifficulty <= 3 )
+    if ( GameDifficulty <= 3 )
     {
         if ( injured.IsPlayerPawn() && (injured == instigatedby) && (Level.NetMode == NM_Standalone) )
             Damage *= 0.5;
@@ -233,14 +263,13 @@ function Killed(Controller Killer, Controller Killed, Pawn KilledPawn, class<Dam
 
                 StatsAndAchievements.AddKill(false, false, false, false, false, false, false, false, false, "");
             }
-
         }
     }
 
     if ( (MonsterController(Killed) != None) || (Monster(KilledPawn) != None) )
     {
         ZombiesKilled++;
-        KFGameReplicationInfo(GameReplicationInfo).MaxMonsters = Max(TotalMaxMonsters + NumMonsters - 1,0);
+        ScrnGRI.MaxMonsters = Max(TotalMaxMonsters + NumMonsters - 1, 0);
         if ( !bDidTraderMovingMessage )
         {
             if ( PlayerController(Killer) != none && float(ZombiesKilled) / float(ZombiesKilled + TotalMaxMonsters + NumMonsters - 1) >= 0.20 )
@@ -260,8 +289,8 @@ function Killed(Controller Killer, Controller Killed, Pawn KilledPawn, class<Dam
             {
                 if ( WaveNum < FinalWave - 1 || (WaveNum < FinalWave && bUseEndGameBoss) )
                 {
-                    if ( Level.NetMode != NM_Standalone || Killer.Pawn == none || KFGameReplicationInfo(GameReplicationInfo).CurrentShop == none ||
-                         VSizeSquared(Killer.Pawn.Location - KFGameReplicationInfo(GameReplicationInfo).CurrentShop.Location) > 2250000 ) // 30 meters
+                    if ( Level.NetMode != NM_Standalone || Killer.Pawn == none || ScrnGRI.CurrentShop == none ||
+                         VSizeSquared(Killer.Pawn.Location - ScrnGRI.CurrentShop.Location) > 2250000 ) // 30 meters
                     {
                         // Have Trader tell players that the Shop's Almost Open
                         PlayerController(Killer).Speech('TRADER', 1, "");
@@ -298,11 +327,64 @@ exec function KillZeds()
             Monsters[Monsters.length] = M;
     }
 
-    PC = Level.GetLocalPlayerController();
     for ( i=0; i<Monsters.length; ++i )
-        Monsters[i].Died(PC, class'DamageType', M.Location);
+        Monsters[i].Died(Monsters[i].Controller, class'DamageType', Monsters[i].Location);
 }
 
+function KillRemainingZeds(bool bForceKill)
+{
+    local Controller C, NextC;
+
+    for ( C = Level.ControllerList; C != None; C = NextC ) {
+        NextC = C.NextController; // use this because calling KilledBy() can destroy C
+        if ( KFMonsterController(C)!=None && (bForceKill || KFMonsterController(C).CanKillMeYet()) )
+            C.Pawn.KilledBy( C.Pawn );
+    }
+}
+
+
+// Force slomo for a longer period of time when the boss dies
+function DoBossDeath()
+{
+    local Controller C, NextC;
+    local PlayerController PC;
+    local KFMonster DeadBoss;
+    local int i;
+
+    bZEDTimeActive =  true;
+    bSpeedingBackUp = false;
+    LastZedTimeEvent = Level.TimeSeconds;
+    CurrentZEDTimeDuration = ZEDTimeDuration*2;
+    SetGameSpeed(ZedTimeSlomoScale);
+
+    if (!bWaveBossInProgress)
+        return;
+
+    // all bosses must be dead before ending the game
+    for ( i = 0; i < Bosses.length; ++i ) {
+        if ( Bosses[i] != none ) {
+            if ( Bosses[i].Health > 0 )
+                return; // boss is still alive
+            DeadBoss = Bosses[i];
+        }
+    }
+
+	for ( C = Level.ControllerList; C != None; C = NextC ) {
+        NextC = C.NextController;
+        PC = PlayerController(C);
+		if( PC != none ) {
+            if ( DeadBoss != none ) {
+                PC.SetViewTarget(DeadBoss);
+                PC.ClientSetViewTarget(DeadBoss);
+                PC.bBehindView = true;
+                PC.ClientSetBehindView(True);
+            }
+		}
+        else if ( KFMonsterController(C) != none ) {
+            C.GotoState('GameEnded');
+        }
+	}
+}
 
 // Calculate spawning cost.
 // Bug Fixes by PooSH:
@@ -415,7 +497,7 @@ function ZombieVolume FindSpawningVolume(optional bool bIgnoreFailedSpawnTime, o
 {
     local ZombieVolume BestZ, CurZ;
     local float BestScore,tScore;
-    local int i,j;
+    local int i,j,k;
     local Controller C;
     local bool bCanSpawnAll;
     local byte ZombieFlag;
@@ -429,21 +511,34 @@ function ZombieVolume FindSpawningVolume(optional bool bIgnoreFailedSpawnTime, o
     for( i=0; i<ZedSpawnList.Length; i++ ) {
         CurZ = ZedSpawnList[i];
         // check if it can spawn all zeds in the squad  -- PooSH
-        if ( !CurZ.bNormalZeds || !CurZ.bRangedZeds || !CurZ.bLeapingZeds || !CurZ.bMassiveZeds ) {
-            bCanSpawnAll = true;
-            for ( j=0; bCanSpawnAll && j<NextSpawnSquad.length; ++j ) {
-                ZombieFlag = NextSpawnSquad[j].default.ZombieFlag;
-                if( (!CurZ.bNormalZeds && ZombieFlag==0)
-                    || (!CurZ.bRangedZeds && ZombieFlag==1)
-                    || (!CurZ.bLeapingZeds && ZombieFlag==2)
-                    || (!CurZ.bMassiveZeds && ZombieFlag==3) )
-                {
+        bCanSpawnAll = true;
+        for ( j=0; bCanSpawnAll && j<NextSpawnSquad.length; ++j ) {
+            ZombieFlag = NextSpawnSquad[j].default.ZombieFlag;
+            if( (!CurZ.bNormalZeds && ZombieFlag==0)
+                || (!CurZ.bRangedZeds && ZombieFlag==1)
+                || (!CurZ.bLeapingZeds && ZombieFlag==2)
+                || (!CurZ.bMassiveZeds && ZombieFlag==3) )
+            {
+                bCanSpawnAll = false;
+                break;
+            }
+            for ( k = 0; k < CurZ.DisallowedZeds.length; ++k ) {
+                if( ClassIsChildOf(NextSpawnSquad[j], CurZ.DisallowedZeds[k]) ) {
                     bCanSpawnAll = false;
+                    break;
                 }
             }
-            if ( !bCanSpawnAll )
-                continue;
+            if ( CurZ.OnlyAllowedZeds.Length > 0 ) {
+                for ( k = 0; k < CurZ.OnlyAllowedZeds.length; ++k ) {
+                    if( !ClassIsChildOf(NextSpawnSquad[j], CurZ.OnlyAllowedZeds[k]) ) {
+                        bCanSpawnAll = false;
+                        break;
+                    }
+                }
+            }
         }
+        if ( !bCanSpawnAll )
+            continue;
 
         if ( bCloserZedSpawns )
             tScore = RateZombieVolume(CurZ,C,bIgnoreFailedSpawnTime, bBossSpawning);
@@ -460,6 +555,113 @@ function ZombieVolume FindSpawningVolume(optional bool bIgnoreFailedSpawnTime, o
         return super.FindSpawningVolume(bIgnoreFailedSpawnTime, bBossSpawning);
 
     return BestZ;
+}
+
+static function string ZedSquadToString(out array< class<KFMonster> > Squad)
+{
+    local string str;
+    local int i;
+
+    if ( Squad.length == 0 )
+        return "<empty>";
+    str = "(" $ GetItemName(string(Squad[0].name));
+    for ( i = 1; i < Squad.length; ++i ) {
+        str $= "," $ GetItemName(string(Squad[i].name));
+    }
+    str $= ")";
+
+    return str;
+}
+function bool AddSquad()
+{
+    if ( ScrnGameLength == none )
+        return super.AddSquad();
+
+    if ( NextSpawnSquad.length==0 ) {
+        LastZVol = none;
+        ScrnGameLength.LoadNextSpawnSquad(NextSpawnSquad);
+        if ( NextSpawnSquad.length == 0 )
+            return false;
+    }
+
+    if ( LastZVol==none ) {
+        LastZVol = FindSpawningVolume();
+        if ( LastZVol == none && ScrnGameLength.bLoadedSpecial ) {
+            // do not give up on special squads that easy
+            LastZVol = FindSpawningVolume(true);
+            if ( LastZVol == none ) {
+                 log("Couldn't find a place for Special Squad "$ZedSquadToString(NextSpawnSquad), class.name);
+            }
+        }
+        if( LastZVol!=None ) {
+            LastSpawningVolume = LastZVol;
+        }
+    }
+
+    if ( LastZVol == None ) {
+        log("Unable to find a spawn volume for " $ ZedSquadToString(NextSpawnSquad), class.name);
+        NextSpawnSquad.length = 0;
+        return false;
+    }
+
+    //Log("Spawn on"@LastZVol.Name);
+    if ( SpawnSquad(LastZVol, NextSpawnSquad) > 0 ) {
+        if ( ScrnGameLength.bLoadedSpecial )
+            MaxSpecialSpawnAttempts = MaxSpecialSpawnAttempts;
+        else
+            MaxSpawnAttempts = default.MaxSpawnAttempts;
+        return true;
+    }
+    else if ( --MaxSpawnAttempts > 0 ) {
+        TryToSpawnInAnotherVolume();
+    }
+    else {
+        log("Unable to spawn squad " $ NextSpawnSquad[0], class.name);
+        NextSpawnSquad.length = 0;
+    }
+    return false;
+}
+
+function BuildNextSquad()
+{
+    if ( ScrnGameLength != none )
+        ScrnGameLength.LoadNextSpawnSquad(NextSpawnSquad);
+    else
+        super.BuildNextSquad();
+}
+
+function AddSpecialSquad()
+{
+    // ScrnGameLength decides itself when to spawn special or regular squad
+    if ( ScrnGameLength != none )
+        ScrnGameLength.LoadNextSpawnSquad(NextSpawnSquad);
+    else
+        super.AddSpecialSquad();
+}
+
+function AddSpecialPatriarchSquad()
+{
+    if ( ScrnGameLength != none )
+        ScrnGameLength.LoadNextSpawnSquad(NextSpawnSquad);
+    else
+        super.AddSpecialPatriarchSquad();
+}
+
+function AddBossBuddySquad()
+{
+    if ( ScrnGameLength == none ) {
+        super.AddBossBuddySquad();
+        return;
+    }
+
+    if ( !bWaveBossInProgress )
+        return;
+
+    TotalMaxMonsters += ScaleMonsterCount(ScrnGameLength.Wave.Counter); // num monsters in wave
+    ScrnGRI.MaxMonsters = TotalMaxMonsters + NumMonsters; // num monsters in wave replicated to clients
+	MaxMonsters = Clamp(TotalMaxMonsters,1,16); // max monsters that can be spawned - limit to 16 in boss waves
+    NextMonsterTime = Level.TimeSeconds;
+    FinalSquadNum++;
 }
 
 // reserved for TSC
@@ -484,7 +686,7 @@ function ShowPathTo(PlayerController CI, int DestinationIndex)
     if ( TSCGameReplicationInfo(GameReplicationInfo) != none )
         shop = TSCGameReplicationInfo(GameReplicationInfo).GetPlayerShop(CI.PlayerReplicationInfo);
     else
-        shop = KFGameReplicationInfo(GameReplicationInfo).CurrentShop;
+        shop = ScrnGRI.CurrentShop;
 
     if( shop == none )
         return;
@@ -558,7 +760,7 @@ protected function StartTourney()
     if ( GameDifficulty < 4 ) {
         // hard difficulty at least
         GameDifficulty = 4;
-        KFGameReplicationInfo(GameReplicationInfo).GameDiff = GameDifficulty;
+        ScrnGRI.GameDiff = GameDifficulty;
         ScrnBalanceMut.SetLevels();
     }
     TurboScale = 1.0;
@@ -846,7 +1048,7 @@ function bool AllowBecomeActivePlayer(PlayerController CI)
 
 function GiveStartingCash(PlayerController PC)
 {
-    PC.PlayerReplicationInfo.Score = StartingCash + CalcStartingCashBonus(PC);
+    PC.PlayerReplicationInfo.Score = max(0, StartingCash + CalcStartingCashBonus(PC));
     if ( ScrnPlayerController(PC) != none )
         ScrnPlayerController(PC).StartCash = PC.PlayerReplicationInfo.Score; // prevent tossing bonus too
 }
@@ -931,9 +1133,10 @@ function ChangeName(Controller Other, string S, bool bNameChange)
 				PlayerController(C).ReceiveLocalizedMessage( class'GameMessage', 2, Other.PlayerReplicationInfo );
 }
 
-// used by TSC
 function int CalcStartingCashBonus(PlayerController PC)
 {
+    if ( ScrnGameLength != none )
+        return ScrnGameLength.StartingCashBonus;
     return 0;
 }
 
@@ -945,24 +1148,10 @@ function byte RelativeWaveNum(float LongGameWaveNum)
     return ceil(LongGameWaveNum * FinalWave / 10.0);
 }
 
-function SetupWave()
+function int ScaleMonsterCount(int SoloNormalCounter)
 {
-	local float NewMaxMonsters;
-	local float DifficultyMod, NumPlayersMod;
 	local int UsedNumPlayers;
-    local Controller C;
-
-    WavePlayerCount = 0;
-    for ( C = Level.ControllerList; C != none; C = C.nextController ) {
-        if ( C.bIsPlayer && C.Pawn != none && C.Pawn.Health > 0 ) {
-            ++WavePlayerCount;
-		}
-    }
-
-    super.SetupWave();
-
-    // adjust wave size
-	NewMaxMonsters = Waves[min(WaveNum,15)].WaveMaxMonsters;
+	local float DifficultyMod, NumPlayersMod;
 
     // scale number of zombies by difficulty
     if ( GameDifficulty >= 7.0 ) // Hell on Earth
@@ -1002,15 +1191,103 @@ function SetupWave()
         default:
             NumPlayersMod = 4.5 + (UsedNumPlayers-6)*ScrnBalanceMut.Post6ZedsPerPlayer; // 7+ player game
 	}
+    return Clamp(SoloNormalCounter * DifficultyMod * NumPlayersMod, 1, ScrnBalanceMut.MaxWaveSize);
+}
 
-    NewMaxMonsters = Clamp(NewMaxMonsters * DifficultyMod * NumPlayersMod, 5, ScrnBalanceMut.MaxWaveSize);
-	TotalMaxMonsters = NewMaxMonsters;  // num monsters in wave
-	KFGameReplicationInfo(GameReplicationInfo).MaxMonsters = NewMaxMonsters; // num monsters in wave replicated to clients
-	MaxMonsters = Clamp(TotalMaxMonsters,5,MaxZombiesOnce); // max monsters that can be spawned
+function SetupWave()
+{
+    local byte WaveIndex;
+    local int i;
+    local bool bOneMessage;
+    local Controller C;
+    local InvasionBot B;
+
+    bWaveInProgress = true;
+    ScrnGRI.bWaveInProgress = true;
 
     // auto lock teams
     if ( (WaveNum+1) == RelativeWaveNum(ScrnBalanceMut.LockTeamAutoWave) )
         LockTeams();
+
+    NextMonsterTime = Level.TimeSeconds + 5.0;
+    TraderProblemLevel = 0;
+    rewardFlag=false;
+    ZombiesKilled=0;
+    WaveMonsters = 0;
+    WaveNumClasses = 0;
+    WavePlayerCount = AlivePlayerCount;
+
+    SetupPickups();
+
+    if (ScrnGameLength != none ) {
+        ScrnGameLength.RunWave();
+    }
+
+    if( WaveNum == FinalWave && bUseEndGameBoss ) {
+        StartWaveBoss();
+        return;
+    }
+
+    if ( ScrnGameLength != none ) {
+        TotalMaxMonsters = ScrnGameLength.GetWaveZedCount();
+        WaveEndTime = ScrnGameLength.GetWaveEndTime();
+        AdjustedDifficulty = GameDifficulty + lerp(float(WaveNum)/FinalWave, 0.1, 0.3);
+    }
+    else {
+        WaveIndex = min(WaveNum,15);
+        TotalMaxMonsters = Waves[WaveIndex].WaveMaxMonsters;
+        WaveEndTime = Level.TimeSeconds + Waves[WaveIndex].WaveDuration;
+        AdjustedDifficulty = GameDifficulty + Waves[WaveIndex].WaveDifficulty;
+    }
+
+	TotalMaxMonsters = max(8, ScaleMonsterCount(TotalMaxMonsters));  // num monsters in wave
+	MaxMonsters = min(TotalMaxMonsters + NumMonsters, MaxZombiesOnce); // max monsters that can be spawned
+	ScrnGRI.MaxMonsters = TotalMaxMonsters + NumMonsters; // num monsters in wave replicated to clients
+	ScrnGRI.MaxMonstersOn = true; // I've no idea what is this for
+
+    for( i = 0; i < ZedSpawnList.Length; ++i )
+        ZedSpawnList[i].Reset();
+
+    //Now build the first squad to use
+    SquadsToUse.Length = 0; // force BuildNextSquad() to rebuild squad list
+    SpecialListCounter = 0;
+    BuildNextSquad();
+
+    // moved here from TraderTimer
+    for ( C = Level.ControllerList; C != none; C = C.NextController ) {
+        B = InvasionBot(C);
+        if ( B != none ) {
+            B.bDamagedMessage = false;
+            B.bInitLifeMessage = false;
+
+            if ( !bOneMessage && (FRand() < 0.65) ) {
+                bOneMessage = true;
+                if ( B.Squad.SquadLeader != None && B.Squad.CloseToLeader(C.Pawn) ) {
+                    B.SendMessage(B.Squad.SquadLeader.PlayerReplicationInfo, 'OTHER', B.GetMessageIndex('INPOSITION'), 20, 'TEAM');
+                    B.bInitLifeMessage = false;
+                }
+            }
+        }
+        else if ( PlayerController(C) != none ) {
+            PlayerController(C).LastPlaySpeech = 0;
+            if ( KFPlayerController(C) != none )
+                KFPlayerController(C).bHasHeardTraderWelcomeMessage = false;
+        }
+    }
+}
+
+function SetupPickups()
+{
+    local int i, j;
+
+    // let mutator do the job
+    ScrnBalanceMut.SetupPickups(false);
+
+    for ( i = 0; i < AmmoPickups.length; ++i ) {
+        if ( AmmoPickups[i].bSleeping )
+            SleepingAmmo[j++] = AmmoPickups[i];
+    }
+    SleepingAmmo.length = j;
 }
 
 function AmmoPickedUp(KFAmmoPickup PickedUp)
@@ -1047,41 +1324,270 @@ function RespawnDoors()
     }
 }
 
+function StartWaveBoss()
+{
+    local int i;
+
+    // reset spawn volumes
+    LastZVol = none;
+    LastSpawningVolume = none;
+    FinalSquadNum = 0;
+    NextMonsterTime = Level.TimeSeconds;
+    bBossSpawned = false;
+
+    for( i = 0; i < ZedSpawnList.Length; ++i )
+        ZedSpawnList[i].Reset();
+    WaveEndTime = Level.TimeSeconds+60;
+
+    if ( ScrnGameLength == none ) {
+        if( KFGameLength != GL_Custom ) {
+            NextSpawnSquad[0] = Class<KFMonster>(DynamicLoadObject(MonsterCollection.default.EndGameBossClass,Class'Class'));
+            NextspawnSquad[0].static.PreCacheAssets(Level);
+        }
+        else {
+            NextSpawnSquad[0] = Class<KFMonster>(DynamicLoadObject(EndGameBossClass,Class'Class'));
+            NextspawnSquad[0].static.PreCacheAssets(Level);
+        }
+    }
+    else {
+        ScrnGameLength.LoadNextSpawnSquad(NextSpawnSquad);
+        log("Boss Squad: " $ ZedSquadToString(NextSpawnSquad), class.name);
+    }
+
+    if ( NextSpawnSquad.length == 0 ) {
+        Broadcast(Self,"Game ended due to lack of bosses");
+        EndGame(None,"TimeLimit");
+        return;
+    }
+
+    ScrnGRI.MaxMonsters = NextSpawnSquad.length;
+    TotalMaxMonsters = NextSpawnSquad.length;
+    MaxMonsters = NextSpawnSquad.length;
+    bWaveBossInProgress = True;
+    bHasSetViewYet = False;
+}
+
 // removed setting NextSpawnSquad, because it already has been set in StartWaveBoss()
 function bool AddBoss()
 {
-    local int numspawned;
-    local class<KFMonster> BossClass;
+    if ( NextSpawnSquad.length == 0 ) {
+        NextMonsterTime = Level.TimeSeconds + 99999; // never
+        return false;
+    }
 
-    BossClass = NextSpawnSquad[0];
     if( LastZVol == none )
     {
         LastZVol = FindSpawningVolume(false, true);
         if( LastZVol == none ) {
             LastZVol = FindSpawningVolume(true, true);
             if( LastZVol == none ) {
-                log("Couldn't find a place for the Boss ("$BossClass$")after 2 tries, trying again later!!!", class.name);
+                log("Couldn't find a place for the Boss "$ZedSquadToString(NextSpawnSquad)$" after 2 tries, trying again later!", class.name);
                 TryToSpawnInAnotherVolume(true);
                 return false;
             }
         }
     }
-    // How many zombies can we have left to spawn at once
     LastSpawningVolume = LastZVol;
-    if(LastZVol.SpawnInHere(NextSpawnSquad,,numspawned,TotalMaxMonsters,32,,true))
-    {
-        log("Boss spawned: "$BossClass $ " (x"$numspawned$")", class.name);
-        NumMonsters+=numspawned;
-        WaveMonsters+=numspawned;
+    if( SpawnSquad(LastZVol, NextSpawnSquad, true) > 0 ) {
+        WaveEndTime += 120;
+        if ( NextSpawnSquad.length == 0 ) {
+            bBossSpawned = true;
+            NextMonsterTime = Level.TimeSeconds + 99999; // never (wait for AddBossBuddySquad)
+            WaveEndTime += 3600;
+        }
+        else {
+            NextMonsterTime =  Level.TimeSeconds + 0.2;
+        }
         return true;
     }
-    else
-    {
-        log("Failed to spawn the Boss: "$BossClass, class.name);
+    else {
+        log("Failed to spawn the Boss: "$ZedSquadToString(NextSpawnSquad), class.name);
         TryToSpawnInAnotherVolume(true);
         return false;
     }
 }
+
+// Override of ZombieVolume.SpawnInHere() fixing a lot of Tripwire's crap.
+// Checks (zombies flags etc.) removed because they already have been made in FindSpawningVolume().
+// Function assumes that entire NextSpawnSquad can be spawned here
+function int SpawnSquad(ZombieVolume ZVol, out array< class<KFMonster> > Squad, optional bool bLogSpawned )
+{
+    local int i, j, numspawned;
+    local rotator RandRot;
+    local KFMonster M;
+
+    if ( ZVol == none ) {
+        log("Unable to spawn squad: Zombie volume is not set", class.name);
+        return 0;
+    }
+    if ( ZVol.SpawnPos.length == 0 ) {
+        log("Zombie volume is not set: "$ZVol.name$" has no spawn points", class.name);
+        return 0;
+    }
+
+    for ( i = 0; i < Squad.Length && NumMonsters < MaxMonsters && TotalMaxMonsters > 0; ++i ) {
+        RandRot.Yaw = Rand(65536);
+        for ( M = none; M == none && j < ZVol.SpawnPos.length; ++j ) {
+            if ( !ZVol.bAllowPlainSightSpawns && PlayerCanSeeSpawnPoint(ZVol.SpawnPos[j], Squad[i]) )
+                continue;
+
+            M = Spawn(Squad[i],,ZVol.ZombieSpawnTag,ZVol.SpawnPos[j],RandRot);
+            if ( M == none )
+                continue;
+
+            M.Event = ZVol.ZombieDeathEvent;
+            if ( ZVol.ZombieSpawnEvent != '' )
+                TriggerEvent(ZVol.ZombieSpawnEvent, ZVol, M);
+            ZVol.AddZEDToSpawnList(M);
+
+            --TotalMaxMonsters;
+            ++NumMonsters;
+            ++WaveMonsters;
+            ++numspawned;
+            Squad.remove(i--, 1);
+
+            if ( bLogSpawned )
+                log("Zed spawned: "$M.class, class.name);
+        }
+    }
+
+    if ( Squad.Length > 0 ) {
+        log("Spawned " $ numspawned $ " of " $ string(numspawned + Squad.Length) $ " in " $ ZVol.name, class.name);
+        log("Remaining: " $ ZedSquadToString(Squad), class.name);
+    }
+
+    if( numspawned>0 ) {
+        ZVol.LastSpawnTime = Level.TimeSeconds;
+        ZVol.LastFailedSpawnTime = 0;
+    }
+    else {
+        ZVol.LastFailedSpawnTime = Level.TimeSeconds;
+    }
+    return numspawned;
+}
+
+function bool PlayerCanSeeSpawnPoint(vector SpawnLoc, class <KFMonster> TestMonster)
+{
+    local Controller C;
+    local vector Right, Test, PlayerLoc;
+
+	// Now make sure no player sees the spawn point.
+	for ( C = Level.ControllerList; C != none; C = C.NextController ) {
+		if( C.Pawn != none && C.bIsPlayer && C.Pawn.Health > 0 ) {
+            PlayerLoc = C.Pawn.Location + C.Pawn.EyePosition();
+            if ( C.Pawn.Region.Zone.bDistanceFog && VSize(SpawnLoc - PlayerLoc) > C.Pawn.Region.Zone.DistanceFogEnd )
+                continue; // SpawnLoc is in fog
+
+            Right = ((SpawnLoc - C.Pawn.Location) cross vect(0.f,0.f,1.f));
+			Right = Normal(Right) * TestMonster.Default.CollisionRadius * 1.1;
+            Test = SpawnLoc;
+			Test.Z += TestMonster.Default.CollisionHeight * 1.25;
+
+            // Do three traces, one to the location, and one slightly above left and right of the collision
+            // cylinder size so we don't see this zed spawn
+            if( FastTrace(SpawnLoc, PlayerLoc)
+                || FastTrace(Test + Right, PlayerLoc)
+                || FastTrace(Test - Right, PlayerLoc) )
+            {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+function AdjustBotCount()
+{
+    if ( NeedPlayers() && AddBot() && RemainingBots > 0 )
+        RemainingBots--;
+
+    if (!bNoBots && !bBotsAdded) {
+        if(ScrnGRI != none)
+
+        if((NumPlayers + NumBots) < MaxPlayers && ScrnGRI.PendingBots > 0 )
+        {
+            AddBots(1);
+            ScrnGRI.PendingBots --;
+        }
+
+        if (ScrnGRI.PendingBots == 0)
+        {
+            bBotsAdded = true;
+            return;
+        }
+    }
+
+}
+
+function BossGrandEntry()
+{
+    local Controller C;
+    local PlayerController PC;
+    local KFMonster M;
+
+    Bosses.length = 0;
+    for ( C = Level.ControllerList; C != None; C = C.NextController ) {
+        M = KFMonster(C.Pawn);
+        if ( M != none && m.Health > 0 && M.MakeGrandEntry() ) {
+            Bosses[Bosses.length] = M;
+            ScrnBalanceMut.GameRules.InitBoss(M);
+        }
+    }
+    if ( Bosses.length > 0 )
+        ViewingBoss = Bosses[0];
+
+    if( ViewingBoss != none ) {
+        ViewingBoss.bAlwaysRelevant = True;
+        for ( C = Level.ControllerList; C != None; C = C.NextController ) {
+            PC = PlayerController(C);
+            if( PC == none )
+                continue;
+            PC.SetViewTarget(ViewingBoss);
+            PC.ClientSetViewTarget(ViewingBoss);
+            PC.bBehindView = True;
+            PC.ClientSetBehindView(True);
+            PC.ClientSetMusic(BossBattleSong,MTRAN_FastFade);
+            if ( PC.PlayerReplicationInfo!=None && bRespawnOnBoss ) {
+                PC.PlayerReplicationInfo.bOutOfLives = false;
+                PC.PlayerReplicationInfo.NumLives = 0;
+                if ( PC.Pawn == None && !C.PlayerReplicationInfo.bOnlySpectator )
+                    PC.GotoState('PlayerWaiting');
+            }
+        }
+    }
+}
+
+function BossGrandExit()
+{
+    local Controller C;
+    local PlayerController PC;
+
+    for ( C = Level.ControllerList; C != None; C = C.NextController ) {
+        PC = PlayerController(C);
+        if( PC == none )
+            continue;
+
+        if( PC.Pawn==None && !PC.PlayerReplicationInfo.bOnlySpectator && bRespawnOnBoss )
+            PC.ServerReStartPlayer();
+
+        if( PC.Pawn!=None ) {
+            PC.SetViewTarget(C.Pawn);
+            PC.ClientSetViewTarget(C.Pawn);
+        }
+        else {
+            PC.SetViewTarget(C);
+            PC.ClientSetViewTarget(C);
+        }
+        PC.bBehindView = False;
+        PC.ClientSetBehindView(False);
+    }
+}
+
+// global funciton definitions to prevent crashes during function calls at state transitions
+function BattleTimer() {}
+function WaveTimer() {}
+function BossWaveTimer() {}
+function TraderTimer() {}
 
 // ==================================== STATES ===============================
 auto State PendingMatch
@@ -1168,169 +1674,420 @@ auto State PendingMatch
                 LobbyTimeout--;
             }
 
-            KFGameReplicationInfo(GameReplicationInfo).LobbyTimeout = LobbyTimeout;
+            ScrnGRI.LobbyTimeout = LobbyTimeout;
         }
         else
         {
-            KFGameReplicationInfo(GameReplicationInfo).LobbyTimeout = -1;
+            ScrnGRI.LobbyTimeout = -1;
         }
     }
 }
 
 State MatchInProgress
 {
+    function BeginState()
+    {
+        Super.BeginState();
+
+        if ( ScrnGameLength != none ) {
+            if (!ScrnGameLength.LoadWave(WaveNum)) {
+                DoWaveEnd();
+            }
+            else {
+                WaveCountDown = max(10, ScrnGameLength.Wave.TraderTime);
+            }
+        }
+    }
+
+    function bool UpdateMonsterCount()
+    {
+        local Controller C;
+        local PlayerReplicationInfo PRI;
+
+        AliveTeamPlayerCount[0] = 0;
+        AliveTeamPlayerCount[1] = 0;
+        NumMonsters = 0;
+
+        for ( C = Level.ControllerList; C != none;  C = C.NextController ) {
+            if( C.Pawn == none || C.Pawn.Health <= 0 )
+                continue;
+
+            if ( C.bIsPlayer ) {
+                PRI = C.PlayerReplicationInfo;
+                if ( PRI != none && !PRI.bOnlySpectator && !PRI.bIsSpectator
+                        && PRI.Team != none && PRI.Team.TeamIndex <= 1)
+                {
+                    AliveTeamPlayerCount[PRI.Team.TeamIndex]++;
+                }
+            }
+            else if ( Monster(C.Pawn) != none ) {
+                NumMonsters++;
+            }
+        }
+        AlivePlayerCount = AliveTeamPlayerCount[0] + AliveTeamPlayerCount[1];
+        return AlivePlayerCount > 0;
+    }
+
     function SetupPickups()
     {
-        local int i, j;
+        global.SetupPickups();
+    }
 
-        // let mutator do the job
-        ScrnBalanceMut.SetupPickups(false);
+    function BattleTimer()
+    {
+        WaveTimeElapsed += 1.0;
 
-        for ( i = 0; i < AmmoPickups.length; ++i ) {
-            if ( AmmoPickups[i].bSleeping )
-                SleepingAmmo[j++] = AmmoPickups[i];
+        // Close Trader doors
+        if (bTradingDoorsOpen) {
+            CloseShops();
+            TraderProblemLevel = 0;
         }
-        SleepingAmmo.length = j;
+        if ( TraderProblemLevel < 4 ) {
+            if( BootShopPlayers() )
+                TraderProblemLevel = 0;
+            else
+                TraderProblemLevel++;
+        }
+
+        if ( ScrnGameLength != none ) {
+            ScrnGameLength.WaveTimer();
+        }
+    }
+
+    function WaveTimer()
+    {
+        BattleTimer();
+
+        if ( !MusicPlaying )
+            StartGameMusic(True);
+
+        if ( TotalMaxMonsters<=0 ) {
+             // all monsters spawned
+            if ( NumMonsters <= 5 )
+                KillRemainingZeds(false);
+        }
+        else if ( Level.TimeSeconds > NextMonsterTime && NumMonsters+NextSpawnSquad.Length <= MaxMonsters ) {
+            if ( ScrnGameLength != none )
+                WaveEndTime = ScrnGameLength.WaveEndTime;
+            else
+                WaveEndTime = Level.TimeSeconds + 60;
+
+            if( !bDisableZedSpawning )
+                AddSquad();
+
+            if( NextSpawnSquad.length > 0 )
+                NextMonsterTime = Level.TimeSeconds + 0.2;
+            else
+                NextMonsterTime = Level.TimeSeconds + CalcNextSquadSpawnTime();
+        }
+    }
+
+    function BossWaveTimer()
+    {
+        BattleTimer();
+
+        if ( bBossSpawned ) {
+            if( !bHasSetViewYet ) {
+                bHasSetViewYet = true;
+                BossGrandEntry();
+            }
+            else if( ViewingBoss != none && !ViewingBoss.bShotAnim ) {
+                ViewingBoss = None;
+                BossGrandExit();
+            }
+        }
+
+        if( TotalMaxMonsters <= 0 || Level.TimeSeconds > WaveEndTime ) {
+            // if everyone's spawned and they're all dead
+            if ( NumMonsters <= 0 )
+                DoWaveEnd();
+        }
+        else if ( Level.TimeSeconds > NextMonsterTime ) {
+            if ( !bBossSpawned )
+                AddBoss();
+            else if ( !bDisableZedSpawning ) {
+                AddSquad();
+                if ( NextSpawnSquad.length > 0 )
+                    NextMonsterTime = Level.TimeSeconds + 0.2;
+                else
+                    NextMonsterTime = Level.TimeSeconds + CalcNextSquadSpawnTime() * 2.0; // slower squad spawn in boss waves
+            }
+        }
+    }
+
+    function TraderTimer()
+    {
+        local Controller C;
+        local int i;
+
+        WaveCountDown--;
+        ScrnGRI.TimeToNextWave = WaveCountDown;
+
+        if ( !CalmMusicPlaying ) {
+            InitMapWaveCfg();
+            StartGameMusic(False);
+        }
+
+        // Select a shop if one isn't open
+        if ( ScrnGRI.CurrentShop == none )
+            SelectShop();
+
+        // Open Trader doors
+        if ( !bTradingDoorsOpen && ((ScrnGameLength != none && ScrnGameLength.Wave.bOpenTrader)
+                || (ScrnGameLength == none && WaveNum != InitialWave)) )
+        {
+            KillZeds(); // make sure that no zeds exist when we are opening trader doors
+            OpenShops();
+        }
+
+        if ( WaveCountDown == 30 || WaveCountDown == 10 ) {
+            if ( WaveCountDown == 30 )
+                i = 4; // Have Trader tell players that they've got 30 seconds
+            else
+                i = 5; // Have Trader tell players that they've got 10 seconds
+
+            for ( C = Level.ControllerList; C != None; C = C.NextController ) {
+                if ( KFPlayerController(C) != None )
+                    KFPlayerController(C).ClientLocationalVoiceMessage(C.PlayerReplicationInfo, none, 'TRADER', i);
+            }
+        }
+        else if ( (WaveCountDown > 0) && (WaveCountDown <= 5) ) {
+            if ( ScrnGameLength != none )
+                ScrnGameLength.SetWaveInfo();
+
+            if( WaveNum == FinalWave && bUseEndGameBoss )
+                BroadcastLocalizedMessage(class'ScrnBalanceSrv.ScrnWaitingMessage', 3);
+            else
+                BroadcastLocalizedMessage(class'ScrnBalanceSrv.ScrnWaitingMessage', 1);
+        }
+        else if ( WaveCountDown <= 1 ) {
+            SetupWave();
+        }
+    }
+
+    function Timer()
+    {
+        Global.Timer();
+
+        if ( !bFinalStartup ) {
+            bFinalStartup = true;
+            PlayStartupMessage();
+        }
+
+        ElapsedTime++;
+        GameReplicationInfo.ElapsedTime = ElapsedTime;
+        if( !UpdateMonsterCount() ) {
+            EndGame(None,"TimeLimit");
+            Return;
+        }
+
+        AdjustBotCount();
+        if( bUpdateViewTargs )
+            UpdateViews();
+
+        if (ScrnGameLength != none ) {
+            if ( bWaveBossInProgress || bWaveInProgress ) {
+                if ( ScrnGameLength.CheckWaveEnd() )
+                    DoWaveEnd();
+                else if ( bWaveBossInProgress )
+                    BossWaveTimer();
+                else
+                    WaveTimer();
+            }
+            else {
+                TraderTimer();
+            }
+        }
+        else if( bWaveBossInProgress ) {
+            BossWaveTimer();
+        }
+        else if( bWaveInProgress ) {
+            WaveTimer();
+        }
+        else if ( NumMonsters <= 0 )
+        {
+            if ( WaveNum > FinalWave || (!bUseEndGameBoss && WaveNum == FinalWave) ) {
+                EndGame(None,"TimeLimit");
+                return;
+            }
+            TraderTimer();
+        }
+    }
+
+    event Tick(float DeltaTime)
+    {
+        global.Tick(DeltaTime);
+
+        if ( ScrnBalanceMut.bBeta && bWaveInProgress && !bWaveBossInProgress
+                && !bDisableZedSpawning && TotalMaxMonsters > 0
+                && Level.TimeSeconds > NextMonsterTime
+                && NumMonsters+NextSpawnSquad.Length <= MaxMonsters )
+        {
+                AddSquad();
+                if( NextSpawnSquad.length > 0 )
+                    NextMonsterTime = Level.TimeSeconds + 0.2;
+                else
+                    NextMonsterTime = Level.TimeSeconds + CalcNextSquadSpawnTime();
+        }
+    }
+
+    function float CalcNextSquadSpawnTime()
+    {
+        local float NextSpawnTime;
+        local float SineMod;
+
+        SineMod = 1.0 - Abs(sin(WaveTimeElapsed * SineWaveFreq));
+
+        NextSpawnTime = KFLRules.WaveSpawnPeriod;
+
+        if( (WaveNum + 1) * 100 / FinalWave < 70 ) {
+            // Make the zeds come faster in the earlier waves
+            if( NumPlayers == 4 )
+                NextSpawnTime *= 0.85;
+            else if( NumPlayers == 5 )
+                NextSpawnTime *= 0.65;
+            else if( NumPlayers >= 6 )
+                NextSpawnTime *= 0.40;
+        }
+        else {
+            // Give a slightly bigger breather in the later waves
+            if( NumPlayers <= 3 )
+                NextSpawnTime *= 1.1;
+            else if( NumPlayers == 4 )
+                NextSpawnTime *= 1.0;
+            else if( NumPlayers == 5 )
+                NextSpawnTime *= 0.85;
+            else if( NumPlayers >= 6 )
+                NextSpawnTime *= 0.60;
+        }
+
+        // Make the zeds come a little faster at all times on harder and above
+        if ( GameDifficulty >= 4.0 ) // Hard
+            NextSpawnTime *= 0.85;
+
+        if ( ScrnGameLength != none )
+            ScrnGameLength.AdjustNextSpawnTime(NextSpawnTime);
+
+        NextSpawnTime += SineMod * (NextSpawnTime * 2);
+
+        return NextSpawnTime;
     }
 
     function DoWaveEnd()
     {
         local Controller C;
-        local PlayerController Survivor;
-        local int SurvivorCount;
+        local KFPlayerController KFPC;
+        local KFPlayerReplicationInfo KFPRI;
 
-        // Only reset this at the end of wave 0. That way the sine wave that scales
-        // the intensity up/down will be somewhat random per wave
-        if( WaveNum < 1 )
-        {
-            WaveTimeElapsed = 0;
-        }
-
-        if ( !rewardFlag )
+        if ( !rewardFlag ) {
+            if ( ScrnGameLength != none ) {
+                Teams[0].Score = int(Teams[0].Score * ScrnGameLength.BountyScale);
+                Teams[1].Score = int(Teams[1].Score * ScrnGameLength.BountyScale);
+            }
             RewardSurvivingPlayers();
-
-        if( bDebugMoney )
-        {
-            log("$$$$$$$$$$$$$$$$ Wave "$WaveNum$" TotalPossibleWaveMoney = "$TotalPossibleWaveMoney,'Debug');
-            log("$$$$$$$$$$$$$$$$ TotalPossibleMatchMoney = "$TotalPossibleMatchMoney,'Debug');
-            TotalPossibleWaveMoney=0;
         }
 
         // Clear Trader Message status
         bDidTraderMovingMessage = false;
         bDidMoveTowardTraderMessage = false;
 
+        Bosses.length = 0;
+        WaveNum++;
+
+        if ( WaveNum > FinalWave ) {
+            EndGame(None, "TimeLimit");
+            return;
+        }
+
+        ScrnGRI.WaveNumber = WaveNum;
+        if ( ScrnGameLength != none ) {
+            if ( !ScrnGameLength.LoadWave(WaveNum) ) {
+                DoWaveEnd();
+                return;
+            }
+            WaveCountDown = ScrnGameLength.Wave.TraderTime;
+            if ( WaveCountDown <= 0 ) {
+                SetupWave();
+                return;
+            }
+            if ( !ScrnGameLength.Wave.bOpenTrader ) {
+                SetupPickups();
+                ScrnBalanceMut.SetupPickups(false, true); // no trader = people need more ammo
+                ScrnBalanceMut.bPickupSetupReduced = true; // don't let ScrnBalance to reduce pickups again
+            }
+        }
+        else {
+            WaveCountDown = max(TimeBetweenWaves, 1);
+        }
+
         bWaveInProgress = false;
         bWaveBossInProgress = false;
         bNotifiedLastManStanding = false;
-        KFGameReplicationInfo(GameReplicationInfo).bWaveInProgress = false;
+        // replicate to clients
+        ScrnGRI.MaxMonstersOn = false;
+        ScrnGRI.TimeToNextWave = WaveCountDown;
+        ScrnGRI.bWaveInProgress = false;
 
-        WaveCountDown = Max(TimeBetweenWaves,1);
-        KFGameReplicationInfo(GameReplicationInfo).TimeToNextWave = WaveCountDown;
-        WaveNum++;
+        for ( C = Level.ControllerList; C != none; C = C.NextController ) {
+            if ( C.PlayerReplicationInfo == none )
+                continue;
 
-        for ( C = Level.ControllerList; C != none; C = C.NextController )
-        {
-            if ( C.PlayerReplicationInfo != none )
+            C.PlayerReplicationInfo.bOutOfLives = false;
+            C.PlayerReplicationInfo.NumLives = 0;
+
+            KFPC = KFPlayerController(C);
+            KFPRI = KFPlayerReplicationInfo(C.PlayerReplicationInfo);
+            if ( KFPC != none && KFPRI != none )
             {
-                C.PlayerReplicationInfo.bOutOfLives = false;
-                C.PlayerReplicationInfo.NumLives = 0;
+                KFPC.bChangedVeterancyThisWave = false;
+                if ( KFPRI.ClientVeteranSkill != KFPC.SelectedVeterancy )
+                    KFPC.SendSelectedVeterancyToServer();
 
-                if ( KFPlayerController(C) != none )
-                {
-                    if ( KFPlayerReplicationInfo(C.PlayerReplicationInfo) != none )
-                    {
-                        KFPlayerController(C).bChangedVeterancyThisWave = false;
-
-                        if ( KFPlayerReplicationInfo(C.PlayerReplicationInfo).ClientVeteranSkill != KFPlayerController(C).SelectedVeterancy )
-                        {
-                            KFPlayerController(C).SendSelectedVeterancyToServer();
-                        }
-                    }
+                if ( KFPC.Pawn == none && !KFPRI.bOnlySpectator ) {
+                    KFPRI.Score = Max(MinRespawnCash, KFPRI.Score);
+                    KFPC.GotoState('PlayerWaiting');
+                    KFPC.SetViewTarget(C);
+                    KFPC.ClientSetBehindView(false);
+                    KFPC.bBehindView = False;
+                    KFPC.ClientSetViewTarget(C.Pawn);
+                    KFPC.ServerReStartPlayer();
                 }
 
-                if ( C.Pawn != none )
-                {
-                    if ( PlayerController(C) != none )
-                    {
-                        Survivor = PlayerController(C);
-                        SurvivorCount++;
-                    }
-                }
-                else if ( !C.PlayerReplicationInfo.bOnlySpectator )
-                {
-                    C.PlayerReplicationInfo.Score = Max(MinRespawnCash,int(C.PlayerReplicationInfo.Score));
+                if ( KFSteamStatsAndAchievements(KFPC.SteamStatsAndAchievements) != none )
+                    KFSteamStatsAndAchievements(KFPC.SteamStatsAndAchievements).WaveEnded();
 
-                    if( PlayerController(C) != none )
-                    {
-                        PlayerController(C).GotoState('PlayerWaiting');
-                        PlayerController(C).SetViewTarget(C);
-                        PlayerController(C).ClientSetBehindView(false);
-                        PlayerController(C).bBehindView = False;
-                        PlayerController(C).ClientSetViewTarget(C.Pawn);
-                    }
-
-                    C.ServerReStartPlayer();
-                }
-
-                if ( KFPlayerController(C) != none )
-                {
-                    if ( KFSteamStatsAndAchievements(PlayerController(C).SteamStatsAndAchievements) != none )
-                    {
-                        KFSteamStatsAndAchievements(PlayerController(C).SteamStatsAndAchievements).WaveEnded();
-                    }
-
-                    // Don't broadcast this message AFTER the final wave!
-                    if( WaveNum < FinalWave )
-                    {
-                        KFPlayerController(C).bSpawnedThisWave = false;
-                        BroadcastLocalizedMessage(class'KFMod.WaitingMessage', 2);
-                    }
-                    else if ( WaveNum == FinalWave )
-                    {
-                        KFPlayerController(C).bSpawnedThisWave = false;
-                    }
-                    else
-                    {
-                        KFPlayerController(C).bSpawnedThisWave = true;
-                    }
-                }
+                KFPC.bSpawnedThisWave = WaveNum > FinalWave;
             }
         }
-
-        if ( Level.NetMode != NM_StandAlone && Level.Game.NumPlayers > 1 &&
-             SurvivorCount == 1 && Survivor != none && KFSteamStatsAndAchievements(Survivor.SteamStatsAndAchievements) != none )
-        {
-            KFSteamStatsAndAchievements(Survivor.SteamStatsAndAchievements).AddOnlySurvivorOfWave();
-        }
-
         bUpdateViewTargs = True;
-
-        RespawnDoors();
+        if ( WaveNum < FinalWave && (ScrnGameLength == none || ScrnGameLength.Wave.bOpenTrader) ) {
+            RespawnDoors();
+            BroadcastLocalizedMessage(class'ScrnBalanceSrv.ScrnWaitingMessage', 2);
+        }
     }
 
     function StartWaveBoss()
     {
-        // reset spawn volumes
-        LastZVol = none;
-        LastSpawningVolume = none;
-        // moved from AddBoss()
-        FinalSquadNum = 0;
-        super.StartWaveBoss();
+        global.StartWaveBoss();
     }
 }
 
 defaultproperties
 {
     GameName="ScrN Floor"
-
     Description="ScrN Edition of Killing Floor game mode (KFGameType)."
+
+    GameReplicationInfoClass=Class'ScrnBalanceSrv.ScrnGameReplicationInfo'
 
     PathWhisps(0)="KFMod.RedWhisp"
     PathWhisps(1)="KFMod.RedWhisp"
 
+    bUseEndGameBoss=True
     bCloserZedSpawns=True
     TurboScale=1.0
+
+    MaxSpawnAttempts=3
+    MaxSpecialSpawnAttempts=10
 
     // copied from last two LongWaves
     NormalWaves(5)=(WaveMask=75393519,WaveMaxMonsters=40,WaveDuration=255,WaveDifficulty=0.300000)

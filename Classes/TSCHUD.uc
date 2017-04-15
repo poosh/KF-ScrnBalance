@@ -279,21 +279,12 @@ simulated function DrawKFHUDTextElements(Canvas C)
     C.FontScaleY = FMin(ResScale,1.f);
 
     // Countdown Text
-    if( !KFGRI.bWaveInProgress )
+    if( !KFGRI.bWaveInProgress || TSCGRI.WaveEndRule == 2 /*RULE_Timeout*/ )
     {
         C.SetDrawColor(255, 255, 255, 255);
         C.SetPos(C.ClipX - CircleSize, 2);
 
         C.DrawTile(WaveGB[TeamIndex], CircleSize, CircleSize, 0, 0, 256, 256);
-
-        if ( KFGRI.TimeToNextWave <= 5 )
-        {
-            // Hints
-               if ( bIsSecondDowntime )
-               {
-                KFPlayerController(PlayerOwner).CheckForHint(40);
-            }
-        }
 
         Min = KFGRI.TimeToNextWave / 60;
         NumZombies = KFGRI.TimeToNextWave - (Min * 60);
@@ -307,18 +298,6 @@ simulated function DrawKFHUDTextElements(Canvas C)
     }
     else
     {
-        //Hints
-        if ( KFPlayerController(PlayerOwner) != none )
-        {
-            KFPlayerController(PlayerOwner).CheckForHint(30);
-
-            if ( !bHint_45_TimeSet && KFGRI.WaveNumber == 1)
-            {
-                Hint_45_Time = Level.TimeSeconds + 5;
-                bHint_45_TimeSet = true;
-            }
-        }
-
         C.SetDrawColor(255, 255, 255, 255);
         C.SetPos(C.ClipX - CircleSize, 2);
         C.DrawTile(WaveGB[2+TeamIndex], CircleSize, CircleSize, 0, 0, 256, 256);
@@ -329,16 +308,15 @@ simulated function DrawKFHUDTextElements(Canvas C)
         C.DrawColor = TextColors[TeamIndex];
         C.SetPos(C.ClipX - CircleSize/2 - (XL / 2), CircleSize/2 - (YL / 1.5));
         C.DrawText(S);
+    }
 
+    if ( KFGRI.bWaveInProgress ) {
         // Show the number of waves
         S = WaveString @ string(KFGRI.WaveNumber + 1) $ "/" $ string(KFGRI.FinalWave);
         C.Font = LoadFont(5);
         C.Strlen(S, XL, YL);
         C.SetPos(C.ClipX - CircleSize/2 - (XL / 2), CircleSize/2 + (YL / 2.5));
         C.DrawText(S);
-
-           //Needed for the hints showing up in the second downtime
-        bIsSecondDowntime = true;
     }
 
     C.FontScaleX = 1;

@@ -3,6 +3,31 @@ class StinkyClot extends ZombieClot;
 var() name CompleteAnim;
 var() name GrabBone;
 
+
+simulated function PostNetBeginPlay()
+{
+    super.PostNetBeginPlay();
+    SetSkin();
+}
+
+simulated event PostNetReceive()
+{
+    super.PostNetReceive();
+    SetSkin();
+}
+
+simulated function SetSkin()
+{
+    if ( bBlockActors ) {
+        Skins[0] = default.Skins[0];
+        if ( bCrispified )
+            ZombieCrispUp();
+    }
+    else {
+        Skins[0] = ColorModifier'ScrnTex.Zeds.StinkyColor';
+    }
+}
+
 function TakeDamage(int Damage, Pawn instigatedBy, Vector hitlocation, Vector momentum, class<DamageType> damageType, optional int HitIndex )
 {
     if ( bBlockActors )

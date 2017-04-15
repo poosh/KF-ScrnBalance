@@ -4,7 +4,7 @@ function projectile SpawnProjectile(Vector Start, Rotator Dir)
 {
 	local Grenade gProj;
     local ScrnFrag aFrag;
-    
+
     gProj = Grenade(super.SpawnProjectile(Start, Dir));
     aFrag = ScrnFrag(Weapon);
     if ( aFrag != none && aFrag.bThrowingCooked ) {
@@ -13,12 +13,17 @@ function projectile SpawnProjectile(Vector Start, Rotator Dir)
         gProj.bTimerSet = true; //don't reset the time if hit the wall
         if ( ScrnNade(gProj) != none )
             ScrnNade(gProj).bBlewInHands = aFrag.bBlewInHands;
-            
+
         aFrag.bCooking = false;
         aFrag.bThrowingCooked = false;
         aFrag.bBlewInHands = false;
     }
     return gProj;
+}
+
+function DoFireEffect()
+{
+    super.DoFireEffect();
 }
 
 defaultproperties

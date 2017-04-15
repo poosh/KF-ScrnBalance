@@ -121,38 +121,22 @@ event InitGame( string Options, out string Error )
 
     super.InitGame(Options, Error);
 
-    // check laoded mutators
+    // check loaded mutators
     for (M = BaseMutator; M != None; M = M.NextMutator) {
         bCtryTags = bCtryTags || M.IsA('CtryTags');
-        if ( ScrnBalanceMut == none )
-            ScrnBalanceMut = ScrnBalance(M);
     }
 
-    // adding here, if it wasn't added to command line
-    if ( ScrnBalanceMut == none ) {
-        log("ScrnBalance mutator is not loaded! Loading it now...", 'TSC');
-        AddMutator(string(class'ScrnBalance'), false);
-        // look again
-        if ( ScrnBalanceMut == none )
-            for (M = BaseMutator; M != None && ScrnBalanceMut == none; M = M.NextMutator)
-                ScrnBalanceMut = ScrnBalance(M);
-    }
+    ScrnRules = ScrnBalanceMut.GameRules;
+    if ( ScrnRules == none )
+        log("!!! Unable to find ScrnGameRules!", 'TSC');
 
-    if ( ScrnBalanceMut != none ) {
-        ScrnRules = ScrnBalanceMut.GameRules;
-        if ( ScrnRules == none ) {
-            log("!!! Unable to find ScrnGameRules!", 'TSC');
-        }
-        // hard-code some ScrN features
-        ScrnBalanceMut.MaxVoteKillMonsters = 0; // no vote end wave since it is auto-ended in 30 seconds
-        ScrnBalanceMut.bSpawn0 = true;
-        ScrnBalanceMut.bNoStartCashToss = true;
-        ScrnBalanceMut.bMedicRewardFromTeam = true;
-        if ( ScrnBalanceMut.ForcedMaxPlayers < 12 )
-            ScrnBalanceMut.ForcedMaxPlayers = 0;
-    }
-    else
-        log("!!!! Unable to add ScrnBalance mutator!", 'TSC');
+    // hard-code some ScrN features
+    ScrnBalanceMut.MaxVoteKillMonsters = 0; // no vote end wave since it is auto-ended in 30 seconds
+    ScrnBalanceMut.bSpawn0 = true;
+    ScrnBalanceMut.bNoStartCashToss = true;
+    ScrnBalanceMut.bMedicRewardFromTeam = true;
+    if ( ScrnBalanceMut.ForcedMaxPlayers < 12 )
+        ScrnBalanceMut.ForcedMaxPlayers = 0;
 
     VH = class'ScrnVotingHandlerMut'.static.GetVotingHandler(self);
     if ( VH != none ) {
@@ -166,11 +150,8 @@ event InitGame( string Options, out string Error )
     else
         log("Voting (mvote) disabled.", 'TSC');
 
+    bUseEndGameBoss = false;
     OriginalFinalWave = FinalWave;
-    if( KFGameLength != GL_Custom ) {
-        bUseEndGameBoss = false;
-    }
-
     OvertimeWaves = Clamp(GetIntOption( Options, "OTWaves", OvertimeWaves ),0,120);
     SudDeathWaves = Clamp(GetIntOption( Options, "SDWaves", SudDeathWaves ),0,120);
 
@@ -183,10 +164,6 @@ event InitGame( string Options, out string Error )
         MaxZombiesOnce = 48;
     }
 
-    // if ( !ClassIsChildOf(PlayerControllerClass, class'ScrnBalanceSrv.TSCPlayerController') ) {
-        // PlayerControllerClass = class'ScrnBalanceSrv.TSCPlayerController';
-        // PlayerControllerClassName = string(class'ScrnBalanceSrv.TSCPlayerController');
-    // }
     // todo - allow mutators to alter those settings
     if ( !bCustomHUD )
         HUDType = string(Class'ScrnBalanceSrv.TSCHUD');
@@ -511,6 +488,9 @@ function bool ShouldKillOnTeamChange(Pawn TeamChanger)
 
 function int CalcStartingCashBonus(PlayerController PC)
 {
+    local int result;
+
+    result = super.CalcStartingCashBonus(PC);
     if ( WaveNum > 0 && LateJoinerCashBonus > 0
             && !PC.PlayerReplicationInfo.bOnlySpectator
             && PC.PlayerReplicationInfo.Team != none
@@ -519,9 +499,9 @@ function int CalcStartingCashBonus(PlayerController PC)
             && PC.PlayerReplicationInfo.Team.Size <= Teams[1-PC.PlayerReplicationInfo.Team.TeamIndex].Size
         )
     {
-        return WaveNum * LateJoinerCashBonus/OriginalFinalWave * (1.0 - CurrentTeamMoneyPenalty);
+        result += WaveNum * LateJoinerCashBonus/OriginalFinalWave * (1.0 - CurrentTeamMoneyPenalty);
     }
-    return 0;
+    return result;
 }
 
 function bool BecomeSpectator(PlayerController P)
@@ -590,7 +570,6 @@ function Killed(Controller Killer, Controller Killed, Pawn KilledPawn, class<Dam
 {
     local TeamInfo KilledTeam;
     local bool bHadMonsters;
-    local int Reds, Blues;
     local byte Ping; // ping is multiplied by 4 in KF!
     local int HealthBeforeDeath;
     local bool bSuicide;
@@ -609,6 +588,7 @@ function Killed(Controller Killer, Controller Killed, Pawn KilledPawn, class<Dam
 
 
     if ( KilledTeam != none ) {
+        AliveTeamPlayerCount[KilledTeam.TeamIndex]--;
         //Broadcast(Self, "HealthBeforeDeath="$HealthBeforeDeath);
         // During Sudden Death wipe team after player's death, unless:
         // - he isn't fully joined yet or lost the connection (ping == 255)
@@ -621,13 +601,20 @@ function Killed(Controller Killer, Controller Killed, Pawn KilledPawn, class<Dam
                 WipeTeam(KilledTeam);
         }
 
-        if ( !bTeamWiped )
-            CheckTeamWiped();
+        if ( !bTeamWiped && AliveTeamPlayerCount[KilledTeam.TeamIndex] == 0) {
+            bTeamWiped = true;
+            // lower amount of remaining but not-spawned zeds twice
+            if ( TotalMaxMonsters > 1) {
+                TotalMaxMonsters /= 2;
+                TSCGRI.MaxMonsters = Max(TotalMaxMonsters + NumMonsters,0);
+            }
+            BroadcastLocalizedMessage(class'TSCMessages', 10+KilledTeam.TeamIndex*100);
+            TeamBases[KilledTeam.TeamIndex].SendHome();
+
+        }
     }
     else if  ( NumMonsters == 0 && bHadMonsters && !bSingleTeam && damageType != class'Suicided' ) {
-        // last monster kill
-        AlivePlayerCount(Reds, Blues);
-        if ( Reds == 0 ^^ Blues == 0 )
+        if ( AliveTeamPlayerCount[0] == 0 ^^ AliveTeamPlayerCount[1] == 0 )
             DramaticEvent(1.0); // do ZED time on winner's kill
     }
 }
@@ -640,30 +627,6 @@ function ScoreKill(Controller Killer, Controller Other)
         TSCTeam(Killer.PlayerReplicationInfo.Team).ZedKills++;
     }
 }
-
-function CheckTeamWiped()
-{
-    local int Reds, Blues;
-    local int WipedTeamNum;
-
-    if ( bTeamWiped )
-        return;
-
-    AlivePlayerCount(Reds, Blues);
-    if ( Reds == 0 || Blues == 0) {
-        bTeamWiped = true;
-        if ( Blues == 0 )
-            WipedTeamNum = 1;
-        // lower amount of remaining but not-spawned zeds twice
-        if ( TotalMaxMonsters > 1) {
-            TotalMaxMonsters /= 2;
-            TSCGRI.MaxMonsters = Max(TotalMaxMonsters + NumMonsters,0);
-        }
-        BroadcastLocalizedMessage(class'TSCMessages', 10+WipedTeamNum*100);
-        TeamBases[WipedTeamNum].SendHome();
-    }
-}
-
 
 function WipeTeam(TeamInfo Team, optional class<DamageType> DamageType)
 {
@@ -687,16 +650,14 @@ function bool CheckEndGame(PlayerReplicationInfo Winner, string Reason)
     local PlayerController Player;
     local bool bSetAchievement;
     local string MapName;
-    local int Reds, Blues;
     local String EndSong;
 
     if ( Reason == "TeamScoreLimit" ) {
-        AlivePlayerCount(Reds, Blues);
-        if ( Reds > 0 && Blues == 0 ) {
+        if ( AliveTeamPlayerCount[0] > 0 && AliveTeamPlayerCount[1] == 0 ) {
             TSCGRI.Winner = Teams[0];
             EndSong = SongRedWin;
         }
-        else if ( Reds == 0 && Blues > 0 ) {
+        else if ( AliveTeamPlayerCount[0] == 0 && AliveTeamPlayerCount[1] > 0 ) {
             TSCGRI.Winner = Teams[1];
             EndSong = SongBlueWin;
         }
@@ -759,29 +720,6 @@ function bool CheckEndGame(PlayerReplicationInfo Winner, string Reason)
 
     return true;
 }
-
-function AlivePlayerCount(out int Reds, out int Blues)
-{
-    local Controller C;
-    local PlayerReplicationInfo PRI;
-
-    Reds = 0;
-    Blues = 0;
-
-    for ( C = Level.ControllerList; C != none; C = C.nextController ) {
-        if ( !C.bIsPlayer || C.Pawn == none || C.Pawn.Health <= 0)
-            continue;
-
-        PRI = C.PlayerReplicationInfo;
-        if ( PRI != none && !PRI.bOnlySpectator && !PRI.bIsSpectator && PRI.Team != none ) {
-            if ( PRI.Team.TeamIndex == 0 )
-                Reds++;
-            else if ( PRI.Team.TeamIndex == 1 )
-                Blues++;
-        }
-    }
-}
-
 
 function TSCBaseGuardian SpawnBaseGuardian(byte TeamIndex)
 {
@@ -872,27 +810,64 @@ function byte RelativeWaveNum(float LongGameWaveNum)
 
 function SetupWave()
 {
-    //local Controller C;
-    //local PlayerReplicationInfo PRI;
     local int i;
-    local float NewMaxMonsters;
-    //local int m;
-    local float DifficultyMod, NumPlayersMod;
-    local int Reds, Blues;
-    local byte MyWaveNum;
+    local byte WaveIndex;
 
-    MyWaveNum = min(WaveNum, 15); // Waves[16]
+    bWaveInProgress = true;
+    TSCGRI.bWaveInProgress = true;
+
+    WaveIndex = min(WaveNum, 15); // Waves[16]
 
     if ( (WaveNum+1) == RelativeWaveNum(ScrnBalanceMut.LockTeamAutoWave) )
         LockTeams();
 
+    NextMonsterTime = Level.TimeSeconds + 5.0;
+    TraderProblemLevel = 0;
+    rewardFlag=false;
+    ZombiesKilled=0;
+    WaveMonsters = 0;
+    WaveNumClasses = 0;
+    bWaveEnding = false;
+
+    SetupPickups();
+
+    i = rand(2);
+    TeamBases[i].ScoreOrHome();
+    TeamBases[1-i].ScoreOrHome();
+
+    WavePlayerCount = AlivePlayerCount;
+    BigTeamSize = max(AliveTeamPlayerCount[0], AliveTeamPlayerCount[1]);
+    SmallTeamSize = min(AliveTeamPlayerCount[0], AliveTeamPlayerCount[1]);
+    bSingleTeam = AliveTeamPlayerCount[0] == 0 || AliveTeamPlayerCount[1] == 0;
+    bTeamWiped = bSingleTeam;
+
+    if ( bSingleTeam || AliveTeamPlayerCount[0] == AliveTeamPlayerCount[1] ) {
+        BalanceTeams(2, 1.0); // remove bonuses
+        SmallTeamSize = BigTeamSize;
+    }
+    else if ( AliveTeamPlayerCount[0] < AliveTeamPlayerCount[1] )
+        BalanceTeams(0, float(AliveTeamPlayerCount[1])/AliveTeamPlayerCount[0]);
+    else if ( AliveTeamPlayerCount[0] > AliveTeamPlayerCount[1] )
+        BalanceTeams(1, float(AliveTeamPlayerCount[0])/AliveTeamPlayerCount[1]);
+
+    if (ScrnGameLength != none ) {
+        ScrnGameLength.RunWave();
+    }
+
+    if( WaveNum == FinalWave && bUseEndGameBoss ) {
+        StartWaveBoss();
+        return;
+    }
+
     if ( WaveNum == 0 ) {
         BroadcastLocalizedMessage(class'TSCMessages', 230); // human damage disabled
     }
-    else if ( KFGameLength != GL_Custom && WaveNum >= OriginalFinalWave ) {
-        // Overtime and Sudden Death waves always use wave 10 of the long game
-        Waves[MyWaveNum] = LongWaves[9];
-        MonsterCollection.default.SpecialSquads[WaveNum] = MonsterCollection.default.LongSpecialSquads[9];
+    else if ( WaveNum >= OriginalFinalWave ) {
+        if ( ScrnGameLength == none ) {
+            // Overtime and Sudden Death waves always use wave 10 of the long game
+            Waves[WaveIndex] = LongWaves[9];
+            MonsterCollection.default.SpecialSquads[WaveNum] = MonsterCollection.default.LongSpecialSquads[9];
+        }
         if ( WaveNum >= OriginalFinalWave + OvertimeWaves ) {
             TSCGRI.bSuddenDeath = true;
             BroadcastLocalizedMessage(class'TSCMessages', 302); // sudden death
@@ -905,11 +880,6 @@ function SetupWave()
                 LockTeams();
         }
     }
-    else if ( WaveNum > 15 )
-    {
-        SetupRandomWave();
-        return;
-    }
     else if ( HumanDamageMode > HDMG_None ) {
         if ( HumanDamageMode >= HDMG_Normal )
             BroadcastLocalizedMessage(class'TSCMessages', 231); // human damage enabled
@@ -917,117 +887,21 @@ function SetupWave()
             BroadcastLocalizedMessage(class'TSCMessages', 232); // enemy fire enabled
     }
 
-
-    TraderProblemLevel = 0;
-    rewardFlag=false;
-    ZombiesKilled=0;
-    WaveMonsters = 0;
-    WaveNumClasses = 0;
-    NewMaxMonsters = Waves[MyWaveNum].WaveMaxMonsters;
-    bWaveEnding = false;
-
-    i = rand(2);
-    TeamBases[i].ScoreOrHome();
-    TeamBases[1-i].ScoreOrHome();
-
-    AlivePlayerCount(Reds, Blues);
-    BigTeamSize = max(Reds, Blues);
-    SmallTeamSize = min(Reds, Blues);
-    bSingleTeam = Reds == 0 || Blues == 0;
-    bTeamWiped = bSingleTeam;
-
-    if ( bSingleTeam || Reds == Blues ) {
-        BalanceTeams(2, 1.0); // remove bonuses
-        SmallTeamSize = BigTeamSize;
+    if ( ScrnGameLength != none ) {
+        TotalMaxMonsters = ScrnGameLength.GetWaveZedCount();
+        WaveEndTime = ScrnGameLength.GetWaveEndTime();
+        AdjustedDifficulty = GameDifficulty + lerp(float(WaveNum)/FinalWave, 0.1, 0.3);
     }
-    else if ( Reds < Blues )
-        BalanceTeams(0, float(Blues)/Reds);
-    else if ( Reds > Blues )
-        BalanceTeams(1, float(Reds)/Blues);
-
-    // no base on sudden death = wipe. Unless other team doesn't have a base too.
-    // if ( TSCGRI.bSuddenDeath && !bSingleTeam && (TeamBases[0].bActive ^^ TeamBases[1].bActive) ) {
-        // if ( !TeamBases[0].bActive )
-            // WipeTeam(Teams[0]);
-        // else
-            // WipeTeam(Teams[1]);
-    // }
-
-    // scale number of zombies by difficulty
-    if ( GameDifficulty >= 7.0 ) // Hell on Earth
-    {
-        DifficultyMod=1.7;
-    }
-    else if ( GameDifficulty >= 5.0 ) // Suicidal
-    {
-        DifficultyMod=1.5;
-    }
-    else if ( GameDifficulty >= 4.0 ) // Hard
-    {
-        DifficultyMod=1.3;
-    }
-    else if ( GameDifficulty >= 2.0 ) // Normal
-    {
-        DifficultyMod=1.0;
-    }
-    else //if ( GameDifficulty == 1.0 ) // Beginner
-    {
-        DifficultyMod=0.7;
+    else {
+        TotalMaxMonsters = Waves[WaveIndex].WaveMaxMonsters;
+        WaveEndTime = Level.TimeSeconds + Waves[WaveIndex].WaveDuration;
+        AdjustedDifficulty = GameDifficulty + Waves[WaveIndex].WaveDifficulty;
     }
 
-    // apply max healths
-    /* Temporary removed due to HealthMax adjustment in ScrnHumanPawn
-    for ( C = Level.ControllerList; C != none; C = C.nextController ) {
-        if ( !C.bIsPlayer || C.Pawn == none || C.Pawn.Health <= 0)
-            continue;
-
-        PRI = C.PlayerReplicationInfo;
-        if ( PRI != none && !PRI.bOnlySpectator && !PRI.bIsSpectator
-                && PRI.Team != none && PRI.Team.TeamIndex < 2 )
-        {
-            C.Pawn.HealthMax = TeamHealth[PRI.Team.TeamIndex];
-            C.Pawn.Health = C.Pawn.HealthMax;
-        }
-    }
-    */
-
-    // Scale the number of zombies by the number of players. Don't want to
-    // do this exactly linear, or it just gets to be too many zombies and too
-    // long of waves at higher levels - Ramm
-    switch ( Reds+Blues )
-    {
-        case 1:
-            NumPlayersMod=1;
-            break;
-        case 2:
-            NumPlayersMod=2;
-            break;
-        case 3:
-            NumPlayersMod=2.75;
-            break;
-        case 4:
-            NumPlayersMod=3.5;
-            break;
-        case 5:
-            NumPlayersMod=4;
-            break;
-        case 6:
-            NumPlayersMod=4.5;
-            break;
-        default:
-            NumPlayersMod = 4.5 + (Reds+Blues-6)*0.4; // 7+ player game
-    }
-    NewMaxMonsters = NewMaxMonsters * DifficultyMod * NumPlayersMod;
-
-    TotalMaxMonsters = Clamp(NewMaxMonsters,5,800);  //11, MAX 800, MIN 5
-
-    MaxMonsters = Clamp(TotalMaxMonsters,5,MaxZombiesOnce);
-    //log("****** "$MaxMonsters$" Max at once!");
-
-    TSCGRI.MaxMonsters=TotalMaxMonsters;
-    TSCGRI.MaxMonstersOn=true;
-    WaveEndTime = Level.TimeSeconds + Waves[MyWaveNum].WaveDuration;
-    AdjustedDifficulty = GameDifficulty + Waves[MyWaveNum].WaveDifficulty;
+	TotalMaxMonsters = max(8, ScaleMonsterCount(TotalMaxMonsters) + NumMonsters);  // num monsters in wave
+	MaxMonsters = min(TotalMaxMonsters, MaxZombiesOnce); // max monsters that can be spawned
+	TSCGRI.MaxMonsters = TotalMaxMonsters; // num monsters in wave replicated to clients
+	TSCGRI.MaxMonstersOn = true; // I've no idea what is this for
 
     NextSquadTeam = rand(2); // pickup random team for the next special squad
     for( i=0; i<ZedSpawnList.Length; ++i )
@@ -1051,6 +925,11 @@ function BuildNextSquad()
 {
     local int i, j, RandNum;
     local byte MyWaveNum;
+
+    if ( ScrnGameLength != none ) {
+        ScrnGameLength.LoadNextSpawnSquad(NextSpawnSquad);
+        return;
+    }
 
     MyWaveNum = min(WaveNum, 15); // Waves[16]
 
@@ -1144,25 +1023,7 @@ function bool AddSquad()
 
         NumMonsters += numspawned; //NextSpawnSquad.Length;
         WaveMonsters+= numspawned; //NextSpawnSquad.Length;
-
-        if( bDebugMoney ) {
-            if ( GameDifficulty >= 7.0 ) // Hell on Earth
-                TotalZombiesValue *= 0.5;
-            else if ( GameDifficulty >= 5.0 ) // Suicidal
-                TotalZombiesValue *= 0.6;
-            else if ( GameDifficulty >= 4.0 ) // Hard
-                TotalZombiesValue *= 0.75;
-            else if ( GameDifficulty >= 2.0 ) // Normal
-                TotalZombiesValue *= 1.0;
-            else //if ( GameDifficulty == 1.0 ) // Beginner
-                TotalZombiesValue *= 2.0;
-
-            TotalPossibleWaveMoney += TotalZombiesValue;
-            TotalPossibleMatchMoney += TotalZombiesValue;
-        }
-
         NextSpawnSquad.Remove(0, numspawned);
-
         return true;
     }
     else
@@ -1209,17 +1070,6 @@ function Controller FindSquadTarget()
         return CL[Rand(CL.Length)];
 
     return super.FindSquadTarget(); // in case when there are no team players alive
-}
-
-function KillRemainingZeds(bool bForceKill)
-{
-    local Controller C, NextC;
-
-    for ( C = Level.ControllerList; C != None; C = NextC ) {
-        NextC = C.NextController; // use this because calling KilledBy() can destroy C
-        if ( KFMonsterController(C)!=None && (bForceKill || KFMonsterController(C).CanKillMeYet()) )
-            C.Pawn.KilledBy( C.Pawn );
-    }
 }
 
 protected function StartTourney()
@@ -1345,10 +1195,8 @@ function ShowPathToBase(PlayerController P)
     }
 }
 
-function SelectShop()
-{
-    // implemented only in MatchInProgress state
-}
+// implemented only in MatchInProgress state
+function SelectShop() { }
 
 
 State MatchInProgress
@@ -1388,14 +1236,12 @@ State MatchInProgress
     function DoWaveEnd()
     {
         local byte NextWave;
-        local int Reds, Blues;
 
         NextWave = WaveNum + 1;
-        AlivePlayerCount(Reds, Blues);
-        if ( !bSingleTeam && (Reds == 0 ^^ Blues == 0) ) {
+        if ( !bSingleTeam && (AliveTeamPlayerCount[0] == 0 ^^ AliveTeamPlayerCount[1] == 0) ) {
             EndGame(None,"TeamScoreLimit");
         }
-        else if ( Reds+Blues > 0 && NextWave >= OriginalFinalWave ) {
+        else if ( AlivePlayerCount > 0 && NextWave >= OriginalFinalWave ) {
             if ( NextWave >= OriginalFinalWave + OvertimeWaves + SudDeathWaves ) {
                 WaveNum++;
                 EndGame(None,"TimeLimit");

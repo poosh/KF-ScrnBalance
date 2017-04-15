@@ -9,6 +9,36 @@
 -------------------------------------------------------------------------------
 *** VERSION 9 ***
 -------------------------------------------------------------------------------
+v9.40:
+- ScrnVotingHandlerMut updated to version 4.05
+- Custom Game Length (ScrnWaves.ini)
+- Completely rewrote zed spawning mechanism (ZombieVolume.SpawnInHere())
+- Fixed Boss death in non-boss wave
+- Fixed "Accessed None 'M'" warning in KillZeds
+- [FTG]: StinkyClot is glowing when invulnerable
+- [BETA]: Fixed bug from the very first day of KF that was limiting zed spawn
+  rate to 1 squad per second. But I'm not sure that this should be fixed...
+- Made just-spawned players less attracting to zeds:
+-- zeds ignore players who spawned less than 10 seconds ago
+-- zeds are less-likely to choose for their target a player who spawned 10-30s ago
+
+CONSOLE COMMANDS:
+- MVOTE MAP RESTART
+- MVOTE ZED <alias> ON|OFF - turns on or off zeds defined in ScrnZedInfo (ScrnWaves.ini)
+- MUTATE ZED LIST - prints all zed aliases defined in ScrnWaves.ini
+ADMIN COMMANDS:
+- MUTATE ZED <alias> - prints all zed infos assigned to the given alias from ScrnWaves.ini
+- MUTATE ZED <alias> <index> ON|OFF - turns on off any zed defined by alias and index.
+    Use MUTATE ZED LIST to get aliases.
+    Use MUTATE ZED <alias> to get zed indexes.
+- MUTATE ZED <alias> <index> PCT <chance> - alters spawn chance of given zed:
+Enabling/Disabling zeds REQUIRE MAP RESTART!
+
+CONFIG VARIABLES (ScrnBalance.ini):
+- bScrnWaves - use ScrnWaves.ini instead of KFMonstersCollection.
+NEW CONFIG FILE - ScrnWaves.ini.
+
+
 v9.33:
 - HoE map achievements are given for FTG mode too (even without Doom3 mode)
 - Sui map achievements are given in Turbo mode too

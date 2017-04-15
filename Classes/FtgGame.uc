@@ -60,7 +60,10 @@ function Killed(Controller Killer, Controller Killed, Pawn KilledPawn, class<Dam
         // allow stinky clots to be killed at the end of the wave
         for ( t = 0; t < 2; ++t ) {
             if ( StinkyControllers[t] != none && StinkyControllers[t] != Killed && StinkyControllers[t].Pawn != none )
+            {
                 StinkyControllers[t].Pawn.SetCollision(true, true);
+                StinkyClot(StinkyControllers[t].Pawn).SetSkin();
+            }
         }
     }
 }
@@ -146,8 +149,10 @@ function StinkyControllerReady(StinkyController SC)
     SC.MoveTargets[0] = TeamBases[SC.TeamIndex];
     SC.MoveTargets[1] = TeamShops[1-SC.TeamIndex].TelList[1-SC.TeamIndex];
     SC.MoveTargets[2] = TeamShops[SC.TeamIndex].TelList[SC.TeamIndex]; // move to own shop
-    if ( bWaveBossInProgress )
+    if ( bWaveBossInProgress ) {
         SC.Pawn.SetCollision(true, true); // Stinky Clot allways can be killed during the boss wave
+        StinkyClot(StinkyControllers[t].Pawn).SetSkin();
+    }
     StinkyControllers[SC.TeamIndex] = SC;
     SC.GotoState('MoveToGuardian', 'Begin');
 }

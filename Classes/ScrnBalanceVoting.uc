@@ -18,6 +18,7 @@ const VOTE_TEAMLOCK     = 12;
 const VOTE_TEAMUNLOCK   = 13;
 const VOTE_INVITE       = 14;
 const VOTE_FF           = 15;
+const VOTE_MAPRESTART   = 16;
 const VOTE_RKILL        = 100;
 
 var localized string strCantEndTrade;
@@ -151,7 +152,7 @@ function int GetVoteIndex(PlayerController Sender, string Key, out string Value,
             Sender.ClientMessage(strNotInStoryMode);
             return VOTE_NOEFECT;
 		}
-        if ( !Mut.KF.bTradingDoorsOpen || Mut.KF.WaveCountDown < 10 || Mut.SkippedTradeTimeMult < 0 ) {
+        if ( Mut.KF.bWaveInProgress|| Mut.KF.WaveCountDown < 10 || Mut.SkippedTradeTimeMult < 0 ) {
             Sender.ClientMessage(strCantEndTrade);
             return VOTE_NOEFECT;
         }
@@ -392,6 +393,9 @@ function int GetVoteIndex(PlayerController Sender, string Key, out string Value,
             VoteInfo = "Friendly Fire "$v$"%";
         return VOTE_FF;
     }
+    else if ( Key == "MAP" && Value == "RESTART" ) {
+        result = VOTE_MAPRESTART;
+    }
 	else if ( Key == "R_KILL" ) {
         if ( !Sender.PlayerReplicationInfo.bAdmin || Mut.SrvTourneyMode == 0 ) {
 			Sender.ClientMessage(strRCommands);
@@ -455,7 +459,7 @@ function ApplyVoteValue(int VoteIndex, string VoteValue)
             }
             break;
         case VOTE_ENDTRADE:
-            if ( !Mut.KF.bTradingDoorsOpen || Mut.KF.WaveCountDown < 6 ) {
+            if ( Mut.KF.bWaveInProgress || Mut.KF.WaveCountDown < 6 ) {
                 VotingHandler.BroadcastMessage(strTooLate);
                 return;
             }
@@ -591,6 +595,9 @@ function ApplyVoteValue(int VoteIndex, string VoteValue)
             Mut.KF.FriendlyFireScale = float(VoteValue)/100.0;
             if ( TSCGame(Mut.KF) != none )
                 TSCGame(Mut.KF).HdmgScale = Mut.KF.FriendlyFireScale;
+            break;
+        case VOTE_MAPRESTART:
+            Level.ServerTravel("?restart",false);
             break;
 
 		case VOTE_RKILL:
@@ -789,6 +796,7 @@ defaultproperties
     HelpInfo(10)="%gSPAWN %y<squad_name> %w Spawns zed squad"
     HelpInfo(11)="%gREADY%w|%gUNREADY %w Makes everybody ready/unready to play"
     HelpInfo(12)="%gFF %yX %w Set Friendly Fire to X%"
+    HelpInfo(13)="%gMAP RESTART %w Restarts current map"
 
     strCantEndTrade="Can not end trade time at the current moment"
     strTooLate="Too late"

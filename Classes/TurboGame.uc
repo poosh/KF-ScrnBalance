@@ -5,6 +5,7 @@ State MatchInProgress
 {
     function BeginState()
     {
+        super.BeginState();
         SetGameSpeed(TurboScale);
     }
 }
@@ -21,7 +22,7 @@ defaultproperties
     Description="Same KF but faster. Much Faster. And more ZED Time."
 
     TurboScale=1.5
-    
+
     ZEDTimeDuration=4.5
     ZedTimeSlomoScale=0.50
 }
