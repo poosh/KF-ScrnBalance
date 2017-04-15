@@ -63,6 +63,9 @@ function LoadGame(ScrnGameType MyGame)
         zi = new(none, Zeds[i]) class'ScrnZedInfo';
 
         for ( j = 0; j < zi.Zeds.length; ++j ) {
+            if ( zi.Zeds[j].Vote != "" )
+                AddZedVote(zi.Zeds[j].Vote);
+
             if ( zi.Zeds[j].bDisabled )
                 continue;
 
@@ -77,9 +80,6 @@ function LoadGame(ScrnGameType MyGame)
                 if ( zi.Zeds[j].Package != "" )
                     Game.AddToPackageMap(zi.Zeds[j].Package);
             }
-
-            if ( zi.Zeds[j].Vote != "" )
-                AddZedVote(zi.Zeds[j].Vote);
 
             AddActiveZed(zi.Zeds[j].Alias, zedc, zi.Zeds[j].Pct);
         }

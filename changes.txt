@@ -9,6 +9,9 @@
 -------------------------------------------------------------------------------
 *** VERSION 9 ***
 -------------------------------------------------------------------------------
+v9.41:
+- Fixed bug when disabled zeds didn't show in voting (mvote ZED)
+
 v9.40:
 - ScrnVotingHandlerMut updated to version 4.05
 - Custom Game Length (ScrnWaves.ini)
