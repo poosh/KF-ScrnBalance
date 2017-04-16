@@ -9,6 +9,9 @@
 -------------------------------------------------------------------------------
 *** VERSION 9 ***
 -------------------------------------------------------------------------------
+v9.42:
+- Fixed wave end when bScrnWaves=False.
+
 v9.41:
 - Fixed bug when disabled zeds didn't show in voting (mvote ZED)
 

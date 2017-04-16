@@ -1,6 +1,6 @@
 ﻿Total rebalance of the game. Adds new guns, Gunslinger perk and server-side achievements.
 Now it IS COMPATIBLE with Objective Mode! Select "Objective Mode [ScrN]" for a proper gameplay.
-Version 9.30.
+Version 9.42.
 
 [URL=http://steamcommunity.com/groups/ScrNBalance][IMG]https://dl.dropboxusercontent.com/u/70213558/ButtonSteamGroup.png[/IMG][/URL]  [URL=http://steamcommunity.com/groups/ScrNBalance/discussions/2/][IMG]https://dl.dropboxusercontent.com/u/70213558/ButtonDownload.png[/IMG][/URL]  [URL=https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=VFARLRAL7CNJ4&lc=LV&item_name=Scrake%20Naders%20Community&item_number=ScrnBalance&currency_code=EUR&bn=PP%2dDonationsBF%3abtn_donateCC_LG%2egif%3aNonHosted][IMG]https://dl.dropboxusercontent.com/u/70213558/ButtonDonate.png[/IMG][/URL]
 [i]If you have any questions about this mod, then please press "Join Steam Group" button above and post your questions there.[/i]

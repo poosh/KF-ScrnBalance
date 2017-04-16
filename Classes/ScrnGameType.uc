@@ -1763,7 +1763,9 @@ State MatchInProgress
 
         if ( TotalMaxMonsters<=0 ) {
              // all monsters spawned
-            if ( NumMonsters <= 5 )
+            if ( ScrnGameLength == none && NumMonsters <= 0 )
+                DoWaveEnd();
+            else if ( NumMonsters <= 5 )
                 KillRemainingZeds(false);
         }
         else if ( Level.TimeSeconds > NextMonsterTime && NumMonsters+NextSpawnSquad.Length <= MaxMonsters ) {
@@ -1898,19 +1900,21 @@ State MatchInProgress
                 TraderTimer();
             }
         }
-        else if( bWaveBossInProgress ) {
-            BossWaveTimer();
-        }
-        else if( bWaveInProgress ) {
-            WaveTimer();
-        }
-        else if ( NumMonsters <= 0 )
-        {
-            if ( WaveNum > FinalWave || (!bUseEndGameBoss && WaveNum == FinalWave) ) {
-                EndGame(None,"TimeLimit");
-                return;
+        else {
+            if( bWaveBossInProgress ) {
+                BossWaveTimer();
             }
-            TraderTimer();
+            else if( bWaveInProgress ) {
+                WaveTimer();
+            }
+            else if ( TotalMaxMonsters <= 0 && NumMonsters <= 0 )
+            {
+                if ( WaveNum > FinalWave || (!bUseEndGameBoss && WaveNum == FinalWave) ) {
+                    EndGame(None,"TimeLimit");
+                    return;
+                }
+                TraderTimer();
+            }
         }
     }
 
