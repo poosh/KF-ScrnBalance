@@ -316,7 +316,23 @@ function RunWave()
 
 function SetWaveInfo()
 {
-    WaveCounter = Wave.Counter * ( 1.0 + Wave.PerPlayerMult * (min(5, Game.WavePlayerCount-1)) );
+    if (Wave.PerPlayerMult == 0) {
+        WaveCounter = Wave.Counter;
+        switch ( Wave.EndRule ) {
+            case RULE_KillBoss:
+            case RULE_Timeout:
+            case RULE_EarnDosh:
+                break; // do no scale
+
+            default:
+                WaveCounter = Game.ScaleMonsterCount(WaveCounter); // apply default scaling
+        }
+    }
+    else {
+        WaveCounter = Wave.Counter * ( 1.0 + Wave.PerPlayerMult * (min(5, Game.WavePlayerCount-1)) );
+    }
+    if (Wave.MaxCounter > 0 && WaveCounter > Wave.MaxCounter)
+        WaveCounter = Wave.MaxCounter;
     WaveEndTime = Game.Level.TimeSeconds + WaveCounter;
 
     Game.ScrnGRI.WaveTitle = Wave.Title;
@@ -385,9 +401,9 @@ function int GetWaveZedCount()
             return 1;
         case RULE_Timeout:
         case RULE_EarnDosh:
-            return Game.ScrnBalanceMut.MaxWaveSize;
+            return 999;
     }
-    return Wave.Counter;
+    return WaveCounter;
 }
 
 function float GetWaveEndTime()
@@ -399,7 +415,7 @@ function float GetWaveEndTime()
     return Game.Level.TimeSeconds + 60;
 }
 
-function AdjustNextSpawnTime(float NextSpawnTime)
+function AdjustNextSpawnTime(out float NextSpawnTime)
 {
     NextSpawnTime *= Wave.SpawnRateMod;
 }

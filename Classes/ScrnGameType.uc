@@ -25,7 +25,6 @@ var array<KFMonster> Bosses;
 var transient bool bBossSpawned;
 var int MaxSpawnAttempts, MaxSpecialSpawnAttempts; // maximum spawn attempts before deleting the squad
 
-
 event InitGame( string Options, out string Error )
 {
     local int ConfigMaxPlayers;
@@ -46,7 +45,9 @@ event InitGame( string Options, out string Error )
         if (ScrnGameLength == none ) // mutators might already load this
             ScrnGameLength = new(none, string(KFGameLength)) class'ScrnGameLength';
         ScrnGameLength.LoadGame(self);
-        FinalWave = ScrnGameLength.Waves.length - 1;
+        FinalWave = ScrnGameLength.Waves.length;
+        if (bUseEndGameBoss)
+            FinalWave--;
     }
     else {
         if ( KFGameLength < 0 || KFGameLength > 3) {
@@ -1209,7 +1210,7 @@ function SetupWave()
     if ( (WaveNum+1) == RelativeWaveNum(ScrnBalanceMut.LockTeamAutoWave) )
         LockTeams();
 
-    NextMonsterTime = Level.TimeSeconds + 5.0;
+    NextMonsterTime = Level.TimeSeconds + 5.0 + 3.0 * frand();
     TraderProblemLevel = 0;
     rewardFlag=false;
     ZombiesKilled=0;
@@ -1229,7 +1230,7 @@ function SetupWave()
     }
 
     if ( ScrnGameLength != none ) {
-        TotalMaxMonsters = ScrnGameLength.GetWaveZedCount();
+        TotalMaxMonsters = ScrnGameLength.GetWaveZedCount() + NumMonsters;
         WaveEndTime = ScrnGameLength.GetWaveEndTime();
         AdjustedDifficulty = GameDifficulty + lerp(float(WaveNum)/FinalWave, 0.1, 0.3);
     }
@@ -1238,9 +1239,9 @@ function SetupWave()
         TotalMaxMonsters = Waves[WaveIndex].WaveMaxMonsters;
         WaveEndTime = Level.TimeSeconds + Waves[WaveIndex].WaveDuration;
         AdjustedDifficulty = GameDifficulty + Waves[WaveIndex].WaveDifficulty;
+        TotalMaxMonsters = max(8, ScaleMonsterCount(TotalMaxMonsters));  // num monsters in wave
     }
 
-	TotalMaxMonsters = max(8, ScaleMonsterCount(TotalMaxMonsters));  // num monsters in wave
 	MaxMonsters = min(TotalMaxMonsters + NumMonsters, MaxZombiesOnce); // max monsters that can be spawned
 	ScrnGRI.MaxMonsters = TotalMaxMonsters + NumMonsters; // num monsters in wave replicated to clients
 	ScrnGRI.MaxMonstersOn = true; // I've no idea what is this for
@@ -1434,6 +1435,8 @@ function int SpawnSquad(ZombieVolume ZVol, out array< class<KFMonster> > Squad, 
             M = Spawn(Squad[i],,ZVol.ZombieSpawnTag,ZVol.SpawnPos[j],RandRot);
             if ( M == none )
                 continue;
+            OverrideMonsterHealth(M);
+            ScrnBalanceMut.GameRules.ReinitMonster(M);
 
             M.Event = ZVol.ZombieDeathEvent;
             if ( ZVol.ZombieSpawnEvent != '' )
@@ -1464,6 +1467,15 @@ function int SpawnSquad(ZombieVolume ZVol, out array< class<KFMonster> > Squad, 
         ZVol.LastFailedSpawnTime = Level.TimeSeconds;
     }
     return numspawned;
+}
+
+function OverrideMonsterHealth(KFMonster M)
+{
+    if ( ScrnGameLength != none && ScrnGameLength.bLoadedSpecial && !(ScrnGameLength.Wave.SpecialSquadHealthMod ~= 1.0) ) {
+        M.HealthMax *= ScrnGameLength.Wave.SpecialSquadHealthMod;
+        M.Health = M.HealthMax;
+        M.HeadHealth *= ScrnGameLength.Wave.SpecialSquadHealthMod;
+    }
 }
 
 function bool PlayerCanSeeSpawnPoint(vector SpawnLoc, class <KFMonster> TestMonster)
@@ -1768,7 +1780,10 @@ State MatchInProgress
             else if ( NumMonsters <= 5 )
                 KillRemainingZeds(false);
         }
-        else if ( Level.TimeSeconds > NextMonsterTime && NumMonsters+NextSpawnSquad.Length <= MaxMonsters ) {
+        else if ( Level.TimeSeconds > NextMonsterTime
+                && NumMonsters < MaxMonsters
+                && (NumMonsters+NextSpawnSquad.Length <= MaxMonsters || MaxMonsters <= 10) )
+        {
             if ( ScrnGameLength != none )
                 WaveEndTime = ScrnGameLength.WaveEndTime;
             else
@@ -1922,7 +1937,7 @@ State MatchInProgress
     {
         global.Tick(DeltaTime);
 
-        if ( ScrnBalanceMut.bBeta && bWaveInProgress && !bWaveBossInProgress
+        if ( ScrnBalanceMut.bSpawnRateFix && bWaveInProgress && !bWaveBossInProgress
                 && !bDisableZedSpawning && TotalMaxMonsters > 0
                 && Level.TimeSeconds > NextMonsterTime
                 && NumMonsters+NextSpawnSquad.Length <= MaxMonsters )
@@ -1972,9 +1987,21 @@ State MatchInProgress
         if ( ScrnGameLength != none )
             ScrnGameLength.AdjustNextSpawnTime(NextSpawnTime);
 
-        NextSpawnTime += SineMod * (NextSpawnTime * 2);
+        NextSpawnTime += SineMod * (NextSpawnTime * 2.0);
 
-        return NextSpawnTime;
+        return fmax(NextSpawnTime, GetMinSpawnDelay());
+    }
+
+    function float GetMinSpawnDelay()
+    {
+        local float result;
+
+        result = KFLRules.WaveSpawnPeriod / ScrnBalanceMut.OriginalWaveSpawnPeriod; // adjusted by MVOTE BORING
+        if ( ScrnGameLength != none )
+            result *= ScrnGameLength.Wave.SpawnRateMod;
+        if ( ScrnBalanceMut.bSpawnRateFix )
+            result *= 1.5;
+        return result;
     }
 
     function DoWaveEnd()

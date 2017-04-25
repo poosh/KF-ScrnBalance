@@ -11,7 +11,7 @@ class ScrnBalance extends Mutator
 #exec OBJ LOAD FILE=ScrnAch_T.utx
 
 
-const VERSION = 94200;
+const VERSION = 94300;
 
 var ScrnBalance Mut; // pointer to self to use in static functions, i.e class'ScrnBalance'.default.Mut
 
@@ -243,7 +243,7 @@ struct SColorTag {
 };
 var array<SColorTag> ColorTags;
 
-var globalconfig bool bCloserZedSpawns;
+var globalconfig bool bCloserZedSpawns, bSpawnRateFix;
 var globalconfig bool bServerInfoVeterancy;
 
 var transient array<KFUseTrigger> DoorKeys;
@@ -3275,6 +3275,7 @@ defaultproperties
     GameStartCountDown=12
     SharpProgMinDmg=1000
     bCloserZedSpawns=True
+    bSpawnRateFix=True
     bScrnWaves=True
     bServerInfoVeterancy=True
     bPlayerZEDTime=True

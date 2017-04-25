@@ -9,6 +9,25 @@
 -------------------------------------------------------------------------------
 *** VERSION 9 ***
 -------------------------------------------------------------------------------
+v9.43:
+TSC:
+- bScrnWaves=True hard-coded in TSC
+- Fixed Overtime and Sudden Death waves
+- New server line option: NWaves to force number of regular wave in TSC game
+  example: ?NWaves=7?OTWaves=2?SDWaves=1
+
+CONFIG VARIABLES (ScrnBalance.ini):
+- bSpawnRateFix - fixes bug from the very first day of KF that was limiting
+  zed spawn rate to 1 squad per second (was controlled by bBeta in v9.40)
+
+ScrnWaves.ini:
+- Fixed bug when SpawnRateMod wasn't applied correctly.
+- PerPlayerMult is now applied on RULE_KillEmAll and RULE_SpawnEmAll waves too.
+  If PerPlayerMult=0, then default zed count scaling is used.
+- Added MaxCounter to prevent too long waves.
+- Added SpecialSquadHealthMod (default=1.0) to modify health of special zeds (bosses).
+
+
 v9.42:
 - Fixed wave end when bScrnWaves=False.
 

@@ -2,7 +2,6 @@ class TSCGame extends ScrnGameType
 	config;
 
 var TSCGameReplicationInfo TSCGRI;
-var ScrnGameRules ScrnRules;
 var TSCVotingOptions TSCVotingOptions;
 var int OriginalFinalWave;
 
@@ -26,9 +25,9 @@ var transient bool bSingleTeam; // wave started without other team
 var transient bool bTeamWiped;  // one of the team was wiped out during the wave. Always true when bSingleTeam=True
 var transient bool bWaveEnding;          // indicates end phase of the wave. Always must be checked together with bWaveBossInProgress!
 var int WaveEndingCountdown; // if bWaveEnding=True, shows how many seconds left until auto-end wave (auto-kill remaining zeds)
-var int SpecialSquadsPending; // how many special squads game needs to spawn
 var byte NextSquadTeam;
 var bool bCheckSquadTeam; // should NextSquadTeam be checked in FindSquadTarget()?
+var array < class<KFMonster> > PendingSpecialSquad;
 
 var	TSCTeam TSCTeams[2];
 var class<TSCBaseGuardian> BaseGuardianClasses[2];
@@ -119,16 +118,13 @@ event InitGame( string Options, out string Error )
     local ScrnVotingHandlerMut VH;
     local Mutator M;
 
+    ScrnBalanceMut.bScrnWaves = true;
     super.InitGame(Options, Error);
 
     // check loaded mutators
     for (M = BaseMutator; M != None; M = M.NextMutator) {
         bCtryTags = bCtryTags || M.IsA('CtryTags');
     }
-
-    ScrnRules = ScrnBalanceMut.GameRules;
-    if ( ScrnRules == none )
-        log("!!! Unable to find ScrnGameRules!", 'TSC');
 
     // hard-code some ScrN features
     ScrnBalanceMut.MaxVoteKillMonsters = 0; // no vote end wave since it is auto-ended in 30 seconds
@@ -151,9 +147,10 @@ event InitGame( string Options, out string Error )
         log("Voting (mvote) disabled.", 'TSC');
 
     bUseEndGameBoss = false;
+    FinalWave = max(GetIntOption(Options, "NWaves", FinalWave), 1);
     OriginalFinalWave = FinalWave;
-    OvertimeWaves = Clamp(GetIntOption( Options, "OTWaves", OvertimeWaves ),0,120);
-    SudDeathWaves = Clamp(GetIntOption( Options, "SDWaves", SudDeathWaves ),0,120);
+    OvertimeWaves = max(GetIntOption(Options, "OTWaves", OvertimeWaves), 0);
+    SudDeathWaves = max(GetIntOption(Options, "SDWaves", SudDeathWaves), 0);
 
     // force FriendlyFireScale to 10%
     FriendlyFireScale = HDmgScale;
@@ -811,12 +808,9 @@ function byte RelativeWaveNum(float LongGameWaveNum)
 function SetupWave()
 {
     local int i;
-    local byte WaveIndex;
 
     bWaveInProgress = true;
     TSCGRI.bWaveInProgress = true;
-
-    WaveIndex = min(WaveNum, 15); // Waves[16]
 
     if ( (WaveNum+1) == RelativeWaveNum(ScrnBalanceMut.LockTeamAutoWave) )
         LockTeams();
@@ -850,9 +844,7 @@ function SetupWave()
     else if ( AliveTeamPlayerCount[0] > AliveTeamPlayerCount[1] )
         BalanceTeams(1, float(AliveTeamPlayerCount[0])/AliveTeamPlayerCount[1]);
 
-    if (ScrnGameLength != none ) {
-        ScrnGameLength.RunWave();
-    }
+    ScrnGameLength.RunWave();
 
     if( WaveNum == FinalWave && bUseEndGameBoss ) {
         StartWaveBoss();
@@ -863,11 +855,6 @@ function SetupWave()
         BroadcastLocalizedMessage(class'TSCMessages', 230); // human damage disabled
     }
     else if ( WaveNum >= OriginalFinalWave ) {
-        if ( ScrnGameLength == none ) {
-            // Overtime and Sudden Death waves always use wave 10 of the long game
-            Waves[WaveIndex] = LongWaves[9];
-            MonsterCollection.default.SpecialSquads[WaveNum] = MonsterCollection.default.LongSpecialSquads[9];
-        }
         if ( WaveNum >= OriginalFinalWave + OvertimeWaves ) {
             TSCGRI.bSuddenDeath = true;
             BroadcastLocalizedMessage(class'TSCMessages', 302); // sudden death
@@ -887,18 +874,10 @@ function SetupWave()
             BroadcastLocalizedMessage(class'TSCMessages', 232); // enemy fire enabled
     }
 
-    if ( ScrnGameLength != none ) {
-        TotalMaxMonsters = ScrnGameLength.GetWaveZedCount();
-        WaveEndTime = ScrnGameLength.GetWaveEndTime();
-        AdjustedDifficulty = GameDifficulty + lerp(float(WaveNum)/FinalWave, 0.1, 0.3);
-    }
-    else {
-        TotalMaxMonsters = Waves[WaveIndex].WaveMaxMonsters;
-        WaveEndTime = Level.TimeSeconds + Waves[WaveIndex].WaveDuration;
-        AdjustedDifficulty = GameDifficulty + Waves[WaveIndex].WaveDifficulty;
-    }
+    TotalMaxMonsters = ScrnGameLength.GetWaveZedCount() + NumMonsters;
+    WaveEndTime = ScrnGameLength.GetWaveEndTime();
+    AdjustedDifficulty = GameDifficulty + lerp(float(WaveNum)/FinalWave, 0.1, 0.3);
 
-	TotalMaxMonsters = max(8, ScaleMonsterCount(TotalMaxMonsters) + NumMonsters);  // num monsters in wave
 	MaxMonsters = min(TotalMaxMonsters, MaxZombiesOnce); // max monsters that can be spawned
 	TSCGRI.MaxMonsters = TotalMaxMonsters; // num monsters in wave replicated to clients
 	TSCGRI.MaxMonstersOn = true; // I've no idea what is this for
@@ -920,121 +899,40 @@ function SetupWave()
     TSCTeams[1].LastMinKills = TSCTeams[1].ZedKills;
 }
 
-// C&P to cap WaveNum at 15  -- PooSH
-function BuildNextSquad()
-{
-    local int i, j, RandNum;
-    local byte MyWaveNum;
-
-    if ( ScrnGameLength != none ) {
-        ScrnGameLength.LoadNextSpawnSquad(NextSpawnSquad);
-        return;
-    }
-
-    MyWaveNum = min(WaveNum, 15); // Waves[16]
-
-    // Reinitialize the SquadsToUse after all the squads have been used up
-    if( SquadsToUse.Length == 0 ) {
-        j = 1;
-        for ( i=0; i<InitSquads.Length; i++ ) {
-            if ( (j & Waves[MyWaveNum].WaveMask) != 0 ) {
-                SquadsToUse.Insert(0,1);
-                SquadsToUse[0] = i;
-            }
-
-            j = j<<1;
-        }
-
-        if( SquadsToUse.Length==0 ) {
-            Warn("No squads to initilize with.");
-            Return;
-        }
-
-        // Save this for use elsewhere
-        InitialSquadsToUseSize = SquadsToUse.Length;
-        SpecialListCounter++;
-        bUsedSpecialSquad=false;
-        if ( bTeamWiped )
-            SpecialSquadsPending = 1;
-        else
-            SpecialSquadsPending = 2; // build one more special squad for second team -- PooSH
-    }
-
-    RandNum = Rand(SquadsToUse.Length);
-    NextSpawnSquad = InitSquads[SquadsToUse[RandNum]].MSquad;
-
-    // Take this squad out of the list so we don't get repeats
-    SquadsToUse.Remove(RandNum,1);
-}
-
-
-// C&P to adjust specimens' health
 function bool AddSquad()
 {
-    local int numspawned;
-    local int ZombiesAtOnceLeft;
-    local int TotalZombiesValue;
-    local int i;
-
-    if(LastZVol==none || NextSpawnSquad.length==0)
-    {
-        // Throw in the special squad if the time is right
-        if( KFGameLength != GL_Custom && SpecialSquadsPending > 0 &&
-            (MonsterCollection.default.SpecialSquads.Length >= WaveNum || SpecialSquads.Length >= WaveNum)
-            && MonsterCollection.default.SpecialSquads[WaveNum].ZedClass.Length > 0
-            && (SpecialListCounter%2 == 1)
-            )
-        {
-            bCheckSquadTeam = true; // One special squad per each team
-            bCloserZedSpawns = true; // spawn close to the designated team
-            AddSpecialSquad();
-            SpecialSquadsPending--;
-        }
-        else
-        {
-            // Check teams only when they are equal in number.
-            // If teams are uneven, then just pick up random player as squad's target
-            bCheckSquadTeam = BigTeamSize == SmallTeamSize;
-            bCloserZedSpawns = false; // make zeds spawn more random on the map
-            BuildNextSquad();
-        }
+    if ( NextSpawnSquad.length == 0 ) {
         NextSquadTeam = 1 - NextSquadTeam;
-        LastZVol = FindSpawningVolume();
-        if( LastZVol!=None )
-            LastSpawningVolume = LastZVol;
-    }
+        LastZVol = none;
 
-    if(LastZVol == None)
-    {
-        NextSpawnSquad.length = 0;
-        return false;
-    }
+        if ( PendingSpecialSquad.length != 0 ) {
+            // spawn the same special squad for another team
+            NextSpawnSquad = PendingSpecialSquad;
+            PendingSpecialSquad.length = 0;
+        }
+        else {
+            ScrnGameLength.LoadNextSpawnSquad(NextSpawnSquad);
+            if ( NextSpawnSquad.length == 0 )
+                return false;
 
-    // How many zombies can we have left to spawn at once
-    ZombiesAtOnceLeft = MaxMonsters - NumMonsters;
-
-    i = LastZVol.ZEDList.Length;
-    //Log("Spawn on"@LastZVol.Name);
-    if( LastZVol.SpawnInHere(NextSpawnSquad,,numspawned,TotalMaxMonsters,ZombiesAtOnceLeft,TotalZombiesValue) )
-    {
-        // adjust health  -- PooSH
-        while ( i < LastZVol.ZEDList.Length )
-            SetMonsterHealth(LastZVol.ZEDList[i++]);
-
-        NumMonsters += numspawned; //NextSpawnSquad.Length;
-        WaveMonsters+= numspawned; //NextSpawnSquad.Length;
-        NextSpawnSquad.Remove(0, numspawned);
-        return true;
+            if ( ScrnGameLength.bLoadedSpecial ) {
+                PendingSpecialSquad = NextSpawnSquad; // backup for another team
+                bCheckSquadTeam = true; // One special squad per each team
+                bCloserZedSpawns = true; // spawn close to the designated team
+            }
+            else {
+                // Check teams only when they are equal in number.
+                // If teams are uneven, then just pick up random player as squad's target
+                bCheckSquadTeam = BigTeamSize == SmallTeamSize;
+                bCloserZedSpawns = false; // make zeds spawn more random on the map
+            }
+        }
     }
-    else
-    {
-        TryToSpawnInAnotherVolume();
-        return false;
-    }
+    return super.AddSquad();
 }
 
 // scale monster health by number of player in the team, not by total number of players
-function SetMonsterHealth(KFMonster M)
+function OverrideMonsterHealth(KFMonster M)
 {
     if ( M == none || M.Health <= 0 )
         return;
@@ -1047,11 +945,6 @@ function SetMonsterHealth(KFMonster M)
     if ( M.PlayerNumHeadHealthScale > 0 ) {
         M.HeadHealth = M.default.HeadHealth * M.DifficultyHealthModifer()
             * (1.0 + (BigTeamSize-1) * M.PlayerNumHeadHealthScale );
-
-        // set changed value to ScrnGameRules
-        if ( ScrnRules != none ) {
-            ScrnRules.MonsterInfos[ScrnRules.GetMonsterIndex(M)].HeadHealth = M.HeadHealth;
-        }
     }
 }
 
@@ -1235,7 +1128,7 @@ State MatchInProgress
 
     function DoWaveEnd()
     {
-        local byte NextWave;
+        local int NextWave;
 
         NextWave = WaveNum + 1;
         if ( !bSingleTeam && (AliveTeamPlayerCount[0] == 0 ^^ AliveTeamPlayerCount[1] == 0) ) {
@@ -1268,7 +1161,15 @@ State MatchInProgress
             SpawnBaseGuardian(1);
         TeamBases[1].SendHome();
 
+        if ( ScrnGameLength != none && NextWave >= ScrnGameLength.Waves.length ) {
+            // if there are not enough waves in ScrnGameLength, then just re-load the last one again
+            WaveNum = ScrnGameLength.Waves.length - 2;
+        }
         super.DoWaveEnd();
+        if ( !bGameEnded ) {
+            WaveNum = NextWave;
+        }
+        TSCGRI.WaveNumber = WaveNum;
 
         if ( bPendingShuffle ) {
             ShuffleTeams();
@@ -1365,14 +1266,15 @@ State MatchInProgress
         }
     }
 
-    function float CalcNextSquadSpawnTime()
-    {
-        if ( bTeamWiped )
-            return super.CalcNextSquadSpawnTime(); // same as in regular game
+    // function float GetMinSpawnDelay()
+    // {
+        // local float result;
 
-        // Faster spawns
-        return super.CalcNextSquadSpawnTime() * 0.5;
-    }
+        // result = super.GetMinSpawnDelay();
+        // if ( !bTeamWiped )
+            // result *= 0.5; // up to twice faster spawns
+        // return result;
+    // }
 } //MatchInProgress
 
 

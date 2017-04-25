@@ -743,8 +743,8 @@ function bool PreventDeath(Pawn Killed, Controller Killer, class<DamageType> dam
         ++GameDoom3Kills;
     }
 
-    if ( Killer != none && ScrnHumanPawn(Killer.Pawn) != none ) {
-        ScrnHumanPawn(Killer.Pawn).MacheteResetTime += 3;
+    if ( Killer != none && ScrnHumanPawn(Killer.Pawn) != none && ClassIsChildOf(damageType, class'DamTypeMachete') ) {
+        ScrnHumanPawn(Killer.Pawn).MacheteResetTime = Level.TimeSeconds + 5.0;
     }
 
     if ( bUseAchievements ) {
@@ -962,7 +962,10 @@ function InitBoss(KFMonster Monster)
 		AchHandlers[i].BossSpawned(Monster);
 }
 
-
+function ReinitMonster(KFMonster Monster)
+{
+    MonsterInfos[GetMonsterIndex(Monster)].HeadHealth = Monster.HeadHealth;
+}
 
 // called from ScrnNade
 function ScrakeNaded(ZombieScrake Scrake)

@@ -14,10 +14,11 @@ var config string Title, Message, TraderMessage;
 var config int TraderTime;
 var config bool bOpenTrader;
 var config EWaveEndRule EndRule;
-var config int Counter;
+var config int Counter, MaxCounter;
 var config float PerPlayerMult;
 var config float SpawnRateMod;
 
+var config float SpecialSquadHealthMod;
 var config int ZedsPerSpecialSquad;
 var config array<string> SpecialSquads;
 var config array<string> Squads;
@@ -28,6 +29,7 @@ defaultproperties
     bOpenTrader=true
     EndRule=RULE_KillEmAll
     Counter=30
+    SpecialSquadHealthMod=1.0
     ZedsPerSpecialSquad=50
     SpawnRateMod=1.0
     Squads(0)="4*CL"

@@ -40,4 +40,4 @@ IMPORTANT NOTICE:
 [b][u]Make a backup of your ScrnBalance.ini and ServerPerks.ini files[/u][/b], if you make any changes to them. Otherwise they will be overwritten by the future releases.
 
 
-Copyright © 2012-2016 PU Developing IK, All Rights Reserved.
+Copyright © 2012-2017 PU Developing IK, All Rights Reserved.

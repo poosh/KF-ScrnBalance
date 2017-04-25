@@ -2,7 +2,9 @@ KF-ScrnTestGrounds.rom?Listen?Game=ScrnBalanceSrv.ScrnGameType?Difficulty=7?Game
 KF-BioticsLab.rom?Listen?Game=ScrnBalanceSrv.FscGame?Difficulty=2?GameLength=2?VACSecured=true?MaxPlayers=6?Mutator=ScrnSP.ServerPerksMutSE,ScrnBalanceSrv.ScrnBalance
 KF-BioticsLab.rom?Listen?Game=ScrnBalanceSrv.TSCGame?Difficulty=2?GameLength=2?VACSecured=true?MaxPlayers=6?Mutator=ScrnSP.ServerPerksMutSE,ScrnBalanceSrv.ScrnBalance
 
+# Mystery Mode
 KF-BioticsLab.rom?Listen?Game=ScrnBalanceSrv.ScrnGameType?Difficulty=5?GameLength=20?VACSecured=true?MaxPlayers=6?Mutator=ScrnSP.ServerPerksMutSE,ScrnBalanceSrv.ScrnBalance
+
 KF-BioticsLab.rom?Listen?Game=ScrnBalanceSrv.ScrnGameType?Difficulty=5?GameLength=12?VACSecured=true?MaxPlayers=6?Mutator=ScrnSP.ServerPerksMutSE,ScrnBalanceSrv.ScrnBalance,ScrnDoom3KF.Doom3Mutator
 
 
