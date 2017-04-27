@@ -11,7 +11,7 @@ class ScrnBalance extends Mutator
 #exec OBJ LOAD FILE=ScrnAch_T.utx
 
 
-const VERSION = 94300;
+const VERSION = 94400;
 
 var ScrnBalance Mut; // pointer to self to use in static functions, i.e class'ScrnBalance'.default.Mut
 
@@ -226,8 +226,6 @@ struct SCustomEvent {
 };
 var globalconfig array<SCustomEvent> CustomEvents;
 
-var float OriginalWaveSpawnPeriod;
-
 var globalconfig bool bNoRequiredEquipment;
 var globalconfig bool bUseExpLevelForSpawnInventory;
 var globalconfig array<string> SpawnInventory;
@@ -243,6 +241,8 @@ struct SColorTag {
 };
 var array<SColorTag> ColorTags;
 
+var float OriginalWaveSpawnPeriod;
+var globalconfig float MinZedSpawnPeriod;
 var globalconfig bool bCloserZedSpawns, bSpawnRateFix;
 var globalconfig bool bServerInfoVeterancy;
 
@@ -1214,6 +1214,10 @@ simulated function Tick( float DeltaTime )
 
     if ( Role == ROLE_Authority ) {
 		OriginalWaveSpawnPeriod = KF.KFLRules.WaveSpawnPeriod;
+        if ( OriginalWaveSpawnPeriod < MinZedSpawnPeriod ) {
+            OriginalWaveSpawnPeriod = MinZedSpawnPeriod;
+            KF.KFLRules.WaveSpawnPeriod = MinZedSpawnPeriod;
+        }
         ForceMaxPlayers();
 		if ( !bStoryMode ) {
             InitDoors();
@@ -3207,7 +3211,7 @@ defaultproperties
     WeldingRequirementScaling=1.000000
     StalkerRequirementScaling=1.000000
     SkippedTradeTimeMult=1.0
-    ServerPerksPkgName="ServerPerksMut.ServerPerksMut"
+    ServerPerksPkgName="ScrnSP.ServerPerksMutSE"
     bReplaceHUD=True
     bReplaceScoreBoard=True
     bBroadcastPickups=True
@@ -3276,6 +3280,7 @@ defaultproperties
     SharpProgMinDmg=1000
     bCloserZedSpawns=True
     bSpawnRateFix=True
+    MinZedSpawnPeriod=2.0
     bScrnWaves=True
     bServerInfoVeterancy=True
     bPlayerZEDTime=True

@@ -9,6 +9,14 @@
 -------------------------------------------------------------------------------
 *** VERSION 9 ***
 -------------------------------------------------------------------------------
+v9.44:
+- Fixed bugs in zed spawning system
+ (for example, it was the reason why some zeds didn't spawned on Hell Ride)
+
+CONFIG VARIABLES (ScrnBalance.ini):
+- MinZedSpawnPeriod - added to prevent insane spawn rates when bSpawnRateFix=True
+
+
 v9.43:
 TSC:
 - bScrnWaves=True hard-coded in TSC

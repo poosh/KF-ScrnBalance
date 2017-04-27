@@ -171,13 +171,16 @@ final static function float GetPost6RequirementScaling()
 
 final static function byte GetBonusLevel(int level)
 {
+    if ( class'ScrnBalance'.default.Mut == none )
+        return level; // happens at the end of the game (after ServerTravel)
     return Clamp(level, class'ScrnBalance'.default.Mut.MinLevel, class'ScrnBalance'.default.Mut.MaxLevel);
 }
 
 final static function byte GetClientVeteranSkillLevel(KFPlayerReplicationInfo KFPRI)
 {
-    // c&p from GetBonusLevel() to reduce function calls  -- PooSH
-    return Clamp(KFPRI.ClientVeteranSkillLevel, class'ScrnBalance'.default.Mut.MinLevel, class'ScrnBalance'.default.Mut.MaxLevel);
+    if ( KFPRI == none )
+        return 0;
+    return GetBonusLevel(KFPRI.ClientVeteranSkillLevel);
 }
 
 final static function bool IsGunslingerEnabled()
