@@ -9,6 +9,10 @@
 -------------------------------------------------------------------------------
 *** VERSION 9 ***
 -------------------------------------------------------------------------------
+v9.45:
+- [FTG] Fixed bug when two special squads were spawned
+
+
 v9.44:
 - Fixed bugs in zed spawning system
  (for example, it was the reason why some zeds didn't spawned on Hell Ride)

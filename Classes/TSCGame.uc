@@ -916,7 +916,8 @@ function bool AddSquad()
                 return false;
 
             if ( ScrnGameLength.bLoadedSpecial ) {
-                PendingSpecialSquad = NextSpawnSquad; // backup for another team
+                if (!bTeamWiped)
+                    PendingSpecialSquad = NextSpawnSquad; // backup for another team
                 bCheckSquadTeam = true; // One special squad per each team
                 bCloserZedSpawns = true; // spawn close to the designated team
             }
