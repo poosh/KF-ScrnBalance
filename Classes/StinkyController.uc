@@ -42,7 +42,7 @@ function CompleteAction()
 function TakeActor(Actor A)
 {
     A.SetBase(Pawn);
-    Pawn.AttachToBone(A, StinkyClot.GrabBone );
+    Pawn.AttachToBone(A, StinkyClot.GrabBone);
 }
 
 function int CalcSpeed()

@@ -62,6 +62,10 @@ state Guarding
 
 defaultproperties
 {
+    GameObjBone="CHR_RArmPalm"
+    GameObjOffset=(X=5,Y=-10,Z=-10)
+    GameObjRot=(Pitch=0,Yaw=0,Roll=0)
+
     WipeOnBaseLost=class'DamTypeEnemyBase'
     bSkipActorPropertyReplication=false
     bReplicateMovement=true

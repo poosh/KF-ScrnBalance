@@ -8,4 +8,5 @@ defaultproperties
      ItemShortName="Grenades SE"
      AmmoItemName="Grenades SE"
      InventoryType=Class'ScrnBalanceSrv.ScrnFrag'
+     BuyClipSize=1
 }

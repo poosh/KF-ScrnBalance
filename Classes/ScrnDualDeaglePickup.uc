@@ -8,4 +8,6 @@ defaultproperties
      ItemShortName="Dual HC SE"
      CorrespondingPerkIndex=8
      InventoryType=Class'ScrnBalanceSrv.ScrnDualDeagle'
+     MagAmmoRemaining=16
+     BuyClipSize=16
 }

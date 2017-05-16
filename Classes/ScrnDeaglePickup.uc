@@ -8,7 +8,7 @@ function inventory SpawnCopy( pawn Other ) {
 
     For( CurInv=Other.Inventory; CurInv!=None; CurInv=CurInv.Inventory ) {
 		PistolInInventory = KFWeapon(CurInv);
-        if( PistolInInventory != None && (PistolInInventory.class == default.InventoryType 
+        if( PistolInInventory != None && (PistolInInventory.class == default.InventoryType
 				|| ClassIsChildOf(default.InventoryType, PistolInInventory.class)) )
 		{
 			// destroy the inventory to force parent SpawnCopy() to make a new instance of class
@@ -44,7 +44,7 @@ function bool CheckCanCarry(KFHumanPawn Hm) {
                 LastCantCarryTime = Level.TimeSeconds + 0.5;
                 PlayerController(Hm.Controller).ReceiveLocalizedMessage(Class'KFMainMessages', 2);
             }
-            return false; 
+            return false;
         }
         else if ( CurInv.class == default.InventoryType ) {
             bHasSinglePistol = true;
@@ -74,4 +74,5 @@ defaultproperties
      ItemShortName="Handcannon SE"
      InventoryType=Class'ScrnBalanceSrv.ScrnDeagle'
 	 Weight=4
+     BuyClipSize=8
 }

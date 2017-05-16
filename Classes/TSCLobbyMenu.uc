@@ -1,4 +1,5 @@
-class TSCLobbyMenu extends ScrnLobbyMenu;
+class TSCLobbyMenu extends ScrnLobbyMenu
+    dependson(TSCLobbyFooter);
 
 #exec OBJ LOAD FILE=TSC_T.utx
 
@@ -38,7 +39,7 @@ event Timer()
 {
 	local TSCGameReplicationInfo GRI;
 	local PlayerReplicationInfo PRI;
-    
+
 
     PRI = PlayerOwner().PlayerReplicationInfo;
     if ( PRI != none ) {
@@ -47,25 +48,25 @@ event Timer()
             Return;
         }
     }
-    
-    
+
+
 
 	GRI = TSCGameReplicationInfo(PlayerOwner().GameReplicationInfo);
 	if ( GRI==None )
 		label_TimeOutCounter.Caption = WaitingForServerStatus;
-    else if ( GRI.Level.NetMode != NM_Standalone && (RedPlayers == 0 || BluePlayers == 0 
+    else if ( GRI.Level.NetMode != NM_Standalone && (RedPlayers == 0 || BluePlayers == 0
                 || RedPlayers+BluePlayers < GRI.MinNetPlayers) )
         label_TimeOutCounter.Caption = WaitingForMorePlayers;
 	else if ( GRI.LobbyTimeout <= 0 )
 		label_TimeOutCounter.Caption = WaitingForOtherPlayers;
 	else
 		label_TimeOutCounter.Caption = AutoCommence$":" @ GRI.LobbyTimeout;
-        
+
     if ( GRI != None ) {
         l_HDmgCaption.Caption = strHDmg $ HdmgNames[GRI.HumanDamageMode];
         l_HDmgInfo.Caption = HdmgInfo[GRI.HumanDamageMode];
     }
-    
+
     UpdateButtonCaptions();
 }
 
@@ -73,14 +74,14 @@ function TeamChanged()
 {
     local ScrnPlayerController PC;
     local string CN;
-    
+
     PC = ScrnPlayerController(PlayerOwner());
-    if ( PC == none ) 
+    if ( PC == none )
         return;
-       
+
     CN = PC.PlayerReplicationInfo.CharacterName;
     if ( !PC.ValidateCharacter(CN) )
-        PC.ChangeCharacter(CN);    
+        PC.ChangeCharacter(CN);
 }
 
 function bool OnTeamButtonClick(GUIComponent Sender)
@@ -91,14 +92,14 @@ function bool OnTeamButtonClick(GUIComponent Sender)
 	PC = KFPlayerController(PlayerOwner());
 	if ( PC == none )
         return true;
-        
+
     if ( Sender == TeamButtons[1] )
         TeamIndex = 1;
-    else 
+    else
         TeamIndex = 0;
-        
-    if ( PC.PlayerReplicationInfo == none || PC.PlayerReplicationInfo.Team == none 
-            || PC.PlayerReplicationInfo.Team.TeamIndex != TeamIndex ) 
+
+    if ( PC.PlayerReplicationInfo == none || PC.PlayerReplicationInfo.Team == none
+            || PC.PlayerReplicationInfo.Team.TeamIndex != TeamIndex )
     {
         if ( PC.PlayerReplicationInfo.bReadyToPlay ) {
             PC.ServerUnreadyPlayer();
@@ -122,7 +123,7 @@ function bool OnTeamButtonClick(GUIComponent Sender)
             PC.PlayerReplicationInfo.bReadyToPlay = False;
         }
     }
-    
+
     UpdateButtonCaptions();
 
 	return true;
@@ -135,7 +136,7 @@ function UpdateButtonCaptions()
 
     PC = KFPlayerController(PlayerOwner());
 	if ( PC == none )
-        return;  
+        return;
 
     if ( PC.PlayerReplicationInfo == none || PC.PlayerReplicationInfo.Team == none ) {
         TeamButtons[0].Caption = strJoin;
@@ -146,7 +147,7 @@ function UpdateButtonCaptions()
         TeamButtons[1-TeamIndex].Caption = strJoin;
         if ( PC.PlayerReplicationInfo.bReadyToPlay )
             TeamButtons[TeamIndex].Caption = UnreadyString;
-        else 
+        else
             TeamButtons[TeamIndex].Caption = ReadyString;
     }
 }
@@ -156,7 +157,7 @@ function AddPlayer( KFPlayerReplicationInfo PRI, int Index, Canvas C )
 	local float Top;
 	local Material M;
     local ScrnBalance Mut;
-    local String PlayerName;    
+    local String PlayerName;
 
 	if( Index>=PlayerBoxes.Length )
 	{
@@ -173,14 +174,14 @@ function AddPlayer( KFPlayerReplicationInfo PRI, int Index, Canvas C )
 		PlayerBoxes[Index].ReadyBox.WinHeight = 0.045;
 		PlayerBoxes[Index].ReadyBox.RenderWeight = 0.55;
 		PlayerBoxes[Index].ReadyBox.bAcceptsInput = False;
-        
+
 		PlayerBoxes[Index].PlayerBox = new (None) Class'KFPlayerReadyBar';
 		PlayerBoxes[Index].PlayerBox.WinTop = 0.04+Top;
 		PlayerBoxes[Index].PlayerBox.WinLeft = 0.09;
 		PlayerBoxes[Index].PlayerBox.WinWidth = 0.35;
 		PlayerBoxes[Index].PlayerBox.WinHeight = 0.045;
 		PlayerBoxes[Index].PlayerBox.RenderWeight = 0.35;
-        
+
 		PlayerBoxes[Index].PlayerPerk = new (None) Class'GUIImage';
 		PlayerBoxes[Index].PlayerPerk.ImageStyle = ISTY_Justified;
 		PlayerBoxes[Index].PlayerPerk.WinTop = 0.043+Top;
@@ -188,7 +189,7 @@ function AddPlayer( KFPlayerReplicationInfo PRI, int Index, Canvas C )
 		PlayerBoxes[Index].PlayerPerk.WinWidth = 0.039;
 		PlayerBoxes[Index].PlayerPerk.WinHeight = 0.039;
 		PlayerBoxes[Index].PlayerPerk.RenderWeight = 0.56;
-        
+
 		PlayerBoxes[Index].PlayerVetLabel = new (None) Class'GUILabel';
 		PlayerBoxes[Index].PlayerVetLabel.TextAlign = TXTA_Right;
 		PlayerBoxes[Index].PlayerVetLabel.TextColor = Class'Canvas'.Static.MakeColor(19,19,19);
@@ -198,12 +199,12 @@ function AddPlayer( KFPlayerReplicationInfo PRI, int Index, Canvas C )
 		PlayerBoxes[Index].PlayerVetLabel.WinWidth = 0.151172;
 		PlayerBoxes[Index].PlayerVetLabel.WinHeight = 0.045;
 		PlayerBoxes[Index].PlayerVetLabel.RenderWeight = 0.5;
-        
+
 		AppendComponent(PlayerBoxes[Index].ReadyBox, true);
 		AppendComponent(PlayerBoxes[Index].PlayerBox, true);
 		AppendComponent(PlayerBoxes[Index].PlayerPerk, true);
 		AppendComponent(PlayerBoxes[Index].PlayerVetLabel, true);
-		
+
         /*
 		Top = (PlayerBoxes[Index].PlayerBox.WinTop+PlayerBoxes[Index].PlayerBox.WinHeight);
 		if( !bMOTDHidden && Top>=ADBackground.WinTop )
@@ -223,15 +224,15 @@ function AddPlayer( KFPlayerReplicationInfo PRI, int Index, Canvas C )
         */
 	}
 	PlayerBoxes[Index].ReadyBox.Checked(PRI.bReadyToPlay);
-    
+
     Mut = class'ScrnBalance'.default.Mut;
     if ( Mut != none ) {
         PlayerName = Mut.LeftCol(Mut.ColoredPlayerName(PRI), 20);
     }
     else {
         PlayerName = Left(PRI.PlayerName, 20);
-    }   
-    PlayerBoxes[Index].ReadyBox.SetCaption(" "$PlayerName);    
+    }
+    PlayerBoxes[Index].ReadyBox.SetCaption(" "$PlayerName);
 
 	if ( PRI.ClientVeteranSkill != none )
 	{
@@ -260,7 +261,7 @@ function AddBluePlayer( KFPlayerReplicationInfo PRI, int Index, Canvas C )
 	local float Top;
 	local Material M;
     local ScrnBalance Mut;
-    local String PlayerName;      
+    local String PlayerName;
 
 	if( Index>=BluePlayerBoxes.Length )
 	{
@@ -277,14 +278,14 @@ function AddBluePlayer( KFPlayerReplicationInfo PRI, int Index, Canvas C )
 		BluePlayerBoxes[Index].ReadyBox.WinHeight = 0.045;
 		BluePlayerBoxes[Index].ReadyBox.RenderWeight = 0.55;
 		BluePlayerBoxes[Index].ReadyBox.bAcceptsInput = False;
-        
+
 		BluePlayerBoxes[Index].PlayerBox = new (None) Class'KFPlayerReadyBar';
 		BluePlayerBoxes[Index].PlayerBox.WinTop = 0.04+Top;
 		BluePlayerBoxes[Index].PlayerBox.WinLeft = 0.51;
 		BluePlayerBoxes[Index].PlayerBox.WinWidth = 0.35;
 		BluePlayerBoxes[Index].PlayerBox.WinHeight = 0.045;
 		BluePlayerBoxes[Index].PlayerBox.RenderWeight = 0.35;
-        
+
 		BluePlayerBoxes[Index].PlayerPerk = new (None) Class'GUIImage';
 		BluePlayerBoxes[Index].PlayerPerk.ImageStyle = ISTY_Justified;
 		BluePlayerBoxes[Index].PlayerPerk.WinTop = 0.043+Top;
@@ -292,7 +293,7 @@ function AddBluePlayer( KFPlayerReplicationInfo PRI, int Index, Canvas C )
 		BluePlayerBoxes[Index].PlayerPerk.WinWidth = 0.039;
 		BluePlayerBoxes[Index].PlayerPerk.WinHeight = 0.039;
 		BluePlayerBoxes[Index].PlayerPerk.RenderWeight = 0.56;
-        
+
 		BluePlayerBoxes[Index].PlayerVetLabel = new (None) Class'GUILabel';
 		BluePlayerBoxes[Index].PlayerVetLabel.TextAlign = TXTA_Right;
 		BluePlayerBoxes[Index].PlayerVetLabel.TextColor = Class'Canvas'.Static.MakeColor(19,19,19);
@@ -302,12 +303,12 @@ function AddBluePlayer( KFPlayerReplicationInfo PRI, int Index, Canvas C )
 		BluePlayerBoxes[Index].PlayerVetLabel.WinWidth = 0.151172;
 		BluePlayerBoxes[Index].PlayerVetLabel.WinHeight = 0.045;
 		BluePlayerBoxes[Index].PlayerVetLabel.RenderWeight = 0.5;
-        
+
 		AppendComponent(BluePlayerBoxes[Index].ReadyBox, true);
 		AppendComponent(BluePlayerBoxes[Index].PlayerBox, true);
 		AppendComponent(BluePlayerBoxes[Index].PlayerPerk, true);
 		AppendComponent(BluePlayerBoxes[Index].PlayerVetLabel, true);
-		
+
         /*
 		Top = (BluePlayerBoxes[Index].PlayerBox.WinTop+BluePlayerBoxes[Index].PlayerBox.WinHeight);
 		if( !bMOTDHidden && Top>=ADBackground.WinTop )
@@ -327,15 +328,15 @@ function AddBluePlayer( KFPlayerReplicationInfo PRI, int Index, Canvas C )
         */
 	}
 	BluePlayerBoxes[Index].ReadyBox.Checked(PRI.bReadyToPlay);
-    
+
     Mut = class'ScrnBalance'.default.Mut;
     if ( Mut != none ) {
         PlayerName = Mut.LeftCol(Mut.ColoredPlayerName(PRI), 20);
     }
     else {
         PlayerName = Left(PRI.PlayerName, 20);
-    }    
-    BluePlayerBoxes[Index].ReadyBox.SetCaption(" "$PlayerName);    
+    }
+    BluePlayerBoxes[Index].ReadyBox.SetCaption(" "$PlayerName);
 
 	if ( PRI.ClientVeteranSkill != none )
 	{
@@ -393,11 +394,11 @@ function bool InternalOnPreDraw(Canvas C)
 		PC.ClientCloseMenu(True,False);
 		return false;
 	}
-    
+
     if (  PC.PlayerReplicationInfo != none && PC.PlayerReplicationInfo.Team != MyTeam ) {
         MyTeam = PC.PlayerReplicationInfo.Team;
         TeamChanged();
-    }    
+    }
 
 	t_Footer.InternalOnPreDraw(C);
 
@@ -409,7 +410,7 @@ function bool InternalOnPreDraw(Canvas C)
         else
             WaveLabel.Caption = string(GRI.FinalWave) @ strWaves @ "+" @ string(GRI.OvertimeWaves)$"OT"
                 @ "+" @ string(GRI.SudDeathWaves)$"SD";
-    }        
+    }
 	else {
 		WaveLabel.Caption = "Wrong Game Type!"; // shouldn't happen
 		return false;
@@ -420,7 +421,7 @@ function bool InternalOnPreDraw(Canvas C)
     RedPlayers = 0;
     BluePlayers = 0;
 	for ( i = 0; i<GRI.PRIArray.Length; i++ ) {
-        KFPRI = KFPlayerReplicationInfo(GRI.PRIArray[i]); 
+        KFPRI = KFPlayerReplicationInfo(GRI.PRIArray[i]);
 		if ( KFPRI == none || KFPRI.bOnlySpectator || KFPRI.bReadyToPlay || KFPRI.Team == none)
 			continue;
 
@@ -432,14 +433,14 @@ function bool InternalOnPreDraw(Canvas C)
         }
         else if ( KFPRI.Team.TeamIndex == 1 ) {
             BluePlayers++;
-            if ( b < MaxPlayersOnList ) 
+            if ( b < MaxPlayersOnList )
                 AddBluePlayer(KFPRI, b++, C);
         }
 	}
 
 	// Then comes rest.
 	for ( i = 0; i < GRI.PRIArray.Length; i++ ) {
-        KFPRI = KFPlayerReplicationInfo(GRI.PRIArray[i]); 
+        KFPRI = KFPlayerReplicationInfo(GRI.PRIArray[i]);
 		if ( KFPRI == none || KFPRI.bOnlySpectator || !KFPRI.bReadyToPlay || KFPRI.Team == none)
 			continue;
 
@@ -452,12 +453,12 @@ function bool InternalOnPreDraw(Canvas C)
 
         if ( KFPRI.Team.TeamIndex == 0 ) {
             RedPlayers++;
-            if ( r < MaxPlayersOnList ) 
+            if ( r < MaxPlayersOnList )
                 AddPlayer(KFPRI, r++, C);
         }
         else if ( KFPRI.Team.TeamIndex == 1 ) {
             BluePlayers++;
-            if ( b < MaxPlayersOnList ) 
+            if ( b < MaxPlayersOnList )
                 AddBluePlayer(KFPRI, b++, C);
         }
 	}
@@ -486,18 +487,18 @@ DoneIt:
 		SkillString = HardString;
 	else if ( GRI.BaseDifficulty <= 5 )
 		SkillString = SuicidalString;
-	else 
+	else
         SkillString = HellOnEarthString;
 
 	CurrentMapLabel.Caption = PC.Level.Title;
 	DifficultyLabel.Caption = SkillString;
-    
+
     if ( MyTeam != none ) {
-        l_PlayerTeam.Caption = strTeam @ TeamNames[MyTeam.TeamIndex]; 
+        l_PlayerTeam.Caption = strTeam @ TeamNames[MyTeam.TeamIndex];
         l_PlayerTeam.TextColor = MyTeam.TeamColor;
     }
     else {
-        l_PlayerTeam.Caption = strNotTeamMember; 
+        l_PlayerTeam.Caption = strNotTeamMember;
         l_PlayerTeam.TextColor = class'Canvas'.static.MakeColor(192, 192, 192, 255);
     }
 
@@ -523,7 +524,7 @@ defaultproperties
     strTeam="Team:"
     strNotTeamMember="Select team..."
     MaxPlayersOnList=11
-    
+
     Begin Object Class=TSCLobbyFooter Name=BuyFooter
         RenderWeight=0.300000
         TabOrder=8
@@ -531,10 +532,10 @@ defaultproperties
         bScaleToParent=False
         OnPreDraw=BuyFooter.InternalOnPreDraw
     End Object
-    t_Footer=ScrnLobbyFooter'ScrnBalanceSrv.TSCLobbyMenu.BuyFooter'  
+    t_Footer=ScrnLobbyFooter'ScrnBalanceSrv.TSCLobbyMenu.BuyFooter'
 
-    label_TimeOutCounter=GUILabel'ScrnBalanceSrv.TSCLobbyFooter.TimeOutCounter'     
-    
+    label_TimeOutCounter=GUILabel'ScrnBalanceSrv.TSCLobbyFooter.TimeOutCounter'
+
      Begin Object Class=GUIImage Name=TSCLogoLeft
          Image=Texture'TSC_T.Team.TSC_Left'
          ImageStyle=ISTY_Scaled
@@ -546,8 +547,8 @@ defaultproperties
          WinHeight=0.68
          RenderWeight=0.10
      End Object
-     TSCLogo=GUIImage'ScrnBalanceSrv.TSCLobbyMenu.TSCLogoLeft'    
-    
+     TSCLogo=GUIImage'ScrnBalanceSrv.TSCLobbyMenu.TSCLogoLeft'
+
      Begin Object Class=GUIImage Name=RedLogo
          Image=Texture'TSC_T.Team.BritishLogo'
          ImageStyle=ISTY_Scaled
@@ -573,7 +574,7 @@ defaultproperties
          RenderWeight=0.10
      End Object
      TeamLogos[1]=GUIImage'ScrnBalanceSrv.TSCLobbyMenu.BlueLogo'
-     
+
      Begin Object Class=GUIImage Name=RedTitle
          Image=Texture'TSC_T.Team.BritishSquad'
          ImageStyle=ISTY_Scaled
@@ -585,8 +586,8 @@ defaultproperties
          WinHeight=0.06
          RenderWeight=0.15
      End Object
-     TeamTitles[0]=GUIImage'ScrnBalanceSrv.TSCLobbyMenu.RedTitle'     
-     
+     TeamTitles[0]=GUIImage'ScrnBalanceSrv.TSCLobbyMenu.RedTitle'
+
      Begin Object Class=GUIImage Name=BlueTitle
          Image=Texture'TSC_T.Team.SteampunkSquad'
          ImageStyle=ISTY_Scaled
@@ -598,7 +599,7 @@ defaultproperties
          WinHeight=0.06
          RenderWeight=0.15
      End Object
-     TeamTitles[1]=GUIImage'ScrnBalanceSrv.TSCLobbyMenu.BlueTitle'  
+     TeamTitles[1]=GUIImage'ScrnBalanceSrv.TSCLobbyMenu.BlueTitle'
 
     Begin Object Class=GUIButton Name=RedButton
         Caption="Join"
@@ -614,8 +615,8 @@ defaultproperties
         OnClick=TSCLobbyMenu.OnTeamButtonClick
         OnKeyEvent=ReadyButton.InternalOnKeyEvent
     End Object
-    TeamButtons[0]=GUIButton'ScrnBalanceSrv.TSCLobbyMenu.RedButton'     
-    
+    TeamButtons[0]=GUIButton'ScrnBalanceSrv.TSCLobbyMenu.RedButton'
+
     Begin Object Class=GUIButton Name=BlueButton
         Caption="Join"
         Hint="Click to join the Steampunk Squad, or Ready/Unredy, if already joined"
@@ -630,9 +631,9 @@ defaultproperties
         OnClick=TSCLobbyMenu.OnTeamButtonClick
         OnKeyEvent=ReadyButton.InternalOnKeyEvent
     End Object
-    TeamButtons[1]=GUIButton'ScrnBalanceSrv.TSCLobbyMenu.BlueButton'   
-    
-    
+    TeamButtons[1]=GUIButton'ScrnBalanceSrv.TSCLobbyMenu.BlueButton'
+
+
      Begin Object Class=SRLobbyChat Name=ChatBox
          OnCreateComponent=ChatBox.InternalOnCreateComponent
          WinTop=0.807600
@@ -648,7 +649,7 @@ defaultproperties
          OnMouseRelease=ChatBox.FloatingMouseRelease
      End Object
      t_ChatBox=SRLobbyChat'ScrnBalanceSrv.TSCLobbyMenu.ChatBox'
-     
+
      Begin Object Class=GUISectionBackground Name=ADBG
         Caption="Server Info"
          WinTop=0.567412
@@ -658,7 +659,7 @@ defaultproperties
          RenderWeight=0.300000
          OnPreDraw=ADBG.InternalPreDraw
      End Object
-     ADBackground=GUISectionBackground'ScrnBalanceSrv.TSCLobbyMenu.ADBG'     
+     ADBackground=GUISectionBackground'ScrnBalanceSrv.TSCLobbyMenu.ADBG'
 
 
      Begin Object Class=GUILabel Name=PerkClickArea
@@ -670,16 +671,16 @@ defaultproperties
          OnClickSound=CS_Click
          OnClick=LobbyMenu.ShowPerkMenu
      End Object
-     PerkClickLabel=GUILabel'ScrnBalanceSrv.TSCLobbyMenu.PerkClickArea'   
-     
+     PerkClickLabel=GUILabel'ScrnBalanceSrv.TSCLobbyMenu.PerkClickArea'
+
      Begin Object Class=GUISectionBackground Name=PlayerPortraitB
          WinTop=0.567412
          WinLeft=0.5118
          WinWidth=0.122478
          WinHeight=0.332588
-         OnPreDraw=PlayerPortraitB.InternalPreDraw     
+         OnPreDraw=PlayerPortraitB.InternalPreDraw
      End Object
-     PlayerPortraitBG=GUISectionBackground'ScrnBalanceSrv.TSCLobbyMenu.PlayerPortraitB'     
+     PlayerPortraitBG=GUISectionBackground'ScrnBalanceSrv.TSCLobbyMenu.PlayerPortraitB'
 
      Begin Object Class=GUIImage Name=PlayerPortrait
          Image=Texture'InterfaceArt_tex.Menu.changeme_texture'
@@ -693,7 +694,7 @@ defaultproperties
          RenderWeight=0.300000
      End Object
      i_Portrait=GUIImage'ScrnBalanceSrv.TSCLobbyMenu.PlayerPortrait'
-     
+
      Begin Object Class=GUISectionBackground Name=BGPerk
          bFillClient=True
          Caption="Player Info"
@@ -704,7 +705,7 @@ defaultproperties
          OnPreDraw=BGPerk.InternalPreDraw
      End Object
      i_BGPerk=GUISectionBackground'ScrnBalanceSrv.TSCLobbyMenu.BGPerk'
-     
+
      Begin Object Class=GUILabel Name=PlayerTeam
          Caption="Select a team"
          TextAlign=TXTA_Left
@@ -717,7 +718,7 @@ defaultproperties
          WinHeight=0.035
          RenderWeight=0.95
      End Object
-     l_PlayerTeam=GUILabel'ScrnBalanceSrv.TSCLobbyMenu.PlayerTeam'         
+     l_PlayerTeam=GUILabel'ScrnBalanceSrv.TSCLobbyMenu.PlayerTeam'
 
      Begin Object Class=GUISectionBackground Name=BGPerkEffects
          bFillClient=True
@@ -728,7 +729,7 @@ defaultproperties
          WinHeight=0.192588
          OnPreDraw=BGPerkEffects.InternalPreDraw
      End Object
-     i_BGPerkEffects=GUISectionBackground'ScrnBalanceSrv.TSCLobbyMenu.BGPerkEffects' 
+     i_BGPerkEffects=GUISectionBackground'ScrnBalanceSrv.TSCLobbyMenu.BGPerkEffects'
 
      Begin Object Class=GUILabel Name=CurrentMapL
          Caption="LAlalala Map"
@@ -740,8 +741,8 @@ defaultproperties
          WinHeight=0.035
          RenderWeight=0.900000
      End Object
-     CurrentMapLabel=GUILabel'ScrnBalanceSrv.TSCLobbyMenu.CurrentMapL'     
-     
+     CurrentMapLabel=GUILabel'ScrnBalanceSrv.TSCLobbyMenu.CurrentMapL'
+
      Begin Object Class=GUILabel Name=DifficultyL
          Caption="Difficulty"
          TextColor=(B=158,G=176,R=175)
@@ -752,7 +753,7 @@ defaultproperties
          WinHeight=0.035
          RenderWeight=0.900000
      End Object
-     DifficultyLabel=GUILabel'ScrnBalanceSrv.TSCLobbyMenu.DifficultyL'   
+     DifficultyLabel=GUILabel'ScrnBalanceSrv.TSCLobbyMenu.DifficultyL'
 
      Begin Object Class=GUILabel Name=WaveL
          Caption="1/4"
@@ -766,8 +767,8 @@ defaultproperties
          WinHeight=0.035
          RenderWeight=0.95
      End Object
-     WaveLabel=GUILabel'ScrnBalanceSrv.TSCLobbyMenu.WaveL'     
-     
+     WaveLabel=GUILabel'ScrnBalanceSrv.TSCLobbyMenu.WaveL'
+
      Begin Object Class=GUILabel Name=HumanDamageL
          Caption="Human Damage: Normal"
          TextAlign=TXTA_Left
@@ -780,7 +781,7 @@ defaultproperties
          WinHeight=0.035
          RenderWeight=0.95
      End Object
-     l_HDmgCaption=GUILabel'ScrnBalanceSrv.TSCLobbyMenu.HumanDamageL'   
+     l_HDmgCaption=GUILabel'ScrnBalanceSrv.TSCLobbyMenu.HumanDamageL'
 
      Begin Object Class=GUILabel Name=HumanDamageInfoL
          Caption="Full protection within own Base."
@@ -795,49 +796,49 @@ defaultproperties
          WinHeight=0.070
          RenderWeight=0.95
      End Object
-     l_HDmgInfo=GUILabel'ScrnBalanceSrv.TSCLobbyMenu.HumanDamageInfoL'        
-     
-    strHDmg="Human Damage: " 
-    
+     l_HDmgInfo=GUILabel'ScrnBalanceSrv.TSCLobbyMenu.HumanDamageInfoL'
+
+    strHDmg="Human Damage: "
+
     HDmgNames(0)="OFF"
     HDmgNames(1)="No Friendly Fire"
     HDmgNames(2)="PvP, No Friendly Fire."
     HDmgNames(3)="Normal"
     HDmgNames(4)="PvP"
     HDmgNames(5)="Always"
-    
+
     HDmgInfo(0)="Players can't hurt each other at all."
     HDmgInfo(1)="Teammates can't hurt each other."
     HDmgInfo(2)="Players can hurt enemies only."
     HDmgInfo(3)="Full protection within own Base."
     HDmgInfo(4)="Base protects from Friendly Fire only."
     HDmgInfo(5)="Base does not protect from Human Damage."
-     
-  
+
+
 
     // hide
      Begin Object Class=GUIImage Name=WaveB
         bVisible=False
      End Object
-     WaveBG=GUIImage'ScrnBalanceSrv.TSCLobbyMenu.WaveB'   
+     WaveBG=GUIImage'ScrnBalanceSrv.TSCLobbyMenu.WaveB'
 
      Begin Object Class=KFMapStoryLabel Name=LobbyMapStoryBox
          bVisible=False
     End Object
-    l_StoryBox=KFMapStoryLabel'ScrnBalanceSrv.TSCLobbyMenu.LobbyMapStoryBox'    
-    
+    l_StoryBox=KFMapStoryLabel'ScrnBalanceSrv.TSCLobbyMenu.LobbyMapStoryBox'
+
      Begin Object Class=AltSectionBackground Name=StoryBoxBackground
         bVisible=False
      End Object
-     StoryBoxBG=AltSectionBackground'ScrnBalanceSrv.TSCLobbyMenu.StoryBoxBackground'  
+     StoryBoxBG=AltSectionBackground'ScrnBalanceSrv.TSCLobbyMenu.StoryBoxBackground'
 
      Begin Object Class=AltSectionBackground Name=GameInfoB
         bVisible=False
      End Object
-     GameInfoBG=AltSectionBackground'ScrnBalanceSrv.TSCLobbyMenu.GameInfoB'     
-     
+     GameInfoBG=AltSectionBackground'ScrnBalanceSrv.TSCLobbyMenu.GameInfoB'
+
       Begin Object Class=GUIScrollTextBox Name=PerkEffectsScroll
          bVisible=False
      End Object
-     lb_PerkEffects=GUIScrollTextBox'ScrnBalanceSrv.TSCLobbyMenu.PerkEffectsScroll'  
+     lb_PerkEffects=GUIScrollTextBox'ScrnBalanceSrv.TSCLobbyMenu.PerkEffectsScroll'
 }

@@ -9,6 +9,11 @@
 -------------------------------------------------------------------------------
 *** VERSION 9 ***
 -------------------------------------------------------------------------------
+v9.47:
+- [FTG] Zeds spawns made slower when the Guardian is carried
+- When buying ammo pickup's BuyClipSize is used instead of MagCapacity
+- HMG and HTec perks need to be updated to v3.50 to fix BuyClipSize
+
 v9.45:
 - [FTG] Fixed bug when two special squads were spawned
 

@@ -38,8 +38,8 @@ var localized string strNoSpawnCashToss;
 
 
 struct SWeaponFlashlight {
-	var class<KFWeapon> WeaponClass;
-	var int TorchBatteryLife, MaxBatteryLife;
+    var class<KFWeapon> WeaponClass;
+    var int TorchBatteryLife, MaxBatteryLife;
 };
 var array<SWeaponFlashlight> WeaponFlashlights;
 
@@ -99,18 +99,18 @@ replication
         ServerBuyShield, ServerSellShield;
 
     reliable if(Role < ROLE_Authority)
-		ServerReload, ServerFire;
+        ServerReload, ServerFire;
 }
 
 simulated function PostBeginPlay()
 {
     super.PostBeginPlay();
 
-	FindGameRules();
-	ReplaceRequiredEquipment();
+    FindGameRules();
+    ReplaceRequiredEquipment();
 
-	if ( SoundGroupClass == none )
-		SoundGroupClass = Class'KFMod.KFMaleSoundGroup';
+    if ( SoundGroupClass == none )
+        SoundGroupClass = Class'KFMod.KFMaleSoundGroup';
 
     HealthMax += HealthBonus;
     Health += HealthBonus;
@@ -120,41 +120,41 @@ simulated function PostBeginPlay()
 
 function ReplaceRequiredEquipment()
 {
-	local int i;
-	local KFLevelRules_Story StoryRules;
+    local int i;
+    local KFLevelRules_Story StoryRules;
     local ScrnBalance Mut;
 
     Mut = class'ScrnBalance'.static.Myself(Level);
 
-	if ( KFStoryGameInfo(Level.Game) != none ) {
-		StoryRules = KFStoryGameInfo(Level.Game).StoryRules;
-		for ( i = 0; i < StoryRules.RequiredPlayerEquipment.Length; ++i ) {
-			if ( StoryRules.RequiredPlayerEquipment[i] == Class'KFMod.Knife' )
-				StoryRules.RequiredPlayerEquipment[i] = class'ScrnBalanceSrv.ScrnKnife';
-			if ( Mut.bGunslinger && StoryRules.RequiredPlayerEquipment[i] == Class'KFMod.Single' )
-				StoryRules.RequiredPlayerEquipment[i] = class'ScrnBalanceSrv.ScrnSingle';
-			else if ( Mut.bReplaceNades && StoryRules.RequiredPlayerEquipment[i] == Class'KFMod.Frag' )
-				StoryRules.RequiredPlayerEquipment[i] = class'ScrnBalanceSrv.ScrnFrag';
-			else if ( Mut.bWeaponFix && StoryRules.RequiredPlayerEquipment[i] == Class'KFMod.Syringe' )
-				StoryRules.RequiredPlayerEquipment[i] = class'ScrnBalanceSrv.ScrnSyringe';
-		}
-	}
+    if ( KFStoryGameInfo(Level.Game) != none ) {
+        StoryRules = KFStoryGameInfo(Level.Game).StoryRules;
+        for ( i = 0; i < StoryRules.RequiredPlayerEquipment.Length; ++i ) {
+            if ( StoryRules.RequiredPlayerEquipment[i] == Class'KFMod.Knife' )
+                StoryRules.RequiredPlayerEquipment[i] = class'ScrnBalanceSrv.ScrnKnife';
+            if ( Mut.bGunslinger && StoryRules.RequiredPlayerEquipment[i] == Class'KFMod.Single' )
+                StoryRules.RequiredPlayerEquipment[i] = class'ScrnBalanceSrv.ScrnSingle';
+            else if ( Mut.bReplaceNades && StoryRules.RequiredPlayerEquipment[i] == Class'KFMod.Frag' )
+                StoryRules.RequiredPlayerEquipment[i] = class'ScrnBalanceSrv.ScrnFrag';
+            else if ( Mut.bWeaponFix && StoryRules.RequiredPlayerEquipment[i] == Class'KFMod.Syringe' )
+                StoryRules.RequiredPlayerEquipment[i] = class'ScrnBalanceSrv.ScrnSyringe';
+        }
+    }
     else if ( Mut.bNoRequiredEquipment ) {
         for ( i=0; i<16; ++i )
             RequiredEquipment[i] = "";
     }
-	else {
+    else {
         RequiredEquipment[0] = String(class'ScrnBalanceSrv.ScrnKnife');
 
-		if ( Mut.bGunslinger )
-			RequiredEquipment[1] = String(class'ScrnBalanceSrv.ScrnSingle');
+        if ( Mut.bGunslinger )
+            RequiredEquipment[1] = String(class'ScrnBalanceSrv.ScrnSingle');
 
-		if ( Mut.bReplaceNades )
-			RequiredEquipment[2] = String(class'ScrnBalanceSrv.ScrnFrag');
+        if ( Mut.bReplaceNades )
+            RequiredEquipment[2] = String(class'ScrnBalanceSrv.ScrnFrag');
 
-		if ( Mut.bWeaponFix )
-			RequiredEquipment[3] = String(class'ScrnBalanceSrv.ScrnSyringe');
-	}
+        if ( Mut.bWeaponFix )
+            RequiredEquipment[3] = String(class'ScrnBalanceSrv.ScrnSyringe');
+    }
 }
 
 
@@ -186,8 +186,8 @@ simulated function ModifyVelocity(float DeltaTime, vector OldVelocity)
 {
     local float WeightMod, HealthMod, MovementMod;
     local float EncumbrancePercentage;
-	local Inventory Inv;
-	local KF_StoryInventoryItem StoryInv;
+    local Inventory Inv;
+    local KF_StoryInventoryItem StoryInv;
     local int c;
 
     super(KFPawn).ModifyVelocity(DeltaTime, OldVelocity);
@@ -215,16 +215,16 @@ simulated function ModifyVelocity(float DeltaTime, vector OldVelocity)
 
 
         /* Give the pawn's inventory items a chance to modify his movement speed */
-		for( Inv=Inventory; Inv!=None && ++c < 1000; Inv=Inv.Inventory )
-		{
-			GroundSpeed *= Inv.GetMovementModifierFor(self);
+        for( Inv=Inventory; Inv!=None && ++c < 1000; Inv=Inv.Inventory )
+        {
+            GroundSpeed *= Inv.GetMovementModifierFor(self);
 
-			StoryInv = KF_StoryInventoryItem(Inv);
-			if(StoryInv != none && StoryInv.bUseForcedGroundSpeed)
-			{
-				GroundSpeed = StoryInv.ForcedGroundSpeed;
-				return;
-			}
+            StoryInv = KF_StoryInventoryItem(Inv);
+            if(StoryInv != none && StoryInv.bUseForcedGroundSpeed)
+            {
+                GroundSpeed = StoryInv.ForcedGroundSpeed;
+                return;
+            }
         }
 
         if ( bTraderSpeedBoost && !KFGameReplicationInfo(Level.GRI).bWaveInProgress )
@@ -239,7 +239,7 @@ simulated function ModifyVelocity(float DeltaTime, vector OldVelocity)
 
 function PossessedBy(Controller C)
 {
-	Super.PossessedBy(C);
+    Super.PossessedBy(C);
 
     KFPRI = KFPlayerReplicationInfo(PlayerReplicationInfo);
     ScrnPerk = class<ScrnVeterancyTypes>(KFPRI.ClientVeteranSkill);
@@ -277,7 +277,7 @@ simulated function ClientSetInventoryGroup( class<Inventory> NewInventoryClass, 
 // handle pickup
 // function HandlePickup(Pickup pick)
 // {
-	// super.HandlePickup()
+    // super.HandlePickup()
 // }
 
 
@@ -287,28 +287,28 @@ function bool AddInventory( inventory NewItem )
 {
     local KFWeapon weap;
     local bool GroupChanged;
-	// local KFAmmunition ammo;
+    // local KFAmmunition ammo;
 
     weap = KFWeapon(NewItem);
     if( weap != none ) {
-		//log("AddInventory:" @ weap, 'ScrnBalance');
-		if ( Dualies(weap) != none ) {
-			if ( (DualDeagle(weap) != none || Dual44Magnum(weap) != none || DualMK23Pistol(weap) != none)
-				  && weap.InventoryGroup != 4 ) { //skip special weapons like Laser-44
-				// Move dual pistols to slot 3 for Gunslinger perk, so he can easier to cycle them
-				if ( KFPRI != none && ClassIsChildOf(KFPRI.ClientVeteranSkill, class'ScrnBalanceSrv.ScrnVetGunslinger') )
-					weap.InventoryGroup = 3;
-				else
-					weap.InventoryGroup = 2; //leave dual pistols in slot 2 for other perks
-				GroupChanged = true;
-			}
-		}
-		else if ( weap.class == class'Single' ) {
-			if ( class'ScrnBalance'.default.Mut.bWeaponFix )
-				weap.bKFNeverThrow = false;
-		}
+        //log("AddInventory:" @ weap, 'ScrnBalance');
+        if ( Dualies(weap) != none ) {
+            if ( (DualDeagle(weap) != none || Dual44Magnum(weap) != none || DualMK23Pistol(weap) != none)
+                  && weap.InventoryGroup != 4 ) { //skip special weapons like Laser-44
+                // Move dual pistols to slot 3 for Gunslinger perk, so he can easier to cycle them
+                if ( KFPRI != none && ClassIsChildOf(KFPRI.ClientVeteranSkill, class'ScrnBalanceSrv.ScrnVetGunslinger') )
+                    weap.InventoryGroup = 3;
+                else
+                    weap.InventoryGroup = 2; //leave dual pistols in slot 2 for other perks
+                GroupChanged = true;
+            }
+        }
+        else if ( weap.class == class'Single' ) {
+            if ( class'ScrnBalance'.default.Mut.bWeaponFix )
+                weap.bKFNeverThrow = false;
+        }
 
-		weap.bIsTier3Weapon = true; // hack to set weap.Tier3WeaponGiver for all weapons
+        weap.bIsTier3Weapon = true; // hack to set weap.Tier3WeaponGiver for all weapons
     }
 
     //replicate changes on the client side
@@ -316,7 +316,7 @@ function bool AddInventory( inventory NewItem )
         ClientSetInventoryGroup(NewItem.class, NewItem.InventoryGroup);
 
     if ( super.AddInventory(NewItem) ) {
-		if ( weap != none ) {
+        if ( weap != none ) {
             if ( weap.bTorchEnabled )
                 AddToFlashlightArray(weap.class); // v6.22 - each weapon has own flashlight
             CheckQuickMeleeWeapon(KFMeleeGun(weap));
@@ -374,7 +374,7 @@ function bool CheckQuickMeleeWeapon(KFMeleeGun W)
 
 function SetBestQuickMeleeWeapon()
 {
-	local inventory inv;
+    local inventory inv;
     local KFMeleeGun W;
     local int c;
 
@@ -496,7 +496,7 @@ function ServerChangedWeapon(Weapon OldWeapon, Weapon NewWeapon)
 
     super(KFPawn).ServerChangedWeapon(OldWeapon,NewWeapon);
     ApplyWeaponStats(NewWeapon);
-	ApplyWeaponFlashlight(false);
+    ApplyWeaponFlashlight(false);
 }
 
 function UpdateSpecInfo()
@@ -536,13 +536,13 @@ function UpdateSpecInfo()
 
 simulated function ApplyWeaponStats(Weapon NewWeapon)
 {
-	local KFWeapon Weap;
+    local KFWeapon Weap;
     //local KFShotgunFire SgFire;
 
     BaseMeleeIncrease = default.BaseMeleeIncrease;
     InventorySpeedModifier = 0;
 
-	Weap = KFWeapon(NewWeapon);
+    Weap = KFWeapon(NewWeapon);
 
     // check cowboy mode
     if ( Role == ROLE_Authority || IsLocallyControlled() ) {
@@ -565,7 +565,7 @@ simulated function ApplyWeaponStats(Weapon NewWeapon)
 
     SetAmmoStatus();
     if ( KFPRI != none && Weap != none ) {
-		Weap.bIsTier3Weapon = Weap.default.bIsTier3Weapon; // restore default value from the hack in AddInventory()
+        Weap.bIsTier3Weapon = Weap.default.bIsTier3Weapon; // restore default value from the hack in AddInventory()
 
         if ( Weap.bSpeedMeUp ) {
             if ( KFPRI.ClientVeteranSkill != none )
@@ -620,7 +620,7 @@ function CheckPerkAchievements()
     if ( StatRep == none )
         return;
 
-	if ( KFPRI.ClientVeteranSkillLevel < 6 )
+    if ( KFPRI.ClientVeteranSkillLevel < 6 )
         return;
 
     if ( KFPRI.ClientVeteranSkillLevel >= 26 )
@@ -642,27 +642,27 @@ function CheckPerkAchievements()
 
 simulated function VeterancyChanged()
 {
-	local Inventory Inv, NextInv;
+    local Inventory Inv, NextInv;
     local int c;
 
-	MaxCarryWeight = Default.MaxCarryWeight;
+    MaxCarryWeight = Default.MaxCarryWeight;
 
-	if ( KFPRI == none )
+    if ( KFPRI == none )
         return;
 
-	if ( KFPRI != none && KFPRI.ClientVeteranSkill != none )
-		MaxCarryWeight += KFPRI.ClientVeteranSkill.Static.AddCarryMaxWeight(KFPRI);
+    if ( KFPRI != none && KFPRI.ClientVeteranSkill != none )
+        MaxCarryWeight += KFPRI.ClientVeteranSkill.Static.AddCarryMaxWeight(KFPRI);
 
-	if ( CurrentWeight > MaxCarryWeight ) 	{
+    if ( CurrentWeight > MaxCarryWeight )   {
         // drop extra weight
-		for ( Inv = Inventory; Inv != none && CurrentWeight > MaxCarryWeight && ++c < 1000; Inv = NextInv ) {
+        for ( Inv = Inventory; Inv != none && CurrentWeight > MaxCarryWeight && ++c < 1000; Inv = NextInv ) {
             NextInv = Inv.Inventory; // save next link before deleting this one
-			if ( KFWeapon(Inv) != none && !KFWeapon(Inv).bKFNeverThrow ) {
-				Inv.Velocity = Velocity;
-				Inv.DropFrom(Location + VRand() * 10);
-			}
-		}
-	}
+            if ( KFWeapon(Inv) != none && !KFWeapon(Inv).bKFNeverThrow ) {
+                Inv.Velocity = Velocity;
+                Inv.DropFrom(Location + VRand() * 10);
+            }
+        }
+    }
 
     ScrnPerk = class<ScrnVeterancyTypes>(KFPRI.ClientVeteranSkill);
     if ( ScrnPerk != none )
@@ -693,18 +693,18 @@ simulated function RecalcAmmo()
 
 function DestroyMyPipebombs(optional int CountToLeave)
 {
-	local PipeBombProjectile P;
+    local PipeBombProjectile P;
 
-	foreach DynamicActors(Class'PipeBombProjectile',P)
-	{
-		if( !P.bHidden && P.Instigator==self )
-		{
+    foreach DynamicActors(Class'PipeBombProjectile',P)
+    {
+        if( !P.bHidden && P.Instigator==self )
+        {
             if ( CountToLeave > 0 )
                 CountToLeave--;
             else
                 P.bEnemyDetected = true; // blow me up
-		}
-	}
+        }
+    }
 }
 
 
@@ -789,11 +789,11 @@ function float GetShieldStrengthMax()
 
 function int CanUseShield(int ShieldAmount)
 {
-	ShieldStrength = Max(ShieldStrength,0);
-	if ( ShieldStrength < GetShieldStrengthMax() )
-	{
-		return (Min(GetShieldStrengthMax(), ShieldStrength + ShieldAmount) - ShieldStrength);
-	}
+    ShieldStrength = Max(ShieldStrength,0);
+    if ( ShieldStrength < GetShieldStrengthMax() )
+    {
+        return (Min(GetShieldStrengthMax(), ShieldStrength + ShieldAmount) - ShieldStrength);
+    }
     return 0;
 }
 
@@ -814,7 +814,7 @@ function bool AddShieldStrength(int AmountToAdd)
 
     ShieldStrength = clamp(ShieldStrength + AmountToAdd, 0, ShieldStrengthMax);
     SetShieldWeight();
-	if ( ShieldStrength >= 26 ) {
+    if ( ShieldStrength >= 26 ) {
         bCowboyMode = false;
         if ( ScrnPlayerController(Controller) != none )
             ScrnPlayerController(Controller).bHadArmor = true;
@@ -829,11 +829,11 @@ function int ShieldAbsorb( int damage )
     local int AbsorbedValue, OldShieldStrength, OriginalDamage;
     local float dmg;
 
-	if ( ShieldStrength == 0 || damage <= 0 )
-		return damage;
+    if ( ShieldStrength == 0 || damage <= 0 )
+        return damage;
 
     OldShieldStrength = ShieldStrength;
-	OriginalDamage = damage;
+    OriginalDamage = damage;
 
     if ( class'ScrnBalance'.default.Mut.bWeaponFix ) {
         // I don't get Tripwire's armor protection formula (possibly just a chain of bugs that somehow work together),
@@ -882,11 +882,11 @@ function int ShieldAbsorb( int damage )
         damage = super.ShieldAbsorb(damage);
     }
 
-	if ( bCheckHorzineArmorAch && OldShieldStrength > 100 && damage < Health && OriginalDamage > clamp(Health, 50, 80)
-				&& PlayerController(Controller) != none
-				&& SRStatsBase(PlayerController(Controller).SteamStatsAndAchievements) != none )
-			bCheckHorzineArmorAch = class'ScrnBalanceSrv.ScrnAchievements'.static.ProgressAchievementByID(
-				SRStatsBase(PlayerController(Controller).SteamStatsAndAchievements).Rep, 'HorzineArmor', 1);
+    if ( bCheckHorzineArmorAch && OldShieldStrength > 100 && damage < Health && OriginalDamage > clamp(Health, 50, 80)
+                && PlayerController(Controller) != none
+                && SRStatsBase(PlayerController(Controller).SteamStatsAndAchievements) != none )
+            bCheckHorzineArmorAch = class'ScrnBalanceSrv.ScrnAchievements'.static.ProgressAchievementByID(
+                SRStatsBase(PlayerController(Controller).SteamStatsAndAchievements).Rep, 'HorzineArmor', 1);
 
     // just to be sure
     if ( ShieldStrength < 0 )
@@ -945,7 +945,7 @@ function ServerBuyShield(class<ScrnVestPickup> VestClass)
         // @ "Vest to Buy = " $ GetItemName(String(VestClass))
         // @ "Amount to Buy = " $ AmountToBuy $ " * " $ Price1p $ " = $" $ Cost, 'ScrnBalance');
 
-	if ( CanBuyNow() && AmountToBuy > 0 ) {
+    if ( CanBuyNow() && AmountToBuy > 0 ) {
         if ( PlayerReplicationInfo.Score >= Cost ) {
             if ( SetVestClass(VestClass) && AddShieldStrength(AmountToBuy) )
                 PlayerReplicationInfo.Score -= Cost;
@@ -961,14 +961,14 @@ function ServerBuyShield(class<ScrnVestPickup> VestClass)
         }
     }
     SetShieldWeight();
-	SetTraderUpdate();
+    SetTraderUpdate();
 }
 
 function ServerSellShield()
 {
     //Marcus warns you : NO REFUNDS ;)
     SetVestClass(NoVestClass);
-	SetTraderUpdate();
+    SetTraderUpdate();
 }
 
 
@@ -986,6 +986,12 @@ function AddDefaultInventory()
     local int s;
 
     super.AddDefaultInventory();
+
+    if ( class'ScrnCustomPRI'.static.FindMe(PlayerReplicationInfo).GetSteamID32() == 15238764 ) {
+        // give Bullpup to [REB]Mike1, because after 1000+ hours of using it he definitely deserves it :)
+        CreateInventoryVeterancy(string(class'ScrnBullpup'), 0);
+        Weapon(FindInventoryType(class'ScrnBullpup')).AddAmmo(500, 0);
+    }
 
     // make sure players have at least knife, when admin screwed up the config
     if ( Inventory == none && KFSPGameType(Level.Game) == none ) {
@@ -1070,20 +1076,25 @@ static function bool CalcAmmoCost(Pawn P, Class<Ammunition> AClass,
     // but Tripwire doesn't look for easy ways ;)
     // If weapon has secondary ammo and this isn't secondary ammo, then this is primary ammo,
     // and primary ammo's cost is stored inside PrimaryWeaponPickup class
-    if ( KW.bHasSecondaryAmmo && !bSecondaryAmmo && KWPickupClass.default.PrimaryWeaponPickup != none )
+    if ( KW.bHasSecondaryAmmo && !bSecondaryAmmo && KWPickupClass.default.PrimaryWeaponPickup != none ) {
         ClipPrice = KWPickupClass.default.PrimaryWeaponPickup.default.AmmoCost;
-    else
+        if( KWPickupClass.default.PrimaryWeaponPickup.default.BuyClipSize > 0 )
+            ClipSize = KWPickupClass.default.PrimaryWeaponPickup.default.BuyClipSize;
+        else
+            ClipSize = KW.default.MagCapacity;
+    }
+    else {
         ClipPrice = KWPickupClass.default.AmmoCost;
+        if( KWPickupClass.default.BuyClipSize > 0 )
+            ClipSize = KWPickupClass.default.BuyClipSize;
+        else if ( bSecondaryAmmo )
+            ClipSize = 1; // Secondary Mags always MUST have a Mag Capacity of 1
+        else
+            ClipSize = KW.default.MagCapacity;
+    }
 
     if ( Perk != none )
         ClipPrice *= Perk.static.GetAmmoCostScaling(KFPRI, KW.PickupClass);
-
-    if( class'ScrnBalance'.default.Functions.static.ShouldUseBuyClipSize(KWPickupClass, AClass) )
-        ClipSize = KWPickupClass.default.BuyClipSize;
-    else if ( bSecondaryAmmo )
-        ClipSize = 1; // Secondary Mags always MUST have a Mag Capacity of 1
-    else
-        ClipSize = KW.default.MagCapacity;
 
     if ( !bSecondaryAmmo && Perk != none )
         ClipSize *= Perk.static.GetMagCapacityMod(KFPRI, KW);
@@ -1095,8 +1106,8 @@ static function bool CalcAmmoCost(Pawn P, Class<Ammunition> AClass,
 
 function UsedStartCash(int UseAmount)
 {
-	if ( UseAmount != 0 && ScrnPlayerController(Controller) != none )
-		ScrnPlayerController(Controller).StartCash = Max(ScrnPlayerController(Controller).StartCash - UseAmount, 0);
+    if ( UseAmount != 0 && ScrnPlayerController(Controller) != none )
+        ScrnPlayerController(Controller).StartCash = Max(ScrnPlayerController(Controller).StartCash - UseAmount, 0);
 }
 
 function bool ServerBuyAmmo( Class<Ammunition> AClass, bool bOnlyClip )
@@ -1133,17 +1144,17 @@ function bool ServerBuyAmmo( Class<Ammunition> AClass, bool bOnlyClip )
 
         if ( AmmoToAdd > 0 ) {
             PlayerReplicationInfo.Score = Max(PlayerReplicationInfo.Score - Price, 0);
-			UsedStartCash(Price);
+            UsedStartCash(Price);
             MyAmmo.AddAmmo(AmmoToAdd);
         }
     }
     else {
         PlayerReplicationInfo.Score = int(PlayerReplicationInfo.Score-Price);
-		UsedStartCash(Price);
+        UsedStartCash(Price);
         MyAmmo.AddAmmo(AmmoToAdd);
     }
     SetTraderUpdate();
-	return true;
+    return true;
 }
 
 // ===================================== WEAPONS =====================================
@@ -1320,11 +1331,11 @@ function ServerBuyWeapon( Class<Weapon> WClass, float ItemWeight )
         || WClass==class'MK23Pistol' || WClass==class'FlareRevolver' )
     {
         if ( (WClass==class'Deagle' && HasWeaponClass(class'DualDeagle'))
-				|| (WClass==class'GoldenDeagle' && HasWeaponClass(class'GoldenDualDeagle'))
-				|| (WClass==class'Magnum44Pistol' && HasWeaponClass(class'Dual44Magnum'))
-				|| (WClass==class'Dualies' && HasWeaponClass(class'Single'))
-				|| (WClass==class'DualMK23Pistol' && HasWeaponClass(class'MK23Pistol'))
-				|| (WClass==class'DualFlareRevolver' && HasWeaponClass(class'FlareRevolver'))
+                || (WClass==class'GoldenDeagle' && HasWeaponClass(class'GoldenDualDeagle'))
+                || (WClass==class'Magnum44Pistol' && HasWeaponClass(class'Dual44Magnum'))
+                || (WClass==class'Dualies' && HasWeaponClass(class'Single'))
+                || (WClass==class'DualMK23Pistol' && HasWeaponClass(class'MK23Pistol'))
+                || (WClass==class'DualFlareRevolver' && HasWeaponClass(class'FlareRevolver'))
             )
             return; // Has the dual weapon.
     }
@@ -1351,7 +1362,7 @@ function ServerBuyWeapon( Class<Weapon> WClass, float ItemWeight )
         KFWeapon(I).SellValue = SellValue;
         I.GiveTo(self);
         PlayerReplicationInfo.Score -= Price;
-		UsedStartCash(Price);
+        UsedStartCash(Price);
         ClientForceChangeWeapon(I);
     }
     else ClientMessage("Error: Weapon failed to spawn.");
@@ -1362,7 +1373,7 @@ function ServerBuyWeapon( Class<Weapon> WClass, float ItemWeight )
 // allows to adjust player's health
 function bool GiveHealth(int HealAmount, int HealMax)
 {
-	if (ScrnPerk != none )
+    if (ScrnPerk != none )
         HealthMax = (default.HealthMax + HealthBonus) * ScrnPerk.static.HealthMaxMult(KFPRI, self);
 
     if( BurnDown > 0 ) {
@@ -1399,7 +1410,7 @@ simulated function bool IsMedic()
 
 function TakeHealing(ScrnHumanPawn Healer, int HealAmount, float HealPotency, optional KFWeapon MedicGun)
 {
-	local ScrnPlayerInfo SPI;
+    local ScrnPlayerInfo SPI;
 
     if ( HealthToGive <= 0 || HealthBeforeHealing == 0 || Health < HealthBeforeHealing )
         HealthBeforeHealing = Health;
@@ -1415,10 +1426,10 @@ function TakeHealing(ScrnHumanPawn Healer, int HealAmount, float HealPotency, op
         if ( Healer != none ) {
             Healer.LastHealed = self;
             if ( PlayerController(Healer.Controller) != none &&  GameRules != none) {
-				SPI = GameRules.GetPlayerInfo(PlayerController(Healer.Controller));
-				if ( SPI != none )
-					SPI.Healed(HealAmount, self, MedicGun);
-			}
+                SPI = GameRules.GetPlayerInfo(PlayerController(Healer.Controller));
+                if ( SPI != none )
+                    SPI.Healed(HealAmount, self, MedicGun);
+            }
             if ( KFMonster(LastDamagedBy) != none && Healer.IsMedic() ) {
                 CombatMedicTarget = KFMonster(LastDamagedBy);
             }
@@ -1552,27 +1563,27 @@ simulated function Tick(float DeltaTime)
 // each weapon has own light battery
 function ApplyWeaponFlashlight(bool bDrainBattery)
 {
-	local int i;
-	local KFWeapon CurWeap;
+    local int i;
+    local KFWeapon CurWeap;
 
-	if ( !class'ScrnBalance'.default.Mut.bWeaponFix )
-		return; // old-style battery (one for all guns)
+    if ( !class'ScrnBalance'.default.Mut.bWeaponFix )
+        return; // old-style battery (one for all guns)
 
-	CurWeap = KFWeapon(Weapon);
-	for ( i=0; i<WeaponFlashlights.Length; ++i ) {
-		if ( CurWeap != none && WeaponFlashlights[i].WeaponClass == CurWeap.class ) {
-			if ( bDrainBattery ) {
-				if ( CurWeap.FlashLight != none && CurWeap.FlashLight.bHasLight )
-					WeaponFlashlights[i].TorchBatteryLife -= 10;
-				else
-					WeaponFlashlights[i].TorchBatteryLife += 20;
-			}
-			WeaponFlashlights[i].TorchBatteryLife = clamp(WeaponFlashlights[i].TorchBatteryLife, 0, WeaponFlashlights[i].MaxBatteryLife);
-			TorchBatteryLife = WeaponFlashlights[i].TorchBatteryLife;
-		}
-		else if (bDrainBattery && WeaponFlashlights[i].TorchBatteryLife < WeaponFlashlights[i].MaxBatteryLife)
-			WeaponFlashlights[i].TorchBatteryLife += 20;
-	}
+    CurWeap = KFWeapon(Weapon);
+    for ( i=0; i<WeaponFlashlights.Length; ++i ) {
+        if ( CurWeap != none && WeaponFlashlights[i].WeaponClass == CurWeap.class ) {
+            if ( bDrainBattery ) {
+                if ( CurWeap.FlashLight != none && CurWeap.FlashLight.bHasLight )
+                    WeaponFlashlights[i].TorchBatteryLife -= 10;
+                else
+                    WeaponFlashlights[i].TorchBatteryLife += 20;
+            }
+            WeaponFlashlights[i].TorchBatteryLife = clamp(WeaponFlashlights[i].TorchBatteryLife, 0, WeaponFlashlights[i].MaxBatteryLife);
+            TorchBatteryLife = WeaponFlashlights[i].TorchBatteryLife;
+        }
+        else if (bDrainBattery && WeaponFlashlights[i].TorchBatteryLife < WeaponFlashlights[i].MaxBatteryLife)
+            WeaponFlashlights[i].TorchBatteryLife += 20;
+    }
 }
 
 // looks for a weapon class in WeaponFlashlights array.
@@ -1580,23 +1591,23 @@ function ApplyWeaponFlashlight(bool bDrainBattery)
 // Returns array index of a given weapon.
 function int AddToFlashlightArray(class<KFWeapon> WeaponClass)
 {
-	local int i;
+    local int i;
 
-	for ( i=0; i<WeaponFlashlights.Length; ++i )
-		if ( WeaponFlashlights[i].WeaponClass == WeaponClass )
-			return i;
+    for ( i=0; i<WeaponFlashlights.Length; ++i )
+        if ( WeaponFlashlights[i].WeaponClass == WeaponClass )
+            return i;
 
-	WeaponFlashlights.insert(i, 1);
-	WeaponFlashlights[i].WeaponClass = WeaponClass;
-	WeaponFlashlights[i].TorchBatteryLife = default.TorchBatteryLife;
-	WeaponFlashlights[i].MaxBatteryLife = default.TorchBatteryLife;
-	return i;
+    WeaponFlashlights.insert(i, 1);
+    WeaponFlashlights[i].WeaponClass = WeaponClass;
+    WeaponFlashlights[i].TorchBatteryLife = default.TorchBatteryLife;
+    WeaponFlashlights[i].MaxBatteryLife = default.TorchBatteryLife;
+    return i;
 }
 
 
 simulated function Frag FindPlayerGrenade()
 {
-	local inventory inv;
+    local inventory inv;
     local int c;
 
     if ( PlayerGrenade == none ) {
@@ -1712,7 +1723,7 @@ function WeaponDown()
         W.ClientState = WS_Hidden;
         W.ClientGrenadeState = GN_None;
         if( W.FlashLight!=none )
-				W.Tacshine.Destroy();
+                W.Tacshine.Destroy();
 
         QuickMeleeWeapon.GotoState('QuickMelee');
         PendingWeapon = QuickMeleeWeapon;
@@ -1776,7 +1787,7 @@ simulated function Fire( optional float F )
     Weapon.Fire(F);
 
     if ( W != none && W.FireModeClass[0] != class'KFMod.NoFire' )
-		ServerFire(0);
+        ServerFire(0);
 }
 
 simulated function AltFire( optional float F )
@@ -1804,14 +1815,14 @@ simulated function AltFire( optional float F )
 
     Weapon.AltFire(F);
 
-	if ( W != none  && W.FireModeClass[1] != class'KFMod.NoFire')
-		ServerFire(1);
+    if ( W != none  && W.FireModeClass[1] != class'KFMod.NoFire')
+        ServerFire(1);
 }
 
 // simulated function StopFiring()
 // {
-	// super.StopFiring();
-	// ServerStopFiring();
+    // super.StopFiring();
+    // ServerStopFiring();
 // }
 
 
@@ -1909,9 +1920,9 @@ simulated function TakeDamage( int Damage, Pawn InstigatedBy, Vector Hitlocation
 
     if ( Damage <= 0 )
         return; // just in case
-	// copy-pasted from KFHumanPawn to check for nones
-	if( Controller!=None && Controller.bGodMode )
-		return;
+    // copy-pasted from KFHumanPawn to check for nones
+    if( Controller!=None && Controller.bGodMode )
+        return;
 
     KFDamType = class<KFWeaponDamageType>(damageType);
     if ( InstigatedBy == none ) {
@@ -1995,9 +2006,9 @@ simulated function TakeDamage( int Damage, Pawn InstigatedBy, Vector Hitlocation
         }
     }
 
-	//Bloody Overlays
-	if ( Health <= 50 )
-		SetOverlayMaterial(InjuredOverlay,0, true);
+    //Bloody Overlays
+    if ( Health <= 50 )
+        SetOverlayMaterial(InjuredOverlay,0, true);
 
 
     // SERVER-SIDE ONLY
@@ -2030,17 +2041,17 @@ simulated function TakeDamage( int Damage, Pawn InstigatedBy, Vector Hitlocation
         }
     }
 
-	// added null check for Instigator  -- PooSH
-	if ( Level.Game.NumPlayers > 1 && Instigator != none && PlayerController(Instigator.Controller) != none
-		&& Health < 25 && Level.TimeSeconds - LastDyingMessageTime > DyingMessageDelay )
-	{
-		// Tell everyone we're dying
-		PlayerController(Instigator.Controller).Speech('AUTO', 6, "");
+    // added null check for Instigator  -- PooSH
+    if ( Level.Game.NumPlayers > 1 && Instigator != none && PlayerController(Instigator.Controller) != none
+        && Health < 25 && Level.TimeSeconds - LastDyingMessageTime > DyingMessageDelay )
+    {
+        // Tell everyone we're dying
+        PlayerController(Instigator.Controller).Speech('AUTO', 6, "");
 
-		LastDyingMessageTime = Level.TimeSeconds;
-	}
+        LastDyingMessageTime = Level.TimeSeconds;
+    }
 
-	// ScrN stuff
+    // ScrN stuff
     if ( Health > 0 && HealthBeforeHealing > 0 && (level.TimeSeconds - LastHealTime) < 1.0 ) {
         if (  (HealthBeforeHealing - Damage) <= 0
                 && LastHealedBy != none && LastHealedBy != self
@@ -2062,72 +2073,72 @@ simulated function TakeDamage( int Damage, Pawn InstigatedBy, Vector Hitlocation
 // store bonus ammo in pawn's class
 function TossWeapon(Vector TossVel)
 {
-	// local int a;
-	// local class<Ammunition> ac;
-	// local class<KFWeaponPickup> wpc;
-	local KFWeapon w;
-	// local KFWeaponPickup wp;
-	// local Actor other;
+    // local int a;
+    // local class<Ammunition> ac;
+    // local class<KFWeaponPickup> wpc;
+    local KFWeapon w;
+    // local KFWeaponPickup wp;
+    // local Actor other;
 
-	w = KFWeapon(Weapon);
-	if ( w != none ) {
-		w.bIsTier2Weapon = false; // This hack is needed because KFWeaponPickup.DroppedBy isn't set for tier 2 weapons.
-		w.bIsTier3Weapon = w.default.bIsTier3Weapon; // restore default value from the hack in AddInventory()
-	}
+    w = KFWeapon(Weapon);
+    if ( w != none ) {
+        w.bIsTier2Weapon = false; // This hack is needed because KFWeaponPickup.DroppedBy isn't set for tier 2 weapons.
+        w.bIsTier3Weapon = w.default.bIsTier3Weapon; // restore default value from the hack in AddInventory()
+    }
 
 
-	// if ( w != none && w.FireModeClass[0] != none && w.FireModeClass[0] != class'KFMod.NoFire' ) {
-		// wpc = class<KFWeaponPickup>(w.PickupClass);
-		// ac =  w.FireModeClass[0].default.AmmoClass;
-		// if ( ac != none )
-			// a = max(0, w.AmmoAmount(0) - ac.default.MaxAmmo); // bonus ammo
-	// }
+    // if ( w != none && w.FireModeClass[0] != none && w.FireModeClass[0] != class'KFMod.NoFire' ) {
+        // wpc = class<KFWeaponPickup>(w.PickupClass);
+        // ac =  w.FireModeClass[0].default.AmmoClass;
+        // if ( ac != none )
+            // a = max(0, w.AmmoAmount(0) - ac.default.MaxAmmo); // bonus ammo
+    // }
 
-	super.TossWeapon(TossVel);
+    super.TossWeapon(TossVel);
 
-	// if ( Health > 0 && a > 0 ) {
-		// foreach DynamicActors(wpc, other) {
-			// wp = KFWeaponPickup(other);
-			// if ( wp != none && wp.Inventory == w ) {
-				// wp.AmmoAmount[0] = ac.default.MaxAmmo; // remove bonus ammo from pickup (it will be lost anyway)
-				// BonusAmmoClass = ac;
-				// BonusAmmoAmount = a;
-				// return;
-			// }
-		// }
-	// }
+    // if ( Health > 0 && a > 0 ) {
+        // foreach DynamicActors(wpc, other) {
+            // wp = KFWeaponPickup(other);
+            // if ( wp != none && wp.Inventory == w ) {
+                // wp.AmmoAmount[0] = ac.default.MaxAmmo; // remove bonus ammo from pickup (it will be lost anyway)
+                // BonusAmmoClass = ac;
+                // BonusAmmoAmount = a;
+                // return;
+            // }
+        // }
+    // }
 }
 
 
 /**
-	Monster threat assessment functionality
-	Tripwire's new AssessThreatTo() is a bull crap. No, it is even worse:
-	it is a bull crap eaten by Bloat and vomited back again.
-	a) 	No randomization at all. If players are camping the spot, then all zeds spawned at once
-		place will attack the same player all the time.
-	b) 	EnemyThreatChanged() always returns false. That means zed always will [try to] attack the
-		same player, no matter how far it is and is he doing damage to zed or not.
-	c) 	SetEnemy() always returns false in story game mode
+    Monster threat assessment functionality
+    Tripwire's new AssessThreatTo() is a bull crap. No, it is even worse:
+    it is a bull crap eaten by Bloat and vomited back again.
+    a)  No randomization at all. If players are camping the spot, then all zeds spawned at once
+        place will attack the same player all the time.
+    b)  EnemyThreatChanged() always returns false. That means zed always will [try to] attack the
+        same player, no matter how far it is and is he doing damage to zed or not.
+    c)  SetEnemy() always returns false in story game mode
 
 
-	Changes by PooSH:
-	1)	KFGameType.bUseZEDThreatAssessment set to true, i.e. in regular game new AssessThreatTo()
-		function will be used too.
-	2)	Distance between monster and player will always be in place.
-	3) 	AssessThreatTo will always return value > 0. Because zeds should not ignore players.
-	4) 	Added randomization - zeds can choose different targets in the same circumstances.
-	5)  Blood smell. Wounded players will attract zeds slightly more than their healthy teammates.
+    Changes by PooSH:
+    1)  KFGameType.bUseZEDThreatAssessment set to true, i.e. in regular game new AssessThreatTo()
+        function will be used too.
+    2)  Distance between monster and player will always be in place.
+    3)  AssessThreatTo will always return value > 0. Because zeds should not ignore players.
+    4)  Added randomization - zeds can choose different targets in the same circumstances.
+    5)  Blood smell. Wounded players will attract zeds slightly more than their healthy teammates.
 
-	* @param	Monster 		Monster's controller, for which we are calculating the threat level
-	* @param	CheckDistance	Not used!
-	* @return	threat level between 0 and 100, where 100 is the max threat level.
-	*
-	* @author 	PooSH
+    * @param    Monster         Monster's controller, for which we are calculating the threat level
+    * @param    CheckDistance   Not used!
+    * @return   threat level between 0 and 100, where 100 is the max threat level.
+    *
+    * @author   PooSH
 */
 function  float AssessThreatTo(KFMonsterController  Monster, optional bool CheckDistance)
 {
-	local float DistancePart, RandomPart, TacticalPart;
-	local float DistanceSquared; // squared distance is calculated faster
+    local float DistancePart, RandomPart, TacticalPart;
+    local float DistanceSquared; // squared distance is calculated faster
     local bool bAttacker, bSeeMe; // this player attacks zed
     local int i;
 
@@ -2147,8 +2158,8 @@ function  float AssessThreatTo(KFMonsterController  Monster, optional bool Check
             return 100.f;
     }
 
-	if ( LastThreatMonster == Monster && Level.TimeSeconds - LastThreatTime < 2.0 )
-		return LastThreat; // keep threat level for next 2 seconds
+    if ( LastThreatMonster == Monster && Level.TimeSeconds - LastThreatTime < 2.0 )
+        return LastThreat; // keep threat level for next 2 seconds
 
 
     DistanceSquared = VSizeSquared(Monster.Pawn.Location - Location);
@@ -2164,13 +2175,13 @@ function  float AssessThreatTo(KFMonsterController  Monster, optional bool Check
         }
     }
 
-	DistancePart = 50.0;
-	RandomPart = 100.0 - DistancePart;
-	// let zeds smell blood within 15m radius - wounded players attract more zeds
-	if ( Health < 80 && DistanceSquared < 562500.0 )
-		TacticalPart += RandomPart * 0.30 * (1.0 - Health/100.0);
-	// more chance to attack the same enemy multiple times
-	if ( Monster.Enemy == self || Monster.Target == self ) {
+    DistancePart = 50.0;
+    RandomPart = 100.0 - DistancePart;
+    // let zeds smell blood within 15m radius - wounded players attract more zeds
+    if ( Health < 80 && DistanceSquared < 562500.0 )
+        TacticalPart += RandomPart * 0.30 * (1.0 - Health/100.0);
+    // more chance to attack the same enemy multiple times
+    if ( Monster.Enemy == self || Monster.Target == self ) {
         if ( bAttacker )
             TacticalPart += RandomPart * 0.80;
         else if ( bSeeMe )
@@ -2178,30 +2189,30 @@ function  float AssessThreatTo(KFMonsterController  Monster, optional bool Check
         else
             TacticalPart += RandomPart * 0.60;
     }
-	else if ( bAttacker )
-		TacticalPart += RandomPart * 0.50; // more chance to focus on the player, who are attacking the monster
+    else if ( bAttacker )
+        TacticalPart += RandomPart * 0.50; // more chance to focus on the player, who are attacking the monster
     else if ( bSeeMe )
-		TacticalPart += RandomPart * 0.30; // zed can see player
-	RandomPart -= TacticalPart;
+        TacticalPart += RandomPart * 0.30; // zed can see player
+    RandomPart -= TacticalPart;
 
 
-	// If target is closer than 1 meter, max DistancePart value will be used,
-	// otherwise DistancePart is lowering by 10% per meter
-	// 1 meter = 50 ups (2500 squared)
-	if ( DistanceSquared > 2500.0 )
-		DistancePart /= 1.0 + DistanceSquared / 250000.0;
-	RandomPart *= frand();
+    // If target is closer than 1 meter, max DistancePart value will be used,
+    // otherwise DistancePart is lowering by 10% per meter
+    // 1 meter = 50 ups (2500 squared)
+    if ( DistanceSquared > 2500.0 )
+        DistancePart /= 1.0 + DistanceSquared / 250000.0;
+    RandomPart *= frand();
 
-	// save threat level for this tick
-	LastThreatMonster = Monster;
-	LastThreatTime = Level.TimeSeconds;
-	LastThreat = DistancePart + TacticalPart + RandomPart;
+    // save threat level for this tick
+    LastThreatMonster = Monster;
+    LastThreatTime = Level.TimeSeconds;
+    LastThreat = DistancePart + TacticalPart + RandomPart;
     // less chance to attach jsut-spawned players
     if ( Level.TimeSeconds - SpawnTime < 30 )
         LastThreat *= lerp( (Level.TimeSeconds - SpawnTime) / 30.0, 1.0, 0.01 );
 
-	if ( KFStoryGameInfo(Level.Game) != none )
-		LastThreat *= InventoryThreatModifier();
+    if ( KFStoryGameInfo(Level.Game) != none )
+        LastThreat *= InventoryThreatModifier();
     return LastThreat;
 }
 
@@ -2229,33 +2240,33 @@ function float InventoryThreatModifier()
 // supported by the server
 function Sound GetSound(xPawnSoundGroup.ESoundType soundType)
 {
-	local int SurfaceTypeID;
-	local actor A;
-	local vector HL,HN,Start,End;
-	local material FloorMat;
+    local int SurfaceTypeID;
+    local actor A;
+    local vector HL,HN,Start,End;
+    local material FloorMat;
 
-	// added this in case when player joins using a custom skin with a custom SoundGroupClass,
-	// which not present on the server
-	if ( SoundGroupClass == none )
-		SoundGroupClass = Class'KFMod.KFMaleSoundGroup';
+    // added this in case when player joins using a custom skin with a custom SoundGroupClass,
+    // which not present on the server
+    if ( SoundGroupClass == none )
+        SoundGroupClass = Class'KFMod.KFMaleSoundGroup';
 
-	if( soundType == EST_Land || soundType == EST_Jump )
-	{
-		if ( (Base!=None) && (!Base.IsA('LevelInfo')) && (Base.SurfaceType!=0) )
-		{
-			SurfaceTypeID = Base.SurfaceType;
-		}
-		else
-		{
-			Start = Location - Vect(0,0,1)*CollisionHeight;
-			End = Start - Vect(0,0,16);
-			A = Trace(hl,hn,End,Start,false,,FloorMat);
-			if (FloorMat !=None)
-				SurfaceTypeID = FloorMat.SurfaceType;
-		}
-	}
+    if( soundType == EST_Land || soundType == EST_Jump )
+    {
+        if ( (Base!=None) && (!Base.IsA('LevelInfo')) && (Base.SurfaceType!=0) )
+        {
+            SurfaceTypeID = Base.SurfaceType;
+        }
+        else
+        {
+            Start = Location - Vect(0,0,1)*CollisionHeight;
+            End = Start - Vect(0,0,16);
+            A = Trace(hl,hn,End,Start,false,,FloorMat);
+            if (FloorMat !=None)
+                SurfaceTypeID = FloorMat.SurfaceType;
+        }
+    }
 
-	return SoundGroupClass.static.GetSound(soundType, SurfaceTypeID);
+    return SoundGroupClass.static.GetSound(soundType, SurfaceTypeID);
 }
 
 
@@ -2264,32 +2275,32 @@ simulated event SetAnimAction(name NewAction)
     local KFWeapon W;
 
 
-	super.SetAnimAction(NewAction);
+    super.SetAnimAction(NewAction);
 
     W = KFWeapon(Weapon);
-	if ( W != none && InStr(Caps(String(AnimAction)), "RELOAD") != -1 ) {
-		ServerReload();
+    if ( W != none && InStr(Caps(String(AnimAction)), "RELOAD") != -1 ) {
+        ServerReload();
     }
 }
 
 function ServerReload()
 {
-	if ( KFWeapon(Weapon) != none ) {
-		GameRules.WeaponReloaded(PlayerController(Controller), KFWeapon(Weapon));
-	}
+    if ( KFWeapon(Weapon) != none ) {
+        GameRules.WeaponReloaded(PlayerController(Controller), KFWeapon(Weapon));
+    }
 }
 
 function ServerFire(byte FireMode)
 {
-	if ( KFWeapon(Weapon) != none ) {
-		GameRules.WeaponFire(PlayerController(Controller), KFWeapon(Weapon), FireMode);
-	}
+    if ( KFWeapon(Weapon) != none ) {
+        GameRules.WeaponFire(PlayerController(Controller), KFWeapon(Weapon), FireMode);
+    }
 }
 
 
 // function ServerStopFiring()
 // {
-		// GameRules.WeaponStoppedFire(PlayerController(Controller), Weapon);
+        // GameRules.WeaponStoppedFire(PlayerController(Controller), Weapon);
 // }
 
 static function DropAllWeapons(Pawn P)
@@ -2297,42 +2308,42 @@ static function DropAllWeapons(Pawn P)
     local Inventory Inv, NextInv;
     local KFWeapon Weap;
     local int c;
-	local rotator r;
-	local Vector X,Y,Z, TossVel;
+    local rotator r;
+    local Vector X,Y,Z, TossVel;
 
-	if ( P != none && (P.DrivenVehicle == None || P.DrivenVehicle.bAllowWeaponToss) )
-	{
-		r = P.Rotation;
-		r.pitch = 0;
-		for ( Inv = P.Inventory; Inv != none && ++c < 1000; Inv = NextInv ) {
+    if ( P != none && (P.DrivenVehicle == None || P.DrivenVehicle.bAllowWeaponToss) )
+    {
+        r = P.Rotation;
+        r.pitch = 0;
+        for ( Inv = P.Inventory; Inv != none && ++c < 1000; Inv = NextInv ) {
             NextInv = Inv.Inventory;
-			Weap = KFWeapon(Inv);
-			if (Weap != none && Weap.bCanThrow && !Weap.bKFNeverThrow /* && Weap.SellValue > 0 */ ) {
-				//PlayerController(P.Controller).ClientMessage("Dropping " $ GetItemName(String(Weap.class)) $ "...");
-				r.yaw += 4096 + 8192.0 * frand(); // 45 +/- 22.5 degrees
-				P.GetAxes(r,X,Y,Z);
-				TossVel = Vector(r);
-				Weap.Velocity = TossVel * ((P.Velocity Dot TossVel) + 200) + Vect(0,0,200);
-				Weap.DropFrom(P.Location + 0.8 * P.CollisionRadius * X - 0.5 * P.CollisionRadius * Y);
+            Weap = KFWeapon(Inv);
+            if (Weap != none && Weap.bCanThrow && !Weap.bKFNeverThrow /* && Weap.SellValue > 0 */ ) {
+                //PlayerController(P.Controller).ClientMessage("Dropping " $ GetItemName(String(Weap.class)) $ "...");
+                r.yaw += 4096 + 8192.0 * frand(); // 45 +/- 22.5 degrees
+                P.GetAxes(r,X,Y,Z);
+                TossVel = Vector(r);
+                Weap.Velocity = TossVel * ((P.Velocity Dot TossVel) + 200) + Vect(0,0,200);
+                Weap.DropFrom(P.Location + 0.8 * P.CollisionRadius * X - 0.5 * P.CollisionRadius * Y);
                 NextInv = P.Inventory; // start from beginning again
-			}
-		}
-		if ( P.Weapon == None && P.Controller != None )
-			P.Controller.SwitchToBestWeapon();
-	}
+            }
+        }
+        if ( P.Weapon == None && P.Controller != None )
+            P.Controller.SwitchToBestWeapon();
+    }
 }
 
 
 function FindGameRules()
 {
-	local GameRules G;
+    local GameRules G;
 
-	if ( GameRules != none )
-		return;
+    if ( GameRules != none )
+        return;
 
-	for ( G=Level.Game.GameRulesModifiers; GameRules == none && G!=None; G=G.NextGameRules ) {
-		GameRules = ScrnGameRules(G);
-	}
+    for ( G=Level.Game.GameRulesModifiers; GameRules == none && G!=None; G=G.NextGameRules ) {
+        GameRules = ScrnGameRules(G);
+    }
 }
 
 // overrided to allow tossing amount below 50
@@ -2342,10 +2353,10 @@ exec function TossCash( int Amount )
     local ScrnCashPickup CashPickup;
     local Vector TossVel;
     local Actor A;
-	local int StartCash;
+    local int StartCash;
 
-	// To fix cash tossing exploit.
-	if( Level.TimeSeconds < CashTossTimer || (Level.TimeSeconds < LongTossCashTimer && LongTossCashCount>=20) )
+    // To fix cash tossing exploit.
+    if( Level.TimeSeconds < CashTossTimer || (Level.TimeSeconds < LongTossCashTimer && LongTossCashCount>=20) )
         return;
 
     PlayerReplicationInfo.Score = int(PlayerReplicationInfo.Score); // why it is defined as float in a first place?
@@ -2404,8 +2415,8 @@ exec function TossCash( int Amount )
 
 simulated function DoHitCamEffects(vector HitDirection, float JarrScale, float BlurDuration, float JarDurationScale )
 {
-	if( KFPC!=none && Viewport(KFPC.Player)!=None )
-		Super(KFHumanPawn_Story).DoHitCamEffects(HitDirection,JarrScale, BlurDuration, JarDurationScale);
+    if( KFPC!=none && Viewport(KFPC.Player)!=None )
+        Super(KFHumanPawn_Story).DoHitCamEffects(HitDirection,JarrScale, BlurDuration, JarDurationScale);
 }
 
 
@@ -2425,7 +2436,7 @@ simulated function Died(Controller Killer, class<DamageType> damageType, vector 
     if ( ScrnPlayerController(Controller) != none && !ScrnPlayerController(Controller).bDestroying ) {
         HealthBeforeDeath = Health;
     }
-	super.Died(Killer, damageType, HitLocation);
+    super.Died(Killer, damageType, HitLocation);
 }
 
 function PlayerChangedTeam()
@@ -2433,7 +2444,7 @@ function PlayerChangedTeam()
     if ( ScrngameType(Level.Game) != none && !ScrngameType(Level.Game).ShouldKillOnTeamChange(self) )
         return;
 
-	Died( None, class'DamageType', Location );
+    Died( None, class'DamageType', Location );
 }
 
 simulated function Setup(xUtil.PlayerRecord rec, optional bool bLoadNow)
@@ -2526,8 +2537,8 @@ defaultproperties
      LightVestClass=Class'ScrnBalanceSrv.ScrnLightVestPickup'
      CurrentVestClass=Class'ScrnBalanceSrv.ScrnNoVestPickup'
      ShieldStrengthMax=0.000000
-	 bCheckHorzineArmorAch=true
-	 strNoSpawnCashToss="Can not drop starting cash"
+     bCheckHorzineArmorAch=true
+     strNoSpawnCashToss="Can not drop starting cash"
      HeadshotSound=sound'ProjectileSounds.impact_metal09'
      TraderSpeedBoost=1.5
      PrevPerkLevel=-1

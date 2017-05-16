@@ -172,6 +172,8 @@ function StinkyControllerCompeledAction(StinkyController SC, int CompletedAction
     else {
         if ( CompletedActionNum == 0 ) {
             SC.TakeActor(gnome);
+            gnome.SetRelativeLocation(gnome.GameObjOffset);
+            gnome.SetRelativeRotation(gnome.GameObjRot);
             gnome.Holder = SC.StinkyClot;
             gnome.bHeld = true;
         }
@@ -262,6 +264,16 @@ State MatchInProgress
 
         NextStinkySpawnTime = Level.TimeSeconds + 30; // give enough time for Boss to spawn
         super.StartWaveBoss();
+    }
+
+    function float GetMinSpawnDelay()
+    {
+        local float result;
+
+        result = super.GetMinSpawnDelay();
+        if ( TeamBases[0].bHeld || TeamBases[1].bHeld )
+            result *= 3.0; // slower spawns when Guardian is carried
+        return result;
     }
 
 }

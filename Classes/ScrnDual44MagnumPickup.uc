@@ -10,4 +10,5 @@ defaultproperties
      CorrespondingPerkIndex=8
      InventoryType=Class'ScrnBalanceSrv.ScrnDual44Magnum'
 	 Weight=4
+     MagAmmoRemaining=12
 }

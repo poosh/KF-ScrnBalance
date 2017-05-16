@@ -2000,10 +2000,6 @@ State MatchInProgress
                 NextSpawnTime *= 0.60;
         }
 
-        // Make the zeds come a little faster at all times on harder and above
-        if ( GameDifficulty >= 4.0 ) // Hard
-            NextSpawnTime *= 0.85;
-
         if ( ScrnGameLength != none )
             ScrnGameLength.AdjustNextSpawnTime(NextSpawnTime);
 

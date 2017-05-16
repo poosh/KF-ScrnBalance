@@ -418,6 +418,8 @@ function float GetWaveEndTime()
 function AdjustNextSpawnTime(out float NextSpawnTime)
 {
     NextSpawnTime *= Wave.SpawnRateMod;
+    if ( bLoadedSpecial )
+        NextSpawnTime *= 2.0; // give players slight break after spawning a special squad
 }
 
 function LoadNextSpawnSquad(out array < class<KFMonster> > NextSpawnSquad)
