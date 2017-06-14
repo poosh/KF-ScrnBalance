@@ -25,6 +25,9 @@ var array<KFMonster> Bosses;
 var transient bool bBossSpawned;
 var int MaxSpawnAttempts, MaxSpecialSpawnAttempts; // maximum spawn attempts before deleting the squad
 
+// list of actors that AI can't find path towards
+var transient array<Actor> InvalidPathTargets;
+
 event InitGame( string Options, out string Error )
 {
     local int ConfigMaxPlayers;
@@ -94,6 +97,26 @@ protected function CheckScrnBalance()
             log("Unable to spawn ScrnBalance!", class.name);
     }
 }
+
+function bool IsPathTargetValid(Actor PathTarget)
+{
+    local int i;
+
+    for ( i = 0; i < InvalidPathTargets.length; ++i ) {
+        if ( InvalidPathTargets[i] == PathTarget )
+            return false;
+    }
+    return true;
+}
+
+function InvalidatePathTarget(Actor PathTarget, optional bool bForceAdd)
+{
+    if ( bForceAdd || !IsPathTargetValid(PathTarget) ) {
+        log("Invalid Path Target: " $ PathTarget, class.name);
+        InvalidPathTargets[InvalidPathTargets.length] = PathTarget;
+    }
+}
+
 function LoadUpMonsterList()
 {
     CheckScrnBalance();

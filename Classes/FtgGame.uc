@@ -122,6 +122,9 @@ function byte GetTeamForStinkyController(StinkyController SC)
 function StinkyControllerReady(StinkyController SC)
 {
     local byte t;
+    local int i;
+    local NavigationPoint N;
+
     SC.TeamIndex = GetTeamForStinkyController(SC);
     if ( SC.TeamIndex > 1 )
     {
@@ -145,10 +148,18 @@ function StinkyControllerReady(StinkyController SC)
     // TODO: add support to custom destination on the map.
     // Until then StinkyClot will move to enemy shop as first target
     SC.ActionNum = 0;
-    SC.MoveTargets.length = 3;
-    SC.MoveTargets[0] = TeamBases[SC.TeamIndex];
-    SC.MoveTargets[1] = TeamShops[1-SC.TeamIndex].TelList[1-SC.TeamIndex];
-    SC.MoveTargets[2] = TeamShops[SC.TeamIndex].TelList[SC.TeamIndex]; // move to own shop
+    SC.MoveTargets[i++] = TeamBases[SC.TeamIndex];
+    if ( AmmoPickups.length >= 5 ) {
+        for ( t=0; t < 2; ++t ) {
+            // moving directly to ammo box is kinda bugged. So we are moving to closest path node instead
+            N = SC.FindClosestPathNode(AmmoPickups[rand(AmmoPickups.length)]);
+            if ( N != none )
+                SC.MoveTargets[i++] = N;
+        }
+    }
+    SC.MoveTargets[i++] = TeamShops[1-SC.TeamIndex].TelList[1-SC.TeamIndex];
+    SC.MoveTargets[i++] = TeamShops[SC.TeamIndex].TelList[SC.TeamIndex]; // move to own shop
+    SC.MoveTargets.length = i;
     if ( bWaveBossInProgress ) {
         SC.Pawn.SetCollision(true, true); // Stinky Clot allways can be killed during the boss wave
         StinkyClot(StinkyControllers[t].Pawn).SetSkin();
@@ -176,6 +187,7 @@ function StinkyControllerCompeledAction(StinkyController SC, int CompletedAction
             gnome.SetRelativeRotation(gnome.GameObjRot);
             gnome.Holder = SC.StinkyClot;
             gnome.bHeld = true;
+            ScrnBalanceMut.GameRules.AdjustZedSpawnRate(); // reset boring votes
         }
         SC.GotoState('MoveToShop', 'Begin');
     }

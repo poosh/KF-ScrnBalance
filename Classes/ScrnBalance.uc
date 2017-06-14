@@ -11,7 +11,7 @@ class ScrnBalance extends Mutator
 #exec OBJ LOAD FILE=ScrnAch_T.utx
 
 
-const VERSION = 94700;
+const VERSION = 94800;
 
 var ScrnBalance Mut; // pointer to self to use in static functions, i.e class'ScrnBalance'.default.Mut
 
@@ -3012,6 +3012,23 @@ function DestroyExtraPipebombs()
                 P.bEnemyDetected = true; // blow up
 		}
 	}
+}
+
+function BlamePlayer(ScrnPlayerController PC, string Reason, optional int BlameInc)
+{
+    local ScrnCustomPRI ScrnPRI;
+
+    if ( PC == none )
+        return;
+    ScrnPRI = class'ScrnCustomPRI'.static.FindMe(PC.PlayerReplicationInfo);
+    if ( ScrnPRI == none )
+        return;
+    if ( BlameInc == 0 )
+        BlameInc = 1;
+    ScrnPRI.BlameCounter += BlameInc;
+    PC.ReceiveLocalizedMessage(class'ScrnBlamedMsg', ScrnPRI.BlameCounter);
+    ReplaceText(Reason, "%p", PC.GetHumanReadableName());
+    BroadcastMessage(ColorString(Reason, 200, 200, 1), false);
 }
 
 final static function bool GetHighlyDecorated(int SteamID32,

@@ -1,5 +1,7 @@
 class ScrnM99SniperRifle extends M99SniperRifle;
 
+var localized string BlameStr;
+
 //disable skipping realod animation
 //v4.39 - you need to reload, but can skip aiming animation
 simulated function bool PutDown()
@@ -9,18 +11,26 @@ simulated function bool PutDown()
 	Instigator.PendingWeapon = none;
 	return false;
   }
-  
-  // remove that shit, when you need to wait some time after switching back to this weapon, 
+
+  // remove that shit, when you need to wait some time after switching back to this weapon,
   // if you skipped reload
   FireMode[0].NextFireTime = Level.TimeSeconds - 0.01;
   return super.PutDown();
 }
 
+function GiveTo( pawn Other, optional Pickup Pickup )
+{
+    super.GiveTo(Other, Pickup);
+    if ( !bDeleteMe )
+        class'ScrnBalance'.default.Mut.BlamePlayer(ScrnPlayerController(Other.Controller), BlameStr);
+}
+
 defaultproperties
 {
-     Weight=13
-     FireModeClass(0)=Class'ScrnBalanceSrv.ScrnM99Fire'
-     MinReloadPct=0.800000
-     PickupClass=Class'ScrnBalanceSrv.ScrnM99Pickup'
-     ItemName="M99AMR 'The NoobGun'"
+    Weight=13
+    FireModeClass(0)=Class'ScrnBalanceSrv.ScrnM99Fire'
+    MinReloadPct=0.800000
+    PickupClass=Class'ScrnBalanceSrv.ScrnM99Pickup'
+    ItemName="M99AMR 'The NoobGun'"
+    BlameStr="%p blamed for using a Noobgun"
 }

@@ -286,8 +286,10 @@ state Held
 
     function EndState()
     {
-        if ( Holder != none )
+        if ( Holder != none ) {
             Holder.bAlwaysRelevant = false;
+            SetLocation(Holder.Location); // prevent holder to exploit GameObjOffset
+        }
         super.EndState();
     }
 

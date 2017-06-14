@@ -142,7 +142,7 @@ replication
         SrvAchReset, ResetMyAchievements, ResetMapAch,
 		ServerDropAllWeapons, ServerLockWeapons, ServerGunSkin,
         ServerAcknowledgeDamages, ServerShowPathTo,
-        ServerDebugRepLink,
+        ServerDebugRepLink, FixQuickMelee,
         ServerTourneyCheck, ServerKillMut, ServerKillRules,
         ServerSwitchViewMode, ServerSetViewTarget;
 
@@ -2527,11 +2527,16 @@ exec function TestQuickMelee()
             ClientMessage(s, 'log');
         }
     }
+    ClientMessage("SecondaryItem: " $ ScrnHumanPawn(Pawn).SecondaryItem, 'log');
+
 }
 
 exec function FixQuickMelee()
 {
-    if ( Pawn != none && Pawn.Weapon != none && Pawn.Weapon.ClientState == WS_Hidden )
+    if ( Pawn == none )
+        return;
+    ScrnHumanPawn(Pawn).SecondaryItem = none;
+    if ( Pawn.Weapon != none && Pawn.Weapon.ClientState == WS_Hidden )
         Pawn.Weapon.BringUp();
 }
 

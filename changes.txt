@@ -9,6 +9,13 @@
 -------------------------------------------------------------------------------
 *** VERSION 9 ***
 -------------------------------------------------------------------------------
+v9.48:
+- [FTG] Stinky Clot learned to take Base Guarding out from glitch spots
+- [FTG] Added more variations to Stinky paths
+- [FTG] Team kill counter raised to 25s when nobody at base
+- [FTG] Stinky Clot moves slower when nobody at base
+- [FTG] MVOTE BORING counter is reset when Stinky Clot picks up a Guardian
+
 v9.47:
 - [FTG] Zeds spawns made slower when the Guardian is carried
 - When buying ammo pickup's BuyClipSize is used instead of MagCapacity

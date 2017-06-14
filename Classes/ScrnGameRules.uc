@@ -163,6 +163,9 @@ function AdjustZedSpawnRate()
 {
 	local int PlayerCount;
 
+	if ( Mut.bStoryMode )
+        return;
+
 	Mut.KF.KFLRules.WaveSpawnPeriod = Mut.OriginalWaveSpawnPeriod;
 
     // TSC adjusts spawn period itself
@@ -216,9 +219,7 @@ function WaveStarted()
 		}
     }
 
-	if ( !Mut.bStoryMode ) {
-		AdjustZedSpawnRate();
-	}
+    AdjustZedSpawnRate();
 
 	for ( i=0; i<AchHandlers.length; ++i ) {
 		AchHandlers[i].WaveStarted(Mut.KF.WaveNum);
@@ -724,8 +725,11 @@ function ScoreKill(Controller Killer, Controller Killed)
 		}
 	}
 
-    if ( Killed.bIsPlayer && Mut.bPlayerZEDTime && Killer != none && Killer != Killed )
-        Mut.KF.DramaticEvent(1.0); // always zed time on player death
+    if ( Killed.bIsPlayer ) {
+        AdjustZedSpawnRate();
+        if ( Mut.bPlayerZEDTime && Killer != none && Killer != Killed )
+            Mut.KF.DramaticEvent(1.0); // always zed time on player death
+    }
 }
 
 
