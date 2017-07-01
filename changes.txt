@@ -1,14 +1,15 @@
 -------------------------------------------------------------------------------
---=VERSION HISTORY=--
+# VersionHistory
 -------------------------------------------------------------------------------
 (NB!)   In this document all references to config file ScrnBalance.ini should be
         treated as ScrnBalanceSrv.ini, if you're using server version of
         ScrnBalance (ScrnBalanceSrv.ScrnBalance).
 
 
--------------------------------------------------------------------------------
-*** VERSION 9 ***
--------------------------------------------------------------------------------
+*******************************************************************************
+***         Starting from v9.50 change history moved to README.md!          ***
+*******************************************************************************
+
 v9.48:
 - [FTG] Stinky Clot learned to take Base Guarding out from glitch spots
 - [FTG] Added more variations to Stinky paths

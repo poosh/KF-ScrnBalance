@@ -4,11 +4,15 @@ class ScrnGameType extends KFGameType;
 var ScrnBalance ScrnBalanceMut;
 var ScrnGameReplicationInfo ScrnGRI;
 
-
-var bool bCloserZedSpawns; // if true uses modified RateZombieVolume() function to get closer volumes for zeds
+enum EZedSpawnLocation {
+    ZSLOC_VANILLA,    // Same as in Vanilla KF
+    ZSLOC_CLOSER,     // Spawn zed closer to players (equals to bCloserZedSpawns=True in previous ScrN versions)
+    ZSLOC_RANDOM,     // Spawn zeds in random locations no matter of distance to player
+    ZSLOC_AUTO        // Auto set the best spawn rating depending from wave stats
+};
+var EZedSpawnLocation ZedSpawnLoc;
 var ScrnGameLength ScrnGameLength;
 var private string CmdLine;
-
 var private int TourneyMode;
 
 var array<KFAmmoPickup> SleepingAmmo;
@@ -19,6 +23,7 @@ var array<string> InviteList; // contains players' steam IDs
 
 var protected float TurboScale;
 
+var bool bSingleTeamGame;
 var transient int WavePlayerCount; // alive player count at the beginning of the wave
 var transient int AlivePlayerCount, AliveTeamPlayerCount[2];
 var array<KFMonster> Bosses;
@@ -434,6 +439,7 @@ function float RateZombieVolume(ZombieVolume ZVol, Controller SpawnCloseTo, opti
 	local float PlayerDistScoreZ, PlayerDistScoreXY, TotalPlayerDistScore, UsageScore;
 	local vector LocationXY, TestLocationXY;
 	local bool bTooCloseToPlayer;
+    local float wDesire, wDist, wUsage, wRand;
 
     if ( ZVol == none )
         return -1;
@@ -491,13 +497,41 @@ function float RateZombieVolume(ZombieVolume ZVol, Controller SpawnCloseTo, opti
     else
         TotalPlayerDistScore = 0.3*PlayerDistScoreZ + 0.7*PlayerDistScoreXY;
 
-	// Tripwire: Spawning score is 30% SpawnDesirability, 30% Distance from players, 30% when the spawn was last used, 10% random
-    // PooSH: Distance now is more important than time to prevent far spawns as much as possible
-    // PooSH: and somebody should learn basic math...
-    if ( bCloserZedSpawns )
-        Score *= 0.30 + 0.35*TotalPlayerDistScore + 0.25*UsageScore + 0.1*frand();
-    else
-        Score *= 0.30 + 0.30*TotalPlayerDistScore + 0.30*UsageScore + 0.1*frand();
+    wDesire = 0.30;
+    switch (ZedSpawnLoc) {
+        case ZSLOC_CLOSER:
+            wDist = 0.35;
+            wUsage = 0.25;
+            break;
+
+        case ZSLOC_RANDOM:
+            wDist = 0.10;
+            wUsage = 0.30;
+            break;
+
+        case ZSLOC_AUTO:
+            if (NumMonsters >= 25 && TotalMaxMonsters >= 25) {
+                // many zeds already spawned, so spawn them more randomly
+                wDist = 0.15;
+                wUsage = 0.30;
+            }
+            else {
+                // closer spawns
+                wDist = 0.35;
+                wUsage = 0.25;
+            }
+            if (GameDifficulty < 3) {
+                wDist *= 0.7; // more random spawns on Normal difficulty
+            }
+            break;
+
+        case ZSLOC_VANILLA:
+        default:
+            wDist = 0.30;
+            wUsage = 0.30;
+    }
+    wRand = 1.0 - wDesire - wDist - wUsage;
+    Score *= wDesire + wDist * TotalPlayerDistScore + wUsage * UsageScore + wRand * frand();
 
     if( bTooCloseToPlayer )
         Score*=0.2;
@@ -2023,6 +2057,11 @@ State MatchInProgress
                 NextSpawnTime *= 0.60;
         }
 
+        if ( GameDifficulty < 4 && NumMonsters > 15 ) {
+            // slower spawns on Normal difficulty if there are already many zeds spawned
+            NextSpawnTime *= 2.0;
+        }
+
         if ( ScrnGameLength != none )
             ScrnGameLength.AdjustNextSpawnTime(NextSpawnTime);
 
@@ -2152,8 +2191,9 @@ defaultproperties
     PathWhisps(0)="KFMod.RedWhisp"
     PathWhisps(1)="KFMod.RedWhisp"
 
+    bSingleTeamGame=True
     bUseEndGameBoss=True
-    bCloserZedSpawns=True
+    ZedSpawnLoc=ZSLOC_AUTO
     TurboScale=1.0
 
     MaxSpawnAttempts=3

@@ -38,7 +38,9 @@ copy /y %STEAMDIR%\textures\ScrnAch_T.utx %outputdir%\Textures\
 copy /y %STEAMDIR%\Textures\TSC_T.utx %outputdir%\Textures\
 copy /y %STEAMDIR%\sounds\ScrnSnd.uax %outputdir%\Sounds\
 copy /y *.txt  %outputdir%
-copy /y changes.txt  D:\Dropbox\Public\KFSrc\ScrnBalanceVersionHistory.txt
+copy /y *.md  %outputdir%
+copy /y README.md  D:\Dropbox\Public\KFSrc\ScrnBalanceVersionHistory.md
+copy /y README.html  D:\Dropbox\Public\KFSrc\ScrnBalanceVersionHistory.html
 copy /y *.ini  %outputdir%
 
 

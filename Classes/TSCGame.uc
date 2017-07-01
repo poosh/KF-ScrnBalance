@@ -33,7 +33,6 @@ var	TSCTeam TSCTeams[2];
 var class<TSCBaseGuardian> BaseGuardianClasses[2];
 var ShopVolume TeamShops[2];
 var class<WillowWhisp> BaseWhisp;
-var bool bSingleTeamGame;
 
 var bool bPendingShuffle; // shuffle teams at the end of the wave
 var protected bool bTeamChanging; // indicates that game changes team members, e.g. doing shuffle
@@ -157,7 +156,7 @@ event InitGame( string Options, out string Error )
     default.FriendlyFireScale = HDmgScale;
 
     // set MaxZombiesOnce to at least 48, unless it is a small map with only 1 trader
-    if ( MaxZombiesOnce < 48 && ShopList.Length > 1 ) {
+    if ( MaxZombiesOnce < 48 && !bSingleTeamGame && ShopList.Length > 1 ) {
         MaxZombiesOnce = 48;
     }
 
@@ -919,13 +918,13 @@ function bool AddSquad()
                 if (!bTeamWiped)
                     PendingSpecialSquad = NextSpawnSquad; // backup for another team
                 bCheckSquadTeam = true; // One special squad per each team
-                bCloserZedSpawns = true; // spawn close to the designated team
+                ZedSpawnLoc = ZSLOC_CLOSER; // spawn close to the designated team
             }
             else {
                 // Check teams only when they are equal in number.
                 // If teams are uneven, then just pick up random player as squad's target
                 bCheckSquadTeam = BigTeamSize == SmallTeamSize;
-                bCloserZedSpawns = false; // make zeds spawn more random on the map
+               ZedSpawnLoc = ZSLOC_RANDOM; // make zeds spawn more random on the map
             }
         }
     }
@@ -1320,6 +1319,7 @@ defaultproperties
     BlueTeamHumanName="Steampunk"
     bNoLateJoiners=False
     bPlayersVsBots=False
+    bSingleTeamGame=False
     bUseEndGameBoss=False
     MinNetPlayers=2
     MaxPlayers=12

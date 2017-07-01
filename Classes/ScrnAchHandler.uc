@@ -147,7 +147,7 @@ function WaveStarted(byte WaveNum)
 		bPerfectGame = true;
 	}
 	else {
-		bPerfectGame = bPerfectGame && TotalPlayers >= 3; // each wave must have 3+ players for perfect game
+		bPerfectGame = bPerfectGame && TotalPlayers >= 2; // each wave must have 2+ players for perfect game
 		bPerfectWave = WaveNum > 0; // can't score perfect wave in wave 1
 	}
 }
@@ -221,9 +221,9 @@ function WaveEnded(byte WaveNum)
 				M4Kills += SPI.WeapInfos[i].KillsPerWave;
 			}
 		}
-		if ( bAsh && ChainsawKills >= 10 && BoomstickKills >= 10 && ChainsawKills + BoomstickKills >= 50 )
+		if ( bAsh && ChainsawKills >= 10 && BoomstickKills >= 10 && ChainsawKills + BoomstickKills >= 40 )
 			SPI.ProgressAchievement('Ash', 1);
-		else if ( M4Kills >= 50 )
+		else if ( M4Kills >= 40 )
 			SPI.ProgressAchievement('M4203Kill50Zeds', 1);
 
 	}
@@ -240,7 +240,7 @@ function WaveEnded(byte WaveNum)
 	if ( TotalPlayers >= 5 && MaxKills > SecondPlaceKills * 2.5 )
 		TopKillsSPI.ProgressAchievement('KillWhore', 1);
 
-	if ( bPerfectWave && TotalPlayers >= 3 )
+	if ( bPerfectWave )
 		Ach2Alive('PerfectWave', 1);
 
 	if ( PlayersKilledByJason >= 3 )
@@ -583,7 +583,10 @@ function MonsterDamaged(int Damage, KFMonster Victim, ScrnPlayerInfo InstigatorI
     else if ( ZombieScrake(Victim) != none || Victim.IsA('ZombieJason') ) {
         if ( !Victim.bDecapitated && Damage < Victim.Health && !GameRules.MonsterInfos[index].TW_Ach_Failed ) {
             if ( ClassIsChildOf(GameRules.MonsterInfos[index].DamType1, class'KFMod.DamTypeLAW') ) {
-                if ( (DamType == class'KFMod.DamTypeDBShotgun' || DamType == class'KFMod.DamTypeBenelli')
+                if ( (ClassIsChildOf(DamType, class'ScrnDamTypeHeavyBase')
+                            || DamType == class'KFMod.DamTypeDBShotgun'
+                            || DamType == class'KFMod.DamTypeBenelli')
+                        && !ClassIsChildOf(GameRules.MonsterInfos[index].DamType2, class'ScrnDamTypeHeavyBase')
                         && GameRules.MonsterInfos[index].DamType2 != class'KFMod.DamTypeDBShotgun'
                         && GameRules.MonsterInfos[index].DamType2 != class'KFMod.DamTypeBenelli' ) {
                     GameRules.MonsterInfos[index].KillAss2 = InstigatorInfo;
@@ -606,7 +609,7 @@ function MonsterDamaged(int Damage, KFMonster Victim, ScrnPlayerInfo InstigatorI
                         GameRules.MonsterInfos[index].DamageFlags1 = GameRules.MonsterInfos[index].DamageFlags1 | DF_HEADSHOT;
                 }
                 else if ( GameRules.MonsterInfos[index].DamType1.default.bSniperWeapon ) {
-                    // Instank Kill can be achieved by 3 snipers, if they all had shot in the same time
+                    // Instant Kill can be achieved by 3 snipers, if they all had shot in the same time
                     if ( DamType.default.bSniperWeapon && bIsHeadshot && Level.TimeSeconds < GameRules.MonsterInfos[index].FirstHitTime + InstantKillTime ) {
                         GameRules.MonsterInfos[index].KillAss2 = InstigatorInfo;
                         GameRules.MonsterInfos[index].DamType2 = DamType;
@@ -699,7 +702,6 @@ function MonsterDamaged(int Damage, KFMonster Victim, ScrnPlayerInfo InstigatorI
 	}
 
 }
-
 
 function NetDamage( int Damage, pawn injured, pawn instigatedBy, vector HitLocation, out vector Momentum,
     class<DamageType> DamType )
@@ -914,7 +916,9 @@ function MonsterKilled(KFMonster Victim, ScrnPlayerInfo KillerInfo, class<KFWeap
             }
         }
         else if ( DamType.default.bIsPowerWeapon ) {
-            if ( (DamType == class'KFMod.DamTypeDBShotgun' || DamType == class'KFMod.DamTypeBenelli')
+            if ( (ClassIsChildOf(DamType, class'ScrnDamTypeHeavyBase')
+                        || DamType == class'KFMod.DamTypeDBShotgun'
+                        || DamType == class'KFMod.DamTypeBenelli')
                     && GameRules.MonsterInfos[index].DamType1 != none && GameRules.MonsterInfos[index].DamType1.default.bIsExplosive
                     && ClassIsChildOf(GameRules.MonsterInfos[index].DamType1, class'KFMod.DamTypeLAW')
                     && (GameRules.MonsterInfos[index].DamageFlags1 & DF_STUNNED) > 0 )

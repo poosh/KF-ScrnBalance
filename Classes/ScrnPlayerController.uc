@@ -2570,11 +2570,11 @@ exec function FixQuickMelee()
     // SetSID64("76561197992537591");
 // }
 
-// exec function PerkLevel(int L)
-// {
-    // if ( Role == ROLE_Authority )
-        // KFPlayerReplicationInfo(PlayerReplicationInfo).ClientVeteranSkillLevel = L;
-// }
+exec function PerkLevel(int L)
+{
+    if ( Role == ROLE_Authority )
+        KFPlayerReplicationInfo(PlayerReplicationInfo).ClientVeteranSkillLevel = L;
+}
 
 // exec function TestZedTime(optional float DesiredZedTimeDuration)
 // {

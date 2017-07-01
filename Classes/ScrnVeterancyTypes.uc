@@ -47,6 +47,7 @@ var class<HUDOverlay> HUDOverlay;
 var Material HighDecMat;
 var name SamePerkAch; // achievement to give when game is won by everybody are playing this perk only
 
+var localized string SkillInfo;
 // ==================================================  FUNCTIONS  ==================================================
 
 // try to avoid using this function on client-side, except for bNetOwner
@@ -181,6 +182,11 @@ final static function byte GetClientVeteranSkillLevel(KFPlayerReplicationInfo KF
     if ( KFPRI == none )
         return 0;
     return GetBonusLevel(KFPRI.ClientVeteranSkillLevel);
+}
+
+static function bool CanBeGrabbed(KFPlayerReplicationInfo KFPRI, KFMonster Other)
+{
+	return KFGameReplicationInfo(KFPRI.Level.GRI).GameDiff > 3; // Can't be grabbed on Normal and below
 }
 
 final static function bool IsGunslingerEnabled()
@@ -352,7 +358,40 @@ static function class<Grenade> GetNadeType(KFPlayerReplicationInfo KFPRI)
 
 static function string GetVetInfoText(byte Level, byte Type, optional byte RequirementNum)
 {
-    return super.GetVetInfoText(GetBonusLevel(Level), Type, RequirementNum);
+    local byte BonusLevel;
+    local string s;
+
+    BonusLevel = GetBonusLevel(Level);
+	switch( Type )
+	{
+        case 0:
+            return default.LevelNames[Min(Level,ArrayCount(default.LevelNames)-1)]; // This was left in the void of unused...
+        case 1:
+            s = GetSkillInfo(BonusLevel);
+            if ( s != "" )
+                S $= "||";
+            if( BonusLevel >= default.SRLevelEffects.Length )
+                s $= GetCustomLevelInfo(BonusLevel);
+            else
+                s $= default.SRLevelEffects[BonusLevel];
+            return s;
+        case 2:
+            return default.Requirements[RequirementNum];
+        case 10:
+            return GetSkillInfo(BonusLevel);
+        case 11:
+            if( BonusLevel >= default.SRLevelEffects.Length )
+                return GetCustomLevelInfo(BonusLevel);
+            else
+                return default.SRLevelEffects[BonusLevel];
+        default:
+            return default.VeterancyName;
+	}
+}
+
+static function string GetSkillInfo(byte Level)
+{
+    return default.SkillInfo;
 }
 
 static function bool IsAdmin(PlayerController Player)

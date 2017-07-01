@@ -30,6 +30,7 @@ function SetupWave()
     super.SetupWave();
 
     if ( WaveNum > 0 ) {
+        ZedSpawnLoc = ZSLOC_CLOSER;
         //TotalMaxMonsters *= 0.75; // reduce amount of zeds in wave
         FriendlyFireScale = HDmgScale;
 
@@ -187,6 +188,7 @@ function StinkyControllerCompeledAction(StinkyController SC, int CompletedAction
             gnome.SetRelativeRotation(gnome.GameObjRot);
             gnome.Holder = SC.StinkyClot;
             gnome.bHeld = true;
+            ZedSpawnLoc = ZSLOC_RANDOM;
             ScrnBalanceMut.GameRules.AdjustZedSpawnRate(); // reset boring votes
         }
         SC.GotoState('MoveToShop', 'Begin');
@@ -298,8 +300,10 @@ defaultproperties
 
     bSingleTeamGame=true
     bUseEndGameBoss=True
-    MinBaseZ = -500;
-    MaxBaseZ =  500;
+    MinBaseZ = -500
+    MaxBaseZ =  500
+    OvertimeTeamMoneyPenalty=0
+    ZedSpawnLoc=ZSLOC_CLOSER
 
     BaseGuardianClasses(0)=class'ScrnBalanceSrv.TheGuardianRed'
     BaseGuardianClasses(1)=class'ScrnBalanceSrv.TheGuardianBlue'

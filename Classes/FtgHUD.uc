@@ -30,6 +30,7 @@ simulated function DrawTSCHUDTextElements(Canvas C)
     local string    aHint, aTitle;
     local bool      bCriticalHint;
     local string    s;
+    local int       row;
 
     // enemy base
     TeamBase = TSCTeamBase(KFGRI.Teams[1-TeamIndex].HomeBase);
@@ -62,7 +63,7 @@ simulated function DrawTSCHUDTextElements(Canvas C)
             BaseDirPointer.UV2Texture = ConstantColor'TSC_T.HUD.GreenCol';
         }
 
-        bDrawShopDirPointer = false;
+        bDrawShopDirPointer = !KFGRI.bWaveInProgress; // always draw Trader Arrow during the Trader Time
         bAtOwnBase = TSCGRI.AtBase(PawnOwner.Location, TeamBase);
         if ( TeamBase.bActive ) {
             s = strOurBase;
@@ -79,7 +80,9 @@ simulated function DrawTSCHUDTextElements(Canvas C)
             s = strGnome;
             C.SetDrawColor(200, 0, 0, KFHUDAlpha); // dropped somewhere
         }
-        DrawDirPointer(C, BaseDirPointer, TeamBase.GetLocation(), 0, 0, false, s);
+        if ( bDrawShopDirPointer )
+            row = 1; // shift team base arrow to fit trader pointer
+        DrawDirPointer(C, BaseDirPointer, TeamBase.GetLocation(), row, 0, false, s);
     }
     else
         bDrawShopDirPointer = true; // no gnome = draw shop arrow

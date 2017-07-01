@@ -11,7 +11,7 @@ class ScrnBalance extends Mutator
 #exec OBJ LOAD FILE=ScrnAch_T.utx
 
 
-const VERSION = 94800;
+const VERSION = 95000;
 
 var ScrnBalance Mut; // pointer to self to use in static functions, i.e class'ScrnBalance'.default.Mut
 
@@ -243,7 +243,7 @@ var array<SColorTag> ColorTags;
 
 var float OriginalWaveSpawnPeriod;
 var globalconfig float MinZedSpawnPeriod;
-var globalconfig bool bCloserZedSpawns, bSpawnRateFix;
+var globalconfig bool bSpawnRateFix;
 var globalconfig bool bServerInfoVeterancy;
 
 var transient array<KFUseTrigger> DoorKeys;
@@ -411,13 +411,13 @@ simulated function InitSettings()
     ApplySpawnBalance();
     ApplyWeaponFix();
 
-    class'ScrnVetSupportSpec'.default.progressArray0[0]=1000.0 * WeldingRequirementScaling;
-    class'ScrnVetSupportSpec'.default.progressArray0[1]=2000.0 * WeldingRequirementScaling;
-    class'ScrnVetSupportSpec'.default.progressArray0[2]=7000.0 * WeldingRequirementScaling;
-    class'ScrnVetSupportSpec'.default.progressArray0[3]=33500.0 * WeldingRequirementScaling;
-    class'ScrnVetSupportSpec'.default.progressArray0[4]=120000.0 * WeldingRequirementScaling;
-    class'ScrnVetSupportSpec'.default.progressArray0[5]=250000.0 * WeldingRequirementScaling;
-    class'ScrnVetSupportSpec'.default.progressArray0[6]=370000.0 * WeldingRequirementScaling;
+    class'ScrnVetSupportSpec'.default.progressArray1[0]=1000.0 * WeldingRequirementScaling;
+    class'ScrnVetSupportSpec'.default.progressArray1[1]=2000.0 * WeldingRequirementScaling;
+    class'ScrnVetSupportSpec'.default.progressArray1[2]=7000.0 * WeldingRequirementScaling;
+    class'ScrnVetSupportSpec'.default.progressArray1[3]=33500.0 * WeldingRequirementScaling;
+    class'ScrnVetSupportSpec'.default.progressArray1[4]=120000.0 * WeldingRequirementScaling;
+    class'ScrnVetSupportSpec'.default.progressArray1[5]=250000.0 * WeldingRequirementScaling;
+    class'ScrnVetSupportSpec'.default.progressArray1[6]=370000.0 * WeldingRequirementScaling;
 
     class'ScrnVetCommando'.default.progressArray0[0]=10.0 * StalkerRequirementScaling;
     class'ScrnVetCommando'.default.progressArray0[1]=30.0 * StalkerRequirementScaling;
@@ -1562,8 +1562,8 @@ function XPBoost(PlayerController Sender, name Achievement, byte Level)
     // achievement wasn't achieved before
     if ( Achievement == '' || SPI.ProgressAchievement(Achievement, 1) ) {
         SteamStats.AddDamageHealed(class'ScrnVetFieldMedic'.default.progressArray0[Level]);
-        SteamStats.AddWeldingPoints(class'ScrnVetSupportSpec'.default.progressArray0[Level]);
-        SteamStats.AddShotgunDamage(class'ScrnVetSupportSpec'.default.progressArray1[Level]);
+        SteamStats.AddShotgunDamage(class'ScrnVetSupportSpec'.default.progressArray0[Level]);
+        SteamStats.AddWeldingPoints(class'ScrnVetSupportSpec'.default.progressArray1[Level]);
         v = class'ScrnVetSharpshooter'.default.progressArray0[Level];
         while ( v-- > 0 )
             SteamStats.AddHeadshotKill(false);
@@ -2633,7 +2633,6 @@ function PostBeginPlay()
     ScrnGT = ScrnGameType(KF);
     if ( ScrnGT != none ) {
         ScrnGT.ScrnBalanceMut = self;
-        ScrnGT.bCloserZedSpawns = bCloserZedSpawns;
     }
     else if ( ScrnStoryGameInfo(KF) != none ) {
         ScrnStoryGameInfo(KF).ScrnBalanceMut = self;
@@ -3150,8 +3149,8 @@ defaultproperties
 	VoteKillPenaltyMult=5.0
     bTraderSpeedBoost=True
 
-    BonusLevelNormalMax=3
-    BonusLevelHardMax=4
+    BonusLevelNormalMax=4
+    BonusLevelHardMax=5
     BonusLevelSuiMin=4
     BonusLevelSuiMax=6
     BonusLevelHoeMin=6
@@ -3295,7 +3294,6 @@ defaultproperties
     FakedPlayers=1
     GameStartCountDown=12
     SharpProgMinDmg=1000
-    bCloserZedSpawns=True
     bSpawnRateFix=True
     MinZedSpawnPeriod=2.0
     bScrnWaves=True

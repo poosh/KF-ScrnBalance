@@ -33,7 +33,10 @@ function OnPerkSelected(GUIComponent Sender)
 			lb_PerkEffects.SetContent(PerkLink.CachePerks[Idx].PerkClass.Static.GetVetInfoText(0,1));
 		else if( PerkLink.CachePerks[Idx].CurrentLevel==PerkLink.MaximumLevel )
 			lb_PerkEffects.SetContent(PerkLink.CachePerks[Idx].PerkClass.Static.GetVetInfoText(PerkLink.CachePerks[Idx].CurrentLevel-1,1));
-		else lb_PerkEffects.SetContent(PerkLink.CachePerks[Idx].PerkClass.Static.GetVetInfoText(PerkLink.CachePerks[Idx].CurrentLevel-1,1)$NextInfoStr$PerkLink.CachePerks[Idx].PerkClass.Static.GetVetInfoText(PerkLink.CachePerks[Idx].CurrentLevel,1));
+		else
+            lb_PerkEffects.SetContent(
+                PerkLink.CachePerks[Idx].PerkClass.Static.GetVetInfoText(PerkLink.CachePerks[Idx].CurrentLevel-1, 1)
+                $ NextInfoStr $ PerkLink.CachePerks[Idx].PerkClass.Static.GetVetInfoText(PerkLink.CachePerks[Idx].CurrentLevel,11));
 		lb_PerkProgress.List.PerkChanged(None, Idx);
 	}
 }
@@ -43,7 +46,7 @@ function bool OnSaveButtonClicked(GUIComponent Sender)
 	if ( PerkLink!=None && lb_PerkSelect.GetIndex()>=0 ) {
         ScrnPlayerController(PlayerOwner()).SelectVeterancy(PerkLink.CachePerks[lb_PerkSelect.GetIndex()].PerkClass);
     }
-        
+
 	return true;
 }
 

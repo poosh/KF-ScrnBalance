@@ -419,7 +419,7 @@ function GiveMapAchievements(optional String MapName)
     // end game bonus
 	BonusMult = Mut.EndGameStatBonus;
 	if ( Mut.bStatBonusUsesHL )
-		BonusMult *= fmax(0, HardcoreLevel - Mut.StatBonusMinHL);
+		BonusMult *= fmax(1.0, HardcoreLevel - Mut.StatBonusMinHL);
 	i = Mut.MapInfo.FindMapInfo();
 	if ( i != -1 )
 		BonusMult *= 1.0 + Mut.MapInfo.MapInfo[i].Difficulty;

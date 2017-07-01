@@ -1,18 +1,18 @@
 "ScrN Balance" a.k.a. "[ScrN] Total Game Balance + Gunslinger Perk"
-Copyright (c) 2012-2014 PU Developing IK, All Rights Reserved.
+Copyright (c) 2012-2017 PU Developing IK, All Rights Reserved.
 
 
 ==============================================================================
   HOW TO INSTALL
 ==============================================================================
 This is very simple:
-0. Ensure that ServerPerks v7 is already installed. If not, download it from 
+0. Ensure that ServerPerks v7 is already installed. If not, download it from
    http://forums.tripwireinteractive.com/showthread.php?t=36065
    and unpack it into your KillingFloor directory.
 1. Unzip package contains into your KillingFloor directory.
-2. If this is your first install of ScrnBalance (not update), then 
+2. If this is your first install of ScrnBalance (not update), then
    copy *.ini files to \KillingFloor\System\ directory.
-   
+
 That's all :)
 
 
@@ -27,6 +27,6 @@ If not - that's all :)
 ==============================================================================
   HOW TO USE
 ==============================================================================
-Add "?Mutator=ServerPerksMut.ServerPerksMut,ScrnBalanceSrv.ScrnBalance"
-to your server's command line (without quotes) 
+Add "?Mutator=ScrnSP.ServerPerksMutSE,ScrnBalanceSrv.ScrnBalance"
+to your server's command line (without quotes)
 or/and into KFMapVote.ini, if you are using Marco's Voting Handler Fix.

@@ -20,10 +20,10 @@ function TakeDamage( int Damage, Pawn InstigatedBy, Vector Hitlocation, Vector M
 {
     if ( Damage < 5 )
         return;
-        
+
 	if ( Monster(InstigatedBy) == none && class<KFWeaponDamageType>(damageType) != none && class<KFWeaponDamageType>(damageType).default.bDealBurningDamage )
 		return; // make pipebombs immune to fire, unless instigated by monsters
-        
+
     super.TakeDamage(Damage, InstigatedBy, Hitlocation, Momentum, damageType, HitIndex);
 }
 
@@ -58,9 +58,9 @@ function Timer()
             	foreach VisibleCollidingActors( class 'Pawn', CheckPawn, DetectionRadius, DetectLocation )
             	{
 					// don't trigger pipes on NPC  -- PooSH
-                    bSameTeam = KF_StoryNPC(CheckPawn) != none 
+                    bSameTeam = KF_StoryNPC(CheckPawn) != none
 						|| (CheckPawn.PlayerReplicationInfo != none && CheckPawn.PlayerReplicationInfo.Team.TeamIndex == PlacedTeam);
-            		if( CheckPawn == Instigator 
+            		if( CheckPawn == Instigator
                         || (bSameTeam && KFGameType(Level.Game).FriendlyFireScale > 0) )
                     {
                         // Make the thing beep if someone on our team is within the detection radius
@@ -143,7 +143,7 @@ simulated function HurtRadius( float DamageAmount, float DamageRadius, class<Dam
 	local array<Pawn> CheckedPawns;
 	local int i;
 	local bool bAlreadyChecked;
-	
+
 	local bool bDamagedInstigator, bKilledCrawler;
 	local byte NumKilledFP; // number of Fleshpounds killed by this exposion
 	local SRStatsBase Stats;
@@ -153,10 +153,10 @@ simulated function HurtRadius( float DamageAmount, float DamageRadius, class<Dam
 		return;
 
 	bHurtEntry = true;
-	
+
 	if ( Instigator != none && Instigator.PlayerReplicationInfo != none )
 		Stats = SRStatsBase(Instigator.PlayerReplicationInfo.SteamStatsAndAchievements);
-	
+
 
 	foreach CollidingActors (class 'Actor', Victims, DamageRadius, HitLocation)
 	{
@@ -166,14 +166,14 @@ simulated function HurtRadius( float DamageAmount, float DamageRadius, class<Dam
 		{
 			if( (Instigator==None || Instigator.Health<=0) && KFPawn(Victims)!=None )
 				Continue;
-				
+
 			P = none;
 			KFMonsterVictim = none;
 			KFP = none;
 			bMonster = false;
 			bFP = false;
 			bCrawler = false;
-			
+
 			dir = Victims.Location - HitLocation;
 			dist = FMax(1,VSize(dir));
 			dir = dir/dist;
@@ -214,9 +214,9 @@ simulated function HurtRadius( float DamageAmount, float DamageRadius, class<Dam
                 if( KFMonsterVictim != none )
                 {
 					bMonster = true;
-					bFP = ZombieFleshpound(KFMonsterVictim) != none;
+					bFP = ZombieFleshpound(KFMonsterVictim) != none || KFMonsterVictim.IsA('FemaleFP');
 					bCrawler = ZombieCrawler(KFMonsterVictim) != none;
-					
+
                     damageScale *= KFMonsterVictim.GetExposureTo(Location + 15 * -Normal(PhysicsVolume.Gravity));
                 }
                 else if( KFP != none )
@@ -233,16 +233,16 @@ simulated function HurtRadius( float DamageAmount, float DamageRadius, class<Dam
 				if ( damageScale <= 0)
 					continue;
 			}
-			
+
 			Victims.TakeDamage(damageScale * DamageAmount,Instigator,Victims.Location - 0.5 * (Victims.CollisionHeight + Victims.CollisionRadius)
 			 * dir,(damageScale * Momentum * dir),DamageType);
-				
+
 			if( Role == ROLE_Authority && bMonster && (KFMonsterVictim == none || KFMonsterVictim.Health <= 0 ) )
             {
                 NumKilled++;
 				if ( bFP )
 					NumKilledFP++;
-				else 
+				else
 					bKilledCrawler = bKilledCrawler || bCrawler;
             }
 
@@ -258,16 +258,16 @@ simulated function HurtRadius( float DamageAmount, float DamageRadius, class<Dam
 		if ( Stats != none ) {
 			if (NumKilled >= 10)
 				Stats.Killed10ZedsWithPipebomb();
-				
+
 			// ScrN Achievements
 			if ( bDamagedInstigator && NumKilledFP > 0 )
-				class'ScrnBalanceSrv.ScrnAchievements'.static.ProgressAchievementByID(Stats.Rep, 'MindBlowingSacrifice', NumKilledFP);  
+				class'ScrnBalanceSrv.ScrnAchievements'.static.ProgressAchievementByID(Stats.Rep, 'MindBlowingSacrifice', NumKilledFP);
 			if ( bKilledCrawler && NumKilled == 1 )
-				class'ScrnBalanceSrv.ScrnAchievements'.static.ProgressAchievementByID(Stats.Rep, 'Overkill3', 1);  
+				class'ScrnBalanceSrv.ScrnAchievements'.static.ProgressAchievementByID(Stats.Rep, 'Overkill3', 1);
 			if ( bDamagedInstigator && (Instigator == none || Instigator.Health <= 0) )
-				class'ScrnBalanceSrv.ScrnAchievements'.static.ProgressAchievementByID(Stats.Rep, 'MadeinChina', 1);  
+				class'ScrnBalanceSrv.ScrnAchievements'.static.ProgressAchievementByID(Stats.Rep, 'MadeinChina', 1);
     	}
-		
+
         if( NumKilled >= 4 )
         {
             KFGameType(Level.Game).DramaticEvent(0.05);
