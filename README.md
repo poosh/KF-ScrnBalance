@@ -20,7 +20,7 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 
 -------------------------------------------------------------------------------
 ### v9.51
-- Fixed bug when bronek Zombie Volumes on a map dropped down zed spawn rate.
+- Fixed bug when broken Zombie Volumes on a map dropped down zed spawn rate.
 - Fixed Berserker damage bonus vs humans (TSC)
 - Fixed Support's requirement saying welding points instead of damage
 
