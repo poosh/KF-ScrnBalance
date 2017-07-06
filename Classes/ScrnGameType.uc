@@ -103,6 +103,24 @@ protected function CheckScrnBalance()
     }
 }
 
+// is called in the first tick from ScrnBalance.Tick()
+function CheckZedSpawnList()
+{
+    local int i;
+    local ZombieVolume ZVol;
+
+    for (i = 0; i < ZedSpawnList.Length; ++i ) {
+        ZVol = ZedSpawnList[i];
+        if ( ZVol.SpawnPos.length == 0 ) {
+            ZVol.InitSpawnPoints();
+            if ( ZVol.SpawnPos.length == 0 ) {
+                log("Unable to init Zombie Volume "$ZVol.name$". Removing it from the list", class.name);
+                ZedSpawnList.remove(i--, 1);
+            }
+        }
+    }
+}
+
 function bool IsPathTargetValid(Actor PathTarget)
 {
     local int i;

@@ -19,8 +19,13 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 ## VERSION 9
 
 -------------------------------------------------------------------------------
-### v9.50
+### v9.51
+- Fixed bug when bronek Zombie Volumes on a map dropped down zed spawn rate.
+- Fixed Berserker damage bonus vs humans (TSC)
+- Fixed Support's requirement saying welding points instead of damage
 
+-------------------------------------------------------------------------------
+### v9.50
 #### Normal Difficulty
 Normal difficulty made newcomers-friendly. Not it is much easier to allow new players to start their
 first games without instantly getting wiped again and again until rage-quit. From now on Normal

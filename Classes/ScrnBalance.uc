@@ -11,7 +11,7 @@ class ScrnBalance extends Mutator
 #exec OBJ LOAD FILE=ScrnAch_T.utx
 
 
-const VERSION = 95000;
+const VERSION = 95100;
 
 var ScrnBalance Mut; // pointer to self to use in static functions, i.e class'ScrnBalance'.default.Mut
 
@@ -1220,13 +1220,16 @@ simulated function Tick( float DeltaTime )
         }
         ForceMaxPlayers();
 		if ( !bStoryMode ) {
+            if ( ScrnGT != none ) {
+                ScrnGT.CheckZedSpawnList();
+            }
             InitDoors();
 			SetStartCash();
             if ( bFixMusic )
                 FixMusic();
         }
         if ( bTSCGame ) {
-            Level.GRI.bNoTeamSkins = bNoTeamSkins && !ScrnGameType(Level.Game).IsTourney();
+            Level.GRI.bNoTeamSkins = bNoTeamSkins && !ScrnGT.IsTourney();
         }
         SetTimer(1, true);
         Disable('Tick');

@@ -162,6 +162,6 @@ defaultproperties
     OnHUDIcons(5)=(PerkIcon=Texture'ScrnTex.Perks.Perk_Support_Orange',StarIcon=Texture'ScrnTex.Perks.Hud_Perk_Star_Orange',DrawColor=(B=255,G=255,R=255,A=255))
     OnHUDIcons(6)=(PerkIcon=Texture'ScrnTex.Perks.Perk_Support_Blood',StarIcon=Texture'ScrnTex.Perks.Hud_Perk_Star_Blood',DrawColor=(B=255,G=255,R=255,A=255))
     VeterancyName="Support Specialist"
-    Requirements(0)="Weld %x door hitpoints"
-    Requirements(1)="Deal %x damage with shotguns"
+    Requirements(0)="Deal %x damage with shotguns"
+    Requirements(1)="Weld %x door hitpoints"
 }

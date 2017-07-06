@@ -11,7 +11,8 @@ static function int AddDamage(KFPlayerReplicationInfo KFPRI, KFMonster Injured, 
     if ( DmgType == default.DefaultDamageTypeNoBonus )
         return InDamage;
 
-    if ( ZombieScrake(Injured) != none && KFGameReplicationInfo(KFPRI.Level.GRI).GameDiff >= 5.0 ) {
+    if ( Injured == none || (ZombieScrake(Injured) != none && KFGameReplicationInfo(KFPRI.Level.GRI).GameDiff >= 5.0) ) {
+        // lower Buzzsaw damage vs humans and Scrakes on Sui+
         if ( ClassIsChildOf(DmgType, class'ScrnBalanceSrv.ScrnDamTypeCrossbuzzsaw') )
             InDamage *= 0.8; // 800 * 0.8 = 640
         else if ( DmgType == class'DamTypeCrossbuzzsaw' )
@@ -19,14 +20,8 @@ static function int AddDamage(KFPlayerReplicationInfo KFPRI, KFMonster Injured, 
     }
 	if( class<KFWeaponDamageType>(DmgType) != none && class<KFWeaponDamageType>(DmgType).default.bIsMeleeDamage )
 	{
-        if ( Injured == none ) {
-            // Human damage
-            InDamage *= InDamage * (1.0 + 0.10 * fmin(GetClientVeteranSkillLevel(KFPRI), 5));
-        }
-        else {
-            // 55% base bonus + 7.5% per level
-            InDamage *= 1.55 + 0.075 * GetClientVeteranSkillLevel(KFPRI);
-        }
+        // 55% base bonus + 7.5% per level
+        InDamage *= 1.55 + 0.075 * GetClientVeteranSkillLevel(KFPRI);
 	}
 
 	return InDamage;
@@ -66,7 +61,7 @@ static function float AddExtraAmmoFor(KFPlayerReplicationInfo KFPRI, Class<Ammun
 // (c) PooSH, 2012
 // v1.74: 15% speed penalty while holding a non-melee gun
 // v1.74: 30% speed penalty while holding a Syringe
-// v2.26: 50% of MeleeMovementSpeedModifier is aplied on chansaw too
+// v2.26: 50% of MeleeMovementSpeedModifier is aplied on chainsaw too
 // v4.39: Test try to give full speed bonus to chainsaw
 static function float GetWeaponMovementSpeedBonus(KFPlayerReplicationInfo KFPRI, Weapon Weap)
 {
@@ -168,7 +163,7 @@ defaultproperties
     SamePerkAch="OP_Berserker"
 
     SkillInfo="PERK SKILLS:|30% faster movement speed|80% less damage from Bloat Bile|40% resistance to all damage|Can't be grabbed by Clots|Up to 4 Zed-Time Extensions"
-    CustomLevelInfo="PERK BONUSES (LEVEL %L):|%x more Melee damage|%s faster melee attacks|%a extra Chansaw Fuel|%$ discount on Melee Weapons"
+    CustomLevelInfo="PERK BONUSES (LEVEL %L):|%x more Melee damage|%s faster melee attacks|%a extra Chainsaw Fuel|%$ discount on Melee Weapons"
 
     PerkIndex=4
     VeterancyName="Berserker"
