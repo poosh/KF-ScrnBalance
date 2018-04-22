@@ -844,6 +844,8 @@ function SetupWave()
         BalanceTeams(1, float(AliveTeamPlayerCount[0])/AliveTeamPlayerCount[1]);
 
     ScrnGameLength.RunWave();
+	
+	CalcDoshDifficultyMult();
 
     if( WaveNum == FinalWave && bUseEndGameBoss ) {
         StartWaveBoss();
@@ -929,23 +931,6 @@ function bool AddSquad()
         }
     }
     return super.AddSquad();
-}
-
-// scale monster health by number of player in the team, not by total number of players
-function OverrideMonsterHealth(KFMonster M)
-{
-    if ( M == none || M.Health <= 0 )
-        return;
-
-    if ( M.PlayerCountHealthScale > 0 ) {
-        M.HealthMax = M.default.HealthMax * M.DifficultyHealthModifer()
-            * (1.0 + (BigTeamSize-1) * M.PlayerCountHealthScale );
-        M.Health = M.HealthMax;
-    }
-    if ( M.PlayerNumHeadHealthScale > 0 ) {
-        M.HeadHealth = M.default.HeadHealth * M.DifficultyHealthModifer()
-            * (1.0 + (BigTeamSize-1) * M.PlayerNumHeadHealthScale );
-    }
 }
 
 // returns random alive player

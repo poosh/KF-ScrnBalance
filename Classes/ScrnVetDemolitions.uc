@@ -107,7 +107,7 @@ static function float GetAmmoCostScaling(KFPlayerReplicationInfo KFPRI, class<Pi
             || ClassIsChildOf(Item, class'LAWPickup') || ClassIsChildOf(Item, class'M4203Pickup')
             || ClassIsChildOf(Item, class'SPGrenadePickup')
             || ClassIsChildOf(Item, class'SealSquealPickup') || ClassIsChildOf(Item, class'SeekerSixPickup')
-            || (class'ScrnBalance'.default.Mut.bSpawnBalance && ClassIsChildOf(Item, class'FragPickup'))
+            || ClassIsChildOf(Item, class'FragPickup')
             || ClassIsInArray(default.PerkedPickups, Item)
         )
     {

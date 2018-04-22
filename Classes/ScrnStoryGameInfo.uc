@@ -414,6 +414,12 @@ function SetActiveObjective( KF_StoryObjective NewObjective, optional pawn ObjIn
     }
 }
 
+function AmmoPickedUp(KFAmmoPickup PickedUp)
+{
+    super.AmmoPickedUp(PickedUp);
+    ScrnBalanceMut.GameRules.WaveAmmoPickups++;
+}
+
 State MatchInProgress
 {
     function Timer()

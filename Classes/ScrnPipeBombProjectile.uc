@@ -18,7 +18,7 @@ static function bool UnloadAssets()
 
 function TakeDamage( int Damage, Pawn InstigatedBy, Vector Hitlocation, Vector Momentum, class<DamageType> damageType, optional int HitIndex)
 {
-    if ( Damage < 5 )
+    if ( bTriggered || Damage < 5 )
         return;
 
 	if ( Monster(InstigatedBy) == none && class<KFWeaponDamageType>(damageType) != none && class<KFWeaponDamageType>(damageType).default.bDealBurningDamage )

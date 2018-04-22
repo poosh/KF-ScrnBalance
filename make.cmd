@@ -12,7 +12,8 @@ cd /D %KFDIR%\System
 del ScrnBalance*.u
 
 rem ucc make > %CURDIR%\make.log
-ucc make > %CURDIR%\make.log
+REM ucc make > %CURDIR%\make.log
+ucc make
 set ERR=%ERRORLEVEL%
 if %ERR% NEQ 0 goto error
 color 0A
@@ -33,7 +34,7 @@ goto end
 :error
 color 0C
 
-type %CURDIR%\make.log
+REM type %CURDIR%\make.log
 
 echo ################################
 echo Compile ERROR! Code = %ERR%.

@@ -191,7 +191,7 @@ static function bool CanBeGrabbed(KFPlayerReplicationInfo KFPRI, KFMonster Other
 
 final static function bool IsGunslingerEnabled()
 {
-    return class'ScrnBalance'.default.Mut.bGunslinger;
+    return true;
 }
 
 // Change the cost of the weapons player spawn with

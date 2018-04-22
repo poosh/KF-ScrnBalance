@@ -7,7 +7,10 @@ enum EWaveEndRule {
     RULE_SpawnEmAll,
     RULE_Timeout,
     RULE_EarnDosh,
-    RULE_KillBoss
+    RULE_KillBoss,
+	RULE_GrabDosh,
+	RULE_GrabDoshZed,
+	RULE_GrabAmmo
 };
 
 var config string Title, Message, TraderMessage;
@@ -17,9 +20,12 @@ var config EWaveEndRule EndRule;
 var config int Counter, MaxCounter;
 var config float PerPlayerMult;
 var config float SpawnRateMod;
+var config float BountyScale;
 
 var config float SpecialSquadHealthMod;
 var config int ZedsPerSpecialSquad;
+var config bool bRandomSquads;
+var config bool bRandomSpecialSquads;
 var config array<string> SpecialSquads;
 var config array<string> Squads;
 
@@ -33,4 +39,6 @@ defaultproperties
     ZedsPerSpecialSquad=50
     SpawnRateMod=1.0
     Squads(0)="4*CL"
+	bRandomSquads=true
+	bRandomSpecialSquads=true
 }

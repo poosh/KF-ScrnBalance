@@ -19,7 +19,6 @@ static function int AddDamage(KFPlayerReplicationInfo KFPRI, KFMonster Injured, 
 static function float GetHeadShotDamMulti(KFPlayerReplicationInfo KFPRI, KFPawn P, class<DamageType> DmgType)
 {
 	local float ret;
-    local byte level;
     local bool bNoExtraBonus;
 
     if ( DmgType == default.DefaultDamageTypeNoBonus ) {
@@ -60,7 +59,6 @@ static function float ModifyRecoilSpread(KFPlayerReplicationInfo KFPRI, WeaponFi
             || M14EBRBattleRifle(Other.Weapon) != none
             || M99SniperRifle(Other.Weapon) != none
 			|| SPSniperRifle(Other.Weapon) != none
-            || (!class'ScrnBalance'.default.Mut.bGunslinger && Dualies(Other.Weapon) != none ) //all dual pistols are derived from Dualies
             || ClassIsInArray(default.PerkedWeapons, Other.Weapon.Class) //v3 - custom weapon support
         )
 	{
@@ -89,7 +87,6 @@ static function float GetReloadSpeedModifierStatic(KFPlayerReplicationInfo KFPRI
 			|| ClassIsChildOf(Other, class'Single') || ClassIsChildOf(Other, class'Deagle')
 			|| ClassIsChildOf(Other, class'Magnum44Pistol') || ClassIsChildOf(Other, class'MK23Pistol')
 			|| ClassIsChildOf(Other, class'SPSniperRifle')
-            || (!class'ScrnBalance'.default.Mut.bGunslinger && ClassIsChildOf(Other, class'Dualies')) //all dual pistols are derived from Dualies
             || ClassIsInArray(default.PerkedWeapons, Other) //v3 - custom weapon support
         )
 	{

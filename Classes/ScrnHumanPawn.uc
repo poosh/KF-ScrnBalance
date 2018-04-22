@@ -131,11 +131,11 @@ function ReplaceRequiredEquipment()
         for ( i = 0; i < StoryRules.RequiredPlayerEquipment.Length; ++i ) {
             if ( StoryRules.RequiredPlayerEquipment[i] == Class'KFMod.Knife' )
                 StoryRules.RequiredPlayerEquipment[i] = class'ScrnBalanceSrv.ScrnKnife';
-            if ( Mut.bGunslinger && StoryRules.RequiredPlayerEquipment[i] == Class'KFMod.Single' )
+            else if ( StoryRules.RequiredPlayerEquipment[i] == Class'KFMod.Single' )
                 StoryRules.RequiredPlayerEquipment[i] = class'ScrnBalanceSrv.ScrnSingle';
             else if ( Mut.bReplaceNades && StoryRules.RequiredPlayerEquipment[i] == Class'KFMod.Frag' )
                 StoryRules.RequiredPlayerEquipment[i] = class'ScrnBalanceSrv.ScrnFrag';
-            else if ( Mut.bWeaponFix && StoryRules.RequiredPlayerEquipment[i] == Class'KFMod.Syringe' )
+            else if ( StoryRules.RequiredPlayerEquipment[i] == Class'KFMod.Syringe' )
                 StoryRules.RequiredPlayerEquipment[i] = class'ScrnBalanceSrv.ScrnSyringe';
         }
     }
@@ -145,15 +145,11 @@ function ReplaceRequiredEquipment()
     }
     else {
         RequiredEquipment[0] = String(class'ScrnBalanceSrv.ScrnKnife');
-
-        if ( Mut.bGunslinger )
-            RequiredEquipment[1] = String(class'ScrnBalanceSrv.ScrnSingle');
-
-        if ( Mut.bReplaceNades )
+        RequiredEquipment[1] = String(class'ScrnBalanceSrv.ScrnSingle');
+        if ( Mut.bReplaceNades ) {
             RequiredEquipment[2] = String(class'ScrnBalanceSrv.ScrnFrag');
-
-        if ( Mut.bWeaponFix )
-            RequiredEquipment[3] = String(class'ScrnBalanceSrv.ScrnSyringe');
+        }
+        RequiredEquipment[3] = String(class'ScrnBalanceSrv.ScrnSyringe');
     }
 }
 
@@ -304,8 +300,7 @@ function bool AddInventory( inventory NewItem )
             }
         }
         else if ( weap.class == class'Single' ) {
-            if ( class'ScrnBalance'.default.Mut.bWeaponFix )
-                weap.bKFNeverThrow = false;
+            weap.bKFNeverThrow = false;
         }
 
         weap.bIsTier3Weapon = true; // hack to set weap.Tier3WeaponGiver for all weapons
@@ -320,7 +315,7 @@ function bool AddInventory( inventory NewItem )
             if ( weap.bTorchEnabled )
                 AddToFlashlightArray(weap.class); // v6.22 - each weapon has own flashlight
             CheckQuickMeleeWeapon(KFMeleeGun(weap));
-            if ( class'ScrnBalance'.default.Mut.bWeaponFix && class'ScrnBalance'.default.Mut.SrvTourneyMode == 0 && Machete(weap) != none ) {
+            if ( class'ScrnBalance'.default.Mut.SrvTourneyMode == 0 && Machete(weap) != none ) {
                 if ( MacheteBoost < 250 && VSizeSquared(Velocity) > 10000 ) {
                     if ( MacheteBoost < 50 )
                         MacheteBoost += 3;
@@ -675,7 +670,7 @@ simulated function VeterancyChanged()
 }
 
 // recalculates ammo bonuses
-simulated function RecalcAmmo()
+function RecalcAmmo()
 {
     local Inventory CurInv;
     local Ammunition MyAmmo;
@@ -835,52 +830,47 @@ function int ShieldAbsorb( int damage )
     OldShieldStrength = ShieldStrength;
     OriginalDamage = damage;
 
-    if ( class'ScrnBalance'.default.Mut.bWeaponFix ) {
-        // I don't get Tripwire's armor protection formula (possibly just a chain of bugs that somehow work together),
-        // so I wrote my own one, which is qute simple:
-        // Shield > 50%  = 67% protection
-        // Shield 26-50% = 50% protection
-        // Shield <= 25% = 33% protection
-        // (c) PooSH
+    // I don't get Tripwire's armor protection formula (possibly just a chain of bugs that somehow work together),
+    // so I wrote my own one, which is quite simple:
+    // Shield > 50%  = 67% protection
+    // Shield 26-50% = 50% protection
+    // Shield <= 25% = 33% protection
+    // (c) PooSH
 
-        dmg = damage;
-        if ( KFPRI != none && KFPRI.ClientVeteranSkill != none ) {
-            if ( KFHumanPawn(LastDamagedBy) != none )
-                dmg = fmax(1.0, dmg * fmax(0.6, KFPRI.ClientVeteranSkill.static.GetBodyArmorDamageModifier(KFPRI))); // cap 40% better armor against Human Damage
-            else
-                dmg = fmax(1.0, dmg * KFPRI.ClientVeteranSkill.static.GetBodyArmorDamageModifier(KFPRI)); // do at least 1 damage point after perk bonus
-        }
+    dmg = damage;
+    if ( KFPRI != none && KFPRI.ClientVeteranSkill != none ) {
+        if ( KFHumanPawn(LastDamagedBy) != none )
+            dmg = fmax(1.0, dmg * fmax(0.6, KFPRI.ClientVeteranSkill.static.GetBodyArmorDamageModifier(KFPRI))); // cap 40% better armor against Human Damage
+        else
+            dmg = fmax(1.0, dmg * KFPRI.ClientVeteranSkill.static.GetBodyArmorDamageModifier(KFPRI)); // do at least 1 damage point after perk bonus
+    }
 
-        if ( dmg < 3 ) {
-            // special case for tiny damages
-            AbsorbedValue = rand(2);
+    if ( dmg < 3 ) {
+        // special case for tiny damages
+        AbsorbedValue = rand(2);
+        ShieldStrength -= AbsorbedValue;
+        dmg -= AbsorbedValue;
+    }
+    else {
+        if ( ShieldStrength > 50 ) {
+            AbsorbedValue = min(0.67 * dmg, ShieldStrength - 50);
             ShieldStrength -= AbsorbedValue;
             dmg -= AbsorbedValue;
         }
-        else {
-            if ( ShieldStrength > 50 ) {
-                AbsorbedValue = min(0.67 * dmg, ShieldStrength - 50);
-                ShieldStrength -= AbsorbedValue;
-                dmg -= AbsorbedValue;
-            }
-            // don't put "else" here - after lowering the shield this can be executed too
-            if ( ShieldStrength > 25 && ShieldStrength <= 50 ) {
-                AbsorbedValue = min(0.50 * dmg, ShieldStrength - 25);
-                ShieldStrength -= AbsorbedValue;
-                dmg -= AbsorbedValue;
-            }
-            // don't put "else" here - after lowering the shield this can be executed too
-            if ( ShieldStrength > 0 && ShieldStrength <= 25 ) {
-                AbsorbedValue = clamp(0.33 * dmg, 1, ShieldStrength);
-                ShieldStrength -= AbsorbedValue;
-                dmg -= AbsorbedValue;
-            }
+        // don't put "else" here - after lowering the shield this can be executed too
+        if ( ShieldStrength > 25 && ShieldStrength <= 50 ) {
+            AbsorbedValue = min(0.50 * dmg, ShieldStrength - 25);
+            ShieldStrength -= AbsorbedValue;
+            dmg -= AbsorbedValue;
         }
-        damage = dmg;
+        // don't put "else" here - after lowering the shield this can be executed too
+        if ( ShieldStrength > 0 && ShieldStrength <= 25 ) {
+            AbsorbedValue = clamp(0.33 * dmg, 1, ShieldStrength);
+            ShieldStrength -= AbsorbedValue;
+            dmg -= AbsorbedValue;
+        }
     }
-    else {
-        damage = super.ShieldAbsorb(damage);
-    }
+    damage = dmg;
 
     if ( bCheckHorzineArmorAch && OldShieldStrength > 100 && damage < Health && OriginalDamage > clamp(Health, 50, 80)
                 && PlayerController(Controller) != none
@@ -957,6 +947,7 @@ function ServerBuyShield(class<ScrnVestPickup> VestClass)
                 PlayerReplicationInfo.Score -= ceil(AmountToBuy * Price1p);
                 if ( PlayerReplicationInfo.Score < 0 )
                     PlayerReplicationInfo.Score = 0;
+                UsedStartCash(ceil(AmountToBuy * Price1p));
             }
         }
     }
@@ -1565,9 +1556,6 @@ function ApplyWeaponFlashlight(bool bDrainBattery)
 {
     local int i;
     local KFWeapon CurWeap;
-
-    if ( !class'ScrnBalance'.default.Mut.bWeaponFix )
-        return; // old-style battery (one for all guns)
 
     CurWeap = KFWeapon(Weapon);
     for ( i=0; i<WeaponFlashlights.Length; ++i ) {

@@ -21,14 +21,14 @@ var transient int OldMagAmmoRemaining;
 simulated function PostNetReceive()
 {
     super.PostNetReceive();
-    
+
     if ( Role < ROLE_Authority ) {
         if ( OldMagAmmoRemaining != MagAmmoRemaining ) {
             if ( MagAmmoRemaining == 0 ) {
 				if ( ThirdPersonActor != none )
 					ThirdPersonActor.AmbientSound = none;
                 TexPanner(Skins[1]).PanRate = 0; // stop saw cycling
-                PlaySound(EngineStopSound);    
+                PlaySound(EngineStopSound);
             }
             else if ( OldMagAmmoRemaining < MagAmmoRemaining && MagAmmoRemaining > 0 ) {
                 //just reloaded
@@ -37,7 +37,7 @@ simulated function PostNetReceive()
 				if ( ThirdPersonActor != none )
 					ThirdPersonActor.AmbientSound = ThirdPersonActor.default.AmbientSound;
                 TexPanner(Skins[1]).PanRate = 3; // start saw cycling
-                PlaySound(EngineStartSound);   
+                PlaySound(EngineStartSound);
                 if ( !IsAnimating() )
                     PlayIdle();
             }
@@ -50,25 +50,25 @@ static function PreloadAssets(Inventory Inv, optional bool bSkipRefCount)
 {
     local int i;
     local ScrnChainsaw W;
-    
+
     super.PreloadAssets(Inv, bSkipRefCount);
-    
+
     W = ScrnChainsaw(Inv);
-    
+
     default.EngineStartSound = sound(DynamicLoadObject(default.EngineStartSoundRef, class'sound'));
     default.EngineStopSound = sound(DynamicLoadObject(default.EngineStopSoundRef, class'sound'));
 
     for ( i = 0; i < default.ReloadSounds.Length; ++i ) {
         default.ReloadSounds[i].Sound = sound(DynamicLoadObject(default.ReloadSounds[i].SoundRef, class'sound'));
         if ( W != none ) {
-            W.ReloadSounds[i].Sound = default.ReloadSounds[i].Sound;    
+            W.ReloadSounds[i].Sound = default.ReloadSounds[i].Sound;
         }
     }
-    
+
     if ( W != none ) {
-        W.EngineStartSound = default.EngineStartSound;    
-        W.EngineStopSound = default.EngineStopSound; 
-        
+        W.EngineStartSound = default.EngineStartSound;
+        W.EngineStopSound = default.EngineStopSound;
+
         W.CalcReloadSoundDuration();
         default.TotalReloadSoundDuration = W.TotalReloadSoundDuration;
     }
@@ -76,15 +76,15 @@ static function PreloadAssets(Inventory Inv, optional bool bSkipRefCount)
 static function bool UnloadAssets()
 {
 	local int i;
-    
+
     default.EngineStartSound = none;
     default.EngineStopSound = none;
 
     default.TotalReloadSoundDuration = 0;
     for ( i = 0; i < default.ReloadSounds.Length; ++i ) {
         default.ReloadSounds[i].Sound = none;
-    }    
-    
+    }
+
     return super.UnloadAssets();
 }
 
@@ -92,19 +92,19 @@ static function bool UnloadAssets()
 simulated function PostBeginPlay()
 {
     super.PostBeginPlay();
-    
+
     CalcReloadSoundDuration();
 }
 
 simulated function CalcReloadSoundDuration()
 {
     local int i;
-    
+
     TotalReloadSoundDuration = 0;
     for ( i = 0; i < default.ReloadSounds.Length; ++i ) {
         ReloadSounds[i].Duration = GetSoundDuration(ReloadSounds[i].Sound);
         TotalReloadSoundDuration += ReloadSounds[i].Duration;
-    }    
+    }
 }
 
 simulated function bool ConsumeAmmo( int Mode, float Load, optional bool bAmountNeededIsMax )
@@ -164,12 +164,12 @@ simulated function bool ConsumeAmmo( int Mode, float Load, optional bool bAmount
 simulated function ClientReload()
 {
     super.ClientReload();
-    
+
     // if MagAmmoRemaining == 0, chaisaw is already stopped
     if ( MagAmmoRemaining > 0 )
         PlaySound(EngineStopSound);
     ThirdPersonActor.AmbientSound = none;
-    
+
     GotoState('Reloading');
 }
 
@@ -185,13 +185,13 @@ simulated function ActuallyFinishReloading()
         ThirdPersonActor.AmbientSound = ThirdPersonActor.default.AmbientSound;
         TexPanner(Skins[1]).PanRate = 3; // start saw cycling
         PlayIdle();
-    }    
+    }
 }
 
 simulated function WeaponTick(float dt)
 {
     super.WeaponTick(dt);
-    
+
     if ( Role == Role_Authority ) {
         if ( !bIsReloading ) {
             if ( MagAmmoRemaining <= 0) {
@@ -216,41 +216,41 @@ simulated function WeaponTick(float dt)
 // taking sounds from flamethrower reload
 simulated state Reloading
 {
-    simulated function BeginState() 
+    simulated function BeginState()
     {
         NextReloadSoundIndex = 0;
-        TimeToNextReloadSound = ReloadRate * 0.2; 
+        TimeToNextReloadSound = ReloadRate * 0.2;
         bBlownUpThisReload = false;
     }
 
     simulated function WeaponTick(float dt)
     {
         super.WeaponTick(dt);
-        
+
         if ( NextReloadSoundIndex < ReloadSounds.length ) {
             // if ( NextReloadSoundIndex < ReloadSounds.length - 2 )
                 // ThirdPersonActor.AmbientSound = none;
             TimeToNextReloadSound -= dt;
             if ( TimeToNextReloadSound <= 0 ) {
                 PlaySound(ReloadSounds[NextReloadSoundIndex].Sound);
-                TimeToNextReloadSound += 0.8*ReloadRate * ReloadSounds[NextReloadSoundIndex].Duration/TotalReloadSoundDuration; 
+                TimeToNextReloadSound += 0.8*ReloadRate * ReloadSounds[NextReloadSoundIndex].Duration/TotalReloadSoundDuration;
                 NextReloadSoundIndex++;
             }
         }
     }
-    
+
     function TakeDamage(int Damage, Pawn EventInstigator, vector HitLocation, vector Momentum, class<DamageType> DamageType, optional int HitIndex)
     {
         local ScrnFlameNade nade;
         local int FuelInTank;
-        
+
         //blow the fuel inside a tank on fire damage received (excluding DoT)
         if ( bBlownUpThisReload || DamageType == none || Damage < 5 || DamageType == class'DamTypeFlamethrower' )
             return;
-        
+
         if ( Level.TimeSeconds > ReloadTimer + ReloadRate*0.9 ) //almost finished reloading, don't blow up
             return;
-            
+
         if ( DamageType.default.bFlaming || (class<KFWeaponDamageType>(DamageType) != none && class<KFWeaponDamageType>(DamageType).default.bDealBurningDamage) ) {
             bBlownUpThisReload = true;
             FuelInTank = MagAmmoRemaining + (MagCapacity - MagAmmoRemaining) * (Level.TimeSeconds - ReloadTimer) / ReloadRate;
@@ -277,7 +277,7 @@ simulated function PlayIdle()
 
 defaultproperties
 {
-     IdleFuelConsumeTime=3.000000
+     IdleFuelConsumeTime=5.000000
      EngineStartSoundRef="KF_ChainsawSnd.Chainsaw_FalseStart4"
      EngineStopSoundRef="KF_ChainsawSnd.Chainsaw_Deselect1"
      ReloadSounds(0)=(SoundRef="KF_FlamethrowerSnd.FT_Reload1")
@@ -289,7 +289,7 @@ defaultproperties
      ReloadSounds(6)=(SoundRef="KF_FlamethrowerSnd.FT_Reload6")
      ReloadSounds(7)=(SoundRef="KF_ChainsawSnd.Chainsaw_FalseStart1")
      ReloadSounds(8)=(SoundRef="KF_ChainsawSnd.Chainsaw_FalseStart2")
-     MagCapacity=100
+     MagCapacity=105
      ReloadRate=2.666667
      ReloadAnim="PutDown"
      ReloadAnimRate=0.250000

@@ -157,33 +157,30 @@ state Moving extends Scripting
 
     function SetMoveTarget()
     {
-        local Actor NextMoveTarget;
-        local int i;
-
         Focus = ScriptedFocus;
-        NextMoveTarget = GetMoveTarget();
-        if ( NextMoveTarget == None ) {
+        Target = GetMoveTarget();
+        if ( Target == None ) {
             Pawn.Suicide();
             //GotoState('Broken');
             return;
         }
         if ( Focus == None )
-            Focus = NextMoveTarget;
-        MoveTarget = NextMoveTarget;
+            Focus = Target;
+        MoveTarget = Target;
         if ( !ActorReachable(MoveTarget) ) {
             MoveTarget = FindPathToward(MoveTarget,false);
             if ( MoveTarget == None ) {
                 // if we can't reach the target, then move to closest NavigationPoint
-                MoveTarget = FindAlternatePath(NextMoveTarget);
+                MoveTarget = FindAlternatePath(Target);
             }
             if ( MoveTarget == None ) {
                 AbortScript();
                 return;
             }
-            if ( Focus == NextMoveTarget )
+            if ( Focus == Target )
                 Focus = MoveTarget;
         }
-        // Level.GetLocalPlayerController().ClientMessage("Moving to " $ GetItemName(string(MoveTarget)) $ " / " $ GetItemName(string(NextMoveTarget)), 'log');
+        // Level.GetLocalPlayerController().ClientMessage("Moving to " $ GetItemName(string(MoveTarget)) $ " / " $ GetItemName(string(Target)), 'log');
     }
 
     function CompleteAction()
@@ -203,9 +200,32 @@ KeepMoving:
     StinkyClot.HiddenGroundSpeed = Pawn.GroundSpeed;
     // MayShootTarget();
     if ( MoveTarget != None && MoveTarget != Pawn ) {
-        MoveToward(MoveTarget, Focus,,,Pawn.bIsWalking);
-        if ( !Pawn.ReachedDestination(GetMoveTarget()) )
+        if ( StinkyClot.StuckCounter >= 25 &&
+                (MoveTarget == StinkyClot.LastMoveTarget[0] || MoveTarget == StinkyClot.LastMoveTarget[1]) )
+        {
+            // force teleport
+            if ( NextRoutePath != none && NextRoutePath.End != none ) {
+                MoveTarget = NextRoutePath.End; // jump one path node forward
+                // Level.GetLocalPlayerController().ClientMessage("Teleporting to next target " $ MoveTarget, 'log');
+            }
+            StinkyClot.TeleportLocation = MoveTarget.Location;
+            StinkyClot.TeleportLocation.Z += StinkyClot.CollisionHeight;
+            StinkyClot.StartTeleport();
+            sleep(1.0);
+            WaitForLanding();
+        }
+        else {
+            MoveToward(MoveTarget, Focus,,,Pawn.bIsWalking);
+        }
+
+        if ( !Pawn.ReachedDestination(GetMoveTarget()) ) {
             Goto('KeepMoving');
+        }
+
+        // make sure the Stinky Clot won't teleport at this phase
+        MoveTarget = none;
+        StinkyClot.LastMoveTarget[0] = none;
+        StinkyClot.LastMoveTarget[1] = none;
     }
     sleep( PlayCompleteAnimation() );
     CompleteAction();

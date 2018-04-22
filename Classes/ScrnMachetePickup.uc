@@ -16,4 +16,8 @@ defaultproperties
      ItemShortName="Machete SE"
      InventoryType=Class'ScrnBalanceSrv.ScrnMachete'
      CorrespondingPerkIndex=7
+
+     CollisionRadius=30
+     CollisionHeight=10
+     PrePivot=(Z=10)
 }

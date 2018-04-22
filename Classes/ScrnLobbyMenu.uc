@@ -48,7 +48,7 @@ function AddPlayer( KFPlayerReplicationInfo PRI, int Index, Canvas C )
 		AppendComponent(PlayerBoxes[Index].PlayerBox, true);
 		AppendComponent(PlayerBoxes[Index].PlayerPerk, true);
 		AppendComponent(PlayerBoxes[Index].PlayerVetLabel, true);
-		
+
 		Top = (PlayerBoxes[Index].PlayerBox.WinTop+PlayerBoxes[Index].PlayerBox.WinHeight);
 		if( !bMOTDHidden && Top>=ADBackground.WinTop )
 		{
@@ -66,14 +66,14 @@ function AddPlayer( KFPlayerReplicationInfo PRI, int Index, Canvas C )
 		}
 	}
 	PlayerBoxes[Index].ReadyBox.Checked(PRI.bReadyToPlay);
-    
+
     Mut = class'ScrnBalance'.default.Mut;
     if ( Mut != none ) {
         PlayerName = Mut.LeftCol(Mut.ColoredPlayerName(PRI), 20);
     }
     else {
         PlayerName = Left(PRI.PlayerName, 20);
-    }    
+    }
     PlayerBoxes[Index].ReadyBox.SetCaption(" "$PlayerName);
 
 	if ( PRI.ClientVeteranSkill != none )
@@ -105,7 +105,9 @@ function bool InternalOnPreDraw(Canvas C)
 	local int i, j;
 	local string StoryString;
 	local String SkillString;
+	local String s;
 	local KFGameReplicationInfo KFGRI;
+	local ScrnGameReplicationInfo ScrnGRI;
 	local PlayerController PC;
 
 	PC = PlayerOwner();
@@ -125,6 +127,7 @@ function bool InternalOnPreDraw(Canvas C)
 	t_Footer.InternalOnPreDraw(C);
 
 	KFGRI = KFGameReplicationInfo(PC.GameReplicationInfo);
+	ScrnGRI = ScrnGameReplicationInfo(PC.GameReplicationInfo);
 
 	if ( KFGRI != none )
 		WaveLabel.Caption = string(KFGRI.WaveNumber + 1) $ "/" $ string(KFGRI.FinalWave);
@@ -187,10 +190,20 @@ DoneIt:
 		SkillString = HardString;
 	else if ( KFGRI.BaseDifficulty <= 5 )
 		SkillString = SuicidalString;
-	else 
+	else
         SkillString = HellOnEarthString;
 
-	CurrentMapLabel.Caption = CurrentMapString @ PC.Level.Title;
+	if ( ScrnGRI != none ) {
+		s = ScrnGRI.GameName;
+		if ( ScrnGRI.GameTitle != "" )
+			s $= ": " $ ScrnGRI.GameTitle;
+		s $= " @ " $  PC.Level.Title;
+	}
+	else {
+		s = CurrentMapString @ PC.Level.Title;
+	}
+	CurrentMapLabel.Caption = s;
+
 	DifficultyLabel.Caption = DifficultyString @ SkillString;
 
 	return false;

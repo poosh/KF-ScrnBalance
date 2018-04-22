@@ -302,6 +302,8 @@ simulated function DrawKFHUDTextElements(Canvas C)
         C.SetPos(C.ClipX - CircleSize, 2);
         C.DrawTile(WaveGB[2+TeamIndex], CircleSize, CircleSize, 0, 0, 256, 256);
 
+        // TODO: Add support for ScrnGRI.WaveEndRule
+
         S = string(KFGRI.MaxMonsters);
         C.Font = LoadFont(1);
         C.Strlen(S, XL, YL);

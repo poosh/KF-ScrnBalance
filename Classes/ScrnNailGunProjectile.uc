@@ -3,9 +3,9 @@ This projectile uses KFMonster's bZedUnderControl and NumZCDHits for own purpose
 It sohuldn't be an issue because those variables seem not be used by anything
 bZedUnderControl - zed has been nailed and flying nail takes zed with it (can't be nailed more in this state)
 NumZCDHits - number of nails zed is pinned with. Can be nailed more. Zed will be released when NumZCDHits reaches 0.
-*/    
-      
-        
+*/
+
+
 class ScrnNailGunProjectile extends ScrnCustomShotgunBullet;
 
 var     String         ImpactSoundRefs[6];
@@ -20,7 +20,7 @@ var ProjectileBodyPart Giblet;
 
 var KFMonster   NailedMonster; //monster that currently is attached to nail
 var transient KFMonster   OldNailedMonster; //used for replication
-var vector      NailHitDelta; // distance between hit's and victim's locations 
+var vector      NailHitDelta; // distance between hit's and victim's locations
 var transient vector      NailingLocation; // location, where zed was hit by nail
 var transient float       NailedFlyDistance; // how far did zed flew away?
 var transient bool        bStillFlying; // NailedMonster is still flying (not pinned yet)
@@ -31,7 +31,7 @@ var vector PendingHitSpot;
 
 var float LifeSpanAfterHitWall; // for how long keep zeds nailed to a wall?
 
-var(Movement) float VelocityModMass; 
+var(Movement) float VelocityModMass;
 var(Movement) float VelocityModHealth;
 
 
@@ -73,7 +73,7 @@ static function bool UnloadAssets()
 simulated function PostBeginPlay()
 {
 	super(Projectile).PostBeginPlay();
-    
+
 	Velocity = Speed * Vector(Rotation); // starts off slower so combo can be done closer
 
     //SetTimer(0.4, false); //wut? There is no Timer function defined in parent classes
@@ -92,9 +92,9 @@ simulated function PostNetReceive()
     local Coords boneCoords;
 
     super.PostNetReceive();
-    
+
     //log ("Nail.PostNetReceive NailedMonster="$NailedMonster @ "NailHitDelta="$NailHitDelta, 'ScrnBalance');
-    
+
 
     if( Giblet == none && MonsterHeadAttached != none )
     {
@@ -107,7 +107,7 @@ simulated function PostNetReceive()
        Giblet.SetBase(self);
        Giblet.Lifespan = Lifespan;
     }
-    
+
     if ( NailedMonster != OldNailedMonster ) {
         if ( NailedMonster != none ) {
             Mass = NailedMonster.Mass;
@@ -116,14 +116,14 @@ simulated function PostNetReceive()
             NailedMonster.bZedUnderControl = true; //indicate that nail is taking zed with it
 
             if ( Physics != PHYS_None )
-                SetPhysics(PHYS_Falling); 
+                SetPhysics(PHYS_Falling);
         }
         else {
             Mass = default.Mass;
         }
         if ( OldNailedMonster != none) {
             if ( OldNailedMonster.Physics == PHYS_Flying )
-                OldNailedMonster.SetPhysics(PHYS_Walking); 
+                OldNailedMonster.SetPhysics(PHYS_Walking);
         }
         OldNailedMonster = NailedMonster;
     }
@@ -133,7 +133,7 @@ simulated function PostNetReceive()
 simulated function NailDeadBodiesToWall()
 {
 	local vector X,HL,HN;
-	
+
 	// Attempt to pin body onto wall
 	X = vector(Rotation);
     if( PendingDeadVictim!=None && PendingDeadVictim.Health<=0 && PendingDeadVictim.Physics==PHYS_KarmaRagdoll )
@@ -147,48 +147,48 @@ simulated function NailDeadBodiesToWall()
 
 function ReleaseMonster()
 {
-    
+
     if ( NailedMonster == none )
         return;
 
     Mass = default.Mass;
-    
+
     if ( --NailedMonster.NumZCDHits <= 0 ) {
         NailedMonster.bZedUnderControl = false;
         NailedMonster.AirSpeed = NailedMonster.default.AirSpeed * NailedMonster.GroundSpeed / NailedMonster.default.GroundSpeed;
-        
+
         //drop zed on the ground and let him walk away
         if ( NailedMonster.Physics == PHYS_Flying )
-            NailedMonster.SetPhysics(PHYS_Walking); 
+            NailedMonster.SetPhysics(PHYS_Walking);
     }
-    
+
     // achievements
     //PlayerController(Instigator.Controller).ClientMessage("NailedFlyDistance = " $ sqrt(NailedFlyDistance) $ " ("$ sqrt(NailedFlyDistance) / 50.0 $"m)");
     if ( NailedFlyDistance >= 25000000.0 && ach_Nail100m.AchHandler != none )
         ach_Nail100m.AchHandler.ProgressAchievement(ach_Nail100m.AchIndex, 1);
     if ( NailedFlyDistance >= 62500.0 && ach_PushShiver.AchHandler != none && NailedMonster.IsA('ZombieShiver') )
         ach_PushShiver.AchHandler.ProgressAchievement(ach_PushShiver.AchIndex, 1);
-    
+
     NailedMonster = none;
     NetUpdateTime = Level.TimeSeconds - 1;
 }
 
 
-simulated function Tick(float DeltaTime) 
+simulated function Tick(float DeltaTime)
 {
 	local vector X,HL,HN, ZedNewLoc;
 
-    
+
     super.Tick(DeltaTime);
 
     if ( Level.NetMode != NM_DedicatedServer && Physics != PHYS_None )
     {
         SetRotation(Rotator(Normal(Velocity)));
     }
-    
+
     if ( NailedMonster != none ) {
         // take naled zed with me
-        ZedNewLoc = Location - NailHitDelta; 
+        ZedNewLoc = Location - NailHitDelta;
         X = vector(Rotation);
         if ( NailedMonster.Health > 0 ) {
             NailedMonster.Velocity = Velocity;
@@ -232,7 +232,7 @@ simulated function Tick(float DeltaTime)
                 Spawn(Class'BodyAttacher',NailedMonster,,PendingHitSpot).AttachEndPoint = HL-HN*4;
             ReleaseMonster();
         }
-    }  
+    }
 }
 
 
@@ -249,7 +249,7 @@ simulated function ProcessTouch (Actor Other, vector HitLocation)
     local Actor TempActor;
     local float PerkedDamage;
 
-    ReleaseMonster(); //release currently nailed monster, when hitting another    
+    ReleaseMonster(); //release currently nailed monster, when hitting another
 
 	if ( Other == none || Other == Instigator  || Other.Base == Instigator || !Other.bBlockHitPointTraces  )
 		return;
@@ -257,34 +257,34 @@ simulated function ProcessTouch (Actor Other, vector HitLocation)
 	if( bFinishedPenetrating ) {
 	   return;
     }
-    
+
 
     //Test - don't pin ExtendedZCollision
-    // if ( ExtendedZCollision(Other) != none ) 
-        // Victim = Pawn(Other.Owner); // ExtendedZCollision is attached to KFMonster    
+    // if ( ExtendedZCollision(Other) != none )
+        // Victim = Pawn(Other.Owner); // ExtendedZCollision is attached to KFMonster
     // else if ( Pawn(Other) != none )
         Victim = Pawn(Other);
-        
-    X = Vector(Rotation);
-    KFM = KFMonster(Victim);    
 
-    KFPRI = KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo);    
+    X = Vector(Rotation);
+    KFM = KFMonster(Victim);
+
+    KFPRI = KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo);
     // damage bonus also makes it fly faster
     PerkedDamage = Damage;
     if ( KFPRI != none && KFPRI.ClientVeteranSkill != none )
         PerkedDamage = KFPRI.ClientVeteranSkill.Static.AddDamage(KFPRI, KFM, KFPawn(Instigator), Damage, MyDamageType);
-    
+
     if ( KFM != none ) {
         bWasDecapitated = KFM.bDecapitated;
         Velocity /= 1.0 + (KFM.Mass*VelocityModMass + KFM.Health*VelocityModHealth)/PerkedDamage; //heavy and healthy pawns slow down nails more
     }
-    
+
  	if( ROBulletWhipAttachment(Other) != none ) {
         // we touched player's auxilary collision cylinder, not let's trace to the player himself
         // Other.Base = KFPawn
-        if( Other.Base == none || Other.Base.bDeleteMe ) 
+        if( Other.Base == none || Other.Base.bDeleteMe )
             return;
-	    
+
         Other = Instigator.HitPointTrace(TempHitLocation, HitNormal, HitLocation + (200 * X), HitPoints, HitLocation,, 1);
 
         if( Other == none || HitPoints.Length == 0 )
@@ -306,7 +306,7 @@ simulated function ProcessTouch (Actor Other, vector HitLocation)
             if( Role == ROLE_Authority && KFM != none && !bWasDecapitated ) {
                 if ( bBounced && KFM.bDecapitated )
                     ach_ProNailer.AchHandler.ProgressAchievement(ach_ProNailer.AchIndex, 1);
-                    
+
                 if( MonsterHeadAttached == none && KFM.Health < 0 )  {
                     MonsterHeadAttached = KFM;
                     if( Level.NetMode == NM_ListenServer || Level.NetMode == NM_StandAlone )
@@ -319,8 +319,8 @@ simulated function ProcessTouch (Actor Other, vector HitLocation)
             Other.TakeDamage(Damage, Instigator, HitLocation, MomentumTransfer * Normal(Velocity), MyDamageType);
         }
     }
-    
-    //Bounces=0; // don't bounce after hit somebody    
+
+    //Bounces=0; // don't bounce after hit somebody
 
     // penetration damage reduction
 	if ( KFPRI != none && KFPRI.ClientVeteranSkill != none )
@@ -329,13 +329,13 @@ simulated function ProcessTouch (Actor Other, vector HitLocation)
    		PenDamageReduction = default.PenDamageReduction;
     // loose penetration damage after hitting specific zeds -- PooSH
     if ( KFM != none)
-        PenDamageReduction *= ZedPenDamageReduction(KFM);     
+        PenDamageReduction *= ZedPenDamageReduction(KFM);
     Damage *= PenDamageReduction; // Keep going, but lose effectiveness each time.
     speed = VSize(Velocity);
 
     // if we've struck through more than the max number of foes, destroy.
-    if ( Damage / default.Damage < (default.PenDamageReduction ** MaxPenetrations) + 0.0001 
-            || Speed < (default.Speed * 0.25)) 
+    if ( Damage / default.Damage < (default.PenDamageReduction ** MaxPenetrations) + 0.0001
+            || Speed < (default.Speed * 0.25))
     {
         ReleaseMonster();
         bFinishedPenetrating = true;
@@ -343,26 +343,26 @@ simulated function ProcessTouch (Actor Other, vector HitLocation)
         Velocity = PhysicsVolume.Gravity;
         Bounces=0;
     }
-    else if ( Role == ROLE_Authority && KFM != none 
+    else if ( Role == ROLE_Authority && KFM != none
             && (bWasDecapitated || !KFM.bDecapitated) ) //don't nail zed on decapitating shot
     {
         PendingHitSpot = HitLocation;
         if ( Victim.Health <= 0) {
             PendingDeadVictim = KFM;
             NetUpdateTime = Level.TimeSeconds - 1;
-        }         
+        }
         else if ( !KFM.bZedUnderControl  && (bWasDecapitated ||
-                    ( // KFM.CollisionRadius < 27 && (!KFM.bUseExtendedCollision || KFM.ColRadius < 27) && 
-                        KFM.Mass < 360 && KFM.Health < PerkedDamage * 10)) ) 
-        {  
+                    ( // KFM.CollisionRadius < 27 && (!KFM.bUseExtendedCollision || KFM.ColRadius < 27) &&
+                        KFM.Mass < 360 && KFM.Health < PerkedDamage * 10 && ZombieSiren(KFM) == none)) ) 
+        {
             // can pin only small zeds (up to Clot) or wounded medium zeds (Gorefast, Siren)
-          
+
             // find a point where nail should go out of body after a penetration:
             // go behind the actor and trace in reverse direction
-            TempActor = Trace(TempHitLocation, HitNormal, 
-                HitLocation, HitLocation + X * 2.0 * (KFM.CollisionRadius + KFM.CollisionHeight), 
+            TempActor = Trace(TempHitLocation, HitNormal,
+                HitLocation, HitLocation + X * 2.0 * (KFM.CollisionRadius + KFM.CollisionHeight),
                 true);
-            if ( TempActor == KFM || TempActor == KFM.MyExtCollision) {     
+            if ( TempActor == KFM || TempActor == KFM.MyExtCollision) {
                 NailingLocation = KFM.Location; // need for ach
                 if ( KFM.NumZCDHits <= 0 ) {
                     // not pinned yet
@@ -373,18 +373,18 @@ simulated function ProcessTouch (Actor Other, vector HitLocation)
                     KFM.SetPhysics(PHYS_Flying); // fly away, baby ;)
                     KFM.AirSpeed = 0;
                     if ( Physics != PHYS_None )
-                        SetPhysics(PHYS_Falling); 
+                        SetPhysics(PHYS_Falling);
                     Mass = KFM.Mass;
                     Bounces=0;
 
                     NetUpdateTime = Level.TimeSeconds - 1;
                 }
                 else {
-                    KFM.NumZCDHits++; 
+                    KFM.NumZCDHits++;
                 }
             }
         }
-    }    
+    }
 }
 
 
@@ -477,7 +477,7 @@ simulated function Destroyed()
     {
         MonsterHeadAttached = none;
     }
-    
+
     ReleaseMonster();
 }
 
@@ -504,12 +504,12 @@ defaultproperties
      LifeSpan=10.000000
      bNetNotify=True
      bBounce=True
-     
+
      // all properties below are required to replicate Velocity
      RemoteRole=ROLE_SimulatedProxy
      bSkipActorPropertyReplication=false
      bReplicateMovement=true
      bUpdateSimulatedPosition=true
-     
-     
+
+
 }

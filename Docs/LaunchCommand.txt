@@ -4,7 +4,10 @@ KF-BioticsLab.rom?Listen?Game=ScrnBalanceSrv.TSCGame?Difficulty=2?GameLength=2?V
 KF-Hospitalhorrors.rom?Listen?Game=ScrnBalanceSrv.FtgGame?Difficulty=2?GameLength=2?VACSecured=true?MaxPlayers=6?Mutator=ScrnSP.ServerPerksMutSE,ScrnBalanceSrv.ScrnBalance
 
 # Mystery Mode
-KF-BioticsLab.rom?Listen?Game=ScrnBalanceSrv.ScrnGameType?Difficulty=5?GameLength=20?VACSecured=true?MaxPlayers=6?Mutator=ScrnSP.ServerPerksMutSE,ScrnBalanceSrv.ScrnBalance
+KF-BioticsLab.rom?Listen?Game=ScrnBalanceSrv.ScrnGameType?Difficulty=5?GameLength=21?VACSecured=true?MaxPlayers=6?Mutator=ScrnSP.ServerPerksMutSE,ScrnBalanceSrv.ScrnBalance
+
+# Small Big Zeds
+KF-BioticsLab.rom?Listen?Game=ScrnBalanceSrv.ScrnGameType?Difficulty=4?GameLength=22?VACSecured=true?MaxPlayers=6?Mutator=ScrnSP.ServerPerksMutSE,ScrnBalanceSrv.ScrnBalance
 
 KF-BioticsLab.rom?Listen?Game=ScrnBalanceSrv.ScrnGameType?Difficulty=5?GameLength=12?VACSecured=true?MaxPlayers=6?Mutator=ScrnSP.ServerPerksMutSE,ScrnBalanceSrv.ScrnBalance,ScrnDoom3KF.Doom3Mutator
 
@@ -12,3 +15,5 @@ KF-BioticsLab.rom?Listen?Game=ScrnBalanceSrv.ScrnGameType?Difficulty=5?GameLengt
 # Pure Doom 3 test
 KF-ScrnTestGrounds.rom?Listen?Game=ScrnBalanceSrv.ScrnGameType?Difficulty=7?GameLength=13?VACSecured=true?MaxPlayers=6?Mutator=ScrnSP.ServerPerksMutSE,ScrnBalanceSrv.ScrnBalance,ScrnDoom3KF.Doom3Mutator
 KF-WestLondon.rom?Listen?Game=ScrnBalanceSrv.ScrnGameType?Difficulty=7?GameLength=13?VACSecured=true?MaxPlayers=6?Mutator=ScrnSP.ServerPerksMutSE,ScrnBalanceSrv.ScrnBalance,ScrnDoom3KF.Doom3Mutator
+
+KF-Suburbia.rom?Listen?Game=ScrnBalanceSrv.FtgGame?Difficulty=2?GameLength=1?VACSecured=true?MaxPlayers=6?Mutator=ScrnSP.ServerPerksMutSE,ScrnBalanceSrv.ScrnBalance

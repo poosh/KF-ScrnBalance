@@ -10,10 +10,7 @@ static function int GetStatValueInt(ClientPerkRepLink StatOther, byte ReqNum)
 // Give Medic normal hand nades again - he should buy medic nade lauchers for healing nades
 static function class<Grenade> GetNadeType(KFPlayerReplicationInfo KFPRI)
 {
-	if ( !class'ScrnBalance'.default.Mut.bWeaponFix )
-        return class'MedicNade'; // Grenade detonations heal nearby teammates, and cause enemies to be poisoned
-
-	return super.GetNadeType(KFPRI);
+    return class'MedicNade'; // Grenade detonations heal nearby teammates, and cause enemies to be poisoned
 }
 //can't cook medic nades
 static function bool CanCookNade(KFPlayerReplicationInfo KFPRI, Weapon Weap)

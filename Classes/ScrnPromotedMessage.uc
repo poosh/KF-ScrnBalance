@@ -47,7 +47,7 @@ static function ClientReceive(
 
 defaultproperties
 {
-    EarnedString="You have promoted to %v level %l!"
+    EarnedString="You have been promoted to %v level %l!"
 	//PromotedSnd=Sound'ScrnSnd.Promoted'
 	PromotedSndRef="ScrnSnd.Promoted"
 	PromotedSndRefDef="KF_InterfaceSnd.Perks.PerkAchieved"

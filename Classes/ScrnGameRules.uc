@@ -14,8 +14,8 @@ var bool bUseAchievements;
 var bool bScrnDoom; // is serrver running ScrN version of Doom3 mutator?
 var localized string msgDoom3Monster, msgDoomPercent, msgDoom3Boss;
 var transient int WaveTotalKills, WaveDoom3Kills, GameDoom3Kills;
+var transient int WaveAmmoPickups;
 var deprecated transient int DoomHardcorePointsGained; // left for backwards compatibility
-
 
 var transient bool bHasCustomZeds;
 
@@ -201,6 +201,7 @@ function WaveStarted()
     WaveTotalKills = 0;
     WavePlayerCount = 0;
     WaveDeadPlayers = 0;
+    WaveAmmoPickups = 0;
 	bFinalWave = Mut.KF.WaveNum == Mut.KF.FinalWave;
 
 	ClearNonePlayerInfos();
@@ -612,7 +613,7 @@ function int NetDamage( int OriginalDamage, int Damage, pawn injured, pawn insti
 
     // prevent zed from rotating while stunned
     // Special case fo Husks -  201+ sniper damage stuns them
-    if ( Mut.bWeaponFix && ZedVictim != none && ZedVictim.Controller != none
+    if ( ZedVictim != none && ZedVictim.Controller != none
             && (Damage*1.5 >= ZedVictim.default.Health
                 || (Damage > 200 && KFDamType != none && KFDamType.default.bSniperWeapon && ZedVictim.IsA('ZombieHusk') && !ZedVictim.IsA('TeslaHusk'))) )
     {
@@ -658,32 +659,26 @@ function int NetDamage( int OriginalDamage, int Damage, pawn injured, pawn insti
 			ScrnPC.DamageMade(Damage, HitLocation, DamTypeNum);
 		}
 
-		if ( bUseAchievements ) {
-			SPI = GetPlayerInfo(PlayerController(instigatedBy.Controller));
-			// SPI.MadeDamage() calls AchHandlers.MonsterDamaged()
-			if ( SPI != none )
-				SPI.MadeDamage(Damage, ZedVictim, KFDamType, MonsterInfos[idx].bHeadshot, MonsterInfos[idx].bWasDecapitated);
-		}
+		SPI = GetPlayerInfo(PlayerController(instigatedBy.Controller));
+		// SPI.MadeDamage() calls AchHandlers.MonsterDamaged()
+		if ( SPI != none )
+			SPI.MadeDamage(Damage, ZedVictim, KFDamType, MonsterInfos[idx].bHeadshot, MonsterInfos[idx].bWasDecapitated);
 	}
 	else if ( KFHumanPawn(injured) != none ) {
         // game bug: Siren doesn't set herself as instigator when dealing screaming damage - sneaky bicth
         if ( DamageType == class'KFMod.SirenScreamDamage' ) {
-            if ( bUseAchievements ) {
-                SPI = GetPlayerInfo(PlayerController(injured.Controller));
-                if ( SPI != none )
-                    SPI.TookDamage(Damage, none, DamageType);
-            }
+            SPI = GetPlayerInfo(PlayerController(injured.Controller));
+            if ( SPI != none )
+                SPI.TookDamage(Damage, none, DamageType);
         }
         else if ( KFMonster(instigatedBy) != none ) {
             // M2P damage
             idx = GetMonsterIndex(KFMonster(instigatedBy));
             MonsterInfos[idx].DamageCounter += Damage;
-            if ( bUseAchievements ) {
-                // SPI.TookDamage() calls AchHandlers.PlayerDamaged()
-                SPI = GetPlayerInfo(PlayerController(injured.Controller));
-                if ( SPI != none )
-                    SPI.TookDamage(Damage, KFMonster(instigatedBy), DamageType);
-            }
+            // SPI.TookDamage() calls AchHandlers.PlayerDamaged()
+            SPI = GetPlayerInfo(PlayerController(injured.Controller));
+            if ( SPI != none )
+                SPI.TookDamage(Damage, KFMonster(instigatedBy), DamageType);
         }
         else if ( ScrnPC != none ) {
             // P2P damage
@@ -695,10 +690,8 @@ function int NetDamage( int OriginalDamage, int Damage, pawn injured, pawn insti
         }
 	}
 
-	if ( bUseAchievements ) {
-		for ( i=0; i<AchHandlers.length; ++i ) {
-			AchHandlers[i].NetDamage(Damage, injured, instigatedBy, HitLocation, Momentum, DamageType);
-		}
+	for ( i=0; i<AchHandlers.length; ++i ) {
+		AchHandlers[i].NetDamage(Damage, injured, instigatedBy, HitLocation, Momentum, DamageType);
 	}
 
 	if ( bP2M ) {
@@ -719,10 +712,8 @@ function ScoreKill(Controller Killer, Controller Killed)
     if ( NextGameRules != None )
         NextGameRules.ScoreKill(Killer, Killed);
 
-	if ( bUseAchievements ) {
-		for ( i=0; i<AchHandlers.length; ++i ) {
-			AchHandlers[i].ScoreKill(Killer, Killed);
-		}
+	for ( i=0; i<AchHandlers.length; ++i ) {
+		AchHandlers[i].ScoreKill(Killer, Killed);
 	}
 
     if ( Killed.bIsPlayer ) {
@@ -737,9 +728,12 @@ function bool PreventDeath(Pawn Killed, Controller Killer, class<DamageType> dam
 {
 	local ScrnPlayerInfo SPI;
 	local int idx;
+    local class<KFWeaponDamageType> KFDamType;
 
     if ( (NextGameRules != None) && NextGameRules.PreventDeath(Killed,Killer, damageType,HitLocation) )
         return true;
+
+    KFDamType = class<KFWeaponDamageType>(DamageType);
 
     ++WaveTotalKills;
     if ( Killed.IsA('DoomMonster') ) {
@@ -747,39 +741,40 @@ function bool PreventDeath(Pawn Killed, Controller Killer, class<DamageType> dam
         ++GameDoom3Kills;
     }
 
-    if ( Killer != none && ScrnHumanPawn(Killer.Pawn) != none && ClassIsChildOf(damageType, class'DamTypeMachete') ) {
+    if ( Killer != none && KFDamType != none && ScrnHumanPawn(Killer.Pawn) != none && ClassIsChildOf(KFDamType, class'DamTypeMachete') ) {
         ScrnHumanPawn(Killer.Pawn).MacheteResetTime = Level.TimeSeconds + 5.0;
     }
 
-    if ( bUseAchievements ) {
-		if ( KFMonster(Killed) != none && PlayerController(Killer) != none && class<KFWeaponDamageType>(DamageType) != none ) {
-			SPI = GetPlayerInfo(PlayerController(Killer));
-			if ( SPI != none )
-				SPI.KilledMonster(KFMonster(Killed), class<KFWeaponDamageType>(DamageType));
+	if ( KFMonster(Killed) != none ) {
+        if ( PlayerController(Killer) != none && KFDamType != none ) {
+            SPI = GetPlayerInfo(PlayerController(Killer));
+            if ( SPI != none ) {
+                SPI.KilledMonster(KFMonster(Killed), KFDamType);
+            }
+        }
+	}
+	else if ( KFHumanPawn(Killed) != none && PlayerController(Killed.Controller) != none ) {
+        ++WaveDeadPlayers;
+		if ( Killer != none && KFMonster(Killer.Pawn) != none ) {
+            // player killed by monster
+			idx = GetMonsterIndex(KFMonster(Killer.Pawn));
+			MonsterInfos[idx].PlayerKillCounter++;
+			MonsterInfos[idx].PlayerKillTime = Level.TimeSeconds;
 		}
-		else if ( KFHumanPawn(Killed) != none && PlayerController(Killed.Controller) != none ) {
-            ++WaveDeadPlayers;
-			if ( Killer != none && KFMonster(Killer.Pawn) != none ) {
-                // player killed by monster
-				idx = GetMonsterIndex(KFMonster(Killer.Pawn));
-				MonsterInfos[idx].PlayerKillCounter++;
-				MonsterInfos[idx].PlayerKillTime = Level.TimeSeconds;
-			}
-			// don't count suicide deaths during trader time
-			if ( !Mut.KF.bTradingDoorsOpen ) {
-				SPI = GetPlayerInfo(PlayerController(Killed.Controller));
-				if ( SPI != none ) {
-					SPI.Died(Killer, DamageType);
-                }
-			}
-			if ( Mut.bSpawn0 || Mut.bStoryMode ) {
-                idx = Killed.Health;
-                Killed.Health = max(Killed.Health, 1); // requires health to spawn second pistol
-				class'ScrnHumanPawn'.static.DropAllWeapons(Killed); // toss all weapons after death, if bSpawn0=true or in Story Mode
-                Killed.Health = idx;
+		// don't count suicide deaths during trader time
+		if ( !Mut.KF.bTradingDoorsOpen ) {
+			SPI = GetPlayerInfo(PlayerController(Killed.Controller));
+			if ( SPI != none ) {
+				SPI.Died(Killer, DamageType);
             }
 		}
-    }
+		if ( Mut.bSpawn0 || Mut.bStoryMode ) {
+            idx = Killed.Health;
+            Killed.Health = max(Killed.Health, 1); // requires health to spawn second pistol
+			class'ScrnHumanPawn'.static.DropAllWeapons(Killed); // toss all weapons after death, if bSpawn0=true or in Story Mode
+            Killed.Health = idx;
+        }
+	}
 
     return false;
 }
@@ -921,9 +916,8 @@ function RegisterMonster(KFMonster Monster)
 	CheckedMonsterClasses[CheckedMonsterClasses.length] = Monster.class;
 	CheckNewMonster(Monster);
 
-	if ( bUseAchievements )
-		for ( i=0; i<AchHandlers.length; ++i )
-			AchHandlers[i].MonsterIntroduced(Monster);
+	for ( i=0; i<AchHandlers.length; ++i )
+		AchHandlers[i].MonsterIntroduced(Monster);
 }
 
 function CheckNewMonster(KFMonster Monster)
@@ -979,6 +973,14 @@ function ScrakeNaded(ZombieScrake Scrake)
     index = GetMonsterIndex(Scrake);
     MonsterInfos[index].DamType2 = class'KFMod.DamTypeFrag';
     MonsterInfos[index].DamageFlags2 = DF_RAGED | DF_STUPID;
+}
+
+// returns true if last damage to zed was a headshot
+function bool WasHeadshot(KFMonster Monster)
+{
+    local int idx;
+
+    return RetrieveMonsterInfo(Monster, idx) && MonsterInfos[idx].bHeadshot;
 }
 
 function protected InitHardcoreLevel()
@@ -1359,8 +1361,7 @@ function bool OverridePickupQuery(Pawn Other, Pickup item, out byte bAllowPickup
 			}
 		}
 
-		// achievements
-		if ( bUseAchievements && (!result || bAllowPickup == 1) )	{
+		if ( !result || bAllowPickup == 1 )	{
 			SPI = GetPlayerInfo(PlayerController(Other.Controller));
 			if ( SPI != none ) {
 				if ( WP != none )

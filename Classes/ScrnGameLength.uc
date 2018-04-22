@@ -5,6 +5,7 @@ Class ScrnGameLength extends Object
 
 var ScrnGameType Game;
 
+var config string GameTitle;
 var config float BountyScale;
 var config int StartingCashBonus;
 var config array<string> Waves;
@@ -36,6 +37,7 @@ struct SSquadMember {
 struct SSquad {
     var byte MinPlayers;
     var byte MaxPlayers;
+    var byte ScaleByPlayers;
     var array<SSquadMember> Members;
 };
 var array<SSquad> Squads;
@@ -46,6 +48,7 @@ var array<int> PendingSpecialSquads;
 var ScrnWaveInfo Wave;
 var transient int ZedsBeforeSpecial;
 var transient bool bLoadedSpecial;
+var transient float PlayerCountOverrideForHealth;
 
 var float WaveEndTime;
 var int WaveCounter;
@@ -283,6 +286,8 @@ function bool LoadWave(int WaveNum)
     }
 
     Game.ScrnGRI.WaveEndRule = Wave.EndRule;
+    Game.bZedPickupDosh = Wave.EndRule == RULE_GrabDoshZed;
+    Game.bZedDropDosh = Wave.EndRule == RULE_GrabDoshZed || Wave.EndRule == RULE_GrabDosh;
     SetWaveInfo();
 
     if ( Wave.TraderMessage != "" ) {
@@ -298,8 +303,6 @@ function bool LoadWave(int WaveNum)
 
     return true;
 }
-
-
 
 function RunWave()
 {
@@ -319,32 +322,52 @@ function SetWaveInfo()
     if (Wave.PerPlayerMult == 0) {
         WaveCounter = Wave.Counter;
         switch ( Wave.EndRule ) {
-            case RULE_KillBoss:
-            case RULE_Timeout:
-            case RULE_EarnDosh:
-                break; // do no scale
-
-            default:
+            case RULE_KillEmAll:
+            case RULE_SpawnEmAll:
                 WaveCounter = Game.ScaleMonsterCount(WaveCounter); // apply default scaling
         }
     }
     else {
-        WaveCounter = Wave.Counter * ( 1.0 + Wave.PerPlayerMult * (min(5, Game.WavePlayerCount-1)) );
+        WaveCounter = Wave.Counter * ( 1.0 + Wave.PerPlayerMult
+                * (max(Game.AlivePlayerCount, Game.ScrnGRI.FakedPlayers) - 1) );
     }
     if (Wave.MaxCounter > 0 && WaveCounter > Wave.MaxCounter)
         WaveCounter = Wave.MaxCounter;
     WaveEndTime = Game.Level.TimeSeconds + WaveCounter;
 
+    switch (Wave.EndRule) {
+        case RULE_GrabAmmo:
+            if ( Game.DesiredAmmoBoxCount < WaveCounter ) {
+                Game.ScrnBalanceMut.AdjustAmmoBoxCount(min(WaveCounter, Game.AmmoPickups.length * 0.8));
+            }
+            break;
+    }
+
     Game.ScrnGRI.WaveTitle = Wave.Title;
     Game.ScrnGRI.WaveMessage = Wave.Message;
     ReplaceText(Game.ScrnGRI.WaveMessage, "%c", string(WaveCounter));
+
+    Game.ScrnGRI.WaveCounter = 0;
+    WaveTimer();
 }
 
 function WaveTimer()
 {
-    if ( Wave.EndRule == RULE_Timeout ) {
-        Game.WaveEndTime = WaveEndTime;
-        Game.ScrnGRI.TimeToNextWave = WaveEndTime - Game.Level.TimeSeconds;
+    switch (Wave.EndRule) {
+        case RULE_Timeout:
+            Game.WaveEndTime = WaveEndTime;
+            Game.ScrnGRI.TimeToNextWave = WaveEndTime - Game.Level.TimeSeconds;
+            break;
+
+        case RULE_EarnDosh:
+        case RULE_GrabDosh:
+        case RULE_GrabDoshZed:
+            Game.ScrnGRI.WaveCounter = max(0, WaveCounter - max(Game.Teams[0].Score, Game.Teams[1].Score));
+            break;
+
+        case RULE_GrabAmmo:
+            Game.ScrnGRI.WaveCounter = max(0, WaveCounter - Game.ScrnBalanceMut.GameRules.WaveAmmoPickups);
+            break;
     }
 }
 
@@ -374,6 +397,7 @@ function bool CheckWaveEnd()
             return Game.TotalMaxMonsters <= 0 && Game.NumMonsters <= 0;
         case RULE_SpawnEmAll:
             return Game.TotalMaxMonsters <= 0;
+
         case RULE_KillBoss:
             if ( Game.bBossSpawned && Game.Bosses.length > 0 ) {
                 for ( i = 0; i < Game.Bosses.length; ++i ) {
@@ -383,10 +407,17 @@ function bool CheckWaveEnd()
                 return true; // all bosses are dead
             }
             break;
+
         case RULE_Timeout:
             return Game.Level.TimeSeconds >= WaveEndTime;
+
         case RULE_EarnDosh:
+        case RULE_GrabDosh:
+        case RULE_GrabDoshZed:
             return max(Game.Teams[0].Score, Game.Teams[1].Score) >= WaveCounter;
+
+        case RULE_GrabAmmo:
+            return Game.ScrnBalanceMut.GameRules.WaveAmmoPickups >= WaveCounter;
     }
 
     // fallback scenario
@@ -401,6 +432,9 @@ function int GetWaveZedCount()
             return 1;
         case RULE_Timeout:
         case RULE_EarnDosh:
+        case RULE_GrabDosh:
+        case RULE_GrabDoshZed:
+        case RULE_GrabAmmo:
             return 999;
     }
     return WaveCounter;
@@ -417,7 +451,7 @@ function float GetWaveEndTime()
 
 function AdjustNextSpawnTime(out float NextSpawnTime)
 {
-    NextSpawnTime *= Wave.SpawnRateMod;
+    NextSpawnTime /= Wave.SpawnRateMod;
     if ( bLoadedSpecial )
         NextSpawnTime *= 2.0; // give players slight break after spawning a special squad
 }
@@ -425,12 +459,12 @@ function AdjustNextSpawnTime(out float NextSpawnTime)
 function LoadNextSpawnSquad(out array < class<KFMonster> > NextSpawnSquad)
 {
     if ( ZedsBeforeSpecial <= 0 && SpecialSquads.length > 0 ) {
-        LoadNextSpawnSquadInternal(NextSpawnSquad, SpecialSquads, PendingSpecialSquads, true);
+        LoadNextSpawnSquadInternal(NextSpawnSquad, SpecialSquads, PendingSpecialSquads, Wave.bRandomSquads);
         ZedsBeforeSpecial = Wave.ZedsPerSpecialSquad * (0.85 + 0.3*frand());
         bLoadedSpecial = true;
     }
     else {
-        LoadNextSpawnSquadInternal(NextSpawnSquad, Squads, PendingSquads, Wave.EndRule != RULE_KillBoss);
+        LoadNextSpawnSquadInternal(NextSpawnSquad, Squads, PendingSquads, Wave.bRandomSpecialSquads);
         ZedsBeforeSpecial -= NextSpawnSquad.length;
         bLoadedSpecial = false;
     }
@@ -439,7 +473,11 @@ function LoadNextSpawnSquad(out array < class<KFMonster> > NextSpawnSquad)
 protected function LoadNextSpawnSquadInternal(out array < class<KFMonster> > NextSpawnSquad,
         out array<SSquad> AllSquads, out array<int> Pending, bool bRandom, optional int Recursions)
 {
-    local int i, j, r;
+    local int i, j, c, r;
+    local int PlayerCount;
+
+    PlayerCountOverrideForHealth = 0;
+    PlayerCount = Game.GetPlayerCountForMonsterHealth();
 
     if ( AllSquads.length == 0 ) {
         NextSpawnSquad.length = 1;
@@ -466,7 +504,17 @@ protected function LoadNextSpawnSquadInternal(out array < class<KFMonster> > Nex
     {
         for ( i = 0; i < AllSquads[r].Members.length; ++i ) {
             for ( j = 0; j < AllSquads[r].Members[i].Count; ++j ) {
-                NextSpawnSquad[NextSpawnSquad.length] = ActivateZed(AllSquads[r].Members[i].ActiveZedIndex);
+                if (AllSquads[r].ScaleByPlayers == 0) {
+                    c = 1;
+                }
+                else {
+                    c = 1 + int( (PlayerCount - 0.5) / AllSquads[r].ScaleByPlayers );
+                    PlayerCountOverrideForHealth = float(PlayerCount) / c;
+                }
+
+                while (c-- > 0) {
+                    NextSpawnSquad[NextSpawnSquad.length] = ActivateZed(AllSquads[r].Members[i].ActiveZedIndex);
+                }
             }
         }
     }
@@ -503,17 +551,24 @@ function bool ParseSquad(string SquadDef, out SSquad Squad)
     Squad.Members.length = 0;
     Squad.MinPlayers = 0;
     Squad.MaxPlayers = 0;
+    Squad.ScaleByPlayers = 0;
 
     // format example: 0-6: 2*CL/GF + BR/TH/HU + BL
+    // another example: ~6: BOSS
 
     // get rid of spaces
     s = Repl(SquadDef, " ", "", true);
 
     Divide(s, ":", count_str, s);
     if ( count_str != "" ) {
-        Divide(count_str, "-", count_str, fallback);
-        Squad.MinPlayers = int(count_str);
-        Squad.MaxPlayers = int(fallback);
+        if ( Left(count_str, 1) == "~" ) {
+            Squad.ScaleByPlayers = int(Mid(count_str, 1));
+        }
+        else {
+            Divide(count_str, "-", count_str, fallback);
+            Squad.MinPlayers = int(count_str);
+            Squad.MaxPlayers = int(fallback);
+        }
     }
 
     Split(s, "+", parts);
@@ -639,6 +694,18 @@ function RecalculateSpawnChances()
             }
         }
     }
+}
+
+function bool ShouldBoostAmmo()
+{
+    return Wave != none && Wave.EndRule == RULE_GrabAmmo;
+}
+
+function float GetBountyScale()
+{
+    if (Wave.BountyScale > 0)
+        return Wave.BountyScale;
+    return BountyScale;
 }
 
 defaultproperties

@@ -19,6 +19,7 @@ const VOTE_TEAMUNLOCK   = 13;
 const VOTE_INVITE       = 14;
 const VOTE_FF           = 15;
 const VOTE_MAPRESTART   = 16;
+const VOTE_FAKEDPLAYERS = 17;
 const VOTE_RKILL        = 100;
 
 var localized string strCantEndTrade;
@@ -396,6 +397,21 @@ function int GetVoteIndex(PlayerController Sender, string Key, out string Value,
     else if ( Key == "MAP" && Value == "RESTART" ) {
         result = VOTE_MAPRESTART;
     }
+    else if ( Key == "FAKED" || Key == "FAKEDPLAYERS" ) {
+        if ( !Mut.CheckScrnGT(Sender) )
+            return VOTE_LOCAL;
+        if ( !TryStrToInt(Value, v) || v < 0 || v > 32 )
+            return VOTE_ILLEGAL;
+        if ( Mut.ScrnGT.ScrnGRI.FakedPlayers == v && Mut.ScrnGT.ScrnGRI.FakedAlivePlayers == v )
+            return VOTE_NOEFECT;
+
+        if ( v <= 1 )
+            VoteInfo = "Faked Players OFF";
+        else
+            VoteInfo = v $ " Faked Players";
+
+        return VOTE_FAKEDPLAYERS;
+    }
 	else if ( Key == "R_KILL" ) {
         if ( !Sender.PlayerReplicationInfo.bAdmin || Mut.SrvTourneyMode == 0 ) {
 			Sender.ClientMessage(strRCommands);
@@ -599,6 +615,10 @@ function ApplyVoteValue(int VoteIndex, string VoteValue)
         case VOTE_MAPRESTART:
             Level.ServerTravel("?restart",false);
             break;
+        case VOTE_FAKEDPLAYERS:
+            Mut.ScrnGT.ScrnGRI.FakedPlayers = byte(VoteValue);
+            Mut.ScrnGT.ScrnGRI.FakedAlivePlayers = byte(VoteValue);
+            break;
 
 		case VOTE_RKILL:
 			if ( VotingHandler.VotedPlayer != none && VotingHandler.VotedPlayer.Pawn != none ) {
@@ -797,6 +817,7 @@ defaultproperties
     HelpInfo(11)="%gREADY%w|%gUNREADY %w Makes everybody ready/unready to play"
     HelpInfo(12)="%gFF %yX %w Set Friendly Fire to X%"
     HelpInfo(13)="%gMAP RESTART %w Restarts current map"
+    HelpInfo(14)="%gFAKED %yX %w Set Faked Players to X"
 
     strCantEndTrade="Can not end trade time at the current moment"
     strTooLate="Too late"

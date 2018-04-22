@@ -4,6 +4,10 @@ class ScrnGameType extends KFGameType;
 var ScrnBalance ScrnBalanceMut;
 var ScrnGameReplicationInfo ScrnGRI;
 
+// Min numbers of players to be used in calculation of zed count in wave
+// Those values are for configurations only. Set ScrnGRI.FakedPlayers to make in-game effect
+var globalconfig protected byte FakedPlayers, FakedAlivePlayers;
+
 enum EZedSpawnLocation {
     ZSLOC_VANILLA,    // Same as in Vanilla KF
     ZSLOC_CLOSER,     // Spawn zed closer to players (equals to bCloserZedSpawns=True in previous ScrN versions)
@@ -33,9 +37,22 @@ var int MaxSpawnAttempts, MaxSpecialSpawnAttempts; // maximum spawn attempts bef
 // list of actors that AI can't find path towards
 var transient array<Actor> InvalidPathTargets;
 
+var bool bKillMessages;  // should the game broadcast kill messages? Set to false if Marco's Kill Messages is in use.
+var float DoshDifficultyMult; // Multiplier for Moster.ScoringValue to calculate kill reward
+
+var bool bZedDropDosh, bZedPickupDosh;
+enum EDropKind {
+    DK_TOSS,
+    DK_SPAWN,
+    DK_FART
+};
+
+var bool bZedTimeEnabled;  // set it to false to completely disable the Zed Time in the game
+
 event InitGame( string Options, out string Error )
 {
     local int ConfigMaxPlayers;
+    local GameRules g;
 
     CmdLine = Options;
 
@@ -66,18 +83,33 @@ event InitGame( string Options, out string Error )
         log("MonsterCollection = " $ MonsterCollection, class.name);
     }
 
+    for ( g = GameRulesModifiers; g != none; g = g.NextGameRules ) {
+        if ( g.IsA('KillsRules') ) {
+            // Marco's Kill Messages mutator is active - deactivate the builtin messages
+            bKillMessages = false;
+        }
+    }
+
     if ( TourneyMode > 0 )
         StartTourney();
 }
 
-// this one is called from PreBeginPlay()
+// this one is called from PreBeginPlay() but AFTER (!) InitGame()
 function InitGameReplicationInfo()
 {
     Super.InitGameReplicationInfo();
 
     ScrnGRI = ScrnGameReplicationInfo(GameReplicationInfo);
-    if ( ScrnGRI == none )
+    if ( ScrnGRI == none ) {
         Warn("Wrong GameReplicationInfo class: " $ GameReplicationInfo);
+        return;
+    }
+
+    if ( ScrnGameLength != none ) {
+        ScrnGRI.GameTitle = ScrnGameLength.GameTitle;
+        ScrnGRI.FakedPlayers = FakedPlayers;
+        ScrnGRI.FakedAlivePlayers = FakedAlivePlayers;
+    }
 }
 
 static event class<GameInfo> SetGameType( string MapName )
@@ -293,10 +325,15 @@ function Killed(Controller Killer, Controller Killed, Pawn KilledPawn, class<Dam
 {
     local KFPlayerReplicationInfo KFPRI;
     local KFSteamStatsAndAchievements StatsAndAchievements;
+    local class<KFWeaponDamageType> KFDamType;
+    local KFMonster KilledMonster;
+
+    KFDamType = class<KFWeaponDamageType>(damageType);
+    KilledMonster = KFMonster(KilledPawn);
 
     if ( PlayerController(Killer) != none ) {
         KFPRI = KFPlayerReplicationInfo(Killer.PlayerReplicationInfo);
-        if ( KFMonster(KilledPawn) != None && Killed != Killer ) {
+        if ( KilledMonster != None && Killed != Killer ) {
             if ( bZEDTimeActive && KFPRI != none && KFPRI.ClientVeteranSkill != none
                     && KFPRI.ClientVeteranSkill.static.ZedTimeExtensions(KFPRI) > ZedTimeExtensionsUsed )
             {
@@ -316,8 +353,8 @@ function Killed(Controller Killer, Controller Killed, Pawn KilledPawn, class<Dam
 
             StatsAndAchievements = KFSteamStatsAndAchievements(PlayerController(Killer).SteamStatsAndAchievements);
             if ( StatsAndAchievements != none ) {
-                if ( class<KFWeaponDamageType>(damageType) != none ) {
-                    class<KFWeaponDamageType>(damageType).Static.AwardKill(StatsAndAchievements,KFPlayerController(Killer),KFMonster(KilledPawn));
+                if ( KFDamType != none ) {
+                    KFDamType.Static.AwardKill(StatsAndAchievements,KFPlayerController(Killer), KilledMonster);
                 }
 
                 StatsAndAchievements.AddKill(false, false, false, false, false, false, false, false, false, "");
@@ -325,10 +362,14 @@ function Killed(Controller Killer, Controller Killed, Pawn KilledPawn, class<Dam
         }
     }
 
-    if ( (MonsterController(Killed) != None) || (Monster(KilledPawn) != None) )
-    {
+    if ( KilledMonster != none || MonsterController(Killed) != None ) {
         ZombiesKilled++;
         ScrnGRI.MaxMonsters = Max(TotalMaxMonsters + NumMonsters - 1, 0);
+
+        if ( bZedDropDosh ) {
+            ZedTossCashFromDamage(KilledMonster, KFDamType);
+        }
+
         if ( !bDidTraderMovingMessage )
         {
             if ( PlayerController(Killer) != none && float(ZombiesKilled) / float(ZombiesKilled + TotalMaxMonsters + NumMonsters - 1) >= 0.20 )
@@ -364,12 +405,229 @@ function Killed(Controller Killer, Controller Killed, Pawn KilledPawn, class<Dam
     Super(Invasion).Killed(Killer,Killed,KilledPawn,DamageType);
 }
 
+function DramaticEvent(float BaseZedTimePossibility, optional float DesiredZedTimeDuration)
+{
+    if (bZedTimeEnabled) {
+        super.DramaticEvent(BaseZedTimePossibility, DesiredZedTimeDuration);
+    }
+}
+
+function ScoreKill(Controller Killer, Controller Other)
+{
+    local PlayerReplicationInfo OtherPRI;
+    local float KillScore;
+    local Controller C;
+
+    OtherPRI = Other.PlayerReplicationInfo;
+    if ( OtherPRI != None ) {
+        OtherPRI.NumLives++;
+        OtherPRI.Score -= (OtherPRI.Score * (GameDifficulty * 0.05));   // you Lose 35% of your current cash on Hell on Earth, 15% on normal.
+        OtherPRI.Team.Score -= OtherPRI.Team.Score / WavePlayerCount * (GameDifficulty * 0.05);
+
+        if (OtherPRI.Score < 0 )
+            OtherPRI.Score = 0;
+        if (OtherPRI.Team.Score < 0 )
+            OtherPRI.Team.Score = 0;
+
+        OtherPRI.Team.NetUpdateTime = Level.TimeSeconds - 1;
+        OtherPRI.bOutOfLives = true;
+        if( Killer!=None && Killer.PlayerReplicationInfo!=None && Killer.bIsPlayer )
+            BroadcastLocalizedMessage(class'KFInvasionMessage',1,OtherPRI,Killer.PlayerReplicationInfo);
+        else if( Killer==None || Monster(Killer.Pawn)==None )
+            BroadcastLocalizedMessage(class'KFInvasionMessage',1,OtherPRI);
+        else
+            BroadcastLocalizedMessage(class'KFInvasionMessage',1,OtherPRI,,Killer.Pawn.Class);
+        CheckScore(None);
+    }
+
+    if ( GameRulesModifiers != None )
+        GameRulesModifiers.ScoreKill(Killer, Other);
+
+    if ( MonsterController(Killer) != None )
+        return;
+
+    if ( Killer == Other || Killer == None )  {
+        // suicide
+        if ( Other.PlayerReplicationInfo != None ) {
+            Other.PlayerReplicationInfo.Score -= 1;
+            Other.PlayerReplicationInfo.NetUpdateTime = Level.TimeSeconds - 1;
+            ScoreEvent(Other.PlayerReplicationInfo,-1,"self_frag");
+        }
+        return;
+    }
+    else if ( !Killer.bIsPlayer || Killer.PlayerReplicationInfo == none ) {
+        return;
+    }
+
+    if ( Other.bIsPlayer ) {
+        // p2p kills
+        if ( Killer.PlayerReplicationInfo.Team == Other.PlayerReplicationInfo.Team ) {
+            Killer.PlayerReplicationInfo.Score -= 100;
+            Killer.PlayerReplicationInfo.Team.Score -= 100;
+            Killer.PlayerReplicationInfo.NetUpdateTime = Level.TimeSeconds - 1;
+            Killer.PlayerReplicationInfo.Team.NetUpdateTime = Level.TimeSeconds - 1;
+            ScoreEvent(Killer.PlayerReplicationInfo, -1, "team_frag");
+        }
+        else {
+            Killer.PlayerReplicationInfo.Score += 100;
+            Killer.PlayerReplicationInfo.Team.Score += 100;
+            Killer.PlayerReplicationInfo.NetUpdateTime = Level.TimeSeconds - 1;
+            Killer.PlayerReplicationInfo.Team.NetUpdateTime = Level.TimeSeconds - 1;
+            ScoreEvent(Killer.PlayerReplicationInfo, 1, "tdm_frag");
+        }
+        return;
+    }
+
+    // v9.52: allow customization of ScoringValue for each zed in addition to zed type
+    if ( Monster(Other.Pawn) != none ) {
+        KillScore = Monster(Other.Pawn).ScoringValue;
+    }
+    else if ( LastKilledMonsterClass != none ) {
+        KillScore = LastKilledMonsterClass.Default.ScoringValue;
+    }
+    else {
+        KillScore = 5; // reward for killing some crap: non-player, non-monster...
+    }
+
+    // Scale killscore by difficulty
+    KillScore *= DoshDifficultyMult;
+
+    KillScore = Max(1,int(KillScore));
+    Killer.PlayerReplicationInfo.Kills++;
+
+    ScoreKillAssists(KillScore, Other, Killer);
+
+    Killer.PlayerReplicationInfo.Team.Score += KillScore;
+    Killer.PlayerReplicationInfo.NetUpdateTime = Level.TimeSeconds - 1;
+    Killer.PlayerReplicationInfo.Team.NetUpdateTime = Level.TimeSeconds - 1;
+    TeamScoreEvent(Killer.PlayerReplicationInfo.Team.TeamIndex, 1, "tdm_frag");
+
+    if (Killer.PlayerReplicationInfo.Score < 0)
+        Killer.PlayerReplicationInfo.Score = 0;
+
+    if ( bKillMessages ) {
+        if( Class'HUDKillingFloor'.Default.MessageHealthLimit<=Other.Pawn.Default.Health ||
+        Class'HUDKillingFloor'.Default.MessageMassLimit<=Other.Pawn.Default.Mass )
+        {
+            for( C=Level.ControllerList; C!=None; C=C.nextController )
+            {
+                if( C.bIsPlayer && xPlayer(C)!=None )
+                {
+                    xPlayer(C).ReceiveLocalizedMessage(Class'KillsMessage',1,Killer.PlayerReplicationInfo,,Other.Pawn.Class);
+                }
+            }
+        }
+        else
+        {
+            if( xPlayer(Killer)!=None )
+            {
+                xPlayer(Killer).ReceiveLocalizedMessage(Class'KillsMessage',,,,Other.Pawn.Class);
+            }
+        }
+    }
+}
+
+function CalcDoshDifficultyMult() {
+    if ( GameDifficulty >= 5.0 ) {
+        DoshDifficultyMult = 0.65;   // Suicidal and Hell on Earth
+    }
+    else if ( GameDifficulty >= 4.0 ) {
+        DoshDifficultyMult = 0.85;  // Hard
+    }
+    else if ( GameDifficulty <= 1.0 ) {
+        DoshDifficultyMult = 2.0;  // Beginner
+    }
+    else {
+        DoshDifficultyMult = 1.0; // Normal
+    }
+
+    if( ScrnGameLength != none ) {
+        DoshDifficultyMult *= ScrnGameLength.GetBountyScale();
+    }
+    else if ( KFGameLength == GL_Short ) {
+        // Increase score in a short game, so the player can afford to buy cool stuff by the end
+        DoshDifficultyMult *= 1.75;
+    }
+}
+
+function ZedTossCashFromDamage(KFMonster M, class<KFWeaponDamageType> KFDamType, optional int Amount)
+{
+    local EDropKind dk;
+
+    if ( KFDamType == none || KFDamType == class'DamTypeBleedOut' || !KFDamType.default.bCheckForHeadShots )
+        dk = DK_SPAWN;
+    else if ( ScrnBalanceMut.GameRules.WasHeadshot(M) )
+        dk = DK_TOSS; // toss dosh toward players on headshot
+    else
+        dk = DK_FART; // body shot from weapon capable of doing headhots
+
+    ZedTossCash(M, dk, Amount);
+}
+
+function ZedTossCash(KFMonster M, EDropKind DropKind, optional int Amount)
+{
+    local Vector X,Y,Z;
+    local ScrnZedDoshPickup DoshPickup;
+    local Vector TossVel, SpawnLocation;
+
+    if ( M == none )
+        return;
+
+    if ( Amount <= 0 || Amount > M.ScoringValue )
+        Amount = M.ScoringValue;
+
+    if ( Amount <= 0 )
+        return;
+
+    M.GetAxes(M.Rotation,X,Y,Z);
+
+    TossVel = Vector(M.GetViewRotation());
+    switch ( DropKind ) {
+        case DK_SPAWN:
+            SpawnLocation =  M.Location;
+            //SpawnLocation.Z += M.CollisionHeight * 0.5 - 2.5;
+            //TossVel = M.PhysicsVolume.Gravity;
+            TossVel = vect(0,0,500);
+            break;
+        case DK_FART:
+            TossVel = -400 * X; // + M.PhysicsVolume.Gravity/2;
+            // TossVel = TossVel * ((M.Velocity Dot TossVel) + 500) * Vect(-0.2,-0.2,0);
+            // TossVel.Z = M.PhysicsVolume.Gravity.Z;
+            SpawnLocation =  M.Location - 0.8 * M.CollisionRadius * X;
+            break;
+        default:
+            TossVel = TossVel * (0.5 + 0.5*frand()) * ((M.Velocity Dot TossVel) + 1000) + Vect(0,0,200);
+            SpawnLocation =  M.Location + 0.8 * M.CollisionRadius * X - 0.5 * M.CollisionRadius * Y;
+            break;
+    }
+
+    DoshPickup = Spawn(class'ScrnZedDoshPickup',,, SpawnLocation);
+    // try default spawn location, if unable to spawn in desired location
+    if ( DoshPickup == none )
+        DoshPickup = Spawn(class'ScrnZedDoshPickup',,, M.Location + 0.8 * M.CollisionRadius * X - 0.5 * M.CollisionRadius * Y);
+
+    if ( DoshPickup != none ) {
+        DoshPickup.CashAmount = Amount * DoshDifficultyMult;
+        DoshPickup.RespawnTime = 0;
+        DoshPickup.bDroppedCash = True;
+        DoshPickup.Velocity = TossVel;
+        DoshPickup.DroppedBy = M.Controller;
+        DoshPickup.InitDroppedPickupFor(None);
+        DoshPickup.bZedPickup = bZedPickupDosh;
+        M.ScoringValue -= Amount;
+    }
+}
+
 exec function KillZeds()
 {
     local KFMonster M;
     local array <KFMonster> Monsters;
     local Controller PC;
     local int i;
+    local bool bZedDropDoshOriginal;
+
+    bZedDropDoshOriginal = bZedDropDosh;
+    bZedDropDosh = false;
 
     for ( PC = Level.ControllerList; PC != none; PC = PC.NextController )
     {
@@ -388,6 +646,7 @@ exec function KillZeds()
 
     for ( i=0; i<Monsters.length; ++i )
         Monsters[i].Died(Monsters[i].Controller, class'DamageType', Monsters[i].Location);
+    bZedDropDosh = bZedDropDoshOriginal;
 }
 
 function KillRemainingZeds(bool bForceKill)
@@ -834,6 +1093,10 @@ function GetServerDetails( out ServerResponseLine ServerState )
     // ScrnGameType
     if ( TourneyMode > 0 )
         AddServerDetail( ServerState, "ScrN Tourney Mode", TourneyMode );
+
+    if ( ScrnGameLength != none ) {
+        AddServerDetail( ServerState, "ScrN Game", ScrnGameLength.GameTitle );
+    }
 }
 
 // Called before spawning mutators.
@@ -845,10 +1108,9 @@ protected function PreStartTourney(out int TourneyMode)
 // called at the end of InitGame(), when mutators have been spawned already
 protected function StartTourney()
 {
-    local bool bVanilla, bNoStartCash;
+    local bool bNoStartCash;
 
     log("Starting TOURNEY MODE " $ TourneyMode, 'ScrnBalance');
-    bVanilla = (TourneyMode&2) > 0;
     bNoStartCash = (TourneyMode&4) > 0;
 
     if ( GameDifficulty < 4 ) {
@@ -859,10 +1121,8 @@ protected function StartTourney()
     }
     TurboScale = 1.0;
     ScrnBalanceMut.SrvTourneyMode = TourneyMode;
-    ScrnBalanceMut.bSpawnBalance = !bVanilla;
-    ScrnBalanceMut.bWeaponFix = !bVanilla;
-    ScrnBalanceMut.bAltBurnMech = !bVanilla;
-    ScrnBalanceMut.bReplacePickups = !bVanilla;
+    ScrnBalanceMut.bAltBurnMech = true;
+    ScrnBalanceMut.bReplacePickups = true;
     ScrnBalanceMut.bNoRequiredEquipment = false;
     ScrnBalanceMut.bForceManualReload = false;
     ScrnBalanceMut.bDynamicLevelCap = false;
@@ -872,7 +1132,6 @@ protected function StartTourney()
     ScrnBalanceMut.Post6ZedsPerPlayer = 0.4;
     ScrnBalanceMut.Post6ZedSpawnInc=0.25;
     ScrnBalanceMut.Post6AmmoSpawnInc=0.20;
-    //ScrnBalanceMut.FakedPlayers = 6;
 
     ScrnBalanceMut.bUseExpLevelForSpawnInventory = false;
     ScrnBalanceMut.bSpawn0 = true;
@@ -918,19 +1177,17 @@ function final string GetCmdLine()
 function SetupRepLink(ClientPerkRepLink R)
 {
     local int i;
-    local bool bVanillaTourney;
     local class<Pickup> PC;
 
     if ( R == none )
         return; // wtf?
 
     if ( TourneyMode > 0 ) {
-        bVanillaTourney = (TourneyMode&2)  > 0;
         // allow only stock or SE weapons in tourney mode
         for ( i=R.ShopInventory.length-1; i>=0; --i ) {
             PC = R.ShopInventory[i].PC;
             if ( PC == none || PC == class'ScrnHorzineVestPickup' || PC == class'ZEDMKIIPickup'
-                    || (PC.outer.name != 'KFMod' && (bVanillaTourney || PC.outer.name != 'ScrnBalanceSrv')) )
+                    || (PC.outer.name != 'KFMod' && PC.outer.name != 'ScrnBalanceSrv') )
                 R.ShopInventory.remove(i, 1);
         }
         // allow only ScrN Perks
@@ -1257,7 +1514,7 @@ function int ScaleMonsterCount(int SoloNormalCounter)
     else
     	DifficultyMod=1.0;            // Normal and below
 
-    UsedNumPlayers = max( max(ScrnBalanceMut.FakedPlayers,1), WavePlayerCount );
+    UsedNumPlayers = max( max(ScrnGRI.FakedPlayers,1), WavePlayerCount );
     // Scale the number of zombies by the number of players. Don't want to
     // do this exactly linear, or it just gets to be too many zombies and too
     // long of waves at higher levels - Ramm
@@ -1317,6 +1574,8 @@ function SetupWave()
         ScrnGameLength.RunWave();
     }
 
+    CalcDoshDifficultyMult();
+
     if( WaveNum == FinalWave && bUseEndGameBoss ) {
         StartWaveBoss();
         return;
@@ -1375,7 +1634,7 @@ function SetupPickups()
     local int i, j;
 
     // let mutator do the job
-    ScrnBalanceMut.SetupPickups(false);
+    ScrnBalanceMut.SetupPickups(false, ScrnGameLength != none && ScrnGameLength.ShouldBoostAmmo());
 
     for ( i = 0; i < AmmoPickups.length; ++i ) {
         if ( AmmoPickups[i].bSleeping )
@@ -1387,6 +1646,8 @@ function SetupPickups()
 function AmmoPickedUp(KFAmmoPickup PickedUp)
 {
     local int i;
+
+    ScrnBalanceMut.GameRules.WaveAmmoPickups++;
 
     // CurrentAmmoBoxCount is set in ScrnAmmoPickup
     // DesiredAmmoBoxCount is set in ScrnBalance
@@ -1564,12 +1825,38 @@ function int SpawnSquad(ZombieVolume ZVol, out array< class<KFMonster> > Squad, 
     return numspawned;
 }
 
+function float GetPlayerCountForMonsterHealth()
+{
+    return max(max(AliveTeamPlayerCount[0], AliveTeamPlayerCount[1]), ScrnGRI.FakedAlivePlayers);
+}
+
 function OverrideMonsterHealth(KFMonster M)
 {
-    if ( ScrnGameLength != none && ScrnGameLength.bLoadedSpecial && !(ScrnGameLength.Wave.SpecialSquadHealthMod ~= 1.0) ) {
-        M.HealthMax *= ScrnGameLength.Wave.SpecialSquadHealthMod;
+    local float UsedNumPlayers;
+
+    if ( ScrnGameLength != none && ScrnGameLength.PlayerCountOverrideForHealth > 0.9999 ) {
+        UsedNumPlayers = ScrnGameLength.PlayerCountOverrideForHealth;
+    }
+    else {
+        UsedNumPlayers = GetPlayerCountForMonsterHealth();
+    }
+
+    if ( M.PlayerCountHealthScale > 0 ) {
+        M.HealthMax = M.default.HealthMax * M.DifficultyHealthModifer()
+            * (1.0 + (UsedNumPlayers-1.0) * M.PlayerCountHealthScale );
         M.Health = M.HealthMax;
-        M.HeadHealth *= ScrnGameLength.Wave.SpecialSquadHealthMod;
+    }
+    if ( M.PlayerNumHeadHealthScale > 0 ) {
+        M.HeadHealth = M.default.HeadHealth * M.DifficultyHealthModifer()
+            * (1.0 + (UsedNumPlayers-1.0) * M.PlayerNumHeadHealthScale );
+    }
+
+    if ( ScrnGameLength != none ) {
+        if ( ScrnGameLength.bLoadedSpecial && !(ScrnGameLength.Wave.SpecialSquadHealthMod ~= 1.0) ) {
+            M.HealthMax *= ScrnGameLength.Wave.SpecialSquadHealthMod;
+            M.Health = M.HealthMax;
+            M.HeadHealth *= ScrnGameLength.Wave.SpecialSquadHealthMod;
+        }
     }
 }
 
@@ -2094,7 +2381,7 @@ State MatchInProgress
 
         result = KFLRules.WaveSpawnPeriod / ScrnBalanceMut.OriginalWaveSpawnPeriod; // adjusted by MVOTE BORING
         if ( ScrnGameLength != none )
-            result *= ScrnGameLength.Wave.SpawnRateMod;
+            result /= ScrnGameLength.Wave.SpawnRateMod;
         if ( ScrnBalanceMut.bSpawnRateFix )
             result *= 1.5;
         return result;
@@ -2107,10 +2394,6 @@ State MatchInProgress
         local KFPlayerReplicationInfo KFPRI;
 
         if ( !rewardFlag ) {
-            if ( ScrnGameLength != none ) {
-                Teams[0].Score = int(Teams[0].Score * ScrnGameLength.BountyScale);
-                Teams[1].Score = int(Teams[1].Score * ScrnGameLength.BountyScale);
-            }
             RewardSurvivingPlayers();
         }
 
@@ -2213,6 +2496,8 @@ defaultproperties
     bUseEndGameBoss=True
     ZedSpawnLoc=ZSLOC_AUTO
     TurboScale=1.0
+    bKillMessages=true
+    bZedTimeEnabled=true
 
     MaxSpawnAttempts=3
     MaxSpecialSpawnAttempts=10

@@ -1,10 +1,10 @@
-![Alt text](https://dl.dropboxusercontent.com/u/70213558/KFSrc/ScrNBalanceLogo256.jpg "ScrN Balance")
+![ScrN Balance](https://www.dropbox.com/s/bm0g36djloco3dc/ScrNBalanceLogo256.jpg?dl=1 "ScrN Balance")
 
 # KF-ScrnBalance
 
 ScrN Total Game Balance mutator for Killing Floor 1.
 
-*Copyright (c) 2012-2017 PU Developing IK, All Rights Reserved.*
+*Copyright (c) 2012-2018 PU Developing IK, All Rights Reserved.*
 
 -------------------------------------------------------------------------------
 
@@ -19,6 +19,111 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+### v9.52
+#### ScrN Waves
+###### Ammo Grab Waves
+Set `EndRule=RULE_GrabAmmo` to force players looking for ammo boxes. Wave ends when the given amount of ammo boxes are
+picked up. Useful to make players replenish their ammo pools without opening the trader.
+
+###### Dosh Grab Waves
+Dead zeds drop dosh on the ground instead of adding it to player/team wallet. It is like using _ScrnDoshGrab_ mutator
+but those could be only a few waves instead of the entire game. Wave ends when the given amount of dosh is collected.
+There are two wave kinds: `RULE_DoshGrab` and `RULE_GrabDoshZed`. The difference between those two is that in
+`RULE_GrabDoshZed` **zeds can pick dosh** to heal or boost their health (up to x5 of the original hp).
+
+Dosh drop kind depends from the kill shot:
+- Dosh is tossed toward player if killed by a headshot;
+- Dosh is thrown up if killed by fire, explosive and other damages that can't do headshots;
+- Dosh is "farted out" if killed by bodyshot.
+
+###### Squad Scale
+Added "Scale squad members by player count" feature (*Squad Scale*) to squad definition in `ScrnWaveInfo`.
+For example, `SpecialSquads=~6: BOSS` means an extra boss will be added for each 6 players starting with 7th (6+1);
+health of the **entire squad** will be matched to player count instead of every zed:
+* 1 player : 1 boss, 1p hp
+* 2 players: 1 boss, 2p hp
+* 6 players: 1 boss, 6p hp
+* 7 players: 2 bosses, 3.5p hp each
+* 8 players: 2 bosses, 4p hp each
+* 9 players: 2 bosses, 4.5p hp each
+* 10 players: 2 bosses, 5p hp each
+* 11 players: 2 bosses, 5.5p hp each
+* 12 players: 2 bosses, 6p hp each
+* 13 players: 3 bosses, 4.33p hp each (13/3)
+* 18 players: 3 bosses, 6p hp each
+* 20 players: 4 bosses, 3.33p hp each
+
+*Squad Scale* can be applied for regular squads as well, e.g. `Squad=~3: SC` spawns an extra Scrake
+per each 3 players in the team (every Scrake in this case won't have more than 3p health).
+
+###### Other changes
+- `BountyScale` now is applied on both player reward and team budget (previously it was applied only on team budget)
+- `BountyScale`, in addition, can be set for each wave (overrides game's value)
+- Inverted `SpawnRateMod`setting to avoid further confusion. From now on `SpawnRateMod=2.0` means twice *faster* spawns
+  while `SpawnRateMod=0.5` - twice *slower*. **Make sure to update ScrnWaves.ini !**
+- `bRandomSquads` and `bRandomSpecialSquads` - allows turning off a random component for more predictable game.
+- `GameTitle` - games (ScrnGameLength) can have a name now (shown on the scoreboard)
+
+#### TSC: Team Survival Competition
+- Killing members of the other team gives $+100
+- Killing teammates charges $-100
+
+#### FTG: Follow The Guardian
+- The Stinky Clot got raped by a Shiver and now gained an ability to teleport... when stuck
+
+#### Mystery Game
+- Wave2, Earn Dosh, split on three: Earn Dosh, Grab Dosh and Zed Grab Dosh.
+- Added Ammo Grab wave between Wave 9 and Wave 10.
+- Now there are 13 waves in the Mystery Game.
+- Balance improvements.
+
+#### (**New**) Half-Long Game
+Five-wave game containing 4 latest waves from the Long game and new brand-new introduction wave (Dosh Grab)
+
+#### (**New**) Small Big Zeds
+Six-wave game where Big zeds (Husk+) have less health, but there are bigger in numbers. For example, in 6-player
+Small Big Zeds game there will be 3 Scrake spawning (each having 2p health) instead of one with 6p health, unlike
+in regular game.
+
+#### Bug Fixes
+- Yet another attempt to fix client crash while opening ScrN Features tab...
+- Fixed Dual Flare Revolver ammo price
+- Fixed an issue when Machete was falling though some objects
+- Fixed bonus ammo calculation bug when sometimes bonus ammo was not seen on the client side
+- Player death penalty now is calculated proportionally to team budget, not player dosh
+
+#### Gameplay changes
+- Sirens can't be nailed anymore
+- Lowered Chainsaw fuel consumption rate while in idle
+- Chainsaw fuel capacity slightly raised to 105 to add some reserve for idle consumption
+- Raised Chainsaw Alt Fire Headshot multiplier to x1.20 (up from x1.05).
+  Now 6p HoE Scrake can be killed with 4 head-hits instead of 5.
+
+#### Configuration
+###### ScrnBalance.ini
+- `ColoredServerName` - color server name with ColorTags
+- `ColorTags` made configurable but NOT replicated
+- Removed Vanilla Tourney option `?tourney=2`
+- `bWeaponFix` and `bSpawnBalance`are removed (were considered deprecated since v9.50)
+- `bGunslinger` is removed (forced to true)
+- `CustomEvents` are marked *deprecated* (will be deleted in future versions)
+
+###### KillingFloor.ini
+- `FakedPlayers` moved from ScrnBalance to ScrnGameType (configurable in KillingFloor.ini)
+- `FakedAlivePlayers` - adjust minimum zed health
+
+#### Console Commands
+- `mvote FAKEDPLAYERS X` - vote to instantly change `FakedPlayers` and `FakedAlivePlayers`
+- **CHEAT** `DebugZedHealth TRUE` - shows zed body & head healths (only in Solo Mode!)
+
+#### Code Remarks
+- Reward for killing zed now is calculated from `Monster.ScoringValue` instead of `Monster.default.ScoringValue`.
+  This allows customizing rewards per individual zed instead of zed type.
+- Added `ScrnGameType.bZedTimeEnabled` flag. This allows custom mutators to disable Zed Time in the game.
+- Class `Doom3MonstersCollection` is deleted. `CustomEvents` are no longer supported.
+  Migrate to ScrnWaves instead.
+
+-------------------------------------------------------------------------------
 ### v9.51
 - Fixed bug when broken Zombie Volumes on a map dropped down zed spawn rate.
 - Fixed Berserker damage bonus vs humans (TSC)
@@ -27,7 +132,7 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 -------------------------------------------------------------------------------
 ### v9.50
 #### Normal Difficulty
-Normal difficulty made newcomers-friendly. Not it is much easier to allow new players to start their
+Normal difficulty made newcomers-friendly. Now it is much easier to allow new players to start their
 first games without instantly getting wiped again and again until rage-quit. From now on Normal
 difficulty is considered easy, Hard - Normal, Suicidal - Hard, Hell on Earth - the game it meant to
 be played. Experienced players shouldn't be playing on Normal difficulty.
@@ -35,8 +140,8 @@ be played. Experienced players shouldn't be playing on Normal difficulty.
 ##### Changes to Normal Difficulty only:
 - Much slower spawn rate (use `MVOTE BORING` if it is too slow).
 - Zeds spawn more randomly on the map, not only close to players.
-- Players can't be grabbed by Clots no matter of chosen perk.
-- Low-level perks made stronged by applying passive skills and 30% base bonus.
+- Players can't be grabbed by Clots no matter of the chosen perk.
+- Low-level perks made stronger by applying passive skills and 30% base bonus.
 
 #### Money Balance
 -   Fixed dual pistol ammo cost.
@@ -54,19 +159,19 @@ be played. Experienced players shouldn't be playing on Normal difficulty.
 -   Removed welding requirement for Support Spec.
 -   Flamethrower weight lowered to 9 (down from 10) to allow carrying together with Tommy Gun Inc.
 -   Flares make zeds burn longer: more flares - longer burn.
--   HMG perk can earn Shotgun-related Teamwork achievements, such as "when size matters".
+-   HMG perk can earn Shotgun-related Teamwork achievements, such as "When Size Matters".
 
 #### Follow The Guardian
 -   Fixed bug when MaxZombiesOnce couldn't be set below 48 in FTG.
 -   Default OvertimeTeamMoneyPenalty set to 0 (no penalty)
--   All players now see Trader Arrow during the Trader Time
+-   All players now see the Trader Arrow during the Trader Time
 
 #### Heavy MachineGunner v4.00
 -   Perk bonuses adjusted to ScrN Balance v9.50 rules
 -   Recoil bonus raised to 75% (up from 50%)
 -   Pat Chaingun price lowered to $8000 (down from 10999)
 -   PKM price lowered to $4000 (down from 6000)
--   PKM ammo prices raised to $50 (up from 30)
+-   PKM ammo price raised to $50 (up from 30)
 -   M249 price lowered to $5000 (down from 7700)
 -   RPK47 price lowered to $2000 (down from 2500)
 

@@ -1,5 +1,5 @@
 "ScrN Balance" a.k.a. "[ScrN] Total Game Balance + Gunslinger Perk"
-Copyright (c) 2012-2017 PU Developing IK, All Rights Reserved.
+Copyright (c) 2012-2018 PU Developing IK, All Rights Reserved.
 
 
 ==============================================================================

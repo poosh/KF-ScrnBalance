@@ -5,88 +5,86 @@ var localized string strLock, strUnlock;
 
 
 // version
-var automated 	GUIImage 		        img_ScrnLogo;
-var automated 	GUIImage 		        img_TourneyLogo;
-var automated   GUILabel                lbl_Version;
-var automated   GUILabel                lbl_CR;
-var automated   GUILabel                lbl_TourneyMember;
-var automated   GUIButton               b_ScrnGroup;
-var automated   GUIButton               b_GetPrize;
+var automated GUIImage                img_ScrnLogo;
+var automated GUIImage                img_TourneyLogo;
+var automated GUILabel                lbl_Version;
+var automated GUILabel                lbl_CR;
+var automated GUILabel                lbl_TourneyMember;
+var automated GUIButton               b_ScrnGroup;
+var automated GUIButton               b_GetPrize;
 
 
 // weapons
-var automated   GUISectionBackground    bg_Weapons;
-var automated 	moCheckBox    	        ch_ManualReload;
-var automated 	moCheckBox    	        ch_CookNade;
-var automated 	moCheckBox    	        ch_PrioritizePerkedWeapons;
-var automated 	moCheckBox    	        ch_PrioritizeBoomstick;
+var automated GUISectionBackground    bg_Weapons;
+var automated moCheckBox              ch_ManualReload;
+var automated moCheckBox              ch_CookNade;
+var automated moCheckBox              ch_PrioritizePerkedWeapons;
+var automated moCheckBox              ch_PrioritizeBoomstick;
 
-var automated   GUIButton               b_GunSkin;
-var automated   GUIButton               b_WeaponLock;
-var automated   GUIButton               b_PerkProgress;
-var automated   GUIButton               b_Accuracy;
+var automated GUIButton               b_GunSkin;
+var automated GUIButton               b_WeaponLock;
+var automated GUIButton               b_PerkProgress;
+var automated GUIButton               b_Accuracy;
 
 var localized string strLockWeapons, strUnlockWeapons;
 var localized string strBoundToCook, strBoundToThrow, strCantFindNade;
 
 
 // HUD & Info
-var automated   GUISectionBackground    bg_HUD;
-var automated 	moCheckBox    	        ch_ShowDamages;
-var automated 	moCheckBox    	        ch_ShowSpeed;
-var automated 	moCheckBox    	        ch_ShowAchProgress;
+var automated GUISectionBackground    bg_HUD;
+var automated moCheckBox              ch_ShowDamages;
+var automated moCheckBox              ch_ShowSpeed;
+var automated moCheckBox              ch_ShowAchProgress;
 
-var automated   moComboBox    	        cbx_BarStyle;
-var automated   moSlider                sl_BarScale;
-var automated   moComboBox    	        cbx_HudStyle;
-var automated   moSlider                sl_HudScale;
-var automated   moSlider                sl_HudAmmoScale;
-var automated   moSlider                sl_HudY;
+var automated moComboBox              cbx_BarStyle;
+var automated moSlider                sl_BarScale;
+var automated moComboBox              cbx_HudStyle;
+var automated moSlider                sl_HudScale;
+var automated moSlider                sl_HudAmmoScale;
+var automated moSlider                sl_HudY;
 
-var array<localized string>             BarStyleItems;
-var array<localized string>             HudStyleItems;
+var array<localized string>           BarStyleItems;
+var array<localized string>           HudStyleItems;
 
 
-var automated   GUIButton               b_Status;
-var automated   GUIButton               b_HL;
-var automated   GUIButton               b_Zeds;
+var automated GUIButton               b_Status;
+var automated GUIButton               b_HL;
+var automated GUIButton               b_Zeds;
 
 
 // PLAYERS
-var automated   GUISectionBackground    bg_Players;
-var automated   moComboBox    	        cbx_Player;
-var automated   GUILabel    	        lbl_PlayerID;
-var automated   GUIButton               b_Profile;
-var automated   GUIButton               b_PlayerList;
+var automated GUISectionBackground    bg_Players;
+var automated moComboBox              cbx_Player;
+var automated GUILabel                lbl_PlayerID;
+var automated GUIButton               b_Profile;
+var automated GUIButton               b_PlayerList;
 
-var automated   moEditBox    	        txt_Reason;
-var automated   GUIButton               b_Blame;
-var automated   GUIButton               b_Spec;
-var automated   GUIButton               b_Kick;
-var automated   GUIButton               b_TSC_C;
-var automated   GUIButton               b_TSC_A;
-var automated   GUIButton               b_Team_Lock;
-var automated   GUIButton               b_Team_Unlock;
-var automated   GUIButton               b_Team_Invite;
-var automated   GUIButton               b_MVOTE_Yes;
-var automated   GUIButton               b_MVOTE_No;
-var automated   GUIButton               b_MVOTE_Boring;
-var automated   GUIButton               b_MVOTE_EndTrade;
+var automated moEditBox               txt_Reason;
+var automated GUIButton               b_Blame;
+var automated GUIButton               b_Spec;
+var automated GUIButton               b_Kick;
+var automated GUIButton               b_TSC_C;
+var automated GUIButton               b_TSC_A;
+var automated GUIButton               b_Team_Lock;
+var automated GUIButton               b_Team_Unlock;
+var automated GUIButton               b_Team_Invite;
+var automated GUIButton               b_MVOTE_Yes;
+var automated GUIButton               b_MVOTE_No;
+var automated GUIButton               b_MVOTE_Boring;
+var automated GUIButton               b_MVOTE_EndTrade;
 
-var transient   int                     PlayerLocalID;
-var transient   string                  PlayerSteamID64;
+var transient int                     PlayerLocalID;
+var transient string                  PlayerSteamID64;
 
 var localized  string strBadReason;
 
 // SERVER INFO
-var automated   GUILabel                lbl_ServerInfo;
+var automated GUILabel                lbl_ServerInfo;
 var localized string strServerInfoSeparator;
 var localized string strPerkRange, strPerkXPLevel, strPerkBonusLevel;
 var localized string strSpawnBalance, strWeaponFix, strAltBurnMech, strBeta, strHardcore, strNoPerkChanges;
 var color StatusColor[2];
 
-var transient KFPlayerReplicationInfo SelectedPRI;
-var transient array<KFPlayerReplicationInfo> PRIs;
 var transient bool bFillPlayerList;
 
 
@@ -94,9 +92,9 @@ var transient bool bFillPlayerList;
 
 function InitComponent(GUIController MyController, GUIComponent MyOwner)
 {
-	local int i;
+    local int i;
 
-	Super.InitComponent(MyController, MyOwner);
+    Super.InitComponent(MyController, MyOwner);
 
     /*
     bg_Weapons.ManageComponent(ch_ManualReload);
@@ -120,22 +118,22 @@ function InitComponent(GUIController MyController, GUIComponent MyOwner)
 
 function ShowPanel(bool bShow)
 {
-	local ScrnPlayerController PC;
+    local ScrnPlayerController PC;
     local ScrnHUD H;
     local ScrnCustomPRI ScrnPRI;
     local bool b;
 
     log("ShowPanel("$bShow$")", class.name);
-	Super.ShowPanel(bShow);
+    Super.ShowPanel(bShow);
 
-	if ( !bShow ) {
+    if ( !bShow ) {
         SetTimer(0, false);
         return;
     }
 
     log("ShowPanel: Set button visibility", class.name);
     lbl_Version.Caption = class'ScrnBalance'.default.FriendlyName @ class'ScrnBalance'.static.GetVersionStr();
-    lbl_CR.Caption = "Copyright (c) 2012-2017 PU Developing IK, Latvia. All Rights Reserved.";
+    lbl_CR.Caption = "Copyright (c) 2012-2018 PU Developing IK, Latvia. All Rights Reserved.";
     ServerStatus();
 
     PC = ScrnPlayerController(PlayerOwner());
@@ -158,7 +156,7 @@ function ShowPanel(bool bShow)
     b_Team_Invite.SetVisibility(true);
 
     // TSC
-    b = TSCGameReplicationInfo(PC.Level.GRI) != none;
+    b = TSCGameReplicationInfo(PC.GameReplicationInfo) != none;
     b_TSC_C.SetVisibility(b);
     b_TSC_A.SetVisibility(b);
 
@@ -183,7 +181,7 @@ function ShowPanel(bool bShow)
 function Timer()
 {
     RefreshInfo();
-    if ( bFillPlayerList )
+    if ( bFillPlayerList && Controller.bCurMenuInitialized )
     {
         FillPlayerList();
     }
@@ -191,29 +189,29 @@ function Timer()
 
 function RefreshInfo()
 {
-	local ScrnPlayerController PC;
+    local ScrnPlayerController PC;
 
     log("RefreshInfo", class.name);
-	PC = ScrnPlayerController(PlayerOwner());
+    PC = ScrnPlayerController(PlayerOwner());
     if ( PC == none )
         return;
 
-	if ( PC.Mut.bAllowWeaponLock ) {
-		b_WeaponLock.EnableMe();
-		b_WeaponLock.Hint = b_WeaponLock.default.Hint ;
+    if ( PC.Mut.bAllowWeaponLock ) {
+        b_WeaponLock.EnableMe();
+        b_WeaponLock.Hint = b_WeaponLock.default.Hint ;
 
-		if ( PC.bWeaponsLocked )
-			b_WeaponLock.Caption = strUnlockWeapons;
-		else
-			b_WeaponLock.Caption = strLockWeapons;
-	}
-	else {
-		b_WeaponLock.DisableMe();
-		b_WeaponLock.Hint = PC.strLockDisabled;
-	}
+        if ( PC.bWeaponsLocked )
+            b_WeaponLock.Caption = strUnlockWeapons;
+        else
+            b_WeaponLock.Caption = strLockWeapons;
+    }
+    else {
+        b_WeaponLock.DisableMe();
+        b_WeaponLock.Hint = PC.strLockDisabled;
+    }
 
-    if ( KFGameReplicationInfo(PC.Level.GRI) != none ) {
-        b_MVOTE_Boring.SetVisibility(KFGameReplicationInfo(PC.Level.GRI).bWaveInProgress);
+    if ( KFGameReplicationInfo(PC.GameReplicationInfo) != none ) {
+        b_MVOTE_Boring.SetVisibility(KFGameReplicationInfo(PC.GameReplicationInfo).bWaveInProgress);
         b_MVOTE_EndTrade.SetVisibility(!b_MVOTE_Boring.bVisible);
     }
     else {
@@ -237,13 +235,14 @@ function ServerStatus()
         return; // wtf?
 
     s = m.ColorStringC(strServerInfoSeparator, lbl_ServerInfo.TextColor);
-    if ( !m.bSpawnBalance )
-        cSpawnBalance = StatusColor[0];
-    else if ( m.bNoStartCashToss && m.bMedicRewardFromTeam && m.bSpawn0 )
+    if ( m.bNoStartCashToss && m.bMedicRewardFromTeam && m.bSpawn0 )
         cSpawnBalance = StatusColor[1];
-    else {
+    else if ( m.bMedicRewardFromTeam ) {
         cSpawnBalance.R = 255;
         cSpawnBalance.G = 106;
+    }
+    else {
+        cSpawnBalance = StatusColor[0];
     }
 
     if ( !m.bNoPerkChanges )
@@ -273,14 +272,41 @@ function ServerStatus()
     }
 
     lbl_ServerInfo.Caption $= "|" $ m.ColorStringC(strSpawnBalance, cSpawnBalance)
-        $ s $ m.ColorStringC(strWeaponFix, StatusColor[byte(m.bWeaponFix)])
+        $ s $ m.ColorStringC(strWeaponFix, StatusColor[1])
         $ s $ m.ColorStringC(strAltBurnMech, StatusColor[byte(m.bAltBurnMech)])
         $ s $ m.ColorStringC(strBeta, StatusColor[byte(m.bBeta)])
         $ s $ m.ColorStringC(strHardcore, StatusColor[byte(m.bHardcore)])
         $ s $ m.ColorStringC(strNoPerkChanges, cNoPerkChanges);
 }
 
+function string GetPlayerName(PlayerReplicationInfo PRI)
+{
+    if (PRI == none) {
+        return "";
+    }
+    return class'ScrnBalance'.default.Mut.StripColorTags(PRI.PlayerName);
+}
 
+function PlayerReplicationInfo FindPRI(string PlayerName)
+{
+    local int i;
+    local GameReplicationInfo GRI;
+
+    PlayerName = class'ScrnBalance'.default.Mut.StripColorTags(PlayerName);
+    if ( PlayerName == "" )
+        return none;
+
+    GRI = PlayerOwner().GameReplicationInfo;
+    if (GRI == none)
+        return none;
+
+    for ( i = 0; i < GRI.PRIArray.Length; ++i ) {
+        if ( GetPlayerName(GRI.PRIArray[i]) == PlayerName ) {
+            return GRI.PRIArray[i];
+        }
+    }
+    return none;
+}
 
 function FillPlayerList()
 {
@@ -288,18 +314,21 @@ function FillPlayerList()
     local KFPlayerReplicationInfo KFPRI;
     local int BlueIndex;
     local GameReplicationInfo GRI;
+    local array<KFPlayerReplicationInfo> PRIs;
+    local string s;
+    local string SelectedPlayerName;
 
-    GRI = PlayerOwner().Level.GRI;
+
+    GRI = PlayerOwner().GameReplicationInfo;
     if ( GRI == none )
         return;
     bFillPlayerList = false;
 
-    PRIs.length = 0;
     log("FillPlayerList", class.name);
     // sort list by Red Players -> Blue Players -> Spectators
-	for ( i = 0; i < GRI.PRIArray.Length; i++) {
+    for ( i = 0; i < GRI.PRIArray.Length; i++) {
         log("FillPlayerList: Loading PRI: " $(i+1)$"/"$GRI.PRIArray.Length, class.name);
-		KFPRI = KFPlayerReplicationInfo(GRI.PRIArray[i]);
+        KFPRI = KFPlayerReplicationInfo(GRI.PRIArray[i]);
         if ( KFPRI == none || KFPRI.PlayerID == 0 )
             continue;
         log("FillPlayerList: PRI["$(i+1)$"] loaded", class.name);
@@ -321,14 +350,15 @@ function FillPlayerList()
     }
 
     log("FillPlayerList: Clearing Player List", class.name);
+    SelectedPlayerName = cbx_Player.GetText();
     cbx_Player.bIgnoreChange = true;
     cbx_Player.ResetComponent();
     idx = -1;
     log("FillPlayerList: FillingPlayer List", class.name);
     for ( i = 0; i < PRIs.Length; i++) {
-        cbx_Player.AddItem( class'ScrnBalance'.default.Mut.StripColorTags(PRIs[i].PlayerName) );
-        //ColoredPlayerName(PRIs[i]));
-        if ( PRIs[i] == SelectedPRI )
+        s = GetPlayerName(PRIs[i]);
+        cbx_Player.AddItem(s);
+        if ( s == SelectedPlayerName )
             idx = i;
     }
     cbx_Player.bIgnoreChange = false;
@@ -338,37 +368,33 @@ function FillPlayerList()
     log("FillPlayerList: EOF", class.name);
 }
 
-function LoadPlayerData( int index)
+function LoadPlayerData(string PlayerName)
 {
+    local PlayerReplicationInfo PRI;
     local ScrnCustomPRI ScrnPRI;
     local string s;
 
-    log("LoadPlayerData: about to call GetObject()", class.name);
-    if ( index >= 0 && index < PRIs.Length )
-        SelectedPRI = PRIs[index];
-    else
-        SelectedPRI = none;
-    log("LoadPlayerData: SelectedPRI = " $ SelectedPRI, class.name);
-
+    log("LoadPlayerData: " $ PlayerName, class.name);
     PlayerLocalID = 0;
     PlayerSteamID64 = "";
-    if ( SelectedPRI == none ) {
+    PRI = FindPRI(PlayerName);
+    if ( PRI == none ) {
         lbl_PlayerID.Caption = "";
     }
     else {
-        PlayerLocalID = SelectedPRI.PlayerID;
-        ScrnPRI = class'ScrnCustomPRI'.static.FindMe(SelectedPRI);
+        PlayerLocalID = PRI.PlayerID;
+        ScrnPRI = class'ScrnCustomPRI'.static.FindMe(PRI);
 
-        s = "ID="$SelectedPRI.PlayerID;
+        s = "ID="$PRI.PlayerID;
         if ( ScrnPRI != none ) {
             PlayerSteamID64 = ScrnPRI.GetSteamID64();
             s $= "  SID64="$ PlayerSteamID64;
         }
         lbl_PlayerID.Caption = s;
-        if ( SelectedPRI.Team == none || SelectedPRI.Team.TeamIndex > 1 )
+        if ( PRI.Team == none || PRI.Team.TeamIndex > 1 )
             lbl_PlayerID.TextColor = lbl_ServerInfo.TextColor;
         else
-            lbl_PlayerID.TextColor = class'ScrnHUD'.default.TextColors[SelectedPRI.Team.TeamIndex];
+            lbl_PlayerID.TextColor = class'ScrnHUD'.default.TextColors[PRI.Team.TeamIndex];
     }
     log("LoadPlayerData: EOF", class.name);
 }
@@ -409,11 +435,11 @@ function InternalOnLoadINI(GUIComponent Sender, string s)
             }
             break;
 
-		case ch_PrioritizePerkedWeapons:
+        case ch_PrioritizePerkedWeapons:
             ch_PrioritizePerkedWeapons.Checked(PC.bPrioritizePerkedWeapons);
             break;
 
-		case ch_PrioritizeBoomstick:
+        case ch_PrioritizeBoomstick:
             ch_PrioritizeBoomstick.Checked(PC.bPrioritizeBoomstick);
             break;
 
@@ -509,24 +535,24 @@ function InternalOnChange(GUIComponent Sender)
 
     switch (sender)
     {
-    	case ch_ManualReload:
+        case ch_ManualReload:
                 PC.bManualReload = ch_ManualReload.IsChecked();
                 PC.SaveConfig();
-			break;
+            break;
 
         case ch_CookNade:
             SetCookNade(ch_CookNade.IsChecked());
             break;
 
         case ch_PrioritizePerkedWeapons:
-				PC.bPrioritizePerkedWeapons =  ch_PrioritizePerkedWeapons.IsChecked();
+                PC.bPrioritizePerkedWeapons =  ch_PrioritizePerkedWeapons.IsChecked();
                 PC.SaveConfig();
-			break;
+            break;
 
         case ch_PrioritizeBoomstick:
-				PC.bPrioritizeBoomstick =  ch_PrioritizeBoomstick.IsChecked();
+                PC.bPrioritizeBoomstick =  ch_PrioritizeBoomstick.IsChecked();
                 PC.SaveConfig();
-			break;
+            break;
 
         case ch_ShowDamages:
                 if ( H != none ) {
@@ -534,19 +560,19 @@ function InternalOnChange(GUIComponent Sender)
                     PC.ServerAcknowledgeDamages(ch_ShowDamages.IsChecked());
                     H.SaveConfig();
                 }
-			break;
+            break;
 
         case ch_ShowSpeed:
                 if ( H != none ) {
                     H.bShowSpeed = ch_ShowSpeed.IsChecked();
                     H.SaveConfig();
                 }
-			break;
+            break;
 
         case ch_ShowAchProgress:
                 PC.bAlwaysDisplayAchProgression = ch_ShowAchProgress.IsChecked();
                 PC.SaveConfig();
-			break;
+            break;
 
 
         case cbx_BarStyle:
@@ -618,21 +644,21 @@ function InternalOnChange(GUIComponent Sender)
             break;
 
         case cbx_Player:
-            LoadPlayerData(cbx_Player.GetIndex());
+            LoadPlayerData(cbx_Player.GetText());
             break;
     }
 }
 
 function SetCookNade(bool bCook)
 {
-	local GUIController GC;
+    local GUIController GC;
     local array<string> BindAliases;
     local array<string> BindKeyNames;
     local array<string> LocalizedBindKeyNames;
     local int i, j;
     local string s, msg;
 
-	GC = GUIController(PlayerOwner().Player.GUIController);
+    GC = GUIController(PlayerOwner().Player.GUIController);
 
     if (bCook) {
         //retrieve key bindings containing "ThrowGrenade" (command) or "ThrowNade" (alias)
@@ -806,7 +832,7 @@ function bool PlayerVoteButtonClicked(GUIComponent Sender)
 
 function LaunchURLPage( string URL )
 {
-	PlayerOwner().Player.Console.DelayedConsoleCommand("START "$URL);
+    PlayerOwner().Player.Console.DelayedConsoleCommand("START "$URL);
 }
 
 
@@ -1052,8 +1078,8 @@ defaultproperties
         OnClick=ScrnTab_UserSettings.ButtonClicked
     End Object
     b_WeaponLock=GUIButton'ScrnBalanceSrv.ScrnTab_UserSettings.WeaponLockButton'
-	strLockWeapons="Lock Weapons"
-	strUnlockWeapons="Unlock Weapons"
+    strLockWeapons="Lock Weapons"
+    strUnlockWeapons="Unlock Weapons"
 
     Begin Object Class=GUIButton Name=PerkProgressButton
         Caption="Perk Progress"
@@ -1411,7 +1437,7 @@ defaultproperties
         TabOrder=60
     End Object
     txt_Reason=moEditBox'ScrnBalanceSrv.ScrnTab_UserSettings.ReasonTextBox'
-    strBadReason="Write a good reason for blaming"
+    strBadReason="Write a good reason"
 
     Begin Object Class=GUIButton Name=BlameButton
         Caption="Blame"

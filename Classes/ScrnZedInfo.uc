@@ -12,6 +12,7 @@ struct SZedInfo {
     var float Pct;
 };
 
+var config byte EventNum;
 var config array<SZedInfo> Zeds;
 
 defaultproperties

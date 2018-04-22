@@ -1,7 +1,7 @@
 /*****************************************************************************
  * ScrN Total Game Balance
  * @author [ScrN]PooSH, contact via steam: http://steamcommunity.com/id/scrn-poosh/
- * Copyright (c) 2012-2017 PU Developing IK, All Rights Reserved.
+ * Copyright (c) 2012-2018 PU Developing IK, All Rights Reserved.
  *****************************************************************************/
 
 class ScrnBalance extends Mutator
@@ -11,7 +11,7 @@ class ScrnBalance extends Mutator
 #exec OBJ LOAD FILE=ScrnAch_T.utx
 
 
-const VERSION = 95100;
+const VERSION = 95200;
 
 var ScrnBalance Mut; // pointer to self to use in static functions, i.e class'ScrnBalance'.default.Mut
 
@@ -25,8 +25,8 @@ var localized string strBetaOnly;
 
 // SRVFLAGS
 var transient int SrvFlags; // used for network replication of the values below
-var globalconfig bool bSpawnBalance, bSpawn0, bNoStartCashToss, bMedicRewardFromTeam;
-var globalconfig bool bWeaponFix, bAltBurnMech, bDoubleDoT, bGunslinger;
+var globalconfig bool bSpawn0, bNoStartCashToss, bMedicRewardFromTeam;
+var globalconfig bool bAltBurnMech, bDoubleDoT;
 var globalconfig bool bReplaceNades, bShieldWeight, bHardcore, bBeta;
 var globalconfig bool bShowDamages, bManualReload, bForceManualReload, bAllowWeaponLock;
 var globalconfig bool bNoPerkChanges, bPerkChangeBoss, bPerkChangeDead, b10Stars;
@@ -181,8 +181,6 @@ var globalconfig int MaxWaveSize;
 
 var globalconfig int MaxZombiesOnce;
 
-var globalconfig byte FakedPlayers; // Min numbers of players to be used in calculation of zed count in wave
-
 var globalconfig float EndGameStatBonus;
 var globalconfig float FirstStatBonusMult;
 var globalconfig bool  bStatBonusUsesHL;
@@ -224,7 +222,7 @@ struct SCustomEvent {
     var String MonstersCollection;
     var array<String> ServerPackages;
 };
-var globalconfig array<SCustomEvent> CustomEvents;
+var globalconfig deprecated array<SCustomEvent> CustomEvents;
 
 var globalconfig bool bNoRequiredEquipment;
 var globalconfig bool bUseExpLevelForSpawnInventory;
@@ -239,7 +237,8 @@ struct SColorTag {
     var string T;
     var byte R, G, B;
 };
-var array<SColorTag> ColorTags;
+var globalconfig array<SColorTag> ColorTags;
+var globalconfig string ColoredServerName;
 
 var float OriginalWaveSpawnPeriod;
 var globalconfig float MinZedSpawnPeriod;
@@ -573,9 +572,6 @@ function MessageStatus(PlayerController PC)
     PC.ClientMessage(msg, 'Log');
 
     msg = strStatus2;
-    ReplaceText(msg, "%s", String(bSpawnBalance));
-    ReplaceText(msg, "%w", String(bWeaponFix));
-    ReplaceText(msg, "%g", String(bGunslinger));
     ReplaceText(msg, "%a", String(bAltBurnMech));
     ReplaceText(msg, "%m", String(KF.MaxZombiesOnce));
     PC.ClientMessage(msg, 'Log');
@@ -781,16 +777,11 @@ function SetupPickups(optional bool bReduceAmount, optional bool bBoostAmount)
     local float W, A; //chance of spawning weapon / ammo box
     local bool bSpawned;
     local int i;
-    local int CurrentAmmoBoxCount, DesiredAmmoBoxCount;
-    local array<KFAmmoPickup> AvailableAmmoBoxes;
 
-    // randomize remaining monster count, when pickups are reset to avoid players expliting this
+    // randomize remaining monster count, when pickups are reset to avoid players exploiting this
     // knowledge
     PickupSetupMonsters = 10 + rand(10);
     bPickupSetupReduced = bReduceAmount;
-
-    // starting with v9.05, amount of pickup is constant accross the difficulties:
-    // 35% during the wave, 10% during the trader time.
 
     // Except the beginner, where all pickups are still spawned
     if ( KF.GameDifficulty < 2 ) {
@@ -826,8 +817,9 @@ function SetupPickups(optional bool bReduceAmount, optional bool bBoostAmount)
         A = 0.50;
     }
 
-    if ( KF.NumPlayers > 6 )
+    if ( KF.NumPlayers > 6 ) {
         A *= 1.0 + float(KF.NumPlayers - 6)*Post6AmmoSpawnInc;
+    }
 
     if ( KF.WeaponPickups.Length > 0 ) {
         for ( i = 0; i < KF.WeaponPickups.Length ; i++ )
@@ -844,7 +836,15 @@ function SetupPickups(optional bool bReduceAmount, optional bool bBoostAmount)
             KF.WeaponPickups[rand(KF.WeaponPickups.Length)].EnableMe();
     }
 
-    DesiredAmmoBoxCount = ceil(A * KF.AmmoPickups.Length);
+    AdjustAmmoBoxCount(ceil(A * KF.AmmoPickups.Length));
+}
+
+function AdjustAmmoBoxCount(int DesiredAmmoBoxCount)
+{
+    local int i;
+    local array<KFAmmoPickup> AvailableAmmoBoxes;
+    local int CurrentAmmoBoxCount;
+
     for ( i = 0; i < KF.AmmoPickups.Length ; i++ ) {
         if ( !KF.AmmoPickups[i].bSleeping )
             ++CurrentAmmoBoxCount;
@@ -881,6 +881,7 @@ function SetupPickups(optional bool bReduceAmount, optional bool bBoostAmount)
         ScrnGT.DesiredAmmoBoxCount = DesiredAmmoBoxCount;
     }
 }
+
 
 function MessagePickups(PlayerController Sender)
 {
@@ -1154,9 +1155,7 @@ function GameTimer()
             if ( MyVotingOptions != none && MyVotingOptions.VotingHandler.IsMyVotingRunning(MyVotingOptions, MyVotingOptions.VOTE_ENDTRADE) )
                 MyVotingOptions.VotingHandler.VoteFailed();
 
-            if ( bWeaponFix ) {
-                DestroyExtraPipebombs();
-            }
+            DestroyExtraPipebombs();
 
             // call SetupPickups only when playing non-ScrnGameType mode.
             // ScrnGameType automatically calls SetupPickups() during wave begin.
@@ -1742,18 +1741,14 @@ static function FillPlayInfo(PlayInfo PlayInfo)
     PlayInfo.AddSetting(default.BonusCapGroup,"BonusLevelHoeMax","7.HoE Max Bonus Level",1,0, "Text", "4;0:70",,,True);
     PlayInfo.AddSetting(default.BonusCapGroup,"Post6RequirementScaling","Level 7+ Scaling",1,0, "Text", "6;0.01:4.00",,,True);
     PlayInfo.AddSetting(default.BonusCapGroup,"MaxZombiesOnce","Max Specimens At Once",1,0, "Text", "4;8:254",,,True);
-    PlayInfo.AddSetting(default.BonusCapGroup,"FakedPlayers","Faked Players",1,0, "Text", "3;1:254",,,True);
 
-    PlayInfo.AddSetting(default.BonusCapGroup,"bSpawnBalance","Balance Initial Inventory and Prices",1,0, "Check");
     PlayInfo.AddSetting(default.BonusCapGroup,"bSpawn0","Zero Cost of Initial Inventory",1,0, "Check");
-    PlayInfo.AddSetting(default.BonusCapGroup,"bWeaponFix","Balance Weapons",1,0, "Check");
     PlayInfo.AddSetting(default.BonusCapGroup,"bHardcore","Hardcore Mode",1,0, "Check");
     PlayInfo.AddSetting(default.BonusCapGroup,"bReplacePickups","Replace Pickups",1,0, "Check");
     PlayInfo.AddSetting(default.BonusCapGroup,"bReplacePickupsStory","Replace Pickups (Story)",1,0, "Check");
     PlayInfo.AddSetting(default.BonusCapGroup,"bReplaceNades","Replace Grenades",1,0, "Check");
     PlayInfo.AddSetting(default.BonusCapGroup,"bShieldWeight","Armor Has Weight",1,0, "Check");
     PlayInfo.AddSetting(default.BonusCapGroup,"bAltBurnMech","Alternate Burning Mechanism",1,0, "Check");
-    PlayInfo.AddSetting(default.BonusCapGroup,"bGunslinger","Gunslinger Perk",1,0, "Check");
     PlayInfo.AddSetting(default.BonusCapGroup,"bShowDamages","Show Damages",1,0, "Check");
     PlayInfo.AddSetting(default.BonusCapGroup,"bReplaceHUD","Replace HUD",1,0, "Check");
     PlayInfo.AddSetting(default.BonusCapGroup,"bNoPerkChanges","No Perk Changes",1,0, "Check");
@@ -1783,18 +1778,14 @@ static function string GetDescriptionText(string PropName)
         case "BonusLevelHoeMax":            return "Maximum perk level, which bonuses can be applied on HoE difficulty. Perk levels above this won't have any extra bonuses.";
         case "Post6RequirementScaling":     return "Additional requirement scaling after reaching level 6";
         case "MaxZombiesOnce":              return "Maximum specimens at once on playtime, note that high values will LAG when theres a lot of them.";
-        case "FakedPlayers":                return "Minimal amount of players to use in calculation of zed count in wave. If FakedPlayers=6 and there are 3 players on the server, then wave will be in 6-player size.";
 
-        case "bSpawnBalance":               return "Balances spawn weapons and its prices (e.g. Crossbow sell price = 225p instead of 600).";
         case "bHardcore":                   return "For those who still think game is too easy...";
         case "bSpawn0":                     return "All initial weapons costs nothing";
-        case "bWeaponFix":                  return "Balances weapons. Replaces perk's initial inventory with Scrn Edition (SE) weapons.";
         case "bReplacePickups":             return "Replaces weapon pickups on a map with their Scrn Editon (SE) versions.";
         case "bReplacePickupsStory":        return "Replaces weapon pickups in Objective Mode with their Scrn Editon (SE) versions.";
         case "bReplaceNades":               return "Replaces hand grenades with 'coockable' ScrN version. Players can disable grenade cooking in ScrN Settings menu anyway. Disabling it here removes this ability from the server.";
         case "bShieldWeight":               return "Kevlar Vest weights 1 block instead of hand grenades. Players without vest can carry more. Automatically enables hand grenade replacing with ScrN version";
         case "bAltBurnMech":                return "Use Alternate Burning Mechanism. Shorter burning period, but higher damage at the begining. Also fixes many bugs, including Crawler Infinite Burning.";
-        case "bGunslinger":                 return "Enabling Gunslinger perk will also remove dual pistols from the Sharpshooter perk";
         case "bShowDamages":                return "Allows showing damage values on the HUD. Clients will still be able to turn it off in their User.ini";
         case "bReplaceHUD":                 return "Replace heads-up display with ScrN version (recommended). Disable only if you have compatibility issues with other mods!";
         case "bNoPerkChanges":              return "Disables perk changes during the game.";
@@ -1895,14 +1886,14 @@ function SetReplicationData()
     SrvAchievementFlags = AchievementFlags;
 
     SrvFlags = 0;
-    if ( bSpawnBalance )                    SrvFlags = SrvFlags | 0x00000001;
+    // if ( bSpawnBalance )                    SrvFlags = SrvFlags | 0x00000001;
     if ( bSpawn0 )                          SrvFlags = SrvFlags | 0x00000002;
     if ( bNoStartCashToss )                 SrvFlags = SrvFlags | 0x00000004;
     if ( bMedicRewardFromTeam )             SrvFlags = SrvFlags | 0x00000008;
 
-    if ( bWeaponFix )                       SrvFlags = SrvFlags | 0x00000010;
+    // if ( bWeaponFix )                       SrvFlags = SrvFlags | 0x00000010;
     if ( bAltBurnMech )                     SrvFlags = SrvFlags | 0x00000020;
-    if ( bGunslinger )                      SrvFlags = SrvFlags | 0x00000040;
+    // if ( bGunslinger )                      SrvFlags = SrvFlags | 0x00000040;
     if ( bTraderSpeedBoost )                SrvFlags = SrvFlags | 0x00000080;
 
     if ( bReplaceNades )                    SrvFlags = SrvFlags | 0x00000100;
@@ -1930,14 +1921,14 @@ simulated function LoadReplicationData()
     MaxLevel = SrvMaxLevel;
     AchievementFlags = SrvAchievementFlags;
 
-    bSpawnBalance                      = (SrvFlags & 0x00000001) > 0;
+    // bSpawnBalance                      = (SrvFlags & 0x00000001) > 0;
     bSpawn0                            = (SrvFlags & 0x00000002) > 0;
     bNoStartCashToss                   = (SrvFlags & 0x00000004) > 0;
     bMedicRewardFromTeam               = (SrvFlags & 0x00000008) > 0;
 
-    bWeaponFix                         = (SrvFlags & 0x00000010) > 0;
+    // bWeaponFix                         = (SrvFlags & 0x00000010) > 0;
     bAltBurnMech                       = (SrvFlags & 0x00000020) > 0;
-    bGunslinger                        = (SrvFlags & 0x00000040) > 0;
+    // bGunslinger                        = (SrvFlags & 0x00000040) > 0;
     bTraderSpeedBoost                  = (SrvFlags & 0x00000080) > 0;
 
     bReplaceNades                      = (SrvFlags & 0x00000100) > 0;
@@ -1993,19 +1984,10 @@ simulated function ApplyWeaponFix()
     class'KFMod.GoldenDualDeagle'.default.MeshRef="KF_Weapons_Trip.Dual50_Trip";
     class'KFMod.GoldenDualDeagle'.default.SkinRefs[0]="KF_Weapons_Gold_T.Weapons.Gold_deagle_cmb";
 
-    if ( bWeaponFix )
-    {
-        class'ScrnHumanPawn'.default.HealthRestoreRate = 7; //30% lower off-perk, but medics now have a bonus
-
-        // prevent weapons from dropping on death
-        class'Knife'.default.bCanThrow = bStoryMode;
-        class'Syringe'.default.bCanThrow = bStoryMode;
-        class'Welder'.default.bCanThrow = bStoryMode;
-    }
-    else
-    {
-        class'ScrnHumanPawn'.default.HealthRestoreRate = 10;
-    }
+    // prevent weapons from dropping on death
+    class'Knife'.default.bCanThrow = bStoryMode;
+    class'Syringe'.default.bCanThrow = bStoryMode;
+    class'Welder'.default.bCanThrow = bStoryMode;
 }
 
 
@@ -2340,12 +2322,10 @@ function bool CheckReplacement(Actor Other, out byte bSuperRelevant)
     }
     else if ( KFMonster(Other) != none ) {
         // harder zapping
-        if ( bWeaponFix ) {
-            if ( ZombieFleshPound(Other) != none )
-                KFMonster(Other).ZapThreshold = 3.75;
-            else if ( KFMonster(Other).default.Health >= 1000 )
-                KFMonster(Other).ZapThreshold = 1.75;
-        }
+        if ( ZombieFleshPound(Other) != none )
+            KFMonster(Other).ZapThreshold = 3.75;
+        else if ( KFMonster(Other).default.Health >= 1000 )
+            KFMonster(Other).ZapThreshold = 1.75;
 
         GameRules.RegisterMonster(KFMonster(Other));
     }
@@ -2451,8 +2431,17 @@ function ForceEvent()
     else
         CurrentEventNum = EventNum;
 
-    // custom events
+    if ( CurrentEventNum == 254 ) {
+        // 254 - random event
+        CurrentEventNum = 1 + rand(4);
+    }
+
+    if (bScrnWaves) {
+        return;  // all we need for ScrnWaves is to load CurrentEventNum. ScrnGameLength will handle everything else.
+    }
+
     if ( CurrentEventNum >= 100 && CurrentEventNum < 200 ) {
+        // custom events
         for ( i=0; i<CustomEvents.length; ++i ) {
             if ( CustomEvents[i].EventNum == CurrentEventNum ) {
                 MC = Class<KFMonstersCollection>(DynamicLoadObject(CustomEvents[i].MonstersCollection, Class'Class'));
@@ -2472,12 +2461,10 @@ function ForceEvent()
             CurrentEventNum = 0;
         }
     }
-    else if ( CurrentEventNum == 254 )
-        CurrentEventNum = rand(4);
 
     if ( MC == none ) {
         switch (CurrentEventNum) {
-            case 0: case 255: // force regular zeds
+            case 0: case 4: case 255: // force regular zeds
                 log("Normal zeds forced for this map", 'ScrnBalance');
                 KF.MonsterCollection = class'KFMod.KFMonstersCollection';
                 CurrentEventNum = 0;
@@ -2699,7 +2686,7 @@ function PostBeginPlay()
             AchHandler = GameRules.Spawn(Class'ScrnBalanceSrv.ScrnAchHandler');
         }
 
-        if ( bResetSquadsAtStart || EventNum == 254 ) {
+        if ( !bScrnWaves && (bResetSquadsAtStart || EventNum == 254) ) {
             GameRules.ResetGameSquads(KF, CurrentEventNum);
         }
     }
@@ -2748,6 +2735,10 @@ function PostBeginPlay()
 	LoadSpawnInventory();
     SetupVoteSquads();
     SetupSrvInfo();
+
+    if ( ColoredServerName != "" ) {
+        KF.GameReplicationInfo.ServerName = ParseColorTags(ColoredServerName);
+    }
 
 	if ( bStoryMode ) {
 		class'ScrnAchievements'.static.RegisterAchievements(class'AchObjMaps');
@@ -3125,14 +3116,11 @@ defaultproperties
     BonusCapGroup="ScrnBalance"
     strBonusLevel="Your effective perk bonus level is [%s]"
     strStatus="Your perk level: Visual=%v, Effective=[%b]. Server perk range is [%n..%x]."
-    strStatus2="Spawn balance=%s. Weapon balance=%w. Gunslinger=%g. Alt.Burn=%a. MaxZombiesOnce=%m."
+    strStatus2="Alt.Burn=%a. MaxZombiesOnce=%m."
     strSrvWarning="You are using dedicated server version of ScrnBalance that shouldn't be installed on local machines! Please Obtain client version from Steam Workshop."
     strSrvWarning2="If you are getting version mismatch erros, delete KillingFloorSystemScrnBalanceSrv.u file."
     strBetaOnly="Only avaliable during Beta testing (bBeta=True)"
 
-    bSpawnBalance=True
-    bWeaponFix=True
-    bGunslinger=True
     bAltBurnMech=True
     bReplacePickups=True
     bReplacePickupsStory=True
@@ -3294,7 +3282,6 @@ defaultproperties
     Post6ZedsPerPlayer=0.40
     MaxWaveSize=800
     MaxZombiesOnce=48
-    FakedPlayers=1
     GameStartCountDown=12
     SharpProgMinDmg=1000
     bSpawnRateFix=True
@@ -3451,4 +3438,3 @@ HighlyDecorated(97)=(SteamID32=403136595,ClanIconRef="ScrnTex.Players.VP",PreNam
 HighlyDecorated(98)=(SteamID32=405312393,ClanIconRef="ScrnTex.Players.VP",PreNameIconRef="ScrnTex.Players.Medal_VP",PostNameIconRef="KillingFloor2HUD.PerkReset.PReset_Sharpshooter_Grey",PrefixIconColor=(A=0),PostfixIconColor=(A=0))
 
 }
-

@@ -65,16 +65,13 @@ static function float AddExtraAmmoFor(KFPlayerReplicationInfo KFPRI, Class<Ammun
 // v4.39: Test try to give full speed bonus to chainsaw
 static function float GetWeaponMovementSpeedBonus(KFPlayerReplicationInfo KFPRI, Weapon Weap)
 {
-	if ( class'ScrnBalance'.default.Mut.bWeaponFix )
-	{
-        // Syringe is a child of KFMeleeGun, so need to checkit first!
-		if ( Syringe(Weap) != none )
-			return -0.15;
-		else if ( KFMeleeGun(Weap) == none )
-            return -0.15;
- 		else if ( Chainsaw(Weap) != none )
-			return GetMeleeMovementSpeedModifier(KFPRI);
-	}
+    // Syringe is a child of KFMeleeGun, so need to check it first!
+	if ( Syringe(Weap) != none )
+		return -0.15;
+	else if ( KFMeleeGun(Weap) == none )
+        return -0.15;
+	else if ( Chainsaw(Weap) != none )
+		return GetMeleeMovementSpeedModifier(KFPRI);
 	return 0.0;
 }
 
