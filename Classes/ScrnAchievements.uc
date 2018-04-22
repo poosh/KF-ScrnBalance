@@ -82,8 +82,8 @@ var name DefaultAchGroup; // default value to set to AchDefs.Group
 var private array< class<ScrnAchievements> > AchClassList; // add here custom achievement classes to load their data from SP custom progress
 
 struct AchGroupInfo {
-	var name 				Group; 		// AchDef.Group
-	var localized string 	Caption; 	// what player sees in GUI
+    var name                 Group;         // AchDef.Group
+    var localized string     Caption;     // what player sees in GUI
 };
 var array<AchGroupInfo> GroupInfo;
 
@@ -363,7 +363,7 @@ function bool ProgressAchievement(int AchIndex, int Inc)
 
     bReplicateDataToClients = false; // further data updates will be send via ClientSetAchProgress()
     result = (Inc > 0 && AchDefs[AchIndex].CurrentProgress < AchDefs[AchIndex].MaxProgress)
-		|| (Inc < 0 && AchDefs[AchIndex].CurrentProgress > 0);
+        || (Inc < 0 && AchDefs[AchIndex].CurrentProgress > 0);
     count = GetAchievementCount();
 
     // in cases when more achevements are sharing the same data
@@ -373,18 +373,18 @@ function bool ProgressAchievement(int AchIndex, int Inc)
     IndexToWrite = AchIndex;
 
     do {
-		if ( Inc < 0 ) {
-			AchDefs[AchIndex].CurrentProgress += Inc;
-			if ( AchDefs[AchIndex].CurrentProgress < 0 )
-				AchDefs[AchIndex].CurrentProgress = 0;
-			ClientSetAchProgress(AchIndex, AchDefs[AchIndex].CurrentProgress, true);
-		}
+        if ( Inc < 0 ) {
+            AchDefs[AchIndex].CurrentProgress += Inc;
+            if ( AchDefs[AchIndex].CurrentProgress < 0 )
+                AchDefs[AchIndex].CurrentProgress = 0;
+            ClientSetAchProgress(AchIndex, AchDefs[AchIndex].CurrentProgress, true);
+        }
         else if ( AchDefs[AchIndex].CurrentProgress < AchDefs[AchIndex].MaxProgress ) {
             AchDefs[AchIndex].CurrentProgress += Inc;
             if ( AchDefs[AchIndex].CurrentProgress >= AchDefs[AchIndex].MaxProgress ) {
                 AchDefs[AchIndex].bUnlockedJustNow = true;
                 AchDefs[AchIndex].CurrentProgress = AchDefs[AchIndex].MaxProgress; // in case prevprogress + inc > max
-				class'ScrnBalance'.default.Mut.AchievementEarned(self, AchIndex);
+                class'ScrnBalance'.default.Mut.AchievementEarned(self, AchIndex);
                 AnnounceEarn(self, AchIndex, true);
             }
             ClientSetAchProgress(AchIndex, AchDefs[AchIndex].CurrentProgress, bSilent);
@@ -457,8 +457,8 @@ static final function bool ResetAchievementByID(ClientPerkRepLink L, name ID)
             for ( i = 0; i < A.AchDefs.length; ++i ) {
                 if ( A.AchDefs[i].ID == ID ) {
                     A.ProgressAchievement(i, -A.AchDefs[i].CurrentProgress);
-					return true;
-				}
+                    return true;
+                }
             }
         }
     }
@@ -482,8 +482,8 @@ static final function InitAchievements(ClientPerkRepLink L)
         return;
 
     for ( i = 0; i < class'ScrnAchievements'.default.AchClassList.Length; ++i ) {
-		if ( class'ScrnAchievements'.default.AchClassList[i] != none )
-			L.AddCustomValue(class'ScrnAchievements'.default.AchClassList[i]);
+        if ( class'ScrnAchievements'.default.AchClassList[i] != none )
+            L.AddCustomValue(class'ScrnAchievements'.default.AchClassList[i]);
     }
 }
 
@@ -494,9 +494,9 @@ static final function RegisterAchievements( class<ScrnAchievements> NewAchClass 
 
     for ( i = 0; i < class'ScrnAchievements'.default.AchClassList.Length; ++i ) {
         if ( class'ScrnAchievements'.default.AchClassList[i] == NewAchClass )
-			return;
+            return;
     }
-	class'ScrnAchievements'.default.AchClassList[i] = NewAchClass;
+    class'ScrnAchievements'.default.AchClassList[i] = NewAchClass;
 }
 
 static final function UnRegisterAchievements( class<ScrnAchievements> AchClass )
@@ -505,17 +505,17 @@ static final function UnRegisterAchievements( class<ScrnAchievements> AchClass )
 
     for ( i = 0; i < class'ScrnAchievements'.default.AchClassList.Length; ++i ) {
         if ( class'ScrnAchievements'.default.AchClassList[i] == AchClass ) {
-			class'ScrnAchievements'.default.AchClassList.remove(i, 1);
-			return;
-		}
+            class'ScrnAchievements'.default.AchClassList.remove(i, 1);
+            return;
+        }
     }
 }
 
 static final function ResetAchList()
 {
-	class'ScrnAchievements'.default.AchClassList.Length = 2;
-	class'ScrnAchievements'.default.AchClassList[0] = Class'ScrnBalanceSrv.Ach';
-	class'ScrnAchievements'.default.AchClassList[1] = Class'ScrnBalanceSrv.AchMaps';
+    class'ScrnAchievements'.default.AchClassList.Length = 2;
+    class'ScrnAchievements'.default.AchClassList[0] = Class'ScrnBalanceSrv.Ach';
+    class'ScrnAchievements'.default.AchClassList[1] = Class'ScrnBalanceSrv.AchMaps';
 }
 
 simulated function GetAchievementStats(out int Completed, out int Total, optional int AchievementFlags, optional name Group)
@@ -650,13 +650,13 @@ static final function AchStrInfo GetAchievementByID(ClientPerkRepLink L, name ID
 // returns false if achievement is locked or doesn't exist
 static final function bool IsAchievementUnlocked(ClientPerkRepLink L, name ID)
 {
-	local AchStrInfo A;
-	
-	A = GetAchievementByID(L, ID, false);
-	if ( A.AchHandler == none ) 
-		return false;
-		
-	return A.AchHandler.IsUnlocked(A.AchIndex);
+    local AchStrInfo A;
+    
+    A = GetAchievementByID(L, ID, false);
+    if ( A.AchHandler == none ) 
+        return false;
+        
+    return A.AchHandler.IsUnlocked(A.AchIndex);
 }
 
 // sets list of all achievement handlers with bDisplayFlag set
@@ -725,31 +725,31 @@ static final function RetrieveGroups(ClientPerkRepLink L, out array<name> GroupN
     local SRCustomProgress S;
     local ScrnAchievements A;
     local int i, j;
-	local bool bFound;
+    local bool bFound;
 
     if ( L == none )
         return;
-		
-	if ( GroupNames.length != GroupCaptions.length )
-		GroupCaptions.length = GroupNames.length;
+        
+    if ( GroupNames.length != GroupCaptions.length )
+        GroupCaptions.length = GroupNames.length;
 
     for( S = L.CustomLink; S != none; S = S.NextLink ) {
         A = ScrnAchievements(S);
         if( A != none ) {
-			for ( i = 0; i < A.GroupInfo.length; ++i ) {
-				bFound = false;
-				for ( j = 0; j < GroupNames.length; ++j ) {
-					if ( A.GroupInfo[i].Group == GroupNames[j] ) {
-						bFound = true;
-						break;
-					}
-				}
-				if ( !bFound ) {
-					j = GroupNames.length;
-					GroupNames[j] = A.GroupInfo[i].Group;
-					GroupCaptions[j] = A.GroupInfo[i].Caption;
-				}
-			}		
+            for ( i = 0; i < A.GroupInfo.length; ++i ) {
+                bFound = false;
+                for ( j = 0; j < GroupNames.length; ++j ) {
+                    if ( A.GroupInfo[i].Group == GroupNames[j] ) {
+                        bFound = true;
+                        break;
+                    }
+                }
+                if ( !bFound ) {
+                    j = GroupNames.length;
+                    GroupNames[j] = A.GroupInfo[i].Group;
+                    GroupCaptions[j] = A.GroupInfo[i].Caption;
+                }
+            }        
         }
     }
 }
@@ -795,12 +795,12 @@ simulated function ClientPerkRepLink GetRepLink()
 
 defaultproperties
 {
-	LockedIcon=Texture'KillingFloorHUD.Achievements.KF_Achievement_Lock'
-	AchClassList(0)=Class'ScrnBalanceSrv.Ach'
-	AchClassList(1)=Class'ScrnBalanceSrv.AchMaps'
-	bFixedDataSize=True
-	bReplicateDataToClients=true
-	bNeedToSetDefaultAchievementData=true
-	 
-	GroupInfo(0)=(Group="",Caption="ALL")
+    LockedIcon=Texture'KillingFloorHUD.Achievements.KF_Achievement_Lock'
+    AchClassList(0)=Class'ScrnBalanceSrv.Ach'
+    AchClassList(1)=Class'ScrnBalanceSrv.AchMaps'
+    bFixedDataSize=True
+    bReplicateDataToClients=true
+    bNeedToSetDefaultAchievementData=true
+     
+    GroupInfo(0)=(Group="",Caption="ALL")
 }

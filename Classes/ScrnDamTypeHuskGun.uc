@@ -1,5 +1,5 @@
 class ScrnDamTypeHuskGun extends DamTypeHuskGun
-	abstract;
+    abstract;
 
 defaultproperties
 {

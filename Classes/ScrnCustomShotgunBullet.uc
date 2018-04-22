@@ -41,37 +41,37 @@ static function bool UnloadAssets()
 simulated function ProcessTouch (Actor Other, vector HitLocation)
 {
     local vector X;
-	local Vector TempHitLocation, HitNormal;
-	local array<int>	HitPoints;
+    local Vector TempHitLocation, HitNormal;
+    local array<int>    HitPoints;
     local KFPlayerReplicationInfo KFPRI;
     local KFPawn HitPawn;
     local Pawn Victim;
     local KFMonster KFM;
 
-	if ( Other == none || Other == Instigator || Other.Base == Instigator || !Other.bBlockHitPointTraces  )
-		return;
+    if ( Other == none || Other == Instigator || Other.Base == Instigator || !Other.bBlockHitPointTraces  )
+        return;
     
     X = Vector(Rotation);
 
- 	if( Instigator != none && ROBulletWhipAttachment(Other) != none ) {
+     if( Instigator != none && ROBulletWhipAttachment(Other) != none ) {
         // we touched player's auxilary collision cylinder, not let's trace to the player himself
         // Other.Base = KFPawn
         if( Other.Base == none || Other.Base.bDeleteMe ) 
             return;
-	    
+        
         Other = Instigator.HitPointTrace(TempHitLocation, HitNormal, HitLocation + (200 * X), HitPoints, HitLocation,, 1);
 
         if( Other == none || HitPoints.Length == 0 )
             return; // bullet didn't hit a pawn
 
-		HitPawn = KFPawn(Other);
+        HitPawn = KFPawn(Other);
 
         if (Role == ROLE_Authority) {
             if ( HitPawn != none && !HitPawn.bDeleteMe ) {
                 HitPawn.ProcessLocationalDamage(Damage, Instigator, TempHitLocation, MomentumTransfer * Normal(Velocity), MyDamageType,HitPoints);
             }
         }
-	}
+    }
     else {
         if ( ExtendedZCollision(Other) != none) 
             Victim = Pawn(Other.Owner); // ExtendedZCollision is attached to KFMonster    
@@ -88,24 +88,24 @@ simulated function ProcessTouch (Actor Other, vector HitLocation)
 
     if ( Instigator != none )
         KFPRI = KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo);    
-	if ( KFPRI != none && KFPRI.ClientVeteranSkill != none )
-   		PenDamageReduction = KFPRI.ClientVeteranSkill.static.GetShotgunPenetrationDamageMulti(KFPRI,default.PenDamageReduction);
-	else
-   		PenDamageReduction = default.PenDamageReduction;
+    if ( KFPRI != none && KFPRI.ClientVeteranSkill != none )
+           PenDamageReduction = KFPRI.ClientVeteranSkill.static.GetShotgunPenetrationDamageMulti(KFPRI,default.PenDamageReduction);
+    else
+           PenDamageReduction = default.PenDamageReduction;
     // loose penetrational damage after hitting specific zeds -- PooSH
     if ( KFM != none)
         PenDamageReduction *= ZedPenDamageReduction(KFM);    
 
-   	Damage *= PenDamageReduction; // Keep going, but lose effectiveness each time.
+       Damage *= PenDamageReduction; // Keep going, but lose effectiveness each time.
     
     // if we've struck through more than the max number of foes, destroy.
     // MaxPenetrations now really means number of max penetration off-perk -- PooSH
     if ( Damage / default.Damage < (default.PenDamageReduction ** MaxPenetrations) + 0.0001 )
         Destroy();
-	else {
-		speed = VSize(Velocity);
-		if( Speed < (default.Speed * 0.25) )
-			Destroy();
+    else {
+        speed = VSize(Velocity);
+        if( Speed < (default.Speed * 0.25) )
+            Destroy();
     }
 }
 

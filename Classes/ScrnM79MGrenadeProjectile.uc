@@ -11,7 +11,7 @@ var()   int                 MaxHeals;       // The total number of times this na
 var transient float         NextHealTime;   // The next time that this nade will heal friendlies or hurt enemies
 var()   float               HealInterval;   // How often to do healing
 
-var 	int		            MaxNumberOfPlayers;
+var     int                    MaxNumberOfPlayers;
 
 var transient int           HealedAmount;   //total amount of HP restored to players
 var transient array<Pawn>   HealedPlayers;
@@ -90,17 +90,17 @@ simulated function PostBeginPlay()
         Dir = vector(Rotation);
         Velocity = speed * Dir;
     }
-	
+    
     if ( Level.NetMode != NM_DedicatedServer)
     {
         SmokeTrail = Spawn(class'ScrnBalanceSrv.ScrnMedicNadeTrail',self);
         SmokeTrail.SetBase(self);
-		SmokeRotation.Pitch = 32768;
+        SmokeRotation.Pitch = 32768;
         SmokeTrail.SetRelativeRotation(SmokeRotation);
         //Corona = Spawn(class'KFMod.KFLAWCorona',self);
     }
 
-	SetRotation(Rotation + IntitialRotationAdjustment);
+    SetRotation(Rotation + IntitialRotationAdjustment);
 
 
 
@@ -120,9 +120,9 @@ simulated function Disintegrate(vector HitLocation, vector HitNormal)
     super.Disintegrate(HitLocation, HitNormal);
     
     // if ( SmokeTrail != None )
-	// {
-		// SmokeTrail.HandleOwnerDestroyed();
-	// }
+    // {
+        // SmokeTrail.HandleOwnerDestroyed();
+    // }
     
     // if ( GreenCloud != none && !GreenCloud.bDeleteMe )     
         // GreenCloud.Kill(); 
@@ -138,12 +138,12 @@ simulated function Explode(vector HitLocation, vector HitNormal)
     if ( bHasExploded )
         return; 
         
-	bHasExploded = True;
-	BlowUp(HitLocation);
+    bHasExploded = True;
+    BlowUp(HitLocation);
 
-	if ( SmokeTrail != None ) {
-		SmokeTrail.HandleOwnerDestroyed();
-	}
+    if ( SmokeTrail != None ) {
+        SmokeTrail.HandleOwnerDestroyed();
+    }
     
     //stop nade and drop it on the ground
     Speed = 0;
@@ -151,9 +151,9 @@ simulated function Explode(vector HitLocation, vector HitNormal)
     SetPhysics(PHYS_Falling);
     LifeSpan = float(MaxHeals) * HealInterval + 1; //delete after healing is over
 
-	PlaySound(ExplosionSound,,TransientSoundVolume);
+    PlaySound(ExplosionSound,,TransientSoundVolume);
 
-	if( Role == ROLE_Authority ) {
+    if( Role == ROLE_Authority ) {
         ExplodeLocation = Location;
         //bNeedToPlayEffects = true;
         AmbientSound=Sound'Inf_WeaponsTwo.smoke_loop';
@@ -161,10 +161,10 @@ simulated function Explode(vector HitLocation, vector HitNormal)
         // PlayerController(Instigator.Controller).ClientMessage("Medic nade exploded on SERVER @ " @ ExplodeLocation);
     }
 
-	if ( Level.NetMode != NM_DedicatedServer ) {
+    if ( Level.NetMode != NM_DedicatedServer ) {
         GreenCloud = Spawn(GreenCloudClass,self,, HitLocation, rotator(vect(0,0,1)));
-		Spawn(ExplosionDecal,self,,HitLocation, rotator(-HitNormal));
-	}
+        Spawn(ExplosionDecal,self,,HitLocation, rotator(-HitNormal));
+    }
     
     // LocalPlayer = Level.GetLocalPlayerController();
     // if ( LocalPlayer != None ) 
@@ -173,14 +173,14 @@ simulated function Explode(vector HitLocation, vector HitNormal)
 
 simulated function Destroyed()
 {
-	if ( SmokeTrail != None )
-		SmokeTrail.HandleOwnerDestroyed();
+    if ( SmokeTrail != None )
+        SmokeTrail.HandleOwnerDestroyed();
     if ( GreenCloud != none )     
         GreenCloud.Kill();         
 
-	// if( !bHasExploded && !bHidden && !bDud )
-		// Explode(Location,vect(0,0,1));
-	// if( bHidden && !bDisintegrated )
+    // if( !bHasExploded && !bHidden && !bDud )
+        // Explode(Location,vect(0,0,1));
+    // if( bHidden && !bDisintegrated )
         // Disintegrate(Location,vect(0,0,1));
 
     Super(ROBallisticProjectile).Destroyed();
@@ -188,27 +188,27 @@ simulated function Destroyed()
 
 simulated function Timer()
 {
-	local KFHumanPawn KFP;
-	
+    local KFHumanPawn KFP;
+    
     if( !bHidden ) {
         if( !bHasExploded ) {
-			//search for wounded players in healing radius and explode immediately, if found any
-			if ( ExplodeTimer > 0 && Speed < 100 ) {
-				ExplodeTimer-= PlayerCheckRate;
-				foreach CollidingActors( class'KFHumanPawn', KFP, DamageRadius, Location ) {
-					if ( KFP.Health > 0 && KFP.Health < KFP.HealthMax ) {
-						ExplodeTimer = 0; //explode now
-						//PlayerController(KFP.Controller).ClientMessage("Medic nade found you");
-						break;
-					}
-				}
-			}
-			//else ExplodeTimer-= PlayerCheckRate*0.5; //twice longer explosion time when flying fast
-			
-			if ( ExplodeTimer <= 0 ) {
-				Explode(Location, vect(0,0,1));
-				SetTimer(0, false);
-			}
+            //search for wounded players in healing radius and explode immediately, if found any
+            if ( ExplodeTimer > 0 && Speed < 100 ) {
+                ExplodeTimer-= PlayerCheckRate;
+                foreach CollidingActors( class'KFHumanPawn', KFP, DamageRadius, Location ) {
+                    if ( KFP.Health > 0 && KFP.Health < KFP.HealthMax ) {
+                        ExplodeTimer = 0; //explode now
+                        //PlayerController(KFP.Controller).ClientMessage("Medic nade found you");
+                        break;
+                    }
+                }
+            }
+            //else ExplodeTimer-= PlayerCheckRate*0.5; //twice longer explosion time when flying fast
+            
+            if ( ExplodeTimer <= 0 ) {
+                Explode(Location, vect(0,0,1));
+                SetTimer(0, false);
+            }
         }
     }
     else {
@@ -245,21 +245,21 @@ simulated function Tick( float DeltaTime )
 
 function BlowUp(vector HitLocation)
 {
-	MakeNoise(1.0);
+    MakeNoise(1.0);
 }
 
 function HealRadius(float DamageAmount, float DamageRadius, class<DamageType> DamageType, float Momentum, vector HitLocation)
 {
-	local KFHumanPawn Victim;
-	local float damageScale;
-	//local vector dir;
-	local array<Pawn> CheckedPawns;
-	local int i;
-	local bool bAlreadyChecked;
-	// Healing
-	local KFPlayerReplicationInfo KFPRI;
-	local int MedicReward;
-	local float HealSum; // for modifying based on perks
+    local KFHumanPawn Victim;
+    local float damageScale;
+    //local vector dir;
+    local array<Pawn> CheckedPawns;
+    local int i;
+    local bool bAlreadyChecked;
+    // Healing
+    local KFPlayerReplicationInfo KFPRI;
+    local int MedicReward;
+    local float HealSum; // for modifying based on perks
     local float HealPotency;
 
 
@@ -269,17 +269,17 @@ function HealRadius(float DamageAmount, float DamageRadius, class<DamageType> Da
         return;
     }
     
-	if ( bHurtEntry )
-		return;
+    if ( bHurtEntry )
+        return;
 
-	bHurtEntry = true;
+    bHurtEntry = true;
     
     // raise it half a meter to be sure it doesn't stuck inside a floor like bugged pipes
     HitLocation.Z = HitLocation.Z + 25; 
     
-	foreach CollidingActors (class'KFHumanPawn', Victim, DamageRadius, HitLocation) {
-		// don't let blast damage affect fluid - VisibleCollisingActors doesn't really work for them - jag
-		if( Victim.Role < ROLE_Authority ) 
+    foreach CollidingActors (class'KFHumanPawn', Victim, DamageRadius, HitLocation) {
+        // don't let blast damage affect fluid - VisibleCollisingActors doesn't really work for them - jag
+        if( Victim.Role < ROLE_Authority ) 
             continue; 
             
         damageScale = 1.0;
@@ -348,8 +348,8 @@ function HealRadius(float DamageAmount, float DamageRadius, class<DamageType> Da
                         KFPRI.Score += MedicReward;
                     }
                 }
-				else 
-					KFPRI.Score += MedicReward;
+                else 
+                    KFPRI.Score += MedicReward;
 
                 if ( KFHumanPawn(Instigator) != none )
                 {
@@ -358,7 +358,7 @@ function HealRadius(float DamageAmount, float DamageRadius, class<DamageType> Da
             }
         }
     }
-	bHurtEntry = false;
+    bHurtEntry = false;
 }
 
 simulated function TakeDamage( int Damage, Pawn InstigatedBy, Vector Hitlocation, Vector Momentum, class<DamageType> damageType, optional int HitIndex)
@@ -413,9 +413,9 @@ simulated function ProcessTouch( actor Other, vector HitLocation )
         return;
     }
 
-	// more realistic interactions with karma objects.
-	if (Other.IsA('NetKActor'))
-		KAddImpulse(Velocity,HitLocation,);
+    // more realistic interactions with karma objects.
+    if (Other.IsA('NetKActor'))
+        KAddImpulse(Velocity,HitLocation,);
 
 }
 
@@ -423,16 +423,16 @@ simulated function ProcessTouch( actor Other, vector HitLocation )
 simulated function HitWall( vector HitNormal, actor Wall )
 {
     local Vector VNorm;
-	local PlayerController PC;
+    local PlayerController PC;
 
     if ( ROBulletWhipAttachment(Wall) != none )    
-        return; // don't collide with this shit, cuz it is on server side only and screws clients	
-	/*
-	if ( (Pawn(Wall) != None) || (GameObjective(Wall) != None) )
-	{
-		Explode(Location, HitNormal);
-		return;
-	}.*/
+        return; // don't collide with this shit, cuz it is on server side only and screws clients    
+    /*
+    if ( (Pawn(Wall) != None) || (GameObjective(Wall) != None) )
+    {
+        Explode(Location, HitNormal);
+        return;
+    }.*/
 
     // Reflect off Wall w/damping
     VNorm = (Velocity dot HitNormal) * HitNormal;
@@ -442,12 +442,12 @@ simulated function HitWall( vector HitNormal, actor Wall )
     //DesiredRotation.Roll = 0;
     //RotationRate.Roll = 0;
     Speed = VSize(Velocity);
-	
-	if ( !bTimerSet ) {
+    
+    if ( !bTimerSet ) {
         SetTimer(PlayerCheckRate, true); // start to check wounded players nearby or explode when ExplodeTimer is reached 
         bTimerSet = true;
-	}
-	
+    }
+    
     if ( GreenCloud != none ) 
         GreenCloud.SetLocation(Location);
 
@@ -455,34 +455,34 @@ simulated function HitWall( vector HitNormal, actor Wall )
     {
         bBounce = False;
         PrePivot.Z = -1.5;
-		//Speed = 0;
-		//SetPhysics(PHYS_Falling);
-		DesiredRotation = Rotation;
-		DesiredRotation.Pitch = 0;
-		DesiredRotation.Roll = 0;
-		SetRotation(DesiredRotation);
-		bRotateToDesired=false;
+        //Speed = 0;
+        //SetPhysics(PHYS_Falling);
+        DesiredRotation = Rotation;
+        DesiredRotation.Pitch = 0;
+        DesiredRotation.Roll = 0;
+        SetRotation(DesiredRotation);
+        bRotateToDesired=false;
 
     }
     else
     {
-		if ( (Level.NetMode != NM_DedicatedServer) && (Speed > 500) )
-			PlaySound(ImpactSound, SLOT_Misc );
-		//else
-		//{
-			bFixedRotationDir = false;
-			DesiredRotation = Rotation;
-			DesiredRotation.Pitch = 0;
-			DesiredRotation.Roll = 0;
-			bRotateToDesired = true;
-			RotationRate.Pitch = 50000;
-			RotationRate.Roll = 50000;
-		//}
+        if ( (Level.NetMode != NM_DedicatedServer) && (Speed > 500) )
+            PlaySound(ImpactSound, SLOT_Misc );
+        //else
+        //{
+            bFixedRotationDir = false;
+            DesiredRotation = Rotation;
+            DesiredRotation.Pitch = 0;
+            DesiredRotation.Roll = 0;
+            bRotateToDesired = true;
+            RotationRate.Pitch = 50000;
+            RotationRate.Roll = 50000;
+        //}
         if ( HitEffectClass != none && !Level.bDropDetail && (Level.DetailMode != DM_Low) && (Level.TimeSeconds - LastSparkTime > 0.5) && EffectIsRelevant(Location,false) )
         {
-			PC = Level.GetLocalPlayerController();
-			if ( (PC.ViewTarget != None) && VSize(PC.ViewTarget.Location - Location) < 6000 )
-				Spawn(HitEffectClass,,, Location, Rotator(HitNormal));
+            PC = Level.GetLocalPlayerController();
+            if ( (PC.ViewTarget != None) && VSize(PC.ViewTarget.Location - Location) < 6000 )
+                Spawn(HitEffectClass,,, Location, Rotator(HitNormal));
             LastSparkTime = Level.TimeSeconds;
         }
     }
@@ -492,20 +492,20 @@ simulated function HitWall( vector HitNormal, actor Wall )
 /*
 static function PreloadAssets()
 {
-	default.ExplosionSound = sound(DynamicLoadObject(default.ExplosionSoundRef, class'Sound', true));
-	default.DisintegrateSound = sound(DynamicLoadObject(default.DisintegrateSoundRef, class'Sound', true));
+    default.ExplosionSound = sound(DynamicLoadObject(default.ExplosionSoundRef, class'Sound', true));
+    default.DisintegrateSound = sound(DynamicLoadObject(default.DisintegrateSoundRef, class'Sound', true));
 
-	UpdateDefaultStaticMesh(StaticMesh(DynamicLoadObject(default.StaticMeshRef, class'StaticMesh', true)));
+    UpdateDefaultStaticMesh(StaticMesh(DynamicLoadObject(default.StaticMeshRef, class'StaticMesh', true)));
 }
 
 static function bool UnloadAssets()
 {
-	default.ExplosionSound = none;
-	default.DisintegrateSound = none;
+    default.ExplosionSound = none;
+    default.DisintegrateSound = none;
 
-	UpdateDefaultStaticMesh(none);
+    UpdateDefaultStaticMesh(none);
 
-	return true;
+    return true;
 }
 */
 
@@ -547,8 +547,8 @@ defaultproperties
     bAlwaysRelevant=true
     bOnlyRelevantToOwner=false
 
-	//DrawScale=2.3
-	DrawScale=2.0
+    //DrawScale=2.3
+    DrawScale=2.0
 
-	IntitialRotationAdjustment=(Pitch=-8192,Roll=16384)
+    IntitialRotationAdjustment=(Pitch=-8192,Roll=16384)
 }

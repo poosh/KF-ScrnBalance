@@ -1,5 +1,5 @@
 class DamTypeEnemyBase extends TSCDamageType 
-	abstract;
+    abstract;
     
 defaultproperties
 {

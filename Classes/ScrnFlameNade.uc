@@ -10,13 +10,13 @@ simulated function HurtRadius( float DamageAmount, float DamageRadius, class<Dam
     local actor Victims;
     local float damageScale, dist;
     local vector dirs;
-	local int NumKilled;
-	local KFMonster KFMonsterVictim;
-	local Pawn P;
-	local KFPawn KFP;
-	local array<Pawn> CheckedPawns;
-	local int i;
-	local bool bAlreadyChecked;
+    local int NumKilled;
+    local KFMonster KFMonsterVictim;
+    local Pawn P;
+    local KFPawn KFP;
+    local array<Pawn> CheckedPawns;
+    local int i;
+    local bool bAlreadyChecked;
 
 
     if ( bHurtEntry )
@@ -26,15 +26,15 @@ simulated function HurtRadius( float DamageAmount, float DamageRadius, class<Dam
 
     foreach CollidingActors (class 'Actor', Victims, DamageRadius, HitLocation)
     {
-		// null pawn variables here just to be sure they didn't left from previous iteration
-		// and waste another day of my life to looking for this fucking bug -- PooSH /totallyPissedOff!!!
-		P = none;
-		KFMonsterVictim = none;
-		KFP = none;
-		
+        // null pawn variables here just to be sure they didn't left from previous iteration
+        // and waste another day of my life to looking for this fucking bug -- PooSH /totallyPissedOff!!!
+        P = none;
+        KFMonsterVictim = none;
+        KFP = none;
+        
         // don't let blast damage affect fluid - VisibleCollisingActors doesn't really work for them - jag
         if( (Victims != self) && (Hurtwall != Victims) && (Victims.Role == ROLE_Authority) && !Victims.IsA('FluidSurfaceInfo')
-		 && ExtendedZCollision(Victims)==None )
+         && ExtendedZCollision(Victims)==None )
         {
             dirs = Victims.Location - HitLocation;
             dist = FMax(1,VSize(dirs));
@@ -45,32 +45,32 @@ simulated function HurtRadius( float DamageAmount, float DamageRadius, class<Dam
             if ( Victims == LastTouched )
                 LastTouched = None;
 
-			P = Pawn(Victims);
+            P = Pawn(Victims);
 
-			if( P != none )
-			{
-		        for (i = 0; i < CheckedPawns.Length; i++)
-				{
-		        	if (CheckedPawns[i] == P)
-					{
-						bAlreadyChecked = true;
-						break;
-					}
-				}
+            if( P != none )
+            {
+                for (i = 0; i < CheckedPawns.Length; i++)
+                {
+                    if (CheckedPawns[i] == P)
+                    {
+                        bAlreadyChecked = true;
+                        break;
+                    }
+                }
 
-				if( bAlreadyChecked )
-				{
-					bAlreadyChecked = false;
-					P = none;
-					continue;
-				}
+                if( bAlreadyChecked )
+                {
+                    bAlreadyChecked = false;
+                    P = none;
+                    continue;
+                }
 
                 KFMonsterVictim = KFMonster(Victims);
 
-    			if( KFMonsterVictim != none && KFMonsterVictim.Health <= 0 )
-    			{
+                if( KFMonsterVictim != none && KFMonsterVictim.Health <= 0 )
+                {
                     KFMonsterVictim = none;
-    			}
+                }
 
                 KFP = KFPawn(Victims);
 
@@ -80,53 +80,53 @@ simulated function HurtRadius( float DamageAmount, float DamageRadius, class<Dam
                 }
                 else if( KFP != none )
                 {
-				    damageScale *= KFP.GetExposureTo(HitLocation/*Location + 15 * -Normal(PhysicsVolume.Gravity)*/);
+                    damageScale *= KFP.GetExposureTo(HitLocation/*Location + 15 * -Normal(PhysicsVolume.Gravity)*/);
                 }
 
-				CheckedPawns[CheckedPawns.Length] = P;
+                CheckedPawns[CheckedPawns.Length] = P;
 
-				if ( damageScale <= 0)
-				{
-					P = none;
-					continue;
-				}
-				else
-				{
-					//Victims = P;
-					P = none;
-				}
-			}
+                if ( damageScale <= 0)
+                {
+                    P = none;
+                    continue;
+                }
+                else
+                {
+                    //Victims = P;
+                    P = none;
+                }
+            }
 
-			if ( KFMonsterVictim != none && class'ScrnBalance'.default.Mut.BurnMech != none) {
-				class'ScrnBalance'.default.Mut.BurnMech.MakeBurnDamage(
-					KFMonsterVictim,
-					damageScale * DamageAmount,
-					Instigator,
-					Victims.Location - 0.5 * (Victims.CollisionHeight + Victims.CollisionRadius) * dirs,
-					(damageScale * Momentum * dirs),
-					DamageType
-				);
-			}
-			else {
-				Victims.TakeDamage
-				(
-					damageScale * DamageAmount,
-					Instigator,
-					Victims.Location - 0.5 * (Victims.CollisionHeight + Victims.CollisionRadius) * dirs,
-					(damageScale * Momentum * dirs),
-					DamageType
-				);
-			}
+            if ( KFMonsterVictim != none && class'ScrnBalance'.default.Mut.BurnMech != none) {
+                class'ScrnBalance'.default.Mut.BurnMech.MakeBurnDamage(
+                    KFMonsterVictim,
+                    damageScale * DamageAmount,
+                    Instigator,
+                    Victims.Location - 0.5 * (Victims.CollisionHeight + Victims.CollisionRadius) * dirs,
+                    (damageScale * Momentum * dirs),
+                    DamageType
+                );
+            }
+            else {
+                Victims.TakeDamage
+                (
+                    damageScale * DamageAmount,
+                    Instigator,
+                    Victims.Location - 0.5 * (Victims.CollisionHeight + Victims.CollisionRadius) * dirs,
+                    (damageScale * Momentum * dirs),
+                    DamageType
+                );
+            }
             if (Vehicle(Victims) != None && Vehicle(Victims).Health > 0)
                 Vehicle(Victims).DriverRadiusDamage(DamageAmount, DamageRadius, InstigatorController, DamageType, Momentum, HitLocation);
 
-			if( Role == ROLE_Authority && KFMonsterVictim != none && KFMonsterVictim.Health <= 0 )
+            if( Role == ROLE_Authority && KFMonsterVictim != none && KFMonsterVictim.Health <= 0 )
             {
                 NumKilled++;
             }
         }
     }
-	/*
+    /*
     if ( (LastTouched != None) && (LastTouched != self) && (LastTouched.Role == ROLE_Authority) && !LastTouched.IsA('FluidSurfaceInfo') )
     {
         Victims = LastTouched;
@@ -148,9 +148,9 @@ simulated function HurtRadius( float DamageAmount, float DamageRadius, class<Dam
         if (Vehicle(Victims) != None && Vehicle(Victims).Health > 0)
             Vehicle(Victims).DriverRadiusDamage(DamageAmount, DamageRadius, InstigatorController, DamageType, Momentum, HitLocation);
     }
-	*/
+    */
 
-	if( Role == ROLE_Authority )
+    if( Role == ROLE_Authority )
     {
         if( NumKilled >= 4 )
         {

@@ -1,11 +1,11 @@
 class ScrnWaitingMessage extends WaitingMessage;
 
 static function string GetString(
-	optional int Switch,
-	optional PlayerReplicationInfo RelatedPRI_1,
-	optional PlayerReplicationInfo RelatedPRI_2,
-	optional Object OptionalObject
-	)
+    optional int Switch,
+    optional PlayerReplicationInfo RelatedPRI_1,
+    optional PlayerReplicationInfo RelatedPRI_2,
+    optional Object OptionalObject
+    )
 {
     local ScrnGameReplicationInfo ScrnGRI;
     local string s;
@@ -23,35 +23,35 @@ static function string GetString(
 }
 
 static function RenderComplexMessage(
-	Canvas Canvas,
-	out float XL,
-	out float YL,
-	optional string MessageString,
-	optional int Switch,
-	optional PlayerReplicationInfo RelatedPRI_1,
-	optional PlayerReplicationInfo RelatedPRI_2,
-	optional Object OptionalObject
-	)
+    Canvas Canvas,
+    out float XL,
+    out float YL,
+    optional string MessageString,
+    optional int Switch,
+    optional PlayerReplicationInfo RelatedPRI_1,
+    optional PlayerReplicationInfo RelatedPRI_2,
+    optional Object OptionalObject
+    )
 {
-	local int i;
-	local float TempY;
+    local int i;
+    local float TempY;
 
-	i = InStr(MessageString, "|");
+    i = InStr(MessageString, "|");
 
-	TempY = Canvas.CurY;
+    TempY = Canvas.CurY;
 
-	Canvas.FontScaleX = Canvas.ClipX / 1024.0;
-	Canvas.FontScaleY = Canvas.FontScaleX;
+    Canvas.FontScaleX = Canvas.ClipX / 1024.0;
+    Canvas.FontScaleY = Canvas.FontScaleX;
 
-	if ( i < 0 ) {
-		Canvas.TextSize(MessageString, XL, YL);
-		Canvas.SetPos((Canvas.ClipX / 2.0) - (XL / 2.0), TempY);
-		Canvas.DrawTextClipped(MessageString, false);
-	}
-	else {
-		Canvas.TextSize(Left(MessageString, i), XL, YL);
-		Canvas.SetPos((Canvas.ClipX / 2.0) - (XL / 2.0), TempY);
-		Canvas.DrawTextClipped(Left(MessageString, i), false);
+    if ( i < 0 ) {
+        Canvas.TextSize(MessageString, XL, YL);
+        Canvas.SetPos((Canvas.ClipX / 2.0) - (XL / 2.0), TempY);
+        Canvas.DrawTextClipped(MessageString, false);
+    }
+    else {
+        Canvas.TextSize(Left(MessageString, i), XL, YL);
+        Canvas.SetPos((Canvas.ClipX / 2.0) - (XL / 2.0), TempY);
+        Canvas.DrawTextClipped(Left(MessageString, i), false);
         TempY += YL;
 
         MessageString = Mid(MessageString, i + 1);
@@ -74,8 +74,8 @@ static function RenderComplexMessage(
             Canvas.SetPos((Canvas.ClipX / 2.0) - (XL / 2.0), TempY);
             Canvas.DrawTextClipped(MessageString, false);
         }
-	}
+    }
 
-	Canvas.FontScaleX = 1.0;
-	Canvas.FontScaleY = 1.0;
+    Canvas.FontScaleX = 1.0;
+    Canvas.FontScaleY = 1.0;
 }

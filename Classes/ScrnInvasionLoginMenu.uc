@@ -22,7 +22,7 @@ function InternalOnClose(optional Bool bCanceled)
     if ( c_Main.ActiveTab.Caption == "ScrN Features" )
         ActivatePerkTab();
 
-	Super.InternalOnClose(bCanceled);
+    Super.InternalOnClose(bCanceled);
 }
 */
 
@@ -33,47 +33,47 @@ function InitComponent(GUIController MyController, GUIComponent MyOwner)
     local int i;
     local string s;
     local eFontScale FS;
-	local SRMenuAddition M;
+    local SRMenuAddition M;
 
-	// Setup panel classes.
-	Panels[0].ClassName = string(Class'SRTab_ServerNews');
-	Panels[1].ClassName = string(Class'ScrnTab_MidGamePerks');
-	Panels[2].ClassName = string(Class'SRTab_MidGameVoiceChat');
-	Panels[3].ClassName = string(Class'SRTab_MidGameHelp');
-	Panels[4].ClassName = string(Class'SRTab_MidGameStats');
+    // Setup panel classes.
+    Panels[0].ClassName = string(Class'SRTab_ServerNews');
+    Panels[1].ClassName = string(Class'ScrnTab_MidGamePerks');
+    Panels[2].ClassName = string(Class'SRTab_MidGameVoiceChat');
+    Panels[3].ClassName = string(Class'SRTab_MidGameHelp');
+    Panels[4].ClassName = string(Class'SRTab_MidGameStats');
 
-	// Setup localization.
-	Panels[1].Caption = Class'KFInvasionLoginMenu'.Default.Panels[1].Caption;
-	Panels[2].Caption = Class'KFInvasionLoginMenu'.Default.Panels[2].Caption;
-	Panels[3].Caption = Class'KFInvasionLoginMenu'.Default.Panels[3].Caption;
-	Panels[1].Hint = Class'KFInvasionLoginMenu'.Default.Panels[1].Hint;
-	Panels[2].Hint = Class'KFInvasionLoginMenu'.Default.Panels[2].Hint;
-	Panels[3].Hint = Class'KFInvasionLoginMenu'.Default.Panels[3].Hint;
-	b_Spec.Caption=class'KFTab_MidGamePerks'.default.b_Spec.Caption;
-	b_MatchSetup.Caption=class'KFTab_MidGamePerks'.default.b_MatchSetup.Caption;
-	b_KickVote.Caption=class'KFTab_MidGamePerks'.default.b_KickVote.Caption;
-	b_MapVote.Caption=class'KFTab_MidGamePerks'.default.b_MapVote.Caption;
-	b_Quit.Caption=class'KFTab_MidGamePerks'.default.b_Quit.Caption;
-	b_Favs.Caption=class'KFTab_MidGamePerks'.default.b_Favs.Caption;
-	b_Favs.Hint=class'KFTab_MidGamePerks'.default.b_Favs.Hint;
-	b_Settings.Caption=class'KFTab_MidGamePerks'.default.b_Settings.Caption;
-	b_Browser.Caption=class'KFTab_MidGamePerks'.default.b_Browser.Caption;
+    // Setup localization.
+    Panels[1].Caption = Class'KFInvasionLoginMenu'.Default.Panels[1].Caption;
+    Panels[2].Caption = Class'KFInvasionLoginMenu'.Default.Panels[2].Caption;
+    Panels[3].Caption = Class'KFInvasionLoginMenu'.Default.Panels[3].Caption;
+    Panels[1].Hint = Class'KFInvasionLoginMenu'.Default.Panels[1].Hint;
+    Panels[2].Hint = Class'KFInvasionLoginMenu'.Default.Panels[2].Hint;
+    Panels[3].Hint = Class'KFInvasionLoginMenu'.Default.Panels[3].Hint;
+    b_Spec.Caption=class'KFTab_MidGamePerks'.default.b_Spec.Caption;
+    b_MatchSetup.Caption=class'KFTab_MidGamePerks'.default.b_MatchSetup.Caption;
+    b_KickVote.Caption=class'KFTab_MidGamePerks'.default.b_KickVote.Caption;
+    b_MapVote.Caption=class'KFTab_MidGamePerks'.default.b_MapVote.Caption;
+    b_Quit.Caption=class'KFTab_MidGamePerks'.default.b_Quit.Caption;
+    b_Favs.Caption=class'KFTab_MidGamePerks'.default.b_Favs.Caption;
+    b_Favs.Hint=class'KFTab_MidGamePerks'.default.b_Favs.Hint;
+    b_Settings.Caption=class'KFTab_MidGamePerks'.default.b_Settings.Caption;
+    b_Browser.Caption=class'KFTab_MidGamePerks'.default.b_Browser.Caption;
 
- 	Super(UT2K4PlayerLoginMenu).InitComponent(MyController, MyOwner);
+     Super(UT2K4PlayerLoginMenu).InitComponent(MyController, MyOwner);
 
-	// Mod menus
-	foreach MyController.ViewportOwner.Actor.DynamicActors(class'SRMenuAddition',M)
-		if( M.bHasInit )
-		{
-			AddOnList[AddOnList.Length] = M;
-			M.NotifyMenuOpen(Self,MyController);
-		}
+    // Mod menus
+    foreach MyController.ViewportOwner.Actor.DynamicActors(class'SRMenuAddition',M)
+        if( M.bHasInit )
+        {
+            AddOnList[AddOnList.Length] = M;
+            M.NotifyMenuOpen(Self,MyController);
+        }
 
-   	s = GetSizingCaption();
+       s = GetSizingCaption();
 
-	for ( i = 0; i < Controls.Length; i++ )
+    for ( i = 0; i < Controls.Length; i++ )
     {
-    	if ( GUIButton(Controls[i]) != None )
+        if ( GUIButton(Controls[i]) != None )
         {
             GUIButton(Controls[i]).bAutoSize = true;
             GUIButton(Controls[i]).SizingCaption = s;
@@ -83,7 +83,7 @@ function InitComponent(GUIController MyController, GUIComponent MyOwner)
     }
     s = class'KFTab_MidGamePerks'.default.PlayerStyleName;
     PlayerStyle = MyController.GetStyle(s, fs);
-	InitGRI();
+    InitGRI();
 }
 
 function InitGRI()
@@ -95,7 +95,7 @@ function InitGRI()
 
 function bool ButtonClicked(GUIComponent Sender)
 {
-	switch( Sender ) {
+    switch( Sender ) {
         case b_Profile:
             if (ScrnPlayerController(PlayerOwner()) != none )
                 Controller.OpenMenu(ScrnPlayerController(PlayerOwner()).ProfilePageClassString);
@@ -109,7 +109,7 @@ function bool ButtonClicked(GUIComponent Sender)
 
         default:
             return super.ButtonClicked(Sender);
-	}
+    }
 }
 
 function bool InternalOnPreDraw(Canvas C)

@@ -2,17 +2,17 @@ class ScrnCrossbowArrow extends CrossbowArrow;
 
 simulated state OnWall
 {
-	function ProcessTouch (Actor Other, vector HitLocation)
-	{
+    function ProcessTouch (Actor Other, vector HitLocation)
+    {
         local Pawn PawnOther;
-		local Inventory inv;
+        local Inventory inv;
         local Crossbow bow;
 
         PawnOther = Pawn(Other);
-		if( PawnOther != none ) {
-			for( inv=PawnOther.Inventory; inv != none; inv = inv.Inventory ) {
+        if( PawnOther != none ) {
+            for( inv=PawnOther.Inventory; inv != none; inv = inv.Inventory ) {
                 bow = Crossbow(inv); 
-				if( bow != none ) {
+                if( bow != none ) {
                     if ( bow.AmmoAmount(0) < bow.MaxAmmo(0) ) {
                         bow.AddAmmo(1,0) ;
                         PlaySound(Sound'KF_InventorySnd.Ammo_GenericPickup', SLOT_Pain,2*TransientSoundVolume,,400);
@@ -23,10 +23,10 @@ simulated state OnWall
                         Destroy();
                     }
                     return;
-				}
-			}
-		}
-	}
+                }
+            }
+        }
+    }
 }    
 
 defaultproperties

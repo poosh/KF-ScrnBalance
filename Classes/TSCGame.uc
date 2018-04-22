@@ -1,5 +1,5 @@
 class TSCGame extends ScrnGameType
-	config;
+    config;
 
 var TSCGameReplicationInfo TSCGRI;
 var TSCVotingOptions TSCVotingOptions;
@@ -29,7 +29,7 @@ var byte NextSquadTeam;
 var bool bCheckSquadTeam; // should NextSquadTeam be checked in FindSquadTarget()?
 var array < class<KFMonster> > PendingSpecialSquad;
 
-var	TSCTeam TSCTeams[2];
+var    TSCTeam TSCTeams[2];
 var class<TSCBaseGuardian> BaseGuardianClasses[2];
 var ShopVolume TeamShops[2];
 var class<WillowWhisp> BaseWhisp;
@@ -87,9 +87,9 @@ function InitGameReplicationInfo()
 
 event PreBeginPlay()
 {
-	Super.PreBeginPlay();
+    Super.PreBeginPlay();
     GameReplicationInfo.bNoTeamSkins = bSingleTeamGame;
-	GameReplicationInfo.bNoTeamChanges = bSingleTeamGame;
+    GameReplicationInfo.bNoTeamChanges = bSingleTeamGame;
 }
 
 function PostBeginPlay()
@@ -270,22 +270,22 @@ function UnrealTeamInfo MyClanTeam(PlayerReplicationInfo myPRI)
 
 function bool ChangeTeam(Controller Other, int num, bool bNewTeam)
 {
-	local UnrealTeamInfo NewTeam;
+    local UnrealTeamInfo NewTeam;
     local TSCBaseGuardian gnome;
 
-	// if (CurrentGameProfile != none)
-	// {
-		// if (!CurrentGameProfile.CanChangeTeam(Other, num)) return false;
-	// }
+    // if (CurrentGameProfile != none)
+    // {
+        // if (!CurrentGameProfile.CanChangeTeam(Other, num)) return false;
+    // }
 
     if ( Other.PlayerReplicationInfo == none )
         return false; // no PlayerReplicationInfo = no team  -- PooSH
 
-	if ( Other.IsA('PlayerController') && Other.PlayerReplicationInfo.bOnlySpectator )
-	{
-		Other.PlayerReplicationInfo.Team = None;
-		return true;
-	}
+    if ( Other.IsA('PlayerController') && Other.PlayerReplicationInfo.bOnlySpectator )
+    {
+        Other.PlayerReplicationInfo.Team = None;
+        return true;
+    }
 
     if ( bTeamChanging && num < 2 )
         NewTeam = Teams[num];
@@ -296,9 +296,9 @@ function bool ChangeTeam(Controller Other, int num, bool bNewTeam)
     if ( NewTeam == none )
         NewTeam = Teams[PickTeam(num,Other)];
 
-	// check if already on this team
-	if ( Other.PlayerReplicationInfo.Team == NewTeam )
-		return false;
+    // check if already on this team
+    if ( Other.PlayerReplicationInfo.Team == NewTeam )
+        return false;
 
     // if player is carrying a Gnome - drop it
     gnome = TSCBaseGuardian(Other.PlayerReplicationInfo.HasFlag);
@@ -313,48 +313,48 @@ function bool ChangeTeam(Controller Other, int num, bool bNewTeam)
         }
     }
 
-	Other.StartSpot = None;
+    Other.StartSpot = None;
 
-	if ( Other.PlayerReplicationInfo.Team != None )
-		Other.PlayerReplicationInfo.Team.RemoveFromTeam(Other);
+    if ( Other.PlayerReplicationInfo.Team != None )
+        Other.PlayerReplicationInfo.Team.RemoveFromTeam(Other);
 
-	if ( NewTeam.AddToTeam(Other) )
-	{
-		BroadcastLocalizedMessage( GameMessageClass, 3, Other.PlayerReplicationInfo, None, NewTeam );
+    if ( NewTeam.AddToTeam(Other) )
+    {
+        BroadcastLocalizedMessage( GameMessageClass, 3, Other.PlayerReplicationInfo, None, NewTeam );
 
-		if ( bNewTeam && PlayerController(Other)!=None ) {
-			GameEvent("TeamChange",string(NewTeam.TeamIndex),Other.PlayerReplicationInfo);
+        if ( bNewTeam && PlayerController(Other)!=None ) {
+            GameEvent("TeamChange",string(NewTeam.TeamIndex),Other.PlayerReplicationInfo);
             // give starting cash fot team changers
             GiveStartingCash(PlayerController(Other));
         }
-	}
+    }
 
-	return true;
+    return true;
 }
 
 function byte PickTeam(byte num, Controller C)
 {
-	local UnrealTeamInfo SmallTeam, BigTeam, NewTeam;
-	//local Controller B;
-	//local int BigTeamBots, SmallTeamBots;
+    local UnrealTeamInfo SmallTeam, BigTeam, NewTeam;
+    //local Controller B;
+    //local int BigTeamBots, SmallTeamBots;
 
     if ( bSingleTeamGame && PlayerController(C) != None )
         return 1; // all players go to Steampunk Team
 
-	if ( bPlayersVsBots && (Level.NetMode != NM_Standalone) )
-	{
-		if ( PlayerController(C) != None )
-			return 1;
-		return 0;
-	}
+    if ( bPlayersVsBots && (Level.NetMode != NM_Standalone) )
+    {
+        if ( PlayerController(C) != None )
+            return 1;
+        return 0;
+    }
 
     SmallTeam = Teams[0];
     BigTeam = Teams[1];
 
-	if ( Teams[0].Size < Teams[1].Size )  {
+    if ( Teams[0].Size < Teams[1].Size )  {
         SmallTeam = Teams[0];
         BigTeam = Teams[1];
-	}
+    }
     else {
         SmallTeam = Teams[1];
         BigTeam = Teams[0];
@@ -365,18 +365,18 @@ function byte PickTeam(byte num, Controller C)
         BigTeam = Teams[1-SmallTeam.TeamIndex];
     }
 
-	if ( num < 2 )
-		NewTeam = Teams[num];
-	else
-		NewTeam = SmallTeam;
+    if ( num < 2 )
+        NewTeam = Teams[num];
+    else
+        NewTeam = SmallTeam;
 
-	if ( bPlayersBalanceTeams && (Level.NetMode != NM_Standalone) && (PlayerController(C) != None) )
-	{
-		if ( SmallTeam.Size < BigTeam.Size )
-			NewTeam = SmallTeam;
-	}
+    if ( bPlayersBalanceTeams && (Level.NetMode != NM_Standalone) && (PlayerController(C) != None) )
+    {
+        if ( SmallTeam.Size < BigTeam.Size )
+            NewTeam = SmallTeam;
+    }
 
-	return NewTeam.TeamIndex;
+    return NewTeam.TeamIndex;
 }
 
 // shuffling only human players, without touching bots
@@ -408,9 +408,9 @@ function ShuffleTeams()
 
     bPendingShuffle = false;
 
-	for ( i = 0; i < GameReplicationInfo.PRIArray.Length; ++i ) {
-		PRI = GameReplicationInfo.PRIArray[i];
-		if ( PRI != none && !PRI.bOnlySpectator && PRI.Team != none && PRI.Team.TeamIndex < 2
+    for ( i = 0; i < GameReplicationInfo.PRIArray.Length; ++i ) {
+        PRI = GameReplicationInfo.PRIArray[i];
+        if ( PRI != none && !PRI.bOnlySpectator && PRI.Team != none && PRI.Team.TeamIndex < 2
                 && PlayerController(PRI.Owner) != none  )
         {
             if ( PRI.HasFlag == none )
@@ -420,7 +420,7 @@ function ShuffleTeams()
             else
                 ++ConstantBlues; // can't move blue gnome carrier
         }
-	}
+    }
 
     // now all players are in RedPlayers array. Move half to blue.
     RedTeamSize = RedPlayers.length - ConstantReds + ConstantBlues;
@@ -844,8 +844,8 @@ function SetupWave()
         BalanceTeams(1, float(AliveTeamPlayerCount[0])/AliveTeamPlayerCount[1]);
 
     ScrnGameLength.RunWave();
-	
-	CalcDoshDifficultyMult();
+    
+    CalcDoshDifficultyMult();
 
     if( WaveNum == FinalWave && bUseEndGameBoss ) {
         StartWaveBoss();
@@ -879,9 +879,9 @@ function SetupWave()
     WaveEndTime = ScrnGameLength.GetWaveEndTime();
     AdjustedDifficulty = GameDifficulty + lerp(float(WaveNum)/FinalWave, 0.1, 0.3);
 
-	MaxMonsters = min(TotalMaxMonsters, MaxZombiesOnce); // max monsters that can be spawned
-	TSCGRI.MaxMonsters = TotalMaxMonsters; // num monsters in wave replicated to clients
-	TSCGRI.MaxMonstersOn = true; // I've no idea what is this for
+    MaxMonsters = min(TotalMaxMonsters, MaxZombiesOnce); // max monsters that can be spawned
+    TSCGRI.MaxMonsters = TotalMaxMonsters; // num monsters in wave replicated to clients
+    TSCGRI.MaxMonstersOn = true; // I've no idea what is this for
 
     NextSquadTeam = rand(2); // pickup random team for the next special squad
     for( i=0; i<ZedSpawnList.Length; ++i )
@@ -1069,7 +1069,7 @@ function ShowPathToBase(PlayerController P)
     }
 
     if ( P.FindPathToward(gnome, false) != None ) {
-		Spawn(BaseWhisp, P,, P.Pawn.Location);
+        Spawn(BaseWhisp, P,, P.Pawn.Location);
     }
 }
 

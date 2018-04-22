@@ -1,5 +1,5 @@
 class ScrnDamTypeMKb42AssaultRifle extends DamTypeMKb42AssaultRifle
-	abstract;
+    abstract;
 
 // Award also Shiver kills with 2x Stalker progress 
 // v4.59 - count only 1 kill from now on, because new version of Shiver.se calls 

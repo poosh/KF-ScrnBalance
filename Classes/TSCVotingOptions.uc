@@ -25,7 +25,7 @@ function int GetGroupVoteIndex(PlayerController Sender, string Group, string Key
     if ( Key == "SHUFFLE" ) {
         if ( TSC.IsTourney() ) {
             Sender.ClientMessage(strOptionDisabled);
-			return VOTE_LOCAL;
+            return VOTE_LOCAL;
         }
         if ( TSC.bPendingShuffle )
             return VOTE_NOEFECT;
@@ -55,8 +55,8 @@ function int GetGroupVoteIndex(PlayerController Sender, string Group, string Key
     }
     else if ( Key == "HDMG" ) {
         if ( !TSC.bVoteHDmg || TSC.IsTourney() || (TSC.bVoteHDmgOnlyBeforeStart && TSC.GameReplicationInfo.bMatchHasBegun) ) {
-			Sender.ClientMessage(strOptionDisabled);
-			return VOTE_LOCAL;
+            Sender.ClientMessage(strOptionDisabled);
+            return VOTE_LOCAL;
         }
         switch ( Value ) {
             case "OFF":
@@ -214,21 +214,21 @@ function SetTeamReady(byte TeamIndex, bool bReady)
 
 function SendTeamPlayerList(PlayerController Sender)
 {
-	local array<PlayerReplicationInfo> AllPRI;
+    local array<PlayerReplicationInfo> AllPRI;
     local PlayerController PC;
-	local int i;
+    local int i;
 
-	Level.Game.GameReplicationInfo.GetPRIArray(AllPRI);
-	for (i = 0; i<AllPRI.Length; i++) {
+    Level.Game.GameReplicationInfo.GetPRIArray(AllPRI);
+    for (i = 0; i<AllPRI.Length; i++) {
         if ( AllPRI[i].Team != Sender.PlayerReplicationInfo.Team )
             continue;
 
         PC = PlayerController(AllPRI[i].Owner);
-		if( PC != none && AllPRI[i].PlayerName != "WebAdmin")
-			Sender.ClientMessage(Right("   "$AllPRI[i].PlayerID, 3)$")"
+        if( PC != none && AllPRI[i].PlayerName != "WebAdmin")
+            Sender.ClientMessage(Right("   "$AllPRI[i].PlayerID, 3)$")"
                 //@ PC.GetPlayerIDHash()
                 @ AllPRI[i].PlayerName);
-	}
+    }
 }
 
 function SendHdmgHelp(PlayerController Sender)

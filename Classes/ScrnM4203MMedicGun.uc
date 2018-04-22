@@ -1,5 +1,5 @@
 class ScrnM4203MMedicGun extends ScrnM4203AssaultRifle
-	config(user);
+    config(user);
 
 
 var localized   string  SuccessfulHealMessage;
@@ -8,34 +8,34 @@ var ScrnFakedHealingGrenade FakedNade;
 
 replication
 {
- 	reliable if( Role == ROLE_Authority )
-		ClientSuccessfulHeal;
+     reliable if( Role == ROLE_Authority )
+        ClientSuccessfulHeal;
 }
 
 simulated function PostBeginPlay()
 {
-	super.PostBeginPlay();
-	
-	if ( Level.NetMode != NM_DedicatedServer ) {
-		SetBoneScale (58, 0.0, 'M203_EmptyShell');
+    super.PostBeginPlay();
+    
+    if ( Level.NetMode != NM_DedicatedServer ) {
+        SetBoneScale (58, 0.0, 'M203_EmptyShell');
 
-		FakedNade = spawn(class'ScrnFakedHealingGrenade',self);
-		if ( FakedNade != none ) {
-			//FakedNade.SetDrawScale(4.0);
-			SetBoneRotation('M203_Round', rot(0, 6000, 0));
-			// bone must have a size to properly adjust rotation
-			SetBoneScale (59, 0.0001, 'M203_Round');
-			AttachToBone(FakedNade, 'M203_Round');
-		}		
-	}
+        FakedNade = spawn(class'ScrnFakedHealingGrenade',self);
+        if ( FakedNade != none ) {
+            //FakedNade.SetDrawScale(4.0);
+            SetBoneRotation('M203_Round', rot(0, 6000, 0));
+            // bone must have a size to properly adjust rotation
+            SetBoneScale (59, 0.0001, 'M203_Round');
+            AttachToBone(FakedNade, 'M203_Round');
+        }        
+    }
 }
 
 
 simulated function Destroyed()
 {
-	if ( FakedNade != None )
-		FakedNade.Destroy();
-	super.Destroyed();
+    if ( FakedNade != None )
+        FakedNade.Destroy();
+    super.Destroyed();
 }
 
 // The server lets the client know they successfully healed someone
@@ -64,5 +64,5 @@ defaultproperties
      PickupClass=Class'ScrnBalanceSrv.ScrnM4203MPickup'
      ItemName="M4-203M Medic Rifle"
      SkinRefs(0)="ScrnTex.Weapons.M4203M"
-	 Priority=70 // to switch after MP5M
+     Priority=70 // to switch after MP5M
 }

@@ -4,50 +4,50 @@ var ScrnClientPerkRepLink PerkLink;
 
 function ShowPanel(bool bShow)
 {
-	Super.ShowPanel(bShow);
+    Super.ShowPanel(bShow);
 
-	if ( bShow ) {
+    if ( bShow ) {
         PerkLink = Class'ScrnClientPerkRepLink'.Static.FindMe(PlayerOwner());
-		if ( PerkLink != none ) {
-			// Initialize the List
-			lb_PerkSelect.List.InitList(None);
-			lb_PerkProgress.List.InitList();
-		}
-	}
+        if ( PerkLink != none ) {
+            // Initialize the List
+            lb_PerkSelect.List.InitList(None);
+            lb_PerkProgress.List.InitList();
+        }
+    }
 }
 
 function OnPerkSelected(GUIComponent Sender)
 {
-	local byte Idx;
+    local byte Idx;
 
-	if ( PerkLink==None || PerkLink.CachePerks.Length==0 )
-	{
-		if( PerkLink!=None )
-			PerkLink.ServerRequestPerks();
-		lb_PerkEffects.SetContent(PleaseWaitStr);
-	}
-	else
-	{
-		Idx = lb_PerkSelect.GetIndex();
-		if( PerkLink.CachePerks[Idx].CurrentLevel==0 )
-			lb_PerkEffects.SetContent(PerkLink.CachePerks[Idx].PerkClass.Static.GetVetInfoText(0,1));
-		else if( PerkLink.CachePerks[Idx].CurrentLevel==PerkLink.MaximumLevel )
-			lb_PerkEffects.SetContent(PerkLink.CachePerks[Idx].PerkClass.Static.GetVetInfoText(PerkLink.CachePerks[Idx].CurrentLevel-1,1));
-		else
+    if ( PerkLink==None || PerkLink.CachePerks.Length==0 )
+    {
+        if( PerkLink!=None )
+            PerkLink.ServerRequestPerks();
+        lb_PerkEffects.SetContent(PleaseWaitStr);
+    }
+    else
+    {
+        Idx = lb_PerkSelect.GetIndex();
+        if( PerkLink.CachePerks[Idx].CurrentLevel==0 )
+            lb_PerkEffects.SetContent(PerkLink.CachePerks[Idx].PerkClass.Static.GetVetInfoText(0,1));
+        else if( PerkLink.CachePerks[Idx].CurrentLevel==PerkLink.MaximumLevel )
+            lb_PerkEffects.SetContent(PerkLink.CachePerks[Idx].PerkClass.Static.GetVetInfoText(PerkLink.CachePerks[Idx].CurrentLevel-1,1));
+        else
             lb_PerkEffects.SetContent(
                 PerkLink.CachePerks[Idx].PerkClass.Static.GetVetInfoText(PerkLink.CachePerks[Idx].CurrentLevel-1, 1)
                 $ NextInfoStr $ PerkLink.CachePerks[Idx].PerkClass.Static.GetVetInfoText(PerkLink.CachePerks[Idx].CurrentLevel,11));
-		lb_PerkProgress.List.PerkChanged(None, Idx);
-	}
+        lb_PerkProgress.List.PerkChanged(None, Idx);
+    }
 }
 
 function bool OnSaveButtonClicked(GUIComponent Sender)
 {
-	if ( PerkLink!=None && lb_PerkSelect.GetIndex()>=0 ) {
+    if ( PerkLink!=None && lb_PerkSelect.GetIndex()>=0 ) {
         ScrnPlayerController(PlayerOwner()).SelectVeterancy(PerkLink.CachePerks[lb_PerkSelect.GetIndex()].PerkClass);
     }
 
-	return true;
+    return true;
 }
 
 defaultproperties

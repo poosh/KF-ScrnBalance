@@ -1,5 +1,5 @@
 class ScrnCombatVestPickup extends ScrnVestPickup
-	notplaceable;
+    notplaceable;
 
 defaultproperties
 {

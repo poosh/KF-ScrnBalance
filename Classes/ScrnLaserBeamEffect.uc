@@ -5,12 +5,12 @@
  */
 
 class ScrnLaserBeamEffect extends LaserBeamEffect
-	dependson(ScrnLaserDot)
+    dependson(ScrnLaserDot)
     config(user);
 
 #exec OBJ LOAD FILE=ScrnTex.utx
 
-var     class<LaserDot>                	LaserDotClass;
+var     class<LaserDot>                    LaserDotClass;
 
 var ScrnLaserDot.ELaserColor LaserColor;
 var protected transient ScrnLaserDot.ELaserColor CurrentLaserColor;
@@ -30,14 +30,14 @@ replication
 
 simulated function PostNetReceive()
 {
-	if ( Role < ROLE_Authority && LaserColor != CurrentLaserColor ) {
-		if ( LaserColor == LASER_Destroyed ) {
-			if ( Spot != none )
-				Spot.Destroy();
-			Destroy();
-			return;
-		}
-	
+    if ( Role < ROLE_Authority && LaserColor != CurrentLaserColor ) {
+        if ( LaserColor == LASER_Destroyed ) {
+            if ( Spot != none )
+                Spot.Destroy();
+            Destroy();
+            return;
+        }
+    
         if ( ScrnPlayerController(Level.GetLocalPlayerController()) != none 
                 && ScrnPlayerController(Level.GetLocalPlayerController()).bOtherPlayerLasersBlue ) {
             SetLaserColor(LASER_Blue);
@@ -46,7 +46,7 @@ simulated function PostNetReceive()
             SetLaserColor(LaserColor);
         }
     }
-	super.PostNetReceive();
+    super.PostNetReceive();
 }
 
 // replicate to clients and destroy
@@ -54,15 +54,15 @@ function DelayedDestroy()
 {
     if ( Spot != none )
         Spot.Destroy();    
-	SetLaserColor(LASER_Destroyed);
+    SetLaserColor(LASER_Destroyed);
     bHidden = true; // just in case
-	NetUpdateTime = Level.TimeSeconds - 1;
-	SetTimer(1.0, false);
+    NetUpdateTime = Level.TimeSeconds - 1;
+    SetTimer(1.0, false);
 }
 
 function Timer()
 {
-	Destroy();
+    Destroy();
 }
 
 simulated function SpawnDot()
@@ -78,12 +78,12 @@ simulated function SpawnDot()
 //no need to simulate, because beam is seen only for others 
 simulated function SetLaserColor(ScrnLaserDot.ELaserColor NewLaserColor)
 {
-	local bool bActivate;
-	
+    local bool bActivate;
+    
     LaserColor = NewLaserColor;
     CurrentLaserColor = NewLaserColor;
     
-	bActivate = true;
+    bActivate = true;
     switch (NewLaserColor) {
         case LASER_Red:
             Skins[0]=Texture'ScrnTex.Laser.Laser_Red';
@@ -97,13 +97,13 @@ simulated function SetLaserColor(ScrnLaserDot.ELaserColor NewLaserColor)
         case LASER_Orange:
             Skins[0]=Texture'ScrnTex.Laser.Laser_Orange';
             break;
-		default:
-			bActivate = false;
-	}
-	SetActive(bActivate);
-	
-	if (Spot != None) 
-		ScrnLaserDot(Spot).SetLaserColor(NewLaserColor);
+        default:
+            bActivate = false;
+    }
+    SetActive(bActivate);
+    
+    if (Spot != None) 
+        ScrnLaserDot(Spot).SetLaserColor(NewLaserColor);
 }
 
 // copy-pasted with add off SpawnDot()

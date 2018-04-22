@@ -1,2 +1,2 @@
 class ScrnDamTypeMedic extends ScrnDamTypeMedicBase
-	abstract;
+    abstract;

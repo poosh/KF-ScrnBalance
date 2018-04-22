@@ -65,7 +65,7 @@ replication
 // Just look for the stats. Don't do mysterious things as Marco intended in FindStats()
 static final function ScrnClientPerkRepLink FindMe( PlayerController MyOwner )
 {
-	local LinkedReplicationInfo L;
+    local LinkedReplicationInfo L;
     local ScrnClientPerkRepLink PerkLink;
 
     if( MyOwner == none || MyOwner.PlayerReplicationInfo == None )
@@ -91,7 +91,7 @@ static final function ScrnClientPerkRepLink FindMe( PlayerController MyOwner )
             return PerkLink;
         }
     }
-	return none;
+    return none;
 }
 
 simulated function AddMeToPRI()
@@ -125,33 +125,33 @@ simulated function PostNetBeginPlay()
 
 function SendClientPerksSE()
 {
-	local int i;
+    local int i;
     local class<ScrnVeterancyTypes> Perk;
     local byte lvl;
 
-	for( i=0; i<CachePerks.Length; i++ ) {
+    for( i=0; i<CachePerks.Length; i++ ) {
         Perk = class<ScrnVeterancyTypes>(CachePerks[i].PerkClass);
         if ( Perk.default.bLocked )
             lvl = 255;
         else
             lvl = 0x80 | CachePerks[i].CurrentLevel;
-		ClientReceivePerk(i, Perk, lvl);
+        ClientReceivePerk(i, Perk, lvl);
     }
 }
 
 simulated function ClientReceivePerk( int Index, class<SRVeterancyTypes> V, byte lvl )
 {
-	// Setup correct icon for trader.
-	if( V.Default.PerkIndex<255 && V.Default.OnHUDIcon!=None )
-	{
-		if( ShopPerkIcons.Length <= V.Default.PerkIndex )
-			ShopPerkIcons.Length = V.Default.PerkIndex+1;
-		ShopPerkIcons[V.Default.PerkIndex] = V.Default.OnHUDIcon;
-	}
+    // Setup correct icon for trader.
+    if( V.Default.PerkIndex<255 && V.Default.OnHUDIcon!=None )
+    {
+        if( ShopPerkIcons.Length <= V.Default.PerkIndex )
+            ShopPerkIcons.Length = V.Default.PerkIndex+1;
+        ShopPerkIcons[V.Default.PerkIndex] = V.Default.OnHUDIcon;
+    }
 
-	if( CachePerks.Length <= Index )
-		CachePerks.Length = Index+1;
-	CachePerks[Index].PerkClass = V;
+    if( CachePerks.Length <= Index )
+        CachePerks.Length = Index+1;
+    CachePerks[Index].PerkClass = V;
     ClientPerkLevel(Index, lvl);
 }
 
@@ -306,19 +306,19 @@ simulated function ClientSendAcknowledge()
 
 simulated function ClientAllReceived()
 {
-	local PlayerController LocalPC;
-	local int i;
+    local PlayerController LocalPC;
+    local int i;
     local class<KFWeapon> WC;
 
-	bRepCompleted = true;
+    bRepCompleted = true;
     //PendingItems = 0;
-	LocalPC = Level.GetLocalPlayerController();
+    LocalPC = Level.GetLocalPlayerController();
 
     // Owner is unreliable on client side
-	if( (LocalPC!=None && LocalPC==Owner) || Level.NetMode==NM_Client ) {
+    if( (LocalPC!=None && LocalPC==Owner) || Level.NetMode==NM_Client ) {
         InitCustomLocks();
-		// Marks Steam DLC requirements
-		for( i=0; i<ShopInventory.length; ++i ) {
+        // Marks Steam DLC requirements
+        for( i=0; i<ShopInventory.length; ++i ) {
             if ( ShopInventory[i].bDLCLocked != DLC_LOCK_SCRN ) {
                 WC = class<KFWeapon>(ShopInventory[i].PC.Default.InventoryType);
                 if ( WC != none && WC.Default.AppID > 0 )
@@ -326,10 +326,10 @@ simulated function ClientAllReceived()
             }
         }
         Spawn(Class'ScrnSteamStatsGetter',LocalPC).Link = self;
-	}
+    }
 
-	if( SmileyTags.Length > 0 && LocalPC!=None && SRHUDKillingFloor(LocalPC.MyHUD)!=None )
-		SRHUDKillingFloor(LocalPC.MyHUD).SmileyMsgs = SmileyTags;
+    if( SmileyTags.Length > 0 && LocalPC!=None && SRHUDKillingFloor(LocalPC.MyHUD)!=None )
+        SRHUDKillingFloor(LocalPC.MyHUD).SmileyMsgs = SmileyTags;
 }
 
 simulated protected function int GetAchGroupProgress(name GroupName)

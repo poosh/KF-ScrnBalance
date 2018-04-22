@@ -6,18 +6,18 @@ var() int       MaxChargeAmmo;    //maximum charge
 
 function Timer()
 {
-	//local PlayerController Player;
-	
+    //local PlayerController Player;
+    
     //consume ammo while charging
-	if ( HoldTime > 0.0  && !bNowWaiting && AmmoInCharge < MaxChargeAmmo && Weapon.AmmoAmount(ThisModeNum) > 0 ) {   
+    if ( HoldTime > 0.0  && !bNowWaiting && AmmoInCharge < MaxChargeAmmo && Weapon.AmmoAmount(ThisModeNum) > 0 ) {   
         Charge();
         // if (AmmoInCharge == MaxChargeAmmo) {
             // Player = Level.GetLocalPlayerController();
             // if (Player != none)
                 // Player.ReceiveLocalizedMessage(class'ScrnBalanceSrv.ScrnPlayerMessage',0);
         // }
-	}
-	super.Timer();
+    }
+    super.Timer();
 }
 
 function Charge()
@@ -50,16 +50,16 @@ function float GetChargeAmount()
 
 simulated function bool AllowFire()
 {
-	return (Weapon.AmmoAmount(ThisModeNum) >= AmmoPerFire);
+    return (Weapon.AmmoAmount(ThisModeNum) >= AmmoPerFire);
 }
 
 //overrided to use AmmoInCharge in instead of HoldTime
 //(c) PooSH
 function PostSpawnProjectile(Projectile P)
 {
-	local HuskGunProjectile HGP;
-	
-	super(KFShotgunFire).PostSpawnProjectile(P);
+    local HuskGunProjectile HGP;
+    
+    super(KFShotgunFire).PostSpawnProjectile(P);
 
     HGP = HuskGunProjectile(p);
     if ( HGP != none ) {
@@ -82,33 +82,33 @@ function PostSpawnProjectile(Projectile P)
 //copy pasted and cutted out ammo consuming, because we did it in time
 function ModeDoFire()
 {
-	local float Rec;
+    local float Rec;
 
-	if (!AllowFire() && HoldTime ~= 0)
-		return;
+    if (!AllowFire() && HoldTime ~= 0)
+        return;
 
-	Spread = Default.Spread;
-	Rec = 1;
+    Spread = Default.Spread;
+    Rec = 1;
 
   
-	if ( KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo) != none && KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo).ClientVeteranSkill != none )
-	{
-		Spread *= KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo).ClientVeteranSkill.Static.ModifyRecoilSpread(KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo), self, Rec);
-	}
+    if ( KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo) != none && KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo).ClientVeteranSkill != none )
+    {
+        Spread *= KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo).ClientVeteranSkill.Static.ModifyRecoilSpread(KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo), self, Rec);
+    }
 
-	if( !bFiringDoesntAffectMovement )
-	{
-		if (FireRate > 0.25)
-		{
-			Instigator.Velocity.x *= 0.1;
-			Instigator.Velocity.y *= 0.1;
-		}
-		else
-		{
-			Instigator.Velocity.x *= 0.5;
-			Instigator.Velocity.y *= 0.5;
-		}
-	}
+    if( !bFiringDoesntAffectMovement )
+    {
+        if (FireRate > 0.25)
+        {
+            Instigator.Velocity.x *= 0.1;
+            Instigator.Velocity.y *= 0.1;
+        }
+        else
+        {
+            Instigator.Velocity.x *= 0.5;
+            Instigator.Velocity.y *= 0.5;
+        }
+    }
 
     if (!AllowFire() && HoldTime ~= 0)
         return;
@@ -122,10 +122,10 @@ function ModeDoFire()
         Charge();
 
         DoFireEffect();
-		HoldTime = 0;	// if bot decides to stop firing, HoldTime must be reset first
+        HoldTime = 0;    // if bot decides to stop firing, HoldTime must be reset first
         SetChargeAmount(0);
         if ( (Instigator == None) || (Instigator.Controller == None) )
-			return;
+            return;
 
         if ( AIController(Instigator.Controller) != None )
             AIController(Instigator.Controller).WeaponFireAgain(BotRefireRate, true);

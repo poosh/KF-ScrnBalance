@@ -28,15 +28,15 @@ function CalcFadeOutTime()
 
 auto state Pickup
 {
-	function BeginState()
-	{
-		UntriggerEvent(Event, self, None);
-		if ( bDropped )
+    function BeginState()
+    {
+        UntriggerEvent(Event, self, None);
+        if ( bDropped )
         {
-			AddToNavigation();
-		    SetFadeOutTime(FadeOutTime);
+            AddToNavigation();
+            SetFadeOutTime(FadeOutTime);
         }
-	}
+    }
     
     function SetFadeOutTime(float value)
     {
@@ -48,13 +48,13 @@ auto state Pickup
 
 state FallingPickup
 {
-	function BeginState()
-	{
+    function BeginState()
+    {
         if ( bAutoFadeOutTime )
             CalcFadeOutTime();
         else
             SetFadeOutTime(FadeOutTime);
-	} 
+    } 
 
     function SetFadeOutTime(float value)
     {

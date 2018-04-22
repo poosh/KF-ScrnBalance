@@ -1,7 +1,7 @@
 //default damage type for Sharpshooter
 
 class ScrnDamTypeSniperBase extends KFProjectileWeaponDamageType
-	abstract;
+    abstract;
 
 defaultproperties
 {

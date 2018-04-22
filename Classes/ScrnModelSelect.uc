@@ -6,7 +6,7 @@ function bool IsUnlocked(xUtil.PlayerRecord Test)
     
     PC = ScrnPlayerController(PlayerOwner());
     if ( PC == none )
-		return true;
+        return true;
     
     // dunno why but Mrs.Foster dosn't pass super.IsUnlocked()
     return PC.IsTeamCharacter(Test.DefaultName) && 

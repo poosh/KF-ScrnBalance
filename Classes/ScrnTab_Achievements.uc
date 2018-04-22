@@ -1,18 +1,18 @@
 class ScrnTab_Achievements extends UT2K4TabPanel;
 
-var	automated GUISectionBackground	    i_BGAchievements;
-var	automated GUIProgressBar		    pb_AchievementProgress;
-var	automated GUILabel				    l_AchievementProgress;
-var	automated ScrnAchievementsListBox	lb_Achievements;
+var    automated GUISectionBackground        i_BGAchievements;
+var    automated GUIProgressBar            pb_AchievementProgress;
+var    automated GUILabel                    l_AchievementProgress;
+var    automated ScrnAchievementsListBox    lb_Achievements;
 
-var automated moComboBox    	        co_Group;
-var automated moCheckBox		        ch_OnlyLocked;
+var automated moComboBox                co_Group;
+var automated moCheckBox                ch_OnlyLocked;
 
 var bool bNeedRefresh;
 
 
-var	localized string	OutOfString;
-var	localized string	UnlockedString;
+var    localized string    OutOfString;
+var    localized string    UnlockedString;
 
 var array<name>         GroupNames;
 var array<string>       GroupCaptions;
@@ -20,25 +20,25 @@ var array<string>       GroupCaptions;
 function InitComponent(GUIController MyController, GUIComponent MyOwner)
 {
 
-	Super.InitComponent(MyController, MyOwner);
+    Super.InitComponent(MyController, MyOwner);
         
-	LoadGroups();
+    LoadGroups();
     LoadStats();    
 }
 
 // function ShowPanel(bool bShow)
 // {
-	// super.ShowPanel(bShow);
+    // super.ShowPanel(bShow);
 // }
 
 function LoadGroups()
 {
     local int i;
-	GroupNames[0] = ''; // just in case modders will screw up the achievement groups
-	GroupCaptions[0] = "ALL";
-	class'ScrnBalanceSrv.ScrnAchievements'.static.RetrieveGroups(Class'ScrnClientPerkRepLink'.Static.FindMe(PlayerOwner()), GroupNames, GroupCaptions);
-	
-	co_Group.ResetComponent();
+    GroupNames[0] = ''; // just in case modders will screw up the achievement groups
+    GroupCaptions[0] = "ALL";
+    class'ScrnBalanceSrv.ScrnAchievements'.static.RetrieveGroups(Class'ScrnClientPerkRepLink'.Static.FindMe(PlayerOwner()), GroupNames, GroupCaptions);
+    
+    co_Group.ResetComponent();
     for ( i = 0; i < GroupCaptions.length; ++i )
         co_Group.AddItem(GroupCaptions[i]);
 }
@@ -87,9 +87,9 @@ function InternalOnChange(GUIComponent Sender)
 function LoadStats()
 {
     local ScrnPlayerController PC;
-	local ClientPerkRepLink L;
-	local int CompletedCount, TotalCount;
-	local name GroupName;
+    local ClientPerkRepLink L;
+    local int CompletedCount, TotalCount;
+    local name GroupName;
 
     PC = ScrnPlayerController(PlayerOwner());
     if ( PC == none )
@@ -100,11 +100,11 @@ function LoadStats()
         return;
         
     if ( PC.AchGroupIndex >= 0 && PC.AchGroupIndex < GroupNames.Length )
-		GroupName = GroupNames[PC.AchGroupIndex]; 
+        GroupName = GroupNames[PC.AchGroupIndex]; 
 
     // Initialize Achievement Progress
     class'ScrnBalanceSrv.ScrnAchievements'.static.GetGlobalAchievementStats(L, CompletedCount, TotalCount, 
-		class'ScrnBalance'.default.Mut.AchievementFlags, GroupName);
+        class'ScrnBalance'.default.Mut.AchievementFlags, GroupName);
     pb_AchievementProgress.Value = CompletedCount;
     pb_AchievementProgress.High = TotalCount;
     l_AchievementProgress.Caption = CompletedCount @ OutOfString @ TotalCount @ UnlockedString;
@@ -117,10 +117,10 @@ function LoadStats()
 function ShowPanel(bool bShow)
 {
 
-	if ( bShow ) {
+    if ( bShow ) {
         if ( bNeedRefresh )
             LoadStats();
-	}
+    }
     super.ShowPanel(bShow);
 }
 */

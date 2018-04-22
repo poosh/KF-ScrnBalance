@@ -48,33 +48,33 @@ replication
 
 static function PreloadAssets()
 {
-	default.ImpactSounds[0] = sound(DynamicLoadObject(default.ImpactSoundRefs[0], class'Sound', true));
+    default.ImpactSounds[0] = sound(DynamicLoadObject(default.ImpactSoundRefs[0], class'Sound', true));
     default.ImpactSounds[1] = sound(DynamicLoadObject(default.ImpactSoundRefs[1], class'Sound', true));
-	default.ImpactSounds[2] = sound(DynamicLoadObject(default.ImpactSoundRefs[2], class'Sound', true));
+    default.ImpactSounds[2] = sound(DynamicLoadObject(default.ImpactSoundRefs[2], class'Sound', true));
     default.ImpactSounds[3] = sound(DynamicLoadObject(default.ImpactSoundRefs[3], class'Sound', true));
-	default.ImpactSounds[4] = sound(DynamicLoadObject(default.ImpactSoundRefs[4], class'Sound', true));
+    default.ImpactSounds[4] = sound(DynamicLoadObject(default.ImpactSoundRefs[4], class'Sound', true));
     default.ImpactSounds[5] = sound(DynamicLoadObject(default.ImpactSoundRefs[5], class'Sound', true));
 
-	super.PreloadAssets();
+    super.PreloadAssets();
 }
 
 static function bool UnloadAssets()
 {
-	default.ImpactSounds[0] = none;
-	default.ImpactSounds[1] = none;
-	default.ImpactSounds[2] = none;
-	default.ImpactSounds[3] = none;
-	default.ImpactSounds[4] = none;
-	default.ImpactSounds[5] = none;
+    default.ImpactSounds[0] = none;
+    default.ImpactSounds[1] = none;
+    default.ImpactSounds[2] = none;
+    default.ImpactSounds[3] = none;
+    default.ImpactSounds[4] = none;
+    default.ImpactSounds[5] = none;
 
-	return super.UnloadAssets();
+    return super.UnloadAssets();
 }
 
 simulated function PostBeginPlay()
 {
-	super(Projectile).PostBeginPlay();
+    super(Projectile).PostBeginPlay();
 
-	Velocity = Speed * Vector(Rotation); // starts off slower so combo can be done closer
+    Velocity = Speed * Vector(Rotation); // starts off slower so combo can be done closer
 
     //SetTimer(0.4, false); //wut? There is no Timer function defined in parent classes
 
@@ -132,10 +132,10 @@ simulated function PostNetReceive()
 // Code taken from Marco's HL2 Crossbow
 simulated function NailDeadBodiesToWall()
 {
-	local vector X,HL,HN;
+    local vector X,HL,HN;
 
-	// Attempt to pin body onto wall
-	X = vector(Rotation);
+    // Attempt to pin body onto wall
+    X = vector(Rotation);
     if( PendingDeadVictim!=None && PendingDeadVictim.Health<=0 && PendingDeadVictim.Physics==PHYS_KarmaRagdoll )
     {
         if( Trace(HL,HN,Location+X*1000.f,Location-X*10.f,False)!=None )
@@ -176,7 +176,7 @@ function ReleaseMonster()
 
 simulated function Tick(float DeltaTime)
 {
-	local vector X,HL,HN, ZedNewLoc;
+    local vector X,HL,HN, ZedNewLoc;
 
 
     super.Tick(DeltaTime);
@@ -196,7 +196,7 @@ simulated function Tick(float DeltaTime)
                 bStillFlying = true;
                 if ( NailedMonster.bZedUnderControl ) {
                     if ( !NailedMonster.SetLocation(ZedNewLoc) )
-						ReleaseMonster();
+                        ReleaseMonster();
                 }
             }
             else {
@@ -239,8 +239,8 @@ simulated function Tick(float DeltaTime)
 simulated function ProcessTouch (Actor Other, vector HitLocation)
 {
     local vector X;
-	local Vector TempHitLocation, HitNormal;
-	local array<int>	HitPoints;
+    local Vector TempHitLocation, HitNormal;
+    local array<int>    HitPoints;
     local KFPlayerReplicationInfo KFPRI;
     local KFPawn HitPawn;
     local Pawn Victim;
@@ -251,11 +251,11 @@ simulated function ProcessTouch (Actor Other, vector HitLocation)
 
     ReleaseMonster(); //release currently nailed monster, when hitting another
 
-	if ( Other == none || Other == Instigator  || Other.Base == Instigator || !Other.bBlockHitPointTraces  )
-		return;
+    if ( Other == none || Other == Instigator  || Other.Base == Instigator || !Other.bBlockHitPointTraces  )
+        return;
 
-	if( bFinishedPenetrating ) {
-	   return;
+    if( bFinishedPenetrating ) {
+       return;
     }
 
 
@@ -279,7 +279,7 @@ simulated function ProcessTouch (Actor Other, vector HitLocation)
         Velocity /= 1.0 + (KFM.Mass*VelocityModMass + KFM.Health*VelocityModHealth)/PerkedDamage; //heavy and healthy pawns slow down nails more
     }
 
- 	if( ROBulletWhipAttachment(Other) != none ) {
+     if( ROBulletWhipAttachment(Other) != none ) {
         // we touched player's auxilary collision cylinder, not let's trace to the player himself
         // Other.Base = KFPawn
         if( Other.Base == none || Other.Base.bDeleteMe )
@@ -290,14 +290,14 @@ simulated function ProcessTouch (Actor Other, vector HitLocation)
         if( Other == none || HitPoints.Length == 0 )
             return; // bullet didn't hit a pawn
 
-		HitPawn = KFPawn(Other);
+        HitPawn = KFPawn(Other);
 
         if (Role == ROLE_Authority) {
             if ( HitPawn != none && !HitPawn.bDeleteMe ) {
                 HitPawn.ProcessLocationalDamage(Damage, Instigator, TempHitLocation, MomentumTransfer * Normal(Velocity), MyDamageType,HitPoints);
             }
         }
-	}
+    }
     else {
         if ( Victim != none && Victim.IsHeadShot(HitLocation, X, 1.0) ) {
             // HEADSHOT
@@ -323,10 +323,10 @@ simulated function ProcessTouch (Actor Other, vector HitLocation)
     //Bounces=0; // don't bounce after hit somebody
 
     // penetration damage reduction
-	if ( KFPRI != none && KFPRI.ClientVeteranSkill != none )
-   		PenDamageReduction = KFPRI.ClientVeteranSkill.static.GetShotgunPenetrationDamageMulti(KFPRI,default.PenDamageReduction);
-	else
-   		PenDamageReduction = default.PenDamageReduction;
+    if ( KFPRI != none && KFPRI.ClientVeteranSkill != none )
+           PenDamageReduction = KFPRI.ClientVeteranSkill.static.GetShotgunPenetrationDamageMulti(KFPRI,default.PenDamageReduction);
+    else
+           PenDamageReduction = default.PenDamageReduction;
     // loose penetration damage after hitting specific zeds -- PooSH
     if ( KFM != none)
         PenDamageReduction *= ZedPenDamageReduction(KFM);
@@ -394,41 +394,41 @@ simulated function ProcessTouch (Actor Other, vector HitLocation)
 simulated function HitWall( vector HitNormal, actor Wall )
 {
     if ( !Wall.bStatic && !Wall.bWorldGeometry
-		&& ((Mover(Wall) == None) || Mover(Wall).bDamageTriggered) )
+        && ((Mover(Wall) == None) || Mover(Wall).bDamageTriggered) )
     {
         if ( Level.NetMode != NM_Client )
-		{
-			if ( Instigator == None || Instigator.Controller == None )
-				Wall.SetDelayedDamageInstigatorController( InstigatorController );
+        {
+            if ( Instigator == None || Instigator.Controller == None )
+                Wall.SetDelayedDamageInstigatorController( InstigatorController );
             Wall.TakeDamage( Damage, instigator, Location, MomentumTransfer * Normal(Velocity), MyDamageType);
-		}
+        }
         Destroy();
         return;
     }
 
     SetRotation(rotator(Normal(Velocity)));
 
-	if (Bounces > 0)
+    if (Bounces > 0)
     {
-		if ( !Level.bDropDetail && (FRand() < 0.4) )
-			Playsound(ImpactSounds[Rand(6)]);
+        if ( !Level.bDropDetail && (FRand() < 0.4) )
+            Playsound(ImpactSounds[Rand(6)]);
 
         Velocity = 0.65 * (Velocity - 2.0*HitNormal*(Velocity dot HitNormal));
         SetPhysics(PHYS_Falling);
         --Bounces;
         bBounced=True;
 
-    	if ( !Level.bDropDetail && (Level.NetMode != NM_DedicatedServer))
-    	{
+        if ( !Level.bDropDetail && (Level.NetMode != NM_DedicatedServer))
+        {
             Spawn(class'ROEffects.ROBulletHitMetalEffect',,,Location, rotator(hitnormal));
-    	}
+        }
     }
     else
     {
-    	if (ImpactEffect != None && (Level.NetMode != NM_DedicatedServer))
-    	{
+        if (ImpactEffect != None && (Level.NetMode != NM_DedicatedServer))
+        {
             Spawn(ImpactEffect,,, Location, rotator(-HitNormal));
-    	}
+        }
         SetPhysics(PHYS_None);
         Bounces=0;
         NailDeadBodiesToWall();

@@ -1,5 +1,5 @@
 class TSCDamageType extends DamageType
-	abstract;
+    abstract;
 
 defaultproperties
 {

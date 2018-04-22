@@ -20,7 +20,7 @@ var localized string strOurBase;
 var localized string strGnome;
 var localized string strCarrier;
 var localized string strEnemyBase;
-var	localized string strTrader;
+var    localized string strTrader;
 
 
 // TSC hints
@@ -557,10 +557,10 @@ simulated function DrawTSCHUDTextElements(Canvas C)
 
 simulated function DrawWeaponName(Canvas C)
 {
-	local string CurWeaponName;
-	local float XL,YL;
+    local string CurWeaponName;
+    local float XL,YL;
 
-	if ( PawnOwner == None || bCoolHudActive )
+    if ( PawnOwner == None || bCoolHudActive )
         return;
 
     if ( PawnOwner.Weapon != none )
@@ -573,17 +573,17 @@ simulated function DrawWeaponName(Canvas C)
         return;
 
 
-	C.Font  = GetFontSizeIndex(C, -1);
-	C.DrawColor = TextColors[TeamIndex];
-	C.Strlen(CurWeaponName, XL, YL);
+    C.Font  = GetFontSizeIndex(C, -1);
+    C.DrawColor = TextColors[TeamIndex];
+    C.Strlen(CurWeaponName, XL, YL);
 
-	// Diet Hud needs to move the weapon name a little bit or it looks weird
-	if ( !bLightHud )
-		C.SetPos((C.ClipX * 0.983) - XL, C.ClipY * 0.90);
-	else
-		C.SetPos((C.ClipX * 0.97) - XL, C.ClipY * 0.915);
+    // Diet Hud needs to move the weapon name a little bit or it looks weird
+    if ( !bLightHud )
+        C.SetPos((C.ClipX * 0.983) - XL, C.ClipY * 0.90);
+    else
+        C.SetPos((C.ClipX * 0.97) - XL, C.ClipY * 0.915);
 
-	C.DrawText(CurWeaponName);
+    C.DrawText(CurWeaponName);
 }
 
 
@@ -615,7 +615,7 @@ simulated function DrawEndGameHUD(Canvas C, bool bVictory)
             MyColorMod.Material = EndGameMaterials[1]; // in non-team game players are in blue team
     }
     else if ( TSCGRI.bSingleTeamGame )
-		MyColorMod.Material = Combiner'DefeatCombiner';
+        MyColorMod.Material = Combiner'DefeatCombiner';
     else
         MyColorMod.Material =  EndGameMaterials[3];
 
@@ -669,17 +669,17 @@ simulated function CalsTeamStats()
     SpecMinKillsDigits[1].Value = max(TSCTeam(KFGRI.Teams[1]).ZedKills - TSCTeam(KFGRI.Teams[1]).PrevMinKills, 0);
 
     if ( SpecMinKillsDigits[0].Value < 15 ) {
-		SpecWaveKillsDigits[0].Tints[0].R = 196;
-		SpecWaveKillsDigits[0].Tints[0].G = 206;
-		SpecWaveKillsDigits[0].Tints[0].B = 0;
+        SpecWaveKillsDigits[0].Tints[0].R = 196;
+        SpecWaveKillsDigits[0].Tints[0].G = 206;
+        SpecWaveKillsDigits[0].Tints[0].B = 0;
     }
     else
         SpecWaveKillsDigits[0].Tints[0] = default.SpecWaveKillsDigits[0].Tints[0];
 
     if ( SpecMinKillsDigits[1].Value < 15 ) {
-		SpecWaveKillsDigits[1].Tints[0].R = 196;
-		SpecWaveKillsDigits[1].Tints[0].G = 206;
-		SpecWaveKillsDigits[1].Tints[0].B = 0;
+        SpecWaveKillsDigits[1].Tints[0].R = 196;
+        SpecWaveKillsDigits[1].Tints[0].G = 206;
+        SpecWaveKillsDigits[1].Tints[0].B = 0;
     }
     else
         SpecWaveKillsDigits[1].Tints[0] = default.SpecWaveKillsDigits[1].Tints[0];
@@ -763,36 +763,36 @@ simulated function DrawSpecialSpectatingHUD(Canvas C)
         CalsTeamStats();
     }
 
-	if ( !bLightHud ) {
-		DrawSpriteWidget(C, SpecKillsBG[0]);
-		DrawSpriteWidget(C, SpecWaveKillsBG[0]);
-		//DrawSpriteWidget(C, SpecMinKillsBG[0]);
-		DrawSpriteWidget(C, SpecDeathsBG[0]);
-		DrawSpriteWidget(C, SpecDoshBG[0]);
+    if ( !bLightHud ) {
+        DrawSpriteWidget(C, SpecKillsBG[0]);
+        DrawSpriteWidget(C, SpecWaveKillsBG[0]);
+        //DrawSpriteWidget(C, SpecMinKillsBG[0]);
+        DrawSpriteWidget(C, SpecDeathsBG[0]);
+        DrawSpriteWidget(C, SpecDoshBG[0]);
 
-		DrawSpriteWidget(C, SpecKillsBG[1]);
-		DrawSpriteWidget(C, SpecWaveKillsBG[1]);
-		//DrawSpriteWidget(C, SpecMinKillsBG[1]);
-		DrawSpriteWidget(C, SpecDeathsBG[1]);
-		DrawSpriteWidget(C, SpecDoshBG[1]);
-	}
-	DrawSpriteWidget(C, SpecDoshIcon[0]);
-	DrawNumericWidget(C, SpecDoshDigits[0], DigitsSmall);
-	DrawSpriteWidget(C, SpecDeathsIcon[0]);
-	DrawNumericWidget(C, SpecDeathsDigits[0], DigitsSmall);
-	DrawSpriteWidget(C, SpecKillsIcon[0]);
-	DrawNumericWidget(C, SpecKillsDigits[0], DigitsSmall);
-	DrawNumericWidget(C, SpecWaveKillsDigits[0], DigitsSmall);
-	//DrawNumericWidget(C, SpecMinKillsDigits[0], DigitsSmall);
+        DrawSpriteWidget(C, SpecKillsBG[1]);
+        DrawSpriteWidget(C, SpecWaveKillsBG[1]);
+        //DrawSpriteWidget(C, SpecMinKillsBG[1]);
+        DrawSpriteWidget(C, SpecDeathsBG[1]);
+        DrawSpriteWidget(C, SpecDoshBG[1]);
+    }
+    DrawSpriteWidget(C, SpecDoshIcon[0]);
+    DrawNumericWidget(C, SpecDoshDigits[0], DigitsSmall);
+    DrawSpriteWidget(C, SpecDeathsIcon[0]);
+    DrawNumericWidget(C, SpecDeathsDigits[0], DigitsSmall);
+    DrawSpriteWidget(C, SpecKillsIcon[0]);
+    DrawNumericWidget(C, SpecKillsDigits[0], DigitsSmall);
+    DrawNumericWidget(C, SpecWaveKillsDigits[0], DigitsSmall);
+    //DrawNumericWidget(C, SpecMinKillsDigits[0], DigitsSmall);
 
-	DrawSpriteWidget(C, SpecDoshIcon[1]);
-	DrawNumericWidget(C, SpecDoshDigits[1], DigitsSmall);
-	DrawSpriteWidget(C, SpecDeathsIcon[1]);
-	DrawNumericWidget(C, SpecDeathsDigits[1], DigitsSmall);
-	DrawSpriteWidget(C, SpecKillsIcon[1]);
-	DrawNumericWidget(C, SpecKillsDigits[1], DigitsSmall);
-	DrawNumericWidget(C, SpecWaveKillsDigits[1], DigitsSmall);
-	//DrawNumericWidget(C, SpecMinKillsDigits[1], DigitsSmall);
+    DrawSpriteWidget(C, SpecDoshIcon[1]);
+    DrawNumericWidget(C, SpecDoshDigits[1], DigitsSmall);
+    DrawSpriteWidget(C, SpecDeathsIcon[1]);
+    DrawNumericWidget(C, SpecDeathsDigits[1], DigitsSmall);
+    DrawSpriteWidget(C, SpecKillsIcon[1]);
+    DrawNumericWidget(C, SpecKillsDigits[1], DigitsSmall);
+    DrawNumericWidget(C, SpecWaveKillsDigits[1], DigitsSmall);
+    //DrawNumericWidget(C, SpecMinKillsDigits[1], DigitsSmall);
 
     C.DrawColor = WhiteColor;
     C.DrawColor.A = KFHUDAlpha;

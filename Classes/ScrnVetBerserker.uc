@@ -1,5 +1,5 @@
 class ScrnVetBerserker extends ScrnVeterancyTypes
-	abstract;
+    abstract;
 
 static function int GetStatValueInt(ClientPerkRepLink StatOther, byte ReqNum)
 {
@@ -18,23 +18,23 @@ static function int AddDamage(KFPlayerReplicationInfo KFPRI, KFMonster Injured, 
         else if ( DmgType == class'DamTypeCrossbuzzsaw' )
             InDamage *= 0.64; // 100 * 0.64 = 640
     }
-	if( class<KFWeaponDamageType>(DmgType) != none && class<KFWeaponDamageType>(DmgType).default.bIsMeleeDamage )
-	{
+    if( class<KFWeaponDamageType>(DmgType) != none && class<KFWeaponDamageType>(DmgType).default.bIsMeleeDamage )
+    {
         // 55% base bonus + 7.5% per level
         InDamage *= 1.55 + 0.075 * GetClientVeteranSkillLevel(KFPRI);
-	}
+    }
 
-	return InDamage;
+    return InDamage;
 }
 
 static function float GetFireSpeedModStatic(KFPlayerReplicationInfo KFPRI, class<Weapon> Other)
 {
-	if ( ClassIsChildOf(Other, class'KFMeleeGun') || ClassIsChildOf(Other, class'Crossbuzzsaw') )
-	{
+    if ( ClassIsChildOf(Other, class'KFMeleeGun') || ClassIsChildOf(Other, class'Crossbuzzsaw') )
+    {
         return 1.13 + 0.02 * float(GetClientVeteranSkillLevel(KFPRI));
-	}
+    }
 
-	return 1.0;
+    return 1.0;
 }
 
 static function float GetMagCapacityModStatic(KFPlayerReplicationInfo KFPRI, class<KFWeapon> Other)
@@ -44,7 +44,7 @@ static function float GetMagCapacityModStatic(KFPlayerReplicationInfo KFPRI, cla
     {
         return 1.3 + 0.05 * GetClientVeteranSkillLevel(KFPRI);
     }
-	return 1.0;
+    return 1.0;
 }
 
 static function float AddExtraAmmoFor(KFPlayerReplicationInfo KFPRI, Class<Ammunition> AmmoType)
@@ -54,7 +54,7 @@ static function float AddExtraAmmoFor(KFPlayerReplicationInfo KFPRI, Class<Ammun
     {
         return 1.3 + 0.05 * GetClientVeteranSkillLevel(KFPRI);
     }
-	return 1.0;
+    return 1.0;
 }
 
 // Make zerker extremely slow while healing
@@ -66,18 +66,18 @@ static function float AddExtraAmmoFor(KFPlayerReplicationInfo KFPRI, Class<Ammun
 static function float GetWeaponMovementSpeedBonus(KFPlayerReplicationInfo KFPRI, Weapon Weap)
 {
     // Syringe is a child of KFMeleeGun, so need to check it first!
-	if ( Syringe(Weap) != none )
-		return -0.15;
-	else if ( KFMeleeGun(Weap) == none )
+    if ( Syringe(Weap) != none )
         return -0.15;
-	else if ( Chainsaw(Weap) != none )
-		return GetMeleeMovementSpeedModifier(KFPRI);
-	return 0.0;
+    else if ( KFMeleeGun(Weap) == none )
+        return -0.15;
+    else if ( Chainsaw(Weap) != none )
+        return GetMeleeMovementSpeedModifier(KFPRI);
+    return 0.0;
 }
 
 static function float GetMeleeMovementSpeedModifier(KFPlayerReplicationInfo KFPRI)
 {
-	return 0.3;
+    return 0.3;
 }
 
 //fixed post level 6 damage resistance (c) PooSH
@@ -88,69 +88,69 @@ static function int ReduceDamage(KFPlayerReplicationInfo KFPRI, KFPawn Injured, 
 
     // HARDCORE - no damage resistance from Husk's fire damage
     // Except Doom3 Monsters mode, because there is no way to differ Husk damage from Imp or ArchVile damage
-	if ( DmgType == class'DamTypeBurned' && class'ScrnBalance'.default.Mut.bHardcore
+    if ( DmgType == class'DamTypeBurned' && class'ScrnBalance'.default.Mut.bHardcore
             && class'ScrnBalance'.default.Mut.GameRules.GameDoom3Kills == 0 )
         return InDamage;
 
-	if ( DmgType == class'DamTypeVomit' ) {
+    if ( DmgType == class'DamTypeVomit' ) {
         InDamage *= 0.20; // 80% reduced Bloat Bile damage
-	}
+    }
     else {
         if ( KFPawn(Instigator) != none )
             InDamage *= 0.70; // v7.46: player-to-player damage
         else
             InDamage *= 0.60; // 40% reduced Damage
     }
-	return max(1, InDamage); // at least 1 damage must be done
+    return max(1, InDamage); // at least 1 damage must be done
 }
 
 static function bool CanBeGrabbed(KFPlayerReplicationInfo KFPRI, KFMonster Other)
 {
-	return false;
+    return false;
 }
 
 // Set number times Zed Time can be extended
 static function int ZedTimeExtensions(KFPlayerReplicationInfo KFPRI)
 {
-	return 4;
+    return 4;
 }
 
 static function float GetAmmoCostScaling(KFPlayerReplicationInfo KFPRI, class<Pickup> Item)
 {
     if ( ClassIsChildOf(Item, class'CrossbuzzsawPickup') ) {
-		return fmax(0.5, 1.0 - (0.05 * GetClientVeteranSkillLevel(KFPRI))); // Up to 30% discount buzzsaw blades - to compensate SC damage resistance
-	}
-	return 1.0;
+        return fmax(0.5, 1.0 - (0.05 * GetClientVeteranSkillLevel(KFPRI))); // Up to 30% discount buzzsaw blades - to compensate SC damage resistance
+    }
+    return 1.0;
 }
 
 // Change the cost of particular items
 static function float GetCostScaling(KFPlayerReplicationInfo KFPRI, class<Pickup> Item)
 {
-	if  ( ClassIsChildOf(Item, class'ChainsawPickup') || ClassIsChildOf(Item, class'KatanaPickup')
+    if  ( ClassIsChildOf(Item, class'ChainsawPickup') || ClassIsChildOf(Item, class'KatanaPickup')
             || ClassIsChildOf(Item, class'ClaymoreSwordPickup')
             || ClassIsChildOf(Item, class'DwarfAxePickup')
             || ClassIsChildOf(Item, class'CrossbuzzsawPickup') || ClassIsChildOf(Item, class'ScythePickup')
-			|| Item == class'KFMod.AxePickup' || Item == class'KFMod.MachetePickup' // only for KFMod, expensive versions
+            || Item == class'KFMod.AxePickup' || Item == class'KFMod.MachetePickup' // only for KFMod, expensive versions
             || ClassIsInArray(default.PerkedPickups, Item) //v3 - custom weapon support
         )
     {
         // 30% base discount + 5% extra per level
         return fmax(0.10, 0.70 - 0.05 * GetClientVeteranSkillLevel(KFPRI));
     }
-	return 1.0;
+    return 1.0;
 }
 
 static function string GetCustomLevelInfo( byte Level )
 {
-	local string S;
+    local string S;
 
-	S = Default.CustomLevelInfo;
-	ReplaceText(S,"%L",string(Level));
-	ReplaceText(S,"%x",GetPercentStr(0.55 + 0.075*Level));
-	ReplaceText(S,"%s",GetPercentStr(0.1301 + 0.02*Level));
-	ReplaceText(S,"%a",GetPercentStr(0.05*Level));
-	ReplaceText(S,"%$",GetPercentStr(fmin(0.90, 0.30 + 0.05*Level)));
-	return S;
+    S = Default.CustomLevelInfo;
+    ReplaceText(S,"%L",string(Level));
+    ReplaceText(S,"%x",GetPercentStr(0.55 + 0.075*Level));
+    ReplaceText(S,"%s",GetPercentStr(0.1301 + 0.02*Level));
+    ReplaceText(S,"%a",GetPercentStr(0.05*Level));
+    ReplaceText(S,"%$",GetPercentStr(fmin(0.90, 0.30 + 0.05*Level)));
+    return S;
 }
 
 defaultproperties

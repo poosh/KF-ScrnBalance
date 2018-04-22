@@ -3,10 +3,10 @@ class ScrnMachetePickup extends MachetePickup;
 // Fixed "Accessed none: Inventory" warning in KFWeaponPickup. This should be copied into all pickup classes.
 function Destroyed()
 {
-	if ( bDropped && Inventory != none && KFGameType(Level.Game) != none )
-			KFGameType(Level.Game).WeaponDestroyed(class<Weapon>(Inventory.Class));
+    if ( bDropped && Inventory != none && KFGameType(Level.Game) != none )
+            KFGameType(Level.Game).WeaponDestroyed(class<Weapon>(Inventory.Class));
 
-	super(WeaponPickup).Destroyed();
+    super(WeaponPickup).Destroyed();
 }
 
 defaultproperties

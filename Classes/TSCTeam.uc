@@ -7,7 +7,7 @@ var int WaveKills;          // how many kills team scored in previous waves
 
 replication
 {
-	// Variables the server should send to the client.
-	reliable if( bNetDirty && (Role==ROLE_Authority) )
-		ZedKills, Deaths, LastMinKills, PrevMinKills, WaveKills;
+    // Variables the server should send to the client.
+    reliable if( bNetDirty && (Role==ROLE_Authority) )
+        ZedKills, Deaths, LastMinKills, PrevMinKills, WaveKills;
 }

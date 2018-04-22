@@ -19,7 +19,7 @@ simulated function TakeDamage( int Damage, Pawn InstigatedBy, Vector Hitlocation
 
 simulated function Tick( float DeltaTime )
 {
-	Disable('Tick');
+    Disable('Tick');
 }
 
 /*
@@ -47,23 +47,23 @@ simulated function PostNetReceive()
 defaultproperties
 {
     StaticMesh=StaticMesh'KF_pickups5_Trip.nades.MedicNade_Pickup'
-	LifeSpan=0
+    LifeSpan=0
 
-	//Physics=PHYS_None
+    //Physics=PHYS_None
 
 
-	RemoteRole=ROLE_None
+    RemoteRole=ROLE_None
     bSkipActorPropertyReplication=true
     bReplicateMovement=false
     bUpdateSimulatedPosition=false
     bNetNotify=false
     bAlwaysRelevant=true
 
-	Physics=PHYS_None
-	bCollideActors=false
-	bCollideWorld=false
-	bBlockActors=false
-	bBlockProjectiles=false
-	bBlockHitPointTraces=false
-	DrawScale=3.5
+    Physics=PHYS_None
+    bCollideActors=false
+    bCollideWorld=false
+    bBlockActors=false
+    bBlockProjectiles=false
+    bBlockHitPointTraces=false
+    DrawScale=3.5
 }

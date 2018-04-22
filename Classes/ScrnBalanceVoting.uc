@@ -6,10 +6,10 @@ const VOTE_PERKLOCK     = 0;
 const VOTE_PERKUNLOCK   = 1;
 const VOTE_PAUSE        = 2;
 const VOTE_ENDTRADE     = 3;
-const VOTE_BLAME  	    = 4;
-const VOTE_KICK  	    = 5;
-const VOTE_BORING  	    = 6;
-const VOTE_SPAWN  	    = 7;
+const VOTE_BLAME          = 4;
+const VOTE_KICK          = 5;
+const VOTE_BORING          = 6;
+const VOTE_SPAWN          = 7;
 const VOTE_ENDWAVE      = 8;
 const VOTE_SPEC         = 9;
 const VOTE_READY        = 10;
@@ -76,20 +76,20 @@ function class<ScrnVeterancyTypes> FindPerkByName(PlayerController Sender, strin
 
 function SendSquadList(PlayerController Sender)
 {
-	local int i;
-	local string s;
+    local int i;
+    local string s;
 
-	if ( Mut.Squads.Length == 0 ) {
-		Sender.ClientMessage(strOptionDisabled);
-		return;
-	}
+    if ( Mut.Squads.Length == 0 ) {
+        Sender.ClientMessage(strOptionDisabled);
+        return;
+    }
 
-	s = strSquadList @ Mut.Squads[0].SquadName;
-	for ( i=1; i<Mut.Squads.Length; ++i ) {
-		s = s $ ", " $ Mut.Squads[i].SquadName;
-	}
+    s = strSquadList @ Mut.Squads[0].SquadName;
+    for ( i=1; i<Mut.Squads.Length; ++i ) {
+        s = s $ ", " $ Mut.Squads[i].SquadName;
+    }
 
-	Sender.ClientMessage(s);
+    Sender.ClientMessage(s);
 }
 
 static function bool TryStrToInt(string str, out int val)
@@ -104,10 +104,10 @@ function int GetVoteIndex(PlayerController Sender, string Key, out string Value,
     local class<ScrnVeterancyTypes> Perk;
 
     if ( Key == "LOCKPERK" ) {
-		if ( !Mut.bAllowLockPerkVote ) {
-			Sender.ClientMessage(strOptionDisabled);
-			return VOTE_NOEFECT;
-		}
+        if ( !Mut.bAllowLockPerkVote ) {
+            Sender.ClientMessage(strOptionDisabled);
+            return VOTE_NOEFECT;
+        }
         Perk = FindPerkByName(Sender, Value);
         if ( Perk == none )
             return VOTE_ILLEGAL;
@@ -128,10 +128,10 @@ function int GetVoteIndex(PlayerController Sender, string Key, out string Value,
         Value = Perk.default.VeterancyName;
     }
     else if ( Key == "PAUSE" || (Level.Pauser != none && Key == "RESUME") ) {
-		if ( !Mut.bAllowPauseVote ) {
-			Sender.ClientMessage(strOptionDisabled);
-			return VOTE_NOEFECT;
-		}
+        if ( !Mut.bAllowPauseVote ) {
+            Sender.ClientMessage(strOptionDisabled);
+            return VOTE_NOEFECT;
+        }
         if ( Mut.bPauseTraderOnly && !Mut.KF.bTradingDoorsOpen && Mut.KF.IsInState('MatchInProgress') ) {
             Sender.ClientMessage(strPauseTraderOnly);
             return VOTE_NOEFECT;
@@ -149,10 +149,10 @@ function int GetVoteIndex(PlayerController Sender, string Key, out string Value,
             VoteInfo = viResume;
     }
     else if ( Key == "ENDTRADE" || (Key == "END" && Value == "TRADE") ) {
-		if ( Mut.bStoryMode ) {
+        if ( Mut.bStoryMode ) {
             Sender.ClientMessage(strNotInStoryMode);
             return VOTE_NOEFECT;
-		}
+        }
         if ( Mut.KF.bWaveInProgress|| Mut.KF.WaveCountDown < 10 || Mut.SkippedTradeTimeMult < 0 ) {
             Sender.ClientMessage(strCantEndTrade);
             return VOTE_NOEFECT;
@@ -161,188 +161,188 @@ function int GetVoteIndex(PlayerController Sender, string Key, out string Value,
         Value = "";
         VoteInfo = viEndTrade;
     }
-	else if ( Key == "BLAME" ) {
-		if ( !Mut.bAllowBlameVote ) {
-			Sender.ClientMessage(strOptionDisabled);
-			return VOTE_NOEFECT;
-		}
+    else if ( Key == "BLAME" ) {
+        if ( !Mut.bAllowBlameVote ) {
+            Sender.ClientMessage(strOptionDisabled);
+            return VOTE_NOEFECT;
+        }
         if ( Level.TimeSeconds - LastBlameVoteTime < Mut.BlameVoteCoolDown ) {
             Sender.ClientMessage(strNotAvaliableATM);
             return VOTE_LOCAL;
         }
 
-		if ( Value == "" ) {
-			SendPlayerList(Sender);
-			return VOTE_LOCAL;
-		}
+        if ( Value == "" ) {
+            SendPlayerList(Sender);
+            return VOTE_LOCAL;
+        }
 
-		Reason = "";
-		if ( Left(Value, 1) == "\"" ) {
-			// don't look for player in quoted string - just blame it :)
-			VotingHandler.VotedPlayer = none;
-			Value = Mid(Value, 1);
-			Divide(Value, "\"", Value, Reason);
+        Reason = "";
+        if ( Left(Value, 1) == "\"" ) {
+            // don't look for player in quoted string - just blame it :)
             VotingHandler.VotedPlayer = none;
-		}
-		else {
-			Divide(Value, " ", Value, Reason);
-			if ( Value ~= "ALL" || Value ~= "TEAM" ) {
-				Value = "TEAM";
-				VoteInfo = "Blame Team";
-				VotingHandler.VotedPlayer = none;
-			}
-			else {
-				if ( Value ~= "ME" )
-					VotingHandler.VotedPlayer = Sender;
-				else
-					VotingHandler.VotedPlayer = FindPlayer(Value);
-				if ( VotingHandler.VotedPlayer == none ) {
-					Sender.ClientMessage(strPlayerNotFound);
-					SendPlayerList(Sender);
-					return VOTE_ILLEGAL;
-				}
-				Value = Mut.ColoredPlayerName(VotingHandler.VotedPlayer.PlayerReplicationInfo);
-				VoteInfo = "Blame " $ Value;
-			}
-		}
+            Value = Mid(Value, 1);
+            Divide(Value, "\"", Value, Reason);
+            VotingHandler.VotedPlayer = none;
+        }
+        else {
+            Divide(Value, " ", Value, Reason);
+            if ( Value ~= "ALL" || Value ~= "TEAM" ) {
+                Value = "TEAM";
+                VoteInfo = "Blame Team";
+                VotingHandler.VotedPlayer = none;
+            }
+            else {
+                if ( Value ~= "ME" )
+                    VotingHandler.VotedPlayer = Sender;
+                else
+                    VotingHandler.VotedPlayer = FindPlayer(Value);
+                if ( VotingHandler.VotedPlayer == none ) {
+                    Sender.ClientMessage(strPlayerNotFound);
+                    SendPlayerList(Sender);
+                    return VOTE_ILLEGAL;
+                }
+                Value = Mut.ColoredPlayerName(VotingHandler.VotedPlayer.PlayerReplicationInfo);
+                VoteInfo = "Blame " $ Value;
+            }
+        }
         LastBlameVoteTime = Level.TimeSeconds;
-		result = VOTE_BLAME;
-	}
-	else if ( Key == "SPEC" ) {
-		if ( Level.Game.AccessControl == none
+        result = VOTE_BLAME;
+    }
+    else if ( Key == "SPEC" ) {
+        if ( Level.Game.AccessControl == none
                 || Level.Game.NumSpectators > Level.Game.MaxSpectators
                 || (!Mut.bAllowKickVote && !Sender.PlayerReplicationInfo.bAdmin) )
         {
-			Sender.ClientMessage(strOptionDisabled);
-			return VOTE_NOEFECT;
-		}
+            Sender.ClientMessage(strOptionDisabled);
+            return VOTE_NOEFECT;
+        }
 
-		if ( Value == "" ) {
-			SendPlayerList(Sender);
-			return VOTE_LOCAL;
-		}
+        if ( Value == "" ) {
+            SendPlayerList(Sender);
+            return VOTE_LOCAL;
+        }
 
-		Reason = "";
-		Divide(Value, " ", Value, Reason);
-		VotingHandler.VotedPlayer = FindPlayer(Value);
-		if ( VotingHandler.VotedPlayer == none ) {
-			Sender.ClientMessage(strPlayerNotFound);
-			SendPlayerList(Sender);
-			return VOTE_ILLEGAL;
-		}
-		Value = Mut.ColoredPlayerName(VotingHandler.VotedPlayer.PlayerReplicationInfo);
-		VoteInfo = "Spectate " $ Value;
-		result = VOTE_SPEC;
-	}
-	else if ( Key == "KICK" ) {
-		if ( Level.Game.AccessControl == none || (!Mut.bAllowKickVote && !Sender.PlayerReplicationInfo.bAdmin) ) {
-			Sender.ClientMessage(strOptionDisabled);
-			return VOTE_NOEFECT;
-		}
+        Reason = "";
+        Divide(Value, " ", Value, Reason);
+        VotingHandler.VotedPlayer = FindPlayer(Value);
+        if ( VotingHandler.VotedPlayer == none ) {
+            Sender.ClientMessage(strPlayerNotFound);
+            SendPlayerList(Sender);
+            return VOTE_ILLEGAL;
+        }
+        Value = Mut.ColoredPlayerName(VotingHandler.VotedPlayer.PlayerReplicationInfo);
+        VoteInfo = "Spectate " $ Value;
+        result = VOTE_SPEC;
+    }
+    else if ( Key == "KICK" ) {
+        if ( Level.Game.AccessControl == none || (!Mut.bAllowKickVote && !Sender.PlayerReplicationInfo.bAdmin) ) {
+            Sender.ClientMessage(strOptionDisabled);
+            return VOTE_NOEFECT;
+        }
 
-		if ( Value == "" ) {
-			SendPlayerList(Sender);
-			return VOTE_LOCAL;
-		}
+        if ( Value == "" ) {
+            SendPlayerList(Sender);
+            return VOTE_LOCAL;
+        }
 
-		Reason = "";
-		Divide(Value, " ", Value, Reason);
-		VotingHandler.VotedPlayer = FindPlayer(Value);
-		if ( VotingHandler.VotedPlayer == none ) {
-			Sender.ClientMessage(strPlayerNotFound);
-			SendPlayerList(Sender);
-			return VOTE_ILLEGAL;
-		}
-		Value = Mut.ColoredPlayerName(VotingHandler.VotedPlayer.PlayerReplicationInfo);
-		VoteInfo = "Kick " $ Value;
-		result = VOTE_KICK;
-	}
-	else if ( Key == "INVITE" ) {
+        Reason = "";
+        Divide(Value, " ", Value, Reason);
+        VotingHandler.VotedPlayer = FindPlayer(Value);
+        if ( VotingHandler.VotedPlayer == none ) {
+            Sender.ClientMessage(strPlayerNotFound);
+            SendPlayerList(Sender);
+            return VOTE_ILLEGAL;
+        }
+        Value = Mut.ColoredPlayerName(VotingHandler.VotedPlayer.PlayerReplicationInfo);
+        VoteInfo = "Kick " $ Value;
+        result = VOTE_KICK;
+    }
+    else if ( Key == "INVITE" ) {
         if ( !Mut.CheckScrnGT(Sender) )
             return VOTE_LOCAL;
 
-		if ( Value == "" ) {
-			SendPlayerList(Sender);
-			return VOTE_LOCAL;
-		}
+        if ( Value == "" ) {
+            SendPlayerList(Sender);
+            return VOTE_LOCAL;
+        }
 
-		Reason = "";
-		Divide(Value, " ", Value, Reason);
-		VotingHandler.VotedPlayer = FindPlayer(Value);
-		if ( VotingHandler.VotedPlayer == none ) {
-			Sender.ClientMessage(strPlayerNotFound);
-			SendPlayerList(Sender);
-			return VOTE_ILLEGAL;
-		}
+        Reason = "";
+        Divide(Value, " ", Value, Reason);
+        VotingHandler.VotedPlayer = FindPlayer(Value);
+        if ( VotingHandler.VotedPlayer == none ) {
+            Sender.ClientMessage(strPlayerNotFound);
+            SendPlayerList(Sender);
+            return VOTE_ILLEGAL;
+        }
         else if ( Mut.ScrnGT.IsInvited(VotingHandler.VotedPlayer) ) {
             VotingHandler.VotedPlayer = none;
             return VOTE_NOEFECT;
         }
-		Value = Mut.ColoredPlayerName(VotingHandler.VotedPlayer.PlayerReplicationInfo);
-		VoteInfo = "Invite " $ Value;
-		result = VOTE_INVITE;
-	}
-	else if ( Key == "BORING" ) {
-		if ( Mut.bStoryMode ) {
+        Value = Mut.ColoredPlayerName(VotingHandler.VotedPlayer.PlayerReplicationInfo);
+        VoteInfo = "Invite " $ Value;
+        result = VOTE_INVITE;
+    }
+    else if ( Key == "BORING" ) {
+        if ( Mut.bStoryMode ) {
             Sender.ClientMessage(strNotInStoryMode);
             return VOTE_LOCAL;
-		}
-		else if ( !Mut.bAllowBoringVote && !Sender.PlayerReplicationInfo.bAdmin ) {
-			Sender.ClientMessage(strOptionDisabled);
-			return VOTE_LOCAL;
-		}
+        }
+        else if ( !Mut.bAllowBoringVote && !Sender.PlayerReplicationInfo.bAdmin ) {
+            Sender.ClientMessage(strOptionDisabled);
+            return VOTE_LOCAL;
+        }
         else if ( Mut.KF.bTradingDoorsOpen || Mut.KF.KFLRules.WaveSpawnPeriod < 0.5 ) {
-			Sender.ClientMessage(strNotAvaliableATM);
-			return VOTE_LOCAL;
+            Sender.ClientMessage(strNotAvaliableATM);
+            return VOTE_LOCAL;
         }
 
-		Value = "";
-		VoteInfo = "Game is BORING";
-		result = VOTE_BORING;
-	}
-	else if ( Key == "SPAWN" ) {
-		if ( Mut.bStoryMode && !Mut.bBeta ) {
+        Value = "";
+        VoteInfo = "Game is BORING";
+        result = VOTE_BORING;
+    }
+    else if ( Key == "SPAWN" ) {
+        if ( Mut.bStoryMode && !Mut.bBeta ) {
             Sender.ClientMessage(strNotInStoryMode);
             return VOTE_NOEFECT;
-		}
-		if ( Mut.Squads.Length == 0 ) {
-			Sender.ClientMessage(strOptionDisabled);
-			return VOTE_NOEFECT;
-		}
-		if ( Value == "" ) {
-			SendSquadList(Sender);
-			return VOTE_LOCAL;
-		}
-		if ( Mut.FindSquad(Value) == -1 ) {
-			Sender.ClientMessage(strSquadNotFound);
-			return VOTE_ILLEGAL;
-		}
-		if ( Mut.KF.TotalMaxMonsters < 10 ) {
-			Sender.ClientMessage(strCantSpawnSquadNow);
-			return VOTE_NOEFECT;
-		}
-		result = VOTE_SPAWN;
-	}
-	else if ( Key == "ENDWAVE" || (Key == "END" && Value == "WAVE") ) {
-		VotingHandler.VotedTeam = Sender.PlayerReplicationInfo.Team;
-		if ( VotingHandler.VotedTeam == none )
-			return VOTE_ILLEGAL;
+        }
+        if ( Mut.Squads.Length == 0 ) {
+            Sender.ClientMessage(strOptionDisabled);
+            return VOTE_NOEFECT;
+        }
+        if ( Value == "" ) {
+            SendSquadList(Sender);
+            return VOTE_LOCAL;
+        }
+        if ( Mut.FindSquad(Value) == -1 ) {
+            Sender.ClientMessage(strSquadNotFound);
+            return VOTE_ILLEGAL;
+        }
+        if ( Mut.KF.TotalMaxMonsters < 10 ) {
+            Sender.ClientMessage(strCantSpawnSquadNow);
+            return VOTE_NOEFECT;
+        }
+        result = VOTE_SPAWN;
+    }
+    else if ( Key == "ENDWAVE" || (Key == "END" && Value == "WAVE") ) {
+        VotingHandler.VotedTeam = Sender.PlayerReplicationInfo.Team;
+        if ( VotingHandler.VotedTeam == none )
+            return VOTE_ILLEGAL;
 
-		if ( Mut.KF.NumMonsters == 0 )
-			return VOTE_NOEFECT;
+        if ( Mut.KF.NumMonsters == 0 )
+            return VOTE_NOEFECT;
 
-		if ( Mut.MaxVoteKillMonsters == 0 ) {
-			Sender.ClientMessage(strOptionDisabled);
-			return VOTE_NOEFECT;
-		}
-		if ( Mut.KF.TotalMaxMonsters > 0 || Mut.KF.NumMonsters > Mut.MaxVoteKillMonsters
-				|| Mut.GameRules.bFinalWave || !CanEndWave() )
-		{
-			Sender.ClientMessage(strCantEndWaveNow);
-			return VOTE_NOEFECT;
-		}
-		return VOTE_ENDWAVE;
-	}
+        if ( Mut.MaxVoteKillMonsters == 0 ) {
+            Sender.ClientMessage(strOptionDisabled);
+            return VOTE_NOEFECT;
+        }
+        if ( Mut.KF.TotalMaxMonsters > 0 || Mut.KF.NumMonsters > Mut.MaxVoteKillMonsters
+                || Mut.GameRules.bFinalWave || !CanEndWave() )
+        {
+            Sender.ClientMessage(strCantEndWaveNow);
+            return VOTE_NOEFECT;
+        }
+        return VOTE_ENDWAVE;
+    }
     else if ( Key == "READY" ) {
         if ( !Level.Game.bWaitingToStartMatch )
             return VOTE_NOEFECT;
@@ -374,10 +374,10 @@ function int GetVoteIndex(PlayerController Sender, string Key, out string Value,
         return VOTE_TEAMUNLOCK;
     }
     else if ( Key == "FF" ) {
-		if ( Mut.bTSCGame ) {
+        if ( Mut.bTSCGame ) {
             Sender.ClientMessage(strNotInTSC);
             return VOTE_NOEFECT;
-		}
+        }
         if ( Level.GRI.bMatchHasBegun ) {
             Sender.ClientMessage(strNotAvaliableATM);
             return VOTE_LOCAL;
@@ -412,29 +412,29 @@ function int GetVoteIndex(PlayerController Sender, string Key, out string Value,
 
         return VOTE_FAKEDPLAYERS;
     }
-	else if ( Key == "R_KILL" ) {
+    else if ( Key == "R_KILL" ) {
         if ( !Sender.PlayerReplicationInfo.bAdmin || Mut.SrvTourneyMode == 0 ) {
-			Sender.ClientMessage(strRCommands);
-			return VOTE_LOCAL;
-		}
+            Sender.ClientMessage(strRCommands);
+            return VOTE_LOCAL;
+        }
 
-		if ( Value == "" ) {
-			SendPlayerList(Sender);
-			return VOTE_LOCAL;
-		}
+        if ( Value == "" ) {
+            SendPlayerList(Sender);
+            return VOTE_LOCAL;
+        }
 
-		Reason = "";
-		Divide(Value, " ", Value, Reason);
-		VotingHandler.VotedPlayer = FindPlayer(Value);
-		if ( VotingHandler.VotedPlayer == none ) {
-			Sender.ClientMessage(strPlayerNotFound);
-			SendPlayerList(Sender);
-			return VOTE_ILLEGAL;
-		}
-		Value = Mut.ColoredPlayerName(VotingHandler.VotedPlayer.PlayerReplicationInfo);
-		VoteInfo = "Referee KILL " $ Value;
-		result = VOTE_RKILL;
-	}
+        Reason = "";
+        Divide(Value, " ", Value, Reason);
+        VotingHandler.VotedPlayer = FindPlayer(Value);
+        if ( VotingHandler.VotedPlayer == none ) {
+            Sender.ClientMessage(strPlayerNotFound);
+            SendPlayerList(Sender);
+            return VOTE_ILLEGAL;
+        }
+        Value = Mut.ColoredPlayerName(VotingHandler.VotedPlayer.PlayerReplicationInfo);
+        VoteInfo = "Referee KILL " $ Value;
+        result = VOTE_RKILL;
+    }
     else
         return VOTE_UNKNOWN;
 
@@ -482,116 +482,116 @@ function ApplyVoteValue(int VoteIndex, string VoteValue)
             Mut.TradeTimeAddSeconds = max(float(Mut.KF.WaveCountDown - 5) * Mut.SkippedTradeTimeMult, 0);
             Mut.KF.WaveCountDown = 6; // need to left at least 6 to execute kfgametype.timer() events
             break;
-		case VOTE_BLAME:
+        case VOTE_BLAME:
             if ( VotingHandler.VotedPlayer != none )
                 VoteValue = Mut.ColoredPlayerName(VotingHandler.VotedPlayer.PlayerReplicationInfo);
             LastBlameVoteTime = Level.TimeSeconds;
-			if ( Reason == "" )
-				VotingHandler.BroadcastMessage(VoteValue $ " blamed");
-			else
-				VotingHandler.BroadcastMessage(VoteValue $ " blamed for " $Reason);
+            if ( Reason == "" )
+                VotingHandler.BroadcastMessage(VoteValue $ " blamed");
+            else
+                VotingHandler.BroadcastMessage(VoteValue $ " blamed for " $Reason);
 
-			//achievement
-			if ( IsGoodReason(Reason) && VotingHandler.VoteInitiator != none
-					&& SRStatsBase(VotingHandler.VoteInitiator.SteamStatsAndAchievements) != none )
-			{
-				class'ScrnBalanceSrv.ScrnAchievements'.static.ProgressAchievementByID(
-					SRStatsBase(VotingHandler.VoteInitiator.SteamStatsAndAchievements).Rep, 'Blame55p', 1);
-				if ( VotingHandler.VotedPlayer == VotingHandler.VoteInitiator )
-					class'ScrnBalanceSrv.ScrnAchievements'.static.ProgressAchievementByID(
-						SRStatsBase(VotingHandler.VoteInitiator.SteamStatsAndAchievements).Rep, 'BlameMe', 1);
-				else if ( ScrnPlayerController(VotingHandler.VotedPlayer) != none && ScrnPlayerController(VotingHandler.VotedPlayer).BeggingForMoney >= 3 )
-				{
-					class'ScrnBalanceSrv.ScrnAchievements'.static.ProgressAchievementByID(
-						SRStatsBase(VotingHandler.VoteInitiator.SteamStatsAndAchievements).Rep, 'SellCrap', 1);
-					VotingHandler.VotedPlayer.ReceiveLocalizedMessage(class'ScrnBalanceSrv.ScrnFakedAchMsg', 1);
-					ScrnPlayerController(VotingHandler.VotedPlayer).BeggingForMoney = 0;
-				}
-			}
+            //achievement
+            if ( IsGoodReason(Reason) && VotingHandler.VoteInitiator != none
+                    && SRStatsBase(VotingHandler.VoteInitiator.SteamStatsAndAchievements) != none )
+            {
+                class'ScrnBalanceSrv.ScrnAchievements'.static.ProgressAchievementByID(
+                    SRStatsBase(VotingHandler.VoteInitiator.SteamStatsAndAchievements).Rep, 'Blame55p', 1);
+                if ( VotingHandler.VotedPlayer == VotingHandler.VoteInitiator )
+                    class'ScrnBalanceSrv.ScrnAchievements'.static.ProgressAchievementByID(
+                        SRStatsBase(VotingHandler.VoteInitiator.SteamStatsAndAchievements).Rep, 'BlameMe', 1);
+                else if ( ScrnPlayerController(VotingHandler.VotedPlayer) != none && ScrnPlayerController(VotingHandler.VotedPlayer).BeggingForMoney >= 3 )
+                {
+                    class'ScrnBalanceSrv.ScrnAchievements'.static.ProgressAchievementByID(
+                        SRStatsBase(VotingHandler.VoteInitiator.SteamStatsAndAchievements).Rep, 'SellCrap', 1);
+                    VotingHandler.VotedPlayer.ReceiveLocalizedMessage(class'ScrnBalanceSrv.ScrnFakedAchMsg', 1);
+                    ScrnPlayerController(VotingHandler.VotedPlayer).BeggingForMoney = 0;
+                }
+            }
 
-			if ( VotingHandler.VotedPlayer != none ) {
+            if ( VotingHandler.VotedPlayer != none ) {
                 ScrnPRI = class'ScrnCustomPRI'.static.FindMe(VotingHandler.VotedPlayer.PlayerReplicationInfo);
-				if ( ScrnPRI != none ) {
-					VotingHandler.VotedPlayer.ReceiveLocalizedMessage(class'ScrnBalanceSrv.ScrnBlamedMsg', ScrnPRI.BlameCounter++); // more blame = bigger shit
+                if ( ScrnPRI != none ) {
+                    VotingHandler.VotedPlayer.ReceiveLocalizedMessage(class'ScrnBalanceSrv.ScrnBlamedMsg', ScrnPRI.BlameCounter++); // more blame = bigger shit
 
-					//achievement
-					if ( ScrnPRI.BlameCounter == 5
-							&& SRStatsBase(VotingHandler.VotedPlayer.SteamStatsAndAchievements) != none )
-						class'ScrnBalanceSrv.ScrnAchievements'.static.ProgressAchievementByID(
-							SRStatsBase(VotingHandler.VotedPlayer.SteamStatsAndAchievements).Rep, 'MaxBlame', 1);
-				}
-				else
-					VotingHandler.VotedPlayer.ReceiveLocalizedMessage(class'ScrnBalanceSrv.ScrnBlamedMsg');
-			}
+                    //achievement
+                    if ( ScrnPRI.BlameCounter == 5
+                            && SRStatsBase(VotingHandler.VotedPlayer.SteamStatsAndAchievements) != none )
+                        class'ScrnBalanceSrv.ScrnAchievements'.static.ProgressAchievementByID(
+                            SRStatsBase(VotingHandler.VotedPlayer.SteamStatsAndAchievements).Rep, 'MaxBlame', 1);
+                }
+                else
+                    VotingHandler.VotedPlayer.ReceiveLocalizedMessage(class'ScrnBalanceSrv.ScrnBlamedMsg');
+            }
 
-			if ( VoteValue ~= "TEAM" || VoteValue ~= "ALL" ) {
-				BlameAll();
-				//achievement
-				if ( IsGoodReason(Reason) && VotingHandler.VoteInitiator != none
-						&& SRStatsBase(VotingHandler.VoteInitiator.SteamStatsAndAchievements) != none )
-					class'ScrnBalanceSrv.ScrnAchievements'.static.ProgressAchievementByID(
-						SRStatsBase(VotingHandler.VoteInitiator.SteamStatsAndAchievements).Rep, 'BlameTeam', 1);
-			}
-			else if ( VoteValue ~= "Baron" || (VotingHandler.VotedPlayer != none && VotingHandler.VotedPlayer.GetPlayerIDHash() == "76561198006289592") ) {
-				Mut.BroadcastFakedAchievement(0); // blame Baron :)
+            if ( VoteValue ~= "TEAM" || VoteValue ~= "ALL" ) {
+                BlameAll();
+                //achievement
+                if ( IsGoodReason(Reason) && VotingHandler.VoteInitiator != none
+                        && SRStatsBase(VotingHandler.VoteInitiator.SteamStatsAndAchievements) != none )
+                    class'ScrnBalanceSrv.ScrnAchievements'.static.ProgressAchievementByID(
+                        SRStatsBase(VotingHandler.VoteInitiator.SteamStatsAndAchievements).Rep, 'BlameTeam', 1);
+            }
+            else if ( VoteValue ~= "Baron" || (VotingHandler.VotedPlayer != none && VotingHandler.VotedPlayer.GetPlayerIDHash() == "76561198006289592") ) {
+                Mut.BroadcastFakedAchievement(0); // blame Baron :)
                 // blame the one who blamed baron
                 if ( VotingHandler.VoteInitiator != none && VotingHandler.VotedPlayer != VotingHandler.VoteInitiator ) {
                     VotingHandler.VotedPlayer = VotingHandler.VoteInitiator;
                     Reason = "Blaming Baron";
                     ApplyVoteValue(VoteIndex, VoteValue);
                 }
-			}
-			else if ( VoteValue ~= "TWI" || VoteValue ~= "Tripwire" ) {
-				Mut.BroadcastFakedAchievement(3); // blame Tripwire :)
-			}
-			else
-				BlameMonster(VoteValue);
+            }
+            else if ( VoteValue ~= "TWI" || VoteValue ~= "Tripwire" ) {
+                Mut.BroadcastFakedAchievement(3); // blame Tripwire :)
+            }
+            else
+                BlameMonster(VoteValue);
 
-			break;
-		case VOTE_SPEC:
-			if ( VotingHandler.VotedPlayer != none && !VotingHandler.VotedPlayer.PlayerReplicationInfo.bAdmin ) {
+            break;
+        case VOTE_SPEC:
+            if ( VotingHandler.VotedPlayer != none && !VotingHandler.VotedPlayer.PlayerReplicationInfo.bAdmin ) {
                 if ( Mut.ScrnGT != none )
                     Mut.ScrnGT.UninvitePlayer(VotingHandler.VotedPlayer);
                 VotingHandler.VotedPlayer.BecomeSpectator();
             }
-			break;
-		case VOTE_KICK:
-			if ( VotingHandler.VotedPlayer != none && !VotingHandler.VotedPlayer.PlayerReplicationInfo.bAdmin && NetConnection(VotingHandler.VotedPlayer.Player)!=None ) {
+            break;
+        case VOTE_KICK:
+            if ( VotingHandler.VotedPlayer != none && !VotingHandler.VotedPlayer.PlayerReplicationInfo.bAdmin && NetConnection(VotingHandler.VotedPlayer.Player)!=None ) {
                 if ( Mut.ScrnGT != none )
                     Mut.ScrnGT.UninvitePlayer(VotingHandler.VotedPlayer);
 
-				if ( Reason == "" ) {
-					VotingHandler.BroadcastMessage(VoteValue $ " kicked");
-					VotingHandler.VotedPlayer.ClientNetworkMessage("AC_Kicked", "Team Vote");
-				}
-				else {
-					VotingHandler.BroadcastMessage(VoteValue $ " kicked for " $Reason);
-					VotingHandler.VotedPlayer.ClientNetworkMessage("AC_Kicked", Reason);
-				}
+                if ( Reason == "" ) {
+                    VotingHandler.BroadcastMessage(VoteValue $ " kicked");
+                    VotingHandler.VotedPlayer.ClientNetworkMessage("AC_Kicked", "Team Vote");
+                }
+                else {
+                    VotingHandler.BroadcastMessage(VoteValue $ " kicked for " $Reason);
+                    VotingHandler.VotedPlayer.ClientNetworkMessage("AC_Kicked", Reason);
+                }
 
-				if (VotingHandler.VotedPlayer.Pawn != none && Vehicle(VotingHandler.VotedPlayer.Pawn) == none)
-					VotingHandler.VotedPlayer.Pawn.Destroy();
-				if (VotingHandler.VotedPlayer != None)
-					VotingHandler.VotedPlayer.Destroy();
-			}
-			break;
-		case VOTE_BORING:
-			Mut.KF.KFLRules.WaveSpawnPeriod *= 0.5;
-			VotingHandler.BroadcastMessage(strZedSpawnsDoubled $ " ("$Mut.KF.KFLRules.WaveSpawnPeriod$")");
-			break;
+                if (VotingHandler.VotedPlayer.Pawn != none && Vehicle(VotingHandler.VotedPlayer.Pawn) == none)
+                    VotingHandler.VotedPlayer.Pawn.Destroy();
+                if (VotingHandler.VotedPlayer != None)
+                    VotingHandler.VotedPlayer.Destroy();
+            }
+            break;
+        case VOTE_BORING:
+            Mut.KF.KFLRules.WaveSpawnPeriod *= 0.5;
+            VotingHandler.BroadcastMessage(strZedSpawnsDoubled $ " ("$Mut.KF.KFLRules.WaveSpawnPeriod$")");
+            break;
 
-		case VOTE_SPAWN:
-			Mut.SpawnSquad(VoteValue);
-			break;
+        case VOTE_SPAWN:
+            Mut.SpawnSquad(VoteValue);
+            break;
 
-		case VOTE_ENDWAVE:
-			if ( Mut.KF.TotalMaxMonsters > 0 || Mut.KF.NumMonsters > Mut.MaxVoteKillMonsters
-					|| Mut.GameRules.bFinalWave )
-			{
-				return;
-			}
-			DoEndWave();
-			break;
+        case VOTE_ENDWAVE:
+            if ( Mut.KF.TotalMaxMonsters > 0 || Mut.KF.NumMonsters > Mut.MaxVoteKillMonsters
+                    || Mut.GameRules.bFinalWave )
+            {
+                return;
+            }
+            DoEndWave();
+            break;
         case VOTE_READY:
             SetReady(VotingHandler.VotedTeam.TeamIndex, true);
             break;
@@ -606,7 +606,7 @@ function ApplyVoteValue(int VoteIndex, string VoteValue)
             break;
         case VOTE_INVITE:
             Mut.ScrnGT.InvitePlayer(VotingHandler.VotedPlayer);
-			break;
+            break;
         case VOTE_FF:
             Mut.KF.FriendlyFireScale = float(VoteValue)/100.0;
             if ( TSCGame(Mut.KF) != none )
@@ -620,17 +620,17 @@ function ApplyVoteValue(int VoteIndex, string VoteValue)
             Mut.ScrnGT.ScrnGRI.FakedAlivePlayers = byte(VoteValue);
             break;
 
-		case VOTE_RKILL:
-			if ( VotingHandler.VotedPlayer != none && VotingHandler.VotedPlayer.Pawn != none ) {
+        case VOTE_RKILL:
+            if ( VotingHandler.VotedPlayer != none && VotingHandler.VotedPlayer.Pawn != none ) {
                 VotingHandler.VotedPlayer.Pawn.Suicide();
-				if ( Reason == "" ) {
-					VotingHandler.BroadcastMessage(VoteValue $ " killed by referee");
-				}
-				else {
-					VotingHandler.BroadcastMessage(VoteValue $ " killed by referee for " $Reason);
-				}
+                if ( Reason == "" ) {
+                    VotingHandler.BroadcastMessage(VoteValue $ " killed by referee");
+                }
+                else {
+                    VotingHandler.BroadcastMessage(VoteValue $ " killed by referee for " $Reason);
+                }
             }
-			break;
+            break;
     }
 }
 
@@ -651,30 +651,30 @@ function SetReady(byte TeamIndex, bool bReady)
 
 function class<KFMonster> Str2Monster(string MonsterName)
 {
-	MonsterName = caps(MonsterName);
+    MonsterName = caps(MonsterName);
 
-	if ( MonsterName == "CLOT" )
-		return class'ZombieClot';
-	if ( MonsterName == "CRAWLER" )
-		return class'ZombieCrawler';
-	if ( MonsterName == "STALKER" )
-		return class'ZombieStalker';
-	if ( MonsterName == "BLOAT" )
-		return class'ZombieBloat';
-	if ( MonsterName == "GOREFAST" )
-		return class'ZombieGorefast';
-	if ( MonsterName == "SIREN" )
-		return class'ZombieSiren';
-	if ( MonsterName == "HUSK" )
-		return class'ZombieHusk';
-	if ( MonsterName == "SCRAKE" || MonsterName == "SC" )
-		return class'ZombieScrake';
-	if ( MonsterName == "FLESHPOUND" || MonsterName == "FP" )
-		return class'ZombieFleshpound';
-	if ( MonsterName == "PAT" || MonsterName == "PATRIARCH" || MonsterName == "BOSS" )
-		return class'ZombieBoss';
+    if ( MonsterName == "CLOT" )
+        return class'ZombieClot';
+    if ( MonsterName == "CRAWLER" )
+        return class'ZombieCrawler';
+    if ( MonsterName == "STALKER" )
+        return class'ZombieStalker';
+    if ( MonsterName == "BLOAT" )
+        return class'ZombieBloat';
+    if ( MonsterName == "GOREFAST" )
+        return class'ZombieGorefast';
+    if ( MonsterName == "SIREN" )
+        return class'ZombieSiren';
+    if ( MonsterName == "HUSK" )
+        return class'ZombieHusk';
+    if ( MonsterName == "SCRAKE" || MonsterName == "SC" )
+        return class'ZombieScrake';
+    if ( MonsterName == "FLESHPOUND" || MonsterName == "FP" )
+        return class'ZombieFleshpound';
+    if ( MonsterName == "PAT" || MonsterName == "PATRIARCH" || MonsterName == "BOSS" )
+        return class'ZombieBoss';
 
-	return none;
+    return none;
 }
 
 function BlameAll()
@@ -687,7 +687,7 @@ function BlameAll()
         Player = ScrnPlayerController(P);
         if ( Player != none ) {
             ScrnPRI = class'ScrnCustomPRI'.static.FindMe(Player.PlayerReplicationInfo);
-			if ( ScrnPRI != none ) {
+            if ( ScrnPRI != none ) {
                 Player.ReceiveLocalizedMessage(class'ScrnBalanceSrv.ScrnBlamedMsg', ScrnPRI.BlameCounter++); // more blame = bigger shit
                 if ( Player.PlayerReplicationInfo != none && Player.PlayerReplicationInfo.PlayerName ~= "Baron" )
                     Mut.BroadcastFakedAchievement(0); // blame Baron :)
@@ -700,73 +700,73 @@ function BlameAll()
 // returns false if monster not found or can't be blamed
 function bool BlameMonster(String MonsterName)
 {
-	local class<KFMonster> MC;
+    local class<KFMonster> MC;
     local Controller P;
     local ScrnPlayerController Player;
 
-	MC = Str2Monster(MonsterName);
-	// don't blame Stalkers and Patriarch, because shit on their head could reveal
-	// their positions
-	if ( MC == none || MC == class'ZombieStalker' ||  MC == class'ZombieBoss' )
-		return false;
+    MC = Str2Monster(MonsterName);
+    // don't blame Stalkers and Patriarch, because shit on their head could reveal
+    // their positions
+    if ( MC == none || MC == class'ZombieStalker' ||  MC == class'ZombieBoss' )
+        return false;
 
     for ( P = Level.ControllerList; P != none; P = P.nextController ) {
         Player = ScrnPlayerController(P);
         if ( Player != none ) {
-			Player.ClientMonsterBlamed(MC);
+            Player.ClientMonsterBlamed(MC);
         }
     }
-	return true;
+    return true;
 }
 
 static function bool IsGoodReason(string Reason)
 {
-	local string a, b;
+    local string a, b;
 
-	// good reason contains from at least 2 words, one of them is at least 6 character long
-	// "n00b" and "screw you" aren't good reasons :)
-	return Divide(Reason, " ", a, b) && ( len(a) >= 6 || len(b) >= 6);
+    // good reason contains from at least 2 words, one of them is at least 6 character long
+    // "n00b" and "screw you" aren't good reasons :)
+    return Divide(Reason, " ", a, b) && ( len(a) >= 6 || len(b) >= 6);
 }
 
 function bool CanEndWave()
 {
-	local Controller C;
-	local MonsterController MC;
-	local Monster M;
-	local KFHumanPawn P;
-	local int TotalHP;
+    local Controller C;
+    local MonsterController MC;
+    local Monster M;
+    local KFHumanPawn P;
+    local int TotalHP;
 
-	for ( C = Level.ControllerList; C != None; C = C.NextController ) {
-		MC = MonsterController(C);
-		M = Monster(C.Pawn);
-		if ( MC==none || M == none )
-			continue;
+    for ( C = Level.ControllerList; C != None; C = C.NextController ) {
+        MC = MonsterController(C);
+        M = Monster(C.Pawn);
+        if ( MC==none || M == none )
+            continue;
 
-		TotalHP += M.default.Health;
+        TotalHP += M.default.Health;
 
-		if ( Mut.bVoteKillCheckVisibility ) {
-			foreach VisibleCollidingActors(class'KFHumanPawn', P, 1000) {
-				if ( P.Health > 0 && P.Controller != none && P.Controller.bIsPlayer && KF_StoryNPC(P) == none && MC.CanSee(P) )
-					return false;
-			}
-		}
-	}
-	return TotalHP < Mut.MaxVoteKillHP;
+        if ( Mut.bVoteKillCheckVisibility ) {
+            foreach VisibleCollidingActors(class'KFHumanPawn', P, 1000) {
+                if ( P.Health > 0 && P.Controller != none && P.Controller.bIsPlayer && KF_StoryNPC(P) == none && MC.CanSee(P) )
+                    return false;
+            }
+        }
+    }
+    return TotalHP < Mut.MaxVoteKillHP;
 }
 
 function DoEndWave()
 {
-	local Monster M;
-	local int Penalty, TotalPenalty;
+    local Monster M;
+    local int Penalty, TotalPenalty;
 
-	foreach DynamicActors(class'Monster', M) {
-		Penalty = max(M.ScoringValue * Mut.VoteKillPenaltyMult, 0);
-		VotingHandler.VotedTeam.Score -= Penalty;
-		TotalPenalty += Penalty;
-		M.KilledBy(M);
-	}
-	if ( TotalPenalty > 0 )
-		VotingHandler.BroadcastMessage(strEndWavePenalty $ TotalPenalty);
+    foreach DynamicActors(class'Monster', M) {
+        Penalty = max(M.ScoringValue * Mut.VoteKillPenaltyMult, 0);
+        VotingHandler.VotedTeam.Score -= Penalty;
+        TotalPenalty += Penalty;
+        M.KilledBy(M);
+    }
+    if ( TotalPenalty > 0 )
+        VotingHandler.BroadcastMessage(strEndWavePenalty $ TotalPenalty);
 }
 
 state GamePaused
@@ -825,14 +825,14 @@ defaultproperties
     strSecondsLeft="seconds left"
     strGameUnpaused="Game resumed"
     strPauseTraderOnly="Game can be paused only during trader time!"
-	strZedSpawnsDoubled="ZED spawn rate doubled!"
-	strSquadNotFound="Monster squad with a given name not found"
-	strCantSpawnSquadNow="Can not spawn monsters at this moment"
-	strSquadList="Avaliable Squads:"
-	strNotInStoryMode="Not avaliable in Story Mode"
-	strNotInTSC="Not avaliable in TSC"
-	strCantEndWaveNow="Can't end the wave now"
-	strEndWavePenalty="Team charged for premature wave end with $"
+    strZedSpawnsDoubled="ZED spawn rate doubled!"
+    strSquadNotFound="Monster squad with a given name not found"
+    strCantSpawnSquadNow="Can not spawn monsters at this moment"
+    strSquadList="Avaliable Squads:"
+    strNotInStoryMode="Not avaliable in Story Mode"
+    strNotInTSC="Not avaliable in TSC"
+    strCantEndWaveNow="Can't end the wave now"
+    strEndWavePenalty="Team charged for premature wave end with $"
     strRCommands="R_* commands can be executed only by Referee (Admin rights + Tourney Mode)"
 
     viResume="RESUME GAME"

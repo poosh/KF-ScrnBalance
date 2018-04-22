@@ -7,23 +7,23 @@ var int MinDamage;
 
 simulated function ProcessTouch (Actor Other, vector HitLocation)
 {
-	local vector X;
-	local Vector TempHitLocation, HitNormal;
-	local array<int>	HitPoints;
+    local vector X;
+    local Vector TempHitLocation, HitNormal;
+    local array<int>    HitPoints;
     local KFPawn HitPawn;
     local bool bHeadshot;
 
-	if ( Other == none || Other == Instigator || Other.Base == Instigator || !Other.bBlockHitPointTraces || Other==IgnoreImpactPawn )
-		return;
+    if ( Other == none || Other == Instigator || Other.Base == Instigator || !Other.bBlockHitPointTraces || Other==IgnoreImpactPawn )
+        return;
 
-	X =  Vector(Rotation);
- 	if( ROBulletWhipAttachment(Other) != none ) {
+    X =  Vector(Rotation);
+     if( ROBulletWhipAttachment(Other) != none ) {
         if( Other.Base == none || Other.Base.bDeleteMe)
             return;
 
-	    Other = Instigator.HitPointTrace(TempHitLocation, HitNormal, HitLocation + (65535 * X), HitPoints, HitLocation,, 1);
+        Other = Instigator.HitPointTrace(TempHitLocation, HitNormal, HitLocation + (65535 * X), HitPoints, HitLocation,, 1);
         if( Other == none || Other == IgnoreImpactPawn || HitPoints.Length == 0 )
-				return;
+                return;
         HitPawn = KFPawn(Other);
         if (Role == ROLE_Authority) {
             if ( HitPawn != none ) {
@@ -33,7 +33,7 @@ simulated function ProcessTouch (Actor Other, vector HitLocation)
                 IgnoreImpactPawn = HitPawn;
             }
         }
-	}
+    }
     else {
         if ( ExtendedZCollision(Other) != none)
             Other = Other.Owner; // ExtendedZCollision is attached to KFMonster
@@ -54,8 +54,8 @@ simulated function ProcessTouch (Actor Other, vector HitLocation)
             Other.TakeDamage(Damage, Instigator, HitLocation, MomentumTransfer * X, MyDamageType);
     }
 
-	if( Level.NetMode!=NM_Client )
-		PlayhitNoise(Pawn(Other)!=none && Pawn(Other).ShieldStrength>0);
+    if( Level.NetMode!=NM_Client )
+        PlayhitNoise(Pawn(Other)!=none && Pawn(Other).ShieldStrength>0);
 
     Velocity *= HitVelocityReduction;
     Damage *= HitDamageReduction;
@@ -71,7 +71,7 @@ simulated function int AdjustZedDamage( int Damage, KFMonster Victim, bool bHead
          Damage *= 0.8; // 20% resistance to Pat
     else if ( Level.Game.GameDifficulty >= 5.0 && ZombieScrake(Victim) != none )
         Damage *= 0.5;
-		
+        
     return Damage;
 }
 

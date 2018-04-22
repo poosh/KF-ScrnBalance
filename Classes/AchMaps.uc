@@ -194,7 +194,7 @@ defaultproperties
      AchDefs(165)=(id="KF-FrightYardHard",DisplayName="Gang Crew",Description="Fright Yard",Icon=Texture'KillingFloor2HUD.Achievements.Achievement_229')
      AchDefs(166)=(id="KF-FrightYardSui",DisplayName="Stevedore",Description="Fright Yard",Icon=Texture'KillingFloor2HUD.Achievements.Achievement_230')
      AchDefs(167)=(id="KF-FrightYardHoe",DisplayName="Wharfinger",Description="Fright Yard",Icon=Texture'KillingFloor2HUD.Achievements.Achievement_231')
-	 
+     
      AchDefs(168)=(id="KF-Forgotten",DisplayName="Brain Fart",Description="Forgotten",Icon=Texture'KillingFloor2HUD.Achievements.Achievement_247')
      AchDefs(169)=(id="KF-ForgottenHard",DisplayName="Agnosia",Description="Forgotten",Icon=Texture'KillingFloor2HUD.Achievements.Achievement_248')
      AchDefs(170)=(id="KF-ForgottenSui",DisplayName="Amnesia",Description="Forgotten",Icon=Texture'KillingFloor2HUD.Achievements.Achievement_249')
@@ -204,7 +204,7 @@ defaultproperties
      AchDefs(173)=(id="KF-SirensBelchHard",DisplayName="Micro Brewer",Description="Siren's Belch",Icon=Texture'KillingFloor2HUD.Achievements.Achievement_253')
      AchDefs(174)=(id="KF-SirensBelchSui",DisplayName="Master Brewer",Description="Siren's Belch",Icon=Texture'KillingFloor2HUD.Achievements.Achievement_254')
      AchDefs(175)=(id="KF-SirensBelchHoe",DisplayName="Trappist Monk",Description="Siren's Belch",Icon=Texture'KillingFloor2HUD.Achievements.Achievement_255')
-	 
+     
      AchDefs(176)=(id="KF-Stronghold",DisplayName="Peasant",Description="Stronghold",Icon=Texture'KillingFloor2HUD.Achievements.Achievement_256')
      AchDefs(177)=(id="KF-StrongholdHard",DisplayName="Squire",Description="Stronghold",Icon=Texture'KillingFloor2HUD.Achievements.Achievement_257')
      AchDefs(178)=(id="KF-StrongholdSui",DisplayName="Prince",Description="Stronghold",Icon=Texture'KillingFloor2HUD.Achievements.Achievement_258')

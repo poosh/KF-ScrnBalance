@@ -1,7 +1,7 @@
 class ScrnDamTypeNailGun extends DamTypeNailGun
-	abstract;
-	
+    abstract;
+    
 defaultproperties
 {
      WeaponClass=Class'ScrnBalanceSrv.ScrnNailGun'
-}	 
+}     

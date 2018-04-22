@@ -1,5 +1,5 @@
 class ScrnDamTypeM4203AssaultRifle extends ScrnDamTypeM4AssaultRifle
-	abstract;
+    abstract;
 
 defaultproperties
 {

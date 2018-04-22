@@ -1,5 +1,5 @@
 class ScrnDamTypeMP5M extends ScrnDamTypeMedic
-	abstract;
+    abstract;
 
 defaultproperties
 {

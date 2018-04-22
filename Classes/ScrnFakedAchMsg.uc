@@ -1,11 +1,11 @@
 class ScrnFakedAchMsg extends ScrnAchievementEarnedMsg
-	abstract;
-	
+    abstract;
+    
 struct FakedAchData
 {
-	var texture Icon;
-	var string Title, Text;
-};	
+    var texture Icon;
+    var string Title, Text;
+};    
 var array<FakedAchData> Achievements; 
 
 
@@ -20,8 +20,8 @@ static function RenderComplexMessage(
         optional Object OptionalObject // must be ScrnAchievementInfo
         )
 {
-	local float X,Y, MaxWidth, MaxHeight, TextX, TextY, IconY;
-	local float TextWidth, TextHeight;
+    local float X,Y, MaxWidth, MaxHeight, TextX, TextY, IconY;
+    local float TextWidth, TextHeight;
     local float OrgX, ClipX; //dunno if it should be restored, but just in case
     local byte Style;
 
@@ -46,9 +46,9 @@ static function RenderComplexMessage(
     MaxWidth = max(256, TextWidth + 104);
     MaxHeight = 120; 
 
-	//X = C.CurX;
+    //X = C.CurX;
     X = (c.ClipX - MaxWidth)*0.5; 
-	Y = C.ClipY - MaxHeight;
+    Y = C.ClipY - MaxHeight;
 
     //background
     C.SetPos(X, Y);
@@ -64,7 +64,7 @@ static function RenderComplexMessage(
     C.SetDrawColor(127, 127, 127, c.DrawColor.A);
     C.StrLen(MessageString, TextWidth, TextHeight);
     C.SetPos((MaxWidth - TextWidth)/2, Y + 7);
-	C.DrawTextClipped(MessageString);
+    C.DrawTextClipped(MessageString);
     
     IconY = Y + 40;
     TextX = 88;
@@ -86,7 +86,7 @@ static function RenderComplexMessage(
     C.SetDrawColor(50, 192, 50, c.DrawColor.A);
     C.Font =class'ScrnBalanceSrv.ScrnHUD'.static.LoadFontStatic(6);
     C.StrLen(default.Achievements[Switch].Title, TextWidth, TextHeight);
-	C.DrawTextClipped(default.Achievements[Switch].Title);
+    C.DrawTextClipped(default.Achievements[Switch].Title);
     
     
     //description
@@ -104,8 +104,8 @@ static function RenderComplexMessage(
 
 defaultproperties
 {
-	Achievements(0)=(Icon=texture'ScrnAch_T.Achievements.Baron',Title="Blame Baron",Text="You died? No ammo? You're lagging? Your game crashed? Blame Baron!")
-	Achievements(1)=(Icon=texture'ScrnAch_T.Achievements.SellCrap',Title="Sell THIS!",Text="Begging for money too much? Your teammates made you a present. Maybe try to sell it.")
-	Achievements(2)=(Icon=texture'KillingFloorHUD.Achievements.Achievement_27',Title="Enjoy Your Luxury Funeral",Text="Didn't shared money? Now you can afford a luxury funeral.")
-	Achievements(3)=(Icon=texture'ScrnAch_T.Achievements.BlameTWI',Title="Blame Tripwire",Text="Broken mods? New bugs? Ruined balance? Milked players? Blame Tripwire!")
+    Achievements(0)=(Icon=texture'ScrnAch_T.Achievements.Baron',Title="Blame Baron",Text="You died? No ammo? You're lagging? Your game crashed? Blame Baron!")
+    Achievements(1)=(Icon=texture'ScrnAch_T.Achievements.SellCrap',Title="Sell THIS!",Text="Begging for money too much? Your teammates made you a present. Maybe try to sell it.")
+    Achievements(2)=(Icon=texture'KillingFloorHUD.Achievements.Achievement_27',Title="Enjoy Your Luxury Funeral",Text="Didn't shared money? Now you can afford a luxury funeral.")
+    Achievements(3)=(Icon=texture'ScrnAch_T.Achievements.BlameTWI',Title="Blame Tripwire",Text="Broken mods? New bugs? Ruined balance? Milked players? Blame Tripwire!")
 }

@@ -6,7 +6,7 @@ var() float SingleShellReloadRatio; //comparing to full reload rate. 2.0 = twice
 replication
 {
     reliable if(Role == ROLE_Authority)
-		ClientPlayReloadAnim, ClientSetWaitingToLoadShotty;
+        ClientPlayReloadAnim, ClientSetWaitingToLoadShotty;
 }
 
 simulated function WeaponTick(float dt)
@@ -27,7 +27,7 @@ simulated function WeaponTick(float dt)
                     SingleShotCount = MagAmmoRemaining;
                     ClientSetSingleShotCount(SingleShotCount);
                     bWaitingToLoadShotty = false;
-    				ClientSetWaitingToLoadShotty(bWaitingToLoadShotty); // replicate it to clients too
+                    ClientSetWaitingToLoadShotty(bWaitingToLoadShotty); // replicate it to clients too
                     NetUpdateTime = Level.TimeSeconds - 1;
                 }
             }
@@ -57,19 +57,19 @@ function SetPendingReload()
 
 simulated function bool ConsumeAmmo( int Mode, float Load, optional bool bAmountNeededIsMax )
 {
-	local bool result;
-	
-	result = super.ConsumeAmmo(0, Load, bAmountNeededIsMax);
+    local bool result;
+    
+    result = super.ConsumeAmmo(0, Load, bAmountNeededIsMax);
 
-	if ( AmmoAmount(0) == 0 && MagAmmoRemaining == 0 ) {
-		SingleShotCount = 0;
+    if ( AmmoAmount(0) == 0 && MagAmmoRemaining == 0 ) {
+        SingleShotCount = 0;
         if ( bWaitingToLoadShotty ) {
             bWaitingToLoadShotty = false;
-    		ClientSetWaitingToLoadShotty(bWaitingToLoadShotty); // replicate it to clients too
+            ClientSetWaitingToLoadShotty(bWaitingToLoadShotty); // replicate it to clients too
         }
-	}
+    }
 
-	return result;
+    return result;
 }
 
 simulated function ClientSetWaitingToLoadShotty(bool bNewWaitingToLoadShotty)
@@ -80,18 +80,18 @@ simulated function ClientSetWaitingToLoadShotty(bool bNewWaitingToLoadShotty)
 
 simulated function ClientPlayReloadAnim(float AnimRatio)
 {
-	if (!Instigator.IsLocallyControlled())
-		return;
+    if (!Instigator.IsLocallyControlled())
+        return;
 
-	if (AnimRatio ~= 0) 
+    if (AnimRatio ~= 0) 
         AnimRatio = 1.0;
         
     bWaitingToLoadShotty = true;    
 
-	PlayAnim(BoomStickAltFire(FireMode[0]).FireLastAnim, 
-		FireMode[0].FireAnimRate * AnimRatio, 
-		FireMode[0].TweenTime, 0);
-	SetAnimFrame(4, 0 , 1); //skip fire animation and jump to reload
+    PlayAnim(BoomStickAltFire(FireMode[0]).FireLastAnim, 
+        FireMode[0].FireAnimRate * AnimRatio, 
+        FireMode[0].TweenTime, 0);
+    SetAnimFrame(4, 0 , 1); //skip fire animation and jump to reload
 }
 
 
@@ -102,15 +102,15 @@ function bool AllowReload()
     if ( bWaitingToLoadShotty )
         return false;
         
-	return super(KFWeaponShotgun).AllowReload();
+    return super(KFWeaponShotgun).AllowReload();
 }
 
 exec function ReloadMeNow()
 {
-	if(!AllowReload())
-		return;
-		
-	if ( SingleShotCount < MagCapacity && !bWaitingToLoadShotty && AmmoAmount(0) > 0 ) {
+    if(!AllowReload())
+        return;
+        
+    if ( SingleShotCount < MagCapacity && !bWaitingToLoadShotty && AmmoAmount(0) > 0 ) {
         bWaitingToLoadShotty = true;
         if ( SingleShotCount > 0 ) {
             CurrentReloadCountDown = ReloadCountDown / SingleShellReloadRatio;
@@ -120,7 +120,7 @@ exec function ReloadMeNow()
             CurrentReloadCountDown = ReloadCountDown;
             ClientPlayReloadAnim(1.0);
         }
-	} 
+    } 
 }
 
 
@@ -169,12 +169,12 @@ simulated function ClientSetSingleShotCount(float NewSingleShotCount)
 
 defaultproperties
 {
-	ReloadRate=2.750000 // set here to properly calc stats
-	SingleShellReloadRatio=1.750000
-	FireModeClass(0)=Class'ScrnBalanceSrv.ScrnBoomStickAltFire'
-	FireModeClass(1)=Class'ScrnBalanceSrv.ScrnBoomStickFire'
-	Description="This is my BOOMstick (c) Ash, Evil Dead - Army of Darkness, 1992.|Has been used through the centuries to hunt down Demons, Aliens and Zombies. Now it's time for the ZEDs.|Can shoot from one or two barrels simultaneousely. Single shell reload is avaliable."
-	PickupClass=Class'ScrnBalanceSrv.ScrnBoomStickPickup'
-	ItemName="Boomstick"
+    ReloadRate=2.750000 // set here to properly calc stats
+    SingleShellReloadRatio=1.750000
+    FireModeClass(0)=Class'ScrnBalanceSrv.ScrnBoomStickAltFire'
+    FireModeClass(1)=Class'ScrnBalanceSrv.ScrnBoomStickFire'
+    Description="This is my BOOMstick (c) Ash, Evil Dead - Army of Darkness, 1992.|Has been used through the centuries to hunt down Demons, Aliens and Zombies. Now it's time for the ZEDs.|Can shoot from one or two barrels simultaneousely. Single shell reload is avaliable."
+    PickupClass=Class'ScrnBalanceSrv.ScrnBoomStickPickup'
+    ItemName="Boomstick"
     //Priority=220 // 160 - switch before aa12
 }

@@ -11,17 +11,17 @@ function Timer() { }
 
 function class<Projectile> GetDesiredProjectileClass()
 {
-	return ProjectileClass;
+    return ProjectileClass;
 }
 
 function PostSpawnProjectile(Projectile P)
 {
-	super(KFShotgunFire).PostSpawnProjectile(P); // bypass HuskGunFire
+    super(KFShotgunFire).PostSpawnProjectile(P); // bypass HuskGunFire
 }
 
 simulated function bool AllowFire()
 {
-	return (Weapon.AmmoAmount(ThisModeNum) >= MaxChargeAmmo);
+    return (Weapon.AmmoAmount(ThisModeNum) >= MaxChargeAmmo);
 }
 
 function ModeDoFire()

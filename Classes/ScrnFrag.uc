@@ -7,11 +7,11 @@ var transient bool bBlewInHands; //client didn't throw nade - it blew up in his 
 
 replication
 {
-	reliable if(Role < ROLE_Authority)
-		ServerCookNade;
+    reliable if(Role < ROLE_Authority)
+        ServerCookNade;
 
-	reliable if(Role == ROLE_Authority)
-		ClientThrowCooked;
+    reliable if(Role == ROLE_Authority)
+        ClientThrowCooked;
 }
 
 //executed on client-side only
@@ -20,8 +20,8 @@ simulated function CookNade()
     if( !Instigator.IsLocallyControlled() ) 
         return;
     
-	HandleSleeveSwapping(); // use proper arms
-	
+    HandleSleeveSwapping(); // use proper arms
+    
     ServerCookNade();
     if( Role < ROLE_Authority ) {
         CookExplodeTimer = Level.TimeSeconds + class'ScrnBalanceSrv.ScrnNade'.default.ExplodeTimer;
@@ -72,7 +72,7 @@ simulated function StartThrow()
         return; //can't throw nade while cooking
     
     HandleSleeveSwapping(); // use proper arms
-	
+    
     super.StartThrow();
 } 
 

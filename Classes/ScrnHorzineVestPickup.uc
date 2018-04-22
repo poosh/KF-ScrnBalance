@@ -1,5 +1,5 @@
 class ScrnHorzineVestPickup extends ScrnVestPickup
-	notplaceable;
+    notplaceable;
 
 defaultproperties
 {

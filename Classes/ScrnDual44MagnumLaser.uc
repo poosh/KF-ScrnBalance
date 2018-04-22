@@ -16,7 +16,7 @@ var         Actor                       RightLaserAttachment, LeftLaserAttachmen
 
 var         byte                        LaserType;       //current laser type
 
-var 		float 						FireSpotRenrerTime; 		// how long to render RightDot after weapon fire (after that RightDot will be put in the center of the screen)
+var         float                         FireSpotRenrerTime;         // how long to render RightDot after weapon fire (after that RightDot will be put in the center of the screen)
 
 
 replication
@@ -31,7 +31,7 @@ simulated function Destroyed()
 {
     if (RightDot != None)
         RightDot.Destroy();    
-	if (LeftDot != None)
+    if (LeftDot != None)
         LeftDot.Destroy();
 
     if (RightLaserAttachment != None)
@@ -79,8 +79,8 @@ simulated function ApplyLaserState()
             LeftLaserAttachment = Spawn(LaserAttachmentClass,self,,,);
             AttachToBone(LeftLaserAttachment,'Tip_Left');
         }
-		RightLaserAttachment.bHidden = false;
-		LeftLaserAttachment.bHidden = false;
+        RightLaserAttachment.bHidden = false;
+        LeftLaserAttachment.bHidden = false;
     }
     else {
         if ( RightLaserAttachment != none ) 
@@ -165,7 +165,7 @@ simulated function RenderOverlays( Canvas Canvas )
     local Actor Other;
     local vector X,Y,Z;
     local coords C;
-	local KFFire KFM;
+    local KFFire KFM;
     local array<Actor> HitActors;
 
     if (Instigator == None)
@@ -183,8 +183,8 @@ simulated function RenderOverlays( Canvas Canvas )
         if (FireMode[i] != None)
             FireMode[i].DrawMuzzleFlash(Canvas);
     }
-	
-	KFM = KFFire(FireMode[0]);
+    
+    KFM = KFFire(FireMode[0]);
 
     SetLocation( Instigator.Location + Instigator.CalcDrawOffset(self) );
     SetRotation( Instigator.GetViewRotation() + ZoomRotInterp);
@@ -195,9 +195,9 @@ simulated function RenderOverlays( Canvas Canvas )
     {
         //move RightDot during fire animation too  -- PooSH
         if( bIsReloading || (Level.TimeSeconds < KFM.LastFireTime + FireSpotRenrerTime
-			&& ((!bAimingRifle && KFM.FireAnim == 'FireLeft') 
-				 || (bAimingRifle && KFM.FireAimedAnim == 'FireLeft_Iron'))) )
-		{
+            && ((!bAimingRifle && KFM.FireAnim == 'FireLeft') 
+                 || (bAimingRifle && KFM.FireAimedAnim == 'FireLeft_Iron'))) )
+        {
             C = GetBoneCoords('Tip_Right');
             X = C.XAxis;
             Y = C.YAxis;
@@ -248,9 +248,9 @@ simulated function RenderOverlays( Canvas Canvas )
     {
         //move LeftDot during fire animation too  -- PooSH
         if( bIsReloading || (Level.TimeSeconds < KFM.LastFireTime + FireSpotRenrerTime
-			&& ((!bAimingRifle && KFM.FireAnim == 'FireRight') 
-				 || (bAimingRifle && KFM.FireAimedAnim == 'FireRight_Iron'))) )
-		{
+            && ((!bAimingRifle && KFM.FireAnim == 'FireRight') 
+                 || (bAimingRifle && KFM.FireAimedAnim == 'FireRight_Iron'))) )
+        {
             C = GetBoneCoords('Tip_Left');
             X = C.XAxis;
             Y = C.YAxis;
@@ -343,18 +343,18 @@ simulated function SetZoomBlendColor(Canvas c)
 
 function bool HandlePickupQuery( pickup Item )
 {
-	if ( ClassIsChildOf(Item.InventoryType, Class'Magnum44Pistol') || ClassIsChildOf(Item.InventoryType, Class'Dual44Magnum') )
-	{
-		if( LastHasGunMsgTime < Level.TimeSeconds && PlayerController(Instigator.Controller) != none )
-		{
-			LastHasGunMsgTime = Level.TimeSeconds + 0.5;
-			PlayerController(Instigator.Controller).ReceiveLocalizedMessage(Class'KFMainMessages', 1);
-		}
+    if ( ClassIsChildOf(Item.InventoryType, Class'Magnum44Pistol') || ClassIsChildOf(Item.InventoryType, Class'Dual44Magnum') )
+    {
+        if( LastHasGunMsgTime < Level.TimeSeconds && PlayerController(Instigator.Controller) != none )
+        {
+            LastHasGunMsgTime = Level.TimeSeconds + 0.5;
+            PlayerController(Instigator.Controller).ReceiveLocalizedMessage(Class'KFMainMessages', 1);
+        }
 
-		return True;
-	}
+        return True;
+    }
 
-	return Super.HandlePickupQuery(Item);
+    return Super.HandlePickupQuery(Item);
 }
 
 
@@ -367,9 +367,9 @@ function DropFrom(vector StartLocation)
     
 function GiveTo( pawn Other, optional Pickup Pickup )
 {
-	local Inventory Inv;
+    local Inventory Inv;
     local KFWeapon W;
-	local int AmmoToAdd;
+    local int AmmoToAdd;
     local int count;
 
     // when picking up laser dual-44, destroy all magnums (single or duals)
@@ -387,18 +387,18 @@ function GiveTo( pawn Other, optional Pickup Pickup )
         else {
             Inv = Inv.Inventory;
         }
-	}
+    }
     
     if ( WeaponPickup(Pickup) != none ) {
         WeaponPickup(Pickup).AmmoAmount[0] += AmmoToAdd;
         AmmoToAdd = 0;
     }
 
-	Super(KFWeapon).GiveTo(Other, Pickup);
+    Super(KFWeapon).GiveTo(Other, Pickup);
 
-	if ( AmmoToAdd > 0 ) {
-		AddAmmo(AmmoToAdd, 0);
-	}
+    if ( AmmoToAdd > 0 ) {
+        AddAmmo(AmmoToAdd, 0);
+    }
 }
 
 defaultproperties
@@ -413,6 +413,6 @@ defaultproperties
      PickupClass=Class'ScrnBalanceSrv.ScrnDual44MagnumLaserPickup'
      AttachmentClass=Class'ScrnBalanceSrv.ScrnDual44MagnumLaserAttachment'
      ItemName="Laser Dual 44 Magnums"
-	 FireSpotRenrerTime=1.0
+     FireSpotRenrerTime=1.0
      MagAmmoRemaining=12
 }

@@ -1,5 +1,5 @@
 class ScrnSPSniperRifle extends SPSniperRifle
-	config(user);
+    config(user);
 
 defaultproperties
 {

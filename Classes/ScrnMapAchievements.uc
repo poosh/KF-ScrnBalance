@@ -46,23 +46,23 @@ simulated function SetDefaultAchievementData()
  */
 static final function int UnlockMapAchievement(ClientPerkRepLink L, string MapName, byte DiffIndex)
 {
-	local SRCustomProgress S;
+    local SRCustomProgress S;
     local ScrnMapAchievements A;
     local int i;
 
     if ( L == none || DiffIndex < 0 || DiffIndex >= 4 || MapName == "" )
         return -1;
 
-	for( S = L.CustomLink; S != none; S = S.NextLink ) {
+    for( S = L.CustomLink; S != none; S = S.NextLink ) {
         A = ScrnMapAchievements(S);
-		if( A != none ) {
+        if( A != none ) {
             for ( i = 0; i < A.AchDefs.length; i += 4 ) {
                 if ( String(A.AchDefs[i].ID) ~= MapName ) {
                     return int(A.ProgressAchievement(i+DiffIndex, 1));
                 }
             }
         }
-	}
+    }
     return -2;
 }
 
@@ -122,21 +122,21 @@ simulated function string LocalGroupCaption(ClientPerkRepLink L, name Group)
 
 defaultproperties
 {
-	UniversalDescriptions(0)="Survive on %m in ScrN Balance mode"
-	UniversalDescriptions(1)="Survive on %m against Super/Custom specimens and Hardcore Level 5+"
-	UniversalDescriptions(2)="Survive on %m in Turbo mode or against Custom end-game Boss and HL 10+"
-	UniversalDescriptions(3)="Survive on %m in FTG mode or against Doom3 monsters and HL 15+"
+    UniversalDescriptions(0)="Survive on %m in ScrN Balance mode"
+    UniversalDescriptions(1)="Survive on %m against Super/Custom specimens and Hardcore Level 5+"
+    UniversalDescriptions(2)="Survive on %m in Turbo mode or against Custom end-game Boss and HL 10+"
+    UniversalDescriptions(3)="Survive on %m in FTG mode or against Doom3 monsters and HL 15+"
 
     UniversalFilters(0)=0
     UniversalFilters(1)=2 // custom monsters
     UniversalFilters(2)=4 // Custom boss: Doom3 (SE), custom (HardPat) or super boss (SuperPat)
     UniversalFilters(3)=8 // doom3
 
-	MapDifficultyNames(0)="Map"
-	MapDifficultyNames(1)="Hard+ Map"
-	MapDifficultyNames(2)="Suicidal+ Map"
-	MapDifficultyNames(3)="HoE Map"
+    MapDifficultyNames(0)="Map"
+    MapDifficultyNames(1)="Hard+ Map"
+    MapDifficultyNames(2)="Suicidal+ Map"
+    MapDifficultyNames(3)="HoE Map"
 
-	DefaultAchGroup="MAP"
-	GroupInfo(1)=(Group="MAP",Caption="Maps")
+    DefaultAchGroup="MAP"
+    GroupInfo(1)=(Group="MAP",Caption="Maps")
 }

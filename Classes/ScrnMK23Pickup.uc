@@ -4,21 +4,21 @@ var class<KFWeapon> DualInventoryType; // dual class
 
 function inventory SpawnCopy( pawn Other ) {
     local Inventory CurInv;
-	local KFWeapon PistolInInventory;
+    local KFWeapon PistolInInventory;
 
     For( CurInv=Other.Inventory; CurInv!=None; CurInv=CurInv.Inventory ) {
-		PistolInInventory = KFWeapon(CurInv);
+        PistolInInventory = KFWeapon(CurInv);
         if( PistolInInventory != None && (PistolInInventory.class == default.InventoryType 
-				|| ClassIsChildOf(default.InventoryType, PistolInInventory.class)) )
-		{
-			// destroy the inventory to force parent SpawnCopy() to make a new instance of class
-			// we specified below
+                || ClassIsChildOf(default.InventoryType, PistolInInventory.class)) )
+        {
+            // destroy the inventory to force parent SpawnCopy() to make a new instance of class
+            // we specified below
             if( Inventory!=None )
-				Inventory.Destroy();
+                Inventory.Destroy();
             // spawn dual guns instead of another instance of single
             InventoryType = DualInventoryType;
-			// Make dualies to cost twice of lowest value in case of PERKED+UNPERKED pistols
-			SellValue = 2 * min(SellValue, PistolInInventory.SellValue);
+            // Make dualies to cost twice of lowest value in case of PERKED+UNPERKED pistols
+            SellValue = 2 * min(SellValue, PistolInInventory.SellValue);
             AmmoAmount[0]+= PistolInInventory.AmmoAmount(0);
             MagAmmoRemaining+= PistolInInventory.MagAmmoRemaining;
             CurInv.Destroyed();
@@ -33,7 +33,7 @@ function inventory SpawnCopy( pawn Other ) {
 function bool CheckCanCarry(KFHumanPawn Hm) {
     local Inventory CurInv;
     local bool bHasSinglePistol;
-	local float AddWeight;
+    local float AddWeight;
 
     AddWeight = class<KFWeapon>(default.InventoryType).default.Weight;
     for ( CurInv = Hm.Inventory; CurInv != none; CurInv = CurInv.Inventory ) {
@@ -54,11 +54,11 @@ function bool CheckCanCarry(KFHumanPawn Hm) {
     }
 
     if ( !Hm.CanCarry(AddWeight) ) {
-		if ( LastCantCarryTime < Level.TimeSeconds && PlayerController(Hm.Controller) != none )
-		{
-			LastCantCarryTime = Level.TimeSeconds + 0.5;
-			PlayerController(Hm.Controller).ReceiveLocalizedMessage(Class'KFMainMessages', 2);
-		}
+        if ( LastCantCarryTime < Level.TimeSeconds && PlayerController(Hm.Controller) != none )
+        {
+            LastCantCarryTime = Level.TimeSeconds + 0.5;
+            PlayerController(Hm.Controller).ReceiveLocalizedMessage(Class'KFMainMessages', 2);
+        }
 
         return false;
     }

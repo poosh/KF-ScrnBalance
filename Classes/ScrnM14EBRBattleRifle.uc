@@ -10,7 +10,7 @@ class ScrnM14EBRBattleRifle extends M14EBRBattleRifle
 dependson(ScrnLocalLaserDot)
     config(user);
 
-var()	byte		                        LaserType; 	  //current laser type
+var()    byte                                LaserType;       //current laser type
 var const class<ScrnLocalLaserDot>          LaserDotClass;
 var     ScrnLocalLaserDot                   LaserDot;
 var     name                                LaserAttachmentBone;
@@ -18,25 +18,25 @@ var     name                                LaserAttachmentBone;
 
 replication
 {
-	reliable if(Role < ROLE_Authority)
-		ServerSetLaserType;
+    reliable if(Role < ROLE_Authority)
+        ServerSetLaserType;
 }
 
 
 simulated function PostBeginPlay()
 {
-	super(KFWeapon).PostBeginPlay();
+    super(KFWeapon).PostBeginPlay();
 }
 
 simulated function Destroyed()
 {
-	if (LaserDot != None)
-		LaserDot.Destroy();
+    if (LaserDot != None)
+        LaserDot.Destroy();
 
-	if (LaserAttachment != None)
-		LaserAttachment.Destroy();
+    if (LaserAttachment != None)
+        LaserAttachment.Destroy();
 
-	super(KFWeapon).Destroyed();
+    super(KFWeapon).Destroyed();
 }
 
 
@@ -50,9 +50,9 @@ simulated function AltFire(float F)
 //bring Laser to current state, which is indicating by LaserType 
 simulated function ApplyLaserState()
 {
-	bLaserActive = LaserType > 0;
-	if( Role < ROLE_Authority  )
-		ServerSetLaserType(LaserType);
+    bLaserActive = LaserType > 0;
+    if( Role < ROLE_Authority  )
+        ServerSetLaserType(LaserType);
 
     if ( ThirdPersonActor != none )
         ScrnLaserWeaponAttachment(ThirdPersonActor).SetLaserType(LaserType);
@@ -60,48 +60,48 @@ simulated function ApplyLaserState()
     if ( !Instigator.IsLocallyControlled() )
         return;
     
-	if( bLaserActive ) {
+    if( bLaserActive ) {
         if ( LaserDot == none )
             LaserDot = Spawn(LaserDotClass, self);
         LaserDot.SetLaserType(LaserType);
-		//spawn 1-st person laser attachment for weapon owner
-		if ( LaserAttachment == none ) {
-			LaserAttachment = Spawn(LaserAttachmentClass,,,,);
-			AttachToBone(LaserAttachment, LaserAttachmentBone);
-		}
-		ConstantColor'ScrnTex.Laser.LaserColor'.Color = 
-			LaserDot.GetLaserColor(); // LaserAttachment's color
-		LaserAttachment.bHidden = false;
+        //spawn 1-st person laser attachment for weapon owner
+        if ( LaserAttachment == none ) {
+            LaserAttachment = Spawn(LaserAttachmentClass,,,,);
+            AttachToBone(LaserAttachment, LaserAttachmentBone);
+        }
+        ConstantColor'ScrnTex.Laser.LaserColor'.Color = 
+            LaserDot.GetLaserColor(); // LaserAttachment's color
+        LaserAttachment.bHidden = false;
 
-	}
-	else {
-		if ( LaserAttachment != none )
-			LaserAttachment.bHidden = true;
+    }
+    else {
+        if ( LaserAttachment != none )
+            LaserAttachment.bHidden = true;
         if ( LaserDot != none )
             LaserDot.Destroy(); //bHidden = true;
-	}
+    }
 }
 // Toggle laser modes: RED/GREEN/OFF
 simulated function ToggleLaser()
 {
-	if( !Instigator.IsLocallyControlled() ) 
+    if( !Instigator.IsLocallyControlled() ) 
         return;
 
     if ( (++LaserType) > 2 )  
         LaserType = 0;
-	ApplyLaserState();
+    ApplyLaserState();
 }
 
 simulated function BringUp(optional Weapon PrevWeapon)
 {
-	ApplyLaserState();
-	Super.BringUp(PrevWeapon);
+    ApplyLaserState();
+    Super.BringUp(PrevWeapon);
 }
 
 simulated function TurnOffLaser()
 {
-	if( !Instigator.IsLocallyControlled() )
-		return;
+    if( !Instigator.IsLocallyControlled() )
+        return;
 
     if( Role < ROLE_Authority  )
         ServerSetLaserType(0);
@@ -121,14 +121,14 @@ simulated function TurnOffLaser()
 function ServerSetLaserType(byte NewLaserType)
 {
     LaserType = NewLaserType;
-	bLaserActive = NewLaserType > 0; 
+    bLaserActive = NewLaserType > 0; 
     ScrnLaserWeaponAttachment(ThirdPersonActor).SetLaserType(LaserType);   
 }
 
 simulated function bool PutDown()
 {
-	TurnOffLaser();
-	return super(KFWeapon).PutDown();
+    TurnOffLaser();
+    return super(KFWeapon).PutDown();
 }
 
 simulated function WeaponTick(float dt)
@@ -144,7 +144,7 @@ simulated function RenderOverlays( Canvas Canvas )
     local Actor Other;
     local vector X,Y,Z;
     local coords C;
-	local KFFire KFM;
+    local KFFire KFM;
     local array<Actor> HitActors;
 
     if (Instigator == None)
@@ -165,15 +165,15 @@ simulated function RenderOverlays( Canvas Canvas )
 
     SetLocation( Instigator.Location + Instigator.CalcDrawOffset(self) );
     SetRotation( Instigator.GetViewRotation() + ZoomRotInterp);
-	
-	KFM = KFFire(FireMode[0]);
+    
+    KFM = KFFire(FireMode[0]);
 
     // Handle drawing the laser dot
     if ( LaserDot != None )
     {
         //move LaserDot during fire animation too  -- PooSH
         if( bIsReloading )
-		{
+        {
             C = GetBoneCoords(LaserAttachmentBone);
             X = C.XAxis;
             Y = C.YAxis;
@@ -227,7 +227,7 @@ simulated function RenderOverlays( Canvas Canvas )
     bDrawingFirstPerson = false;
 }
 
-	
+    
 
 defaultproperties
 {

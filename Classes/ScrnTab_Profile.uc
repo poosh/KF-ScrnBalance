@@ -5,75 +5,75 @@ var localized string strNotATeamChar;
 
 function bool PickModel(GUIComponent Sender)
 {
-	if ( Controller.OpenMenu(string(Class'ScrnModelSelect'), PlayerRec.DefaultName, Eval(Controller.CtrlPressed, PlayerRec.Race, "")) )
-	{
-		Controller.ActivePage.OnClose = ModelSelectClosed;
-	}
+    if ( Controller.OpenMenu(string(Class'ScrnModelSelect'), PlayerRec.DefaultName, Eval(Controller.CtrlPressed, PlayerRec.Race, "")) )
+    {
+        Controller.ActivePage.OnClose = ModelSelectClosed;
+    }
 
-	return true;
+    return true;
 }
 
 function ModelSelectClosed( optional bool bCancelled )
 {
     local ScrnPlayerController PC;
-	local string str;
+    local string str;
 
-	if ( bCancelled )
-		return;
+    if ( bCancelled )
+        return;
 
     PC = ScrnPlayerController(PlayerOwner());
-	str = Controller.ActivePage.GetDataString();
-	if ( str != "" ) {
+    str = Controller.ActivePage.GetDataString();
+    if ( str != "" ) {
         if ( PC != none && !PC.IsTeamCharacter(str) ) {
             PC.ClientMessage(strNotATeamChar);
             return;
         }
         super.ModelSelectClosed(bCancelled);
-	}
+    }
 }
 
 function OnPerkSelected(GUIComponent Sender)
 {
-	local ClientPerkRepLink ST;
-	local byte Idx;
-	local string S;
+    local ClientPerkRepLink ST;
+    local byte Idx;
+    local string S;
 
-	ST = Class'ClientPerkRepLink'.Static.FindStats(PlayerOwner());
-	if ( ST==None || ST.CachePerks.Length==0 )
-	{
-		if( ST!=None )
-			ST.ServerRequestPerks();
-		lb_PerkEffects.SetContent("Please wait while your client is loading the perks...");
-	}
-	else
-	{
-		Idx = lb_PerkSelect.GetIndex();
-		if( ST.CachePerks[Idx].CurrentLevel==0 )
-			S = ST.CachePerks[Idx].PerkClass.Static.GetVetInfoText(0,1);
-		else if( ST.CachePerks[Idx].CurrentLevel==ST.MaximumLevel )
-			S = ST.CachePerks[Idx].PerkClass.Static.GetVetInfoText(ST.CachePerks[Idx].CurrentLevel-1,1);
-		else
+    ST = Class'ClientPerkRepLink'.Static.FindStats(PlayerOwner());
+    if ( ST==None || ST.CachePerks.Length==0 )
+    {
+        if( ST!=None )
+            ST.ServerRequestPerks();
+        lb_PerkEffects.SetContent("Please wait while your client is loading the perks...");
+    }
+    else
+    {
+        Idx = lb_PerkSelect.GetIndex();
+        if( ST.CachePerks[Idx].CurrentLevel==0 )
+            S = ST.CachePerks[Idx].PerkClass.Static.GetVetInfoText(0,1);
+        else if( ST.CachePerks[Idx].CurrentLevel==ST.MaximumLevel )
+            S = ST.CachePerks[Idx].PerkClass.Static.GetVetInfoText(ST.CachePerks[Idx].CurrentLevel-1,1);
+        else
             S = ST.CachePerks[Idx].PerkClass.Static.GetVetInfoText(ST.CachePerks[Idx].CurrentLevel-1,1)
             $ Class'SRTab_MidGamePerks'.Default.NextInfoStr
             $ ST.CachePerks[Idx].PerkClass.Static.GetVetInfoText(ST.CachePerks[Idx].CurrentLevel,11);
-		lb_PerkEffects.SetContent(S);
-		lb_PerkProgress.List.PerkChanged(KFStatsAndAchievements, Idx);
-	}
+        lb_PerkEffects.SetContent(S);
+        lb_PerkProgress.List.PerkChanged(KFStatsAndAchievements, Idx);
+    }
 }
 
 
 function SaveSettings()
 {
-	local PlayerController PC;
+    local PlayerController PC;
     local ScrnPlayerController ScrnPC;
-	local ClientPerkRepLink L;
+    local ClientPerkRepLink L;
 
-	PC = PlayerOwner();
+    PC = PlayerOwner();
     ScrnPC = ScrnPlayerController(PlayerOwner());
-	L = Class'ScrnClientPerkRepLink'.Static.FindMe(PC);
+    L = Class'ScrnClientPerkRepLink'.Static.FindMe(PC);
 
-	if ( ChangedCharacter!="" )
-	{
+    if ( ChangedCharacter!="" )
+    {
         if ( ScrnPC != none && !ScrnPC.IsTeamCharacter(ChangedCharacter) ) {
             ScrnPC.ClientMessage(strNotATeamChar);
         }
@@ -99,10 +99,10 @@ function SaveSettings()
                 else PC.UpdateURL("Sex", "M", True);
             }
         }
-		ChangedCharacter = "";
-	}
+        ChangedCharacter = "";
+    }
 
-	if ( lb_PerkSelect.GetIndex()>=0 && L!=None ) {
+    if ( lb_PerkSelect.GetIndex()>=0 && L!=None ) {
         ScrnPC.SelectVeterancy(L.CachePerks[lb_PerkSelect.GetIndex()].PerkClass);
     }
 }

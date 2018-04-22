@@ -361,9 +361,9 @@ simulated event UpdateScoreBoard(Canvas Canvas)
 
     // "Zeroth", Draw game name :)
     S = GRI.GameName;
-	Canvas.TextSize(S, XL,YL);
-	Canvas.SetPos( (Canvas.ClipX - XL)/2, HeaderOffsetY - YL);
-	Canvas.DrawTextClipped(S);
+    Canvas.TextSize(S, XL,YL);
+    Canvas.SetPos( (Canvas.ClipX - XL)/2, HeaderOffsetY - YL);
+    Canvas.DrawTextClipped(S);
 
     // First, draw title.
     if ( HumanDamageMode != 3 )
@@ -373,7 +373,7 @@ simulated event UpdateScoreBoard(Canvas Canvas)
     S $= SkillLevel[Clamp(InvasionGameReplicationInfo(GRI).BaseDifficulty, 0, 7)]  $ " | HL="$string(class'ScrnBalance'.default.Mut.HardcoreLevel)
             $ " | " $ WaveString @ string(InvasionGameReplicationInfo(GRI).WaveNumber + 1)$"/"$string(InvasionGameReplicationInfo(GRI).FinalWave)
             $ " | " $ Level.Title $ " | " $ FormatTime(GRI.ElapsedTime);
-	Canvas.TextSize(S, XL,YL);
+    Canvas.TextSize(S, XL,YL);
     Canvas.SetPos(0.5 * (Canvas.ClipX - XL), HeaderOffsetY);
     Canvas.DrawTextClipped(S);
 
@@ -467,8 +467,8 @@ simulated event UpdateScoreBoard(Canvas Canvas)
     {
         Canvas.Font = class'ROHud'.static.LoadMenuFontStatic( min(8, fi+2) );
         Canvas.DrawColor = Class'HudBase'.Default.GrayColor;
-		Canvas.SetPos(RedBoxXPos, HeaderOffsetY + PlayerBoxSizeY*DisplayedCount + PlayerBoxSizeY*0.5 );
-		Canvas.DrawText(SpectatorsText $ ": |" $ Spectators, true);
+        Canvas.SetPos(RedBoxXPos, HeaderOffsetY + PlayerBoxSizeY*DisplayedCount + PlayerBoxSizeY*0.5 );
+        Canvas.DrawText(SpectatorsText $ ": |" $ Spectators, true);
     }
 }
 

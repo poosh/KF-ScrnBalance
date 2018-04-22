@@ -74,8 +74,8 @@ simulated state QuickMelee
 
 simulated function PostBeginPlay()
 {
-	super.PostBeginPlay();
-	
+    super.PostBeginPlay();
+    
     bCanThrow = KF_StoryGRI(Level.GRI) != none; // throw knife on dying only in story mode
 }
 

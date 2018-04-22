@@ -1,5 +1,5 @@
 class DamTypeSudDeath extends TSCDamageType 
-	abstract;
+    abstract;
     
 defaultproperties
 {

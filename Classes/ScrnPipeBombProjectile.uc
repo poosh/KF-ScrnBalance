@@ -2,18 +2,18 @@ class ScrnPipeBombProjectile extends PipeBombProjectile;
 
 static function PreloadAssets()
 {
-	//default.ExplodeSounds[0] = sound(DynamicLoadObject(default.ExplodeSoundRefs[0], class'Sound', true));
+    //default.ExplodeSounds[0] = sound(DynamicLoadObject(default.ExplodeSoundRefs[0], class'Sound', true));
 
-	UpdateDefaultStaticMesh(StaticMesh(DynamicLoadObject(default.StaticMeshRef, class'StaticMesh', true)));
+    UpdateDefaultStaticMesh(StaticMesh(DynamicLoadObject(default.StaticMeshRef, class'StaticMesh', true)));
 }
 
 static function bool UnloadAssets()
 {
-	//default.ExplodeSounds[0] = none;
+    //default.ExplodeSounds[0] = none;
 
-	UpdateDefaultStaticMesh(none);
+    UpdateDefaultStaticMesh(none);
 
-	return true;
+    return true;
 }
 
 function TakeDamage( int Damage, Pawn InstigatedBy, Vector Hitlocation, Vector Momentum, class<DamageType> damageType, optional int HitIndex)
@@ -21,16 +21,16 @@ function TakeDamage( int Damage, Pawn InstigatedBy, Vector Hitlocation, Vector M
     if ( bTriggered || Damage < 5 )
         return;
 
-	if ( Monster(InstigatedBy) == none && class<KFWeaponDamageType>(damageType) != none && class<KFWeaponDamageType>(damageType).default.bDealBurningDamage )
-		return; // make pipebombs immune to fire, unless instigated by monsters
+    if ( Monster(InstigatedBy) == none && class<KFWeaponDamageType>(damageType) != none && class<KFWeaponDamageType>(damageType).default.bDealBurningDamage )
+        return; // make pipebombs immune to fire, unless instigated by monsters
 
     super.TakeDamage(Damage, InstigatedBy, Hitlocation, Momentum, damageType, HitIndex);
 }
 
 function Timer()
 {
-	local Pawn CheckPawn;
-	local float ThreatLevel;
+    local Pawn CheckPawn;
+    local float ThreatLevel;
     local vector DetectLocation;
     local bool bSameTeam; //pawn is from the same team as instigator
 
@@ -46,21 +46,21 @@ function Timer()
             {
                 SetTimer(1.0,True);
             }
-    	}
-    	else
-    	{
+        }
+        else
+        {
             // Check for enemies
             if( !bEnemyDetected )
             {
                 bAlwaysRelevant=false;
                 PlaySound(BeepSound,,0.5,,50.0);
 
-            	foreach VisibleCollidingActors( class 'Pawn', CheckPawn, DetectionRadius, DetectLocation )
-            	{
-					// don't trigger pipes on NPC  -- PooSH
+                foreach VisibleCollidingActors( class 'Pawn', CheckPawn, DetectionRadius, DetectLocation )
+                {
+                    // don't trigger pipes on NPC  -- PooSH
                     bSameTeam = KF_StoryNPC(CheckPawn) != none
-						|| (CheckPawn.PlayerReplicationInfo != none && CheckPawn.PlayerReplicationInfo.Team.TeamIndex == PlacedTeam);
-            		if( CheckPawn == Instigator
+                        || (CheckPawn.PlayerReplicationInfo != none && CheckPawn.PlayerReplicationInfo.Team.TeamIndex == PlacedTeam);
+                    if( CheckPawn == Instigator
                         || (bSameTeam && KFGameType(Level.Game).FriendlyFireScale > 0) )
                     {
                         // Make the thing beep if someone on our team is within the detection radius
@@ -72,7 +72,7 @@ function Timer()
                         if( CheckPawn.Health > 0 //don't trigger pipes by dead bodies  -- PooSH
                             && CheckPawn != Instigator && CheckPawn.Role == ROLE_Authority
                             && !bSameTeam )
-                		{
+                        {
                             if( KFMonster(CheckPawn) != none )
                             {
                                 ThreatLevel += KFMonster(CheckPawn).MotionDetectorThreat;
@@ -87,10 +87,10 @@ function Timer()
                                 bEnemyDetected=true;
                                 SetTimer(0.15,True);
                             }
-                		}
-            		}
+                        }
+                    }
 
-            	}
+                }
 
                 if( ThreatLevel >= ThreatThreshhold )
                 {
@@ -105,10 +105,10 @@ function Timer()
                 {
                     SetTimer(1.0,True);
                 }
-        	}
-        	// Play some fast beeps and blow up
-        	else
-        	{
+            }
+            // Play some fast beeps and blow up
+            else
+            {
                 bAlwaysRelevant=true;
                 Countdown--;
 
@@ -120,153 +120,153 @@ function Timer()
                 {
                     Explode(DetectLocation, vector(Rotation));
                 }
-        	}
-    	}
-	}
-	else
-	{
+            }
+        }
+    }
+    else
+    {
         Destroy();
-	}
+    }
 }
 
 
 // copy-pasted, adding ScrN achievements
 simulated function HurtRadius( float DamageAmount, float DamageRadius, class<DamageType> DamageType, float Momentum, vector HitLocation )
 {
-	local actor Victims;
-	local float damageScale, dist;
-	local vector dir;
-	local int NumKilled;
-	local KFMonster KFMonsterVictim;
-	local Pawn P;
-	local KFPawn KFP;
-	local array<Pawn> CheckedPawns;
-	local int i;
-	local bool bAlreadyChecked;
+    local actor Victims;
+    local float damageScale, dist;
+    local vector dir;
+    local int NumKilled;
+    local KFMonster KFMonsterVictim;
+    local Pawn P;
+    local KFPawn KFP;
+    local array<Pawn> CheckedPawns;
+    local int i;
+    local bool bAlreadyChecked;
 
-	local bool bDamagedInstigator, bKilledCrawler;
-	local byte NumKilledFP; // number of Fleshpounds killed by this exposion
-	local SRStatsBase Stats;
-	local bool bMonster, bFP, bCrawler;
+    local bool bDamagedInstigator, bKilledCrawler;
+    local byte NumKilledFP; // number of Fleshpounds killed by this exposion
+    local SRStatsBase Stats;
+    local bool bMonster, bFP, bCrawler;
 
-	if ( bHurtEntry )
-		return;
+    if ( bHurtEntry )
+        return;
 
-	bHurtEntry = true;
+    bHurtEntry = true;
 
-	if ( Instigator != none && Instigator.PlayerReplicationInfo != none )
-		Stats = SRStatsBase(Instigator.PlayerReplicationInfo.SteamStatsAndAchievements);
+    if ( Instigator != none && Instigator.PlayerReplicationInfo != none )
+        Stats = SRStatsBase(Instigator.PlayerReplicationInfo.SteamStatsAndAchievements);
 
 
-	foreach CollidingActors (class 'Actor', Victims, DamageRadius, HitLocation)
-	{
-		// don't let blast damage affect fluid - VisibleCollisingActors doesn't really work for them - jag
-		if( (Victims != self) && (Hurtwall != Victims) && (Victims.Role == ROLE_Authority) && !Victims.IsA('FluidSurfaceInfo')
-		 && ExtendedZCollision(Victims)==None )
-		{
-			if( (Instigator==None || Instigator.Health<=0) && KFPawn(Victims)!=None )
-				Continue;
+    foreach CollidingActors (class 'Actor', Victims, DamageRadius, HitLocation)
+    {
+        // don't let blast damage affect fluid - VisibleCollisingActors doesn't really work for them - jag
+        if( (Victims != self) && (Hurtwall != Victims) && (Victims.Role == ROLE_Authority) && !Victims.IsA('FluidSurfaceInfo')
+         && ExtendedZCollision(Victims)==None )
+        {
+            if( (Instigator==None || Instigator.Health<=0) && KFPawn(Victims)!=None )
+                Continue;
 
-			P = none;
-			KFMonsterVictim = none;
-			KFP = none;
-			bMonster = false;
-			bFP = false;
-			bCrawler = false;
+            P = none;
+            KFMonsterVictim = none;
+            KFP = none;
+            bMonster = false;
+            bFP = false;
+            bCrawler = false;
 
-			dir = Victims.Location - HitLocation;
-			dist = FMax(1,VSize(dir));
-			dir = dir/dist;
-			damageScale = 1 - FMax(0,(dist - Victims.CollisionRadius)/DamageRadius);
+            dir = Victims.Location - HitLocation;
+            dist = FMax(1,VSize(dir));
+            dir = dir/dist;
+            damageScale = 1 - FMax(0,(dist - Victims.CollisionRadius)/DamageRadius);
 
-			if ( Instigator == None || Instigator.Controller == None )
-			{
-				Victims.SetDelayedDamageInstigatorController( InstigatorController );
-			}
+            if ( Instigator == None || Instigator.Controller == None )
+            {
+                Victims.SetDelayedDamageInstigatorController( InstigatorController );
+            }
 
-			P = Pawn(Victims);
+            P = Pawn(Victims);
 
-			if( P != none )
-			{
-				bAlreadyChecked = false;
-		        for (i = 0; i < CheckedPawns.Length; i++)
-				{
-		        	if (CheckedPawns[i] == P)
-					{
-						bAlreadyChecked = true;
-						break;
-					}
-				}
+            if( P != none )
+            {
+                bAlreadyChecked = false;
+                for (i = 0; i < CheckedPawns.Length; i++)
+                {
+                    if (CheckedPawns[i] == P)
+                    {
+                        bAlreadyChecked = true;
+                        break;
+                    }
+                }
 
-				if( bAlreadyChecked )
-					continue;
+                if( bAlreadyChecked )
+                    continue;
 
 
                 KFMonsterVictim = KFMonster(Victims);
 
-    			if( KFMonsterVictim != none && KFMonsterVictim.Health <= 0 )
-    			{
+                if( KFMonsterVictim != none && KFMonsterVictim.Health <= 0 )
+                {
                     KFMonsterVictim = none;
-    			}
+                }
 
                 KFP = KFPawn(Victims);
 
                 if( KFMonsterVictim != none )
                 {
-					bMonster = true;
-					bFP = ZombieFleshpound(KFMonsterVictim) != none || KFMonsterVictim.IsA('FemaleFP');
-					bCrawler = ZombieCrawler(KFMonsterVictim) != none;
+                    bMonster = true;
+                    bFP = ZombieFleshpound(KFMonsterVictim) != none || KFMonsterVictim.IsA('FemaleFP');
+                    bCrawler = ZombieCrawler(KFMonsterVictim) != none;
 
                     damageScale *= KFMonsterVictim.GetExposureTo(Location + 15 * -Normal(PhysicsVolume.Gravity));
                 }
                 else if( KFP != none )
                 {
-				    damageScale *= KFP.GetExposureTo(Location + 15 * -Normal(PhysicsVolume.Gravity));
-				    // Reduce damage to poeple so I can make the damage radius a bit bigger for killing zeds
-				    damageScale *= 0.5;
-					if ( KFP == Instigator && damageScale * DamageAmount > 0 )
-						bDamagedInstigator = true;
+                    damageScale *= KFP.GetExposureTo(Location + 15 * -Normal(PhysicsVolume.Gravity));
+                    // Reduce damage to poeple so I can make the damage radius a bit bigger for killing zeds
+                    damageScale *= 0.5;
+                    if ( KFP == Instigator && damageScale * DamageAmount > 0 )
+                        bDamagedInstigator = true;
                 }
 
-				CheckedPawns[CheckedPawns.Length] = P;
+                CheckedPawns[CheckedPawns.Length] = P;
 
-				if ( damageScale <= 0)
-					continue;
-			}
-
-			Victims.TakeDamage(damageScale * DamageAmount,Instigator,Victims.Location - 0.5 * (Victims.CollisionHeight + Victims.CollisionRadius)
-			 * dir,(damageScale * Momentum * dir),DamageType);
-
-			if( Role == ROLE_Authority && bMonster && (KFMonsterVictim == none || KFMonsterVictim.Health <= 0 ) )
-            {
-                NumKilled++;
-				if ( bFP )
-					NumKilledFP++;
-				else
-					bKilledCrawler = bKilledCrawler || bCrawler;
+                if ( damageScale <= 0)
+                    continue;
             }
 
-			if (Vehicle(Victims) != None && Vehicle(Victims).Health > 0)
-			{
-				Vehicle(Victims).DriverRadiusDamage(DamageAmount, DamageRadius, InstigatorController, DamageType, Momentum, HitLocation);
-			}
+            Victims.TakeDamage(damageScale * DamageAmount,Instigator,Victims.Location - 0.5 * (Victims.CollisionHeight + Victims.CollisionRadius)
+             * dir,(damageScale * Momentum * dir),DamageType);
+
+            if( Role == ROLE_Authority && bMonster && (KFMonsterVictim == none || KFMonsterVictim.Health <= 0 ) )
+            {
+                NumKilled++;
+                if ( bFP )
+                    NumKilledFP++;
+                else
+                    bKilledCrawler = bKilledCrawler || bCrawler;
+            }
+
+            if (Vehicle(Victims) != None && Vehicle(Victims).Health > 0)
+            {
+                Vehicle(Victims).DriverRadiusDamage(DamageAmount, DamageRadius, InstigatorController, DamageType, Momentum, HitLocation);
+            }
         }
-	} //foreach
+    } //foreach
 
-	if( Role == ROLE_Authority )
+    if( Role == ROLE_Authority )
     {
-		if ( Stats != none ) {
-			if (NumKilled >= 10)
-				Stats.Killed10ZedsWithPipebomb();
+        if ( Stats != none ) {
+            if (NumKilled >= 10)
+                Stats.Killed10ZedsWithPipebomb();
 
-			// ScrN Achievements
-			if ( bDamagedInstigator && NumKilledFP > 0 )
-				class'ScrnBalanceSrv.ScrnAchievements'.static.ProgressAchievementByID(Stats.Rep, 'MindBlowingSacrifice', NumKilledFP);
-			if ( bKilledCrawler && NumKilled == 1 )
-				class'ScrnBalanceSrv.ScrnAchievements'.static.ProgressAchievementByID(Stats.Rep, 'Overkill3', 1);
-			if ( bDamagedInstigator && (Instigator == none || Instigator.Health <= 0) )
-				class'ScrnBalanceSrv.ScrnAchievements'.static.ProgressAchievementByID(Stats.Rep, 'MadeinChina', 1);
-    	}
+            // ScrN Achievements
+            if ( bDamagedInstigator && NumKilledFP > 0 )
+                class'ScrnBalanceSrv.ScrnAchievements'.static.ProgressAchievementByID(Stats.Rep, 'MindBlowingSacrifice', NumKilledFP);
+            if ( bKilledCrawler && NumKilled == 1 )
+                class'ScrnBalanceSrv.ScrnAchievements'.static.ProgressAchievementByID(Stats.Rep, 'Overkill3', 1);
+            if ( bDamagedInstigator && (Instigator == none || Instigator.Health <= 0) )
+                class'ScrnBalanceSrv.ScrnAchievements'.static.ProgressAchievementByID(Stats.Rep, 'MadeinChina', 1);
+        }
 
         if( NumKilled >= 4 )
         {
@@ -278,7 +278,7 @@ simulated function HurtRadius( float DamageAmount, float DamageRadius, class<Dam
         }
     }
 
-	bHurtEntry = false;
+    bHurtEntry = false;
 }
 
 defaultproperties

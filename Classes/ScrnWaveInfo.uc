@@ -1,6 +1,6 @@
 Class ScrnWaveInfo extends Object
-	PerObjectConfig
-	Config(ScrnWaves);
+    PerObjectConfig
+    Config(ScrnWaves);
 
 enum EWaveEndRule {
     RULE_KillEmAll,
@@ -8,9 +8,9 @@ enum EWaveEndRule {
     RULE_Timeout,
     RULE_EarnDosh,
     RULE_KillBoss,
-	RULE_GrabDosh,
-	RULE_GrabDoshZed,
-	RULE_GrabAmmo
+    RULE_GrabDosh,
+    RULE_GrabDoshZed,
+    RULE_GrabAmmo
 };
 
 var config string Title, Message, TraderMessage;
@@ -39,6 +39,6 @@ defaultproperties
     ZedsPerSpecialSquad=50
     SpawnRateMod=1.0
     Squads(0)="4*CL"
-	bRandomSquads=true
-	bRandomSpecialSquads=true
+    bRandomSquads=true
+    bRandomSpecialSquads=true
 }

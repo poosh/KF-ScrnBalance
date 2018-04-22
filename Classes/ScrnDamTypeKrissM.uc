@@ -1,5 +1,5 @@
 class ScrnDamTypeKrissM extends ScrnDamTypeMedic
-	abstract;
+    abstract;
 
 defaultproperties
 {

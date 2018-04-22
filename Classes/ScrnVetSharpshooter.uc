@@ -1,5 +1,5 @@
 class ScrnVetSharpshooter extends ScrnVeterancyTypes
-	abstract;
+    abstract;
 
 static function int GetStatValueInt(ClientPerkRepLink StatOther, byte ReqNum)
 {
@@ -18,26 +18,26 @@ static function int AddDamage(KFPlayerReplicationInfo KFPRI, KFMonster Injured, 
 
 static function float GetHeadShotDamMulti(KFPlayerReplicationInfo KFPRI, KFPawn P, class<DamageType> DmgType)
 {
-	local float ret;
+    local float ret;
     local bool bNoExtraBonus;
 
     if ( DmgType == default.DefaultDamageTypeNoBonus ) {
         ret = 1.0;
     }
-	else if ( ClassIsChildOf(DmgType, class'DamTypeDualies') && KFPRI.Level.Game.GameDifficulty >= 7.0 ) {
-		ret = 1.40; // limit to 40% max HS damage bonus
+    else if ( ClassIsChildOf(DmgType, class'DamTypeDualies') && KFPRI.Level.Game.GameDifficulty >= 7.0 ) {
+        ret = 1.40; // limit to 40% max HS damage bonus
         bNoExtraBonus = true;
-	}
-	else if ( DmgType == default.DefaultDamageType
+    }
+    else if ( DmgType == default.DefaultDamageType
             || class<KFWeaponDamageType>(DmgType).default.bSniperWeapon
             || ClassIsInArray(default.PerkedDamTypes, DmgType) //v3 - custom weapon support
             )
     {
         ret = 1.0 + 0.10 * GetClientVeteranSkillLevel(KFPRI);
-	}
-	else {
-		ret = 1.0; // Fix for oversight in Balance Round 6(which is the reason for the Round 6 second attempt patch)
-	}
+    }
+    else {
+        ret = 1.0; // Fix for oversight in Balance Round 6(which is the reason for the Round 6 second attempt patch)
+    }
 
     if ( !bNoExtraBonus ) {
         ret *= 1.50;
@@ -47,53 +47,53 @@ static function float GetHeadShotDamMulti(KFPlayerReplicationInfo KFPRI, KFPawn 
         ret *= 2.0; // to compensate 50% damage reduction in ReduceDamage();
 
     //Log("Headshot multiplier for " $ String(DmgType) $ " is " $ ret);
-	return  ret;
+    return  ret;
 }
 
 static function float ModifyRecoilSpread(KFPlayerReplicationInfo KFPRI, WeaponFire Other, out float Recoil)
 {
-	// If Gunslinger perk persists, remove bonus from dual pistols.
-	if ( Crossbow(Other.Weapon) != none || Winchester(Other.Weapon) != none
+    // If Gunslinger perk persists, remove bonus from dual pistols.
+    if ( Crossbow(Other.Weapon) != none || Winchester(Other.Weapon) != none
             || Single(Other.Weapon) != none || Deagle(Other.Weapon) != none
             || Magnum44Pistol(Other.Weapon) != none
             || M14EBRBattleRifle(Other.Weapon) != none
             || M99SniperRifle(Other.Weapon) != none
-			|| SPSniperRifle(Other.Weapon) != none
+            || SPSniperRifle(Other.Weapon) != none
             || ClassIsInArray(default.PerkedWeapons, Other.Weapon.Class) //v3 - custom weapon support
         )
-	{
+    {
         Recoil = 0.25;
-	}
+    }
     else
         Recoil = 1.0;
-	Return Recoil;
+    Return Recoil;
 }
 
 // Modify fire speed
 static function float GetFireSpeedModStatic(KFPlayerReplicationInfo KFPRI, class<Weapon> Other)
 {
-	if ( ClassIsChildOf(Other, class'Winchester') || ClassIsChildOf(Other, class'SPSniperRifle')
-		|| ClassIsInArray(default.SpecialWeapons, Other) )
-	{
-		return 1.6; // 60% faster fire rate with LAR and Special Weapons
-	}
-	return 1.0;
+    if ( ClassIsChildOf(Other, class'Winchester') || ClassIsChildOf(Other, class'SPSniperRifle')
+        || ClassIsInArray(default.SpecialWeapons, Other) )
+    {
+        return 1.6; // 60% faster fire rate with LAR and Special Weapons
+    }
+    return 1.0;
 }
 
 static function float GetReloadSpeedModifierStatic(KFPlayerReplicationInfo KFPRI, class<KFWeapon> Other)
 {
-	// If Gunslinger perk persists, remove bonus from dual pistols.
-	if ( ClassIsChildOf(Other, class'Winchester') || ClassIsChildOf(Other, class'M14EBRBattleRifle')
-			|| ClassIsChildOf(Other, class'Single') || ClassIsChildOf(Other, class'Deagle')
-			|| ClassIsChildOf(Other, class'Magnum44Pistol') || ClassIsChildOf(Other, class'MK23Pistol')
-			|| ClassIsChildOf(Other, class'SPSniperRifle')
+    // If Gunslinger perk persists, remove bonus from dual pistols.
+    if ( ClassIsChildOf(Other, class'Winchester') || ClassIsChildOf(Other, class'M14EBRBattleRifle')
+            || ClassIsChildOf(Other, class'Single') || ClassIsChildOf(Other, class'Deagle')
+            || ClassIsChildOf(Other, class'Magnum44Pistol') || ClassIsChildOf(Other, class'MK23Pistol')
+            || ClassIsChildOf(Other, class'SPSniperRifle')
             || ClassIsInArray(default.PerkedWeapons, Other) //v3 - custom weapon support
         )
-	{
+    {
         return 1.6; // 60% faster reload with Pistols and Sniper Weapons
-	}
+    }
 
-	return 1.0;
+    return 1.0;
 }
 
 // Change the cost of particular items
@@ -103,9 +103,9 @@ static function float GetCostScaling(KFPlayerReplicationInfo KFPRI, class<Pickup
     if ( Item == class'ScrnBalanceSrv.ScrnMagnum44Pickup' || Item == class'ScrnBalanceSrv.ScrnDual44MagnumPickup' )
         return 1.0;
 
-	//leave discount for Dual Pistols even if Gunslinger perk persists to reject possible
-	//buy-sell exploits
-	if ( ClassIsChildOf(Item, class'DeaglePickup') || ClassIsChildOf(Item, class'DualDeaglePickup')
+    //leave discount for Dual Pistols even if Gunslinger perk persists to reject possible
+    //buy-sell exploits
+    if ( ClassIsChildOf(Item, class'DeaglePickup') || ClassIsChildOf(Item, class'DualDeaglePickup')
             || ClassIsChildOf(Item, class'MK23Pickup') || ClassIsChildOf(Item, class'DualMK23Pickup')
             || Item == class'Magnum44Pickup' || Item == class'Dual44MagnumPickup'
             || ClassIsChildOf(Item, class'M14EBRPickup')
@@ -117,7 +117,7 @@ static function float GetCostScaling(KFPlayerReplicationInfo KFPRI, class<Pickup
     {
         // 30% base discount + 5% extra per level
         return fmax(0.10, 0.70 - 0.05 * GetClientVeteranSkillLevel(KFPRI));
-	}
+    }
     return 1.0;
 }
 
@@ -136,27 +136,27 @@ static function float AddExtraAmmoFor(KFPlayerReplicationInfo KFPRI, Class<Ammun
                 || ClassIsInArray(default.PerkedAmmo, AmmoType) )
             return 1.0 + 0.10 * float(GetClientVeteranSkillLevel(KFPRI)-6); // +10% per level above 6
     }
-	return 1.0;
+    return 1.0;
 }
 
 static function float GetAmmoCostScaling(KFPlayerReplicationInfo KFPRI, class<Pickup> Item)
 {
-	if ( ClassIsChildOf(Item, class'CrossbowPickup') || ClassIsChildOf(Item, class'M99Pickup') ) {
-		return 1.0 - fmin(0.7, (0.07 * GetClientVeteranSkillLevel(KFPRI))); // Up to 42% discount on Crossbow Bolts(Added in Balance Round 4 at 30%, increased to 42% in Balance Round 7)
-	}
-	return 1.0;
+    if ( ClassIsChildOf(Item, class'CrossbowPickup') || ClassIsChildOf(Item, class'M99Pickup') ) {
+        return 1.0 - fmin(0.7, (0.07 * GetClientVeteranSkillLevel(KFPRI))); // Up to 42% discount on Crossbow Bolts(Added in Balance Round 4 at 30%, increased to 42% in Balance Round 7)
+    }
+    return 1.0;
 }
 
 static function string GetCustomLevelInfo( byte Level )
 {
-	local string S;
+    local string S;
 
-	S = Default.CustomLevelInfo;
-	ReplaceText(S,"%L",string(Level));
-	ReplaceText(S,"%x",GetPercentStr(0.15*Level));
-	ReplaceText(S,"%$",GetPercentStr(fmin(0.90, 0.30 + 0.05*Level)));
-	ReplaceText(S,"%d",GetPercentStr(fmin(0.70, 0.07*Level)));
-	return S;
+    S = Default.CustomLevelInfo;
+    ReplaceText(S,"%L",string(Level));
+    ReplaceText(S,"%x",GetPercentStr(0.15*Level));
+    ReplaceText(S,"%$",GetPercentStr(fmin(0.90, 0.30 + 0.05*Level)));
+    ReplaceText(S,"%d",GetPercentStr(fmin(0.70, 0.07*Level)));
+    return S;
 }
 
 defaultproperties

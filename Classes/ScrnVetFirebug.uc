@@ -1,5 +1,5 @@
 class ScrnVetFirebug extends ScrnVeterancyTypes
-	abstract;
+    abstract;
 
 static function int GetStatValueInt(ClientPerkRepLink StatOther, byte ReqNum)
 {
@@ -13,13 +13,13 @@ static function float GetMagCapacityModStatic(KFPlayerReplicationInfo KFPRI, cla
             || ClassIsInArray(default.PerkedAmmo, Other.default.FiremodeClass[0].default.AmmoClass)  //v3 - custom weapon support
         )
         return 1.301 + 0.05 * fmin(6, GetClientVeteranSkillLevel(KFPRI));
-	return 1.0;
+    return 1.0;
 }
 
 // more ammo from ammo boxes
 static function float GetAmmoPickupMod(KFPlayerReplicationInfo KFPRI, KFAmmunition Other)
 {
-	return AddExtraAmmoFor(KFPRI, Other.class);
+    return AddExtraAmmoFor(KFPRI, Other.class);
 }
 
 static function float AddExtraAmmoFor(KFPlayerReplicationInfo KFPRI, Class<Ammunition> AmmoType)
@@ -40,7 +40,7 @@ static function float AddExtraAmmoFor(KFPlayerReplicationInfo KFPRI, Class<Ammun
     else if ( GetClientVeteranSkillLevel(KFPRI) > 6 && ClassIsChildOf(AmmoType, class'ScrnM79IncAmmo') ) {
         return 1.001 + (0.083334 * float(GetClientVeteranSkillLevel(KFPRI)-6)); //+2 M79Inc nades post level 6
     }
-	return 1.0;
+    return 1.0;
 }
 
 static function int AddDamage(KFPlayerReplicationInfo KFPRI, KFMonster Injured, KFPawn DamageTaker, int InDamage, class<DamageType> DmgType)
@@ -48,24 +48,24 @@ static function int AddDamage(KFPlayerReplicationInfo KFPRI, KFMonster Injured, 
     if ( DmgType == default.DefaultDamageTypeNoBonus || class<KFWeaponDamageType>(DmgType) == none )
         return InDamage;
 
-	if ( class<DamTypeBurned>(DmgType) != none || class<DamTypeFlamethrower>(DmgType) != none
-		|| class<ScrnDamTypeTrenchgun>(DmgType) != none // only for SE version, cuz it has reduced base damage
-		|| ClassIsInArray(default.PerkedDamTypes, DmgType) //v3 - custom weapon support
+    if ( class<DamTypeBurned>(DmgType) != none || class<DamTypeFlamethrower>(DmgType) != none
+        || class<ScrnDamTypeTrenchgun>(DmgType) != none // only for SE version, cuz it has reduced base damage
+        || ClassIsInArray(default.PerkedDamTypes, DmgType) //v3 - custom weapon support
         )
     {
         // 30% base bonus + 5% per level
-		InDamage *= 1.30 + 0.05 * GetClientVeteranSkillLevel(KFPRI);
-	}
+        InDamage *= 1.30 + 0.05 * GetClientVeteranSkillLevel(KFPRI);
+    }
 
-	// +5% husk gun and flare impact damage above level 6
-	if ( GetClientVeteranSkillLevel(KFPRI) > 6 && (
-			class<DamTypeHuskGunProjectileImpact>(DmgType) != none
-			|| class<DamTypeFlareProjectileImpact>(DmgType) != none ) )
-	{
-		InDamage *= 0.70 + 0.05 * GetClientVeteranSkillLevel(KFPRI);
-	}
+    // +5% husk gun and flare impact damage above level 6
+    if ( GetClientVeteranSkillLevel(KFPRI) > 6 && (
+            class<DamTypeHuskGunProjectileImpact>(DmgType) != none
+            || class<DamTypeFlareProjectileImpact>(DmgType) != none ) )
+    {
+        InDamage *= 0.70 + 0.05 * GetClientVeteranSkillLevel(KFPRI);
+    }
 
-	return InDamage;
+    return InDamage;
 }
 
 // Change effective range on FlameThrower
@@ -76,13 +76,13 @@ static function int ExtraRange(KFPlayerReplicationInfo KFPRI)
 
 static function int ReduceDamage(KFPlayerReplicationInfo KFPRI, KFPawn Injured, Pawn Instigator, int InDamage, class<DamageType> DmgType)
 {
-	if ( class<KFWeaponDamageType>(DmgType) != none && class<KFWeaponDamageType>(DmgType).default.bDealBurningDamage )
+    if ( class<KFWeaponDamageType>(DmgType) != none && class<KFWeaponDamageType>(DmgType).default.bDealBurningDamage )
     {
         if ( class'ScrnBalance'.default.Mut.bHardcore )
             return max(1, InDamage * 0.20); // limit fire damage resistance to 80%
-		return 0; // no damage from fire
-	}
-	return InDamage;
+        return 0; // no damage from fire
+    }
+    return InDamage;
 }
 
 static function class<Grenade> GetNadeType(KFPlayerReplicationInfo KFPRI)
@@ -106,7 +106,7 @@ static function float GetReloadSpeedModifierStatic(KFPlayerReplicationInfo KFPRI
             || ClassIsInArray(default.PerkedWeapons, Other) //v3 - custom weapon support
         )
         return 1.60;
-	return 1.0;
+    return 1.0;
 }
 
 // Change the cost of particular items
@@ -116,7 +116,7 @@ static function float GetCostScaling(KFPlayerReplicationInfo KFPRI, class<Pickup
         return 1.0; // price lowered to $200, no discount needed
 
     //add discount on class descenders as well, e.g. ScrnHuskGun
-	if ( ClassIsChildOf(Item,  class'FlameThrowerPickup')
+    if ( ClassIsChildOf(Item,  class'FlameThrowerPickup')
             || ClassIsChildOf(Item,  class'MAC10Pickup')
             || ClassIsChildOf(Item,  class'ScrnThompsonIncPickup')
             || ClassIsChildOf(Item,  class'HuskGunPickup')
@@ -129,25 +129,25 @@ static function float GetCostScaling(KFPlayerReplicationInfo KFPRI, class<Pickup
         // 30% base discount + 5% extra per level
         return fmax(0.10, 0.70 - 0.05 * GetClientVeteranSkillLevel(KFPRI));
     }
-	return 1.0;
+    return 1.0;
 }
 
 static function class<DamageType> GetMAC10DamageType(KFPlayerReplicationInfo KFPRI)
 {
-	return class'DamTypeMAC10MPInc';
+    return class'DamTypeMAC10MPInc';
 }
 
 static function string GetCustomLevelInfo( byte Level )
 {
-	local string S;
+    local string S;
 
-	S = Default.CustomLevelInfo;
-	ReplaceText(S,"%L",string(Level));
-	ReplaceText(S,"%x",GetPercentStr(0.30 + 0.05*Level));
-	ReplaceText(S,"%a",GetPercentStr(0.30 + 0.05*Level));
-	ReplaceText(S,"%g",string(Level/2));
-	ReplaceText(S,"%$",GetPercentStr(fmin(0.90, 0.30 + 0.05*Level)));
-	return S;
+    S = Default.CustomLevelInfo;
+    ReplaceText(S,"%L",string(Level));
+    ReplaceText(S,"%x",GetPercentStr(0.30 + 0.05*Level));
+    ReplaceText(S,"%a",GetPercentStr(0.30 + 0.05*Level));
+    ReplaceText(S,"%g",string(Level/2));
+    ReplaceText(S,"%$",GetPercentStr(fmin(0.90, 0.30 + 0.05*Level)));
+    return S;
 }
 
 defaultproperties

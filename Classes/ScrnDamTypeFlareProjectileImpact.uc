@@ -2,5 +2,5 @@ class ScrnDamTypeFlareProjectileImpact extends DamTypeFlareProjectileImpact;
 
 defaultproperties
 {
-	HeadShotDamageMult=2.0
+    HeadShotDamageMult=2.0
 }

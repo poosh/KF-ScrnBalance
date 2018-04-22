@@ -1,5 +1,5 @@
 class ScrnLightVestPickup extends ScrnVestPickup
-	notplaceable;
+    notplaceable;
 
 defaultproperties
 {

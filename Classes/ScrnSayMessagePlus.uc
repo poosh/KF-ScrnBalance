@@ -10,16 +10,16 @@ static function RenderComplexMessage(
         optional PlayerReplicationInfo RelatedPRI_1,
         optional PlayerReplicationInfo RelatedPRI_2,
         optional Object OptionalObject
-	)
+    )
 {
-	if (RelatedPRI_1 == None)
-		return;
+    if (RelatedPRI_1 == None)
+        return;
     
-	Canvas.SetDrawColor(0,255,0);
+    Canvas.SetDrawColor(0,255,0);
     Canvas.DrawText(class'ScrnBalance'.default.Mut.ColoredPlayerName(RelatedPRI_1), false);
-	Canvas.SetPos( Canvas.CurX, Canvas.CurY - YL );
-	Canvas.SetDrawColor(0,128,0);
-	Canvas.DrawText(": " $ MessageString, False );
+    Canvas.SetPos( Canvas.CurX, Canvas.CurY - YL );
+    Canvas.SetDrawColor(0,128,0);
+    Canvas.DrawText(": " $ MessageString, False );
 }
 
 static function string AssembleString(
@@ -27,12 +27,12 @@ static function string AssembleString(
         optional int Switch,
         optional PlayerReplicationInfo RelatedPRI_1,
         optional String MessageString
-	)
+    )
 {
     local color c;
     
-	if ( RelatedPRI_1 == None || RelatedPRI_1.PlayerName == "" )
-		return "";
+    if ( RelatedPRI_1 == None || RelatedPRI_1.PlayerName == "" )
+        return "";
         
     c = GetConsoleColor(RelatedPRI_1);  
     return class'ScrnBalance'.default.Mut.ColoredPlayerName(RelatedPRI_1)

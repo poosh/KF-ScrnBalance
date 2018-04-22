@@ -13,7 +13,7 @@ replication
     reliable if ( Role == ROLE_Authority )
         Perk, WeaponClass, bWeapon, bDiscount, bFire, bFireAlt, bAmmo, bAmmoAlt, 
         bOverrideDamType, bOverrideDamTypeAlt, bSpecial,
-		ForcePrice;
+        ForcePrice;
 }
 
 simulated function PostNetReceive()
@@ -50,10 +50,10 @@ simulated function LoadWeaponBonuses()
         Perk.static.ClassAddToArrayUnique(Perk.default.SpecialWeapons, WeaponClass);  
     if ( bDiscount )
         Perk.static.ClassAddToArrayUnique(Perk.default.PerkedPickups, WeaponClass.default.PickupClass);  
-	
-	WP = class<KFWeaponPickup>(WeaponClass.default.PickupClass);
-	if ( ForcePrice > 0 && WP != none )
-		WP.default.Cost = ForcePrice;
+    
+    WP = class<KFWeaponPickup>(WeaponClass.default.PickupClass);
+    if ( ForcePrice > 0 && WP != none )
+        WP.default.Cost = ForcePrice;
     
     // Primary fire
     WF = WeaponClass.default.FireModeClass[0];

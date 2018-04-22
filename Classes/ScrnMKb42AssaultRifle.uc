@@ -1,5 +1,5 @@
 class ScrnMKb42AssaultRifle extends MKb42AssaultRifle
-	config(user);
+    config(user);
 
 var         name            ReloadShortAnim;
 var         float           ReloadShortRate;

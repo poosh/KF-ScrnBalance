@@ -1,5 +1,5 @@
 class ScrnBullpup extends Bullpup
-	config(user);
+    config(user);
 
 defaultproperties
 {

@@ -1,5 +1,5 @@
 class ScrnVetCombatMedic extends ScrnVetFieldMedic
-	abstract;
+    abstract;
 
 static function int GetStatValueInt(ClientPerkRepLink StatOther, byte ReqNum)
 {
@@ -8,7 +8,7 @@ static function int GetStatValueInt(ClientPerkRepLink StatOther, byte ReqNum)
 
 static function class<Grenade> GetNadeType(KFPlayerReplicationInfo KFPRI)
 {
-	return super(ScrnVeterancyTypes).GetNadeType(KFPRI); // no healing nades
+    return super(ScrnVeterancyTypes).GetNadeType(KFPRI); // no healing nades
 }
 
 static function float GetSyringeChargeRate(KFPlayerReplicationInfo KFPRI)
@@ -23,17 +23,17 @@ static function float GetHealPotency(KFPlayerReplicationInfo KFPRI)
 
 static function float GetFireSpeedModStatic(KFPlayerReplicationInfo KFPRI, class<Weapon> Other)
 {
-	if ( class<KFMeleeGun>(Other) != none &&  class<KFMeleeGun>(Other).default.Weight <= 3
+    if ( class<KFMeleeGun>(Other) != none &&  class<KFMeleeGun>(Other).default.Weight <= 3
         && class<Syringe>(Other) == none && class<Welder>(Other) == none )
-	{
-		return 1.75;
+    {
+        return 1.75;
     }
     return 1.0;
 }
 
 static function int ZedTimeExtensions(KFPlayerReplicationInfo KFPRI)
 {
-	return Min(GetClientVeteranSkillLevel(KFPRI), 6);
+    return Min(GetClientVeteranSkillLevel(KFPRI), 6);
 }
 
 static function float GetWeaponMovementSpeedBonus(KFPlayerReplicationInfo KFPRI, Weapon Weap)
@@ -61,9 +61,9 @@ static function int AddDamage(KFPlayerReplicationInfo KFPRI, KFMonster Injured, 
             || ClassIsInArray(default.PerkedDamTypes, DmgType) )
     {
         // 30% base bonus + 5% per level
-		InDamage *= 1.30 + 0.05 * GetClientVeteranSkillLevel(KFPRI);
+        InDamage *= 1.30 + 0.05 * GetClientVeteranSkillLevel(KFPRI);
     }
-	return InDamage;
+    return InDamage;
 }
 
 static function float AddExtraAmmoFor(KFPlayerReplicationInfo KFPRI, Class<Ammunition> AmmoType)
@@ -81,7 +81,7 @@ static function float AddExtraAmmoFor(KFPlayerReplicationInfo KFPRI, Class<Ammun
     {
         return 1.0 + 0.05 * float(GetClientVeteranSkillLevel(KFPRI)); // +5% per level
     }
-	return 1.0;
+    return 1.0;
 }
 
 static function float GetCostScaling(KFPlayerReplicationInfo KFPRI, class<Pickup> Item)
@@ -93,16 +93,16 @@ static function float GetCostScaling(KFPlayerReplicationInfo KFPRI, class<Pickup
 
 static function string GetCustomLevelInfo( byte Level )
 {
-	local string S;
+    local string S;
 
-	S = Default.CustomLevelInfo;
-	ReplaceText(S,"%L",string(Level));
-	ReplaceText(S,"%x",GetPercentStr(0.30 + 0.05*Level));
-	ReplaceText(S,"%a",GetPercentStr(0.05*Level));
-	ReplaceText(S,"%v",GetPercentStr(fmin(0.60, 0.30 + 0.05*Level)));
-	ReplaceText(S,"%z",string(clamp(Level,1,6)));
-	ReplaceText(S,"%$",GetPercentStr(fmin(0.90, 0.30 + 0.05*Level)));
-	return S;
+    S = Default.CustomLevelInfo;
+    ReplaceText(S,"%L",string(Level));
+    ReplaceText(S,"%x",GetPercentStr(0.30 + 0.05*Level));
+    ReplaceText(S,"%a",GetPercentStr(0.05*Level));
+    ReplaceText(S,"%v",GetPercentStr(fmin(0.60, 0.30 + 0.05*Level)));
+    ReplaceText(S,"%z",string(clamp(Level,1,6)));
+    ReplaceText(S,"%$",GetPercentStr(fmin(0.90, 0.30 + 0.05*Level)));
+    return S;
 }
 
 static function bool OverridePerkIndex( class<KFWeaponPickup> Pickup )

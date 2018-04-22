@@ -1,10 +1,10 @@
 class ScrnAchievementEarnedMsg extends CriticalEventPlus
-	abstract;
-	
+    abstract;
+    
 var(Message) localized string EarnedString, InProgressString;
 var texture BackGround;
-var	texture	ProgressBarBackground;
-var	texture	ProgressBarForeground;
+var    texture    ProgressBarBackground;
+var    texture    ProgressBarForeground;
 
 var byte Align; // 0 - left, 1 - center, 2 - right
 
@@ -18,10 +18,10 @@ static function string GetString(
         )
 {
     local ScrnAchievements AchHandler;
-	local int AchIndex;
+    local int AchIndex;
     
     AchHandler = ScrnAchievements(OptionalObject);
-	AchIndex = Switch;
+    AchIndex = Switch;
     if ( AchHandler == none || !AchHandler.IsUnlocked(AchIndex) )
         return "";
 
@@ -44,16 +44,16 @@ static function RenderComplexMessage(
         optional Object OptionalObject // must be ScrnAchievementInfo
         )
 {
-	local float X,Y, MaxWidth, MaxHeight, TextX, TextY, IconY;
+    local float X,Y, MaxWidth, MaxHeight, TextX, TextY, IconY;
     local ScrnPlayerController P;
     local ScrnAchievements AchHandler;
-	local int AchIndex;
+    local int AchIndex;
     local bool bUnlocked;
-	local float TextWidth, TextHeight;
+    local float TextWidth, TextHeight;
     local float OrgX, ClipX; //dunno if it should be restored, but just in case
     local byte Style;
     local float BarHeight, BarWidth, BarTop, BarLeft;
-	local int CurProg, MaxProg;
+    local int CurProg, MaxProg;
 
     // don't draw a message if it is fully transparent
     if ( c.DrawColor.A < 10 )
@@ -68,13 +68,13 @@ static function RenderComplexMessage(
     if ( RelatedPRI_1 != none )
         P = ScrnPlayerController(RelatedPRI_1.Owner);
     AchHandler = ScrnAchievements(OptionalObject);
-	AchIndex = Switch;
+    AchIndex = Switch;
 
     if ( P == none || AchHandler == none || AchHandler.AchDefs[AchIndex].CurrentProgress <= 0 )
         return;
 
-	CurProg = AchHandler.AchDefs[AchIndex].CurrentProgress;
-	MaxProg = AchHandler.AchDefs[AchIndex].MaxProgress;
+    CurProg = AchHandler.AchDefs[AchIndex].CurrentProgress;
+    MaxProg = AchHandler.AchDefs[AchIndex].MaxProgress;
     bUnlocked = CurProg >= MaxProg;
     
     ClipX = c.ClipX;
@@ -92,13 +92,13 @@ static function RenderComplexMessage(
     if ( !bUnlocked )
         MaxHeight += BarHeight;
         
-	//X = C.CurX;
+    //X = C.CurX;
     switch ( default.Align ) {
         case 0:     X = C.OrgX; break;
         case 1:     X = (c.ClipX - C.OrgX - MaxWidth)/2; break;
         default:    X = c.ClipX - MaxWidth;
     }
-	Y = C.ClipY - MaxHeight;
+    Y = C.ClipY - MaxHeight;
 
     //background
     C.SetPos(X, Y);
@@ -117,7 +117,7 @@ static function RenderComplexMessage(
     C.SetDrawColor(127, 127, 127, c.DrawColor.A);
     C.StrLen(MessageString, TextWidth, TextHeight);
     C.SetPos((MaxWidth - TextWidth)/2, Y + 7);
-	C.DrawTextClipped(MessageString);
+    C.DrawTextClipped(MessageString);
 
     // PROGRESS BAR
     if ( !bUnlocked ) {
@@ -169,7 +169,7 @@ static function RenderComplexMessage(
         C.SetDrawColor(127, 127, 127, c.DrawColor.A);
     C.Font = P.myHUD.LoadFontStatic(6);
     C.StrLen(AchHandler.AchDefs[AchIndex].DisplayName, TextWidth, TextHeight);
-	C.DrawTextClipped(AchHandler.AchDefs[AchIndex].DisplayName);
+    C.DrawTextClipped(AchHandler.AchDefs[AchIndex].DisplayName);
     
     
     //description
@@ -197,7 +197,7 @@ static function ClientReceive(
 {
     local ScrnHUD hud;
     
-	Super.ClientReceive(P,Switch,RelatedPRI_1,RelatedPRI_2,OptionalObject);
+    Super.ClientReceive(P,Switch,RelatedPRI_1,RelatedPRI_2,OptionalObject);
     
     hud = ScrnHUD(P.MyHUD);
     if ( hud != none && hud.bCoolHud && !hud.bCoolHudLeftAlign)

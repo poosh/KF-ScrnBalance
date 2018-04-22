@@ -208,7 +208,7 @@ function ShowPathTo(PlayerController P, int DestinationIndex)
     }
 
     if ( P.FindPathToward(gnome, false) != None ) {
-		Spawn(BaseWhisp, P,, P.Pawn.Location);
+        Spawn(BaseWhisp, P,, P.Pawn.Location);
     }
 }
 

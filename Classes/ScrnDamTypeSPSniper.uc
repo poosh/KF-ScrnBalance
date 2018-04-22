@@ -1,7 +1,7 @@
 class ScrnDamTypeSPSniper extends DamTypeSPSniper
-	abstract;
+    abstract;
 
-	
+    
 defaultproperties
 {
      WeaponClass=Class'ScrnBalanceSrv.ScrnSPSniperRifle'

@@ -4,45 +4,45 @@ class ScrnMK23Pistol extends MK23Pistol;
 
 simulated function bool PutDown()
 {
-	if ( Instigator.PendingWeapon.class == class'ScrnBalanceSrv.ScrnDualMK23Pistol' )
-	{
-		bIsReloading = false;
-	}
+    if ( Instigator.PendingWeapon.class == class'ScrnBalanceSrv.ScrnDualMK23Pistol' )
+    {
+        bIsReloading = false;
+    }
 
-	return super(KFWeapon).PutDown();
+    return super(KFWeapon).PutDown();
 }
 
 //original TWI code contained some gay issues like always -- by PooSH
 function bool HandlePickupQuery( pickup Item )
 {
-	if ( Item.InventoryType != none )
-	{
-		if ( KFPlayerController(Instigator.Controller) != none )
-		{
-			KFPlayerController(Instigator.Controller).PendingAmmo = WeaponPickup(Item).AmmoAmount[0];
-		}
+    if ( Item.InventoryType != none )
+    {
+        if ( KFPlayerController(Instigator.Controller) != none )
+        {
+            KFPlayerController(Instigator.Controller).PendingAmmo = WeaponPickup(Item).AmmoAmount[0];
+        }
 
-		return false; // Allow to "pickup" so this weapon can be replaced with dual MK23.
-	}
+        return false; // Allow to "pickup" so this weapon can be replaced with dual MK23.
+    }
 
-	return Super(KFWeapon).HandlePickupQuery(Item);
+    return Super(KFWeapon).HandlePickupQuery(Item);
 }
 
 function GiveTo( pawn Other, optional Pickup Pickup )
 {
-	local KFPlayerReplicationInfo KFPRI;
-	local KFWeaponPickup WeapPickup;
+    local KFPlayerReplicationInfo KFPRI;
+    local KFWeaponPickup WeapPickup;
 
-	KFPRI = KFPlayerReplicationInfo(Other.PlayerReplicationInfo);
-	WeapPickup = KFWeaponPickup(Pickup);
-	
-	//pick the lowest sell value
-	if ( WeapPickup != None && KFPRI != None && KFPRI.ClientVeteranSkill != none ) {
-		SellValue = 0.75 * min(WeapPickup.Cost, WeapPickup.default.Cost 
-			* KFPRI.ClientVeteranSkill.static.GetCostScaling(KFPRI, WeapPickup.class));
-	}
+    KFPRI = KFPlayerReplicationInfo(Other.PlayerReplicationInfo);
+    WeapPickup = KFWeaponPickup(Pickup);
+    
+    //pick the lowest sell value
+    if ( WeapPickup != None && KFPRI != None && KFPRI.ClientVeteranSkill != none ) {
+        SellValue = 0.75 * min(WeapPickup.Cost, WeapPickup.default.Cost 
+            * KFPRI.ClientVeteranSkill.static.GetCostScaling(KFPRI, WeapPickup.class));
+    }
 
-	Super.GiveTo(Other,Pickup);
+    Super.GiveTo(Other,Pickup);
 }
 
 defaultproperties

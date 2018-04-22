@@ -19,6 +19,18 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+### v9.53
+#### Code Remarks
+v9.53 code is the same as v9.52's. The only change it does is **change whitespace from tabs to 4 spaces** to apply
+the same standard for the entire source code.
+
+Those who forked the *KF-ScrnBalance* repository should do the following procedure to avoid merge conflicts:
+1. Merge `v9.52` **tag** into your branch.
+2. Replace tabs with 4 spaces within your code ("\t" -> "    ") and commit changes to your branch.
+3. Merge `v9.53` **tag** into your branch. Resolve any conflicts.
+4. Merge `master` into your branch.
+
+
 ### v9.52
 #### ScrN Waves
 ###### Ammo Grab Waves

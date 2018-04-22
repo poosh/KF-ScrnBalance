@@ -1,5 +1,5 @@
 class ScrnVetCommando extends ScrnVeterancyTypes
-	abstract;
+    abstract;
 
 
 static function int GetStatValueInt(ClientPerkRepLink StatOther, byte ReqNum)
@@ -14,8 +14,8 @@ static function int GetStatValueInt(ClientPerkRepLink StatOther, byte ReqNum)
 // Display enemy health bars
 static function SpecialHUDInfo(KFPlayerReplicationInfo KFPRI, Canvas C)
 {
-	local KFMonster KFEnemy;
-	local HUDKillingFloor HKF;
+    local KFMonster KFEnemy;
+    local HUDKillingFloor HKF;
     local float MaxDistance;
 
     HKF = HUDKillingFloor(C.ViewPort.Actor.myHUD);
@@ -35,7 +35,7 @@ static function SpecialHUDInfo(KFPlayerReplicationInfo KFPRI, Canvas C)
 
 static function bool ShowStalkers(KFPlayerReplicationInfo KFPRI)
 {
-	return true;
+    return true;
 }
 
 static function float GetStalkerViewDistanceMulti(KFPlayerReplicationInfo KFPRI)
@@ -43,7 +43,7 @@ static function float GetStalkerViewDistanceMulti(KFPlayerReplicationInfo KFPRI)
     if ( class'ScrnBalance'.default.Mut.bHardcore )
         return 0.75;
 
-	return 1.0;
+    return 1.0;
 }
 
 static function float GetMagCapacityModStatic(KFPlayerReplicationInfo KFPRI, class<KFWeapon> Other)
@@ -58,12 +58,12 @@ static function float GetMagCapacityModStatic(KFPlayerReplicationInfo KFPRI, cla
     {
         return 1.25; // 25% bigger assault rifle magazine
     }
-	return 1.0;
+    return 1.0;
 }
 
 static function float GetAmmoPickupMod(KFPlayerReplicationInfo KFPRI, KFAmmunition Other)
 {
-	return AddExtraAmmoFor(KFPRI, Other.class);
+    return AddExtraAmmoFor(KFPRI, Other.class);
 }
 
 static function float AddExtraAmmoFor(KFPlayerReplicationInfo KFPRI, Class<Ammunition> AmmoType)
@@ -83,11 +83,11 @@ static function float AddExtraAmmoFor(KFPlayerReplicationInfo KFPRI, Class<Ammun
                 || ClassIsChildOf(AmmoType, class'SPThompsonAmmo')
                 || ClassIsInArray(default.PerkedAmmo, AmmoType)  //v3 - custom weapon support
             )
-		{
+        {
             return 1.25 + fmax(0.00, 0.05 * float(GetClientVeteranSkillLevel(KFPRI)-6)); // +10% per level above 6
         }
     }
-	return 1.0;
+    return 1.0;
 }
 static function int AddDamage(KFPlayerReplicationInfo KFPRI, KFMonster Injured, KFPawn DamageTaker, int InDamage, class<DamageType> DmgType)
 {
@@ -108,14 +108,14 @@ static function int AddDamage(KFPlayerReplicationInfo KFPRI, KFMonster Injured, 
         )
     {
         // 20% base bonus + 5% per level
-		InDamage *= 1.20 + 0.05 * GetClientVeteranSkillLevel(KFPRI);
-	}
-	return InDamage;
+        InDamage *= 1.20 + 0.05 * GetClientVeteranSkillLevel(KFPRI);
+    }
+    return InDamage;
 }
 
 static function int ReduceDamage(KFPlayerReplicationInfo KFPRI, KFPawn Injured, Pawn Instigator, int InDamage, class<DamageType> DmgType)
 {
-	if ( class'ScrnBalance'.default.Mut.bHardcore && DmgType == class'DamTypeSlashingAttack' ) {
+    if ( class'ScrnBalance'.default.Mut.bHardcore && DmgType == class'DamTypeSlashingAttack' ) {
         return InDamage * 3.5; // quad damage from Stalkers in hardcore mode
     }
 
@@ -125,7 +125,7 @@ static function int ReduceDamage(KFPlayerReplicationInfo KFPRI, KFPawn Injured, 
 static function float ModifyRecoilSpread(KFPlayerReplicationInfo KFPRI, WeaponFire Other, out float Recoil)
 {
     Recoil = 0.60;
-	return Recoil;
+    return Recoil;
 }
 
 static function float GetReloadSpeedModifierStatic(KFPlayerReplicationInfo KFPRI, class<KFWeapon> Other)
@@ -133,7 +133,7 @@ static function float GetReloadSpeedModifierStatic(KFPlayerReplicationInfo KFPRI
     if ( ClassIsChildOf(Other, class'ThompsonSMG') )
         return 2.0; // 100% faster reload speed for Tommy Guns
 
-	return 1.35; // Up to 35% faster reload speed for any weapon
+    return 1.35; // Up to 35% faster reload speed for any weapon
 }
 
 // Set number times Zed Time can be extended
@@ -148,7 +148,7 @@ static function float GetCostScaling(KFPlayerReplicationInfo KFPRI, class<Pickup
     if ( Item == class'ScrnBalanceSrv.ScrnBullpupPickup' )
         return 1.0; // price lowered to $200, no discount needed
 
-	if ( ClassIsChildOf(Item, class'BullpupPickup')
+    if ( ClassIsChildOf(Item, class'BullpupPickup')
             || ClassIsChildOf(Item, class'AK47Pickup' )
             || ClassIsChildOf(Item, class'SCARMK17Pickup')
             || ClassIsChildOf(Item, class'M4Pickup')
@@ -163,19 +163,19 @@ static function float GetCostScaling(KFPlayerReplicationInfo KFPRI, class<Pickup
         // 30% base discount + 5% extra per level
         return fmax(0.10, 0.70 - 0.05 * GetClientVeteranSkillLevel(KFPRI));
     }
-	return 1.0;
+    return 1.0;
 }
 
 static function string GetCustomLevelInfo( byte Level )
 {
-	local string S;
+    local string S;
 
-	S = Default.CustomLevelInfo;
-	ReplaceText(S, "%L", string(Level));
-	ReplaceText(S, "%x", GetPercentStr(0.20 + 0.05*Level));
-	ReplaceText(S, "%z", string(min(10, 2 + Level/3)));
-	ReplaceText(S, "%$", GetPercentStr(fmin(0.90, 0.30 + 0.05*Level)));
-	return S;
+    S = Default.CustomLevelInfo;
+    ReplaceText(S, "%L", string(Level));
+    ReplaceText(S, "%x", GetPercentStr(0.20 + 0.05*Level));
+    ReplaceText(S, "%z", string(min(10, 2 + Level/3)));
+    ReplaceText(S, "%$", GetPercentStr(fmin(0.90, 0.30 + 0.05*Level)));
+    return S;
 }
 
 defaultproperties

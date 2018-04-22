@@ -38,10 +38,10 @@ function DropFrom(vector StartLocation)
     if ( Pickup != None )
     {
         Pickup.InitDroppedPickupFor(self);
-		Pickup.DroppedBy = PlayerController(Instigator.Controller);
+        Pickup.DroppedBy = PlayerController(Instigator.Controller);
         Pickup.Velocity = Velocity;
         Pickup.AmmoAmount[0] = AmmoThrown;
-		Pickup.MagAmmoRemaining = MagAmmoRemaining;
+        Pickup.MagAmmoRemaining = MagAmmoRemaining;
         if (Instigator.Health > 0)
             Pickup.bThrown = true;
     }

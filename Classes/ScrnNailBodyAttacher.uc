@@ -18,7 +18,7 @@ simulated function PostBeginPlay()
     }
     log("ScrnNailBodyAttacher spawned");
     
-	SetTimer(1,False);
+    SetTimer(1,False);
 }
 
 simulated function Destroyed()
@@ -38,28 +38,28 @@ simulated function Destroyed()
     
 simulated function Tick( float Delta )
 {
-	if( Owner==None )
-	{
-		Destroy();
-		Return;
-	}
+    if( Owner==None )
+    {
+        Destroy();
+        Return;
+    }
     //Owner.SetLocation(Location);
-	if( Physics==PHYS_Karma /* || Owner.Physics!=PHYS_KarmaRagdoll */ )
-		 Return;
-	if( Owner.Physics !=PHYS_KarmaRagdoll  )
-		 Owner.SetPhysics(PHYS_KarmaRagdoll);
+    if( Physics==PHYS_Karma /* || Owner.Physics!=PHYS_KarmaRagdoll */ )
+         Return;
+    if( Owner.Physics !=PHYS_KarmaRagdoll  )
+         Owner.SetPhysics(PHYS_KarmaRagdoll);
          
-	KConstraintActor1 = Owner;
-	KPos1 = (Location-AttachEndPoint)/50.f;
-	KPos2 = AttachEndPoint/50.f;
-	KPriAxis1 = vect(1,0,0);
-	KSecAxis1 = vect(0,0,1);
-	KPriAxis2 = vect(1,0,0);
-	KSecAxis2 = vect(0,0,1);
+    KConstraintActor1 = Owner;
+    KPos1 = (Location-AttachEndPoint)/50.f;
+    KPos2 = AttachEndPoint/50.f;
+    KPriAxis1 = vect(1,0,0);
+    KSecAxis1 = vect(0,0,1);
+    KPriAxis2 = vect(1,0,0);
+    KSecAxis2 = vect(0,0,1);
     
-	SetPhysics(PHYS_Karma);
+    SetPhysics(PHYS_Karma);
 
-	SetTimer(0,False); //disable auto-destroy
+    SetTimer(0,False); //disable auto-destroy
 }
 
 defaultproperties

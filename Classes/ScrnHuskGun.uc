@@ -29,7 +29,7 @@ simulated function bool StartFire(int Mode)
     local KFPlayerReplicationInfo KFPRI;
     
 
-	if ( super.StartFire(Mode) ) {
+    if ( super.StartFire(Mode) ) {
         f = ScrnHuskGunFire(FireMode[Mode]);
         if ( Mode == 0 && f != none ) {
             f.MaxChargeTime = f.default.MaxChargeTime;
@@ -39,7 +39,7 @@ simulated function bool StartFire(int Mode)
         }
         return true;
     }
-	return false;
+    return false;
 }
 
 defaultproperties

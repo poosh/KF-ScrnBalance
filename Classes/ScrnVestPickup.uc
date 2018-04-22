@@ -1,9 +1,9 @@
 class ScrnVestPickup extends KFWeaponPickup
-	abstract notplaceable;
+    abstract notplaceable;
     
 var(Shield) int         ShieldCapacity; 
 var(Shield) float       SpeedModifier;      // movement speed modifier. How slower you will move while wearing this shield. In % of default ground speed.
-var         texture	    TraderInfoTexture;  //Image to show in Info
+var         texture        TraderInfoTexture;  //Image to show in Info
 
 defaultproperties
 {

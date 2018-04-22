@@ -18,8 +18,8 @@ replication
         bSingleTeamGame, OvertimeWaves, SudDeathWaves,
         BaseRadiusSqr, MinBaseZ, MaxBaseZ;
 
-	reliable if( bNetDirty && Role == ROLE_Authority )
-		BlueShop, bSuddenDeath,
+    reliable if( bNetDirty && Role == ROLE_Authority )
+        BlueShop, bSuddenDeath,
         HumanDamageMode, TeamCaptain, TeamCarrier;
 }
 

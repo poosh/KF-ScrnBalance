@@ -1,5 +1,5 @@
 class ScrnDamTypeM99HeadShot extends DamTypeM99HeadShot
-	abstract;
+    abstract;
     
 defaultproperties
 {

@@ -1,5 +1,5 @@
 class ScrnVetFieldMedic extends ScrnVeterancyTypes
-	abstract;
+    abstract;
 
 
 static function int GetStatValueInt(ClientPerkRepLink StatOther, byte ReqNum)
@@ -20,12 +20,12 @@ static function bool CanCookNade(KFPlayerReplicationInfo KFPRI, Weapon Weap)
 
 static function float GetSyringeChargeRate(KFPlayerReplicationInfo KFPRI)
 {
-	return 2.4 + (0.1 * float(GetClientVeteranSkillLevel(KFPRI))); // Level 6 - Recharges 200% faster
+    return 2.4 + (0.1 * float(GetClientVeteranSkillLevel(KFPRI))); // Level 6 - Recharges 200% faster
 }
 
 static function float GetHealPotency(KFPlayerReplicationInfo KFPRI)
 {
-	return 1.75;  // Heals for 75% more
+    return 1.75;  // Heals for 75% more
 }
 
 static function float GetFireSpeedModStatic(KFPlayerReplicationInfo KFPRI, class<Weapon> Other)
@@ -33,7 +33,7 @@ static function float GetFireSpeedModStatic(KFPlayerReplicationInfo KFPRI, class
     if ( ClassIsChildOf(Other, class'Syringe') ) {
         return 1.6;
     }
-	return 1.0;
+    return 1.0;
 }
 
 // give medic speed bonus while holding syringe
@@ -52,15 +52,15 @@ static function float GetMovementSpeedModifier(KFPlayerReplicationInfo KFPRI, KF
 
 static function int ReduceDamage(KFPlayerReplicationInfo KFPRI, KFPawn Injured, Pawn Instigator, int InDamage, class<DamageType> DmgType)
 {
-	if ( DmgType == class'DamTypeVomit' )
-	{
-		// Medics don't damage themselves with the bile shooter
+    if ( DmgType == class'DamTypeVomit' )
+    {
+        // Medics don't damage themselves with the bile shooter
         if( Injured == Instigator )
             return 0;
 
-		return InDamage * 0.25; // 75% decrease in damage from Bloat's Bile
-	}
-	return InDamage;
+        return InDamage * 0.25; // 75% decrease in damage from Bloat's Bile
+    }
+    return InDamage;
 }
 
 
@@ -71,7 +71,7 @@ static function float GetReloadSpeedModifierStatic(KFPlayerReplicationInfo KFPRI
     if ( ClassIsInArray(default.PerkedWeapons, Other) )
         return 1.5;
 
-	return 1.0;
+    return 1.0;
 }
 
 static function float GetMagCapacityModStatic(KFPlayerReplicationInfo KFPRI, class<KFWeapon> Other)
@@ -81,7 +81,7 @@ static function float GetMagCapacityModStatic(KFPlayerReplicationInfo KFPRI, cla
             || ClassIsChildOf(Other, class'ScrnM4203MMedicGun')
             || ClassIsInArray(default.PerkedAmmo, Other.default.FiremodeClass[0].default.AmmoClass) ) //v3 - custom weapon support
         return 2.0; // up to 100% increase in Medic weapon ammo carry
-	return 1.0;
+    return 1.0;
 }
 
 static function float GetAmmoPickupMod(KFPlayerReplicationInfo KFPRI, KFAmmunition Other)
@@ -91,7 +91,7 @@ static function float GetAmmoPickupMod(KFPlayerReplicationInfo KFPRI, KFAmmuniti
             //|| ScrnM203MAmmo(Other) != none
             || ClassIsInArray(default.PerkedAmmo, Other.class) ) //v3 - custom weapon support
         return 2.0; // 100% increase in MP7 Medic weapon ammo carry
-	return 1.0;
+    return 1.0;
 }
 
 static function float AddExtraAmmoFor(KFPlayerReplicationInfo KFPRI, Class<Ammunition> AmmoType)
@@ -111,15 +111,15 @@ static function float AddExtraAmmoFor(KFPlayerReplicationInfo KFPRI, Class<Ammun
         return 1.0 + 0.05 * float(GetClientVeteranSkillLevel(KFPRI)-6); // +5% per level above 6
     }
 
-	return 1.0;
+    return 1.0;
 }
 
 // Change the cost of particular items
 // v6.10 - all medic guns have regular discount rate
 static function float GetCostScaling(KFPlayerReplicationInfo KFPRI, class<Pickup> Item)
 {
-	if ( Item == class'Vest' || ClassIsChildOf(Item, class'ScrnBalanceSrv.ScrnVestPickup')
-				|| ClassIsChildOf(Item, class'MP7MPickup')
+    if ( Item == class'Vest' || ClassIsChildOf(Item, class'ScrnBalanceSrv.ScrnVestPickup')
+                || ClassIsChildOf(Item, class'MP7MPickup')
                 || ClassIsChildOf(Item, class'MP5MPickup')
                 || ClassIsChildOf(Item, class'M7A3MPickup')
                 || ClassIsChildOf(Item, class'KrissMPickup')
@@ -130,8 +130,8 @@ static function float GetCostScaling(KFPlayerReplicationInfo KFPRI, class<Pickup
     {
         // 30% base discount + 5% extra per level
         return fmax(0.10, 0.70 - 0.05 * GetClientVeteranSkillLevel(KFPRI));
-	}
-	return 1.0;
+    }
+    return 1.0;
 }
 
 // Reduce damage when wearing Armor
@@ -142,21 +142,21 @@ static function float GetBodyArmorDamageModifier(KFPlayerReplicationInfo KFPRI)
 
 static function string GetCustomLevelInfo( byte Level )
 {
-	local string S;
+    local string S;
 
-	S = Default.CustomLevelInfo;
-	ReplaceText(S,"%L",string(Level));
-	ReplaceText(S,"%s",GetPercentStr(2.40 + 0.10*Level));
-	ReplaceText(S,"%v",GetPercentStr(fmin(0.60, 0.30 + 0.05*Level)));
-	ReplaceText(S,"%$",GetPercentStr(fmin(0.90, 0.30 + 0.05*Level)));
-	return S;
+    S = Default.CustomLevelInfo;
+    ReplaceText(S,"%L",string(Level));
+    ReplaceText(S,"%s",GetPercentStr(2.40 + 0.10*Level));
+    ReplaceText(S,"%v",GetPercentStr(fmin(0.60, 0.30 + 0.05*Level)));
+    ReplaceText(S,"%$",GetPercentStr(fmin(0.90, 0.30 + 0.05*Level)));
+    return S;
 }
 
 // allow medic to see NPC's health
 static function SpecialHUDInfo(KFPlayerReplicationInfo KFPRI, Canvas C)
 {
-	local KF_StoryNPC_Spawnable NPC;
-	local HUDKillingFloor HKF;
+    local KF_StoryNPC_Spawnable NPC;
+    local HUDKillingFloor HKF;
 
     HKF = HUDKillingFloor(C.ViewPort.Actor.myHUD);
     if ( HKF == none || Pawn(C.ViewPort.Actor.ViewTarget)==none || Pawn(C.ViewPort.Actor.ViewTarget).Health<=0 )

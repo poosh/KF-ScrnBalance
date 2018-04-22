@@ -11,22 +11,22 @@ var ScrnClientPerkRepLink PerkLink;
 
 
 // Settings
-var()	float	ItemMargin;  // amount of pixels between left or right side of the list box and item border
-var()	float	ItemSpacing; // amount of pixels between list items
-var()	float	ItemPadding; // amount of pixels between item border and elements
+var()    float    ItemMargin;  // amount of pixels between left or right side of the list box and item border
+var()    float    ItemSpacing; // amount of pixels between list items
+var()    float    ItemPadding; // amount of pixels between item border and elements
 
-var()	float	ProgressBarWidth;
+var()    float    ProgressBarWidth;
 
 // Display
-var	texture	ItemBackground;
-var	texture	ProgressBarBackground;
-var	texture	ProgressBarForeground;
+var    texture    ItemBackground;
+var    texture    ProgressBarBackground;
+var    texture    ProgressBarForeground;
 
 
 function InitComponent(GUIController MyController, GUIComponent MyOwner)
 {
-	OnDrawItem = DrawAchievement;
-	Super.InitComponent(MyController, MyOwner);
+    OnDrawItem = DrawAchievement;
+    Super.InitComponent(MyController, MyOwner);
 }
 
 
@@ -39,10 +39,10 @@ function Display(GUIBuyable NewBuyable)
         SetIndex(0);
     }
 
-	if ( MyScrollBar != none )
-	{
-		MyScrollBar.AlignThumb();
-	}
+    if ( MyScrollBar != none )
+    {
+        MyScrollBar.AlignThumb();
+    }
 }
 
 function UpdateList()
@@ -56,13 +56,13 @@ function UpdateList()
                 LockIndex[LockIndex.length] = i;
         }
     }
-	ItemCount = LockIndex.Length;
+    ItemCount = LockIndex.Length;
 }
 
 
 function DrawAchievement(Canvas Canvas, int Index, float X, float Y, float Width, float Height, bool bSelected, bool bPending)
 {
-	local float TempX, TempY, TempWidth, TempHeight, IconSize, BarWidth, BarHeight;
+    local float TempX, TempY, TempWidth, TempHeight, IconSize, BarWidth, BarHeight;
     local float ClipX, ClipY;
     local string s;
     local Color TextColor; 
@@ -71,22 +71,22 @@ function DrawAchievement(Canvas Canvas, int Index, float X, float Y, float Width
     // remember to restore those in the end
     ClipX = Canvas.ClipX;
     ClipY = Canvas.ClipY;
-	// Initialize the Canvas
+    // Initialize the Canvas
     Canvas.Style = 1;
 
     ItemMargin = default.ItemMargin;
     if ( Canvas.ClipY < 900 )
         ItemMargin /= 2;
-	// Offset for the Background
-	X += ItemMargin;
-	Y += ItemSpacing / 2.0;
+    // Offset for the Background
+    X += ItemMargin;
+    Y += ItemSpacing / 2.0;
     Width -= ItemMargin * 2.0;
     Height -= ItemSpacing;
-	// Draw Item Background
-	Canvas.SetDrawColor(255, 255, 255, 192);
-	Canvas.SetPos(X, Y);
-	Canvas.DrawTileStretched(ItemBackground, Width, Height);
-		
+    // Draw Item Background
+    Canvas.SetDrawColor(255, 255, 255, 192);
+    Canvas.SetPos(X, Y);
+    Canvas.DrawTileStretched(ItemBackground, Width, Height);
+        
     if ( PerkLink.Locks[Index].CurProgress >= PerkLink.Locks[Index].MaxProgress ) {
         TextColor = Canvas.MakeColor(255, 255, 255, 255);
     }
@@ -94,19 +94,19 @@ function DrawAchievement(Canvas Canvas, int Index, float X, float Y, float Width
         TextColor = Canvas.MakeColor(92, 92, 92, 255);
     }
 
-	// Offset and Calculate Icon's Size
-	TempX = X + ItemPadding;
-	TempY = Y + ItemPadding;
+    // Offset and Calculate Icon's Size
+    TempX = X + ItemPadding;
+    TempY = Y + ItemPadding;
 
-	// Draw Icon
+    // Draw Icon
     Canvas.DrawColor = TextColor;
-	IconSize = Height - 2.0*ItemPadding;
-	Canvas.SetPos(TempX, TempY);
+    IconSize = Height - 2.0*ItemPadding;
+    Canvas.SetPos(TempX, TempY);
     Canvas.DrawTile(PerkLink.Locks[Index].Icon, IconSize, IconSize, 0, 0, PerkLink.Locks[Index].Icon.MaterialUSize(), PerkLink.Locks[Index].Icon.MaterialVSize());
 
-	TempX += IconSize + ItemPadding;
+    TempX += IconSize + ItemPadding;
 
-	//Draw the Display Name
+    //Draw the Display Name
     s = PerkLink.Locks[Index].Title;
     if ( PerkLink.Locks[Index].Group > 0 )
         s = "["$PerkLink.Locks[Index].Group$"] " $ s;
@@ -123,7 +123,7 @@ function DrawAchievement(Canvas Canvas, int Index, float X, float Y, float Width
     Canvas.SetPos(TempX, TempY);
     Canvas.DrawTextClipped(s);
     
-	//Draw the Description
+    //Draw the Description
     Canvas.SetClip(ClipX, ClipY); // always restore proper clipping before calling GetStaticFontSize
     Canvas.Font = class'ScrnHUD'.static.GetStaticFontSizeIndex(Canvas, -5);
     Canvas.SetOrigin(TempX, TempY);
@@ -138,16 +138,16 @@ function DrawAchievement(Canvas Canvas, int Index, float X, float Y, float Width
         // align top-right with title
         BarWidth = ProgressBarWidth * Width;
         BarHeight = TempHeight;
-		TempX = X + Width - ItemPadding - BarWidth;
+        TempX = X + Width - ItemPadding - BarWidth;
         TempY = Y + Height - ItemPadding - BarHeight;
-		// Draw Progress Bar
-		Canvas.SetPos(TempX, TempY);
-		Canvas.DrawTileStretched(ProgressBarBackground, BarWidth, BarHeight);
-		Canvas.SetPos(TempX + 3.0, TempY + 3.0);
+        // Draw Progress Bar
+        Canvas.SetPos(TempX, TempY);
+        Canvas.DrawTileStretched(ProgressBarBackground, BarWidth, BarHeight);
+        Canvas.SetPos(TempX + 3.0, TempY + 3.0);
         Canvas.DrawTileStretched(ProgressBarForeground, (BarWidth - 6.0) 
             * (float(PerkLink.Locks[Index].CurProgress) / float(PerkLink.Locks[Index].MaxProgress)), BarHeight - 6.0);
             
-		// Draw Progress Text
+        // Draw Progress Text
         s = PerkLink.Locks[Index].CurProgress $"/"$ PerkLink.Locks[Index].MaxProgress;
         Canvas.Font = class'ScrnHUD'.static.GetStaticFontSizeIndex(Canvas, -3);
         Canvas.TextSize(s, TempWidth, TempHeight);
@@ -161,13 +161,13 @@ function DrawAchievement(Canvas Canvas, int Index, float X, float Y, float Width
         Canvas.SetDrawColor(160, 160, 160, 255);
         Canvas.SetPos(TempX, TempY);
         Canvas.DrawText(s);
-	}
+    }
     Canvas.SetClip(ClipX, ClipY);
 }
 
 function float ListItemHeight(Canvas c)
 {
-	return (MenuOwner.ActualHeight() / 5.0) - 1.0;
+    return (MenuOwner.ActualHeight() / 5.0) - 1.0;
 }
 
 defaultproperties

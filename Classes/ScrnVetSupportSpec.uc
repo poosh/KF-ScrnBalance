@@ -1,5 +1,5 @@
 class ScrnVetSupportSpec extends ScrnVeterancyTypes
-	abstract;
+    abstract;
 
 static function int GetStatValueInt(ClientPerkRepLink StatOther, byte ReqNum)
 {
@@ -17,7 +17,7 @@ static function int AddCarryMaxWeight(KFPlayerReplicationInfo KFPRI)
 // Adjust distance of welded door health status
 static function float GetDoorHealthVisibilityScaling(KFPlayerReplicationInfo KFPRI, Pawn P)
 {
-	return 5.0; //5x longer distance
+    return 5.0; //5x longer distance
 }
 
 // give support melee speed bonus while holding welder
@@ -30,7 +30,7 @@ static function float GetWeaponMovementSpeedBonus(KFPlayerReplicationInfo KFPRI,
 
 static function float GetWeldSpeedModifier(KFPlayerReplicationInfo KFPRI)
 {
-	return 2.5; // 150% increase in speed
+    return 2.5; // 150% increase in speed
 }
 
 static function float AddExtraAmmoFor(KFPlayerReplicationInfo KFPRI, Class<Ammunition> AmmoType)
@@ -48,7 +48,7 @@ static function float AddExtraAmmoFor(KFPlayerReplicationInfo KFPRI, Class<Ammun
     else {
         return 1.0 + (0.05 * float(GetClientVeteranSkillLevel(KFPRI)));
     }
-	return 1.0;
+    return 1.0;
 }
 
 // Removed frag damage bonus (c) PooSH
@@ -57,25 +57,25 @@ static function int AddDamage(KFPlayerReplicationInfo KFPRI, KFMonster Injured, 
     if ( DmgType == default.DefaultDamageTypeNoBonus || class<KFWeaponDamageType>(DmgType) == none )
         return InDamage;
 
-	if ( DmgType == default.DefaultDamageType
+    if ( DmgType == default.DefaultDamageType
             || class<KFWeaponDamageType>(DmgType).default.bIsPowerWeapon
             || ClassIsInArray(default.PerkedDamTypes, DmgType) //v3 - custom weapon support
         )
-	{
+    {
         // 30% base bonus + 5% per level
-		InDamage *= 1.30 + 0.05 * GetClientVeteranSkillLevel(KFPRI);
+        InDamage *= 1.30 + 0.05 * GetClientVeteranSkillLevel(KFPRI);
     }
-	return InDamage;
+    return InDamage;
 }
 
 
 // Modify fire speed
 static function float GetFireSpeedModStatic(KFPlayerReplicationInfo KFPRI, class<Weapon> Other)
 {
-	if ( class'ScrnBalance'.default.Mut.bHardcore )
+    if ( class'ScrnBalance'.default.Mut.bHardcore )
         return 0.80; // 20% slower fire rate in hardcore mode
 
-	return 1.0;
+    return 1.0;
 }
 
 // Support's penetration bonus limited to 60% (down from 90%),
@@ -84,7 +84,7 @@ static function float GetFireSpeedModStatic(KFPlayerReplicationInfo KFPRI, class
 // (c) PooSH
 static function float GetShotgunPenetrationDamageMulti(KFPlayerReplicationInfo KFPRI, float DefaultPenDamageReduction)
 {
-	local float PenDamageInverse;
+    local float PenDamageInverse;
 
     PenDamageInverse = (1.0 - FMax(0,DefaultPenDamageReduction));
     return DefaultPenDamageReduction + (PenDamageInverse * 0.6); // 60% better penetration
@@ -96,7 +96,7 @@ static function float GetCostScaling(KFPlayerReplicationInfo KFPRI, class<Pickup
     if ( Item == class'ScrnBalanceSrv.ScrnShotgunPickup' )
         return 1.0; // price lowered to $200, no discount needed
 
-	if ( ClassIsChildOf(Item, class'ShotgunPickup')
+    if ( ClassIsChildOf(Item, class'ShotgunPickup')
             || ClassIsChildOf(Item, class'BoomstickPickup')
             || ClassIsChildOf(Item, class'AA12Pickup')
             || ClassIsChildOf(Item, class'KSGPickup')
@@ -108,21 +108,21 @@ static function float GetCostScaling(KFPlayerReplicationInfo KFPRI, class<Pickup
     {
         // 30% base discount + 5% extra per level
         return fmax(0.10, 0.70 - 0.05 * GetClientVeteranSkillLevel(KFPRI));
-	}
+    }
     return 1.0;
 }
 
 static function string GetCustomLevelInfo( byte Level )
 {
-	local string S;
+    local string S;
 
-	S = Default.CustomLevelInfo;
-	ReplaceText(S,"%L",string(Level));
-	ReplaceText(S,"%x",GetPercentStr(0.30 + 0.05*Level));
-	ReplaceText(S,"%a",GetPercentStr(0.05*Level));
-	ReplaceText(S,"%g",string(Level));
-	ReplaceText(S,"%$",GetPercentStr(fmin(0.90, 0.30 + 0.05*Level)));
-	return S;
+    S = Default.CustomLevelInfo;
+    ReplaceText(S,"%L",string(Level));
+    ReplaceText(S,"%x",GetPercentStr(0.30 + 0.05*Level));
+    ReplaceText(S,"%a",GetPercentStr(0.05*Level));
+    ReplaceText(S,"%g",string(Level));
+    ReplaceText(S,"%$",GetPercentStr(fmin(0.90, 0.30 + 0.05*Level)));
+    return S;
 }
 
 defaultproperties

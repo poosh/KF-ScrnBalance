@@ -13,7 +13,7 @@ function ServerPlayFiring() { }
 
 state WaitingForFireButtonRelease
 {    
-	ignores PlayFiring, ServerPlayFiring, PlayFireEnd, ModeDoFire;
+    ignores PlayFiring, ServerPlayFiring, PlayFireEnd, ModeDoFire;
 
     function ModeTick(float dt)
     {
@@ -26,7 +26,7 @@ state WaitingForFireButtonRelease
 
 state FireBurst
 {
-	ignores PlayFiring, ServerPlayFiring; // ingnore because we play an anbient fire sound
+    ignores PlayFiring, ServerPlayFiring; // ingnore because we play an anbient fire sound
     //ignores StopFiring;
 
     function BeginState()
@@ -34,19 +34,19 @@ state FireBurst
         //log ("ScrnM4Fire.FireBurst BEGIN STATE", 'ScrnBalance');
     
         BurstShotCount = 0;
-		NextFireTime = Level.TimeSeconds - 0.000001; //fire now!
+        NextFireTime = Level.TimeSeconds - 0.000001; //fire now!
         FireBurstEndTime = Level.TimeSeconds + ( FireRate * BurstSize ) + 0.1; // if shit happens - get us out of this state when this time hits 
-		
+        
         if( KFWeap.bAimingRifle )
-		{
+        {
             Weapon.LoopAnim(FireLoopAimedAnim, FireLoopAnimRate, TweenTime);
-		}
-		else
-		{
+        }
+        else
+        {
             Weapon.LoopAnim(FireLoopAnim, FireLoopAnimRate, TweenTime);
-		}
+        }
 
-		PlayAmbientSound(AmbientFireSound);		
+        PlayAmbientSound(AmbientFireSound);        
     }
 
     function EndState()
@@ -57,9 +57,9 @@ state FireBurst
         Weapon.AnimStopLooping();
         PlayAmbientSound(none);
         
-    	if( Weapon.Instigator != none && Weapon.Instigator.IsLocallyControlled() &&
-    	   Weapon.Instigator.IsFirstPerson() && StereoFireSound != none )
-    	{
+        if( Weapon.Instigator != none && Weapon.Instigator.IsLocallyControlled() &&
+           Weapon.Instigator.IsFirstPerson() && StereoFireSound != none )
+        {
             Weapon.PlayOwnedSound(FireEndStereoSound,SLOT_None,AmbientFireVolume/127,,AmbientFireSoundRadius,,false);
         }
         else
@@ -67,14 +67,14 @@ state FireBurst
             Weapon.PlayOwnedSound(FireEndSound,SLOT_None,AmbientFireVolume/127,,AmbientFireSoundRadius);
         }
         
-		ScrnM4203AssaultRifle(Weapon).ReallyStopFire(ThisModeNum);  
+        ScrnM4203AssaultRifle(Weapon).ReallyStopFire(ThisModeNum);  
         bIsFiring = false; // tbs
     }
-	
-	function StartFiring()
-	{
-		super(KFFire).StartFiring(); //bypass KFHighROFFire
-	}
+    
+    function StartFiring()
+    {
+        super(KFFire).StartFiring(); //bypass KFHighROFFire
+    }
     
     function StopFiring()
     {
@@ -85,9 +85,9 @@ state FireBurst
     function ModeTick(float dt)
     {
         //log ("ScrnM4Fire.FireBurst.ModeTick()", 'ScrnBalance');
-	    Super.ModeTick(dt);
+        Super.ModeTick(dt);
         
-		if ( !bIsFiring || !AllowFire() )
+        if ( !bIsFiring || !AllowFire() )
             GotoState('');
         else if ( Level.TimeSeconds > FireBurstEndTime ) {
             GotoState('');

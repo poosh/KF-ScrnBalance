@@ -7,6 +7,6 @@ defaultproperties
      Description="A classic Vietnam era grenade launcher. Launches incendiary grenades."
      PickupClass=Class'ScrnBalanceSrv.ScrnM79IncPickup'
      ItemName="M79 Incendiary"
-	 Priority=95
-	 AppID=0
+     Priority=95
+     AppID=0
 }

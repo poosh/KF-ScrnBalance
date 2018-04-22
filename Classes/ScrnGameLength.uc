@@ -1,7 +1,7 @@
 Class ScrnGameLength extends Object
     dependson(ScrnWaveInfo)
-	PerObjectConfig
-	Config(ScrnWaves);
+    PerObjectConfig
+    Config(ScrnWaves);
 
 var ScrnGameType Game;
 

@@ -10,10 +10,10 @@ var const array<SLaser> Lasers;
 
 enum ELaserColor {
     LASER_None,
-	LASER_Red,
-	LASER_Green,
-	LASER_Blue,
-	LASER_Orange
+    LASER_Red,
+    LASER_Green,
+    LASER_Blue,
+    LASER_Orange
 };
 var private byte LaserType;
 

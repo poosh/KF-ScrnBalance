@@ -7,7 +7,7 @@ state FireLoop
     {
         super.BeginState();
         
-		NextFireTime = Level.TimeSeconds - 0.000001; //fire now!
+        NextFireTime = Level.TimeSeconds - 0.000001; //fire now!
     }
 }  
 
@@ -15,7 +15,7 @@ defaultproperties
 {
      AmmoClass=Class'ScrnBalanceSrv.ScrnThompsonDrumAmmo'
      DamageType=Class'ScrnBalanceSrv.ScrnDamTypeThompsonDrum'
-	 
+     
 
      RecoilRate=0.080000
      maxVerticalRecoilAngle=150

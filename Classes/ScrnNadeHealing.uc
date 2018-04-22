@@ -4,24 +4,24 @@ var bool bFlashed;
 
 simulated function PostBeginPlay()
 {
-	Super.Postbeginplay();
-	NadeLight();
+    Super.Postbeginplay();
+    NadeLight();
 }
 
 simulated function NadeLight()
 {
-	if ( !Level.bDropDetail && (Instigator != None)
-		&& ((Level.TimeSeconds - LastRenderTime < 0.2) || (PlayerController(Instigator.Controller) != None)) )
-	{
-		bDynamicLight = true;
-		SetTimer(0.25, false);
-	}
-	else Timer();
+    if ( !Level.bDropDetail && (Instigator != None)
+        && ((Level.TimeSeconds - LastRenderTime < 0.2) || (PlayerController(Instigator.Controller) != None)) )
+    {
+        bDynamicLight = true;
+        SetTimer(0.25, false);
+    }
+    else Timer();
 }
 
 simulated function Timer()
 {
-	bDynamicLight = false;
+    bDynamicLight = false;
 }
 
 defaultproperties

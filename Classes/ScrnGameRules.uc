@@ -34,13 +34,13 @@ const DF_HEADSHOT  = 0x10; // 100% sure that this damage was made by headshot
 
 struct MonsterInfo {
     var KFMonster Monster;
-	var float SpawnTime;
+    var float SpawnTime;
     var float FirstHitTime; // time when Monster took first damage
-	var int HitCount; // how many hits monster received
+    var int HitCount; // how many hits monster received
 
-	var byte PlayerKillCounter; // how many players this monster killed
-	var int DamageCounter; // how much damage monster delivered to players
-	var float PlayerKillTime; // last time when monster killed a player
+    var byte PlayerKillCounter; // how many players this monster killed
+    var int DamageCounter; // how much damage monster delivered to players
+    var float PlayerKillTime; // last time when monster killed a player
 
     var ScrnPlayerInfo KillAss1, KillAss2; // who helped player to kill this monster
     var class<KFWeaponDamageType> DamType1, DamType2;
@@ -48,17 +48,17 @@ struct MonsterInfo {
     var int DamageFlags1, DamageFlags2;
     var bool TW_Ach_Failed; //if true, no TeamWork achievements can be earned on this zed
 
-	var bool bHeadshot; // was last damage from headshot?
-	var int RowHeadshots; // headshots in a row done to this monster. RowHeadshots doesn't reset after decapitation
-	var int Headshots; // number of headshots made to this monster
-	var int BodyShots; // number of bodyshots made to this monster by weapons, which can score headshots
-	var int OtherHits; // number of hits made to this monster by weapons, which can NOT score headshots
+    var bool bHeadshot; // was last damage from headshot?
+    var int RowHeadshots; // headshots in a row done to this monster. RowHeadshots doesn't reset after decapitation
+    var int Headshots; // number of headshots made to this monster
+    var int BodyShots; // number of bodyshots made to this monster by weapons, which can score headshots
+    var int OtherHits; // number of hits made to this monster by weapons, which can NOT score headshots
 
-	// variables below are set after NetDamage() call
-	var float LastHitTime; // time when Monster took last damage
-	var int HeadHealth; // track head health to check headshots
-	var bool bWasDecapitated; // was the monster decapitated before last damage? If bWasDecapitated=true then bHeadshot=false
-	var bool bWasBackstabbed; // previous hit was a melee backstab
+    // variables below are set after NetDamage() call
+    var float LastHitTime; // time when Monster took last damage
+    var int HeadHealth; // track head health to check headshots
+    var bool bWasDecapitated; // was the monster decapitated before last damage? If bWasDecapitated=true then bHeadshot=false
+    var bool bWasBackstabbed; // previous hit was a melee backstab
 };
 var array<MonsterInfo> MonsterInfos;
 var private transient KFMonster LastSeachedMonster; //used to optimize GetMonsterIndex()
@@ -123,7 +123,7 @@ function PostBeginPlay()
 event Destroyed()
 {
     local ScrnPlayerInfo SPI;
-	local int i;
+    local int i;
 
     log("ScrnGameRules destroyed", 'ScrnBalance');
     // clear all ScrnPlayerInfo objects
@@ -139,10 +139,10 @@ event Destroyed()
     }
 
     // destroy all ach handlers
-	for ( i=0; i<AchHandlers.length; ++i ) {
-		if ( AchHandlers[i] != none )
+    for ( i=0; i<AchHandlers.length; ++i ) {
+        if ( AchHandlers[i] != none )
             AchHandlers[i].Destroy();
-	}
+    }
     AchHandlers.length = 0;
 
     super.Destroyed();
@@ -161,12 +161,12 @@ function AddGameRules(GameRules GR)
 // more players = faster zed spawn
 function AdjustZedSpawnRate()
 {
-	local int PlayerCount;
+    local int PlayerCount;
 
-	if ( Mut.bStoryMode )
+    if ( Mut.bStoryMode )
         return;
 
-	Mut.KF.KFLRules.WaveSpawnPeriod = Mut.OriginalWaveSpawnPeriod;
+    Mut.KF.KFLRules.WaveSpawnPeriod = Mut.OriginalWaveSpawnPeriod;
 
     // TSC adjusts spawn period itself
     if ( !Mut.bTSCGame ) {
@@ -195,43 +195,43 @@ function WaveStarted()
     local int i;
     local Controller P;
     local PlayerController PC;
-	local ScrnPlayerInfo SPI;
+    local ScrnPlayerInfo SPI;
 
     WaveDoom3Kills = 0;
     WaveTotalKills = 0;
     WavePlayerCount = 0;
     WaveDeadPlayers = 0;
     WaveAmmoPickups = 0;
-	bFinalWave = Mut.KF.WaveNum == Mut.KF.FinalWave;
+    bFinalWave = Mut.KF.WaveNum == Mut.KF.FinalWave;
 
-	ClearNonePlayerInfos();
+    ClearNonePlayerInfos();
     for ( P = Level.ControllerList; P != none; P = P.nextController ) {
         PC = PlayerController(P);
         if ( PC != none && PC.Pawn != none && PC.Pawn.Health > 0 ) {
             ++WavePlayerCount;
-			if ( ScrnPlayerController(PC) != none )
-				ScrnPlayerController(PC).ResetWaveStats();
-			SPI = CreatePlayerInfo(PC, false);
+            if ( ScrnPlayerController(PC) != none )
+                ScrnPlayerController(PC).ResetWaveStats();
+            SPI = CreatePlayerInfo(PC, false);
             // in case when stats were created before ClientReplLink created
             if ( !SPI.GameStartStats.bSet )
                 SPI.BackupStats(SPI.GameStartStats);
             SPI.WaveStarted(Mut.KF.WaveNum);
             SPI.ProgressAchievement('Welcome', 1);
-		}
+        }
     }
 
     AdjustZedSpawnRate();
 
-	for ( i=0; i<AchHandlers.length; ++i ) {
-		AchHandlers[i].WaveStarted(Mut.KF.WaveNum);
-	}
+    for ( i=0; i<AchHandlers.length; ++i ) {
+        AchHandlers[i].WaveStarted(Mut.KF.WaveNum);
+    }
 
-	if ( Mut.bStoryMode )
-		log("Wave "$(Mut.KF.WaveNum+1)$" started", 'ScrnBalance');
-	else if (bFinalWave)
-		log("Final wave started", 'ScrnBalance');
-	else
-		log("Wave "$(Mut.KF.WaveNum+1)$"/"$(Mut.KF.FinalWave)$" started", 'ScrnBalance');
+    if ( Mut.bStoryMode )
+        log("Wave "$(Mut.KF.WaveNum+1)$" started", 'ScrnBalance');
+    else if (bFinalWave)
+        log("Final wave started", 'ScrnBalance');
+    else
+        log("Wave "$(Mut.KF.WaveNum+1)$"/"$(Mut.KF.FinalWave)$" started", 'ScrnBalance');
 
     DestroyBuzzsawBlade(); // prevent cheating
 }
@@ -261,18 +261,18 @@ function WaveEnded()
 {
     local int i;
     local string s;
-	local ScrnPlayerInfo SPI;
-	local byte WaveNum;
-	local Controller P;
-	local PlayerController PC;
+    local ScrnPlayerInfo SPI;
+    local byte WaveNum;
+    local Controller P;
+    local PlayerController PC;
     local float Accuracy;
 
-	// KF.WaveNum already set to a next wave, when WaveEnded() has been called
-	// E.g. KF.WaveNum == 1 means that first wave has been ended (wave with index 0)
-	WaveNum = KF.WaveNum-1;
+    // KF.WaveNum already set to a next wave, when WaveEnded() has been called
+    // E.g. KF.WaveNum == 1 means that first wave has been ended (wave with index 0)
+    WaveNum = KF.WaveNum-1;
 
     for ( SPI=PlayerInfo; SPI!=none; SPI=SPI.NextPlayerInfo ) {
-		SPI.WaveEnded(WaveNum);
+        SPI.WaveEnded(WaveNum);
         SPI.BackupPRI(); // just in case
 
         // broadcast players with high accuracy
@@ -287,23 +287,23 @@ function WaveEnded()
         }
     }
 
-	for ( i=0; i<AchHandlers.length; ++i ) {
-		AchHandlers[i].WaveEnded(WaveNum);
-	}
+    for ( i=0; i<AchHandlers.length; ++i ) {
+        AchHandlers[i].WaveEnded(WaveNum);
+    }
 
-	// create player infos for the newcomers
+    // create player infos for the newcomers
     for ( P = Level.ControllerList; P != none; P = P.nextController ) {
-		PC = PlayerController(P);
-		if ( PC != none ) {
-			if ( P.bIsPlayer && P.Pawn != none && P.Pawn.Health > 0 )
-				CreatePlayerInfo(PC);
+        PC = PlayerController(P);
+        if ( PC != none ) {
+            if ( P.bIsPlayer && P.Pawn != none && P.Pawn.Health > 0 )
+                CreatePlayerInfo(PC);
 
-			// call this in story mode to enable perk selection in ServerPerks
-			if ( Mut.bStoryMode ) {
-				if ( KFSteamStatsAndAchievements(PC.SteamStatsAndAchievements) != none )
-					KFSteamStatsAndAchievements(PC.SteamStatsAndAchievements).WaveEnded();
-			}
-		}
+            // call this in story mode to enable perk selection in ServerPerks
+            if ( Mut.bStoryMode ) {
+                if ( KFSteamStatsAndAchievements(PC.SteamStatsAndAchievements) != none )
+                    KFSteamStatsAndAchievements(PC.SteamStatsAndAchievements).WaveEnded();
+            }
+        }
     }
 }
 
@@ -335,7 +335,7 @@ function bool CheckEndGame(PlayerReplicationInfo Winner, string Reason)
 {
     local bool bWin;
     local string MapName;
-	local int i;
+    local int i;
 
     if ( Level.Game.bGameEnded ) {
         log("Calling CheckEndGame() for already ended game!", 'ScrnBalance');
@@ -345,35 +345,35 @@ function bool CheckEndGame(PlayerReplicationInfo Winner, string Reason)
         return false;
     }
 
-	if ( NextGameRules != None && !NextGameRules.CheckEndGame(Winner,Reason) )
-		return false;
+    if ( NextGameRules != None && !NextGameRules.CheckEndGame(Winner,Reason) )
+        return false;
 
-	// KFStoryGameInfo first call GameRules.CheckEndGame() and only then sets EndGameType
-	if ( Mut.bStoryMode )
-		bWin = Reason ~= "WinAction";
-	else {
-		bWin = KFGameReplicationInfo(Level.GRI)!=None && KFGameReplicationInfo(Level.GRI).EndGameType==2;
-	}
+    // KFStoryGameInfo first call GameRules.CheckEndGame() and only then sets EndGameType
+    if ( Mut.bStoryMode )
+        bWin = Reason ~= "WinAction";
+    else {
+        bWin = KFGameReplicationInfo(Level.GRI)!=None && KFGameReplicationInfo(Level.GRI).EndGameType==2;
+    }
 
     if ( bWin ) {
         mut.BroadcastMessage("Game WON in " $ Mut.FormatTime(Level.Game.GameReplicationInfo.ElapsedTime)
             $". HL="$HardcoreLevel, true);
-		// Map achievements
+        // Map achievements
         MapName = Mut.KF.GetCurrentMapName(Level);
-		CheckMapAlias(MapName);
+        CheckMapAlias(MapName);
         if ( !IsMapBlackListed(MapName) ) {
-			Mut.bNeedToSaveStats = false;
+            Mut.bNeedToSaveStats = false;
             GiveMapAchievements(MapName);
-			for ( i=0; i<AchHandlers.length; ++i )
-				AchHandlers[i].GameWon(MapName);
+            for ( i=0; i<AchHandlers.length; ++i )
+                AchHandlers[i].GameWon(MapName);
             // no need to save stats at this moment, because Level.Game.bGameEnded=False yet,
             // i.e. ServerPerks hasn't done the final save yet
-			//Mut.SaveStats();
+            //Mut.SaveStats();
         }
         Mut.bNeedToSaveStats = false;
         Mut.bSaveStatsOnAchievementEarned = false;
     }
-	else {
+    else {
         if ( Mut.ScrnGT != none ) {
             for ( i = 0; i < Mut.ScrnGT.Bosses.Length; ++i ) {
                 if ( Mut.ScrnGT.Bosses[i] != none && Mut.ScrnGT.Bosses[i].Health > 0 ) {
@@ -398,7 +398,7 @@ function bool CheckEndGame(PlayerReplicationInfo Winner, string Reason)
 function GiveMapAchievements(optional String MapName)
 {
     local bool bCustomMap, bGiveHardAch, bGiveSuiAch, bGiveHoeAch, bNewAch;
-	local ScrnPlayerInfo SPI;
+    local ScrnPlayerInfo SPI;
     local ClientPerkRepLink PerkLink;
     local TeamInfo WinnerTeam;
     local float BonusMult;
@@ -406,66 +406,66 @@ function GiveMapAchievements(optional String MapName)
     local int i;
 
     WinnerTeam = TeamInfo(Level.Game.GameReplicationInfo.Winner);
-	if ( Mut.bStoryMode ) {
-		bGiveHardAch = Level.Game.GameDifficulty >= 4;
-		bGiveSuiAch = Level.Game.GameDifficulty >= 5;
-		bGiveHoeAch = Level.Game.GameDifficulty >= 7;
-	}
-	else {
-		bGiveHardAch = HardcoreLevel >= 5 && HasCustomZeds();
-		bGiveSuiAch = HardcoreLevel >= 10 && (bDoomPat || bSuperPat) || Mut.KF.IsA('TurboGame') ;
-		bGiveHoeAch = HardcoreLevel >= 15 && ( GameDoom3Kills > 0 ) || Mut.KF.IsA('FtgGame');
-	}
+    if ( Mut.bStoryMode ) {
+        bGiveHardAch = Level.Game.GameDifficulty >= 4;
+        bGiveSuiAch = Level.Game.GameDifficulty >= 5;
+        bGiveHoeAch = Level.Game.GameDifficulty >= 7;
+    }
+    else {
+        bGiveHardAch = HardcoreLevel >= 5 && HasCustomZeds();
+        bGiveSuiAch = HardcoreLevel >= 10 && (bDoomPat || bSuperPat) || Mut.KF.IsA('TurboGame') ;
+        bGiveHoeAch = HardcoreLevel >= 15 && ( GameDoom3Kills > 0 ) || Mut.KF.IsA('FtgGame');
+    }
 
     // end game bonus
-	BonusMult = Mut.EndGameStatBonus;
-	if ( Mut.bStatBonusUsesHL )
-		BonusMult *= fmax(1.0, HardcoreLevel - Mut.StatBonusMinHL);
-	i = Mut.MapInfo.FindMapInfo();
-	if ( i != -1 )
-		BonusMult *= 1.0 + Mut.MapInfo.MapInfo[i].Difficulty;
+    BonusMult = Mut.EndGameStatBonus;
+    if ( Mut.bStatBonusUsesHL )
+        BonusMult *= fmax(1.0, HardcoreLevel - Mut.StatBonusMinHL);
+    i = Mut.MapInfo.FindMapInfo();
+    if ( i != -1 )
+        BonusMult *= 1.0 + Mut.MapInfo.MapInfo[i].Difficulty;
     bGiveBonus = BonusMult >= 0.1;
     if ( bGiveBonus )
         log("Giving bonus xp to winners (x"$BonusMult$")", 'ScrnBalance');
 
     for ( SPI=PlayerInfo; SPI!=none; SPI=SPI.NextPlayerInfo ) {
-		if ( SPI.PlayerOwner == none || SPI.PlayerOwner.PlayerReplicationInfo == none )
-			continue;
+        if ( SPI.PlayerOwner == none || SPI.PlayerOwner.PlayerReplicationInfo == none )
+            continue;
 
-		PerkLink = SPI.GetRep();
-		if ( PerkLink == none )
-			continue;
+        PerkLink = SPI.GetRep();
+        if ( PerkLink == none )
+            continue;
 
         if ( WinnerTeam != none && SPI.PlayerOwner.PlayerReplicationInfo.Team != WinnerTeam )
             continue; // no candies for loosers
 
-		// additional achievements that are granted only when surviving the game
-		if ( ScrnPlayerController(SPI.PlayerOwner) != none && !ScrnPlayerController(SPI.PlayerOwner).bChangedPerkDuringGame )
-			SPI.ProgressAchievement('PerkFavorite', 1);
+        // additional achievements that are granted only when surviving the game
+        if ( ScrnPlayerController(SPI.PlayerOwner) != none && !ScrnPlayerController(SPI.PlayerOwner).bChangedPerkDuringGame )
+            SPI.ProgressAchievement('PerkFavorite', 1);
 
-		//unlock "Normal" achievement and see if the map is found
-		bCustomMap = MapAchClass.static.UnlockMapAchievement(PerkLink, MapName, 0) == -2;
+        //unlock "Normal" achievement and see if the map is found
+        bCustomMap = MapAchClass.static.UnlockMapAchievement(PerkLink, MapName, 0) == -2;
         bNewAch = false;
-		if ( bCustomMap ) {
-			//map not found - progress custom map achievements
-			if ( bGiveHardAch )
-				AchClass.static.ProgressAchievementByID(PerkLink, 'WinCustomMapsHard', 1);
-			if ( bGiveSuiAch )
-				AchClass.static.ProgressAchievementByID(PerkLink, 'WinCustomMapsSui', 1);
-			if ( bGiveHoeAch )
-				AchClass.static.ProgressAchievementByID(PerkLink, 'WinCustomMapsHoE', 1);
-			AchClass.static.ProgressAchievementByID(PerkLink, 'WinCustomMapsNormal', 1);
-			AchClass.static.ProgressAchievementByID(PerkLink, 'WinCustomMaps', 1);
-		}
-		else {
-			//map found - give related achievements
-			if ( bGiveHardAch && MapAchClass.static.UnlockMapAchievement(PerkLink, MapName, 1) == 1 )
-				bNewAch = true;
-			if ( bGiveSuiAch && MapAchClass.static.UnlockMapAchievement(PerkLink, MapName, 2) == 1 )
-				bNewAch = true;
-			if ( bGiveHoeAch && MapAchClass.static.UnlockMapAchievement(PerkLink, MapName, 3) == 1 )
-				bNewAch = true;
-		}
+        if ( bCustomMap ) {
+            //map not found - progress custom map achievements
+            if ( bGiveHardAch )
+                AchClass.static.ProgressAchievementByID(PerkLink, 'WinCustomMapsHard', 1);
+            if ( bGiveSuiAch )
+                AchClass.static.ProgressAchievementByID(PerkLink, 'WinCustomMapsSui', 1);
+            if ( bGiveHoeAch )
+                AchClass.static.ProgressAchievementByID(PerkLink, 'WinCustomMapsHoE', 1);
+            AchClass.static.ProgressAchievementByID(PerkLink, 'WinCustomMapsNormal', 1);
+            AchClass.static.ProgressAchievementByID(PerkLink, 'WinCustomMaps', 1);
+        }
+        else {
+            //map found - give related achievements
+            if ( bGiveHardAch && MapAchClass.static.UnlockMapAchievement(PerkLink, MapName, 1) == 1 )
+                bNewAch = true;
+            if ( bGiveSuiAch && MapAchClass.static.UnlockMapAchievement(PerkLink, MapName, 2) == 1 )
+                bNewAch = true;
+            if ( bGiveHoeAch && MapAchClass.static.UnlockMapAchievement(PerkLink, MapName, 3) == 1 )
+                bNewAch = true;
+        }
         // END-GAME STAT BONUS
         if ( bGiveBonus ) {
             if ( bNewAch )
@@ -545,37 +545,37 @@ static function TrimCollectionToDefault(out class<KFMonstersCollection> Collecti
 
 function ResetSquads()
 {
-	ResetGameSquads(Mut.KF, Mut.CurrentEventNum);
+    ResetGameSquads(Mut.KF, Mut.CurrentEventNum);
 }
 
 //resets squads to default ones, because default ones are screwed
 static function ResetGameSquads(KFGameType Game, byte EventNum)
 {
-	local class<KFMonstersCollection> DefaultCollection;
-	local int i;
+    local class<KFMonstersCollection> DefaultCollection;
+    local int i;
 
-	for ( i=0; i<16; ++i ) {
-		Game.ShortWaves[i] = Game.default.ShortWaves[i];
-		Game.NormalWaves[i] = Game.default.NormalWaves[i];
-		Game.LongWaves[i] = Game.default.LongWaves[i];
-	}
+    for ( i=0; i<16; ++i ) {
+        Game.ShortWaves[i] = Game.default.ShortWaves[i];
+        Game.NormalWaves[i] = Game.default.NormalWaves[i];
+        Game.LongWaves[i] = Game.default.LongWaves[i];
+    }
 
-	switch ( EventNum ) {
-		case 0:
-			DefaultCollection = class'DefaultMonstersCollection';
-			break;
-		case 1:
-			DefaultCollection = class'DefaultMonstersCollectionSummer';
-			break;
-		case 2:
-			DefaultCollection = class'DefaultMonstersCollectionHalloween';
-			break;
-		case 3:
-			DefaultCollection = class'DefaultMonstersCollectionXmas';
-			break;
-		default:
-			return; // custom collection used, don't screw it
-	}
+    switch ( EventNum ) {
+        case 0:
+            DefaultCollection = class'DefaultMonstersCollection';
+            break;
+        case 1:
+            DefaultCollection = class'DefaultMonstersCollectionSummer';
+            break;
+        case 2:
+            DefaultCollection = class'DefaultMonstersCollectionHalloween';
+            break;
+        case 3:
+            DefaultCollection = class'DefaultMonstersCollectionXmas';
+            break;
+        default:
+            return; // custom collection used, don't screw it
+    }
 
     Game.EndGameBossClass = DefaultCollection.default.EndGameBossClass;
     Game.StandardMonsterClasses.Length = 0; //fill MonstersCollection instead
@@ -586,13 +586,13 @@ static function ResetGameSquads(KFGameType Game, byte EventNum)
 
 
 function int NetDamage( int OriginalDamage, int Damage, pawn injured, pawn instigatedBy,
-	vector HitLocation, out vector Momentum, class<DamageType> DamageType )
+    vector HitLocation, out vector Momentum, class<DamageType> DamageType )
 {
     local byte DamTypeNum;
-	local int idx, i;
-	local ScrnPlayerInfo SPI;
-	local class<KFWeaponDamageType> KFDamType;
-	local bool bP2M;
+    local int idx, i;
+    local ScrnPlayerInfo SPI;
+    local class<KFWeaponDamageType> KFDamType;
+    local bool bP2M;
     local ScrnPlayerController ScrnPC;
     local KFMonster ZedVictim;
 
@@ -602,12 +602,12 @@ function int NetDamage( int OriginalDamage, int Damage, pawn injured, pawn insti
     if ( NextGameRules != None )
         Damage = NextGameRules.NetDamage( OriginalDamage,Damage,injured,instigatedBy,HitLocation,Momentum,DamageType );
 
-	if ( Damage == 0 )
-		return 0;
+    if ( Damage == 0 )
+        return 0;
 
-	KFDamType = class<KFWeaponDamageType>(damageType);
+    KFDamType = class<KFWeaponDamageType>(damageType);
     ZedVictim = KFMonster(injured);
-	bP2M = ZedVictim != none && KFDamType != none && instigatedBy != none && PlayerController(instigatedBy.Controller) != none;
+    bP2M = ZedVictim != none && KFDamType != none && instigatedBy != none && PlayerController(instigatedBy.Controller) != none;
     if ( instigatedBy != none )
         ScrnPC = ScrnPlayerController(instigatedBy.Controller);
 
@@ -621,50 +621,50 @@ function int NetDamage( int OriginalDamage, int Damage, pawn injured, pawn insti
         ZedVictim.Controller.FocalPoint = ZedVictim.Location + 512 * vector(ZedVictim.Rotation);
     }
 
-	if ( bP2M ) {
-		idx = GetMonsterIndex(ZedVictim);
-		MonsterInfos[idx].HitCount++;
-		if ( MonsterInfos[idx].FirstHitTime == 0 )
-			MonsterInfos[idx].FirstHitTime = Level.TimeSeconds;
+    if ( bP2M ) {
+        idx = GetMonsterIndex(ZedVictim);
+        MonsterInfos[idx].HitCount++;
+        if ( MonsterInfos[idx].FirstHitTime == 0 )
+            MonsterInfos[idx].FirstHitTime = Level.TimeSeconds;
 
-		MonsterInfos[idx].bHeadshot = !MonsterInfos[idx].bWasDecapitated && KFDamType.default.bCheckForHeadShots
-			&& (ZedVictim.bDecapitated || int(ZedVictim.HeadHealth) < MonsterInfos[idx].HeadHealth);
+        MonsterInfos[idx].bHeadshot = !MonsterInfos[idx].bWasDecapitated && KFDamType.default.bCheckForHeadShots
+            && (ZedVictim.bDecapitated || int(ZedVictim.HeadHealth) < MonsterInfos[idx].HeadHealth);
 
 
-		if ( MonsterInfos[idx].bHeadshot ) {
-			MonsterInfos[idx].RowHeadshots++;
-			MonsterInfos[idx].Headshots++;
+        if ( MonsterInfos[idx].bHeadshot ) {
+            MonsterInfos[idx].RowHeadshots++;
+            MonsterInfos[idx].Headshots++;
 
-			if ( KFDamType.default.bSniperWeapon && Damage > Mut.SharpProgMinDmg && !ZedVictim.bDecapitated
-					&& SRStatsBase(PlayerController(instigatedBy.Controller).SteamStatsAndAchievements) != none )
-				SRStatsBase(PlayerController(instigatedBy.Controller).SteamStatsAndAchievements).AddHeadshotKill(false);
-		}
-		else if ( !ZedVictim.bDecapitated ) {
-			MonsterInfos[idx].RowHeadshots = 0;
-			if ( KFDamType.default.bCheckForHeadShots )
-				MonsterInfos[idx].Bodyshots++;
-			else
-				MonsterInfos[idx].OtherHits++;
-		}
+            if ( KFDamType.default.bSniperWeapon && Damage > Mut.SharpProgMinDmg && !ZedVictim.bDecapitated
+                    && SRStatsBase(PlayerController(instigatedBy.Controller).SteamStatsAndAchievements) != none )
+                SRStatsBase(PlayerController(instigatedBy.Controller).SteamStatsAndAchievements).AddHeadshotKill(false);
+        }
+        else if ( !ZedVictim.bDecapitated ) {
+            MonsterInfos[idx].RowHeadshots = 0;
+            if ( KFDamType.default.bCheckForHeadShots )
+                MonsterInfos[idx].Bodyshots++;
+            else
+                MonsterInfos[idx].OtherHits++;
+        }
 
-		// display damages on the hud
-		if ( bShowDamages && ScrnPC != none && ScrnPC.bDamageAck ) {
-			if ( MonsterInfos[idx].bHeadshot )
-				DamTypeNum = 1;
-			else if ( KFDamType.default.bDealBurningDamage )
-				DamTypeNum = 2;
+        // display damages on the hud
+        if ( bShowDamages && ScrnPC != none && ScrnPC.bDamageAck ) {
+            if ( MonsterInfos[idx].bHeadshot )
+                DamTypeNum = 1;
+            else if ( KFDamType.default.bDealBurningDamage )
+                DamTypeNum = 2;
 
-			if ( HitLocation == vect(0, 0, 0) ) //DoT
-				HitLocation = injured.Location;
-			ScrnPC.DamageMade(Damage, HitLocation, DamTypeNum);
-		}
+            if ( HitLocation == vect(0, 0, 0) ) //DoT
+                HitLocation = injured.Location;
+            ScrnPC.DamageMade(Damage, HitLocation, DamTypeNum);
+        }
 
-		SPI = GetPlayerInfo(PlayerController(instigatedBy.Controller));
-		// SPI.MadeDamage() calls AchHandlers.MonsterDamaged()
-		if ( SPI != none )
-			SPI.MadeDamage(Damage, ZedVictim, KFDamType, MonsterInfos[idx].bHeadshot, MonsterInfos[idx].bWasDecapitated);
-	}
-	else if ( KFHumanPawn(injured) != none ) {
+        SPI = GetPlayerInfo(PlayerController(instigatedBy.Controller));
+        // SPI.MadeDamage() calls AchHandlers.MonsterDamaged()
+        if ( SPI != none )
+            SPI.MadeDamage(Damage, ZedVictim, KFDamType, MonsterInfos[idx].bHeadshot, MonsterInfos[idx].bWasDecapitated);
+    }
+    else if ( KFHumanPawn(injured) != none ) {
         // game bug: Siren doesn't set herself as instigator when dealing screaming damage - sneaky bicth
         if ( DamageType == class'KFMod.SirenScreamDamage' ) {
             SPI = GetPlayerInfo(PlayerController(injured.Controller));
@@ -688,18 +688,18 @@ function int NetDamage( int OriginalDamage, int Damage, pawn injured, pawn insti
                 ScrnPC.ClientPlayerDamaged(Damage, HitLocation, 10);
             }
         }
-	}
+    }
 
-	for ( i=0; i<AchHandlers.length; ++i ) {
-		AchHandlers[i].NetDamage(Damage, injured, instigatedBy, HitLocation, Momentum, DamageType);
-	}
+    for ( i=0; i<AchHandlers.length; ++i ) {
+        AchHandlers[i].NetDamage(Damage, injured, instigatedBy, HitLocation, Momentum, DamageType);
+    }
 
-	if ( bP2M ) {
-		MonsterInfos[idx].LastHitTime = Level.TimeSeconds;
-		MonsterInfos[idx].HeadHealth = ZedVictim.HeadHealth;
-		MonsterInfos[idx].bWasDecapitated = ZedVictim.bDecapitated;
-		MonsterInfos[idx].bWasBackstabbed = ZedVictim.bBackstabbed;
-	}
+    if ( bP2M ) {
+        MonsterInfos[idx].LastHitTime = Level.TimeSeconds;
+        MonsterInfos[idx].HeadHealth = ZedVictim.HeadHealth;
+        MonsterInfos[idx].bWasDecapitated = ZedVictim.bDecapitated;
+        MonsterInfos[idx].bWasBackstabbed = ZedVictim.bBackstabbed;
+    }
 
     return Damage;
 }
@@ -707,14 +707,14 @@ function int NetDamage( int OriginalDamage, int Damage, pawn injured, pawn insti
 
 function ScoreKill(Controller Killer, Controller Killed)
 {
-	local int i;
+    local int i;
 
     if ( NextGameRules != None )
         NextGameRules.ScoreKill(Killer, Killed);
 
-	for ( i=0; i<AchHandlers.length; ++i ) {
-		AchHandlers[i].ScoreKill(Killer, Killed);
-	}
+    for ( i=0; i<AchHandlers.length; ++i ) {
+        AchHandlers[i].ScoreKill(Killer, Killed);
+    }
 
     if ( Killed.bIsPlayer ) {
         AdjustZedSpawnRate();
@@ -726,8 +726,8 @@ function ScoreKill(Controller Killer, Controller Killed)
 
 function bool PreventDeath(Pawn Killed, Controller Killer, class<DamageType> damageType, vector HitLocation)
 {
-	local ScrnPlayerInfo SPI;
-	local int idx;
+    local ScrnPlayerInfo SPI;
+    local int idx;
     local class<KFWeaponDamageType> KFDamType;
 
     if ( (NextGameRules != None) && NextGameRules.PreventDeath(Killed,Killer, damageType,HitLocation) )
@@ -745,36 +745,36 @@ function bool PreventDeath(Pawn Killed, Controller Killer, class<DamageType> dam
         ScrnHumanPawn(Killer.Pawn).MacheteResetTime = Level.TimeSeconds + 5.0;
     }
 
-	if ( KFMonster(Killed) != none ) {
+    if ( KFMonster(Killed) != none ) {
         if ( PlayerController(Killer) != none && KFDamType != none ) {
             SPI = GetPlayerInfo(PlayerController(Killer));
             if ( SPI != none ) {
                 SPI.KilledMonster(KFMonster(Killed), KFDamType);
             }
         }
-	}
-	else if ( KFHumanPawn(Killed) != none && PlayerController(Killed.Controller) != none ) {
+    }
+    else if ( KFHumanPawn(Killed) != none && PlayerController(Killed.Controller) != none ) {
         ++WaveDeadPlayers;
-		if ( Killer != none && KFMonster(Killer.Pawn) != none ) {
+        if ( Killer != none && KFMonster(Killer.Pawn) != none ) {
             // player killed by monster
-			idx = GetMonsterIndex(KFMonster(Killer.Pawn));
-			MonsterInfos[idx].PlayerKillCounter++;
-			MonsterInfos[idx].PlayerKillTime = Level.TimeSeconds;
-		}
-		// don't count suicide deaths during trader time
-		if ( !Mut.KF.bTradingDoorsOpen ) {
-			SPI = GetPlayerInfo(PlayerController(Killed.Controller));
-			if ( SPI != none ) {
-				SPI.Died(Killer, DamageType);
+            idx = GetMonsterIndex(KFMonster(Killer.Pawn));
+            MonsterInfos[idx].PlayerKillCounter++;
+            MonsterInfos[idx].PlayerKillTime = Level.TimeSeconds;
+        }
+        // don't count suicide deaths during trader time
+        if ( !Mut.KF.bTradingDoorsOpen ) {
+            SPI = GetPlayerInfo(PlayerController(Killed.Controller));
+            if ( SPI != none ) {
+                SPI.Died(Killer, DamageType);
             }
-		}
-		if ( Mut.bSpawn0 || Mut.bStoryMode ) {
+        }
+        if ( Mut.bSpawn0 || Mut.bStoryMode ) {
             idx = Killed.Health;
             Killed.Health = max(Killed.Health, 1); // requires health to spawn second pistol
-			class'ScrnHumanPawn'.static.DropAllWeapons(Killed); // toss all weapons after death, if bSpawn0=true or in Story Mode
+            class'ScrnHumanPawn'.static.DropAllWeapons(Killed); // toss all weapons after death, if bSpawn0=true or in Story Mode
             Killed.Health = idx;
         }
-	}
+    }
 
     return false;
 }
@@ -827,10 +827,10 @@ function ClearMonsterInfo(int index)
     MonsterInfos[index].DamageFlags2 = 0;
     MonsterInfos[index].TW_Ach_Failed = false;
     MonsterInfos[index].bHeadshot = false;
-	MonsterInfos[index].RowHeadshots = 0;
-	MonsterInfos[index].Headshots = 0;
-	MonsterInfos[index].BodyShots = 0;
-	MonsterInfos[index].OtherHits = 0;
+    MonsterInfos[index].RowHeadshots = 0;
+    MonsterInfos[index].Headshots = 0;
+    MonsterInfos[index].BodyShots = 0;
+    MonsterInfos[index].OtherHits = 0;
     MonsterInfos[index].LastHitTime = 0;
     MonsterInfos[index].HeadHealth = 0;
     MonsterInfos[index].bWasDecapitated = false;
@@ -856,18 +856,18 @@ function int GetMonsterIndex(KFMonster Monster)
             free_index = i;
     }
     // if reached here - no monster is found, so init a first free record
-	if ( free_index >= MonsterInfos.length ) {
-		// if free_index out of bounds, maybe MaxZombiesOnce is changed during the game
-		if ( MonsterInfos.length < Mut.KF.MaxZombiesOnce )
-			MonsterInfos.insert(free_index, Mut.KF.MaxZombiesOnce - MonsterInfos.length);
-		// MaxZombiesOnce was ok, just added extra monsters
-		if ( free_index >= MonsterInfos.length )
-			MonsterInfos.insert(free_index, 1);
-	}
+    if ( free_index >= MonsterInfos.length ) {
+        // if free_index out of bounds, maybe MaxZombiesOnce is changed during the game
+        if ( MonsterInfos.length < Mut.KF.MaxZombiesOnce )
+            MonsterInfos.insert(free_index, Mut.KF.MaxZombiesOnce - MonsterInfos.length);
+        // MaxZombiesOnce was ok, just added extra monsters
+        if ( free_index >= MonsterInfos.length )
+            MonsterInfos.insert(free_index, 1);
+    }
     ClearMonsterInfo(free_index);
     MonsterInfos[free_index].Monster = Monster;
     MonsterInfos[free_index].HeadHealth = Monster.HeadHealth * Monster.DifficultyHeadHealthModifer() * Monster.NumPlayersHeadHealthModifer();
-	MonsterInfos[free_index].SpawnTime = Level.TimeSeconds;
+    MonsterInfos[free_index].SpawnTime = Level.TimeSeconds;
     LastFoundMonsterIndex = free_index;
     return free_index;
 }
@@ -893,31 +893,31 @@ function bool RetrieveMonsterInfo(KFMonster Monster, out int index)
 
 function RegisterMonster(KFMonster Monster)
 {
-	local int i;
+    local int i;
 
-	GetMonsterIndex(Monster); // add to MonsterInfos
+    GetMonsterIndex(Monster); // add to MonsterInfos
 
-	if ( Mut.KF.bUseEndGameBoss && Mut.KF.WaveNum == Mut.KF.FinalWave && BossClass == none
-			&& GetItemName(Mut.KF.MonsterCollection.default.EndGameBossClass) ~= GetItemName(String(Monster.class)) )
-	{
-		InitBoss(Monster);
-		return;
-	}
+    if ( Mut.KF.bUseEndGameBoss && Mut.KF.WaveNum == Mut.KF.FinalWave && BossClass == none
+            && GetItemName(Mut.KF.MonsterCollection.default.EndGameBossClass) ~= GetItemName(String(Monster.class)) )
+    {
+        InitBoss(Monster);
+        return;
+    }
 
-	for ( i = 0; i < CheckedMonsterClasses.Length; ++i ) {
-		if ( Monster.class == CheckedMonsterClasses[i] )
-			return;
-	}
+    for ( i = 0; i < CheckedMonsterClasses.Length; ++i ) {
+        if ( Monster.class == CheckedMonsterClasses[i] )
+            return;
+    }
 
-	if ( Mut.IsSquadWaitingToSpawn() )
-		return; // this monster is spawned by "mvote spawn", so ignore it in HL and achievement calculations
+    if ( Mut.IsSquadWaitingToSpawn() )
+        return; // this monster is spawned by "mvote spawn", so ignore it in HL and achievement calculations
 
-	//log("Monster=" $ String(Other) @ "Outer="$String(Other.outer) @ "OuterClass="$String(Other.class.outer), 'ScrnBalance');
-	CheckedMonsterClasses[CheckedMonsterClasses.length] = Monster.class;
-	CheckNewMonster(Monster);
+    //log("Monster=" $ String(Other) @ "Outer="$String(Other.outer) @ "OuterClass="$String(Other.class.outer), 'ScrnBalance');
+    CheckedMonsterClasses[CheckedMonsterClasses.length] = Monster.class;
+    CheckNewMonster(Monster);
 
-	for ( i=0; i<AchHandlers.length; ++i )
-		AchHandlers[i].MonsterIntroduced(Monster);
+    for ( i=0; i<AchHandlers.length; ++i )
+        AchHandlers[i].MonsterIntroduced(Monster);
 }
 
 function CheckNewMonster(KFMonster Monster)
@@ -939,7 +939,7 @@ function CheckNewMonster(KFMonster Monster)
 
 function InitBoss(KFMonster Monster)
 {
-	local int i;
+    local int i;
     local string BossClassStr;
 
     Boss = Monster;
@@ -956,8 +956,8 @@ function InitBoss(KFMonster Monster)
         }
     }
 
-	for ( i=0; i<AchHandlers.length; ++i )
-		AchHandlers[i].BossSpawned(Monster);
+    for ( i=0; i<AchHandlers.length; ++i )
+        AchHandlers[i].BossSpawned(Monster);
 }
 
 function ReinitMonster(KFMonster Monster)
@@ -1008,7 +1008,7 @@ function protected InitHardcoreLevel()
     }
 
     if ( Mut.bHardcore )
-		HardcoreLevelFloat += HL_Hardcore;
+        HardcoreLevelFloat += HL_Hardcore;
 
     for ( i=0; i<HardcoreGames.length; ++i ) {
         if ( HardcoreGames[i].GameClass ~= GameClass ) {
@@ -1049,51 +1049,51 @@ function RaiseHardcoreLevel(float inc, string reason)
 
 function WeaponReloaded(PlayerController WeaponOwner, KFWeapon W)
 {
-	local ScrnPlayerInfo SPI;
+    local ScrnPlayerInfo SPI;
 
-	SPI = GetPlayerInfo(WeaponOwner);
-	if ( SPI != none )
-		SPI.WeaponReloaded(W);
+    SPI = GetPlayerInfo(WeaponOwner);
+    if ( SPI != none )
+        SPI.WeaponReloaded(W);
 }
 
 function WeaponFire(PlayerController WeaponOwner, KFWeapon W, byte FireMode)
 {
-	local ScrnPlayerInfo SPI;
+    local ScrnPlayerInfo SPI;
 
-	SPI = GetPlayerInfo(WeaponOwner);
-	if ( SPI != none )
-		SPI.WeaponFired(W, FireMode);
+    SPI = GetPlayerInfo(WeaponOwner);
+    if ( SPI != none )
+        SPI.WeaponFired(W, FireMode);
 }
 
 
 function RegisterAchHandler(ScrnAchHandlerBase Handler)
 {
-	local int i;
+    local int i;
 
-	for ( i=0; i<AchHandlers.length; ++i ) {
-		if ( AchHandlers[i] == Handler )
-			return;
-	}
-	AchHandlers[AchHandlers.length] = Handler;
+    for ( i=0; i<AchHandlers.length; ++i ) {
+        if ( AchHandlers[i] == Handler )
+            return;
+    }
+    AchHandlers[AchHandlers.length] = Handler;
 }
 
 function ScrnPlayerInfo GetPlayerInfo(PlayerController PlayerOwner)
 {
-	local ScrnPlayerInfo SPI;
+    local ScrnPlayerInfo SPI;
 
-	if ( PlayerOwner == none )
-		return none;
+    if ( PlayerOwner == none )
+        return none;
 
-	for ( SPI=PlayerInfo; SPI!=none; SPI=SPI.NextPlayerInfo ) {
-		if ( SPI.PlayerOwner == PlayerOwner )
-			return SPI;
-	}
-	return none;
+    for ( SPI=PlayerInfo; SPI!=none; SPI=SPI.NextPlayerInfo ) {
+        if ( SPI.PlayerOwner == PlayerOwner )
+            return SPI;
+    }
+    return none;
 }
 
 function int AlivePlayerCount()
 {
-	return WavePlayerCount - WaveDeadPlayers;
+    return WavePlayerCount - WaveDeadPlayers;
 }
 
 function int PlayerCountInWave()
@@ -1103,26 +1103,26 @@ function int PlayerCountInWave()
 
 /**
  * Increments achievement progress for all players who have PlayerInfo object, except ExcludeSPI.
- * @param AchID 		Achievement ID
- * @param Inc 			Achievement progress. Usually 1.
- * @param bOnlyAlive	if true, then achievement will not be granted for dead players (SPI.bDied = true)
- * @param ExcludeSPI	player to exclude from achievement progress.
+ * @param AchID         Achievement ID
+ * @param Inc             Achievement progress. Usually 1.
+ * @param bOnlyAlive    if true, then achievement will not be granted for dead players (SPI.bDied = true)
+ * @param ExcludeSPI    player to exclude from achievement progress.
  */
 // if bOnlyAlive=true, then achievment will not be granted for dead players (bDied = true)
 function ProgressAchievementForAllPlayers(name AchID, int Inc, optional bool bOnlyAlive, optional ScrnPlayerInfo ExcludeSPI, optional TeamInfo Team)
 {
-	local ScrnPlayerInfo SPI;
+    local ScrnPlayerInfo SPI;
 
-	for ( SPI=PlayerInfo; SPI!=none; SPI=SPI.NextPlayerInfo ) {
-		if ( SPI != ExcludeSPI && SPI.PlayerOwner != none
+    for ( SPI=PlayerInfo; SPI!=none; SPI=SPI.NextPlayerInfo ) {
+        if ( SPI != ExcludeSPI && SPI.PlayerOwner != none
                 && (!SPI.bDied || !bOnlyAlive)
                 && SPI.PlayerOwner.PlayerReplicationInfo != none
                 && (Team == none || SPI.PlayerOwner.PlayerReplicationInfo.Team == Team)
             )
         {
-			SPI.ProgressAchievement(AchID, Inc);
+            SPI.ProgressAchievement(AchID, Inc);
         }
-	}
+    }
 }
 
 final private function BackupOrDestroySPI(ScrnPlayerInfo SPI)
@@ -1144,31 +1144,31 @@ final private function BackupOrDestroySPI(ScrnPlayerInfo SPI)
 // destroys player infos without PlayerOwner
 final function ClearNonePlayerInfos()
 {
-	local ScrnPlayerInfo SPI, PrevSPI;
+    local ScrnPlayerInfo SPI, PrevSPI;
 
-	while ( PlayerInfo!=none && (PlayerInfo.PlayerOwner == none || PlayerInfo.PlayerOwner.Pawn == none) )
-	{
-		PrevSPI = PlayerInfo;
-		PlayerInfo = PrevSPI.NextPlayerInfo;
+    while ( PlayerInfo!=none && (PlayerInfo.PlayerOwner == none || PlayerInfo.PlayerOwner.Pawn == none) )
+    {
+        PrevSPI = PlayerInfo;
+        PlayerInfo = PrevSPI.NextPlayerInfo;
         BackupOrDestroySPI(PrevSPI);
-	}
+    }
 
-	if ( PlayerInfo == none )
-		return;
+    if ( PlayerInfo == none )
+        return;
 
-	PrevSPI = PlayerInfo;
-	// we already know that PlayerInfo has PlayerOwner, otherwise we won't reach here
-	SPI = PrevSPI.NextPlayerInfo;
-	while ( SPI != none ) {
-		if ( SPI.PlayerOwner == none || PlayerInfo.PlayerOwner.Pawn == none ) {
-			PrevSPI.NextPlayerInfo = SPI.NextPlayerInfo;
+    PrevSPI = PlayerInfo;
+    // we already know that PlayerInfo has PlayerOwner, otherwise we won't reach here
+    SPI = PrevSPI.NextPlayerInfo;
+    while ( SPI != none ) {
+        if ( SPI.PlayerOwner == none || PlayerInfo.PlayerOwner.Pawn == none ) {
+            PrevSPI.NextPlayerInfo = SPI.NextPlayerInfo;
             BackupOrDestroySPI(SPI);
-		}
-		else {
-			PrevSPI = SPI;
-		}
-		SPI = PrevSPI.NextPlayerInfo;
-	}
+        }
+        else {
+            PrevSPI = SPI;
+        }
+        SPI = PrevSPI.NextPlayerInfo;
+    }
 }
 
 /**
@@ -1187,18 +1187,18 @@ final function ClearNonePlayerInfos()
  */
 final function ScrnPlayerInfo CreatePlayerInfo(PlayerController PlayerOwner, optional bool bDontRestoreFromBackup)
 {
-	local ScrnPlayerInfo SPI, PrevSPI;
+    local ScrnPlayerInfo SPI, PrevSPI;
     local ScrnCustomPRI ScrnPRI;
     local int SteamID32;
 
-	if ( PlayerOwner == none )
-		return none;
+    if ( PlayerOwner == none )
+        return none;
 
-	// Does it exist and active?
-	for ( SPI=PlayerInfo; SPI!=none; SPI=SPI.NextPlayerInfo ) {
-		if ( SPI.PlayerOwner == PlayerOwner )
-			return SPI;
-	}
+    // Does it exist and active?
+    for ( SPI=PlayerInfo; SPI!=none; SPI=SPI.NextPlayerInfo ) {
+        if ( SPI.PlayerOwner == PlayerOwner )
+            return SPI;
+    }
 
     ScrnPRI = class'ScrnCustomPRI'.static.FindMe(PlayerOwner.PlayerReplicationInfo);
     if ( ScrnPRI != none )
@@ -1266,7 +1266,7 @@ final function ScrnPlayerInfo CreatePlayerInfo(PlayerController PlayerOwner, opt
     SPI.SteamID32 = SteamID32;
     SPI.StartWave = Mut.KF.WaveNum;
     SPI.BackupStats(SPI.GameStartStats);
-	return SPI;
+    return SPI;
 }
 
 function DebugSPI(PlayerController Sender)
@@ -1300,20 +1300,20 @@ returns true, bAllowPickup will determine if the object can be picked up.
 */
 function bool OverridePickupQuery(Pawn Other, Pickup item, out byte bAllowPickup)
 {
-	local bool result;
-	local KFWeaponPickup WP;
-	local ScrnPlayerInfo SPI;
-	local string str;
+    local bool result;
+    local KFWeaponPickup WP;
+    local ScrnPlayerInfo SPI;
+    local string str;
     local ScrnHumanPawn ScrnPawn;
 
-	if ( Other.Health <= 0 ) {
-		bAllowPickup = 0; // prevent dying bodies of picking up items
-		return true;
-	}
+    if ( Other.Health <= 0 ) {
+        bAllowPickup = 0; // prevent dying bodies of picking up items
+        return true;
+    }
 
     ScrnPawn = ScrnHumanPawn(Other);
 
-	Mut.ReplacePickup(item);	// replace pickup's inventory with ScrN version
+    Mut.ReplacePickup(item);    // replace pickup's inventory with ScrN version
     WP = KFWeaponPickup(item);
     if ( Mut.bPickPerkedWeaponsOnly && WP != none && ScrnPawn != none
         && WP.CorrespondingPerkIndex != 7 //off-perk
@@ -1325,144 +1325,144 @@ function bool OverridePickupQuery(Pawn Other, Pickup item, out byte bAllowPickup
         result = true;
         bAllowPickup = 0;
     }
-	else if ( NextGameRules != None )
-		result = NextGameRules.OverridePickupQuery(Other, item, bAllowPickup);
+    else if ( NextGameRules != None )
+        result = NextGameRules.OverridePickupQuery(Other, item, bAllowPickup);
 
-	if ( !result || bAllowPickup == 1 )	{
-		if ( WP != none ) {
-			// weapon lock and broadcast
-			if ( WP.SellValue > 0 && WP.DroppedBy != Other.Controller
-					&& WP.DroppedBy != none && WP.DroppedBy.PlayerReplicationInfo != none )
-			{
+    if ( !result || bAllowPickup == 1 )    {
+        if ( WP != none ) {
+            // weapon lock and broadcast
+            if ( WP.SellValue > 0 && WP.DroppedBy != Other.Controller
+                    && WP.DroppedBy != none && WP.DroppedBy.PlayerReplicationInfo != none )
+            {
                 // ScrN Players can lock weapons from picking up by teammates
-				if ( ScrnPlayerController(WP.DroppedBy) != none && ScrnPlayerController(WP.DroppedBy).bWeaponsLocked
+                if ( ScrnPlayerController(WP.DroppedBy) != none && ScrnPlayerController(WP.DroppedBy).bWeaponsLocked
                         && (Other.PlayerReplicationInfo == none || WP.DroppedBy.PlayerReplicationInfo.Team == Other.PlayerReplicationInfo.Team) )
                 {
-					result = true;
-					bAllowPickup = 0;
-					if ( ScrnPlayerController(Other.Controller) != none && Level.TimeSeconds > ScrnPlayerController(Other.Controller).LastLockMsgTime + 1.0 ) {
-						str = strWeaponLocked;
-						ReplaceText(str, "%o",  Mut.ColoredPlayerName(WP.DroppedBy.PlayerReplicationInfo));
-						ReplaceText(str, "%w", WP.ItemName);
-						ScrnPlayerController(Other.Controller).ClientMessage(Mut.ColorString(str,192,1,1));
-						ScrnPlayerController(Other.Controller).LastLockMsgTime = Level.TimeSeconds;
-					}
-				}
-				else if ( ScrnPlayerController(Other.Controller) != none && ScrnPlayerController(Other.Controller).bWeaponsLocked ) {
-					result = true;
-					bAllowPickup = 0;
-					if ( Level.TimeSeconds > ScrnPlayerController(Other.Controller).LastLockMsgTime + 1.0 ) {
-						ScrnPlayerController(Other.Controller).ClientMessage(Mut.ColorString(strWeaponLockedOwn,192,128,1));
-						ScrnPlayerController(Other.Controller).LastLockMsgTime = Level.TimeSeconds;
-					}
-				}
-				else if ( Mut.bBroadcastPickups && !HasInventoryClass(Other, WP.InventoryType) )
-					Mut.StolenWeapon(Other, WP);
-			}
-		}
+                    result = true;
+                    bAllowPickup = 0;
+                    if ( ScrnPlayerController(Other.Controller) != none && Level.TimeSeconds > ScrnPlayerController(Other.Controller).LastLockMsgTime + 1.0 ) {
+                        str = strWeaponLocked;
+                        ReplaceText(str, "%o",  Mut.ColoredPlayerName(WP.DroppedBy.PlayerReplicationInfo));
+                        ReplaceText(str, "%w", WP.ItemName);
+                        ScrnPlayerController(Other.Controller).ClientMessage(Mut.ColorString(str,192,1,1));
+                        ScrnPlayerController(Other.Controller).LastLockMsgTime = Level.TimeSeconds;
+                    }
+                }
+                else if ( ScrnPlayerController(Other.Controller) != none && ScrnPlayerController(Other.Controller).bWeaponsLocked ) {
+                    result = true;
+                    bAllowPickup = 0;
+                    if ( Level.TimeSeconds > ScrnPlayerController(Other.Controller).LastLockMsgTime + 1.0 ) {
+                        ScrnPlayerController(Other.Controller).ClientMessage(Mut.ColorString(strWeaponLockedOwn,192,128,1));
+                        ScrnPlayerController(Other.Controller).LastLockMsgTime = Level.TimeSeconds;
+                    }
+                }
+                else if ( Mut.bBroadcastPickups && !HasInventoryClass(Other, WP.InventoryType) )
+                    Mut.StolenWeapon(Other, WP);
+            }
+        }
 
-		if ( !result || bAllowPickup == 1 )	{
-			SPI = GetPlayerInfo(PlayerController(Other.Controller));
-			if ( SPI != none ) {
-				if ( WP != none )
-					SPI.PickedWeapon(WP);
-				else if ( CashPickup(item) != none )
-					SPI.PickedCash(CashPickup(item));
-				else
-					SPI.PickedItem(item);
-			}
-		}
-	}
-	return result;
+        if ( !result || bAllowPickup == 1 )    {
+            SPI = GetPlayerInfo(PlayerController(Other.Controller));
+            if ( SPI != none ) {
+                if ( WP != none )
+                    SPI.PickedWeapon(WP);
+                else if ( CashPickup(item) != none )
+                    SPI.PickedCash(CashPickup(item));
+                else
+                    SPI.PickedItem(item);
+            }
+        }
+    }
+    return result;
 }
 
 function bool HasInventoryClass( Pawn P, class<Inventory> IC )
 {
-	local Inventory I;
+    local Inventory I;
 
-	if ( P == none || IC == none )
-		return false;
+    if ( P == none || IC == none )
+        return false;
 
-	for ( I=P.Inventory; I!=None; I=I.Inventory )
-		if( I.Class==IC )
-			return true;
-	return false;
+    for ( I=P.Inventory; I!=None; I=I.Inventory )
+        if( I.Class==IC )
+            return true;
+    return false;
 }
 
 /*
 // from time to time monster becomes frustrated with enemy and finds a new one
 function MonsterFrustration()
 {
-	local int i;
-	local KFMonsterController MC;
-	local ScrnHumanPawn ScrnPawn;
+    local int i;
+    local KFMonsterController MC;
+    local ScrnHumanPawn ScrnPawn;
 
-	for ( i=0; i<MonsterInfos.length; ++i ) {
-		if ( MonsterInfos[i].Monster == none
-				|| MonsterInfos[i].Monster.Health <= 0 || MonsterInfos[i].Monster.bDecapitated
-				|| MonsterInfos[i].DamageCounter > 0
-				|| Level.TimeSeconds - MonsterInfos[i].SpawnTime < 30.0
-				|| Level.TimeSeconds - MonsterInfos[i].LastHitTime < 15.0 )
-			continue;
+    for ( i=0; i<MonsterInfos.length; ++i ) {
+        if ( MonsterInfos[i].Monster == none
+                || MonsterInfos[i].Monster.Health <= 0 || MonsterInfos[i].Monster.bDecapitated
+                || MonsterInfos[i].DamageCounter > 0
+                || Level.TimeSeconds - MonsterInfos[i].SpawnTime < 30.0
+                || Level.TimeSeconds - MonsterInfos[i].LastHitTime < 15.0 )
+            continue;
 
-		MC = KFMonsterController(MonsterInfos[i].Monster.Controller);
-		if ( MC == none )
-			continue;
+        MC = KFMonsterController(MonsterInfos[i].Monster.Controller);
+        if ( MC == none )
+            continue;
 
-		ScrnPawn = ScrnHumanPawn(MC.Enemy);
-		if ( ScrnPawn == none )
-			continue;
+        ScrnPawn = ScrnHumanPawn(MC.Enemy);
+        if ( ScrnPawn == none )
+            continue;
 
-		if ( ScrnPawn.GroundSpeed > fmax(220, MonsterInfos[i].Monster.GroundSpeed) ) {
-			// make ScrnPawn.AssessThreatTo() return 0.1 (it will be called by FindNewEnemy())
-			ScrnPawn.LastThreatMonster = MC;
-			ScrnPawn.LastThreatTime = Level.TimeSeconds;
-			ScrnPawn.LastThreat = 0.1;
-			MC.FindNewEnemy();
-			// todo - the next FindNewEnemy() will probably reset this enemy again
-		}
-	}
+        if ( ScrnPawn.GroundSpeed > fmax(220, MonsterInfos[i].Monster.GroundSpeed) ) {
+            // make ScrnPawn.AssessThreatTo() return 0.1 (it will be called by FindNewEnemy())
+            ScrnPawn.LastThreatMonster = MC;
+            ScrnPawn.LastThreatTime = Level.TimeSeconds;
+            ScrnPawn.LastThreat = 0.1;
+            MC.FindNewEnemy();
+            // todo - the next FindNewEnemy() will probably reset this enemy again
+        }
+    }
 }
 */
 
 
 defaultproperties
 {
-	msgHardcore="Hardcore level raised to %a (+%i for %r)"
-	msgDoom3Monster="Doom3 monsters"
-	msgDoom3Boss="Doom Boss"
-	msgDoomPercent="Doom3 monster count in wave = %p%"
-	strWeaponLocked="%w locked by %o"
-	strWeaponLockedOwn="Can not pickup another's weapons while own are locked"
-	strPerkedWeaponsOnly="You can pickup perked weapons only"
+    msgHardcore="Hardcore level raised to %a (+%i for %r)"
+    msgDoom3Monster="Doom3 monsters"
+    msgDoom3Boss="Doom Boss"
+    msgDoomPercent="Doom3 monster count in wave = %p%"
+    strWeaponLocked="%w locked by %o"
+    strWeaponLockedOwn="Can not pickup another's weapons while own are locked"
+    strPerkedWeaponsOnly="You can pickup perked weapons only"
     strWaveAccuracy="%p scored %a accuracy in this wave!"
 
-	AchClass=class'ScrnBalanceSrv.ScrnAchievements'
-	MapAchClass=class'ScrnBalanceSrv.ScrnMapAchievements'
+    AchClass=class'ScrnBalanceSrv.ScrnAchievements'
+    MapAchClass=class'ScrnBalanceSrv.ScrnMapAchievements'
 
-	MapAliases(0)=(FileName="KF-HarbourV3-fix",AchName="KF-HarbourV3")
-	MapAliases(1)=(FileName="KF-Harbor",AchName="KF-HarbourV3")
-	MapAliases(2)=(FileName="KF-SantasRetreatFinal1-1",AchName="KF-SantasRetreat")
-	MapAliases(3)=(FileName="KF-BigSunriseBeta1-6",AchName="KF-BigSunrise")
-	MapAliases(4)=(FileName="KF-SunnyLandSanitariumBeta1-5",AchName="KF-SunnyLandSanitarium")
-	MapAliases(5)=(FileName="KF-SilentHillBeta2-0",AchName="KF-SilentHill")
-	MapAliases(6)=(FileName="KF-HellGateFinal1-2",AchName="KF-HellGate")
-	MapAliases(7)=(FileName="Kf-HellFinal1-5",AchName="KF-Hell")
-	MapAliases(8)=(FileName="KF-Doom2-Final-V7",AchName="KF-D2M1")
-	MapAliases(9)=(FileName="KF-Doom2-HiRes",AchName="KF-D2M1")
-	MapAliases(10)=(FileName="KF-Doom2-HiRes11",AchName="KF-D2M1")
-	MapAliases(11)=(FileName="KF-ZedDiscoThe1stFloor",AchName="KF-ZedDisco")
-	MapAliases(12)=(FileName="KF-ZedDiscoThe2ndFloor",AchName="KF-ZedDisco")
-	MapAliases(13)=(FileName="KF-Abandoned-Moonbase",AchName="KF-MoonBase")
-	MapAliases(14)=(FileName="KF-DepartedNight",AchName="KF-Departed")
-	MapAliases(15)=(FileName="KF-FoundryLightsOut",AchName="KF-Foundry")
-	MapAliases(16)=(FileName="KF-HospitalhorrorsLightsOut",AchName="KF-Hospitalhorrors")
-	MapAliases(17)=(FileName="KF-Doom2-SE",AchName="KF-D2M1")
-	MapAliases(18)=(FileName="KF-Icebreaker-SE",AchName="KF-Icebreaker")
-	MapAliases(19)=(FileName="KF-HellFreezesOver1-2",AchName="KF-Hell")
-	MapAliases(20)=(FileName="KF-Train-fix",AchName="KF-Train")
-	MapAliases(21)=(FileName="KF-PandorasBoxV2-fix",AchName="KF-PandorasBox")
-	MapAliases(22)=(FileName="KF-Constriction-SE",AchName="KF-Constriction")
+    MapAliases(0)=(FileName="KF-HarbourV3-fix",AchName="KF-HarbourV3")
+    MapAliases(1)=(FileName="KF-Harbor",AchName="KF-HarbourV3")
+    MapAliases(2)=(FileName="KF-SantasRetreatFinal1-1",AchName="KF-SantasRetreat")
+    MapAliases(3)=(FileName="KF-BigSunriseBeta1-6",AchName="KF-BigSunrise")
+    MapAliases(4)=(FileName="KF-SunnyLandSanitariumBeta1-5",AchName="KF-SunnyLandSanitarium")
+    MapAliases(5)=(FileName="KF-SilentHillBeta2-0",AchName="KF-SilentHill")
+    MapAliases(6)=(FileName="KF-HellGateFinal1-2",AchName="KF-HellGate")
+    MapAliases(7)=(FileName="Kf-HellFinal1-5",AchName="KF-Hell")
+    MapAliases(8)=(FileName="KF-Doom2-Final-V7",AchName="KF-D2M1")
+    MapAliases(9)=(FileName="KF-Doom2-HiRes",AchName="KF-D2M1")
+    MapAliases(10)=(FileName="KF-Doom2-HiRes11",AchName="KF-D2M1")
+    MapAliases(11)=(FileName="KF-ZedDiscoThe1stFloor",AchName="KF-ZedDisco")
+    MapAliases(12)=(FileName="KF-ZedDiscoThe2ndFloor",AchName="KF-ZedDisco")
+    MapAliases(13)=(FileName="KF-Abandoned-Moonbase",AchName="KF-MoonBase")
+    MapAliases(14)=(FileName="KF-DepartedNight",AchName="KF-Departed")
+    MapAliases(15)=(FileName="KF-FoundryLightsOut",AchName="KF-Foundry")
+    MapAliases(16)=(FileName="KF-HospitalhorrorsLightsOut",AchName="KF-Hospitalhorrors")
+    MapAliases(17)=(FileName="KF-Doom2-SE",AchName="KF-D2M1")
+    MapAliases(18)=(FileName="KF-Icebreaker-SE",AchName="KF-Icebreaker")
+    MapAliases(19)=(FileName="KF-HellFreezesOver1-2",AchName="KF-Hell")
+    MapAliases(20)=(FileName="KF-Train-fix",AchName="KF-Train")
+    MapAliases(21)=(FileName="KF-PandorasBoxV2-fix",AchName="KF-PandorasBox")
+    MapAliases(22)=(FileName="KF-Constriction-SE",AchName="KF-Constriction")
 
     SovietDamageTypes(0)=class'KFMod.DamTypeKnife'
     SovietDamageTypes(1)=class'KFMod.DamTypeFrag'

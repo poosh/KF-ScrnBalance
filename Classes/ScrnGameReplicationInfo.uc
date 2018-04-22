@@ -9,17 +9,17 @@ var byte FakedPlayers, FakedAlivePlayers;
 
 replication
 {
-	reliable if( bNetInitial && Role == ROLE_Authority )
-		GameTitle;
+    reliable if( bNetInitial && Role == ROLE_Authority )
+        GameTitle;
 
-	reliable if( (bNetInitial || bNetDirty) && Role == ROLE_Authority )
-		WaveTitle, WaveMessage, WaveEndRule;
+    reliable if( (bNetInitial || bNetDirty) && Role == ROLE_Authority )
+        WaveTitle, WaveMessage, WaveEndRule;
 
-	reliable if( (bNetInitial || bNetDirty) && Role == ROLE_Authority )
-		WaveCounter;
+    reliable if( (bNetInitial || bNetDirty) && Role == ROLE_Authority )
+        WaveCounter;
 
-	reliable if( (bNetInitial || bNetDirty) && Role == ROLE_Authority )
-		FakedPlayers, FakedAlivePlayers;
+    reliable if( (bNetInitial || bNetDirty) && Role == ROLE_Authority )
+        FakedPlayers, FakedAlivePlayers;
 }
 
 defaultproperties

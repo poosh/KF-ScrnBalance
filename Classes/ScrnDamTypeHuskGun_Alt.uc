@@ -1,7 +1,7 @@
 class ScrnDamTypeHuskGun_Alt extends ScrnDamTypeHuskGun
-	abstract;
+    abstract;
 
-	
+    
 
 defaultproperties
 {

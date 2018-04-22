@@ -43,7 +43,7 @@ function ChangeName(Controller Other, string S, bool bNameChange)
     if ( S == "" )
         return;
 
-	S = StripColor(s);	// Stip out color codes
+    S = StripColor(s);    // Stip out color codes
 
     if (Other.PlayerReplicationInfo.playername~=S)
         return;
@@ -53,20 +53,20 @@ function ChangeName(Controller Other, string S, bool bNameChange)
     ReplaceText(S, " ", "_");
     ReplaceText(S, "|", "I");
 
-	if ( bEpicNames && (Bot(Other) != None) )
-	{
-		if ( TotalEpic < 21 )
-		{
-			S = EpicNames[EpicOffset % 21];
-			EpicOffset++;
-			TotalEpic++;
-		}
-		else
-		{
-			S = NamePrefixes[NameNumber%10]$"CliffyB"$NameSuffixes[NameNumber%10];
-			NameNumber++;
-		}
-	}
+    if ( bEpicNames && (Bot(Other) != None) )
+    {
+        if ( TotalEpic < 21 )
+        {
+            S = EpicNames[EpicOffset % 21];
+            EpicOffset++;
+            TotalEpic++;
+        }
+        else
+        {
+            S = NamePrefixes[NameNumber%10]$"CliffyB"$NameSuffixes[NameNumber%10];
+            NameNumber++;
+        }
+    }
 
     for( APlayer=Level.ControllerList; APlayer!=None; APlayer=APlayer.nextController )
         if ( APlayer.bIsPlayer && (APlayer.PlayerReplicationInfo.playername~=S) )
@@ -74,45 +74,45 @@ function ChangeName(Controller Other, string S, bool bNameChange)
             if ( Other.IsA('PlayerController') )
             {
                 PlayerController(Other).ReceiveLocalizedMessage( GameMessageClass, 8 );
-				return;
-			}
-			else
-			{
-				if ( Other.PlayerReplicationInfo.bIsFemale )
-				{
-					S = FemaleBackupNames[FemaleBackupNameOffset%32];
-					FemaleBackupNameOffset++;
-				}
-				else
-				{
-					S = MaleBackupNames[MaleBackupNameOffset%32];
-					MaleBackupNameOffset++;
-				}
-				for( P=Level.ControllerList; P!=None; P=P.nextController )
-					if ( P.bIsPlayer && (P.PlayerReplicationInfo.playername~=S) )
-					{
-						S = NamePrefixes[NameNumber%10]$S$NameSuffixes[NameNumber%10];
-						NameNumber++;
-						break;
-					}
-				break;
-			}
+                return;
+            }
+            else
+            {
+                if ( Other.PlayerReplicationInfo.bIsFemale )
+                {
+                    S = FemaleBackupNames[FemaleBackupNameOffset%32];
+                    FemaleBackupNameOffset++;
+                }
+                else
+                {
+                    S = MaleBackupNames[MaleBackupNameOffset%32];
+                    MaleBackupNameOffset++;
+                }
+                for( P=Level.ControllerList; P!=None; P=P.nextController )
+                    if ( P.bIsPlayer && (P.PlayerReplicationInfo.playername~=S) )
+                    {
+                        S = NamePrefixes[NameNumber%10]$S$NameSuffixes[NameNumber%10];
+                        NameNumber++;
+                        break;
+                    }
+                break;
+            }
             S = NamePrefixes[NameNumber%10]$S$NameSuffixes[NameNumber%10];
             NameNumber++;
             break;
         }
 
-	if( bNameChange )
-		GameEvent("NameChange",s,Other.PlayerReplicationInfo);
+    if( bNameChange )
+        GameEvent("NameChange",s,Other.PlayerReplicationInfo);
 
-	if ( S ~= "CliffyB" )
-		bEpicNames = true;
+    if ( S ~= "CliffyB" )
+        bEpicNames = true;
     Other.PlayerReplicationInfo.SetPlayerName(S);
     // notify local players
     if  ( bNameChange )
-		for ( C=Level.ControllerList; C!=None; C=C.NextController )
-			if ( (PlayerController(C) != None) && (Viewport(PlayerController(C).Player) != None) )
-				PlayerController(C).ReceiveLocalizedMessage( class'GameMessage', 2, Other.PlayerReplicationInfo );
+        for ( C=Level.ControllerList; C!=None; C=C.NextController )
+            if ( (PlayerController(C) != None) && (Viewport(PlayerController(C).Player) != None) )
+                PlayerController(C).ReceiveLocalizedMessage( class'GameMessage', 2, Other.PlayerReplicationInfo );
 }
 
 // fixed GameRules.NetDamage() call
@@ -379,10 +379,10 @@ static event class<GameInfo> SetGameType( string MapName )
     local string prefix;
 
     prefix = Caps(Left(MapName, InStr(MapName, "-")));
-	if ( prefix == "KFO")
-		return default.class;
-	else if ( prefix == "KF" )
-		return Class'ScrnBalanceSrv.ScrnGameType';
+    if ( prefix == "KFO")
+        return default.class;
+    else if ( prefix == "KF" )
+        return Class'ScrnBalanceSrv.ScrnGameType';
 
     return super.SetGameType( MapName );
 }
@@ -391,10 +391,10 @@ static event class<GameInfo> SetGameType( string MapName )
 // NumMonsters check replaced with bTradingDoorsOpen
 function bool IsTraderTime()
 {
-	bWaveInProgress = !bTradingDoorsOpen && NumMonsters > 0 && ObjTraderIndex == -1;
+    bWaveInProgress = !bTradingDoorsOpen && NumMonsters > 0 && ObjTraderIndex == -1;
         //&& CurrentObjective != none && !CurrentObjective.IsTraderObj();
-	KFGameReplicationInfo(Level.GRI).bWaveInProgress = bWaveInProgress;
-	return !bWaveInProgress;
+    KFGameReplicationInfo(Level.GRI).bWaveInProgress = bWaveInProgress;
+    return !bWaveInProgress;
 }
 
 function SetActiveObjective( KF_StoryObjective NewObjective, optional pawn ObjInstigator)

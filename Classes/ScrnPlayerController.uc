@@ -66,7 +66,7 @@ var globalconfig bool bPrioritizePerkedWeapons, bPrioritizeBoomstick;
 var int StartCash; // amount of cash given to this pawn on game/wave start
 
 struct SDualWieldable {
-	var class<KFWeapon> Single, Dual;
+    var class<KFWeapon> Single, Dual;
 };
 var array<SDualWieldable> DualWieldables;
 var private transient bool bDualWieldablesLoaded;
@@ -74,7 +74,7 @@ var private transient bool bDualWieldablesLoaded;
 
 // TSC
 var string ProfilePageClassString;
-var	string	TSCLobbyMenuClassString;
+var    string    TSCLobbyMenuClassString;
 var config bool bTSCAdvancedKeyBindings; // pressing altfire while carrying the guardian gnome, sets up the base
 var config bool bTSCAutoDetectKeys; // turns off bTSCAdvancedKeyBindings if a dedicated key is bound for SetupBase
 var config string RedCharacter, BlueCharacter;
@@ -90,7 +90,7 @@ var transient bool bDestroying; // indicates that Destroyed() is executing
 var bool bDamageAck; // does server needs to acknowledge client of damages he made?
 
 var transient byte PerkChangeWave; // wave num, when perk was changed last time
-var	localized string strNoPerkChanges, strPerkLocked;
+var    localized string strNoPerkChanges, strPerkLocked;
 
 var transient Controller FavoriteSpecs[2];
 var localized string strSpecFavoriteAssigned, strSpecNoFavorites;
@@ -140,18 +140,18 @@ replication
 
     reliable if ( Role < ROLE_Authority )
         SrvAchReset, ResetMyAchievements, ResetMapAch,
-		ServerDropAllWeapons, ServerLockWeapons, ServerGunSkin,
+        ServerDropAllWeapons, ServerLockWeapons, ServerGunSkin,
         ServerAcknowledgeDamages, ServerShowPathTo,
         ServerDebugRepLink, FixQuickMelee,
         ServerTourneyCheck, ServerKillMut, ServerKillRules,
         ServerSwitchViewMode, ServerSetViewTarget;
 
-	reliable if ( bNetOwner && (bNetDirty || bNetInitial) && Role < ROLE_Authority )
-		bPrioritizePerkedWeapons, StartCash;
+    reliable if ( bNetOwner && (bNetDirty || bNetInitial) && Role < ROLE_Authority )
+        bPrioritizePerkedWeapons, StartCash;
 
     // TSC stuff
-	reliable if ( Role < ROLE_Authority )
-		ServerScoreFlag;
+    reliable if ( Role < ROLE_Authority )
+        ServerScoreFlag;
 }
 
 simulated function PreBeginPlay()
@@ -286,9 +286,9 @@ simulated function PreloadFireModeAssetsSE(class<WeaponFire> WF, optional Weapon
         class<M99Bullet>(P).static.PreloadAssets();
     else if ( class<PipeBombProjectile>(P) != none && class<PipeBombProjectile>(P).default.StaticMeshRef != "" )
         class<PipeBombProjectile>(P).static.PreloadAssets();
-	// More DLC
-	else if ( class<SealSquealProjectile>(P) != none && class<SealSquealProjectile>(P).default.StaticMeshRef != "" )
-		class<SealSquealProjectile>(P).static.PreloadAssets();
+    // More DLC
+    else if ( class<SealSquealProjectile>(P) != none && class<SealSquealProjectile>(P).default.StaticMeshRef != "" )
+        class<SealSquealProjectile>(P).static.PreloadAssets();
 }
 
 simulated function ClientWeaponSpawned(class<Weapon> WClass, Inventory Inv)
@@ -442,13 +442,13 @@ function ServerAcknowledgeDamages(bool bWantDagage)
 
 simulated function ClientMonsterBlamed(class<KFMonster> BlamedMonsterClass)
 {
-	local ScrnHUD hud;
+    local ScrnHUD hud;
 
-	hud = ScrnHUD(myHUD);
+    hud = ScrnHUD(myHUD);
     if (  hud != none ) {
-		hud.BlameCountdown = hud.default.BlameCountdown;
-		hud.BlamedMonsterClass = BlamedMonsterClass;
-	}
+        hud.BlameCountdown = hud.default.BlameCountdown;
+        hud.BlamedMonsterClass = BlamedMonsterClass;
+    }
 }
 
 exec function ScrnInit()
@@ -553,7 +553,7 @@ exec function TogglePathToTrader()
         default:
             PathDestination = 0; // trader
     }
-	ServerShowPathTo(PathDestination);
+    ServerShowPathTo(PathDestination);
 }
 
 function ServerShowPathTo(byte NewDestination)
@@ -574,11 +574,11 @@ function Timer()
     {
         UnrealMPGameInfo(Level.Game).ShowPathTo(Self, PathDestination);
     }
-	else
-	{
+    else
+    {
         bShowTraderPath = false;
         SetTimer(0, false);
-	}
+    }
 }
 
 event SongPlaying(String Song, int MyIndex)
@@ -847,7 +847,7 @@ exec function SoundVolume(coerce string vol)
 function bool IsAimingToZedHead()
 {
     local Vector vNull, StartTrace, HeadLoc, LookDir, HeadDir;
-	local KFMonster HitMonster;
+    local KFMonster HitMonster;
     local float cosine;
 
     if ( Pawn == none )
@@ -925,8 +925,8 @@ simulated function DisplayAchievementStatus(ScrnAchievements AchHandler, int Ach
         else if ( AchHandler.AchDefs[AchIndex].bUnlockedJustNow ){
             //don't bother player with status updates, when other achievements have been really earned
             PendingAchievements.insert(PendingAchievements.Length, 1);
-			PendingAchievements[PendingAchievements.Length-1].AchHandler = AchHandler;
-			PendingAchievements[PendingAchievements.Length-1].AchIndex = AchIndex;
+            PendingAchievements[PendingAchievements.Length-1].AchHandler = AchHandler;
+            PendingAchievements[PendingAchievements.Length-1].AchIndex = AchIndex;
         }
     }
 }
@@ -953,8 +953,8 @@ simulated function string MyColoredName()
 
 event ClientMessage( coerce string S, optional Name Type )
 {
-	if ( Level.NetMode == NM_DedicatedServer || GameReplicationInfo == None )
-		return;
+    if ( Level.NetMode == NM_DedicatedServer || GameReplicationInfo == None )
+        return;
 
     if ( Type == 'Log' ) {
         log(S, 'ScrnBalance');
@@ -974,43 +974,43 @@ function LongMessage(string S, optional int MaxLen, optional string Divider)
 
 event TeamMessage( PlayerReplicationInfo PRI, coerce string S, name Type  )
 {
-	local string c;
+    local string c;
 
-	// Wait for player to be up to date with replication when joining a server, before stacking up messages
-	if ( Level.NetMode == NM_DedicatedServer || GameReplicationInfo == None )
-		return;
+    // Wait for player to be up to date with replication when joining a server, before stacking up messages
+    if ( Level.NetMode == NM_DedicatedServer || GameReplicationInfo == None )
+        return;
 
-	if( AllowTextToSpeech(PRI, Type) )
-		TextToSpeech( S, TextToSpeechVoiceVolume );
-	if ( Type == 'TeamSayQuiet' )
-		Type = 'TeamSay';
+    if( AllowTextToSpeech(PRI, Type) )
+        TextToSpeech( S, TextToSpeechVoiceVolume );
+    if ( Type == 'TeamSayQuiet' )
+        Type = 'TeamSay';
 
-	if ( myHUD != None )
-		myHUD.Message( PRI, c$S, Type );
+    if ( myHUD != None )
+        myHUD.Message( PRI, c$S, Type );
 
         if ( (Player != None) && (Player.Console != None) )
-	{
-		if ( PRI!=None )
-		{
-			if ( PRI.Team!=None && GameReplicationInfo.bTeamGame)
-			{
-    			if (PRI.Team.TeamIndex==0)
-					c = chr(27)$chr(200)$chr(1)$chr(1);
-    			else if (PRI.Team.TeamIndex==1)
-        			c = chr(27)$chr(75)$chr(139)$chr(198);
-			}
-			S = Mut.ColoredPlayerName(PRI)$c$": "$ Mut.ParseColorTags(S, PRI);
-		}
-		Player.Console.Chat( c$s, 6.0, PRI );
-	}
+    {
+        if ( PRI!=None )
+        {
+            if ( PRI.Team!=None && GameReplicationInfo.bTeamGame)
+            {
+                if (PRI.Team.TeamIndex==0)
+                    c = chr(27)$chr(200)$chr(1)$chr(1);
+                else if (PRI.Team.TeamIndex==1)
+                    c = chr(27)$chr(75)$chr(139)$chr(198);
+            }
+            S = Mut.ColoredPlayerName(PRI)$c$": "$ Mut.ParseColorTags(S, PRI);
+        }
+        Player.Console.Chat( c$s, 6.0, PRI );
+    }
 }
 
 simulated function ReceiveLocalizedMessage( class<LocalMessage> Message, optional int Switch, optional PlayerReplicationInfo RelatedPRI_1, optional PlayerReplicationInfo RelatedPRI_2, optional Object OptionalObject )
 {
-	if ( Message == class'KFVetEarnedMessageSR' ||  Message == class'ScrnPromotedMessage'
+    if ( Message == class'KFVetEarnedMessageSR' ||  Message == class'ScrnPromotedMessage'
             || (Message == class'KFVetEarnedMessagePL' && RelatedPRI_1 == PlayerReplicationInfo) ) {
         Message = class'ScrnPromotedMessage';
-	}
+    }
     else if ( Message == class'TSCMessages' ) {
         switch (Switch) {
             case 300:     // trying to shop in enemy trader
@@ -1027,15 +1027,15 @@ simulated function ReceiveLocalizedMessage( class<LocalMessage> Message, optiona
 
 function ResetWaveStats()
 {
-	local KFPlayerReplicationInfo KFPRI;
+    local KFPlayerReplicationInfo KFPRI;
 
-	KFPRI = KFPlayerReplicationInfo(PlayerReplicationInfo);
+    KFPRI = KFPlayerReplicationInfo(PlayerReplicationInfo);
 
     bCowboyForWave = true;
-	BeggingForMoney = 0;
+    BeggingForMoney = 0;
     bShoppedThisWave = false;
-	bHadArmor = bHadArmor || (KFPRI != none	&& KFPRI.ClientVeteranSkill != none
-		&& KFPRI.ClientVeteranSkill.static.ReduceDamage(KFPRI, KFPawn(Pawn), none, 100, none) < 100);
+    bHadArmor = bHadArmor || (KFPRI != none    && KFPRI.ClientVeteranSkill != none
+        && KFPRI.ClientVeteranSkill.static.ReduceDamage(KFPRI, KFPawn(Pawn), none, 100, none) < 100);
 
     if ( ScrnHumanPawn(Pawn) != none )
         ScrnHumanPawn(Pawn).ApplyWeaponStats(Pawn.Weapon);
@@ -1183,9 +1183,9 @@ function ServerSpeech( name Type, int Index, string Callsign )
         else if ( index == 1 )
             ServerMutate("VOTE TRYNO");
     }
-	if ( Type == 'SUPPORT' && Index == 2 ) {
-		BeggingForMoney++;
-	}
+    if ( Type == 'SUPPORT' && Index == 2 ) {
+        BeggingForMoney++;
+    }
 
     super.ServerSpeech(Type, Index, Callsign);
 }
@@ -1217,8 +1217,8 @@ function BecomeSpectator()
     bWasOnlySpectator = PlayerReplicationInfo.bOnlySpectator;
     super.BecomeSpectator();
 
-	if (Role < ROLE_Authority)
-		return;
+    if (Role < ROLE_Authority)
+        return;
 
     if ( PlayerReplicationInfo.bOnlySpectator && !bWasOnlySpectator )
         Mut.GameRules.PlayerLeaving(self);
@@ -1235,41 +1235,41 @@ function BecomeActivePlayer()
     super.BecomeActivePlayer();
 
 
-	if (Role < ROLE_Authority) {
+    if (Role < ROLE_Authority) {
         if ( ScrnHUD(MyHUD) != none ) {
             ScrnHUD(MyHUD).DisableHudHacks();
         }
         return;
     }
 
-	if ( !PlayerReplicationInfo.bOnlySpectator ) {
-		if ( Mut.KF.bTradingDoorsOpen ) {
-			if ( Mut.bDynamicLevelCap )
-				Mut.DynamicLevelCap();
-		}
-		StartCash = PlayerReplicationInfo.Score;
+    if ( !PlayerReplicationInfo.bOnlySpectator ) {
+        if ( Mut.KF.bTradingDoorsOpen ) {
+            if ( Mut.bDynamicLevelCap )
+                Mut.DynamicLevelCap();
+        }
+        StartCash = PlayerReplicationInfo.Score;
         if ( bWasOnlySpectator )
             Mut.GameRules.PlayerEntering(self);
-	}
+    }
 }
 
 function Possess(Pawn aPawn)
 {
-	//ClientMessage("Possess("$aPawn$"). Current Pawn="$Pawn);
-	if ( Role == ROLE_Authority && Mut != none ) {
-		if ( bHadPawn )
-			StartCash = max(StartCash, Mut.KF.MinRespawnCash);
-		else
-			StartCash = max(StartCash, Mut.KF.StartingCash);
+    //ClientMessage("Possess("$aPawn$"). Current Pawn="$Pawn);
+    if ( Role == ROLE_Authority && Mut != none ) {
+        if ( bHadPawn )
+            StartCash = max(StartCash, Mut.KF.MinRespawnCash);
+        else
+            StartCash = max(StartCash, Mut.KF.StartingCash);
 
-	}
+    }
 
-	super.Possess(aPawn);
+    super.Possess(aPawn);
     // show path to trader if respawned during the trader time
     if ( Role == ROLE_Authority && Pawn != none && Mut != none && Mut.KF.bTradingDoorsOpen )
         SetShowPathToTrader(true);
 
-	bHadPawn = bHadPawn || Pawn != none;
+    bHadPawn = bHadPawn || Pawn != none;
 }
 
 simulated event Destroyed()
@@ -1305,48 +1305,48 @@ simulated event Destroyed()
 
 simulated function ClientEnterZedTime()
 {
-	super.ClientEnterZedTime();
-	bZEDTimeActive = true;
+    super.ClientEnterZedTime();
+    bZEDTimeActive = true;
 }
 
 simulated function ClientExitZedTime()
 {
-	super.ClientExitZedTime();
-	bZEDTimeActive = false;
+    super.ClientExitZedTime();
+    bZEDTimeActive = false;
 }
 
 function bool AllowVoiceMessage(name MessageType)
 {
-	local float TimeSinceLastMsg;
+    local float TimeSinceLastMsg;
 
-	if ( Level.NetMode == NM_Standalone || (PlayerReplicationInfo != none && PlayerReplicationInfo.bAdmin) )
-		return true;
+    if ( Level.NetMode == NM_Standalone || (PlayerReplicationInfo != none && PlayerReplicationInfo.bAdmin) )
+        return true;
 
-	TimeSinceLastMsg = Level.TimeSeconds - OldMessageTime;
+    TimeSinceLastMsg = Level.TimeSeconds - OldMessageTime;
 
-	if ( TimeSinceLastMsg < 3 )
-	{
-		if ( (MessageType == 'TAUNT') || (MessageType == 'AUTOTAUNT') )
-			return false;
-		if ( TimeSinceLastMsg < 1 )
-			return false;
-	}
+    if ( TimeSinceLastMsg < 3 )
+    {
+        if ( (MessageType == 'TAUNT') || (MessageType == 'AUTOTAUNT') )
+            return false;
+        if ( TimeSinceLastMsg < 1 )
+            return false;
+    }
 
-	// zed time screws up voice messages
-	if ( !bZEDTimeActive && MessageType != 'TRADER' && MessageType != 'AUTO' ) {
-		OldMessageTime = Level.TimeSeconds;
-		if ( TimeSinceLastMsg < 10 ) {
-			if ( MaxVoiceMsgIn10s > 0 )
-				MaxVoiceMsgIn10s--;
-			else {
-				ClientMessage("Keep quiet for " $ ceil(10-TimeSinceLastMsg) $"s");
-				return false;
-			}
-		}
-		else
-			MaxVoiceMsgIn10s = default.MaxVoiceMsgIn10s;
-	}
-	return true;
+    // zed time screws up voice messages
+    if ( !bZEDTimeActive && MessageType != 'TRADER' && MessageType != 'AUTO' ) {
+        OldMessageTime = Level.TimeSeconds;
+        if ( TimeSinceLastMsg < 10 ) {
+            if ( MaxVoiceMsgIn10s > 0 )
+                MaxVoiceMsgIn10s--;
+            else {
+                ClientMessage("Keep quiet for " $ ceil(10-TimeSinceLastMsg) $"s");
+                return false;
+            }
+        }
+        else
+            MaxVoiceMsgIn10s = default.MaxVoiceMsgIn10s;
+    }
+    return true;
 }
 
 exec function RemoveVotingMsg()
@@ -1360,103 +1360,103 @@ exec function RemoveVotingMsg()
 
 exec function DropAllWeapons()
 {
-	ServerDropAllWeapons();
+    ServerDropAllWeapons();
 }
 
 function ServerDropAllWeapons()
 {
-	class'ScrnHumanPawn'.static.DropAllWeapons(Pawn);
+    class'ScrnHumanPawn'.static.DropAllWeapons(Pawn);
 }
 
 exec function LockWeapons()
 {
-	if ( Mut.bAllowWeaponLock ) {
-		bWeaponsLocked = true;
-		ServerLockWeapons(bWeaponsLocked);
-		ClientMessage(ConsoleColorString(strLocked, 192, 1, 1));
-	}
-	else
-		ClientMessage(strLockDisabled);
+    if ( Mut.bAllowWeaponLock ) {
+        bWeaponsLocked = true;
+        ServerLockWeapons(bWeaponsLocked);
+        ClientMessage(ConsoleColorString(strLocked, 192, 1, 1));
+    }
+    else
+        ClientMessage(strLockDisabled);
 }
 
 exec function UnlockWeapons()
 {
-	if ( Mut.bAllowWeaponLock ) {
-		bWeaponsLocked = false;
-		ServerLockWeapons(bWeaponsLocked);
-		ClientMessage(ConsoleColorString(strUnlocked, 1, 192, 1));
-	}
-	else
-		ClientMessage(strLockDisabled);
+    if ( Mut.bAllowWeaponLock ) {
+        bWeaponsLocked = false;
+        ServerLockWeapons(bWeaponsLocked);
+        ClientMessage(ConsoleColorString(strUnlocked, 1, 192, 1));
+    }
+    else
+        ClientMessage(strLockDisabled);
 }
 
 exec function ToggleWeaponLock()
 {
-	if ( bWeaponsLocked )
-		UnlockWeapons();
-	else
-		LockWeapons();
+    if ( bWeaponsLocked )
+        UnlockWeapons();
+    else
+        LockWeapons();
 }
 
 function ServerLockWeapons(bool bLock)
 {
-	bWeaponsLocked = Mut.bAllowWeaponLock && bLock;
+    bWeaponsLocked = Mut.bAllowWeaponLock && bLock;
 }
 
 
 exec function Ready()
 {
-	if ( PlayerReplicationInfo.bOnlySpectator )
-		BecomeActivePlayer();
+    if ( PlayerReplicationInfo.bOnlySpectator )
+        BecomeActivePlayer();
 
-	if ( PlayerReplicationInfo.Team == none || Level.GRI.bMatchHasBegun )
-		return;
+    if ( PlayerReplicationInfo.Team == none || Level.GRI.bMatchHasBegun )
+        return;
 
-	if ( Level.NetMode == NM_Standalone || !PlayerReplicationInfo.bReadyToPlay ) {
-		SendSelectedVeterancyToServer(true);
+    if ( Level.NetMode == NM_Standalone || !PlayerReplicationInfo.bReadyToPlay ) {
+        SendSelectedVeterancyToServer(true);
 
-		//Set Ready
-		ServerRestartPlayer();
-		PlayerReplicationInfo.bReadyToPlay = True;
-		if ( Level.GRI.bMatchHasBegun )
-			ClientCloseMenu(true, false);
-	}
+        //Set Ready
+        ServerRestartPlayer();
+        PlayerReplicationInfo.bReadyToPlay = True;
+        if ( Level.GRI.bMatchHasBegun )
+            ClientCloseMenu(true, false);
+    }
 }
 
 exec function Spectate()
 {
-	if ( PlayerReplicationInfo.bOnlySpectator ) {
-		ConsoleMessage(strAlreadySpectating);
-		return;
-	}
-	ClientCloseMenu(true, false);
-	BecomeSpectator();
+    if ( PlayerReplicationInfo.bOnlySpectator ) {
+        ConsoleMessage(strAlreadySpectating);
+        return;
+    }
+    ClientCloseMenu(true, false);
+    BecomeSpectator();
 }
 
 exec function Unready()
 {
-	if ( Level.GRI.bMatchHasBegun )
-		return;
+    if ( Level.GRI.bMatchHasBegun )
+        return;
 
-	ServerUnreadyPlayer();
-	PlayerReplicationInfo.bReadyToPlay = False;
+    ServerUnreadyPlayer();
+    PlayerReplicationInfo.bReadyToPlay = False;
 }
 
 exec function ShowMenu()
 {
-	if ( Level.GRI.bMatchHasBegun || PlayerReplicationInfo.bOnlySpectator )
-		super.ShowMenu();
-	else
-		ShowLobbyMenu();
+    if ( Level.GRI.bMatchHasBegun || PlayerReplicationInfo.bOnlySpectator )
+        super.ShowMenu();
+    else
+        ShowLobbyMenu();
 }
 
 function ShowLobbyMenu()
 {
-	StopForceFeedback();  // jdf - no way to pause feedback
+    StopForceFeedback();  // jdf - no way to pause feedback
 
-	bPendingLobbyDisplay = false;
+    bPendingLobbyDisplay = false;
 
-	// Open menu
+    // Open menu
     if (  TSCGameReplicationInfo(Level.GRI) != none && !TSCGameReplicationInfo(Level.GRI).bSingleTeamGame )
         ClientOpenMenu(TSCLobbyMenuClassString);
     else
@@ -1466,80 +1466,80 @@ function ShowLobbyMenu()
 
 function LoadDualWieldables()
 {
-	local ScrnClientPerkRepLink L;
-	local class<KFWeaponPickup> WP;
-	local class<KFWeapon> W;
-	local int i;
+    local ScrnClientPerkRepLink L;
+    local class<KFWeaponPickup> WP;
+    local class<KFWeapon> W;
+    local int i;
 
     L = class'ScrnClientPerkRepLink'.static.FindMe(self);
-	if( L==None || L.ShopInventory.Length == 0 )
-		return; // Hmmmm?
+    if( L==None || L.ShopInventory.Length == 0 )
+        return; // Hmmmm?
 
 
-	for ( i=0; i<L.ShopInventory.Length; ++i ) {
-		WP = class<KFWeaponPickup>(L.ShopInventory[i].PC);
-		if ( WP == none )
-			continue;
-		W = class<KFWeapon>(WP.default.InventoryType);
-		if ( W != none && W.Default.DemoReplacement != none )
-			AddDualWieldable(class<KFWeapon>(W.Default.DemoReplacement), W);
-	}
+    for ( i=0; i<L.ShopInventory.Length; ++i ) {
+        WP = class<KFWeaponPickup>(L.ShopInventory[i].PC);
+        if ( WP == none )
+            continue;
+        W = class<KFWeapon>(WP.default.InventoryType);
+        if ( W != none && W.Default.DemoReplacement != none )
+            AddDualWieldable(class<KFWeapon>(W.Default.DemoReplacement), W);
+    }
 
-	bDualWieldablesLoaded = L.PendingWeapons == 0;
+    bDualWieldablesLoaded = L.PendingWeapons == 0;
 }
 
 final function AddDualWieldable(class<KFWeapon> SingleWeapon, class<KFWeapon> DualWeapon)
 {
-	local int i;
+    local int i;
 
-	if ( SingleWeapon == none || DualWeapon == none )
-		return;
+    if ( SingleWeapon == none || DualWeapon == none )
+        return;
 
-	for ( i=0; i<DualWieldables.Length; ++i ) {
-		if ( DualWieldables[i].Single == SingleWeapon || DualWieldables[i].Dual == DualWeapon)
-			break;
-	}
-	if ( i == DualWieldables.Length )
-		DualWieldables.insert(i, 1);
+    for ( i=0; i<DualWieldables.Length; ++i ) {
+        if ( DualWieldables[i].Single == SingleWeapon || DualWieldables[i].Dual == DualWeapon)
+            break;
+    }
+    if ( i == DualWieldables.Length )
+        DualWieldables.insert(i, 1);
 
-	DualWieldables[i].Single = SingleWeapon;
-	DualWieldables[i].Dual = DualWeapon;
+    DualWieldables[i].Single = SingleWeapon;
+    DualWieldables[i].Dual = DualWeapon;
 }
 
 function bool IsSinglePistol(class<KFWeapon> Weapon)
 {
-	local int i;
+    local int i;
 
-	if ( !bDualWieldablesLoaded )
-		LoadDualWieldables();
+    if ( !bDualWieldablesLoaded )
+        LoadDualWieldables();
 
-	if ( Weapon == none )
-		return false;
+    if ( Weapon == none )
+        return false;
 
-	for ( i=0; i<DualWieldables.Length; ++i ) {
-		if ( DualWieldables[i].Single == Weapon )
-			return true;
-	}
+    for ( i=0; i<DualWieldables.Length; ++i ) {
+        if ( DualWieldables[i].Single == Weapon )
+            return true;
+    }
 
-	return false;
+    return false;
 }
 
 function bool AreDualPistols(class<KFWeapon> Weapon)
 {
-	local int i;
+    local int i;
 
-	if ( !bDualWieldablesLoaded )
-		LoadDualWieldables();
+    if ( !bDualWieldablesLoaded )
+        LoadDualWieldables();
 
-	if ( Weapon == none )
-		return false;
+    if ( Weapon == none )
+        return false;
 
-	for ( i=0; i<DualWieldables.Length; ++i ) {
-		if ( DualWieldables[i].Dual == Weapon )
-			return true;
-	}
+    for ( i=0; i<DualWieldables.Length; ++i ) {
+        if ( DualWieldables[i].Dual == Weapon )
+            return true;
+    }
 
-	return false;
+    return false;
 }
 
 // if pickup is in inventory, then always returns true, even if bCheckForEquivalent = false,
@@ -1551,36 +1551,36 @@ function bool IsInInventory(class<Pickup> PickupToCheck, bool bCheckForEquivalen
     local class<KFWeaponPickup> WeaponPickupToCheck;
     local int i;
 
-	if ( PickupToCheck == none )
-		return false;
+    if ( PickupToCheck == none )
+        return false;
 
-	WeaponPickupToCheck = class<KFWeaponPickup>(PickupToCheck);
+    WeaponPickupToCheck = class<KFWeaponPickup>(PickupToCheck);
     for ( CurInv = Pawn.Inventory; CurInv != none; CurInv = CurInv.Inventory ) {
         if ( /* bCheckForEquivalent && */ CurInv.default.PickupClass == PickupToCheck ) {
-			if ( !bCheckForEquivalent && IsSinglePistol(class<KFWeapon>(CurInv.class)) )
-				return false; // allow picking up a second pistol
+            if ( !bCheckForEquivalent && IsSinglePistol(class<KFWeapon>(CurInv.class)) )
+                return false; // allow picking up a second pistol
             return true;
-		}
+        }
 
         if( !bCheckForVariant )
             continue;
 
         // check if Item is variant of normal inventory item
-		InvPickupClass = class<KFWeaponPickup>(CurInv.default.PickupClass);
+        InvPickupClass = class<KFWeaponPickup>(CurInv.default.PickupClass);
         if( InvPickupClass != none ) {
             for( i = 0; i < InvPickupClass.default.VariantClasses.Length; ++i ) {
                 if( InvPickupClass.default.VariantClasses[i] == PickupToCheck )
                     return true;
             }
-		}
-		// check if Item is normal version of variant inventory item
-		if( WeaponPickupToCheck != none && CurInv.default.PickupClass != none ) {
-			for( i = 0; i < WeaponPickupToCheck.default.VariantClasses.Length; ++i ) {
-				if( WeaponPickupToCheck.default.VariantClasses[i] == CurInv.default.PickupClass )
-					return true;
-			}
-		}
-	}
+        }
+        // check if Item is normal version of variant inventory item
+        if( WeaponPickupToCheck != none && CurInv.default.PickupClass != none ) {
+            for( i = 0; i < WeaponPickupToCheck.default.VariantClasses.Length; ++i ) {
+                if( WeaponPickupToCheck.default.VariantClasses[i] == CurInv.default.PickupClass )
+                    return true;
+            }
+        }
+    }
 
     return false;
 }
@@ -1600,9 +1600,9 @@ exec function SetName(coerce string S)
     else {
         PlayerName = S;
     }
-	ChangeName(S);
-	UpdateURL("Name", S, true);
-	SaveConfig();
+    ChangeName(S);
+    UpdateURL("Name", S, true);
+    SaveConfig();
 }
 
 function ChangeName( coerce string S )
@@ -1631,7 +1631,7 @@ exec function SwitchTeam()
 
 exec function ChangeTeam( int N )
 {
-	ServerChangeTeam(N);
+    ServerChangeTeam(N);
 }
 
 function ServerChangeTeam( int N )
@@ -1667,8 +1667,8 @@ exec function AltFire( optional float F )
         SetPause(false);
         return;
     }
-	if( bDemoOwner || (Pawn == None) )
-		return;
+    if( bDemoOwner || (Pawn == None) )
+        return;
 
     if ( !bTSCAdvancedKeyBindings && PlayerReplicationInfo.HasFlag != none
             && GameObject(PlayerReplicationInfo.HasFlag) != none
@@ -1751,9 +1751,9 @@ exec function ChangeCharacter(string newCharacter, optional string inClass)
         return;
 
     L = class'ScrnClientPerkRepLink'.static.FindMe(self);
-	if( L!=None )
-		L.SelectedCharacter(newCharacter);
-	else
+    if( L!=None )
+        L.SelectedCharacter(newCharacter);
+    else
         Super(KFPlayerController_Story).ChangeCharacter(newCharacter,inClass);
 }
 
@@ -1794,9 +1794,9 @@ function SendSelectedVeterancyToServer(optional bool bForceChange)
 {
     local class<KFVeterancyTypes> OldPerk;
 
-	if( Level.NetMode!=NM_Client && SRStatsBase(SteamStatsAndAchievements)!=none ) {
+    if( Level.NetMode!=NM_Client && SRStatsBase(SteamStatsAndAchievements)!=none ) {
         OldPerk = KFPlayerReplicationInfo(PlayerReplicationInfo).ClientVeteranSkill;
-		SRStatsBase(SteamStatsAndAchievements).WaveEnded();
+        SRStatsBase(SteamStatsAndAchievements).WaveEnded();
         if ( OldPerk != KFPlayerReplicationInfo(PlayerReplicationInfo).ClientVeteranSkill )
             PerkChangeWave = KFGameType(Level.Game).WaveNum;
     }
@@ -1806,7 +1806,7 @@ function SelectVeterancy(class<KFVeterancyTypes> VetSkill, optional bool bForceC
 {
     local ClientPerkRepLink L;
 
-	if( SRStatsBase(SteamStatsAndAchievements)!=none )
+    if( SRStatsBase(SteamStatsAndAchievements)!=none )
         L = Class'ScrnClientPerkRepLink'.Static.FindMe(self);
 
     if ( L != none ) {
@@ -2123,7 +2123,7 @@ state Dead
 {
     // fix of null-reference
     function Timer()
-	{
+    {
         if ( KFStoryGameInfo(Level.Game) != none )
             super.Timer();
         else
@@ -2137,8 +2137,8 @@ function ServerViewNextPlayer()
     local Controller C, Pick;
     local bool bFound, bWasSpec;
 
-	if( !IsInState('Spectating') )
-	    return;
+    if( !IsInState('Spectating') )
+        return;
 
     if ( ScrnGameType(Level.Game) == none ) {
         super.ServerViewNextPlayer();
@@ -2219,8 +2219,8 @@ function ServerSwitchViewMode(byte Mode)
     local bool bFound;
     local TeamInfo ViewingTeam;
 
-	if( !IsInState('Spectating') || !PlayerReplicationInfo.bOnlySpectator )
-	    return;
+    if( !IsInState('Spectating') || !PlayerReplicationInfo.bOnlySpectator )
+        return;
 
     if ( ScrnGameType(Level.Game) == none )
         return;
@@ -2620,18 +2620,18 @@ exec function BuyAll()
 
 exec function GiveSpawnInv()
 {
-	if ( Role != ROLE_Authority )
-		return;
+    if ( Role != ROLE_Authority )
+        return;
 
-	KFPlayerReplicationInfo(PlayerReplicationInfo).ClientVeteranSkill.static.AddDefaultInventory(KFPlayerReplicationInfo(PlayerReplicationInfo), Pawn);
+    KFPlayerReplicationInfo(PlayerReplicationInfo).ClientVeteranSkill.static.AddDefaultInventory(KFPlayerReplicationInfo(PlayerReplicationInfo), Pawn);
 }
 
 exec function TestWaveSize(int PlayerCount)
 {
-	Mut.KF.TotalMaxMonsters = 10000;
-	Mut.GameRules.PlayersAlive.Length = PlayerCount;
-	Mut.KF.NumBots = 0;
-	Mut.GameRules.SetupWaveSize();
+    Mut.KF.TotalMaxMonsters = 10000;
+    Mut.GameRules.PlayersAlive.Length = PlayerCount;
+    Mut.KF.NumBots = 0;
+    Mut.GameRules.SetupWaveSize();
 }
 
 
@@ -2659,35 +2659,35 @@ defaultproperties
     PawnClass=Class'ScrnBalanceSrv.ScrnHumanPawn'
     CustomPlayerReplicationInfoClass=class'ScrnBalanceSrv.ScrnCustomPRI'
     bSpeechVote=true
-	bAlwaysDisplayAchProgression=true
-	MaxVoiceMsgIn10s=5
-	strLocked="Weapon pickups LOCKED"
-	strUnlocked="Weapon pickups UNLOCKED"
-	strLockDisabled="Weapon lock is disabled by server"
-	strAlreadySpectating="Already spectating. Type READY, if you want to join the game."
+    bAlwaysDisplayAchProgression=true
+    MaxVoiceMsgIn10s=5
+    strLocked="Weapon pickups LOCKED"
+    strUnlocked="Weapon pickups UNLOCKED"
+    strLockDisabled="Weapon lock is disabled by server"
+    strAlreadySpectating="Already spectating. Type READY, if you want to join the game."
     strNoPerkChanges="Mid-game perk changes disabled"
     strPerkLocked="Perk is locked"
     bWaveGarbageCollection=False
 
-	DualWieldables(0)=(Single=class'KFMod.Single',Dual=class'KFMod.Dualies')
-	DualWieldables(1)=(Single=class'KFMod.Deagle',Dual=class'KFMod.DualDeagle')
-	DualWieldables(2)=(Single=class'KFMod.GoldenDeagle',Dual=class'KFMod.GoldenDualDeagle')
-	DualWieldables(3)=(Single=class'KFMod.Magnum44Pistol',Dual=class'KFMod.Dual44Magnum')
-	DualWieldables(4)=(Single=class'KFMod.MK23Pistol',Dual=class'KFMod.DualMK23Pistol')
-	DualWieldables(5)=(Single=class'KFMod.FlareRevolver',Dual=class'KFMod.DualFlareRevolver')
+    DualWieldables(0)=(Single=class'KFMod.Single',Dual=class'KFMod.Dualies')
+    DualWieldables(1)=(Single=class'KFMod.Deagle',Dual=class'KFMod.DualDeagle')
+    DualWieldables(2)=(Single=class'KFMod.GoldenDeagle',Dual=class'KFMod.GoldenDualDeagle')
+    DualWieldables(3)=(Single=class'KFMod.Magnum44Pistol',Dual=class'KFMod.Dual44Magnum')
+    DualWieldables(4)=(Single=class'KFMod.MK23Pistol',Dual=class'KFMod.DualMK23Pistol')
+    DualWieldables(5)=(Single=class'KFMod.FlareRevolver',Dual=class'KFMod.DualFlareRevolver')
 
     strSpecFavoriteAssigned="View target marked as favorite"
     strSpecNoFavorites="No favorite view targets! Press '4' to assign favorite."
 
-	DLC(0)=(AppID=210934)
-	DLC(1)=(AppID=210938)
-	DLC(2)=(AppID=210939)
-	DLC(3)=(AppID=210942)
-	DLC(4)=(AppID=210943)
-	DLC(5)=(AppID=210944)
+    DLC(0)=(AppID=210934)
+    DLC(1)=(AppID=210938)
+    DLC(2)=(AppID=210939)
+    DLC(3)=(AppID=210942)
+    DLC(4)=(AppID=210943)
+    DLC(5)=(AppID=210944)
     DLC(6)=(AppID=258751)
-	DLC(7)=(AppID=258752)
-	DLC(8)=(AppID=309991)
+    DLC(7)=(AppID=258752)
+    DLC(8)=(AppID=309991)
 
     strPlayingSong="Now playing: "
     MusicPlaylistNames(0)="<DEFAULT>"

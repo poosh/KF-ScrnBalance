@@ -7,12 +7,12 @@ state FireLoop
     {
         super.BeginState();
         
-		NextFireTime = Level.TimeSeconds - 0.000001; //fire now!
+        NextFireTime = Level.TimeSeconds - 0.000001; //fire now!
     }
 }  
 
 defaultproperties
 {
-	DamageType=Class'ScrnBalanceSrv.ScrnDamTypeSPThompson'
+    DamageType=Class'ScrnBalanceSrv.ScrnDamTypeSPThompson'
     AmmoClass=Class'ScrnBalanceSrv.ScrnSPThompsonAmmo'
 }

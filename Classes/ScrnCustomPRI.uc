@@ -16,7 +16,7 @@ const SteamUID_Part2 =         960265728;
 
 replication
 {
-	reliable if ( bNetDirty && Role == Role_Authority )
+    reliable if ( bNetDirty && Role == Role_Authority )
         BlameCounter, SteamID32;
 }  
 

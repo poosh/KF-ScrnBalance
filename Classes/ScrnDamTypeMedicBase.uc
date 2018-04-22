@@ -1,5 +1,5 @@
 class ScrnDamTypeMedicBase extends KFProjectileWeaponDamageType
-	abstract;
+    abstract;
 
 defaultproperties
 {

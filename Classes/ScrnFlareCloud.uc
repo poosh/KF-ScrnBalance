@@ -4,37 +4,37 @@ var byte FlareCount; // more flares = wider cloud
 
 replication 
 {
-	reliable if ( bNetDirty && Role == ROLE_Authority )
-		FlareCount;
+    reliable if ( bNetDirty && Role == ROLE_Authority )
+        FlareCount;
 }
 
 simulated function PostNetReceive()
 {
-	if ( Role < ROLE_Authority ) {
-		if ( bHidden )
-			Kill();
-		else if (FlareCount > 1)
-			AdjustCloudSize();
-	}
+    if ( Role < ROLE_Authority ) {
+        if ( bHidden )
+            Kill();
+        else if (FlareCount > 1)
+            AdjustCloudSize();
+    }
 }
 
 function Timer()
 {
-	Kill();
-	//Destroy();
+    Kill();
+    //Destroy();
 }
 
 simulated function AdjustCloudSize()
 {
-	local float clound_size;
-	
-	// more flares = wider cloud
-	clound_size = 1.0 + 0.25 * min(10, FlareCount);
-	Emitters[0].StartSizeRange.X.Max = default.Emitters[0].StartSizeRange.X.Max * clound_size;
-	Emitters[0].StartSizeRange.Y.Max = default.Emitters[0].StartSizeRange.Y.Max * clound_size;	
+    local float clound_size;
+    
+    // more flares = wider cloud
+    clound_size = 1.0 + 0.25 * min(10, FlareCount);
+    Emitters[0].StartSizeRange.X.Max = default.Emitters[0].StartSizeRange.X.Max * clound_size;
+    Emitters[0].StartSizeRange.Y.Max = default.Emitters[0].StartSizeRange.Y.Max * clound_size;    
 }
 
-		
+        
 
 defaultproperties
 {
@@ -82,5 +82,5 @@ defaultproperties
      Physics=PHYS_Trailer
      RemoteRole=ROLE_SimulatedProxy
      bNetNotify=True
-	 NetUpdateFrequency=5
+     NetUpdateFrequency=5
 }

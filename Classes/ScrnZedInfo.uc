@@ -1,6 +1,6 @@
 Class ScrnZedInfo extends Object
-	PerObjectConfig
-	Config(ScrnWaves);
+    PerObjectConfig
+    Config(ScrnWaves);
 
 struct SZedInfo {
     var string Alias;

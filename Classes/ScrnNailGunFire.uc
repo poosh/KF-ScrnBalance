@@ -24,17 +24,17 @@ function projectile SpawnProjectile(Vector Start, Rotator Dir)
 
 function ModeDoFire()
 {
-	local float Rec;
+    local float Rec;
 
-	if (!AllowFire())
-		return;
+    if (!AllowFire())
+        return;
 
     Load = min(AmmoPerFire, KFWeapon(Weapon).MagAmmoRemaining);  // must set it before fire in case player just changed fire mode
 
-	Rec = GetFireSpeed();
-	FireRate = default.FireRate/Rec;
-	FireAnimRate = default.FireAnimRate*Rec;
-	Rec = 1;
+    Rec = GetFireSpeed();
+    FireRate = default.FireRate/Rec;
+    FireAnimRate = default.FireAnimRate*Rec;
+    Rec = 1;
 
     if ( Load == 1 ) {
         Spread = SingleSpread;
@@ -42,26 +42,26 @@ function ModeDoFire()
     else {
         Spread = default.Spread;
     }
-	if ( KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo) != none && KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo).ClientVeteranSkill != none )
-	{
-		Spread *= KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo).ClientVeteranSkill.Static.ModifyRecoilSpread(KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo), self, Rec);
-	}
+    if ( KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo) != none && KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo).ClientVeteranSkill != none )
+    {
+        Spread *= KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo).ClientVeteranSkill.Static.ModifyRecoilSpread(KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo), self, Rec);
+    }
 
-	if( !bFiringDoesntAffectMovement )
-	{
-		if (FireRate > 0.25)
-		{
-			Instigator.Velocity.x *= 0.1;
-			Instigator.Velocity.y *= 0.1;
-		}
-		else
-		{
-			Instigator.Velocity.x *= 0.5;
-			Instigator.Velocity.y *= 0.5;
-		}
-	}
+    if( !bFiringDoesntAffectMovement )
+    {
+        if (FireRate > 0.25)
+        {
+            Instigator.Velocity.x *= 0.1;
+            Instigator.Velocity.y *= 0.1;
+        }
+        else
+        {
+            Instigator.Velocity.x *= 0.5;
+            Instigator.Velocity.y *= 0.5;
+        }
+    }
 
-	super(BaseProjectileFire).ModeDoFire();
+    super(BaseProjectileFire).ModeDoFire();
 
     // client
     if (Instigator.IsLocallyControlled())

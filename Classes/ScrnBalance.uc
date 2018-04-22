@@ -11,7 +11,7 @@ class ScrnBalance extends Mutator
 #exec OBJ LOAD FILE=ScrnAch_T.utx
 
 
-const VERSION = 95200;
+const VERSION = 95300;
 
 var ScrnBalance Mut; // pointer to self to use in static functions, i.e class'ScrnBalance'.default.Mut
 
@@ -440,7 +440,7 @@ simulated function InitSettings()
     class'ScrnFragPickup'.default.Weight = class'ScrnFrag'.default.Weight;
     RecalcAllPawnWeight();
 
-	class'KFMod.CrossbowArrow'.default.DamageRadius = 0; // isn't used anywhere. Set to 0 to fix description
+    class'KFMod.CrossbowArrow'.default.DamageRadius = 0; // isn't used anywhere. Set to 0 to fix description
 
     // Achievements
     bUseAchievements = bool(AchievementFlags & ACH_ENABLE);
@@ -1121,7 +1121,7 @@ function KickOffPerkPlayers()
 // executes each second while match is in progress
 function GameTimer()
 {
-	if ( bStoryMode ) {
+    if ( bStoryMode ) {
         KF.bWaveInProgress = !KFStoryGameInfo(KF).IsTraderTime();
         KFGameReplicationInfo(Level.GRI).bWaveInProgress = KF.bWaveInProgress;
     }
@@ -1131,11 +1131,11 @@ function GameTimer()
     {
         bTradingDoorsOpen = KF.bTradingDoorsOpen;
         if ( bTradingDoorsOpen ) {
-			// Trader Time
-			if ( bStoryMode && KF.WaveNum == CurWave ) {
-				// seems like story game doesn't increment wave counter
-				KF.WaveNum++;
-			}
+            // Trader Time
+            if ( bStoryMode && KF.WaveNum == CurWave ) {
+                // seems like story game doesn't increment wave counter
+                KF.WaveNum++;
+            }
 
             GameRules.WaveEnded();
 
@@ -1143,8 +1143,8 @@ function GameTimer()
             TradeTimeAddSeconds = 0;
         }
         else {
-			// Wave in Progress
-			CurWave = KF.WaveNum;
+            // Wave in Progress
+            CurWave = KF.WaveNum;
 
             if ( bAutoKickOffPerkPlayers )
                 KickOffPerkPlayers();
@@ -1167,7 +1167,7 @@ function GameTimer()
             DynamicLevelCap();
     }
 
-	if ( !bStoryMode ) {
+    if ( !bStoryMode ) {
         CheckDoors();
 
         if ( !bPickupSetupReduced && KF.TotalMaxMonsters <= 0 && KF.NumMonsters < PickupSetupMonsters )
@@ -1212,18 +1212,18 @@ simulated function Tick( float DeltaTime )
     }
 
     if ( Role == ROLE_Authority ) {
-		OriginalWaveSpawnPeriod = KF.KFLRules.WaveSpawnPeriod;
+        OriginalWaveSpawnPeriod = KF.KFLRules.WaveSpawnPeriod;
         if ( OriginalWaveSpawnPeriod < MinZedSpawnPeriod ) {
             OriginalWaveSpawnPeriod = MinZedSpawnPeriod;
             KF.KFLRules.WaveSpawnPeriod = MinZedSpawnPeriod;
         }
         ForceMaxPlayers();
-		if ( !bStoryMode ) {
+        if ( !bStoryMode ) {
             if ( ScrnGT != none ) {
                 ScrnGT.CheckZedSpawnList();
             }
             InitDoors();
-			SetStartCash();
+            SetStartCash();
             if ( bFixMusic )
                 FixMusic();
         }
@@ -1246,40 +1246,40 @@ simulated function Tick( float DeltaTime )
 
 function SetStartCash()
 {
-	local Controller C;
+    local Controller C;
     if ( KF.GameDifficulty >= 7 ) // HoE
     {
-		KF.TimeBetweenWaves = TraderTimeHoE;
-		KF.StartingCash = StartCashHoE;
-		KF.MinRespawnCash = MinRespawnCashHoE;
+        KF.TimeBetweenWaves = TraderTimeHoE;
+        KF.StartingCash = StartCashHoE;
+        KF.MinRespawnCash = MinRespawnCashHoE;
     }
     else if (KF.GameDifficulty >= 5 ) // Suicidal
     {
-		KF.TimeBetweenWaves = TraderTimeSui;
-		KF.StartingCash = StartCashSui;
-		KF.MinRespawnCash = MinRespawnCashSui;
+        KF.TimeBetweenWaves = TraderTimeSui;
+        KF.StartingCash = StartCashSui;
+        KF.MinRespawnCash = MinRespawnCashSui;
     }
     else if ( KF.GameDifficulty >= 4 ) // Hard
     {
-		KF.TimeBetweenWaves = TraderTimeHard;
-		KF.StartingCash = StartCashHard;
-		KF.MinRespawnCash = MinRespawnCashHard;
+        KF.TimeBetweenWaves = TraderTimeHard;
+        KF.StartingCash = StartCashHard;
+        KF.MinRespawnCash = MinRespawnCashHard;
     }
     else
     {
-		KF.TimeBetweenWaves = TraderTimeNormal;
-		KF.StartingCash = StartCashNormal;
-		KF.MinRespawnCash = MinRespawnCashNormal;
+        KF.TimeBetweenWaves = TraderTimeNormal;
+        KF.StartingCash = StartCashNormal;
+        KF.MinRespawnCash = MinRespawnCashNormal;
     }
 
     for ( C = Level.ControllerList; C != none; C = C.nextController ) {
-		if ( C.PlayerReplicationInfo != none ) {
+        if ( C.PlayerReplicationInfo != none ) {
             if ( ScrnGT != none && PlayerController(C) != none )
                 ScrnGT.GiveStartingCash(PlayerController(C));
             else
                 C.PlayerReplicationInfo.Score = KF.StartingCash;
         }
-	}
+    }
 }
 
 function DebugArmor(PlayerController Sender)
@@ -1511,14 +1511,14 @@ function Mutate(string MutateString, PlayerController Sender)
 private final function DebugDoors(PlayerController Sender)
 {
     local KFDoorMover door;
-	local Inventory I;
+    local Inventory I;
     local int c;
 
     foreach DynamicActors(class'KFDoorMover', door)
         door.RespawnDoor();
 
     if ( Sender.Pawn != none ) {
-		for ( I = Sender.Pawn.Inventory; I != none; I = I.Inventory ) {
+        for ( I = Sender.Pawn.Inventory; I != none; I = I.Inventory ) {
             if ( Single(I) != none ) {
                 KFFire(Single(I).GetFireMode(0)).DamageType = class'DamTypeFrag';
                 KFFire(Single(I).GetFireMode(0)).DamageMax = 1000;
@@ -1527,8 +1527,8 @@ private final function DebugDoors(PlayerController Sender)
 
             if ( ++c > 1000 )
                 return; //circular link prevention
-		}
-	}
+        }
+    }
 }
 */
 
@@ -1642,19 +1642,19 @@ function SendZedList(PlayerController Sender)
 
 function SendPlayerList(PlayerController Sender)
 {
-	local array<PlayerReplicationInfo> AllPRI;
+    local array<PlayerReplicationInfo> AllPRI;
     local PlayerController PC;
-	local int i;
+    local int i;
 
-	Level.Game.GameReplicationInfo.GetPRIArray(AllPRI);
-	for (i = 0; i<AllPRI.Length; i++) {
+    Level.Game.GameReplicationInfo.GetPRIArray(AllPRI);
+    for (i = 0; i<AllPRI.Length; i++) {
         PC = PlayerController(AllPRI[i].Owner);
-		if( PC != none && AllPRI[i].PlayerName != "WebAdmin")
-			Sender.ClientMessage(Right("   "$AllPRI[i].PlayerID, 3)$")"
+        if( PC != none && AllPRI[i].PlayerName != "WebAdmin")
+            Sender.ClientMessage(Right("   "$AllPRI[i].PlayerID, 3)$")"
                 @ PC.GetPlayerIDHash()
                 @ AllPRI[i].PlayerName
                 , 'Log');
-	}
+    }
 }
 
 // @param Pct 0..1
@@ -1693,7 +1693,7 @@ function SendAccuracy(PlayerController Sender)
             @ ColorString("("$SPI.HeadshotsPerGame,1,220,1)$ColorString("/"$SPI.BodyshotsPerGame,200,200,200)$")";
         if ( ScrnPlayerController(SPI.PlayerOwner) != none && ScrnPlayerController(SPI.PlayerOwner).ab_warning > 0 )
             msg @= ColorString("AB="$ScrnPlayerController(SPI.PlayerOwner).ab_warning$"%", 255, 200, 1);
-		Sender.ClientMessage(msg);
+        Sender.ClientMessage(msg);
     }
 
 }
@@ -1710,8 +1710,8 @@ static final function String FormatTime( int Seconds )
         Seconds -= Hours * 3600;
 
         Time = Hours$":";
-	}
-	Minutes = Seconds / 60;
+    }
+    Minutes = Seconds / 60;
     Seconds -= Minutes * 60;
 
     if( Minutes >= 10 || Hours == 0 )
@@ -2012,7 +2012,7 @@ function LoadCustomWeapons()
     local class<KFWeapon> W;
     local class<ScrnVeterancyTypes> ScrnPerk;
     local ScrnCustomWeaponLink ClientLink;
-	local int ForcePrice;
+    local int ForcePrice;
 
     // Load custom perks first
     MaxPerkIndex = 9;
@@ -2044,8 +2044,8 @@ function LoadCustomWeapons()
 
     // Load weapon bonuses
     for( i=0; i < PerkedWeapons.Length; i++ ) {
-		PriceStr = "";
-		WeaponBonusStr = "";
+        PriceStr = "";
+        WeaponBonusStr = "";
 
         S = PerkedWeapons[i];
         j = InStr(S,":");
@@ -2061,22 +2061,22 @@ function LoadCustomWeapons()
         }
         ScrnPerk = Perks[PerkIndex];
         WeaponClassStr = Mid(S, j+1);
-		// bonuses
+        // bonuses
         j = InStr(WeaponClassStr,":");
         if ( j >= 0 ) {
             WeaponBonusStr =  Mid(WeaponClassStr, j+1);
             WeaponClassStr = Left(WeaponClassStr, j);
 
-			// price
-			j = InStr(WeaponBonusStr,":");
-			if ( j >= 0 ) {
-				PriceStr =  Mid(WeaponBonusStr, j+1);
-				WeaponBonusStr = Left(WeaponBonusStr, j);
-			}
+            // price
+            j = InStr(WeaponBonusStr,":");
+            if ( j >= 0 ) {
+                PriceStr =  Mid(WeaponBonusStr, j+1);
+                WeaponBonusStr = Left(WeaponBonusStr, j);
+            }
         }
-		AllBonuses = WeaponBonusStr == "";
-		ForcePrice = int(PriceStr);
-		//log("WeaponBonusStr="$WeaponBonusStr @ "ForcePrice="$ForcePrice  , 'ScrnBalance');
+        AllBonuses = WeaponBonusStr == "";
+        ForcePrice = int(PriceStr);
+        //log("WeaponBonusStr="$WeaponBonusStr @ "ForcePrice="$ForcePrice  , 'ScrnBalance');
 
         W = class<KFWeapon>(DynamicLoadObject(WeaponClassStr, Class'Class'));
         if( W == none ) {
@@ -2122,12 +2122,12 @@ function LoadCustomWeapons()
 
 function LoadSpawnInventory()
 {
-	local int i, j, index, k;
+    local int i, j, index, k;
     local byte X;
-	local string S, PickupStr, LevelStr, AmmoStr, SellStr, AchStr;
-	local int PerkIndex;
-	local class<ScrnVeterancyTypes> ScrnPerk;
-	local class<Pickup> Pickup;
+    local string S, PickupStr, LevelStr, AmmoStr, SellStr, AchStr;
+    local int PerkIndex;
+    local class<ScrnVeterancyTypes> ScrnPerk;
+    local class<Pickup> Pickup;
     local bool bAllPerks;
     local bool bTourney;
 
@@ -2138,16 +2138,16 @@ function LoadSpawnInventory()
         if ( Perks[j] != none )
             Perks[j].default.DefaultInventory.length = 0;
 
-	for ( i=0; i<SpawnInventory.length; ++i ) {
+    for ( i=0; i<SpawnInventory.length; ++i ) {
         bAllPerks = false;
-		LevelStr = "";
-		AmmoStr = "";
-		SellStr = "";
-		AchStr = "";
+        LevelStr = "";
+        AmmoStr = "";
+        SellStr = "";
+        AchStr = "";
         X = 0;
 
-		S = SpawnInventory[i];
-		j = InStr(S,":");
+        S = SpawnInventory[i];
+        j = InStr(S,":");
         if( j <= 0 ) {
             log("Illegal Spawn Inventory definition: '" $ S $"'! Wrong perk index.", 'ScrnBalance');
             continue;
@@ -2170,74 +2170,74 @@ function LoadSpawnInventory()
             log("Illegal Spawn Inventory definition: '" $ S $"'! Wrong perk index.", 'ScrnBalance');
             continue;
         }
-		ScrnPerk = Perks[PerkIndex];
+        ScrnPerk = Perks[PerkIndex];
 
-		//pickup
-		j = InStr(PickupStr,":");
-		if ( j >= 0 ) {
+        //pickup
+        j = InStr(PickupStr,":");
+        if ( j >= 0 ) {
             LevelStr = Mid(PickupStr, j+1);
             PickupStr = Left(PickupStr, j);
 
-			// ammo
-			j = InStr(LevelStr,":");
-			if ( j >= 0 ) {
-				AmmoStr =  Mid(LevelStr, j+1);
-				LevelStr = Left(LevelStr, j);
+            // ammo
+            j = InStr(LevelStr,":");
+            if ( j >= 0 ) {
+                AmmoStr =  Mid(LevelStr, j+1);
+                LevelStr = Left(LevelStr, j);
 
-				// sell value
-				j = InStr(AmmoStr,":");
-				if ( j >= 0 ) {
-					SellStr = Mid(AmmoStr, j+1);
-					AmmoStr = Left(AmmoStr, j);
-				}
+                // sell value
+                j = InStr(AmmoStr,":");
+                if ( j >= 0 ) {
+                    SellStr = Mid(AmmoStr, j+1);
+                    AmmoStr = Left(AmmoStr, j);
+                }
 
                 // Achievement
-				j = InStr(SellStr,":");
-				if ( j >= 0 ) {
-					AchStr = Mid(SellStr, j+1);
-					SellStr = Left(SellStr, j);
-				}
-			}
-		}
+                j = InStr(SellStr,":");
+                if ( j >= 0 ) {
+                    AchStr = Mid(SellStr, j+1);
+                    SellStr = Left(SellStr, j);
+                }
+            }
+        }
         if ( bTourney && AchStr != "" )
             continue; // do not allow achievement-specific inventory in tournaments
 
-		Pickup = class<Pickup>(DynamicLoadObject(PickupStr, Class'Class'));
+        Pickup = class<Pickup>(DynamicLoadObject(PickupStr, Class'Class'));
         if( Pickup == none ) {
             log("Can't load Spawn Inventory: '" $ PickupStr $"'!", 'ScrnBalance');
             continue;
         }
 
-		index = ScrnPerk.default.DefaultInventory.length;
-		ScrnPerk.default.DefaultInventory.insert(index, 1);
-		ScrnPerk.default.DefaultInventory[index].PickupClass = Pickup;
-		// LevelStr in format <MinLevel>[-<MaxLevel>]
-		j = InStr(LevelStr,"-");
-		if ( j > 0 ) {
-			ScrnPerk.default.DefaultInventory[index].MinPerkLevel = byte(Left(LevelStr, j));
-			ScrnPerk.default.DefaultInventory[index].MaxPerkLevel = byte(Mid(LevelStr, j+1));
-		}
-		else {
-			ScrnPerk.default.DefaultInventory[index].MinPerkLevel = byte(LevelStr);
-			ScrnPerk.default.DefaultInventory[index].MaxPerkLevel = ScrnPerk.default.DefaultInventory[index].MinPerkLevel;
-		}
-		// AmmoStr in format <Ammo>[+<AmmoPerLevel>]
-		if ( AmmoStr != "" ) {
-			ScrnPerk.default.DefaultInventory[index].bSetAmmo = true;
-			j = InStr(AmmoStr,"+");
-			if ( j > 0 ) {
-				ScrnPerk.default.DefaultInventory[index].AmmoAmount = int(Left(AmmoStr, j));
-				ScrnPerk.default.DefaultInventory[index].AmmoPerLevel = int(Mid(AmmoStr, j+1));
-			}
-			else {
-				ScrnPerk.default.DefaultInventory[index].AmmoAmount = int(AmmoStr);
-			}
-		}
-		// SellValue
-		if ( SellStr != "" )
-			ScrnPerk.default.DefaultInventory[index].SellValue = int(SellStr);
+        index = ScrnPerk.default.DefaultInventory.length;
+        ScrnPerk.default.DefaultInventory.insert(index, 1);
+        ScrnPerk.default.DefaultInventory[index].PickupClass = Pickup;
+        // LevelStr in format <MinLevel>[-<MaxLevel>]
+        j = InStr(LevelStr,"-");
+        if ( j > 0 ) {
+            ScrnPerk.default.DefaultInventory[index].MinPerkLevel = byte(Left(LevelStr, j));
+            ScrnPerk.default.DefaultInventory[index].MaxPerkLevel = byte(Mid(LevelStr, j+1));
+        }
+        else {
+            ScrnPerk.default.DefaultInventory[index].MinPerkLevel = byte(LevelStr);
+            ScrnPerk.default.DefaultInventory[index].MaxPerkLevel = ScrnPerk.default.DefaultInventory[index].MinPerkLevel;
+        }
+        // AmmoStr in format <Ammo>[+<AmmoPerLevel>]
+        if ( AmmoStr != "" ) {
+            ScrnPerk.default.DefaultInventory[index].bSetAmmo = true;
+            j = InStr(AmmoStr,"+");
+            if ( j > 0 ) {
+                ScrnPerk.default.DefaultInventory[index].AmmoAmount = int(Left(AmmoStr, j));
+                ScrnPerk.default.DefaultInventory[index].AmmoPerLevel = int(Mid(AmmoStr, j+1));
+            }
+            else {
+                ScrnPerk.default.DefaultInventory[index].AmmoAmount = int(AmmoStr);
+            }
+        }
+        // SellValue
+        if ( SellStr != "" )
+            ScrnPerk.default.DefaultInventory[index].SellValue = int(SellStr);
         if ( AchStr != "" )
-			ScrnPerk.default.DefaultInventory[index].Achievement = StringToName(AchStr);
+            ScrnPerk.default.DefaultInventory[index].Achievement = StringToName(AchStr);
         ScrnPerk.default.DefaultInventory[index].X = X;
 
         if ( bAllPerks ) {
@@ -2257,7 +2257,7 @@ function LoadSpawnInventory()
                 }
             }
         }
-	}
+    }
 }
 
 // UE2 doesn't support direct string to name typecasting
@@ -2270,49 +2270,49 @@ final function name StringToName(string str)
 
 function SetupStoryRules(KFLevelRules_Story StoryRules)
 {
-	local int i,j;
-	local Class<Inventory> OldInv;
+    local int i,j;
+    local Class<Inventory> OldInv;
 
-	for( i=0; i<StoryRules.RequiredPlayerEquipment.Length; ++i ) {
-		OldInv = StoryRules.RequiredPlayerEquipment[i];
-		for ( j=0; j<pickupReplaceArray.length; ++j ) {
-			if ( pickupReplaceArray[j].oldClass.default.InventoryType == OldInv ) {
-				StoryRules.RequiredPlayerEquipment[i] = pickupReplaceArray[j].NewClass.default.InventoryType;
-				break;
-			}
-		}
-	}
+    for( i=0; i<StoryRules.RequiredPlayerEquipment.Length; ++i ) {
+        OldInv = StoryRules.RequiredPlayerEquipment[i];
+        for ( j=0; j<pickupReplaceArray.length; ++j ) {
+            if ( pickupReplaceArray[j].oldClass.default.InventoryType == OldInv ) {
+                StoryRules.RequiredPlayerEquipment[i] = pickupReplaceArray[j].NewClass.default.InventoryType;
+                break;
+            }
+        }
+    }
 }
 
 function bool CheckReplacement(Actor Other, out byte bSuperRelevant)
 {
-	local int i;
+    local int i;
     //Log("CheckReplacement: " $ String(Other), 'ScrnBalance');
 
     // first check classes that need to be replaced
-	if ( Other.class == class'KFRandomItemSpawn' ) {
+    if ( Other.class == class'KFRandomItemSpawn' ) {
         if ( !bReplacePickups )
             return true;
-		ReplaceWith(Other, "ScrnBalanceSrv.ScrnRandomItemSpawn");
-		return false;
-	}
-	else if ( Other.class == class'KFAmmoPickup' ) {
+        ReplaceWith(Other, "ScrnBalanceSrv.ScrnRandomItemSpawn");
+        return false;
+    }
+    else if ( Other.class == class'KFAmmoPickup' ) {
         AmmoBoxMesh = Other.StaticMesh;
         AmmoBoxDrawScale = Other.DrawScale;
         AmmoBoxDrawScale3D = Other.DrawScale3D;
-		ReplaceWith(Other, "ScrnBalanceSrv.ScrnAmmoPickup");
-		return false;
-	}
-	else if ( bReplacePickups && Pickup(Other) != none && KF.IsInState('MatchInProgress') ) {
+        ReplaceWith(Other, "ScrnBalanceSrv.ScrnAmmoPickup");
+        return false;
+    }
+    else if ( bReplacePickups && Pickup(Other) != none && KF.IsInState('MatchInProgress') ) {
         // don't replace pickups placed on the map by the author - replace only dropped ones
         // or spawned by KFRandomItemSpawn
-		i = FindPickupReplacementIndex(Pickup(Other));
-		if ( i != -1 ) {
-			ReplaceWith(Other, string(pickupReplaceArray[i].NewClass));
-			return false;
-		}
+        i = FindPickupReplacementIndex(Pickup(Other));
+        if ( i != -1 ) {
+            ReplaceWith(Other, string(pickupReplaceArray[i].NewClass));
+            return false;
+        }
         return true; // no need to replace
-	}
+    }
 
 
     // classes below do not need replacement
@@ -2337,18 +2337,18 @@ function bool CheckReplacement(Actor Other, out byte bSuperRelevant)
         Other.SetDrawScale(AmmoBoxDrawScale);
         Other.SetDrawScale3D(AmmoBoxDrawScale3D);
     }
-	else if ( bStoryMode ) {
-		if ( KFLevelRules_Story(Other) != none  ) {
-			if ( bReplacePickupsStory )
-				SetupStoryRules(KFLevelRules_Story(Other));
-		}
-		else if ( KF_StoryNPC(Other) != none ) {
-			if ( Other.class == class'KF_BreakerBoxNPC' ) // don't alter subclasses
-				KF_StoryNPC(Other).BaseAIThreatRating = 20;
-			else if ( Other.class == class'KF_RingMasterNPC' )
-				KF_StoryNPC(Other).BaseAIThreatRating = 40;
-		}
-	}
+    else if ( bStoryMode ) {
+        if ( KFLevelRules_Story(Other) != none  ) {
+            if ( bReplacePickupsStory )
+                SetupStoryRules(KFLevelRules_Story(Other));
+        }
+        else if ( KF_StoryNPC(Other) != none ) {
+            if ( Other.class == class'KF_BreakerBoxNPC' ) // don't alter subclasses
+                KF_StoryNPC(Other).BaseAIThreatRating = 20;
+            else if ( Other.class == class'KF_RingMasterNPC' )
+                KF_StoryNPC(Other).BaseAIThreatRating = 40;
+        }
+    }
 
     return true;
 }
@@ -2637,9 +2637,9 @@ function PostBeginPlay()
 
     AddToPackageMap("ScrnSnd.uax"); // Promoted!!!!!!!!!! :)
 
-	if ( !bStoryMode ) {
-		SetMaxZombiesOnce();
-	}
+    if ( !bStoryMode ) {
+        SetMaxZombiesOnce();
+    }
 
     // CHECK & LOAD SERVERPERKS
     GetRidOfMut('AliensKFServerPerksMut');
@@ -2664,8 +2664,8 @@ function PostBeginPlay()
     if ( bReplaceHUD )
         KF.HUDType = string(Class'ScrnBalanceSrv.ScrnHUD');
 
-	if ( bReplaceScoreBoard )
-		Level.Game.ScoreBoardType = string(Class'ScrnBalanceSrv.ScrnScoreBoard');
+    if ( bReplaceScoreBoard )
+        Level.Game.ScoreBoardType = string(Class'ScrnBalanceSrv.ScrnScoreBoard');
 
     KF.LoginMenuClass = string(Class'ScrnBalanceSrv.ScrnInvasionLoginMenu');
 
@@ -2732,7 +2732,7 @@ function PostBeginPlay()
             ++LockCount;
     }
     InitSettings();
-	LoadSpawnInventory();
+    LoadSpawnInventory();
     SetupVoteSquads();
     SetupSrvInfo();
 
@@ -2740,9 +2740,9 @@ function PostBeginPlay()
         KF.GameReplicationInfo.ServerName = ParseColorTags(ColoredServerName);
     }
 
-	if ( bStoryMode ) {
-		class'ScrnAchievements'.static.RegisterAchievements(class'AchObjMaps');
-	}
+    if ( bStoryMode ) {
+        class'ScrnAchievements'.static.RegisterAchievements(class'AchObjMaps');
+    }
 
     Log(FriendlyName @ GetVersionStr()$" loaded", 'ScrnBalance');
 
@@ -2858,57 +2858,57 @@ function LockPerk(class<ScrnVeterancyTypes> Perk, bool bLock)
 
 function bool ShouldReplacePickups()
 {
-	if ( bStoryMode )
-		return bReplacePickupsStory;
+    if ( bStoryMode )
+        return bReplacePickupsStory;
 
-	return bReplacePickups;
+    return bReplacePickups;
 }
 
 // replaces weapon pickup's inventory type with ScrN version of that weapon
 // returns true of replacement was made
 function bool ReplacePickup( Pickup item )
 {
-	local int i;
+    local int i;
 
-	if ( FragPickup(item) != none ) {
-		if ( !bReplaceNades || ScrnFragPickup(item) != none )
-			return false;
+    if ( FragPickup(item) != none ) {
+        if ( !bReplaceNades || ScrnFragPickup(item) != none )
+            return false;
 
-		i = FragReplacementIndex; // index of frag replacement
-	}
-	else {
-		if ( !ShouldReplacePickups() )
-			return false;
-		i = FindPickupReplacementIndex(item);
-		if ( i == -1 )
-			return false;
-	}
-	item.InventoryType = pickupReplaceArray[i].NewClass.default.InventoryType;
-	item.default.InventoryType = pickupReplaceArray[i].NewClass.default.InventoryType; // pistols reset they inventory type to default
-	if ( KFWeaponPickup(item) != none ) {
-		KFWeaponPickup(item).Weight = class<KFWeaponPickup>(pickupReplaceArray[i].NewClass).default.Weight;
-		KFWeaponPickup(item).default.Weight = class<KFWeaponPickup>(pickupReplaceArray[i].NewClass).default.Weight;
-	}
-	return true;
+        i = FragReplacementIndex; // index of frag replacement
+    }
+    else {
+        if ( !ShouldReplacePickups() )
+            return false;
+        i = FindPickupReplacementIndex(item);
+        if ( i == -1 )
+            return false;
+    }
+    item.InventoryType = pickupReplaceArray[i].NewClass.default.InventoryType;
+    item.default.InventoryType = pickupReplaceArray[i].NewClass.default.InventoryType; // pistols reset they inventory type to default
+    if ( KFWeaponPickup(item) != none ) {
+        KFWeaponPickup(item).Weight = class<KFWeaponPickup>(pickupReplaceArray[i].NewClass).default.Weight;
+        KFWeaponPickup(item).default.Weight = class<KFWeaponPickup>(pickupReplaceArray[i].NewClass).default.Weight;
+    }
+    return true;
 }
 
 // returns -1, if not found
 function int FindPickupReplacementIndex( Pickup item )
 {
-	local int i;
+    local int i;
 
-	for ( i=0; i<pickupReplaceArray.length; ++i ) {
-		if ( pickupReplaceArray[i].oldClass == item.class )
-			return i;
-	}
-	return -1;
+    for ( i=0; i<pickupReplaceArray.length; ++i ) {
+        if ( pickupReplaceArray[i].oldClass == item.class )
+            return i;
+    }
+    return -1;
 }
 
 // returns true if there are doom3 monsters in the game.
 //If there are no doom3 monsters spawned yet, then function returns false, even if server is running doom3 mutator
 function bool Doom3Check()
 {
-	return GameRules.GameDoom3Kills > 0;
+    return GameRules.GameDoom3Kills > 0;
 }
 
 static function DestroyLinkedInfo( LinkedReplicationInfo EntryLink )
@@ -2930,12 +2930,12 @@ function ServerTraveling(string URL, bool bItems)
     if ( bLogObjectsAtMapEnd )
         LogObjects();
 
-	if (NextMutator != None)
-    	NextMutator.ServerTraveling(URL,bItems);
+    if (NextMutator != None)
+        NextMutator.ServerTraveling(URL,bItems);
 
     if ( ScrnGT == none || ScrnGT.ScrnGameLength == none )
         class'ScrnGameRules'.static.ResetGameSquads(KF, CurrentEventNum);
-	class'ScrnAchievements'.static.ResetAchList();
+    class'ScrnAchievements'.static.ResetAchList();
 
     if ( Level.NetMode == NM_DedicatedServer ) {
         // break links to self
@@ -2975,16 +2975,16 @@ simulated function Destroyed()
 // Limits placed pipebomb count to perk's capacity
 function DestroyExtraPipebombs()
 {
-	local PipeBombProjectile P;
+    local PipeBombProjectile P;
     local KFPlayerReplicationInfo KFPRI;
     local array<KFPlayerReplicationInfo> KFPRIArray;
     local array<byte> PipeBombCapacity;
     local int i;
 
-	foreach DynamicActors(Class'PipeBombProjectile',P)
-	{
-		if( !P.bHidden && P.Instigator != none )
-		{
+    foreach DynamicActors(Class'PipeBombProjectile',P)
+    {
+        if( !P.bHidden && P.Instigator != none )
+        {
             KFPRI = KFPlayerReplicationInfo(P.Instigator.PlayerReplicationInfo);
             if ( KFPRI == none || KFPRI.ClientVeteranSkill == none )
                 continue;
@@ -3003,8 +3003,8 @@ function DestroyExtraPipebombs()
                 PipeBombCapacity[i]--;
             else
                 P.bEnemyDetected = true; // blow up
-		}
-	}
+        }
+    }
 }
 
 function BlamePlayer(ScrnPlayerController PC, string Reason, optional int BlameInc)
@@ -3135,9 +3135,9 @@ defaultproperties
     bAllowLockPerkVote=True
     bAllowBoringVote=True
     MaxVoteKillMonsters=5
-	MaxVoteKillHP=2000
-	bVoteKillCheckVisibility=True
-	VoteKillPenaltyMult=5.0
+    MaxVoteKillHP=2000
+    bVoteKillCheckVisibility=True
+    VoteKillPenaltyMult=5.0
     bTraderSpeedBoost=True
 
     BonusLevelNormalMax=4
@@ -3196,7 +3196,7 @@ defaultproperties
     pickupReplaceArray(46)=(oldClass=Class'KFMod.M79Pickup',NewClass=Class'ScrnBalanceSrv.ScrnM79Pickup')
     pickupReplaceArray(47)=(oldClass=Class'KFMod.CrossbowPickup',NewClass=Class'ScrnBalanceSrv.ScrnCrossbowPickup')
     pickupReplaceArray(48)=(oldClass=Class'KFMod.KnifePickup',NewClass=Class'ScrnBalanceSrv.ScrnKnifePickup')
-	FragReplacementIndex=45
+    FragReplacementIndex=45
 
     Functions=Class'ScrnBalanceSrv.ScrnFunctions'
 
@@ -3232,35 +3232,35 @@ defaultproperties
     CustomEvents(0)=(EventNum=100,MonstersCollection="ScrnBalanceSrv.Doom3MonstersCollection",ServerPackages=("ScrnDoom3KF"))
 
     bLeaveCashOnDisconnect=True
-	StartCashNormal=250
-	StartCashHard=250
-	StartCashSui=200
-	StartCashHoE=200
-	MinRespawnCashNormal=200
-	MinRespawnCashHard=200
-	MinRespawnCashSui=150
-	MinRespawnCashHoE=100
-	TraderTimeNormal=60
-	TraderTimeHard=60
-	TraderTimeSui=60
-	TraderTimeHoE=60
+    StartCashNormal=250
+    StartCashHard=250
+    StartCashSui=200
+    StartCashHoE=200
+    MinRespawnCashNormal=200
+    MinRespawnCashHard=200
+    MinRespawnCashSui=150
+    MinRespawnCashHoE=100
+    TraderTimeNormal=60
+    TraderTimeHard=60
+    TraderTimeSui=60
+    TraderTimeHoE=60
 
-	SpawnInventory(0)="0:ScrnBalanceSrv.ScrnCombatVestPickup:5-255:100"
-	SpawnInventory(1)="0:ScrnBalanceSrv.ScrnMP7MPickup:6-255:200+20:157"
-	SpawnInventory(2)="1:ScrnBalanceSrv.ScrnShotgunPickup:5:24:150"
-	SpawnInventory(3)="1:ScrnBalanceSrv.ScrnBoomStickPickup:6-255:24+6:225"
-	SpawnInventory(4)="2:ScrnBalanceSrv.ScrnWinchesterPickup:5:40:150"
-	SpawnInventory(5)="2:ScrnBalanceSrv.ScrnCrossbowPickup:6-255:12+3:225"
-	SpawnInventory(6)="3:ScrnBalanceSrv.ScrnBullpupPickup:5:200:150"
-	SpawnInventory(7)="3:ScrnBalanceSrv.ScrnAK47Pickup:6-255:150+30:225"
-	SpawnInventory(8)="4:ScrnBalanceSrv.ScrnAxePickup:5::150"
-	SpawnInventory(9)="4:ScrnBalanceSrv.ScrnChainsawPickup:6-255:500+50:225"
-	SpawnInventory(10)="5:ScrnBalanceSrv.ScrnMAC10Pickup:5:200:150"
-	SpawnInventory(11)="5:ScrnBalanceSrv.ScrnFlameThrowerPickup:6-255:320+80:225"
-	SpawnInventory(12)="6:ScrnBalanceSrv.ScrnFragPickup:5:10"
-	SpawnInventory(13)="6:ScrnBalanceSrv.ScrnM79Pickup:6-255:12+2:225"
-	SpawnInventory(14)="8:ScrnBalanceSrv.ScrnDualiesPickup:5:150:150"
-	SpawnInventory(15)="8:ScrnBalanceSrv.ScrnDual44MagnumPickup:6-255:66+12:225"
+    SpawnInventory(0)="0:ScrnBalanceSrv.ScrnCombatVestPickup:5-255:100"
+    SpawnInventory(1)="0:ScrnBalanceSrv.ScrnMP7MPickup:6-255:200+20:157"
+    SpawnInventory(2)="1:ScrnBalanceSrv.ScrnShotgunPickup:5:24:150"
+    SpawnInventory(3)="1:ScrnBalanceSrv.ScrnBoomStickPickup:6-255:24+6:225"
+    SpawnInventory(4)="2:ScrnBalanceSrv.ScrnWinchesterPickup:5:40:150"
+    SpawnInventory(5)="2:ScrnBalanceSrv.ScrnCrossbowPickup:6-255:12+3:225"
+    SpawnInventory(6)="3:ScrnBalanceSrv.ScrnBullpupPickup:5:200:150"
+    SpawnInventory(7)="3:ScrnBalanceSrv.ScrnAK47Pickup:6-255:150+30:225"
+    SpawnInventory(8)="4:ScrnBalanceSrv.ScrnAxePickup:5::150"
+    SpawnInventory(9)="4:ScrnBalanceSrv.ScrnChainsawPickup:6-255:500+50:225"
+    SpawnInventory(10)="5:ScrnBalanceSrv.ScrnMAC10Pickup:5:200:150"
+    SpawnInventory(11)="5:ScrnBalanceSrv.ScrnFlameThrowerPickup:6-255:320+80:225"
+    SpawnInventory(12)="6:ScrnBalanceSrv.ScrnFragPickup:5:10"
+    SpawnInventory(13)="6:ScrnBalanceSrv.ScrnM79Pickup:6-255:12+2:225"
+    SpawnInventory(14)="8:ScrnBalanceSrv.ScrnDualiesPickup:5:150:150"
+    SpawnInventory(15)="8:ScrnBalanceSrv.ScrnDual44MagnumPickup:6-255:66+12:225"
 
     ColorTags(0)=(T="^0",R=1,G=1,B=1)
     ColorTags(1)=(T="^1",R=200,G=1,B=1)

@@ -4,25 +4,25 @@ var ScrnTraderRequirementsList List;
 
 function InitComponent(GUIController MyController, GUIComponent MyOwner)
 {
-	Super.InitComponent(MyController,MyOwner);
+    Super.InitComponent(MyController,MyOwner);
 
     if ( DefaultListClass != "" )
-	{
-		List = ScrnTraderRequirementsList(AddComponent(DefaultListClass));
-		if ( List == none )
-		{
-			log(Class$".InitComponent - Could not create default list ["$DefaultListClass$"]");
-			return;
-		}
-	}
+    {
+        List = ScrnTraderRequirementsList(AddComponent(DefaultListClass));
+        if ( List == none )
+        {
+            log(Class$".InitComponent - Could not create default list ["$DefaultListClass$"]");
+            return;
+        }
+    }
 
-	if ( List == none )
-	{
-		Warn("Could not initialize list!");
-		return;
-	}
+    if ( List == none )
+    {
+        Warn("Could not initialize list!");
+        return;
+    }
 
-	InitBaseList(List);
+    InitBaseList(List);
 }
 
 

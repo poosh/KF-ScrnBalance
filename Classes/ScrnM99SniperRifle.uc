@@ -8,8 +8,8 @@ simulated function bool PutDown()
 {
   if ( Level.TimeSeconds <  FireMode[0].NextFireTime - FireMode[0].FireRate * (1.0 - MinReloadPct)
         && AmmoAmount(0) >= FireMode[0].AmmoPerFire) {
-	Instigator.PendingWeapon = none;
-	return false;
+    Instigator.PendingWeapon = none;
+    return false;
   }
 
   // remove that shit, when you need to wait some time after switching back to this weapon,

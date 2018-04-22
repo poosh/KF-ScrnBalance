@@ -3,30 +3,30 @@ class TSCLobbyMenu extends ScrnLobbyMenu
 
 #exec OBJ LOAD FILE=TSC_T.utx
 
-var automated   GUIImage			TSCLogo;
+var automated   GUIImage            TSCLogo;
 
-var	automated	GUIButton			TeamButtons[2];
-var automated   GUIImage			TeamLogos[2];
-var automated   GUIImage			TeamTitles[2];
+var    automated    GUIButton            TeamButtons[2];
+var automated   GUIImage            TeamLogos[2];
+var automated   GUIImage            TeamTitles[2];
 
-var automated   GUILabel			l_PlayerTeam;
-var automated   GUILabel			l_HDmgCaption;
-var automated   GUILabel			l_HDmgInfo;
+var automated   GUILabel            l_PlayerTeam;
+var automated   GUILabel            l_HDmgCaption;
+var automated   GUILabel            l_HDmgInfo;
 
-var	localized string	ReadyString, UnreadyString;
-var	localized string    strJoin, strJoined;
-var	localized string	strCurrentWave, strWaves;
-var	localized string	strTeam;
-var	localized string	strNotTeamMember;
+var    localized string    ReadyString, UnreadyString;
+var    localized string    strJoin, strJoined;
+var    localized string    strCurrentWave, strWaves;
+var    localized string    strTeam;
+var    localized string    strNotTeamMember;
 
-var	localized string    WaitingForMorePlayers;
-var	localized string    TeamNames[2];
+var    localized string    WaitingForMorePlayers;
+var    localized string    TeamNames[2];
 
-var	localized string    strHDmg;
+var    localized string    strHDmg;
 var array<localized string> HDmgNames, HDmgInfo;
 
 
-var array<FPlayerBoxEntry>		BluePlayerBoxes;
+var array<FPlayerBoxEntry>        BluePlayerBoxes;
 
 
 var TeamInfo MyTeam;
@@ -37,8 +37,8 @@ var int RedPlayers, BluePlayers;
 
 event Timer()
 {
-	local TSCGameReplicationInfo GRI;
-	local PlayerReplicationInfo PRI;
+    local TSCGameReplicationInfo GRI;
+    local PlayerReplicationInfo PRI;
 
 
     PRI = PlayerOwner().PlayerReplicationInfo;
@@ -51,16 +51,16 @@ event Timer()
 
 
 
-	GRI = TSCGameReplicationInfo(PlayerOwner().GameReplicationInfo);
-	if ( GRI==None )
-		label_TimeOutCounter.Caption = WaitingForServerStatus;
+    GRI = TSCGameReplicationInfo(PlayerOwner().GameReplicationInfo);
+    if ( GRI==None )
+        label_TimeOutCounter.Caption = WaitingForServerStatus;
     else if ( GRI.Level.NetMode != NM_Standalone && (RedPlayers == 0 || BluePlayers == 0
                 || RedPlayers+BluePlayers < GRI.MinNetPlayers) )
         label_TimeOutCounter.Caption = WaitingForMorePlayers;
-	else if ( GRI.LobbyTimeout <= 0 )
-		label_TimeOutCounter.Caption = WaitingForOtherPlayers;
-	else
-		label_TimeOutCounter.Caption = AutoCommence$":" @ GRI.LobbyTimeout;
+    else if ( GRI.LobbyTimeout <= 0 )
+        label_TimeOutCounter.Caption = WaitingForOtherPlayers;
+    else
+        label_TimeOutCounter.Caption = AutoCommence$":" @ GRI.LobbyTimeout;
 
     if ( GRI != None ) {
         l_HDmgCaption.Caption = strHDmg $ HdmgNames[GRI.HumanDamageMode];
@@ -86,11 +86,11 @@ function TeamChanged()
 
 function bool OnTeamButtonClick(GUIComponent Sender)
 {
-	local KFPlayerController PC;
+    local KFPlayerController PC;
     local int TeamIndex;
 
-	PC = KFPlayerController(PlayerOwner());
-	if ( PC == none )
+    PC = KFPlayerController(PlayerOwner());
+    if ( PC == none )
         return true;
 
     if ( Sender == TeamButtons[1] )
@@ -126,16 +126,16 @@ function bool OnTeamButtonClick(GUIComponent Sender)
 
     UpdateButtonCaptions();
 
-	return true;
+    return true;
 }
 
 function UpdateButtonCaptions()
 {
-	local KFPlayerController PC;
+    local KFPlayerController PC;
     local int TeamIndex;
 
     PC = KFPlayerController(PlayerOwner());
-	if ( PC == none )
+    if ( PC == none )
         return;
 
     if ( PC.PlayerReplicationInfo == none || PC.PlayerReplicationInfo.Team == none ) {
@@ -154,76 +154,76 @@ function UpdateButtonCaptions()
 
 function AddPlayer( KFPlayerReplicationInfo PRI, int Index, Canvas C )
 {
-	local float Top;
-	local Material M;
+    local float Top;
+    local Material M;
     local ScrnBalance Mut;
     local String PlayerName;
 
-	if( Index>=PlayerBoxes.Length )
-	{
-		Top = 0.025 + Index*0.045;
-		PlayerBoxes.Length = Index+1;
-		PlayerBoxes[Index].ReadyBox = new (None) Class'moCheckBox';
-		PlayerBoxes[Index].ReadyBox.bValueReadOnly = true;
-		PlayerBoxes[Index].ReadyBox.ComponentJustification = TXTA_Left;
-		PlayerBoxes[Index].ReadyBox.CaptionWidth = 0.82;
-		PlayerBoxes[Index].ReadyBox.LabelColor.B = 0;
-		PlayerBoxes[Index].ReadyBox.WinTop = 0.0475+Top;
-		PlayerBoxes[Index].ReadyBox.WinLeft = 0.125;
-		PlayerBoxes[Index].ReadyBox.WinWidth = 0.40;
-		PlayerBoxes[Index].ReadyBox.WinHeight = 0.045;
-		PlayerBoxes[Index].ReadyBox.RenderWeight = 0.55;
-		PlayerBoxes[Index].ReadyBox.bAcceptsInput = False;
+    if( Index>=PlayerBoxes.Length )
+    {
+        Top = 0.025 + Index*0.045;
+        PlayerBoxes.Length = Index+1;
+        PlayerBoxes[Index].ReadyBox = new (None) Class'moCheckBox';
+        PlayerBoxes[Index].ReadyBox.bValueReadOnly = true;
+        PlayerBoxes[Index].ReadyBox.ComponentJustification = TXTA_Left;
+        PlayerBoxes[Index].ReadyBox.CaptionWidth = 0.82;
+        PlayerBoxes[Index].ReadyBox.LabelColor.B = 0;
+        PlayerBoxes[Index].ReadyBox.WinTop = 0.0475+Top;
+        PlayerBoxes[Index].ReadyBox.WinLeft = 0.125;
+        PlayerBoxes[Index].ReadyBox.WinWidth = 0.40;
+        PlayerBoxes[Index].ReadyBox.WinHeight = 0.045;
+        PlayerBoxes[Index].ReadyBox.RenderWeight = 0.55;
+        PlayerBoxes[Index].ReadyBox.bAcceptsInput = False;
 
-		PlayerBoxes[Index].PlayerBox = new (None) Class'KFPlayerReadyBar';
-		PlayerBoxes[Index].PlayerBox.WinTop = 0.04+Top;
-		PlayerBoxes[Index].PlayerBox.WinLeft = 0.09;
-		PlayerBoxes[Index].PlayerBox.WinWidth = 0.35;
-		PlayerBoxes[Index].PlayerBox.WinHeight = 0.045;
-		PlayerBoxes[Index].PlayerBox.RenderWeight = 0.35;
+        PlayerBoxes[Index].PlayerBox = new (None) Class'KFPlayerReadyBar';
+        PlayerBoxes[Index].PlayerBox.WinTop = 0.04+Top;
+        PlayerBoxes[Index].PlayerBox.WinLeft = 0.09;
+        PlayerBoxes[Index].PlayerBox.WinWidth = 0.35;
+        PlayerBoxes[Index].PlayerBox.WinHeight = 0.045;
+        PlayerBoxes[Index].PlayerBox.RenderWeight = 0.35;
 
-		PlayerBoxes[Index].PlayerPerk = new (None) Class'GUIImage';
-		PlayerBoxes[Index].PlayerPerk.ImageStyle = ISTY_Justified;
-		PlayerBoxes[Index].PlayerPerk.WinTop = 0.043+Top;
-		PlayerBoxes[Index].PlayerPerk.WinLeft = 0.0918;
-		PlayerBoxes[Index].PlayerPerk.WinWidth = 0.039;
-		PlayerBoxes[Index].PlayerPerk.WinHeight = 0.039;
-		PlayerBoxes[Index].PlayerPerk.RenderWeight = 0.56;
+        PlayerBoxes[Index].PlayerPerk = new (None) Class'GUIImage';
+        PlayerBoxes[Index].PlayerPerk.ImageStyle = ISTY_Justified;
+        PlayerBoxes[Index].PlayerPerk.WinTop = 0.043+Top;
+        PlayerBoxes[Index].PlayerPerk.WinLeft = 0.0918;
+        PlayerBoxes[Index].PlayerPerk.WinWidth = 0.039;
+        PlayerBoxes[Index].PlayerPerk.WinHeight = 0.039;
+        PlayerBoxes[Index].PlayerPerk.RenderWeight = 0.56;
 
-		PlayerBoxes[Index].PlayerVetLabel = new (None) Class'GUILabel';
-		PlayerBoxes[Index].PlayerVetLabel.TextAlign = TXTA_Right;
-		PlayerBoxes[Index].PlayerVetLabel.TextColor = Class'Canvas'.Static.MakeColor(19,19,19);
-		PlayerBoxes[Index].PlayerVetLabel.TextFont = "UT2SmallFont";
-		PlayerBoxes[Index].PlayerVetLabel.WinTop = 0.04+Top;
-		PlayerBoxes[Index].PlayerVetLabel.WinLeft = 0.27907;
-		PlayerBoxes[Index].PlayerVetLabel.WinWidth = 0.151172;
-		PlayerBoxes[Index].PlayerVetLabel.WinHeight = 0.045;
-		PlayerBoxes[Index].PlayerVetLabel.RenderWeight = 0.5;
+        PlayerBoxes[Index].PlayerVetLabel = new (None) Class'GUILabel';
+        PlayerBoxes[Index].PlayerVetLabel.TextAlign = TXTA_Right;
+        PlayerBoxes[Index].PlayerVetLabel.TextColor = Class'Canvas'.Static.MakeColor(19,19,19);
+        PlayerBoxes[Index].PlayerVetLabel.TextFont = "UT2SmallFont";
+        PlayerBoxes[Index].PlayerVetLabel.WinTop = 0.04+Top;
+        PlayerBoxes[Index].PlayerVetLabel.WinLeft = 0.27907;
+        PlayerBoxes[Index].PlayerVetLabel.WinWidth = 0.151172;
+        PlayerBoxes[Index].PlayerVetLabel.WinHeight = 0.045;
+        PlayerBoxes[Index].PlayerVetLabel.RenderWeight = 0.5;
 
-		AppendComponent(PlayerBoxes[Index].ReadyBox, true);
-		AppendComponent(PlayerBoxes[Index].PlayerBox, true);
-		AppendComponent(PlayerBoxes[Index].PlayerPerk, true);
-		AppendComponent(PlayerBoxes[Index].PlayerVetLabel, true);
+        AppendComponent(PlayerBoxes[Index].ReadyBox, true);
+        AppendComponent(PlayerBoxes[Index].PlayerBox, true);
+        AppendComponent(PlayerBoxes[Index].PlayerPerk, true);
+        AppendComponent(PlayerBoxes[Index].PlayerVetLabel, true);
 
         /*
-		Top = (PlayerBoxes[Index].PlayerBox.WinTop+PlayerBoxes[Index].PlayerBox.WinHeight);
-		if( !bMOTDHidden && Top>=ADBackground.WinTop )
-		{
-			ADBackground.WinTop = Top+0.01;
-			if( (ADBackground.WinTop+ADBackground.WinHeight)>t_ChatBox.WinTop )
-			{
-				ADBackground.WinHeight = t_ChatBox.WinTop-ADBackground.WinTop;
-				if( ADBackground.WinHeight<0.15 )
-				{
-					RemoveComponent(ADBackground);
-					RemoveComponent(tb_ServerMOTD);
-					bMOTDHidden = true;
-				}
-			}
-		}
+        Top = (PlayerBoxes[Index].PlayerBox.WinTop+PlayerBoxes[Index].PlayerBox.WinHeight);
+        if( !bMOTDHidden && Top>=ADBackground.WinTop )
+        {
+            ADBackground.WinTop = Top+0.01;
+            if( (ADBackground.WinTop+ADBackground.WinHeight)>t_ChatBox.WinTop )
+            {
+                ADBackground.WinHeight = t_ChatBox.WinTop-ADBackground.WinTop;
+                if( ADBackground.WinHeight<0.15 )
+                {
+                    RemoveComponent(ADBackground);
+                    RemoveComponent(tb_ServerMOTD);
+                    bMOTDHidden = true;
+                }
+            }
+        }
         */
-	}
-	PlayerBoxes[Index].ReadyBox.Checked(PRI.bReadyToPlay);
+    }
+    PlayerBoxes[Index].ReadyBox.Checked(PRI.bReadyToPlay);
 
     Mut = class'ScrnBalance'.default.Mut;
     if ( Mut != none ) {
@@ -234,100 +234,100 @@ function AddPlayer( KFPlayerReplicationInfo PRI, int Index, Canvas C )
     }
     PlayerBoxes[Index].ReadyBox.SetCaption(" "$PlayerName);
 
-	if ( PRI.ClientVeteranSkill != none )
-	{
-		PlayerBoxes[Index].PlayerVetLabel.Caption = LvAbbrString @ PRI.ClientVeteranSkillLevel @ PRI.ClientVeteranSkill.default.VeterancyName;
-		if( Class<SRVeterancyTypes>(PRI.ClientVeteranSkill)!=None )
-		{
-			Class<SRVeterancyTypes>(PRI.ClientVeteranSkill).Static.PreDrawPerk(C,PRI.ClientVeteranSkillLevel,PlayerBoxes[Index].PlayerPerk.Image,M);
-			PlayerBoxes[Index].PlayerPerk.ImageColor = C.DrawColor;
-		}
-		else
-		{
-			PlayerBoxes[Index].PlayerPerk.Image = PRI.ClientVeteranSkill.default.OnHUDIcon;
-			PlayerBoxes[Index].PlayerPerk.ImageColor = Class'Canvas'.Static.MakeColor(255,255,255);
-		}
-	}
-	else
-	{
-		PlayerBoxes[Index].PlayerPerk.Image = None;
-		PlayerBoxes[Index].PlayerVetLabel.Caption = "";
-	}
-	PlayerBoxes[Index].bIsEmpty = false;
+    if ( PRI.ClientVeteranSkill != none )
+    {
+        PlayerBoxes[Index].PlayerVetLabel.Caption = LvAbbrString @ PRI.ClientVeteranSkillLevel @ PRI.ClientVeteranSkill.default.VeterancyName;
+        if( Class<SRVeterancyTypes>(PRI.ClientVeteranSkill)!=None )
+        {
+            Class<SRVeterancyTypes>(PRI.ClientVeteranSkill).Static.PreDrawPerk(C,PRI.ClientVeteranSkillLevel,PlayerBoxes[Index].PlayerPerk.Image,M);
+            PlayerBoxes[Index].PlayerPerk.ImageColor = C.DrawColor;
+        }
+        else
+        {
+            PlayerBoxes[Index].PlayerPerk.Image = PRI.ClientVeteranSkill.default.OnHUDIcon;
+            PlayerBoxes[Index].PlayerPerk.ImageColor = Class'Canvas'.Static.MakeColor(255,255,255);
+        }
+    }
+    else
+    {
+        PlayerBoxes[Index].PlayerPerk.Image = None;
+        PlayerBoxes[Index].PlayerVetLabel.Caption = "";
+    }
+    PlayerBoxes[Index].bIsEmpty = false;
 }
 
 function AddBluePlayer( KFPlayerReplicationInfo PRI, int Index, Canvas C )
 {
-	local float Top;
-	local Material M;
+    local float Top;
+    local Material M;
     local ScrnBalance Mut;
     local String PlayerName;
 
-	if( Index>=BluePlayerBoxes.Length )
-	{
-		Top = 0.025 + Index*0.045;
-		BluePlayerBoxes.Length = Index+1;
-		BluePlayerBoxes[Index].ReadyBox = new (None) Class'moCheckBox';
-		BluePlayerBoxes[Index].ReadyBox.bValueReadOnly = true;
-		BluePlayerBoxes[Index].ReadyBox.ComponentJustification = TXTA_Left;
-		BluePlayerBoxes[Index].ReadyBox.CaptionWidth = 0.82;
-		BluePlayerBoxes[Index].ReadyBox.LabelColor.B = 0;
-		BluePlayerBoxes[Index].ReadyBox.WinTop = 0.0475+Top;
-		BluePlayerBoxes[Index].ReadyBox.WinLeft = 0.545;
-		BluePlayerBoxes[Index].ReadyBox.WinWidth = 0.4;
-		BluePlayerBoxes[Index].ReadyBox.WinHeight = 0.045;
-		BluePlayerBoxes[Index].ReadyBox.RenderWeight = 0.55;
-		BluePlayerBoxes[Index].ReadyBox.bAcceptsInput = False;
+    if( Index>=BluePlayerBoxes.Length )
+    {
+        Top = 0.025 + Index*0.045;
+        BluePlayerBoxes.Length = Index+1;
+        BluePlayerBoxes[Index].ReadyBox = new (None) Class'moCheckBox';
+        BluePlayerBoxes[Index].ReadyBox.bValueReadOnly = true;
+        BluePlayerBoxes[Index].ReadyBox.ComponentJustification = TXTA_Left;
+        BluePlayerBoxes[Index].ReadyBox.CaptionWidth = 0.82;
+        BluePlayerBoxes[Index].ReadyBox.LabelColor.B = 0;
+        BluePlayerBoxes[Index].ReadyBox.WinTop = 0.0475+Top;
+        BluePlayerBoxes[Index].ReadyBox.WinLeft = 0.545;
+        BluePlayerBoxes[Index].ReadyBox.WinWidth = 0.4;
+        BluePlayerBoxes[Index].ReadyBox.WinHeight = 0.045;
+        BluePlayerBoxes[Index].ReadyBox.RenderWeight = 0.55;
+        BluePlayerBoxes[Index].ReadyBox.bAcceptsInput = False;
 
-		BluePlayerBoxes[Index].PlayerBox = new (None) Class'KFPlayerReadyBar';
-		BluePlayerBoxes[Index].PlayerBox.WinTop = 0.04+Top;
-		BluePlayerBoxes[Index].PlayerBox.WinLeft = 0.51;
-		BluePlayerBoxes[Index].PlayerBox.WinWidth = 0.35;
-		BluePlayerBoxes[Index].PlayerBox.WinHeight = 0.045;
-		BluePlayerBoxes[Index].PlayerBox.RenderWeight = 0.35;
+        BluePlayerBoxes[Index].PlayerBox = new (None) Class'KFPlayerReadyBar';
+        BluePlayerBoxes[Index].PlayerBox.WinTop = 0.04+Top;
+        BluePlayerBoxes[Index].PlayerBox.WinLeft = 0.51;
+        BluePlayerBoxes[Index].PlayerBox.WinWidth = 0.35;
+        BluePlayerBoxes[Index].PlayerBox.WinHeight = 0.045;
+        BluePlayerBoxes[Index].PlayerBox.RenderWeight = 0.35;
 
-		BluePlayerBoxes[Index].PlayerPerk = new (None) Class'GUIImage';
-		BluePlayerBoxes[Index].PlayerPerk.ImageStyle = ISTY_Justified;
-		BluePlayerBoxes[Index].PlayerPerk.WinTop = 0.043+Top;
-		BluePlayerBoxes[Index].PlayerPerk.WinLeft = 0.5118;
-		BluePlayerBoxes[Index].PlayerPerk.WinWidth = 0.039;
-		BluePlayerBoxes[Index].PlayerPerk.WinHeight = 0.039;
-		BluePlayerBoxes[Index].PlayerPerk.RenderWeight = 0.56;
+        BluePlayerBoxes[Index].PlayerPerk = new (None) Class'GUIImage';
+        BluePlayerBoxes[Index].PlayerPerk.ImageStyle = ISTY_Justified;
+        BluePlayerBoxes[Index].PlayerPerk.WinTop = 0.043+Top;
+        BluePlayerBoxes[Index].PlayerPerk.WinLeft = 0.5118;
+        BluePlayerBoxes[Index].PlayerPerk.WinWidth = 0.039;
+        BluePlayerBoxes[Index].PlayerPerk.WinHeight = 0.039;
+        BluePlayerBoxes[Index].PlayerPerk.RenderWeight = 0.56;
 
-		BluePlayerBoxes[Index].PlayerVetLabel = new (None) Class'GUILabel';
-		BluePlayerBoxes[Index].PlayerVetLabel.TextAlign = TXTA_Right;
-		BluePlayerBoxes[Index].PlayerVetLabel.TextColor = Class'Canvas'.Static.MakeColor(19,19,19);
-		BluePlayerBoxes[Index].PlayerVetLabel.TextFont = "UT2SmallFont";
-		BluePlayerBoxes[Index].PlayerVetLabel.WinTop = 0.04+Top;
-		BluePlayerBoxes[Index].PlayerVetLabel.WinLeft = 0.69907;
-		BluePlayerBoxes[Index].PlayerVetLabel.WinWidth = 0.151172;
-		BluePlayerBoxes[Index].PlayerVetLabel.WinHeight = 0.045;
-		BluePlayerBoxes[Index].PlayerVetLabel.RenderWeight = 0.5;
+        BluePlayerBoxes[Index].PlayerVetLabel = new (None) Class'GUILabel';
+        BluePlayerBoxes[Index].PlayerVetLabel.TextAlign = TXTA_Right;
+        BluePlayerBoxes[Index].PlayerVetLabel.TextColor = Class'Canvas'.Static.MakeColor(19,19,19);
+        BluePlayerBoxes[Index].PlayerVetLabel.TextFont = "UT2SmallFont";
+        BluePlayerBoxes[Index].PlayerVetLabel.WinTop = 0.04+Top;
+        BluePlayerBoxes[Index].PlayerVetLabel.WinLeft = 0.69907;
+        BluePlayerBoxes[Index].PlayerVetLabel.WinWidth = 0.151172;
+        BluePlayerBoxes[Index].PlayerVetLabel.WinHeight = 0.045;
+        BluePlayerBoxes[Index].PlayerVetLabel.RenderWeight = 0.5;
 
-		AppendComponent(BluePlayerBoxes[Index].ReadyBox, true);
-		AppendComponent(BluePlayerBoxes[Index].PlayerBox, true);
-		AppendComponent(BluePlayerBoxes[Index].PlayerPerk, true);
-		AppendComponent(BluePlayerBoxes[Index].PlayerVetLabel, true);
+        AppendComponent(BluePlayerBoxes[Index].ReadyBox, true);
+        AppendComponent(BluePlayerBoxes[Index].PlayerBox, true);
+        AppendComponent(BluePlayerBoxes[Index].PlayerPerk, true);
+        AppendComponent(BluePlayerBoxes[Index].PlayerVetLabel, true);
 
         /*
-		Top = (BluePlayerBoxes[Index].PlayerBox.WinTop+BluePlayerBoxes[Index].PlayerBox.WinHeight);
-		if( !bMOTDHidden && Top>=ADBackground.WinTop )
-		{
-			ADBackground.WinTop = Top+0.01;
-			if( (ADBackground.WinTop+ADBackground.WinHeight)>t_ChatBox.WinTop )
-			{
-				ADBackground.WinHeight = t_ChatBox.WinTop-ADBackground.WinTop;
-				if( ADBackground.WinHeight<0.15 )
-				{
-					RemoveComponent(ADBackground);
-					RemoveComponent(tb_ServerMOTD);
-					bMOTDHidden = true;
-				}
-			}
-		}
+        Top = (BluePlayerBoxes[Index].PlayerBox.WinTop+BluePlayerBoxes[Index].PlayerBox.WinHeight);
+        if( !bMOTDHidden && Top>=ADBackground.WinTop )
+        {
+            ADBackground.WinTop = Top+0.01;
+            if( (ADBackground.WinTop+ADBackground.WinHeight)>t_ChatBox.WinTop )
+            {
+                ADBackground.WinHeight = t_ChatBox.WinTop-ADBackground.WinTop;
+                if( ADBackground.WinHeight<0.15 )
+                {
+                    RemoveComponent(ADBackground);
+                    RemoveComponent(tb_ServerMOTD);
+                    bMOTDHidden = true;
+                }
+            }
+        }
         */
-	}
-	BluePlayerBoxes[Index].ReadyBox.Checked(PRI.bReadyToPlay);
+    }
+    BluePlayerBoxes[Index].ReadyBox.Checked(PRI.bReadyToPlay);
 
     Mut = class'ScrnBalance'.default.Mut;
     if ( Mut != none ) {
@@ -338,92 +338,92 @@ function AddBluePlayer( KFPlayerReplicationInfo PRI, int Index, Canvas C )
     }
     BluePlayerBoxes[Index].ReadyBox.SetCaption(" "$PlayerName);
 
-	if ( PRI.ClientVeteranSkill != none )
-	{
-		BluePlayerBoxes[Index].PlayerVetLabel.Caption = LvAbbrString @ PRI.ClientVeteranSkillLevel @ PRI.ClientVeteranSkill.default.VeterancyName;
-		if( Class<SRVeterancyTypes>(PRI.ClientVeteranSkill)!=None )
-		{
-			Class<SRVeterancyTypes>(PRI.ClientVeteranSkill).Static.PreDrawPerk(C,PRI.ClientVeteranSkillLevel,BluePlayerBoxes[Index].PlayerPerk.Image,M);
-			BluePlayerBoxes[Index].PlayerPerk.ImageColor = C.DrawColor;
-		}
-		else
-		{
-			BluePlayerBoxes[Index].PlayerPerk.Image = PRI.ClientVeteranSkill.default.OnHUDIcon;
-			BluePlayerBoxes[Index].PlayerPerk.ImageColor = Class'Canvas'.Static.MakeColor(255,255,255);
-		}
-	}
-	else
-	{
-		BluePlayerBoxes[Index].PlayerPerk.Image = None;
-		BluePlayerBoxes[Index].PlayerVetLabel.Caption = "";
-	}
-	BluePlayerBoxes[Index].bIsEmpty = false;
+    if ( PRI.ClientVeteranSkill != none )
+    {
+        BluePlayerBoxes[Index].PlayerVetLabel.Caption = LvAbbrString @ PRI.ClientVeteranSkillLevel @ PRI.ClientVeteranSkill.default.VeterancyName;
+        if( Class<SRVeterancyTypes>(PRI.ClientVeteranSkill)!=None )
+        {
+            Class<SRVeterancyTypes>(PRI.ClientVeteranSkill).Static.PreDrawPerk(C,PRI.ClientVeteranSkillLevel,BluePlayerBoxes[Index].PlayerPerk.Image,M);
+            BluePlayerBoxes[Index].PlayerPerk.ImageColor = C.DrawColor;
+        }
+        else
+        {
+            BluePlayerBoxes[Index].PlayerPerk.Image = PRI.ClientVeteranSkill.default.OnHUDIcon;
+            BluePlayerBoxes[Index].PlayerPerk.ImageColor = Class'Canvas'.Static.MakeColor(255,255,255);
+        }
+    }
+    else
+    {
+        BluePlayerBoxes[Index].PlayerPerk.Image = None;
+        BluePlayerBoxes[Index].PlayerVetLabel.Caption = "";
+    }
+    BluePlayerBoxes[Index].bIsEmpty = false;
 }
 
 
 function EmptyBluePlayers( int Index )
 {
-	while( Index<BluePlayerBoxes.Length && !BluePlayerBoxes[Index].bIsEmpty )
-	{
-		BluePlayerBoxes[Index].ReadyBox.Checked(False);
-		BluePlayerBoxes[Index].PlayerPerk.Image = None;
-		BluePlayerBoxes[Index].PlayerVetLabel.Caption = "";
-		BluePlayerBoxes[Index].ReadyBox.SetCaption("");
-		BluePlayerBoxes[Index].bIsEmpty = true;
-		++Index;
-	}
+    while( Index<BluePlayerBoxes.Length && !BluePlayerBoxes[Index].bIsEmpty )
+    {
+        BluePlayerBoxes[Index].ReadyBox.Checked(False);
+        BluePlayerBoxes[Index].PlayerPerk.Image = None;
+        BluePlayerBoxes[Index].PlayerVetLabel.Caption = "";
+        BluePlayerBoxes[Index].ReadyBox.SetCaption("");
+        BluePlayerBoxes[Index].bIsEmpty = true;
+        ++Index;
+    }
 }
 
 function bool InternalOnPreDraw(Canvas C)
 {
-	local int i, r, b;
-	//local string StoryString;
-	local String SkillString;
-	local TSCGameReplicationInfo GRI;
-	local KFPlayerReplicationInfo KFPRI;
-	local PlayerController PC;
+    local int i, r, b;
+    //local string StoryString;
+    local String SkillString;
+    local TSCGameReplicationInfo GRI;
+    local KFPlayerReplicationInfo KFPRI;
+    local PlayerController PC;
 
-	PC = PlayerOwner();
+    PC = PlayerOwner();
 
-	if ( PC == none || PC.Level == none ) // Error?
-		return false;
+    if ( PC == none || PC.Level == none ) // Error?
+        return false;
 
-	if ( (PC.PlayerReplicationInfo != none && (!PC.PlayerReplicationInfo.bWaitingPlayer || PC.PlayerReplicationInfo.bOnlySpectator)) || PC.Outer.Name=='Entry' )
-	{
-		bAllowClose = true;
-		PC.ClientCloseMenu(True,False);
-		return false;
-	}
+    if ( (PC.PlayerReplicationInfo != none && (!PC.PlayerReplicationInfo.bWaitingPlayer || PC.PlayerReplicationInfo.bOnlySpectator)) || PC.Outer.Name=='Entry' )
+    {
+        bAllowClose = true;
+        PC.ClientCloseMenu(True,False);
+        return false;
+    }
 
     if (  PC.PlayerReplicationInfo != none && PC.PlayerReplicationInfo.Team != MyTeam ) {
         MyTeam = PC.PlayerReplicationInfo.Team;
         TeamChanged();
     }
 
-	t_Footer.InternalOnPreDraw(C);
+    t_Footer.InternalOnPreDraw(C);
 
-	GRI = TSCGameReplicationInfo(PC.GameReplicationInfo);
+    GRI = TSCGameReplicationInfo(PC.GameReplicationInfo);
 
-	if ( GRI != none ) {
+    if ( GRI != none ) {
         if ( GRI.bMatchHasBegun )
             WaveLabel.Caption = strCurrentWave @ string(GRI.WaveNumber + 1) $ "/" $ string(GRI.FinalWave)$"+"$ string(GRI.OvertimeWaves) $"OT+"$ string(GRI.SudDeathWaves)$"SD";
         else
             WaveLabel.Caption = string(GRI.FinalWave) @ strWaves @ "+" @ string(GRI.OvertimeWaves)$"OT"
                 @ "+" @ string(GRI.SudDeathWaves)$"SD";
     }
-	else {
-		WaveLabel.Caption = "Wrong Game Type!"; // shouldn't happen
-		return false;
-	}
-	C.DrawColor.A = 255;
+    else {
+        WaveLabel.Caption = "Wrong Game Type!"; // shouldn't happen
+        return false;
+    }
+    C.DrawColor.A = 255;
 
-	// First fill in non-ready players.
+    // First fill in non-ready players.
     RedPlayers = 0;
     BluePlayers = 0;
-	for ( i = 0; i<GRI.PRIArray.Length; i++ ) {
+    for ( i = 0; i<GRI.PRIArray.Length; i++ ) {
         KFPRI = KFPlayerReplicationInfo(GRI.PRIArray[i]);
-		if ( KFPRI == none || KFPRI.bOnlySpectator || KFPRI.bReadyToPlay || KFPRI.Team == none)
-			continue;
+        if ( KFPRI == none || KFPRI.bOnlySpectator || KFPRI.bReadyToPlay || KFPRI.Team == none)
+            continue;
 
         if ( KFPRI.Team.TeamIndex == 0 ) {
             RedPlayers++;
@@ -436,20 +436,20 @@ function bool InternalOnPreDraw(Canvas C)
             if ( b < MaxPlayersOnList )
                 AddBluePlayer(KFPRI, b++, C);
         }
-	}
+    }
 
-	// Then comes rest.
-	for ( i = 0; i < GRI.PRIArray.Length; i++ ) {
+    // Then comes rest.
+    for ( i = 0; i < GRI.PRIArray.Length; i++ ) {
         KFPRI = KFPlayerReplicationInfo(GRI.PRIArray[i]);
-		if ( KFPRI == none || KFPRI.bOnlySpectator || !KFPRI.bReadyToPlay || KFPRI.Team == none)
-			continue;
+        if ( KFPRI == none || KFPRI.bOnlySpectator || !KFPRI.bReadyToPlay || KFPRI.Team == none)
+            continue;
 
-		if ( KFPRI.bReadyToPlay ) {
-			if ( !bTimeoutTimeLogged ) {
-				ActivateTimeoutTime = PC.Level.TimeSeconds;
-				bTimeoutTimeLogged = true;
-			}
-		}
+        if ( KFPRI.bReadyToPlay ) {
+            if ( !bTimeoutTimeLogged ) {
+                ActivateTimeoutTime = PC.Level.TimeSeconds;
+                bTimeoutTimeLogged = true;
+            }
+        }
 
         if ( KFPRI.Team.TeamIndex == 0 ) {
             RedPlayers++;
@@ -461,37 +461,37 @@ function bool InternalOnPreDraw(Canvas C)
             if ( b < MaxPlayersOnList )
                 AddBluePlayer(KFPRI, b++, C);
         }
-	}
+    }
 
-	if( r < MaxPlayersOnList )
-		EmptyPlayers(r);
-	if( b < MaxPlayersOnList )
-		EmptyBluePlayers(b);
+    if( r < MaxPlayersOnList )
+        EmptyPlayers(r);
+    if( b < MaxPlayersOnList )
+        EmptyBluePlayers(b);
 
 DoneIt:
-	//StoryString = PC.Level.Description;
+    //StoryString = PC.Level.Description;
 
-	if ( !bStoryBoxFilled )
-	{
-		l_StoryBox.LoadStoryText();
-		bStoryBoxFilled = true;
-	}
+    if ( !bStoryBoxFilled )
+    {
+        l_StoryBox.LoadStoryText();
+        bStoryBoxFilled = true;
+    }
 
-	CheckBotButtonAccess();
+    CheckBotButtonAccess();
 
-	if ( GRI.BaseDifficulty <= 1 )
-		SkillString = BeginnerString;
-	else if ( GRI.BaseDifficulty <= 2 )
-		SkillString = NormalString;
-	else if ( GRI.BaseDifficulty <= 4 )
-		SkillString = HardString;
-	else if ( GRI.BaseDifficulty <= 5 )
-		SkillString = SuicidalString;
-	else
+    if ( GRI.BaseDifficulty <= 1 )
+        SkillString = BeginnerString;
+    else if ( GRI.BaseDifficulty <= 2 )
+        SkillString = NormalString;
+    else if ( GRI.BaseDifficulty <= 4 )
+        SkillString = HardString;
+    else if ( GRI.BaseDifficulty <= 5 )
+        SkillString = SuicidalString;
+    else
         SkillString = HellOnEarthString;
 
-	CurrentMapLabel.Caption = PC.Level.Title;
-	DifficultyLabel.Caption = SkillString;
+    CurrentMapLabel.Caption = PC.Level.Title;
+    DifficultyLabel.Caption = SkillString;
 
     if ( MyTeam != none ) {
         l_PlayerTeam.Caption = strTeam @ TeamNames[MyTeam.TeamIndex];
@@ -502,7 +502,7 @@ DoneIt:
         l_PlayerTeam.TextColor = class'Canvas'.static.MakeColor(192, 192, 192, 255);
     }
 
-	return false;
+    return false;
 }
 
 

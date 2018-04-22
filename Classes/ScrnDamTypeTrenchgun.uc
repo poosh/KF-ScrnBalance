@@ -1,11 +1,11 @@
 class ScrnDamTypeTrenchgun extends DamTypeTrenchgun
-	abstract;
+    abstract;
 
 static function AwardDamage(KFSteamStatsAndAchievements KFStatsAndAchievements, int Amount)
 {
-	super.AwardDamage(KFStatsAndAchievements, Amount); //count shotgun progress too
+    super.AwardDamage(KFStatsAndAchievements, Amount); //count shotgun progress too
 
-	KFStatsAndAchievements.AddFlameThrowerDamage(Amount);
+    KFStatsAndAchievements.AddFlameThrowerDamage(Amount);
 }
 
 defaultproperties

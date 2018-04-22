@@ -117,10 +117,10 @@ static event class<GameInfo> SetGameType( string MapName )
     local string prefix;
 
     prefix = Caps(Left(MapName, InStr(MapName, "-")));
-	if ( prefix == "KFO")
-		return Class'ScrnBalanceSrv.ScrnStoryGameInfo';
-	else if ( prefix == "KF" )
-		return default.class;
+    if ( prefix == "KFO")
+        return Class'ScrnBalanceSrv.ScrnStoryGameInfo';
+    else if ( prefix == "KF" )
+        return default.class;
 
     return super.SetGameType( MapName );
 }
@@ -687,21 +687,21 @@ function DoBossDeath()
         }
     }
 
-	for ( C = Level.ControllerList; C != None; C = NextC ) {
+    for ( C = Level.ControllerList; C != None; C = NextC ) {
         NextC = C.NextController;
         PC = PlayerController(C);
-		if( PC != none ) {
+        if( PC != none ) {
             if ( DeadBoss != none ) {
                 PC.SetViewTarget(DeadBoss);
                 PC.ClientSetViewTarget(DeadBoss);
                 PC.bBehindView = true;
                 PC.ClientSetBehindView(True);
             }
-		}
+        }
         else if ( KFMonsterController(C) != none ) {
             C.GotoState('GameEnded');
         }
-	}
+    }
 }
 
 // Calculate spawning cost.
@@ -709,13 +709,13 @@ function DoBossDeath()
 // - Dead players do not lower distance score
 function float RateZombieVolume(ZombieVolume ZVol, Controller SpawnCloseTo, optional bool bIgnoreFailedSpawnTime, optional bool bBossSpawning)
 {
-	local Controller C;
-	local float Score;
-	local float DistSquared, MinDistanceToPlayerSquared;
-	local byte i;
-	local float PlayerDistScoreZ, PlayerDistScoreXY, TotalPlayerDistScore, UsageScore;
-	local vector LocationXY, TestLocationXY;
-	local bool bTooCloseToPlayer;
+    local Controller C;
+    local float Score;
+    local float DistSquared, MinDistanceToPlayerSquared;
+    local byte i;
+    local float PlayerDistScoreZ, PlayerDistScoreXY, TotalPlayerDistScore, UsageScore;
+    local vector LocationXY, TestLocationXY;
+    local bool bTooCloseToPlayer;
     local float wDesire, wDist, wUsage, wRand;
 
     if ( ZVol == none )
@@ -725,36 +725,36 @@ function float RateZombieVolume(ZombieVolume ZVol, Controller SpawnCloseTo, opti
         return -1;
 
     // check doors
-	for( i=0; i<ZVol.RoomDoorsList.Length; ++i ) {
-		if ( ZVol.RoomDoorsList[i].DoorActor!=None && (ZVol.RoomDoorsList[i].DoorActor.bSealed
+    for( i=0; i<ZVol.RoomDoorsList.Length; ++i ) {
+        if ( ZVol.RoomDoorsList[i].DoorActor!=None && (ZVol.RoomDoorsList[i].DoorActor.bSealed
                 || (!ZVol.RoomDoorsList[i].bOnlyWhenWelded && ZVol.RoomDoorsList[i].DoorActor.KeyNum==0)) )
-        	return -1;
-	}
+            return -1;
+    }
 
-	// Now make sure no player sees the spawn point.
+    // Now make sure no player sees the spawn point.
     MinDistanceToPlayerSquared = ZVol.MinDistanceToPlayer**2;
-	for ( C=Level.ControllerList; C!=None; C=C.NextController ) {
-		if( C.bIsPlayer && C.Pawn!=none && C.Pawn.Health>0 ) {
+    for ( C=Level.ControllerList; C!=None; C=C.NextController ) {
+        if( C.bIsPlayer && C.Pawn!=none && C.Pawn.Health>0 ) {
             if( ZVol.Encompasses(C.Pawn) )
                 return -1; // player inside this volume
 
             DistSquared = VSizeSquared(ZVol.Location - C.Pawn.Location);
             if( DistSquared < MinDistanceToPlayerSquared )
-            	return -1;
+                return -1;
             // If the zone is too close to a boss character, reduce its desirability
-        	if( bBossSpawning && DistSquared < 1000000.0 )
+            if( bBossSpawning && DistSquared < 1000000.0 )
                 bTooCloseToPlayer = true;
-			// Do individual checks for spawn locations now, maybe add this back in later as an optimization
+            // Do individual checks for spawn locations now, maybe add this back in later as an optimization
             // if fog doesn't hide spawn & lineofsight possible
-			if( !ZVol.bAllowPlainSightSpawns
+            if( !ZVol.bAllowPlainSightSpawns
                     && (!C.Pawn.Region.Zone.bDistanceFog || (DistSquared < C.Pawn.Region.Zone.DistanceFogEnd**2))
                     && FastTrace(ZVol.Location, C.Pawn.Location + C.Pawn.EyePosition()) )
                 return -1; // can be seen by player
-		}
-	}
+        }
+    }
 
     // Start score with Spawn desirability
-	Score = ZVol.SpawnDesirability;
+    Score = ZVol.SpawnDesirability;
     // Rate how long its been since this spawn was used
     UsageScore = fmin(Level.TimeSeconds - ZVol.LastSpawnTime, 30.0) / 30.0;
 
@@ -813,12 +813,12 @@ function float RateZombieVolume(ZombieVolume ZVol, Controller SpawnCloseTo, opti
     if( bTooCloseToPlayer )
         Score*=0.2;
 
-	// Try and prevent spawning in the same volume back to back
+    // Try and prevent spawning in the same volume back to back
     if( LastSpawningVolume == ZVol )
-		Score*=0.2;
+        Score*=0.2;
 
-	// if we get here, return at least a 1
-	return fmax(Score,1);
+    // if we get here, return at least a 1
+    return fmax(Score,1);
 }
 
 // returns random alive player
@@ -1012,7 +1012,7 @@ function AddBossBuddySquad()
 
     TotalMaxMonsters += ScaleMonsterCount(ScrnGameLength.Wave.Counter); // num monsters in wave
     ScrnGRI.MaxMonsters = TotalMaxMonsters + NumMonsters; // num monsters in wave replicated to clients
-	MaxMonsters = Clamp(TotalMaxMonsters,1,16); // max monsters that can be spawned - limit to 16 in boss waves
+    MaxMonsters = Clamp(TotalMaxMonsters,1,16); // max monsters that can be spawned - limit to 16 in boss waves
     NextMonsterTime = Level.TimeSeconds;
     FinalSquadNum++;
 }
@@ -1026,7 +1026,7 @@ function bool ShouldKillOnTeamChange(Pawn TeamChanger)
 function ShowPathTo(PlayerController CI, int DestinationIndex)
 {
     local ShopVolume shop;
-    local class<WillowWhisp>	WWclass;
+    local class<WillowWhisp>    WWclass;
     local byte TeamNum;
 
     // DestinationIndex is used by TSC to show path to base
@@ -1051,8 +1051,8 @@ function ShowPathTo(PlayerController CI, int DestinationIndex)
     TeamNum = CI.PlayerReplicationInfo.Team.TeamIndex;
 
     if ( shop.TelList[0] != None && CI.FindPathToward(shop.TelList[0], false) != None ) {
-		WWclass = class<WillowWhisp>(DynamicLoadObject(PathWhisps[TeamNum], class'Class'));
-		Spawn(WWclass, CI,, CI.Pawn.Location);
+        WWclass = class<WillowWhisp>(DynamicLoadObject(PathWhisps[TeamNum], class'Class'));
+        Spawn(WWclass, CI,, CI.Pawn.Location);
     }
 }
 
@@ -1071,20 +1071,20 @@ function GetServerDetails( out ServerResponseLine ServerState )
     }
 
     // skip UnrealMPGameInfo
-	// AddServerDetail( ServerState, "MinPlayers", MinPlayers );
-	// AddServerDetail( ServerState, "EndTimeDelay", EndTimeDelay );
+    // AddServerDetail( ServerState, "MinPlayers", MinPlayers );
+    // AddServerDetail( ServerState, "EndTimeDelay", EndTimeDelay );
 
     // skip DeathMatch
-	// AddServerDetail( ServerState, "GoalScore", GoalScore );
-	// AddServerDetail( ServerState, "TimeLimit", TimeLimit );
-	// AddServerDetail( ServerState, "Translocator", bAllowTrans );
-	// AddServerDetail( ServerState, "WeaponStay", bWeaponStay );
-	// AddServerDetail( ServerState, "ForceRespawn", bForceRespawn );
+    // AddServerDetail( ServerState, "GoalScore", GoalScore );
+    // AddServerDetail( ServerState, "TimeLimit", TimeLimit );
+    // AddServerDetail( ServerState, "Translocator", bAllowTrans );
+    // AddServerDetail( ServerState, "WeaponStay", bWeaponStay );
+    // AddServerDetail( ServerState, "ForceRespawn", bForceRespawn );
 
     // Invasion
     if ( InitialWave > 0 )
         AddServerDetail( ServerState, "InitialWave", InitialWave );
-	// AddServerDetail( ServerState, "FinalWave", FinalWave );
+    // AddServerDetail( ServerState, "FinalWave", FinalWave );
 
     //KFGameType
     AddServerDetail( ServerState, "Max runtime zombies", MaxZombiesOnce );
@@ -1203,39 +1203,39 @@ function InitPlacedBot(Controller C, RosterEntry R)
 {
     local UnrealTeamInfo BotTeam;
 
-	log("Init placed bot "$C $ ", pawn = "$C.Pawn);
+    log("Init placed bot "$C $ ", pawn = "$C.Pawn);
 
     BotTeam = FindTeamFor(C);
     if ( Bot(C) != None )
     {
-		Bot(C).InitializeSkill(AdjustedDifficulty);
-		if ( R != None )
-			R.InitBot(Bot(C));
-	}
+        Bot(C).InitializeSkill(AdjustedDifficulty);
+        if ( R != None )
+            R.InitBot(Bot(C));
+    }
 
     // no team for Breaker Boxes  -- PooSH
     if ( BotTeam != none && C.PlayerReplicationInfo != none )
         BotTeam.AddToTeam(C);
 
-	if ( R != None )
-		ChangeName(C, R.PlayerName, false);
+    if ( R != None )
+        ChangeName(C, R.PlayerName, false);
 }
 
 // overrided to remove team check for spectators-only
 function bool CanSpectate( PlayerController Viewer, bool bOnlySpectator, actor ViewTarget )
 {
-	if ( (ViewTarget == None) )
-		return false;
+    if ( (ViewTarget == None) )
+        return false;
 
-	if ( Controller(ViewTarget) != None ) {
-		if ( Controller(ViewTarget).Pawn == None )
-			return false;
-		return Controller(ViewTarget).PlayerReplicationInfo != None && ViewTarget != Viewer
-				&& (bOnlySpectator || Controller(ViewTarget).PlayerReplicationInfo.Team == Viewer.PlayerReplicationInfo.Team);
-	}
+    if ( Controller(ViewTarget) != None ) {
+        if ( Controller(ViewTarget).Pawn == None )
+            return false;
+        return Controller(ViewTarget).PlayerReplicationInfo != None && ViewTarget != Viewer
+                && (bOnlySpectator || Controller(ViewTarget).PlayerReplicationInfo.Team == Viewer.PlayerReplicationInfo.Team);
+    }
 
-	return Pawn(ViewTarget) != None && Pawn(ViewTarget).IsPlayerPawn()
-		&& (bOnlySpectator || Pawn(ViewTarget).PlayerReplicationInfo.Team == Viewer.PlayerReplicationInfo.Team);
+    return Pawn(ViewTarget) != None && Pawn(ViewTarget).IsPlayerPawn()
+        && (bOnlySpectator || Pawn(ViewTarget).PlayerReplicationInfo.Team == Viewer.PlayerReplicationInfo.Team);
 }
 
 event PostLogin( PlayerController NewPlayer )
@@ -1412,7 +1412,7 @@ function ChangeName(Controller Other, string S, bool bNameChange)
     if ( S == "" )
         return;
 
-	S = StripColor(s);	// Stip out color codes
+    S = StripColor(s);    // Stip out color codes
 
     if (Other.PlayerReplicationInfo.playername~=S)
         return;
@@ -1422,20 +1422,20 @@ function ChangeName(Controller Other, string S, bool bNameChange)
     ReplaceText(S, " ", "_");
     ReplaceText(S, "|", "I");
 
-	if ( bEpicNames && (Bot(Other) != None) )
-	{
-		if ( TotalEpic < 21 )
-		{
-			S = EpicNames[EpicOffset % 21];
-			EpicOffset++;
-			TotalEpic++;
-		}
-		else
-		{
-			S = NamePrefixes[NameNumber%10]$"CliffyB"$NameSuffixes[NameNumber%10];
-			NameNumber++;
-		}
-	}
+    if ( bEpicNames && (Bot(Other) != None) )
+    {
+        if ( TotalEpic < 21 )
+        {
+            S = EpicNames[EpicOffset % 21];
+            EpicOffset++;
+            TotalEpic++;
+        }
+        else
+        {
+            S = NamePrefixes[NameNumber%10]$"CliffyB"$NameSuffixes[NameNumber%10];
+            NameNumber++;
+        }
+    }
 
     for( APlayer=Level.ControllerList; APlayer!=None; APlayer=APlayer.nextController )
         if ( APlayer.bIsPlayer && (APlayer.PlayerReplicationInfo.playername~=S) )
@@ -1443,45 +1443,45 @@ function ChangeName(Controller Other, string S, bool bNameChange)
             if ( Other.IsA('PlayerController') )
             {
                 PlayerController(Other).ReceiveLocalizedMessage( GameMessageClass, 8 );
-				return;
-			}
-			else
-			{
-				if ( Other.PlayerReplicationInfo.bIsFemale )
-				{
-					S = FemaleBackupNames[FemaleBackupNameOffset%32];
-					FemaleBackupNameOffset++;
-				}
-				else
-				{
-					S = MaleBackupNames[MaleBackupNameOffset%32];
-					MaleBackupNameOffset++;
-				}
-				for( CI=Level.ControllerList; CI!=None; CI=CI.nextController )
-					if ( CI.bIsPlayer && (CI.PlayerReplicationInfo.playername~=S) )
-					{
-						S = NamePrefixes[NameNumber%10]$S$NameSuffixes[NameNumber%10];
-						NameNumber++;
-						break;
-					}
-				break;
-			}
+                return;
+            }
+            else
+            {
+                if ( Other.PlayerReplicationInfo.bIsFemale )
+                {
+                    S = FemaleBackupNames[FemaleBackupNameOffset%32];
+                    FemaleBackupNameOffset++;
+                }
+                else
+                {
+                    S = MaleBackupNames[MaleBackupNameOffset%32];
+                    MaleBackupNameOffset++;
+                }
+                for( CI=Level.ControllerList; CI!=None; CI=CI.nextController )
+                    if ( CI.bIsPlayer && (CI.PlayerReplicationInfo.playername~=S) )
+                    {
+                        S = NamePrefixes[NameNumber%10]$S$NameSuffixes[NameNumber%10];
+                        NameNumber++;
+                        break;
+                    }
+                break;
+            }
             S = NamePrefixes[NameNumber%10]$S$NameSuffixes[NameNumber%10];
             NameNumber++;
             break;
         }
 
-	if( bNameChange )
-		GameEvent("NameChange",s,Other.PlayerReplicationInfo);
+    if( bNameChange )
+        GameEvent("NameChange",s,Other.PlayerReplicationInfo);
 
-	if ( S ~= "CliffyB" )
-		bEpicNames = true;
+    if ( S ~= "CliffyB" )
+        bEpicNames = true;
     Other.PlayerReplicationInfo.SetPlayerName(S);
     // notify local players
     if  ( bNameChange )
-		for ( C=Level.ControllerList; C!=None; C=C.NextController )
-			if ( (PlayerController(C) != None) && (Viewport(PlayerController(C).Player) != None) )
-				PlayerController(C).ReceiveLocalizedMessage( class'GameMessage', 2, Other.PlayerReplicationInfo );
+        for ( C=Level.ControllerList; C!=None; C=C.NextController )
+            if ( (PlayerController(C) != None) && (Viewport(PlayerController(C).Player) != None) )
+                PlayerController(C).ReceiveLocalizedMessage( class'GameMessage', 2, Other.PlayerReplicationInfo );
 }
 
 function int CalcStartingCashBonus(PlayerController PC)
@@ -1501,47 +1501,47 @@ function byte RelativeWaveNum(float LongGameWaveNum)
 
 function int ScaleMonsterCount(int SoloNormalCounter)
 {
-	local int UsedNumPlayers;
-	local float DifficultyMod, NumPlayersMod;
+    local int UsedNumPlayers;
+    local float DifficultyMod, NumPlayersMod;
 
     // scale number of zombies by difficulty
     if ( GameDifficulty >= 7.0 ) // Hell on Earth
-    	DifficultyMod=1.7;
+        DifficultyMod=1.7;
     else if ( GameDifficulty >= 5.0 ) // Suicidal
-    	DifficultyMod=1.5;
+        DifficultyMod=1.5;
     else if ( GameDifficulty >= 4.0 ) // Hard
-    	DifficultyMod=1.3;
+        DifficultyMod=1.3;
     else
-    	DifficultyMod=1.0;            // Normal and below
+        DifficultyMod=1.0;            // Normal and below
 
     UsedNumPlayers = max( max(ScrnGRI.FakedPlayers,1), WavePlayerCount );
     // Scale the number of zombies by the number of players. Don't want to
     // do this exactly linear, or it just gets to be too many zombies and too
     // long of waves at higher levels - Ramm
-	// Yeah, yeah, then why did you increased that number for 7+ player game, huh? - PooSH
-	switch ( UsedNumPlayers )
-	{
-		case 1:
-			NumPlayersMod=1;
-			break;
-		case 2:
-			NumPlayersMod=2;
-			break;
-		case 3:
-			NumPlayersMod=2.75;
-			break;
-		case 4:
-			NumPlayersMod=3.5;
-			break;
-		case 5:
-			NumPlayersMod=4;
-			break;
-		case 6:
-			NumPlayersMod=4.5;
-			break;
+    // Yeah, yeah, then why did you increased that number for 7+ player game, huh? - PooSH
+    switch ( UsedNumPlayers )
+    {
+        case 1:
+            NumPlayersMod=1;
+            break;
+        case 2:
+            NumPlayersMod=2;
+            break;
+        case 3:
+            NumPlayersMod=2.75;
+            break;
+        case 4:
+            NumPlayersMod=3.5;
+            break;
+        case 5:
+            NumPlayersMod=4;
+            break;
+        case 6:
+            NumPlayersMod=4.5;
+            break;
         default:
             NumPlayersMod = 4.5 + (UsedNumPlayers-6)*ScrnBalanceMut.Post6ZedsPerPlayer; // 7+ player game
-	}
+    }
     return Clamp(SoloNormalCounter * DifficultyMod * NumPlayersMod, 1, ScrnBalanceMut.MaxWaveSize);
 }
 
@@ -1594,9 +1594,9 @@ function SetupWave()
         TotalMaxMonsters = max(8, ScaleMonsterCount(TotalMaxMonsters));  // num monsters in wave
     }
 
-	MaxMonsters = min(TotalMaxMonsters + NumMonsters, MaxZombiesOnce); // max monsters that can be spawned
-	ScrnGRI.MaxMonsters = TotalMaxMonsters + NumMonsters; // num monsters in wave replicated to clients
-	ScrnGRI.MaxMonstersOn = true; // I've no idea what is this for
+    MaxMonsters = min(TotalMaxMonsters + NumMonsters, MaxZombiesOnce); // max monsters that can be spawned
+    ScrnGRI.MaxMonsters = TotalMaxMonsters + NumMonsters; // num monsters in wave replicated to clients
+    ScrnGRI.MaxMonstersOn = true; // I've no idea what is this for
 
     for( i = 0; i < ZedSpawnList.Length; ++i )
         ZedSpawnList[i].Reset();
@@ -1865,17 +1865,17 @@ function bool PlayerCanSeeSpawnPoint(vector SpawnLoc, class <KFMonster> TestMons
     local Controller C;
     local vector Right, Test, PlayerLoc;
 
-	// Now make sure no player sees the spawn point.
-	for ( C = Level.ControllerList; C != none; C = C.NextController ) {
-		if( C.Pawn != none && C.bIsPlayer && C.Pawn.Health > 0 ) {
+    // Now make sure no player sees the spawn point.
+    for ( C = Level.ControllerList; C != none; C = C.NextController ) {
+        if( C.Pawn != none && C.bIsPlayer && C.Pawn.Health > 0 ) {
             PlayerLoc = C.Pawn.Location + C.Pawn.EyePosition();
             if ( C.Pawn.Region.Zone.bDistanceFog && VSize(SpawnLoc - PlayerLoc) > C.Pawn.Region.Zone.DistanceFogEnd )
                 continue; // SpawnLoc is in fog
 
             Right = ((SpawnLoc - C.Pawn.Location) cross vect(0.f,0.f,1.f));
-			Right = Normal(Right) * TestMonster.Default.CollisionRadius * 1.1;
+            Right = Normal(Right) * TestMonster.Default.CollisionRadius * 1.1;
             Test = SpawnLoc;
-			Test.Z += TestMonster.Default.CollisionHeight * 1.25;
+            Test.Z += TestMonster.Default.CollisionHeight * 1.25;
 
             // Do three traces, one to the location, and one slightly above left and right of the collision
             // cylinder size so we don't see this zed spawn

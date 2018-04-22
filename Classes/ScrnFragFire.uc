@@ -2,7 +2,7 @@ class ScrnFragFire extends FragFire;
 
 function projectile SpawnProjectile(Vector Start, Rotator Dir)
 {
-	local Grenade gProj;
+    local Grenade gProj;
     local ScrnFrag aFrag;
 
     gProj = Grenade(super.SpawnProjectile(Start, Dir));
