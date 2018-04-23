@@ -29,6 +29,66 @@ ScrnBalance (ScrnBalanceSrv.ScrnBalance).</em></li>
 <hr />
 <h2>VERSION 9</h2>
 <hr />
+<h3>v9.55</h3>
+<ul>
+<li>Reverted changes in v9.54 regarding QuickMelee bug fix (that fix brought more bugs that fixes)</li>
+<li>Yet another attempt to fix QuickMelee bug when the player ends up with empty hands.
+If that doesn't help, then try <code>FixQuickMelee</code> console command.</li>
+</ul>
+<h3>v9.54</h3>
+<ul>
+<li>Another attempt to fix QuickMelee bug when the player ends up with empty hands</li>
+<li>Modified ScrnWaves.ini to match <em>ScrN Brutal KF Bundle</em></li>
+<li>Fixed <code>ColoredServerName</code></li>
+<li><code>ColorTags</code> are not configurable anymore (due to various issues)</li>
+<li>Added more color tags. The complete list of color tags:
+<ul>
+<li><code>^p</code> - <em>(player specific)</em> Perk Color</li>
+<li><code>^t</code> - <em>(player specific)</em> Team Color</li>
+<li><code>^0</code> - Black</li>
+<li><code>^1</code> - Red</li>
+<li><code>^2</code> - Green</li>
+<li><code>^3</code> - Yellow</li>
+<li><code>^4</code> - Blue</li>
+<li><code>^5</code> - Cyan</li>
+<li><code>^6</code> - Pink</li>
+<li><code>^7</code> - White</li>
+<li><code>^8</code> - Orange</li>
+<li><code>^9</code> - Gray</li>
+<li><code>^w$</code> - White</li>
+<li><code>^r$</code> - Pure Red</li>
+<li><code>^g$</code> - Pure Green (Lime)</li>
+<li><code>^b$</code> - Pure Blue</li>
+<li><code>^y$</code> - Yellow</li>
+<li><code>^c$</code> - Cyan</li>
+<li><code>^o$</code> - Orange</li>
+<li><code>^u$</code> - Purple</li>
+<li><code>^s$</code> - Deep Sky Blue</li>
+<li><code>^n</code>  - Brown</li>
+<li><code>^W$</code> - Gray</li>
+<li><code>^R$</code> - Dark Red</li>
+<li><code>^G$</code> - Natural Green</li>
+<li><code>^B$</code> - Dark Blue</li>
+<li><code>^Y$</code> - Gold Yellow</li>
+<li><code>^C$</code> - Dark Cyan (Turquoise)</li>
+<li><code>^O$</code> - Dark Orange</li>
+<li><code>^U$</code> - Dark Purple</li>
+<li><code>^S$</code> - Royal Sky Blue</li>
+<li><code>^N$</code> - Dark Brown</li>
+</ul>
+</li>
+</ul>
+<h3>v9.53</h3>
+<h4>Code Remarks</h4>
+<p>v9.53 code is the same as v9.52's. The only change it does is <strong>change whitespace from tabs to 4 spaces</strong> to apply
+the same standard for the entire source code.</p>
+<p>Those who forked the <em>KF-ScrnBalance</em> repository should do the following procedure to avoid merge conflicts:</p>
+<ol>
+<li>Merge <code>v9.52</code> <strong>tag</strong> into your branch.</li>
+<li>Replace tabs with 4 spaces within your code (&quot;\t&quot; -&gt; &quot;    &quot;) and commit changes to your branch.</li>
+<li>Merge <code>v9.53</code> <strong>tag</strong> into your branch. Resolve any conflicts.</li>
+<li>Merge <code>master</code> into your branch.</li>
+</ol>
 <h3>v9.52</h3>
 <h4>ScrN Waves</h4>
 <h6>Ammo Grab Waves</h6>

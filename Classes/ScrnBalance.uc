@@ -11,7 +11,7 @@ class ScrnBalance extends Mutator
 #exec OBJ LOAD FILE=ScrnAch_T.utx
 
 
-const VERSION = 95300;
+const VERSION = 95500;
 
 var ScrnBalance Mut; // pointer to self to use in static functions, i.e class'ScrnBalance'.default.Mut
 
@@ -237,7 +237,7 @@ struct SColorTag {
     var string T;
     var byte R, G, B;
 };
-var globalconfig array<SColorTag> ColorTags;
+var array<SColorTag> ColorTags;
 var globalconfig string ColoredServerName;
 
 var float OriginalWaveSpawnPeriod;
@@ -705,8 +705,7 @@ simulated function string ParseColorTags(string ColoredText, optional PlayerRepl
 
 
     for ( i=0; i<ColorTags.Length; ++i ) {
-        if ( InStr(s, ColorTags[i].T) != -1 )
-            ReplaceText(s, ColorTags[i].T, ColorString("",
+        ReplaceText(s, ColorTags[i].T, ColorString("",
                 ColorTags[i].R, ColorTags[i].G, ColorTags[i].B));
     }
 
@@ -722,8 +721,7 @@ simulated function string StripColorTags(string ColoredText)
     ReplaceText(s, "^p", "");
     ReplaceText(s, "^t", "");
     for ( i=0; i<ColorTags.Length; ++i ) {
-        if ( InStr(s, ColorTags[i].T) != -1 )
-            ReplaceText(s, ColorTags[i].T, "");
+        ReplaceText(s, ColorTags[i].T, "");
     }
 
     return s;
@@ -1230,6 +1228,10 @@ simulated function Tick( float DeltaTime )
         if ( bTSCGame ) {
             Level.GRI.bNoTeamSkins = bNoTeamSkins && !ScrnGT.IsTourney();
         }
+        if ( ColoredServerName != "" ) {
+            Level.GRI.ServerName = ParseColorTags(ColoredServerName);
+        }
+
         SetTimer(1, true);
         Disable('Tick');
     }
@@ -2736,10 +2738,6 @@ function PostBeginPlay()
     SetupVoteSquads();
     SetupSrvInfo();
 
-    if ( ColoredServerName != "" ) {
-        KF.GameReplicationInfo.ServerName = ParseColorTags(ColoredServerName);
-    }
-
     if ( bStoryMode ) {
         class'ScrnAchievements'.static.RegisterAchievements(class'AchObjMaps');
     }
@@ -3262,16 +3260,38 @@ defaultproperties
     SpawnInventory(14)="8:ScrnBalanceSrv.ScrnDualiesPickup:5:150:150"
     SpawnInventory(15)="8:ScrnBalanceSrv.ScrnDual44MagnumPickup:6-255:66+12:225"
 
-    ColorTags(0)=(T="^0",R=1,G=1,B=1)
-    ColorTags(1)=(T="^1",R=200,G=1,B=1)
-    ColorTags(2)=(T="^2",R=1,G=200,B=1)
-    ColorTags(3)=(T="^3",R=200,G=200,B=1)
-    ColorTags(4)=(T="^4",R=1,G=1,B=255)
-    ColorTags(5)=(T="^5",R=1,G=255,B=255)
-    ColorTags(6)=(T="^6",R=200,G=1,B=200)
-    ColorTags(7)=(T="^7",R=200,G=200,B=200)
-    ColorTags(8)=(T="^8",R=244,G=237,B=205)
-    ColorTags(9)=(T="^9",R=128,G=128,B=128)
+    ColorTags( 0)=(T="^0",R=1,G=1,B=1)
+    ColorTags( 1)=(T="^1",R=200,G=1,B=1)
+    ColorTags( 2)=(T="^2",R=1,G=200,B=1)
+    ColorTags( 3)=(T="^3",R=200,G=200,B=1)
+    ColorTags( 4)=(T="^4",R=1,G=1,B=255)
+    ColorTags( 5)=(T="^5",R=1,G=255,B=255)
+    ColorTags( 6)=(T="^6",R=200,G=1,B=200)
+    ColorTags( 7)=(T="^7",R=200,G=200,B=200)
+    ColorTags( 8)=(T="^8",R=255,G=127,B=0)
+    ColorTags( 9)=(T="^9",R=128,G=128,B=128)
+
+    ColorTags(10)=(T="^w$",R=255,G=255,B=255)
+    ColorTags(11)=(T="^r$",R=255,G=1,B=1)
+    ColorTags(12)=(T="^g$",R=1,G=255,B=1)
+    ColorTags(13)=(T="^b$",R=1,G=1,B=255)
+    ColorTags(14)=(T="^y$",R=255,G=255,B=1)
+    ColorTags(15)=(T="^c$",R=1,G=255,B=255)
+    ColorTags(16)=(T="^o$",R=255,G=140,B=1)
+    ColorTags(17)=(T="^u$",R=255,G=20,B=147)
+    ColorTags(18)=(T="^s$",R=1,G=192,B=255)
+    ColorTags(19)=(T="^n$",R=139,G=69,B=19)
+
+    ColorTags(20)=(T="^W$",R=112,G=138,B=144)
+    ColorTags(21)=(T="^R$",R=132,G=1,B=1)
+    ColorTags(22)=(T="^G$",R=1,G=132,B=1)
+    ColorTags(23)=(T="^B$",R=1,G=1,B=132)
+    ColorTags(24)=(T="^Y$",R=255,G=192,B=1)
+    ColorTags(25)=(T="^C$",R=1,G=160,B=192)
+    ColorTags(26)=(T="^O$",R=255,G=69,B=1)
+    ColorTags(27)=(T="^U$",R=160,G=32,B=240)
+    ColorTags(28)=(T="^S$",R=65,G=105,B=225)
+    ColorTags(29)=(T="^N$",R=80,G=40,B=20)
 
     Post6ZedSpawnInc=0.25
     Post6AmmoSpawnInc=0.20

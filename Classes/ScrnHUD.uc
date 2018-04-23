@@ -3337,6 +3337,13 @@ simulated function LayoutMessage( out HudLocalizedMessage Message, Canvas C )
     }
 }
 
+function SelectWeapon()
+{
+    if ( ScrnHumanPawn(PawnOwner) != none && ScrnHumanPawn(PawnOwner).bQuickMeleeInProgress )
+        return;  // no weapon selection during quick melee
+    super.SelectWeapon();
+}
+
 defaultproperties
 {
     MinMagCapacity=5

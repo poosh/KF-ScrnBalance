@@ -1056,6 +1056,14 @@ function ShowPathTo(PlayerController CI, int DestinationIndex)
     }
 }
 
+function GetServerInfo( out ServerResponseLine ServerState )
+{
+    super.GetServerInfo(ServerState);
+    if ( ScrnBalanceMut.ColoredServerName != "" ) {
+        ServerState.ServerName = ScrnBalanceMut.ParseColorTags(ScrnBalanceMut.ColoredServerName);
+    }
+}
+
 // entire C&CI from parent classes to clear garbage
 function GetServerDetails( out ServerResponseLine ServerState )
 {

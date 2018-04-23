@@ -142,7 +142,7 @@ replication
         SrvAchReset, ResetMyAchievements, ResetMapAch,
         ServerDropAllWeapons, ServerLockWeapons, ServerGunSkin,
         ServerAcknowledgeDamages, ServerShowPathTo,
-        ServerDebugRepLink, FixQuickMelee,
+        ServerDebugRepLink, ServerFixQuickMelee,
         ServerTourneyCheck, ServerKillMut, ServerKillRules,
         ServerSwitchViewMode, ServerSetViewTarget;
 
@@ -2117,6 +2117,27 @@ exec function ReloadMeNow()
         W.ReloadMeNow();
 }
 
+exec function GetWeapon(class<Weapon> NewWeaponClass )
+{
+    if ( ScrnHumanPawn(Pawn) != none && ScrnHumanPawn(Pawn).bQuickMeleeInProgress )
+        return;
+    super.GetWeapon(NewWeaponClass);
+}
+
+exec function NextWeapon()
+{
+    if ( ScrnHumanPawn(Pawn) != none && ScrnHumanPawn(Pawn).bQuickMeleeInProgress )
+        return;
+    super.NextWeapon();
+}
+
+exec function PrevWeapon()
+{
+    if ( ScrnHumanPawn(Pawn) != none && ScrnHumanPawn(Pawn).bQuickMeleeInProgress )
+        return;
+    super.PrevWeapon();
+}
+
 // STATES
 
 state Dead
@@ -2516,11 +2537,12 @@ exec function TestQuickMelee()
     local Inventory inv;
     local KFWeapon W;
     local string s;
+    local int c;
 
     if ( Pawn == none )
         return;
 
-    for ( inv = Pawn.Inventory; inv != none; inv = inv.Inventory ) {
+    for ( inv = Pawn.Inventory; inv != none && ++c < 1000 ; inv = inv.Inventory ) {
         W = KFWeapon(inv);
         if ( W != none ) {
             if ( W == Pawn.Weapon )
@@ -2536,13 +2558,48 @@ exec function TestQuickMelee()
 
 }
 
+
+
 exec function FixQuickMelee()
 {
+    local Inventory inv;
+    local KFWeapon W;
+    local int c;
+
     if ( Pawn == none )
         return;
-    ScrnHumanPawn(Pawn).SecondaryItem = none;
-    if ( Pawn.Weapon != none && Pawn.Weapon.ClientState == WS_Hidden )
+
+    if ( Level.NetMode == NM_Client ) {
+        ServerFixQuickMelee();  // do the same on server
+    }
+
+    KFPawn(Pawn).SecondaryItem = none;
+    KFPawn(Pawn).bThrowingNade = false;
+
+    for ( inv = Pawn.Inventory; inv != none && ++c < 1000 ; inv = inv.Inventory ) {
+        W = KFWeapon(inv);
+        if ( W != none ) {
+            if ( W != Pawn.Weapon ) {
+                W.ClientState = WS_Hidden;
+                W.ClientGrenadeState = GN_None;
+            }
+            W.SetTimer(0, false);
+            W.GotoState('');
+        }
+    }
+
+    if ( Pawn.Weapon != none && Pawn.Weapon.ClientState != WS_ReadyToFire ) {
+        Pawn.Weapon.ClientState = WS_Hidden;
+        KFWeapon(Pawn.Weapon).ClientGrenadeState = GN_BringUp;
         Pawn.Weapon.BringUp();
+    }
+}
+
+function ServerFixQuickMelee()
+{
+    if ( Level.NetMode != NM_Client ) {
+        FixQuickMelee();
+    }
 }
 
 // ======================== COMMENT BEFORE RELEASE !!! =====================

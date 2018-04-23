@@ -70,6 +70,7 @@ var float MacheteResetTime;
 
 var transient KFMeleeGun QuickMeleeWeapon;
 var transient KFWeapon WeaponToFixClientState;
+var transient bool bQuickMeleeInProgress;
 
 replication
 {
@@ -394,6 +395,8 @@ simulated function SwitchWeapon(byte F)
     if ( (Level.Pauser!=None) || (Inventory == None) )
         return;
     if ( PendingWeapon != None && PendingWeapon.bForceSwitch )
+        return;
+    if ( bQuickMeleeInProgress )
         return;
 
     bPerkedFirst = ScrnPerk != none && ScrnPlayerController(Controller) != none && ScrnPlayerController(Controller).bPrioritizePerkedWeapons;
@@ -1669,27 +1672,26 @@ function QuickMelee()
 {
     local KFWeapon KFW;
 
-    if ( bThrowingNade )
-        return;
-
     KFW = KFWeapon(Weapon);
-    if ( KFW == none || KFW.GetFireMode(0).NextFireTime - Level.TimeSeconds > 0.1
+    if ( bThrowingNade || KFW == none || KFW.GetFireMode(0).NextFireTime - Level.TimeSeconds > 0.1
+            || KFW.GetFireMode(1).NextFireTime - Level.TimeSeconds > 0.1
             // || KFW.ClientState != WS_ReadyToFire
             || (KFW.bIsReloading && !KFW.InterruptReload()) )
-        return;
-
-    if ( QuickMeleeWeapon != none && Weapon == QuickMeleeWeapon && QuickMeleeWeapon.IsInState('QuickMelee') ) {
-        QuickMeleeWeapon.GotoState('');
+    {
+        Controller.bAltFire = 0; // avoid accidental firing with the current weapon
         return;
     }
 
-    if ( KFMeleeGun(KFW) != none ) {
-        AltFire();
-        return;
+    if ( QuickMeleeWeapon != none && Weapon == QuickMeleeWeapon ) {
+        if ( QuickMeleeWeapon.IsInState('QuickMelee') ) {
+            QuickMeleeWeapon.GotoState('');
+        }
+        else {
+            AltFire(); // already equipped quick melee gun - simply do alt fire
+        }
     }
-
-
-    if ( SecondaryItem == none && QuickMeleeWeapon != none ) {
+    else if ( SecondaryItem == none && QuickMeleeWeapon != none ) {
+        bQuickMeleeInProgress = true;
         SecondaryItem = QuickMeleeWeapon;
         KFW.SetTimer(0, false);
         KFW.ClientGrenadeState = GN_TempDown;
@@ -1697,6 +1699,11 @@ function QuickMelee()
     }
 }
 
+function QuickMeleeFinished()
+{
+    bQuickMeleeInProgress = false;
+    SecondaryItem = none;
+}
 
 function WeaponDown()
 {
@@ -2095,6 +2102,13 @@ function TossWeapon(Vector TossVel)
             // }
         // }
     // }
+}
+
+exec function SwitchToLastWeapon()
+{
+    if ( bQuickMeleeInProgress )
+        return;
+    super.SwitchToLastWeapon();
 }
 
 

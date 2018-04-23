@@ -17,3 +17,12 @@ KF-ScrnTestGrounds.rom?Listen?Game=ScrnBalanceSrv.ScrnGameType?Difficulty=7?Game
 KF-WestLondon.rom?Listen?Game=ScrnBalanceSrv.ScrnGameType?Difficulty=7?GameLength=13?VACSecured=true?MaxPlayers=6?Mutator=ScrnSP.ServerPerksMutSE,ScrnBalanceSrv.ScrnBalance,ScrnDoom3KF.Doom3Mutator
 
 KF-Suburbia.rom?Listen?Game=ScrnBalanceSrv.FtgGame?Difficulty=2?GameLength=1?VACSecured=true?MaxPlayers=6?Mutator=ScrnSP.ServerPerksMutSE,ScrnBalanceSrv.ScrnBalance
+
+
+
+
+# Color tests:
+
+say ^0Black ^1Red ^2Green ^3Yellow ^4Blue ^5Cyan ^6Purple ^7White ^8Orange ^9Gray
+say ^w$white ^r$red ^g$green ^b$blue ^c$cyan ^o$orange ^u$purple ^s$skyblue ^y$yellow ^o$brown
+say ^W$gray ^R$red ^G$green ^B$blue ^C$cyan ^O$orange ^U$pink ^S$skyblue ^Y$yellow ^O$brown

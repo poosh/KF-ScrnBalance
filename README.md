@@ -19,6 +19,51 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+### v9.55
+- Reverted changes in v9.54 regarding QuickMelee bug fix (that fix brought more bugs that fixes)
+- Yet another attempt to fix QuickMelee bug when the player ends up with empty hands.
+  If that doesn't help, then try `FixQuickMelee` console command.
+
+### v9.54
+- Another attempt to fix QuickMelee bug when the player ends up with empty hands
+- Modified ScrnWaves.ini to match *ScrN Brutal KF Bundle*
+- Fixed `ColoredServerName`
+- `ColorTags` are not configurable anymore (due to various issues)
+- Added more color tags. The complete list of color tags:
+  * `^p` - *(player specific)* Perk Color
+  * `^t` - *(player specific)* Team Color
+  * `^0` - Black
+  * `^1` - Red
+  * `^2` - Green
+  * `^3` - Yellow
+  * `^4` - Blue
+  * `^5` - Cyan
+  * `^6` - Pink
+  * `^7` - White
+  * `^8` - Orange
+  * `^9` - Gray
+  * `^w$` - White
+  * `^r$` - Pure Red
+  * `^g$` - Pure Green (Lime)
+  * `^b$` - Pure Blue
+  * `^y$` - Yellow
+  * `^c$` - Cyan
+  * `^o$` - Orange
+  * `^u$` - Purple
+  * `^s$` - Deep Sky Blue
+  * `^n`  - Brown
+  * `^W$` - Gray
+  * `^R$` - Dark Red
+  * `^G$` - Natural Green
+  * `^B$` - Dark Blue
+  * `^Y$` - Gold Yellow
+  * `^C$` - Dark Cyan (Turquoise)
+  * `^O$` - Dark Orange
+  * `^U$` - Dark Purple
+  * `^S$` - Royal Sky Blue
+  * `^N$` - Dark Brown
+
+
 ### v9.53
 #### Code Remarks
 v9.53 code is the same as v9.52's. The only change it does is **change whitespace from tabs to 4 spaces** to apply

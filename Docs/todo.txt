@@ -8,3 +8,7 @@ Move DLCLocks from ScrnbalanceSrv.ini
 ? Events in ScrnWaves
 
 ? mvote FakedPlayers
+
+? Fix QuickMelee bug when player ends up with hidden weapon
+
+Brown Cloud: blaming players make them fart
