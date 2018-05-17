@@ -19,6 +19,10 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+### v9.56
+- Fixed medic nades (i.e., restored frag nades)
+- Fixed keeping the melee weapon on double-clicking QuickMelee button
+
 ### v9.55
 - Reverted changes in v9.54 regarding QuickMelee bug fix (that fix brought more bugs that fixes)
 - Yet another attempt to fix QuickMelee bug when the player ends up with empty hands.

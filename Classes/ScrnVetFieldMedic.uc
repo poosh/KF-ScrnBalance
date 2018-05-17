@@ -7,17 +7,6 @@ static function int GetStatValueInt(ClientPerkRepLink StatOther, byte ReqNum)
   return StatOther.RDamageHealedStat;
 }
 
-// Give Medic normal hand nades again - he should buy medic nade lauchers for healing nades
-static function class<Grenade> GetNadeType(KFPlayerReplicationInfo KFPRI)
-{
-    return class'MedicNade'; // Grenade detonations heal nearby teammates, and cause enemies to be poisoned
-}
-//can't cook medic nades
-static function bool CanCookNade(KFPlayerReplicationInfo KFPRI, Weapon Weap)
-{
-  return GetNadeType(KFPRI) != class'MedicNade';
-}
-
 static function float GetSyringeChargeRate(KFPlayerReplicationInfo KFPRI)
 {
     return 2.4 + (0.1 * float(GetClientVeteranSkillLevel(KFPRI))); // Level 6 - Recharges 200% faster

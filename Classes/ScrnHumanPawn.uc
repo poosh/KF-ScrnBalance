@@ -1673,7 +1673,18 @@ function QuickMelee()
     local KFWeapon KFW;
 
     KFW = KFWeapon(Weapon);
-    if ( bThrowingNade || KFW == none || KFW.GetFireMode(0).NextFireTime - Level.TimeSeconds > 0.1
+    if ( KFW == none ) {
+        Controller.bAltFire = 0; // avoid accidental firing with the current weapon
+        return;
+    }
+
+    if ( Weapon == QuickMeleeWeapon && QuickMeleeWeapon.IsInState('QuickMelee') ) {
+        QuickMeleeWeapon.GotoState('');
+        return;
+    }
+
+    if ( bThrowingNade
+            || KFW.GetFireMode(0).NextFireTime - Level.TimeSeconds > 0.1
             || KFW.GetFireMode(1).NextFireTime - Level.TimeSeconds > 0.1
             // || KFW.ClientState != WS_ReadyToFire
             || (KFW.bIsReloading && !KFW.InterruptReload()) )
@@ -1682,13 +1693,8 @@ function QuickMelee()
         return;
     }
 
-    if ( QuickMeleeWeapon != none && Weapon == QuickMeleeWeapon ) {
-        if ( QuickMeleeWeapon.IsInState('QuickMelee') ) {
-            QuickMeleeWeapon.GotoState('');
-        }
-        else {
-            AltFire(); // already equipped quick melee gun - simply do alt fire
-        }
+    if ( Weapon == QuickMeleeWeapon ) {
+        AltFire(); // already equipped quick melee gun - simply do alt fire
     }
     else if ( SecondaryItem == none && QuickMeleeWeapon != none ) {
         bQuickMeleeInProgress = true;
