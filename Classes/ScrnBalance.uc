@@ -11,7 +11,7 @@ class ScrnBalance extends Mutator
 #exec OBJ LOAD FILE=ScrnAch_T.utx
 
 
-const VERSION = 95600;
+const VERSION = 96000;
 
 var ScrnBalance Mut; // pointer to self to use in static functions, i.e class'ScrnBalance'.default.Mut
 
@@ -216,13 +216,6 @@ var array<SSquad> Squads;
 // if ( SquadSpawnedMonsters > 0 && KF.WaveMonsters < SquadSpawnedMonsters )
 // then those zeds are still waiting in spawn queue
 var int SquadSpawnedMonsters;
-
-struct SCustomEvent {
-    var byte EventNum;
-    var String MonstersCollection;
-    var array<String> ServerPackages;
-};
-var globalconfig deprecated array<SCustomEvent> CustomEvents;
 
 var globalconfig bool bNoRequiredEquipment;
 var globalconfig bool bUseExpLevelForSpawnInventory;
@@ -518,26 +511,21 @@ static function MessageBonusLevel(PlayerController KPC)
 
 static final function string GetVersionStr()
 {
-    local String msg, s;
-    local int v, sub_v;
+    local String msg;
+    local int v;
+    local byte major, minor, patch;
 
     msg = default.strVersion;
-    v = VERSION / 100;
-    sub_v = VERSION % 100;
+    v = VERSION;
+    // for some reason, UnrealScript has operator % declared only for float not for int.
+    // So we can't use % here do to precision
+    major = v / 10000; v -= major * 10000;
+    minor = v / 100;   v -= minor * 100;
+    patch = v;
 
-    s = String(int(v%100));
-    if ( len(s) == 1 )
-        s = "0" $ s;
-    if ( sub_v > 0 )
-        s @= "(BETA "$sub_v$")";
-    ReplaceText(msg, "%n", s);
-
-    s = String(v/100);
-    ReplaceText(msg, "%m",s);
-
-    //left for backward comp.
-    ReplaceText(msg, "%s", "6");
-    ReplaceText(msg, "%p", "01");
+    ReplaceText(msg, "%m", string(major));
+    ReplaceText(msg, "%n", class'ScrnFunctions'.static.LPad(minor, 2, "0"));
+    ReplaceText(msg, "%p", string(patch));
 
     return msg;
 }
@@ -2422,7 +2410,7 @@ function SetupRepLink(ClientPerkRepLink R)
 
 function ForceEvent()
 {
-    local int i, j;
+    local int i;
     local class<KFMonstersCollection> MC;
 
     i = MapInfo.FindMapInfo(false);
@@ -2440,28 +2428,6 @@ function ForceEvent()
 
     if (bScrnWaves) {
         return;  // all we need for ScrnWaves is to load CurrentEventNum. ScrnGameLength will handle everything else.
-    }
-
-    if ( CurrentEventNum >= 100 && CurrentEventNum < 200 ) {
-        // custom events
-        for ( i=0; i<CustomEvents.length; ++i ) {
-            if ( CustomEvents[i].EventNum == CurrentEventNum ) {
-                MC = Class<KFMonstersCollection>(DynamicLoadObject(CustomEvents[i].MonstersCollection, Class'Class'));
-                break;
-            }
-        }
-        if ( MC != none ) {
-            log("Custom zeds forced for this map: " $ MC, 'ScrnBalance');
-            KF.MonsterCollection = MC;
-            for ( j=0; j<CustomEvents[i].ServerPackages.length; ++j ) {
-                AddToPackageMap(CustomEvents[i].ServerPackages[j]);
-                log(CustomEvents[i].ServerPackages[j] $ " added to ServerPackages", 'ScrnBalance');
-            }
-        }
-        else {
-            log("Custom event ("$CurrentEventNum$") is illegal. Regular zeds will be used instead.", 'ScrnBalance');
-            CurrentEventNum = 0;
-        }
     }
 
     if ( MC == none ) {
@@ -3224,10 +3190,7 @@ defaultproperties
     bAllowWeaponLock=True
     bAutoKickOffPerkPlayers=True
     strAutoKickOffPerk="You have been auto kicked from the server for playing without a perk. Type RECONNECT in the console to join the server again and choose a perk."
-    strVersion="v%m.%n"
-
-
-    CustomEvents(0)=(EventNum=100,MonstersCollection="ScrnBalanceSrv.Doom3MonstersCollection",ServerPackages=("ScrnDoom3KF"))
+    strVersion="v%m.%n.%p"
 
     bLeaveCashOnDisconnect=True
     StartCashNormal=250

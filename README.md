@@ -19,6 +19,38 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+### v9.60.0
+#### Version Numbering Change
+Version numbering changed to **MAJOR.MINOR.PATCH**. No more special BETA releases.
+From now on every version is a potential release candidate.
+
+#### Burning Mechanism
+- Now flares do not explode. They burn the victim from inside.
+- Since regular fire damage burn zeds from outside, both can co-exist, dealing two damages at once:
+  burn and flare (iDoT)
+- Flares cannot crispify zeds.
+- Headshots with flares do increased burn damage (iDoT) comparing to body shots.
+- *Flare Revolvers* do x1.5 headshot burn damage; *Protecta* - x3.0.
+- Husk Gun's headshot multiplier raised to x2.4 (up from x2.2)
+- Optimized and enhanced Flare Cloud replication.
+- Added `ScrnDamTypeFlare` with options to adjust flare burning behavior.
+
+#### Gunslinger
+- Added *LAR* and *Flare Revolvers* to Gunslinger's arsenal. They are cross-perk weapons now.
+- LAR and Flare Revolvers kills added to Gunslinger perk progress, but only when played as Gunslinger.
+- LAR headshots are still added to Sharpshooter progress no matter of perk played.
+- Flare Revolver fire damage is still added to Firebug progress no matter of perk played.
+
+#### Other changes
+- `mvote FAKEDCOUNT` and `mvote FAKEDHEALTH` - allow voting to change respectively zed count and zed health.
+- `mvote FAKED` is still valid and change both count and health at once.
+- Fixed bug when sometimes players got negative dosh at the end of a wave
+- Fixed bug in `KillRemainingZeds()` that sometimes didn't kill the remaining zeds.
+- Completely removed `CustomEvents`
+- `bAntiBlocker` can be configured for `ScrnGameType` (moved upper in class tree from `TscGame`)
+- AntiBlocker is automatically disabled on test maps (e.g., *ScrnTestGrounds*)
+
+
 ### v9.56
 - Fixed medic nades (i.e., restored frag nades)
 - Fixed keeping the melee weapon on double-clicking QuickMelee button

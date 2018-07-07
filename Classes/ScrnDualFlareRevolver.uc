@@ -59,7 +59,7 @@ function DropFrom(vector StartLocation)
         Pickup.Velocity = Velocity;
         //fixing dropping exploit
         Pickup.SellValue = SellValue / 2;
-        Pickup.Cost = Pickup.SellValue / 0.75; 
+        Pickup.Cost = Pickup.SellValue / 0.75;
         Pickup.AmmoAmount[0] = AmmoThrown;
         Pickup.MagAmmoRemaining = MagAmmoRemaining;
         if (Instigator.Health > 0)

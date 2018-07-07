@@ -1,40 +1,69 @@
 class ScrnFlareCloud extends Emitter;
 
-var byte FlareCount; // more flares = wider cloud
+var float TTL;
+var float FadeTime;
+var transient vector OriginalSizeRange;
 
-replication 
+
+function PostBeginPlay()
 {
-    reliable if ( bNetDirty && Role == ROLE_Authority )
-        FlareCount;
+    local vector Offset;
+
+    OriginalSizeRange.X = Emitters[0].StartSizeRange.X.Max;
+    OriginalSizeRange.Y = Emitters[0].StartSizeRange.Y.Max;
+    OriginalSizeRange.Z = Emitters[0].StartSizeRange.Z.Max;
+
+    SetBase(Owner);
+    // randomize flare locations
+    // Ideally would be to replicate the hit location, but it costly and sometimes buggy
+    Offset.x = Owner.CollisionRadius * (frand() - 0.5);
+    Offset.y = Owner.CollisionRadius * (frand() - 0.5);
+    Offset.z = Owner.CollisionHeight * 0.5 * (frand() - 0.5);
+    SetRelativeLocation(Offset);
+    SetRelativeRotation(rot(0,0,0));
+
+
+    SetTimer(TTL, false);
 }
 
-simulated function PostNetReceive()
+function PawnBaseDied()
 {
-    if ( Role < ROLE_Authority ) {
-        if ( bHidden )
-            Kill();
-        else if (FlareCount > 1)
-            AdjustCloudSize();
-    }
+    Kill();
 }
 
 function Timer()
 {
     Kill();
-    //Destroy();
 }
 
-simulated function AdjustCloudSize()
+function Tick(float dt)
 {
-    local float clound_size;
-    
-    // more flares = wider cloud
-    clound_size = 1.0 + 0.25 * min(10, FlareCount);
-    Emitters[0].StartSizeRange.X.Max = default.Emitters[0].StartSizeRange.X.Max * clound_size;
-    Emitters[0].StartSizeRange.Y.Max = default.Emitters[0].StartSizeRange.Y.Max * clound_size;    
+    TTL -= dt;
+    if ( TTL < FadeTime ) {
+        Emitters[0].StartSizeRange.X.Max = OriginalSizeRange.X * TTL / FadeTime;
+        Emitters[0].StartSizeRange.Y.Max = OriginalSizeRange.Y * TTL / FadeTime;
+        Emitters[0].StartSizeRange.Z.Max = OriginalSizeRange.Z * TTL / FadeTime;
+    }
 }
 
-        
+function SetLifeSpan(float time)
+{
+    TTL = time;
+    SetTimer(time, false);
+}
+
+function SetDamage(int Damage)
+{
+    local float ScaleFactor;
+
+    ScaleFactor = lerp(Damage/200.0, 0.5, 2.0, true);
+    Emitters[0].StartSizeRange.X.Max = default.Emitters[0].StartSizeRange.X.Max * ScaleFactor;
+    Emitters[0].StartSizeRange.Y.Max = default.Emitters[0].StartSizeRange.Y.Max * ScaleFactor;
+    OriginalSizeRange.X = Emitters[0].StartSizeRange.X.Max;
+    OriginalSizeRange.Y = Emitters[0].StartSizeRange.Y.Max;
+    OriginalSizeRange.Z = Emitters[0].StartSizeRange.Z.Max;
+}
+
 
 defaultproperties
 {
@@ -60,7 +89,7 @@ defaultproperties
          SpinsPerSecondRange=(X=(Max=0.070000))
          StartSpinRange=(X=(Max=1.000000))
          SizeScale(0)=(RelativeSize=1.000000)
-         StartSizeRange=(X=(Min=20.000000,Max=50.000000),Y=(Min=20.000000,Max=50.000000),Z=(Max=200.000000))
+         StartSizeRange=(X=(Min=20.000000,Max=50.000000),Y=(Min=20.000000,Max=50.000000),Z=(Max=50.000000))
          ScaleSizeByVelocityMultiplier=(X=0.000000,Y=0.000000,Z=0.000000)
          ScaleSizeByVelocityMax=0.000000
          DrawStyle=PTDS_Brighten
@@ -78,9 +107,9 @@ defaultproperties
      AutoDestroy=True
      AutoReset=True
      bNoDelete=False
-     bAlwaysRelevant=True
      Physics=PHYS_Trailer
-     RemoteRole=ROLE_SimulatedProxy
-     bNetNotify=True
-     NetUpdateFrequency=5
+     bHardAttach = True
+
+     TTL=8.0
+     FadeTime=5.0
 }

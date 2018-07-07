@@ -14,7 +14,7 @@ simulated function HurtRadius( float DamageAmount, float DamageRadius, class<Dam
     local array<Pawn> CheckedPawns;
     local int i;
     local bool bAlreadyChecked;
-    
+
     //local int OldHealth;
 
     if ( bHurtEntry )
@@ -77,8 +77,8 @@ simulated function HurtRadius( float DamageAmount, float DamageRadius, class<Dam
                 if ( damageScale <= 0)
                     continue;
             }
-            
-                
+
+
             if ( KFMonsterVictim != none && class'ScrnBalance'.default.Mut.BurnMech != none) {
                 class'ScrnBalance'.default.Mut.BurnMech.MakeBurnDamage(
                     KFMonsterVictim,
@@ -99,14 +99,7 @@ simulated function HurtRadius( float DamageAmount, float DamageRadius, class<Dam
                     DamageType
                 );
             }
-            
-            // if ( KFMonsterVictim != none ) 
-                // log("ScrnHuskGunProjectile.HurtRadius(): Victim = " @ String(Victims) 
-                    // @ "Damage = " $ String(int(damageScale * DamageAmount)) 
-                    // @ "("$damageScale$"*"$DamageAmount$")"
-                    // @ "Perked Damage = " $ String(OldHealth-KFMonsterVictim.Health) @ "("$OldHealth$" - "$KFMonsterVictim.Health$")"
-                    // ,'ScrnBalance');            
-            
+
             if (Vehicle(Victims) != None && Vehicle(Victims).Health > 0)
                 Vehicle(Victims).DriverRadiusDamage(DamageAmount, DamageRadius, InstigatorController, DamageType, Momentum, HitLocation);
 
@@ -116,32 +109,6 @@ simulated function HurtRadius( float DamageAmount, float DamageRadius, class<Dam
             }
         }
     }
-    /*
-    if ( (LastTouched != None) && (LastTouched != self) && (LastTouched != Instigator) &&
-        (LastTouched.Role == ROLE_Authority) && !LastTouched.IsA('FluidSurfaceInfo') )
-    {
-        Victims = LastTouched;
-        LastTouched = None;
-        dirs = Victims.Location - HitLocation;
-        dist = FMax(1,VSize(dirs));
-        dirs = dirs/dist;
-        damageScale = FMax(Victims.CollisionRadius/(Victims.CollisionRadius + Victims.CollisionHeight),1 - FMax(0,(dist - Victims.CollisionRadius)/DamageRadius));
-        if ( Instigator == None || Instigator.Controller == None )
-            Victims.SetDelayedDamageInstigatorController(InstigatorController);
-
-        log("Part 2 Doing "$(damageScale * DamageAmount)$" damage to "$Victims);
-        Victims.TakeDamage
-        (
-            damageScale * DamageAmount,
-            Instigator,
-            Victims.Location - 0.5 * (Victims.CollisionHeight + Victims.CollisionRadius) * dirs,
-            (damageScale * Momentum * dirs),
-            DamageType
-        );
-        if (Vehicle(Victims) != None && Vehicle(Victims).Health > 0)
-            Vehicle(Victims).DriverRadiusDamage(DamageAmount, DamageRadius, InstigatorController, DamageType, Momentum, HitLocation);
-    }
-    */
 
     if( Role == ROLE_Authority )
     {
@@ -231,14 +198,7 @@ simulated function ProcessTouch(Actor Other, Vector HitLocation)
         }
         else
         {
-            if (Pawn(Other) != none && Pawn(Other).IsHeadShot(HitLocation, X, 1.0))
-            {
-                Pawn(Other).TakeDamage(ImpactDamage * HeadShotDamageMult, Instigator, HitLocation, MomentumTransfer * Normal(Velocity), ImpactDamageType);
-            }
-            else
-            {
-                Other.TakeDamage(ImpactDamage, Instigator, HitLocation, MomentumTransfer * Normal(Velocity), ImpactDamageType);
-            }
+            Other.TakeDamage(ImpactDamage, Instigator, HitLocation, MomentumTransfer * Normal(Velocity), ImpactDamageType);
         }
     }
 
@@ -252,8 +212,8 @@ defaultproperties
 {
     ImpactDamage=65
     ImpactDamageType=Class'ScrnBalanceSrv.ScrnDamTypeHuskGunProjectileImpact'
-    
+
     Damage=30.000000
     DamageRadius=150.000000
-    HeadShotDamageMult=2.2 // up from 1.5
+    HeadShotDamageMult=1.0 // not used
 }

@@ -129,6 +129,8 @@ var private transient int ActiveMusicSongIndex;
 var private transient string PendingSong;
 var localized string strPlayingSong;
 
+var class<ScrnFlareCloud> FlareCloudClass;
+
 
 replication
 {
@@ -137,6 +139,9 @@ replication
 
     unreliable if ( bDamageAck && Role == ROLE_Authority )
         ClientPlayerDamaged;
+
+    unreliable if ( Role == ROLE_Authority )
+        ClientFlareDamage;
 
     reliable if ( Role < ROLE_Authority )
         SrvAchReset, ResetMyAchievements, ResetMapAch,
@@ -435,9 +440,25 @@ simulated function ClientPlayerDamaged(int Damage, vector HitLocation, byte DamT
     }
 }
 
-function ServerAcknowledgeDamages(bool bWantDagage)
+simulated function ClientFlareDamage(KFMonster Victim, byte DamageX4, byte BurnTime)
 {
-    bDamageAck = bWantDagage;
+    local ScrnFlareCloud cloud;
+
+
+
+    if ( Level.NetMode == NM_DedicatedServer )
+        return;
+    if ( Victim == none )
+        return; // victim is not replicated
+
+    cloud = Spawn(FlareCloudClass, Victim,, Victim.Location, rotator(vect(0,0,1)));
+    cloud.SetDamage(DamageX4 * 4);
+    cloud.SetLifeSpan(BurnTime);
+}
+
+function ServerAcknowledgeDamages(bool bWantDamage)
+{
+    bDamageAck = bWantDamage;
 }
 
 simulated function ClientMonsterBlamed(class<KFMonster> BlamedMonsterClass)
@@ -2715,6 +2736,7 @@ defaultproperties
     TSCLobbyMenuClassString="ScrnBalanceSrv.TSCLobbyMenu"
     PawnClass=Class'ScrnBalanceSrv.ScrnHumanPawn'
     CustomPlayerReplicationInfoClass=class'ScrnBalanceSrv.ScrnCustomPRI'
+    FlareCloudClass=Class'ScrnBalanceSrv.ScrnFlareCloud'
     bSpeechVote=true
     bAlwaysDisplayAchProgression=true
     MaxVoiceMsgIn10s=5

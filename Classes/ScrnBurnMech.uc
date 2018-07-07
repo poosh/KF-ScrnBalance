@@ -1,17 +1,18 @@
 // Alternate Burning Mechanism
 // Big thanx to Scary Ghost for inspiring me to do it this way
 
-class ScrnBurnMech extends ReplicationInfo;
+class ScrnBurnMech extends Info;
 
 struct BurningMonster {
     var KFMonster Victim;
+    var Pawn Instigator;
     var int BurnDown;
-    var Pawn InstigatedBy;
-    var int Damage;
+    var int BurnDamage;
     var class<DamageType> FireDamageClass;
     var float NextBurnTime;
     var int BurnTicks; //how many ticks zed is already burning
-    var int FlareCount; //how many flares are burning inside a zed (excluding first one)
+    var int FlareCount; //how many flares are burning inside a zed
+    var int TotalInputDamage; // total amount of incoming damage
 };
 var array<BurningMonster> Monsters;
 
@@ -26,11 +27,20 @@ var            string    FlareSoundRef;
 
 var bool bOutputDamage;
 
-var float NextBurnTime; // global check time to prevent calculations on every tick
-
 function PostBeginPlay()
 {
     FlareSound = sound(DynamicLoadObject(FlareSoundRef, class'Sound', true));
+}
+
+function int FindMonsterIndex(KFMonster Monster )
+{
+    local int i;
+
+    for ( i = 0; i < Monsters.Length; ++i ) {
+        if ( Monsters[i].Victim == Monster )
+            return i;
+    }
+    return -1;
 }
 
 function int GetAvgBurnDamage(int BurnDown, int InitialDamage)
@@ -51,65 +61,29 @@ function int GetAvgBurnDamage(int BurnDown, int InitialDamage)
     return InitialDamage + AvgTickInc;
 }
 
-
-function FlareMonster(KFMonster Other)
+function FlareMonster(int idx)
 {
-    local int i;
-    local KFMonster  M;
+    local ScrnPlayerController InstigatorController;
+    local ScrnPlayerController PC;
+    local Controller C;
 
-    //log("FlareMonster", 'ScrnBalance');
-    Other.AmbientSound = FlareSound;
+    Monsters[idx].Victim.AmbientSound = FlareSound;
 
-    while ( i < FlareClouds.length ) {
-        if ( FlareClouds[i] == none ) {
-            FlareClouds.remove(i, 1);
-            continue;
-        }
-        M = KFMonster(FlareClouds[i].Owner);
-        if ( M == none || M.Health <= 0 ) {
-            FlareClouds[i].bHidden = true;
-            FlareClouds[i].NetUpdateTime = Level.TimeSeconds - 1;
-            FlareClouds[i].SetTimer(0.2, false); // give it some time to replicate bHidden property, then kill it
-            FlareClouds.remove(i, 1);
-            continue;
-        }
-        if ( M == Other ) {
-            if ( FlareClouds[i].FlareCount < 10 )
-                FlareClouds[i].FlareCount++;
-            FlareClouds[i].NetUpdateTime = Level.TimeSeconds - 1;
-            FlareClouds[i].AdjustCloudSize();
+    if ( Monsters[idx].Instigator != none )
+        InstigatorController = ScrnPlayerController(Monsters[idx].Instigator.Controller);
 
-            return; //already flaming
+    for ( C = Level.ControllerList; C != none; C = C.NextController ) {
+        PC = ScrnPlayerController(C);
+        if ( PC != none && (PC == InstigatorController || PC.LineOfSightTo(Monsters[idx].Victim)) ) {
+            PC.ClientFlareDamage(Monsters[idx].Victim, Monsters[idx].BurnDamage/4, Monsters[idx].BurnDown);
         }
-        i++;
     }
-    FlareClouds[FlareClouds.length] = Spawn(Class'ScrnBalanceSrv.ScrnFlareCloud',Other,,, rotator(vect(0,0,1)));
 }
 
-function UnFlareMonster(optional KFMonster Other)
+function StopFlareFX(KFMonster Monster)
 {
-    local int i;
-    local KFMonster  M;
-
-    if ( Other.AmbientSound == FlareSound )
-        Other.AmbientSound = none;
-
-    while ( i < FlareClouds.length ) {
-        if ( FlareClouds[i] == none ) {
-            FlareClouds.remove(i, 1);
-            continue;
-        }
-        M = KFMonster(FlareClouds[i].Owner);
-        if ( M == none || M.Health <= 0 || M == Other ) {
-            FlareClouds[i].bHidden = true;
-            FlareClouds[i].NetUpdateTime = Level.TimeSeconds - 1;
-            FlareClouds[i].SetTimer(0.2, false); // give it some time to replicate bHidden property, then kill it
-
-            FlareClouds.remove(i, 1);
-            continue;
-        }
-        i++;
-    }
+    if ( Monster.AmbientSound == FlareSound )
+        Monster.AmbientSound = none;
 }
 
 function StopBurningBehavior(KFMonster Monster)
@@ -125,57 +99,73 @@ function StopBurningBehavior(KFMonster Monster)
     Monster.RemoveFlamingEffects();
     Monster.StopBurnFX();
 
-    if ( Monster.AmbientSound == FlareSound )
-        Monster.AmbientSound = none;
-
-    UnFlareMonster(Monster);
+    StopFlareFX(Monster);
 }
-
 
 function MakeBurnDamage(KFMonster Victim, int Damage, Pawn InstigatedBy, Vector HitLocation, Vector Momentum,
         class<DamageType> DamType, optional int HitIndex)
 {
-    local bool bIncDamage, bFlareDamage;
+    local bool bIncDamage;
     local int OldHealth;
-    local int i;
+    local int i, FreeSlot;
+    local class<ScrnDamTypeFlare> FlareDamType;
+    local float AdjustedFlareCount;
 
     // ScrnDamTypeHuskGun_Alt required for achievement
     bIncDamage = ClassIsChildOf(DamType, class'DamTypeMAC10MPInc') || DamType == class'ScrnBalanceSrv.ScrnDamTypeHuskGun_Alt';
-    bFlareDamage = ClassIsChildOf(DamType, class'DamTypeFlareRevolver');
-    //PlayerController(InstigatedBy.Controller).ClientMessage("Is MAC10 Damage? : " $ bMAC10Damage);
+    FlareDamType = class<ScrnDamTypeFlare>(DamType);
 
     // check if zed is already burning
-    for( i = 0; i < Monsters.Length; i++ ) {
-        if (Monsters[i].Victim == Victim) {
-            //PlayerController(InstigatedBy.Controller).ClientMessage("Monster found in burning list");
+    FreeSlot = Monsters.Length;
+    for( i = 0; i < Monsters.Length; ++i ) {
+        if ( Monsters[i].Victim == none ) {
+            if ( FreeSlot == Monsters.Length )
+                FreeSlot = i;
+        }
+        else if ( Monsters[i].Victim == Victim
+                // Flare and regular burn damages occupy different slots
+                && (FlareDamType == none) == (Monsters[i].FlareCount == 0) )
+        {
+            if ( FlareDamType != none ) {
+                // Flares make incremental damage, i.e. each next flare raises damage per tick
 
-            // Flares make incremental damage, i.e. each next flare raises damage per tick
-            // Need to check for damage value to ensure this is a direct hit, not a splash damage
-            if ( bFlareDamage && Damage >= 15 && DamType == Monsters[i].FireDamageClass ) {
-                Monsters[i].BurnDown = max(Monsters[i].BurnDown, BurnDuration + Monsters[i].FlareCount/2); //flares don't use burn in; each 2 flares adds +1s to burning
-                Monsters[i].Damage = Monsters[i].Damage + max(1, Damage / (1.0 + Monsters[i].FlareCount * 0.25)); // 1st shot makes 30, 2nd +24, 3rd +20, 4rth +17 etc
+                // Adjust flare count for this amount of damage.
+                // For instance, monster was hit by 4 small flares (15 damage each) and now hit by
+                // a big flare which causing 60 damage. Total flare count = 5, but if scaled by current damage,
+                // then adjusted flare count = 2.
+                AdjustedFlareCount = float(Monsters[i].TotalInputDamage) / Damage;
+                if ( bOutputDamage && InstigatedBy != none && PlayerController(InstigatedBy.Controller) != none )
+                    PlayerController(InstigatedBy.Controller).ClientMessage(
+                            "AdjustedFlareCount="$AdjustedFlareCount
+                            @ "TotalInputDamage="$Monsters[i].TotalInputDamage
+                            @ "Damage="$Damage
+                        );
+
+                Monsters[i].BurnDown += FlareDamType.default.BurnTimeBoost;
+                Monsters[i].BurnDown = max(Monsters[i].BurnDown,
+                        FlareDamType.default.MinBurnTime + AdjustedFlareCount * FlareDamType.default.BurnTimeInc);
+                Monsters[i].BurnDown = min(Monsters[i].BurnDown, FlareDamType.default.MaxBurnTime);
+                Monsters[i].BurnDamage += max(Damage * FlareDamType.default.iDoT_MinBoostRatio,
+                        Damage / (1.0 + AdjustedFlareCount * FlareDamType.default.iDoT_FadeFactor));
                 Monsters[i].FlareCount++;
-                Monsters[i].InstigatedBy = instigatedBy;
             }
-            else if ( Damage >= Monsters[i].Damage * 0.8 ) { //lower fire damage can't increase burn ticks, e.g. shooting with MAC10 after Husk gun
-                // remove flare, if zed now is burnified by higher fire damage
-                UnFlareMonster(Victim);
-                Monsters[i].FlareCount = 0;
+            else if ( Damage >= Monsters[i].BurnDamage * 0.8 ) { //lower fire damage can't increase burn ticks, e.g. shooting with MAC10 after Husk gun
                 //received extra burn damage while still burning
                 Monsters[i].BurnDown = max(Monsters[i].BurnDown, BurnDuration - BurnInCount); //increase burn time to the maximum again (excluding 2 burn-in ticks)
-                Monsters[i].Damage = max(Damage, Monsters[i].Damage);
-                if ( bIncDamage || bFlareDamage )
+                Monsters[i].BurnDamage = max(Damage, Monsters[i].BurnDamage);
+                if ( bIncDamage )
                     Monsters[i].FireDamageClass = DamType;
                 else
                     Monsters[i].FireDamageClass = class'DamTypeFlamethrower';
-                Monsters[i].InstigatedBy = instigatedBy;
             }
+            Monsters[i].Instigator = instigatedBy;
+            Monsters[i].TotalInputDamage += Damage;
             Victim.BurnDown = Monsters[i].BurnDown;
             Victim.TakeDamage(Damage, instigatedBy, hitLocation, momentum, DamType, HitIndex);
             if ( Victim.Health <= 0 )
                 StopBurningBehavior(Victim);
-            else if ( bFlareDamage && Damage >= 15 )
-                FlareMonster(Victim);
+            else if ( FlareDamType != none )
+                FlareMonster(i);
             return;
         }
     }
@@ -203,20 +193,6 @@ function MakeBurnDamage(KFMonster Victim, int Damage, Pawn InstigatedBy, Vector 
         return;
     }
 
-    if ( bFlareDamage && Damage >= 15 )
-        FlareMonster(Victim);
-
-
-/*    this doesn't work at it should - zed continue burning
-    // if zed is set on fire in lame KFMonster code, it doesn't mean we'll allow him burning
-    // check the requirements - need to deal fire damage at least 3% of zed health  or 75 to set zed on fire
-    if( Victim.HeatAmount < min(75, Victim.HealthMax * 0.03) ) {
-        //don't set on fire yet
-        StopBurningBehavior(Victim);
-        return;
-    }
-*/
-
     // if we reached here, zed is ignited and should burning - OUR WAY
 
     // KFMonster.Timer() makes fire damage based on LastBurnDamage + 3 + rand(2)
@@ -226,94 +202,114 @@ function MakeBurnDamage(KFMonster Victim, int Damage, Pawn InstigatedBy, Vector 
     Victim.BurnDown = BurnDuration;
 
     //add new record
-    i = Monsters.Length;
-    Monsters.Length = i + 1;
-    Monsters[i].Victim = Victim;
-    Monsters[i].NextBurnTime = Level.TimeSeconds + BurnPeriod;
-    Monsters[i].BurnDown = BurnDuration;
-    Monsters[i].InstigatedBy = InstigatedBy;
-    Monsters[i].Damage = Damage;
-    if ( bIncDamage || bFlareDamage) {
-        Monsters[i].FireDamageClass = DamType;
-        if ( bFlareDamage )
-            Monsters[i].FlareCount = 1;
+    i = FreeSlot;
+    if ( i == Monsters.Length ) {
+        Monsters.insert( i, 1 );
     }
-    else
-        Monsters[i].FireDamageClass = class'DamTypeFlamethrower';
-    Enable('Tick');
-    //PlayerController(InstigatedBy.Controller).ClientMessage("Monsters.Length = " $ String(Monsters.Length));
+    Monsters[i].Victim = Victim;
+    Monsters[i].Instigator = InstigatedBy;
+    Monsters[i].NextBurnTime = Level.TimeSeconds + BurnPeriod;
+    Monsters[i].BurnTicks = 0;
+    Monsters[i].BurnDamage = Damage;
+    Monsters[i].TotalInputDamage = Damage;
+    if ( FlareDamType != none ) {
+        Monsters[i].FireDamageClass = FlareDamType;
+        Monsters[i].BurnDown = FlareDamType.default.MinBurnTime;
+        Monsters[i].FlareCount = 1;
+        FlareMonster(i);
+    }
+    else {
+        if ( bIncDamage )
+            Monsters[i].FireDamageClass = DamType;
+        else
+            Monsters[i].FireDamageClass = class'DamTypeFlamethrower';
+        Monsters[i].BurnDown = BurnDuration;
+        Monsters[i].FlareCount = 0;
+    }
+
+    if ( !bTimerLoop ) {
+        SetTimer(0.1, true);
+    }
 }
 
 
-function Tick(float DeltaTime)
+function Timer()
 {
-    local int i;
+    local int i, EmptyTailBegin;
     local int OldHealth;
-    local bool bRemoveMonster;
     local int Damage;
+    local KFMonster M;
 
     if ( Monsters.Length == 0 ) {
-        Disable('Tick');
+        SetTimer(0, false);
         return;
     }
 
-    if ( Level.TimeSeconds < NextBurnTime )
-        return;
-
-    while(i < Monsters.Length) {
-        bRemoveMonster = false;
-
-        if ( Monsters[i].Victim == none) {
-            bRemoveMonster = true;
-        }
-        else if ( Monsters[i].Victim.Health <= 0 ) {
+    EmptyTailBegin = Monsters.Length;
+    for ( i = 0; i < Monsters.Length; ++i ) {
+        if ( Monsters[i].Victim != none && Monsters[i].Victim.Health <= 0 ) {
             StopBurningBehavior(Monsters[i].Victim);
-            bRemoveMonster = true;
+            Monsters[i].Victim = none;
         }
-        else {
-            Monsters[i].Victim.SetTimer(0,false); // ensure that timer is disabled
-            if (Monsters[i].NextBurnTime < Level.TimeSeconds) {
-                Monsters[i].Victim.bSTUNNED = false; // manualy remove flinching effect here, cuz we disabled the timer
 
-                Monsters[i].Victim.BurnDown = max(Monsters[i].BurnDown, 2); //can't be less, or TakeFireDamage() will decrease it to 0 and turn off burning
+        if ( Monsters[i].Victim == none ) {
+            if ( EmptyTailBegin == Monsters.Length ) {
+                EmptyTailBegin = i;
+            }
+            continue;
+        }
 
-                if ( Monsters[i].FlareCount > 0 )
-                    Damage = Monsters[i].Damage; // flares don't use burn in
-                else
-                    Damage = GetAvgBurnDamage(Monsters[i].BurnDown, Monsters[i].Damage);
+        EmptyTailBegin = Monsters.Length;
+        M = Monsters[i].Victim;
+        M.SetTimer(0, false); // ensure that timer is disabled
+        if ( Monsters[i].NextBurnTime < Level.TimeSeconds ) {
+            M.bSTUNNED = false; // manualy remove flinching effect here, cuz we disabled the timer
+            M.BurnDown = max(Monsters[i].BurnDown, 2); //can't be less, or TakeFireDamage() will decrease it to 0 and turn off burning
 
-                OldHealth = Monsters[i].Victim.Health;
-                Monsters[i].Victim.TakeDamage(Damage*BurnPeriod, Monsters[i].InstigatedBy, Monsters[i].Victim.Location,
-                    vect(0, 0, 0), Monsters[i].FireDamageClass);
-                Monsters[i].Victim.LastBurnDamage = -3; //reset to default
+            if ( Monsters[i].FlareCount > 0 )
+                Damage = Monsters[i].BurnDamage; // flares don't use burn in
+            else
+                Damage = GetAvgBurnDamage(Monsters[i].BurnDown, Monsters[i].BurnDamage);
 
-                if ( bOutputDamage && Monsters[i].InstigatedBy != none && PlayerController(Monsters[i].InstigatedBy.Controller) != none)
-                    PlayerController(Monsters[i].InstigatedBy.Controller).ClientMessage(
-                        "Fire DoT: " $ String(Damage)$ "/" $ String(OldHealth - Monsters[i].Victim.Health)
-                        @ " -> "@ Monsters[i].Victim.MenuName @ "("$String(i+1)$"/"$Monsters.Length$"). Burns = " $ String(Monsters[i].BurnDown)
-                    );
+            OldHealth = Monsters[i].Victim.Health;
+            M.TakeDamage(Damage*BurnPeriod, Monsters[i].Instigator, M.Location,
+                vect(0, 0, 0), Monsters[i].FireDamageClass);
+            M.LastBurnDamage = -3; //reset to default
 
-                Monsters[i].BurnDown--;
-                Monsters[i].BurnTicks++;
-                Monsters[i].NextBurnTime += BurnPeriod;
+            if ( bOutputDamage && Monsters[i].Instigator != none && PlayerController(Monsters[i].Instigator.Controller) != none)
+                PlayerController(Monsters[i].Instigator.Controller).ClientMessage(
+                    "Fire DoT: " $ String(Damage)$ "/" $ String(OldHealth - M.Health)
+                    @ " -> "@ M.MenuName @ "("$String(i+1)$"/"$Monsters.Length$"). Burns = " $ String(Monsters[i].BurnDown)
+                );
 
-                if (Monsters[i].BurnTicks * BurnPeriod > 10 - Monsters[i].Victim.CrispUpThreshhold)
-                    Monsters[i].Victim.ZombieCrispUp(); // Melt em' :)
+            Monsters[i].BurnDown--;
+            Monsters[i].BurnTicks++;
+            Monsters[i].NextBurnTime += BurnPeriod;
 
-                if (Monsters[i].BurnDown <= 0 || Monsters[i].Victim.Health <= 0) {
-                    StopBurningBehavior(Monsters[i].Victim);
-                    bRemoveMonster = true;
+            if ( Monsters[i].FlareCount == 0 && Monsters[i].BurnTicks * BurnPeriod > 10 - M.CrispUpThreshhold )
+                M.ZombieCrispUp(); // Melt em' :)
+
+            if ( M.Health <= 0 ) {
+                Monsters[i].Victim = none;
+                StopBurningBehavior(M);
+            }
+            else if ( Monsters[i].BurnDown <= 0 ) {
+                Monsters[i].Victim = none;
+                if ( FindMonsterIndex(M) == -1 ) {
+                    StopBurningBehavior(M);
+                }
+                else if ( Monsters[i].FlareCount > 0 ) {
+                    StopFlareFX(M); // flares burned down, but other burning continues
                 }
             }
         }
-        if (bRemoveMonster) {
-            Monsters.remove(i, 1);
-        }
-        else {
-            i++;
-        }
     }
-    NextBurnTime = Level.TimeSeconds + default.NextBurnTime;
+
+    if ( EmptyTailBegin != Monsters.Length ) {
+        // Remove empty records from the end of the monsters array.
+        // Shouldn't do it in the middle of array to prevent record shifts in memory.
+        Monsters.Length = EmptyTailBegin;
+    }
 }
 
 defaultproperties
@@ -322,5 +318,4 @@ defaultproperties
     BurnInCount=2
     BurnPeriod=1.0
     FlareSoundRef="KF_IJC_HalloweenSnd.KF_FlarePistol_Projectile_Loop"
-    NextBurnTime=0.2
 }

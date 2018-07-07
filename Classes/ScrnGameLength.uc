@@ -100,6 +100,15 @@ function LoadGame(ScrnGameType MyGame)
 
     if ( ZedVotes.length > 0 )
         AddVoting();
+
+    // this makes sure the Wave is never none
+    if ( Waves.length == 0 ) {
+        warn("ScrnGameLength: NO WAVES DEFINED!");
+        Wave = new(none, "Wave1") class'ScrnWaveInfo';
+    }
+    else {
+        Wave = new(none, Waves[0]) class'ScrnWaveInfo';
+    }
 }
 
 function AddVoting()

@@ -27,4 +27,5 @@ simulated function bool AllowFire()
 
 defaultproperties
 {
+    DamageType=Class'ScrnBalanceSrv.ScrnDamTypeWinchester'
 }

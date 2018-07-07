@@ -44,7 +44,6 @@ struct SClanTags {
 };
 var config array<SClanTags> ClanTags;
 var config bool bClanCheck;
-var config bool bAntiBlocker;
 
 var bool bCustomHUD, bCustomScoreboard;
 
@@ -844,7 +843,7 @@ function SetupWave()
         BalanceTeams(1, float(AliveTeamPlayerCount[0])/AliveTeamPlayerCount[1]);
 
     ScrnGameLength.RunWave();
-    
+
     CalcDoshDifficultyMult();
 
     if( WaveNum == FinalWave && bUseEndGameBoss ) {
@@ -1079,35 +1078,33 @@ function SelectShop() { }
 
 State MatchInProgress
 {
-    function Timer()
+    function WaveTimer()
     {
-        super.Timer();
+        super.WaveTimer();
 
-        if( bWaveInProgress ) {
-            if ( TotalMaxMonsters <= 0 && !bWaveBossInProgress ) {
-                if ( NumMonsters > 0 && NumMonsters < 10 ) {
-                    if ( bWaveEnding ) {
-                        if ( --WaveEndingCountDown <= 0) {
-                            KillRemainingZeds(true);
-                            bWaveEnding = false;
-                        }
-                        // tell about disabling Human Damage 3 seconds after auto-end message
-                        if ( HumanDamageMode > HDMG_None && WaveEndingCountDown == default.WaveEndingCountDown-3 )
-                            BroadcastLocalizedMessage(class'TSCMessages', 230);
+        if ( TotalMaxMonsters <= 0 ) {
+            if ( NumMonsters > 0 && NumMonsters < 10 ) {
+                if ( bWaveEnding ) {
+                    if ( --WaveEndingCountDown <= 0) {
+                        KillRemainingZeds(true);
+                        bWaveEnding = false;
                     }
-                    else {
-                        bWaveEnding = true;
-                        WaveEndingCountDown = default.WaveEndingCountDown; // force end wave in 30 seconds
-                        BroadcastLocalizedMessage(class'TSCMessages', 200); // tell about auto-end
-                    }
+                    // tell about disabling Human Damage 3 seconds after auto-end message
+                    if ( HumanDamageMode > HDMG_None && WaveEndingCountDown == default.WaveEndingCountDown-3 )
+                        BroadcastLocalizedMessage(class'TSCMessages', 230);
+                }
+                else {
+                    bWaveEnding = true;
+                    WaveEndingCountDown = default.WaveEndingCountDown; // force end wave in 30 seconds
+                    BroadcastLocalizedMessage(class'TSCMessages', 200); // tell about auto-end
                 }
             }
-            if ( (int(WaveTimeElapsed)%60) == 0 ) {
-                    TSCTeams[0].PrevMinKills = TSCTeams[0].LastMinKills;
-                    TSCTeams[0].LastMinKills = TSCTeams[0].ZedKills;
-                    TSCTeams[1].PrevMinKills = TSCTeams[1].LastMinKills;
-                    TSCTeams[1].LastMinKills = TSCTeams[1].ZedKills;
-            }
+        }
+        if ( (int(WaveTimeElapsed)%60) == 0 ) {
+                TSCTeams[0].PrevMinKills = TSCTeams[0].LastMinKills;
+                TSCTeams[0].LastMinKills = TSCTeams[0].ZedKills;
+                TSCTeams[1].PrevMinKills = TSCTeams[1].LastMinKills;
+                TSCTeams[1].LastMinKills = TSCTeams[1].ZedKills;
         }
     }
 

@@ -36,6 +36,8 @@ static function float AddExtraAmmoFor(KFPlayerReplicationInfo KFPRI, Class<Ammun
             || ClassIsChildOf(AmmoType, class'Magnum44Ammo')
             || ClassIsChildOf(AmmoType, class'MK23Ammo')
             || ClassIsChildOf(AmmoType, class'DeagleAmmo')
+            || ClassIsChildOf(AmmoType, class'FlareRevolverAmmo')
+            || ClassIsChildOf(AmmoType, class'WinchesterAmmo')
             || ClassIsInArray(default.PerkedAmmo, AmmoType)  //v3 - custom weapon support
         )
         return 1.0 + (0.10 * GetClientVeteranSkillLevel(KFPRI)); //up to 60% ammo bonus
@@ -52,6 +54,8 @@ static function int AddDamage(KFPlayerReplicationInfo KFPRI, KFMonster Injured, 
             || ClassIsChildOf(DmgType, class'KFMod.DamTypeDeagle')
             || ClassIsChildOf(DmgType, class'KFMod.DamTypeMagnum44Pistol ')
             || ClassIsChildOf(DmgType, class'KFMod.DamTypeMK23Pistol')
+            || ClassIsChildOf(DmgType, class'ScrnDamTypeFlareRevolverImpact')
+            || ClassIsChildOf(DmgType, class'KFMod.DamTypeWinchester')
             || ClassIsInArray(default.PerkedDamTypes, DmgType) //v3 - custom weapon support
         )
     {
@@ -75,9 +79,11 @@ static function int ReduceDamage(KFPlayerReplicationInfo KFPRI, KFPawn Injured, 
 static function float ModifyRecoilSpread(KFPlayerReplicationInfo KFPRI, WeaponFire Other, out float Recoil)
 {
     if ( Single(Other.Weapon) != none || Dualies(Other.Weapon) != none
-            || Deagle(Other.Weapon) != none || DualDeagle(Other.Weapon) != none
-            || MK23Pistol(Other.Weapon) != none || DualMK23Pistol(Other.Weapon) != none
-            || Magnum44Pistol(Other.Weapon) != none || Dual44Magnum(Other.Weapon) != none
+            || Deagle(Other.Weapon) != none
+            || MK23Pistol(Other.Weapon) != none
+            || Magnum44Pistol(Other.Weapon) != none
+            || FlareRevolver(Other.Weapon) != none
+            || Winchester(Other.Weapon) != none
             || ClassIsInArray(default.PerkedWeapons, Other.Weapon.Class) //v3 - custom weapon support
         )
     {
@@ -126,6 +132,10 @@ static function float GetFireSpeedModStatic(KFPlayerReplicationInfo KFPRI, class
     {
         return 1.6;
     }
+
+    if ( ClassIsChildOf(Other, class'Winchester') )
+        return 1.6;
+
     return 1.0;
 }
 
@@ -137,6 +147,8 @@ static function float GetReloadSpeedModifierStatic(KFPlayerReplicationInfo KFPRI
     if ( ClassIsChildOf(Other, class'Dualies') // all dual pistols classes extend this
             || ClassIsChildOf(Other, class'Single') || ClassIsChildOf(Other, class'Deagle')
             || ClassIsChildOf(Other, class'MK23Pistol') || ClassIsChildOf(Other, class'Magnum44Pistol')
+            || ClassIsChildOf(Other, class'FlareRevolver')
+            || ClassIsChildOf(Other, class'Winchester')
             || ClassIsInArray(default.PerkedWeapons, Other) //v3 - custom weapon support
         )
         result = 1.6; // Up to 60% faster reload with pistols
@@ -165,6 +177,7 @@ static function float GetCostScaling(KFPlayerReplicationInfo KFPRI, class<Pickup
             || ClassIsChildOf(Item, class'MK23Pickup') || ClassIsChildOf(Item, class'DualMK23Pickup')
             || Item == class'Magnum44Pickup' || Item == class'Dual44MagnumPickup'
             || ClassIsChildOf(Item, class'ScrnDual44MagnumLaserPickup')
+            || ClassIsChildOf(Item, class'FlareRevolverPickup') || ClassIsChildOf(Item, class'DualFlareRevolverPickup')
             || ClassIsInArray(default.PerkedPickups, Item)
         )
     {
@@ -172,6 +185,12 @@ static function float GetCostScaling(KFPlayerReplicationInfo KFPRI, class<Pickup
         return fmax(0.10, 0.70 - 0.05 * GetClientVeteranSkillLevel(KFPRI));
     }
     return 1.0;
+}
+
+static function bool OverridePerkIndex( class<KFWeaponPickup> Pickup )
+{
+    return Pickup == class'ScrnWinchesterPickup' || Pickup == class'ScrnDualFlareRevolverPickup'
+            || super.OverridePerkIndex(Pickup);
 }
 
 static function string GetCustomLevelInfo( byte Level )

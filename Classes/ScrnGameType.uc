@@ -7,6 +7,7 @@ var ScrnGameReplicationInfo ScrnGRI;
 // Min numbers of players to be used in calculation of zed count in wave
 // Those values are for configurations only. Set ScrnGRI.FakedPlayers to make in-game effect
 var globalconfig protected byte FakedPlayers, FakedAlivePlayers;
+var config bool bAntiBlocker;
 
 enum EZedSpawnLocation {
     ZSLOC_VANILLA,    // Same as in Vanilla KF
@@ -90,6 +91,10 @@ event InitGame( string Options, out string Error )
         }
     }
 
+    if ( IsTestMap() ) {
+        bAntiBlocker = false; // disable AntiBlocker on test map
+    }
+
     if ( TourneyMode > 0 )
         StartTourney();
 }
@@ -123,6 +128,14 @@ static event class<GameInfo> SetGameType( string MapName )
         return default.class;
 
     return super.SetGameType( MapName );
+}
+
+function bool IsTestMap()
+{
+    local string MapName;
+
+    MapName = caps(GetCurrentMapName(Level));
+    return InStr(MapName, "TESTMAP") != -1 || InStr(MapName, "TESTGROUNDS") != -1;
 }
 
 protected function CheckScrnBalance()
@@ -475,6 +488,11 @@ function ScoreKill(Controller Killer, Controller Other)
             Killer.PlayerReplicationInfo.Team.NetUpdateTime = Level.TimeSeconds - 1;
             ScoreEvent(Killer.PlayerReplicationInfo, 1, "tdm_frag");
         }
+
+        if (Killer.PlayerReplicationInfo.Score < 0 )
+            Killer.PlayerReplicationInfo.Score = 0;
+        if (Killer.PlayerReplicationInfo.Team.Score < 0 )
+            Killer.PlayerReplicationInfo.Team.Score = 0;
         return;
     }
 
@@ -651,12 +669,17 @@ exec function KillZeds()
 
 function KillRemainingZeds(bool bForceKill)
 {
-    local Controller C, NextC;
+    local Controller C;
+    local array<KFMonster> SuicideSquad;
+    local int i;
 
-    for ( C = Level.ControllerList; C != None; C = NextC ) {
-        NextC = C.NextController; // use this because calling KilledBy() can destroy C
+    for ( C = Level.ControllerList; C != None; C = C.NextController ) {
         if ( KFMonsterController(C)!=None && (bForceKill || KFMonsterController(C).CanKillMeYet()) )
-            C.Pawn.KilledBy( C.Pawn );
+            SuicideSquad[SuicideSquad.length] = KFMonster(C.Pawn);
+    }
+
+    for ( i = 0; i < SuicideSquad.length; ++i ) {
+        SuicideSquad[i].Suicide();
     }
 }
 
@@ -710,7 +733,7 @@ function DoBossDeath()
 function float RateZombieVolume(ZombieVolume ZVol, Controller SpawnCloseTo, optional bool bIgnoreFailedSpawnTime, optional bool bBossSpawning)
 {
     local Controller C;
-    local float Score;
+    local float Rating;
     local float DistSquared, MinDistanceToPlayerSquared;
     local byte i;
     local float PlayerDistScoreZ, PlayerDistScoreXY, TotalPlayerDistScore, UsageScore;
@@ -753,8 +776,8 @@ function float RateZombieVolume(ZombieVolume ZVol, Controller SpawnCloseTo, opti
         }
     }
 
-    // Start score with Spawn desirability
-    Score = ZVol.SpawnDesirability;
+    // Start Rating with Spawn desirability
+    Rating = ZVol.SpawnDesirability;
     // Rate how long its been since this spawn was used
     UsageScore = fmin(Level.TimeSeconds - ZVol.LastSpawnTime, 30.0) / 30.0;
 
@@ -808,17 +831,17 @@ function float RateZombieVolume(ZombieVolume ZVol, Controller SpawnCloseTo, opti
             wUsage = 0.30;
     }
     wRand = 1.0 - wDesire - wDist - wUsage;
-    Score *= wDesire + wDist * TotalPlayerDistScore + wUsage * UsageScore + wRand * frand();
+    Rating *= wDesire + wDist * TotalPlayerDistScore + wUsage * UsageScore + wRand * frand();
 
     if( bTooCloseToPlayer )
-        Score*=0.2;
+        Rating*=0.2;
 
     // Try and prevent spawning in the same volume back to back
     if( LastSpawningVolume == ZVol )
-        Score*=0.2;
+        Rating*=0.2;
 
     // if we get here, return at least a 1
-    return fmax(Score,1);
+    return fmax(Rating,1);
 }
 
 // returns random alive player
@@ -1561,6 +1584,8 @@ function SetupWave()
     local Controller C;
     local InvasionBot B;
 
+    UpdateMonsterCount();
+
     bWaveInProgress = true;
     ScrnGRI.bWaveInProgress = true;
 
@@ -1635,6 +1660,35 @@ function SetupWave()
                 KFPlayerController(C).bHasHeardTraderWelcomeMessage = false;
         }
     }
+}
+
+function bool UpdateMonsterCount()
+{
+    local Controller C;
+    local PlayerReplicationInfo PRI;
+
+    AliveTeamPlayerCount[0] = 0;
+    AliveTeamPlayerCount[1] = 0;
+    NumMonsters = 0;
+
+    for ( C = Level.ControllerList; C != none;  C = C.NextController ) {
+        if( C.Pawn == none || C.Pawn.Health <= 0 )
+            continue;
+
+        if ( C.bIsPlayer ) {
+            PRI = C.PlayerReplicationInfo;
+            if ( PRI != none && !PRI.bOnlySpectator && !PRI.bIsSpectator
+                    && PRI.Team != none && PRI.Team.TeamIndex <= 1)
+            {
+                AliveTeamPlayerCount[PRI.Team.TeamIndex]++;
+            }
+        }
+        else if ( Monster(C.Pawn) != none ) {
+            NumMonsters++;
+        }
+    }
+    AlivePlayerCount = AliveTeamPlayerCount[0] + AliveTeamPlayerCount[1];
+    return AlivePlayerCount > 0;
 }
 
 function SetupPickups()
@@ -2103,31 +2157,7 @@ State MatchInProgress
 
     function bool UpdateMonsterCount()
     {
-        local Controller C;
-        local PlayerReplicationInfo PRI;
-
-        AliveTeamPlayerCount[0] = 0;
-        AliveTeamPlayerCount[1] = 0;
-        NumMonsters = 0;
-
-        for ( C = Level.ControllerList; C != none;  C = C.NextController ) {
-            if( C.Pawn == none || C.Pawn.Health <= 0 )
-                continue;
-
-            if ( C.bIsPlayer ) {
-                PRI = C.PlayerReplicationInfo;
-                if ( PRI != none && !PRI.bOnlySpectator && !PRI.bIsSpectator
-                        && PRI.Team != none && PRI.Team.TeamIndex <= 1)
-                {
-                    AliveTeamPlayerCount[PRI.Team.TeamIndex]++;
-                }
-            }
-            else if ( Monster(C.Pawn) != none ) {
-                NumMonsters++;
-            }
-        }
-        AlivePlayerCount = AliveTeamPlayerCount[0] + AliveTeamPlayerCount[1];
-        return AlivePlayerCount > 0;
+        return global.UpdateMonsterCount();
     }
 
     function SetupPickups()
@@ -2481,6 +2511,47 @@ State MatchInProgress
         if ( WaveNum < FinalWave && (ScrnGameLength == none || ScrnGameLength.Wave.bOpenTrader) ) {
             RespawnDoors();
             BroadcastLocalizedMessage(class'ScrnBalanceSrv.ScrnWaitingMessage', 2);
+        }
+    }
+
+    function OpenShops()
+    {
+        local int i;
+        local Controller C;
+        local KFPlayerController KFPC;
+        local int TraderMessageIndex;
+
+        bTradingDoorsOpen = True;
+
+        if ( WaveNum < FinalWave )
+            TraderMessageIndex = 2;
+        else
+            TraderMessageIndex = 3;
+
+        for( i=0; i<ShopList.Length; ++i ) {
+            if( ShopList[i].bAlwaysClosed )
+                continue;
+            if( ShopList[i].bAlwaysEnabled )
+                ShopList[i].OpenShop();
+        }
+
+        if ( KFGameReplicationInfo(GameReplicationInfo).CurrentShop == none )
+            SelectShop();
+        KFGameReplicationInfo(GameReplicationInfo).CurrentShop.OpenShop();
+
+        // Tell all players to start showing the path to the trader
+        for( C=Level.ControllerList; C!=None; C=C.NextController ) {
+            if( C.bIsPlayer && C.Pawn!=None && C.Pawn.Health>0 )
+            {
+                // Disable pawn collision during trader time
+                C.Pawn.bBlockActors = !bAntiBlocker;
+
+                KFPC = KFPlayerController(C);
+                if( KFPC(C) != none ) {
+                    KFPC.SetShowPathToTrader(true);
+                    KFPC.ClientLocationalVoiceMessage(C.PlayerReplicationInfo, none, 'TRADER', TraderMessageIndex);
+                }
+            }
         }
     }
 

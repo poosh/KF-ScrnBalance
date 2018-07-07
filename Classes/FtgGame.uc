@@ -212,6 +212,14 @@ function ShowPathTo(PlayerController P, int DestinationIndex)
     }
 }
 
+function KillRemainingZeds(bool bForceKill)
+{
+    super.KillRemainingZeds(bForceKill);
+    if (bForceKill) {
+        KillAllStinkyClots();
+    }
+}
+
 function KillAllStinkyClots()
 {
     local array <StinkyClot> Monsters;
@@ -245,18 +253,18 @@ State MatchInProgress
             super.DoWaveEnd();
     }
 
-    function Timer()
+    function BattleTimer()
     {
-        super.Timer();
-        if ( bWaveInProgress ) {
-            if ( WaveNum > 0 && NextStinkySpawnTime < Level.TimeSeconds
+        super.BattleTimer();
+
+        if ( WaveNum > 0 && NextStinkySpawnTime < Level.TimeSeconds
+                && (bWaveBossInProgress || TotalMaxMonsters > 0)
                 && ( (StinkyControllers[1] == none && TeamBases[1].bActive)
                     || (!bSingleTeamGame && StinkyControllers[0] == none && TeamBases[0].bActive) )
-                && (bWaveBossInProgress || TotalMaxMonsters > 0) )
-            {
-                SpawnStinkyClot();
-                NextStinkySpawnTime = Level.TimeSeconds + 5; // if failed to spawn, try again in 5 seconds
-            }
+           )
+        {
+            SpawnStinkyClot();
+            NextStinkySpawnTime = Level.TimeSeconds + 5; // if failed to spawn, try again in 5 seconds
         }
     }
 

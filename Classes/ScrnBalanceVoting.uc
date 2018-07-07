@@ -6,10 +6,10 @@ const VOTE_PERKLOCK     = 0;
 const VOTE_PERKUNLOCK   = 1;
 const VOTE_PAUSE        = 2;
 const VOTE_ENDTRADE     = 3;
-const VOTE_BLAME          = 4;
-const VOTE_KICK          = 5;
-const VOTE_BORING          = 6;
-const VOTE_SPAWN          = 7;
+const VOTE_BLAME        = 4;
+const VOTE_KICK         = 5;
+const VOTE_BORING       = 6;
+const VOTE_SPAWN        = 7;
 const VOTE_ENDWAVE      = 8;
 const VOTE_SPEC         = 9;
 const VOTE_READY        = 10;
@@ -20,6 +20,8 @@ const VOTE_INVITE       = 14;
 const VOTE_FF           = 15;
 const VOTE_MAPRESTART   = 16;
 const VOTE_FAKEDPLAYERS = 17;
+const VOTE_FAKEDCOUNT   = 18;
+const VOTE_FAKEDHEALTH  = 19;
 const VOTE_RKILL        = 100;
 
 var localized string strCantEndTrade;
@@ -412,6 +414,36 @@ function int GetVoteIndex(PlayerController Sender, string Key, out string Value,
 
         return VOTE_FAKEDPLAYERS;
     }
+    else if ( Key == "FAKEDCOUNT" ) {
+        if ( !Mut.CheckScrnGT(Sender) )
+            return VOTE_LOCAL;
+        if ( !TryStrToInt(Value, v) || v < 0 || v > 32 )
+            return VOTE_ILLEGAL;
+        if ( Mut.ScrnGT.ScrnGRI.FakedPlayers == v )
+            return VOTE_NOEFECT;
+
+        if ( v <= 1 )
+            VoteInfo = "Faked Zed Count OFF";
+        else
+            VoteInfo = v $ "p Faked Zed Count";
+
+        return VOTE_FAKEDCOUNT;
+    }
+    else if ( Key == "FAKEDHEALTH" ) {
+        if ( !Mut.CheckScrnGT(Sender) )
+            return VOTE_LOCAL;
+        if ( !TryStrToInt(Value, v) || v < 0 || v > 32 )
+            return VOTE_ILLEGAL;
+        if ( Mut.ScrnGT.ScrnGRI.FakedAlivePlayers == v )
+            return VOTE_NOEFECT;
+
+        if ( v <= 1 )
+            VoteInfo = "Faked Zed Health OFF";
+        else
+            VoteInfo = v $ "p Faked Zed Health";
+
+        return VOTE_FAKEDHEALTH;
+    }
     else if ( Key == "R_KILL" ) {
         if ( !Sender.PlayerReplicationInfo.bAdmin || Mut.SrvTourneyMode == 0 ) {
             Sender.ClientMessage(strRCommands);
@@ -619,6 +651,12 @@ function ApplyVoteValue(int VoteIndex, string VoteValue)
             Mut.ScrnGT.ScrnGRI.FakedPlayers = byte(VoteValue);
             Mut.ScrnGT.ScrnGRI.FakedAlivePlayers = byte(VoteValue);
             break;
+        case VOTE_FAKEDCOUNT:
+            Mut.ScrnGT.ScrnGRI.FakedPlayers = byte(VoteValue);
+            break;
+        case VOTE_FAKEDHEALTH:
+            Mut.ScrnGT.ScrnGRI.FakedAlivePlayers = byte(VoteValue);
+            break;
 
         case VOTE_RKILL:
             if ( VotingHandler.VotedPlayer != none && VotingHandler.VotedPlayer.Pawn != none ) {
@@ -751,7 +789,7 @@ function bool CanEndWave()
             }
         }
     }
-    return TotalHP < Mut.MaxVoteKillHP;
+    return TotalHP <= Mut.MaxVoteKillHP;
 }
 
 function DoEndWave()
@@ -817,7 +855,9 @@ defaultproperties
     HelpInfo(11)="%gREADY%w|%gUNREADY %w Makes everybody ready/unready to play"
     HelpInfo(12)="%gFF %yX %w Set Friendly Fire to X%"
     HelpInfo(13)="%gMAP RESTART %w Restarts current map"
-    HelpInfo(14)="%gFAKED %yX %w Set Faked Players to X"
+    HelpInfo(14)="%gFAKED %yX %w Set Faked Players to X (FAKEDCOUNT+FAKEDHEALTH)"
+    HelpInfo(15)="%gFAKEDCOUNT %yX %w Set Faked Players for zed count calculation"
+    HelpInfo(16)="%gFAKEDHEALTH %yX %w Set Faked Players for zed health calculation"
 
     strCantEndTrade="Can not end trade time at the current moment"
     strTooLate="Too late"
