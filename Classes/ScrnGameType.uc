@@ -545,6 +545,92 @@ function ScoreKill(Controller Killer, Controller Other)
     }
 }
 
+function ScoreKillAssists(float Score, Controller Victim, Controller Killer)
+{
+    local int i;
+    local float GrossDamage, ScoreMultiplier, KillScore;
+    local KFMonsterController MyVictim;
+    local KFPlayerReplicationInfo KFPRI;
+
+    MyVictim = KFMonsterController(Victim);
+
+    if ( MyVictim == none || MyVictim.KillAssistants.Length < 1 )
+        return;
+
+    for ( i = 0; i < MyVictim.KillAssistants.Length; ++i ) {
+        GrossDamage += MyVictim.KillAssistants[i].Damage;
+    }
+
+    if ( GrossDamage <= 0 )
+        return;
+
+    ScoreMultiplier = Score / GrossDamage;
+
+    for ( i = 0; i < MyVictim.KillAssistants.Length; i++  ) {
+        if ( MyVictim.KillAssistants[i].PC != none
+                && MyVictim.KillAssistants[i].PC.PlayerReplicationInfo != none)
+        {
+            KillScore = ScoreMultiplier * MyVictim.KillAssistants[i].Damage;
+            MyVictim.KillAssistants[i].PC.PlayerReplicationInfo.Score += KillScore;
+
+            KFPRI = KFPlayerReplicationInfo(MyVictim.KillAssistants[i].PC.PlayerReplicationInfo) ;
+            if(KFPRI != none)
+            {
+                if(MyVictim.KillAssistants[i].PC != Killer)
+                {
+                    KFPRI.KillAssists ++ ;
+                }
+
+                KFPRI.ThreeSecondScore += KillScore;
+            }
+        }
+    }
+}
+
+function bool RewardSurvivingPlayers()
+{
+    local Controller C;
+    local int SurvivedPlayers[2];
+    local int moneyPerPlayer[2];
+    local byte t;
+
+    for ( C = Level.ControllerList; C != none; C = C.NextController ) {
+        if ( C.Pawn != none && C.PlayerReplicationInfo != none && C.PlayerReplicationInfo.Team != none
+                && C.PlayerReplicationInfo.Team.TeamIndex < 2 )
+        {
+            t = C.PlayerReplicationInfo.Team.TeamIndex;
+            SurvivedPlayers[t]++;
+        }
+    }
+
+    for ( t = 0; t < 2; ++t ) {
+        if ( SurvivedPlayers[t] > 0 ) {
+            moneyPerPlayer[t] = Teams[t].Score / SurvivedPlayers[t];
+            Teams[t].NetUpdateTime = Level.TimeSeconds - 1;
+        }
+    }
+
+    for ( C = Level.ControllerList; C != none; C = C.NextController ) {
+        if ( C.Pawn != none && C.PlayerReplicationInfo != none && C.PlayerReplicationInfo.Team != none
+                && C.PlayerReplicationInfo.Team.TeamIndex < 2 )
+        {
+            t = C.PlayerReplicationInfo.Team.TeamIndex;
+            if ( SurvivedPlayers[t] > 1 ) {
+                C.PlayerReplicationInfo.Score += moneyPerPlayer[t];
+                Teams[t].Score -= moneyPerPlayer[t];
+            }
+            else if ( SurvivedPlayers[t] == 1 ) {
+                C.PlayerReplicationInfo.Score += Teams[t].Score;
+                Teams[t].Score = 0;
+            }
+            SurvivedPlayers[t]--;
+            C.PlayerReplicationInfo.NetUpdateTime = Level.TimeSeconds - 1;
+        }
+    }
+
+    return true;
+}
+
 function CalcDoshDifficultyMult() {
     if ( GameDifficulty >= 5.0 ) {
         DoshDifficultyMult = 0.65;   // Suicidal and Hell on Earth
@@ -1383,6 +1469,11 @@ function RestartPlayer( Controller aPlayer )
     }
 
     super.RestartPlayer(aPlayer);
+
+    if ( bTradingDoorsOpen && aPlayer.bIsPlayer && aPlayer.Pawn != none )
+    {
+        aPlayer.Pawn.bBlockActors = !bAntiBlocker;
+    }
 
     if ( CI != none && CI.Pawn != none ) {
         if ( FriendlyFireScale > 0 )
@@ -2577,6 +2668,7 @@ defaultproperties
     TurboScale=1.0
     bKillMessages=true
     bZedTimeEnabled=true
+    bAntiBlocker=true
 
     MaxSpawnAttempts=3
     MaxSpecialSpawnAttempts=10

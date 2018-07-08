@@ -19,10 +19,15 @@ simulated function bool AllowFire()
 
     if( KFWeaponShotgun(Weapon).MagAmmoRemaining<1 )
     {
-            return false;
+        return false;
     }
 
     return super(WeaponFire).AllowFire();
+}
+
+event ModeDoFire()
+{
+    super(KFFire).ModeDoFire(); // skip WinchesterFire
 }
 
 defaultproperties

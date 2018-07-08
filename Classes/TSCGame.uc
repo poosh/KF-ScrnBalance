@@ -961,23 +961,6 @@ protected function StartTourney()
     bVoteHDmg = false;
 }
 
-/*
-auto State PendingMatch
-{
-    function Timer()
-    {
-        if ( Level.NetMode != NM_Standalone && (
-                Teams[0].Size == 0 || Teams[1].Size == 0
-                || NumPlayers < MinNetPlayers) )
-        {
-            global.Timer();
-            return;
-        }
-        super.Timer();
-    }
-}
-*/
-
 function bool RewardSurvivingPlayers()
 {
     local Controller C;
@@ -992,58 +975,7 @@ function bool RewardSurvivingPlayers()
         Broadcast(Self, strBudgetCut @ int(100*(CurrentTeamMoneyPenalty)) $ "%");
     }
 
-    for ( C = Level.ControllerList; C != none; C = C.NextController ) {
-        if ( C.Pawn != none && C.PlayerReplicationInfo != none && C.PlayerReplicationInfo.Team != none ) {
-            switch ( C.PlayerReplicationInfo.Team.TeamIndex ) {
-                case 0:
-                    Reds++;;
-                    break;
-                case 1:
-                    Blues++;
-                    break;
-            }
-        }
-    }
-
-    if ( Reds > 0 )
-        moneyPerPlayerRed = Teams[0].Score / Reds;
-    if ( Blues > 0 )
-        moneyPerPlayerBlue = Teams[1].Score / Blues;
-
-    for ( C = Level.ControllerList; C != none; C = C.NextController ) {
-        if ( C.Pawn != none && C.PlayerReplicationInfo != none && C.PlayerReplicationInfo.Team != none ) {
-            switch ( C.PlayerReplicationInfo.Team.TeamIndex ) {
-                case 0:
-                    if ( Reds > 1 ) {
-                        C.PlayerReplicationInfo.Score += moneyPerPlayerRed;
-                        Teams[0].Score -= moneyPerPlayerRed;
-                    }
-                    else if ( Reds == 1 ) {
-                        C.PlayerReplicationInfo.Score += Teams[0].Score;
-                        Teams[0].Score = 0;
-                    }
-                    Reds--;
-                    break;
-                case 1:
-                    if ( Blues > 1 ) {
-                        C.PlayerReplicationInfo.Score += moneyPerPlayerBlue;
-                        Teams[1].Score -= moneyPerPlayerBlue;
-                    }
-                    else if ( Blues == 1 ) {
-                        C.PlayerReplicationInfo.Score += Teams[1].Score;
-                        Teams[1].Score = 0;
-                    }
-                    Blues--;
-                    break;
-            }
-            C.PlayerReplicationInfo.NetUpdateTime = Level.TimeSeconds - 1;
-        }
-    }
-
-    Teams[0].NetUpdateTime = Level.TimeSeconds - 1;
-    Teams[1].NetUpdateTime = Level.TimeSeconds - 1;
-
-    return true;
+    return super.RewardSurvivingPlayers();
 }
 
 function ShowPathTo(PlayerController P, int DestinationIndex)

@@ -29,6 +29,46 @@ ScrnBalance (ScrnBalanceSrv.ScrnBalance).</em></li>
 <hr />
 <h2>VERSION 9</h2>
 <hr />
+<h3>v9.60.1</h3>
+<ul>
+<li>Fixed bug when respawned players ignored <code>bAntiBlocker</code> setting.</li>
+<li><code>bAntiBlocker</code> is set to true by default</li>
+<li>Fixed LAR fire animation rate to properly apply perk bonus</li>
+<li>Fixed yet another Tripwire's bug in end-wave dosh calculation</li>
+</ul>
+<h3>v9.60.0</h3>
+<h4>Version Numbering Change</h4>
+<p>Version numbering changed to <strong>MAJOR.MINOR.PATCH</strong>. No more special BETA releases.
+From now on every version is a potential release candidate.</p>
+<h4>Burning Mechanism</h4>
+<ul>
+<li>Now flares do not explode. They burn the victim from inside.</li>
+<li>Since regular fire damage burn zeds from outside, both can co-exist, dealing two damages at once:
+burn and flare (iDoT)</li>
+<li>Flares cannot crispify zeds.</li>
+<li>Headshots with flares do increased burn damage (iDoT) comparing to body shots.</li>
+<li><em>Flare Revolvers</em> do x1.5 headshot burn damage; <em>Protecta</em> - x3.0.</li>
+<li>Husk Gun's headshot multiplier raised to x2.4 (up from x2.2)</li>
+<li>Optimized and enhanced Flare Cloud replication.</li>
+<li>Added <code>ScrnDamTypeFlare</code> with options to adjust flare burning behavior.</li>
+</ul>
+<h4>Gunslinger</h4>
+<ul>
+<li>Added <em>LAR</em> and <em>Flare Revolvers</em> to Gunslinger's arsenal. They are cross-perk weapons now.</li>
+<li>LAR and Flare Revolvers kills added to Gunslinger perk progress, but only when played as Gunslinger.</li>
+<li>LAR headshots are still added to Sharpshooter progress no matter of perk played.</li>
+<li>Flare Revolver fire damage is still added to Firebug progress no matter of perk played.</li>
+</ul>
+<h4>Other changes</h4>
+<ul>
+<li><code>mvote FAKEDCOUNT</code> and <code>mvote FAKEDHEALTH</code> - allow voting to change respectively zed count and zed health.</li>
+<li><code>mvote FAKED</code> is still valid and change both count and health at once.</li>
+<li>Fixed bug when sometimes players got negative dosh at the end of a wave</li>
+<li>Fixed bug in <code>KillRemainingZeds()</code> that sometimes didn't kill the remaining zeds.</li>
+<li>Completely removed <code>CustomEvents</code></li>
+<li><code>bAntiBlocker</code> can be configured for <code>ScrnGameType</code> (moved upper in class tree from <code>TscGame</code>)</li>
+<li>AntiBlocker is automatically disabled on test maps (e.g., <em>ScrnTestGrounds</em>)</li>
+</ul>
 <h3>v9.56</h3>
 <ul>
 <li>Fixed medic nades (i.e., restored frag nades)</li>

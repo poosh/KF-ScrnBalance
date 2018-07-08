@@ -19,6 +19,12 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+### v9.60.1
+- Fixed bug when respawned players ignored `bAntiBlocker` setting.
+- `bAntiBlocker` is set to true by default
+- Fixed LAR fire animation rate to properly apply perk bonus
+- Fixed yet another Tripwire's bug in end-wave dosh calculation
+
 ### v9.60.0
 #### Version Numbering Change
 Version numbering changed to **MAJOR.MINOR.PATCH**. No more special BETA releases.
