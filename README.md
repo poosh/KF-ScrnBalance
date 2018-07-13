@@ -19,6 +19,10 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+### v9.60.2
+- Fixed bug when `ZombieVolume.bVolumeIsEnabled` flag was ignored when choosing spawn volume.
+- Lowered falling damage. Traded realism for fun.
+
 ### v9.60.1
 - Fixed bug when respawned players ignored `bAntiBlocker` setting.
 - `bAntiBlocker` is set to true by default

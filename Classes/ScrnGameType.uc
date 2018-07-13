@@ -993,7 +993,7 @@ function ZombieVolume FindSpawningVolume(optional bool bIgnoreFailedSpawnTime, o
     // Second pass, figure out best spawning point.
     for( i=0; i<ZedSpawnList.Length; i++ ) {
         CurZ = ZedSpawnList[i];
-        if ( CurZ.bObjectiveModeOnly )
+        if ( CurZ.bObjectiveModeOnly || !CurZ.bVolumeIsEnabled )
             continue;
 
         bCanSpawnAll = true;

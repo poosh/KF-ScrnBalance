@@ -5,10 +5,10 @@ Warning: ZombieCrawler_HALLOWEEN KF-ZedDiscoThe2ndFloor.ZombieCrawler_HALLOWEEN 
 
 Move DLCLocks from ScrnbalanceSrv.ini
 
-? Events in ScrnWaves
-
-? mvote FakedPlayers
-
 ? Fix QuickMelee bug when player ends up with hidden weapon
 
 Brown Cloud: blaming players make them fart
+
+SCAR Tactical Reload
+
+A Blank Page

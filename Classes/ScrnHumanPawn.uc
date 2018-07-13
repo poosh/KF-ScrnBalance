@@ -2550,4 +2550,5 @@ defaultproperties
      HeadshotSound=sound'ProjectileSounds.impact_metal09'
      TraderSpeedBoost=1.5
      PrevPerkLevel=-1
+     MaxFallSpeed=750
 }

@@ -963,10 +963,6 @@ protected function StartTourney()
 
 function bool RewardSurvivingPlayers()
 {
-    local Controller C;
-    local int Reds, Blues;
-    local int moneyPerPlayerRed, moneyPerPlayerBlue;
-
     // At this WaveNum isn't increased yet
     if ( OvertimeTeamMoneyPenalty > 0 && WaveNum+1 >= OriginalFinalWave ) {
         CurrentTeamMoneyPenalty = fmin(CurrentTeamMoneyPenalty + OvertimeTeamMoneyPenalty, 1);

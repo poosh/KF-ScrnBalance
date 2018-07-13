@@ -1,14 +1,14 @@
 "ScrN Balance" a.k.a. "[ScrN] Total Game Balance + Gunslinger Perk"
-Copyright (c) 2012-2016 PU Developing IK, Latvia, All Rights Reserved.
+Copyright (c) 2012-2018 PU Developing IK, Latvia, All Rights Reserved.
 
 
 1. TERMS OF USE
 Every owner of full, registered copy of "Killing Floor" game can use "ScrN Balance" mod for free.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT 
-NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND 
-NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, 
-DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, 
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT
+NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
@@ -21,26 +21,26 @@ copies or substantial portions of the Software.
 No charges, including but not limiting with hosting or media costs, must be applied.
 If you can not distribute "ScrN Balance" for free, then do not do it at all!
 
- 
+
 3. MODIFICATION
-"ScrN Balance" comes with source code, which can be extracted (decompiled) from ScrnBalance.u or 
+"ScrN Balance" comes with source code, which can be extracted (decompiled) from ScrnBalance.u or
 ScrnBalanceSrv.u packages.
-You can use "ScrN Balance" source code for modifications or new creations that are subject of the 
+You can use "ScrN Balance" source code for modifications or new creations that are subject of the
 following restrictions:
 a)  Original author must be referenced, including copyrights and the following link:
     http://steamcommunity.com/sharedfiles/filedetails/?id=97709811
-b)  Your work must be compiled under separate package. Modifications of ScrnBalance.u 
-    or ScrnBalanceSrv.u files are strictly prohibited. 
+b)  Your work must be compiled under separate package. Modifications of ScrnBalance.u
+    or ScrnBalanceSrv.u files are strictly prohibited.
 c)  You can not make your work available to public without written permission from PU Developing IK,
     if it uses more than 100 lines from "ScrN Balance" source code, excluding comments, brackets and
     whitespace. "Line" in this context means "operation that ends with a semicolon (;)".
-    This, however, does not apply to extended classes, which are linked to ScrnBalance.u 
+    This, however, does not apply to extended classes, which are linked to ScrnBalance.u
     or ScrnBalanceSrv.u and can not be used without them. In such cases you can use entire
     "ScrN Balance" source code without requiring additional permission.
-d)  Your work must be provided to end user 100% free of any charges. You or anybody else 
-    are not allowed to benefit from any income of the product, which directly or relatively uses 
-    "ScrN Balance" or any part of its source code, without written permission from PU Developing IK, 
-    even if you have received permission from Tripwire Interactive. 
-    This includes but not limited with direct sales of the product, advertising income, 
-    selling in-game items or stats, which can not be (or are not) used without "ScrN Balance" or its 
+d)  Your work must be provided to end user 100% free of any charges. You or anybody else
+    are not allowed to benefit from any income of the product, which directly or relatively uses
+    "ScrN Balance" or any part of its source code, without written permission from PU Developing IK,
+    even if you have received permission from Tripwire Interactive.
+    This includes but not limited with direct sales of the product, advertising income,
+    selling in-game items or stats, which can not be (or are not) used without "ScrN Balance" or its
     source code.
