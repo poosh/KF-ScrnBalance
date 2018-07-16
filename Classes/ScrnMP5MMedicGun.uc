@@ -14,4 +14,5 @@ defaultproperties
     InventoryGroup=4
     PickupClass=Class'ScrnBalanceSrv.ScrnMP5MPickup'
     ItemName="MP5M Medic Gun SE"
+    PlayerViewPivot=(Pitch=45,Roll=0,Yaw=5) //fix to make sight centered
 }
