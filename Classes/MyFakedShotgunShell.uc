@@ -21,29 +21,10 @@ simulated function Tick( float DeltaTime )
     Disable('Tick');
 }
 
-/*
-simulated function ProcessTouch( actor Other, vector HitLocation )
-{
-}
-simulated function HitWall( vector HitNormal, actor Wall )
-{
-}
-*/
-/*
-simulated function PostNetReceive()
-{
-}
-*/
- 
-
 defaultproperties
 {
-    //StaticMesh=StaticMesh'KF_pickups5_Trip.nades.MedicNade_Pickup'
-	StaticMesh=StaticMesh'kf_generic_sm.Bullet_Shells.12Guage_Shell'
+    StaticMesh=StaticMesh'kf_generic_sm.Bullet_Shells.12Guage_Shell'
     LifeSpan=0
-
-    //Physics=PHYS_None
-
 
     RemoteRole=ROLE_None
     bSkipActorPropertyReplication=true
@@ -52,7 +33,7 @@ defaultproperties
     bNetNotify=false
     bAlwaysRelevant=true
 
-	
+
     Physics=PHYS_None
     bCollideActors=false
     bCollideWorld=false
