@@ -117,4 +117,5 @@ defaultproperties
     Description="A compact assault rifle. Damage could be better, but accuracy, fast reload and a lot of ammo makes it a good choise in a battle."
     PickupClass=Class'ScrnBalanceSrv.ScrnM4Pickup'
     ItemName="M4 SE"
+    PlayerViewPivot=(Pitch=28,Roll=0,Yaw=7) //fix to make sight centered
 }
