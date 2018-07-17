@@ -40,5 +40,5 @@ defaultproperties
     bBlockActors=false
     bBlockProjectiles=false
     bBlockHitPointTraces=false
-    DrawScale=10.0 //3.5
+    DrawScale=3.5
 }
