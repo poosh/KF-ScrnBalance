@@ -3299,30 +3299,6 @@ simulated function SetHUDAlpha()
     default.WhiteAlphaColor.A = KFHUDAlpha;
 }
 
-exec function DoshR(byte value)
-{
-    CoolCashIcon.Tints[0].R = value;
-    CoolCashIcon.Tints[1].R = value;
-    CoolCashDigits.Tints[0].R = value;
-    CoolCashDigits.Tints[1].R = value;
-}
-
-exec function DoshG(byte value)
-{
-    CoolCashIcon.Tints[0].G = value;
-    CoolCashIcon.Tints[1].G = value;
-    CoolCashDigits.Tints[0].G = value;
-    CoolCashDigits.Tints[1].G = value;
-}
-
-exec function DoshB(byte value)
-{
-    CoolCashIcon.Tints[0].B = value;
-    CoolCashIcon.Tints[1].B = value;
-    CoolCashDigits.Tints[0].B = value;
-    CoolCashDigits.Tints[1].B = value;
-}
-
 simulated function LayoutMessage( out HudLocalizedMessage Message, Canvas C )
 {
     local int FontSize;

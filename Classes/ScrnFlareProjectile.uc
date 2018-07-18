@@ -86,9 +86,7 @@ simulated function ProcessTouch(Actor Other, Vector HitLocation)
     }
 
     if( !bDud )
-	{
-	   Explode(HitLocation,Normal(HitLocation-Other.Location));
-	}
+        Explode(HitLocation,Normal(HitLocation-Other.Location));
 }
 
 

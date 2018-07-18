@@ -19,6 +19,19 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+### v9.60.3
+- Added tactical reload for AA12 (by *Scuddles*)
+- Enhanced M32 reload (by *Scuddles*)
+- Fixed tactical reload for SCAR (by *Scuddles*)
+- Adjusted iron sights for MP5, M4, M4-203 and M4-203M (by *Scuddles*)
+- Buffed Combat Shotgun's penetration vs big zeds
+- Lowered spread Combat Shotgun's spread while aiming down the sights
+- Raised spread of Nailgun multi fire (1250 -> 1750)
+- Added Nailgun single fire sound (thanks to *Scuddles* for idea)
+- Fixed issue in Support Spec. perk that prevented penetration damage reduction lowering below x0.60
+- Significantly nerfed nail over penetration (damage reduction: x0.75 -> x0.33)
+- Nails cannot penetrate big or medium zeds anymore (Bloat, Husk, SC, FP, etc.)
+
 ### v9.60.2
 - Fixed bug when `ZombieVolume.bVolumeIsEnabled` flag was ignored when choosing spawn volume.
 - Lowered falling damage. Traded realism for fun.

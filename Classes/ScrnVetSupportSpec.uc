@@ -86,8 +86,13 @@ static function float GetShotgunPenetrationDamageMulti(KFPlayerReplicationInfo K
 {
     local float PenDamageInverse;
 
-    PenDamageInverse = (1.0 - FMax(0,DefaultPenDamageReduction));
-    return DefaultPenDamageReduction + (PenDamageInverse * 0.6); // 60% better penetration
+    if ( DefaultPenDamageReduction < 0.0001 )
+        return 0.0; // do not enhance penetration if that is disabled
+    else if ( DefaultPenDamageReduction > 0.9999 )
+        return DefaultPenDamageReduction; // do not enhance penetration if there is no damage reduction
+
+    PenDamageInverse = 1.0 - DefaultPenDamageReduction;
+    return DefaultPenDamageReduction + fmin(PenDamageInverse, DefaultPenDamageReduction) * 0.6; // 60% better penetration
 }
 
 // Change the cost of particular items
