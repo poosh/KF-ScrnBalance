@@ -364,9 +364,12 @@ simulated function bool PutDown()
 defaultproperties
 {
      FireModeClass(0)=Class'ScrnBalanceSrv.ScrnM32Fire'
-     ReloadRate=10.204 //added to support new reload
-     BulletLoadRate=1.50 // increased base reload speed from original value 1.634
-     ReloadAnimRate=1.0893000 //speed up animation to match
+     //ReloadRate=10.204 //added to support new reload
+     //BulletLoadRate=1.50 // increased base reload speed from original value 1.634
+     //ReloadAnimRate=1.0893000 //speed up animation to match
+     ReloadRate=10.00//10.204
+     BulletLoadRate=1.467 // 1.634
+     ReloadAnimRate=1.12//1.0893000
      PickupClass=Class'ScrnBalanceSrv.ScrnM32Pickup'
      ItemName="M32 Grenade Launcher SE"
 }
