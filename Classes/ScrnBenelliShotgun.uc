@@ -8,4 +8,5 @@ defaultproperties
      Description="A military tactical shotgun with semi automatic fire capability. Holds up to 6 shells. Special shell construction allow pellets to penetrate fat much easier."
      PickupClass=Class'ScrnBalanceSrv.ScrnBenelliPickup'
      ItemName="Combat Shotgun SE"
+     PlayerViewPivot=(Pitch=-47,Roll=0,Yaw=-5) //fix to make sight centered
 }
