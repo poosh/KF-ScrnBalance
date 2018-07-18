@@ -111,7 +111,7 @@ function AddReloadedAmmo()
 defaultproperties
 {
     ReloadShortAnim="Reload"
-    ReloadShortRate=2.966000
+    ReloadShortRate=2.27 //2.966000
 
     FireModeClass(0)=Class'ScrnBalanceSrv.ScrnSCARMK17Fire'
     PickupClass=Class'ScrnBalanceSrv.ScrnSCARMK17Pickup'
