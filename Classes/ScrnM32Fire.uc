@@ -26,6 +26,7 @@ simulated function bool AllowFire()
 
 defaultproperties
 {
+    FireAnimRate=1.10; //Speed up cylinder rotate animation so it doesn't break when firing at max rate
     ProjectileClass=Class'ScrnBalanceSrv.ScrnM32GrenadeProjectile'
     ProjSpawnOffset=(X=5,Y=10.000000)
 }
