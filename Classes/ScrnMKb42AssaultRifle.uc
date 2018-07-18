@@ -84,8 +84,9 @@ function AddReloadedAmmo()
     UpdateMagCapacity(Instigator.PlayerReplicationInfo);
 
     a = MagCapacity;
-    if ( bShortReload )
-        a++; // 1 bullet already bolted
+    //if ( bShortReload )
+    //    a++; // 1 bullet already bolted
+    //removed +1 on tactical reload because MKb42(H) is an open bolt weapon
     
     if ( AmmoAmount(0) >= a )
         MagAmmoRemaining = a;
