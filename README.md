@@ -19,6 +19,9 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+### v9.60.4
+- `FirstStatBonusMult` now is used for winning custom maps too
+
 ### v9.60.3
 - Added tactical reload for AA12 (by *Scuddles*)
 - Enhanced M32 reload (by *Scuddles*)

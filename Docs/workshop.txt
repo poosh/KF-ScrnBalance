@@ -1,8 +1,8 @@
 ﻿Total rebalance of the game. Adds new guns, Gunslinger perk and server-side achievements.
 Now it IS COMPATIBLE with Objective Mode! Select "Objective Mode [ScrN]" for a proper gameplay.
-Version 9.60.1.
+Version 9.60.4.
 
-[URL=http://steamcommunity.com/groups/ScrNBalance][IMG]https://dl.dropboxusercontent.com/u/70213558/ButtonSteamGroup.png[/IMG][/URL]  [URL=http://steamcommunity.com/groups/ScrNBalance/discussions/2/][IMG]https://dl.dropboxusercontent.com/u/70213558/ButtonDownload.png[/IMG][/URL]  [URL=https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=VFARLRAL7CNJ4&lc=LV&item_name=Scrake%20Naders%20Community&item_number=ScrnBalance&currency_code=EUR&bn=PP%2dDonationsBF%3abtn_donateCC_LG%2egif%3aNonHosted][IMG]https://dl.dropboxusercontent.com/u/70213558/ButtonDonate.png[/IMG][/URL]
+[URL=http://steamcommunity.com/groups/ScrNBalance][IMG]https://www.dropbox.com/s/mv0zdjrpujrg9fm/ButtonSteamGroup.png[/IMG][/URL]  [URL=http://steamcommunity.com/groups/ScrNBalance/discussions/2/][IMG]https://www.dropbox.com/s/3634z1xcj4xlp4i/ButtonDownload.png[/IMG][/URL]  [URL=https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=VFARLRAL7CNJ4&lc=LV&item_name=Scrake%20Naders%20Community&item_number=ScrnBalance&currency_code=EUR&bn=PP%2dDonationsBF%3abtn_donateCC_LG%2egif%3aNonHosted][IMG]https://www.dropbox.com/s/k45xt5myzul70l6/ButtonDonate.png[/IMG][/URL]
 [i]If you have any questions about this mod, then please press "Join Steam Group" button above and post your questions there.[/i]
 
 Main features:
@@ -16,7 +16,7 @@ Main features:
 [*] Tactical Reload for Commando and Combat Medic.
 [*] Chainsaw consumes fuel and brings real massacre to the game;
 [*] Perk bonuses for custom weapons (the ones you can get via workshop);
-[*] Changing gun skings "on-the-fly"
+[*] Changing gun skins "on-the-fly"
 [*] Balances weapons and perks, making each perk useful in the game;
 [*] Alternate Burning Mechanism makes Firebug awesome (but not OP);
 [*] Perks support custom weapons: install a new weapon, add it to the config and receive perk bonuses for that;

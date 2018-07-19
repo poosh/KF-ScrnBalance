@@ -124,7 +124,7 @@ simulated function InitData()
                 default.AchDefs[i].DisplayName = AchDefs[i].DisplayName;
                 default.AchDefs[i].Description = AchDefs[i].Description;
                 default.AchDefs[i].Icon = AchDefs[i].Icon;
-            }        
+            }
         }
         default.bNeedToSetDefaultAchievementData = false;
     }
@@ -173,10 +173,10 @@ simulated function InitData()
 simulated function SetDefaultAchievementData()
 {
     local int i;
-    
-    if ( Level.NetMode == NM_DedicatedServer ) 
+
+    if ( Level.NetMode == NM_DedicatedServer )
         return;
-        
+
     for ( i = 0; i < AchDefs.Length; ++i ) {
         if (InStr(AchDefs[i].Description, "%c") != -1 )
             ReplaceText(AchDefs[i].Description, "%c", string(AchDefs[i].MaxProgress));
@@ -381,6 +381,7 @@ function bool ProgressAchievement(int AchIndex, int Inc)
         }
         else if ( AchDefs[AchIndex].CurrentProgress < AchDefs[AchIndex].MaxProgress ) {
             AchDefs[AchIndex].CurrentProgress += Inc;
+            result = true;
             if ( AchDefs[AchIndex].CurrentProgress >= AchDefs[AchIndex].MaxProgress ) {
                 AchDefs[AchIndex].bUnlockedJustNow = true;
                 AchDefs[AchIndex].CurrentProgress = AchDefs[AchIndex].MaxProgress; // in case prevprogress + inc > max
@@ -437,7 +438,7 @@ static final private function AnnounceEarn(ScrnAchievements AchOwner, int AchInd
 
     for( S = AchOwner.RepLink.CustomLink; S != none; S = S.NextLink ) {
         A = ScrnAchievements(S);
-        if( A != none ) 
+        if( A != none )
             A.AchievementEarned(AchOwner, AchIndex, bFirstTimeEarned);
     }
 }
@@ -651,11 +652,11 @@ static final function AchStrInfo GetAchievementByID(ClientPerkRepLink L, name ID
 static final function bool IsAchievementUnlocked(ClientPerkRepLink L, name ID)
 {
     local AchStrInfo A;
-    
+
     A = GetAchievementByID(L, ID, false);
-    if ( A.AchHandler == none ) 
+    if ( A.AchHandler == none )
         return false;
-        
+
     return A.AchHandler.IsUnlocked(A.AchIndex);
 }
 
@@ -729,7 +730,7 @@ static final function RetrieveGroups(ClientPerkRepLink L, out array<name> GroupN
 
     if ( L == none )
         return;
-        
+
     if ( GroupNames.length != GroupCaptions.length )
         GroupCaptions.length = GroupNames.length;
 
@@ -749,7 +750,7 @@ static final function RetrieveGroups(ClientPerkRepLink L, out array<name> GroupN
                     GroupNames[j] = A.GroupInfo[i].Group;
                     GroupCaptions[j] = A.GroupInfo[i].Caption;
                 }
-            }        
+            }
         }
     }
 }
@@ -757,11 +758,11 @@ static final function RetrieveGroups(ClientPerkRepLink L, out array<name> GroupN
 simulated function string LocalGroupCaption(ClientPerkRepLink L, name GroupName)
 {
     local int i;
-    
+
     for ( i = 0; i < GroupInfo.length; ++i ) {
         if ( GroupInfo[i].Group == GroupName )
             return GroupInfo[i].Caption;
-    }    
+    }
     return "";
 }
 
@@ -801,6 +802,6 @@ defaultproperties
     bFixedDataSize=True
     bReplicateDataToClients=true
     bNeedToSetDefaultAchievementData=true
-     
+
     GroupInfo(0)=(Group="",Caption="ALL")
 }

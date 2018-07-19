@@ -404,6 +404,7 @@ function GiveMapAchievements(optional String MapName)
     local float BonusMult;
     local bool bGiveBonus;
     local int i;
+    local int MapResult;
 
     WinnerTeam = TeamInfo(Level.Game.GameReplicationInfo.Winner);
     if ( Mut.bStoryMode ) {
@@ -444,18 +445,20 @@ function GiveMapAchievements(optional String MapName)
             SPI.ProgressAchievement('PerkFavorite', 1);
 
         //unlock "Normal" achievement and see if the map is found
-        bCustomMap = MapAchClass.static.UnlockMapAchievement(PerkLink, MapName, 0) == -2;
-        bNewAch = false;
+        MapResult = MapAchClass.static.UnlockMapAchievement(PerkLink, MapName, 0);
+        bCustomMap = (MapResult == -2);
+        bNewAch = (MapResult == 1);
         if ( bCustomMap ) {
             //map not found - progress custom map achievements
-            if ( bGiveHardAch )
-                AchClass.static.ProgressAchievementByID(PerkLink, 'WinCustomMapsHard', 1);
-            if ( bGiveSuiAch )
-                AchClass.static.ProgressAchievementByID(PerkLink, 'WinCustomMapsSui', 1);
-            if ( bGiveHoeAch )
-                AchClass.static.ProgressAchievementByID(PerkLink, 'WinCustomMapsHoE', 1);
+            if ( bGiveHardAch && AchClass.static.ProgressAchievementByID(PerkLink, 'WinCustomMapsHard', 1) )
+                bNewAch = true;
+            if ( bGiveSuiAch && AchClass.static.ProgressAchievementByID(PerkLink, 'WinCustomMapsSui', 1) )
+                bNewAch = true;
+            if ( bGiveHoeAch && AchClass.static.ProgressAchievementByID(PerkLink, 'WinCustomMapsHoE', 1) )
+                bNewAch = true;
             AchClass.static.ProgressAchievementByID(PerkLink, 'WinCustomMapsNormal', 1);
-            AchClass.static.ProgressAchievementByID(PerkLink, 'WinCustomMaps', 1);
+            if ( AchClass.static.ProgressAchievementByID(PerkLink, 'WinCustomMaps', 1) )
+                bNewAch = true;
         }
         else {
             //map found - give related achievements
