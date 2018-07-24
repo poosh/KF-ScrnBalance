@@ -112,6 +112,7 @@ simulated function PostNetReceive()
         if ( NailedMonster != none ) {
             Mass = NailedMonster.Mass;
             Bounces=0;
+            NailedMonster.SetBase(self);
             NailedMonster.SetPhysics(PHYS_Flying); // fly away, baby ;)
             NailedMonster.bZedUnderControl = true; //indicate that nail is taking zed with it
 
@@ -156,6 +157,9 @@ function ReleaseMonster()
     if ( --NailedMonster.NumZCDHits <= 0 ) {
         NailedMonster.bZedUnderControl = false;
         NailedMonster.AirSpeed = NailedMonster.default.AirSpeed * NailedMonster.GroundSpeed / NailedMonster.default.GroundSpeed;
+
+        if ( NailedMonster.Base == self )
+            NailedMonster.SetBase(none);
 
         //drop zed on the ground and let him walk away
         if ( NailedMonster.Physics == PHYS_Flying )
@@ -353,7 +357,7 @@ simulated function ProcessTouch (Actor Other, vector HitLocation)
         }
         else if ( !KFM.bZedUnderControl  && (bWasDecapitated ||
                     ( // KFM.CollisionRadius < 27 && (!KFM.bUseExtendedCollision || KFM.ColRadius < 27) &&
-                        KFM.Mass < 360 && KFM.Health < PerkedDamage * 10 && ZombieSiren(KFM) == none)) ) 
+                        KFM.Mass < 360 && KFM.Health < PerkedDamage * 10 && ZombieSiren(KFM) == none)) )
         {
             // can pin only small zeds (up to Clot) or wounded medium zeds (Gorefast, Siren)
 
@@ -372,6 +376,7 @@ simulated function ProcessTouch (Actor Other, vector HitLocation)
                     KFM.bZedUnderControl = true; // under our conrol
                     KFM.SetPhysics(PHYS_Flying); // fly away, baby ;)
                     KFM.AirSpeed = 0;
+                    KFM.SetBase(self);
                     if ( Physics != PHYS_None )
                         SetPhysics(PHYS_Falling);
                     Mass = KFM.Mass;
@@ -493,9 +498,10 @@ defaultproperties
      LifeSpanAfterHitWall=2.000000
      VelocityModMass=0.005000
      VelocityModHealth=0.120000
-     BigZedPenDmgReduction=0.000000
+     BigZedPenDmgReduction=0.00
+     MediumZedPenDmgReduction=0.00  // nerf from 0.75 in v9.60.3
      StaticMeshRef="EffectsSM.Weapons.Vlad_9000_Nail"
-     PenDamageReduction=0.750000
+     PenDamageReduction=0.33  // nerf from 0.75 in v9.60.3
      Damage=40.000000
      Speed=3500
      MyDamageType=Class'ScrnBalanceSrv.ScrnDamTypeNailGun'

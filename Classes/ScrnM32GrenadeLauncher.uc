@@ -1,5 +1,8 @@
+/** A M32 with fancy code copied from Poosh's Colt
+ * @author Scuddles
+ * @see https://steamcommunity.com/groups/ScrNBalance/discussions/6/1696049513783762669/
+ */
 class ScrnM32GrenadeLauncher extends M32GrenadeLauncher;
-//A M32 with fancy code copied from Poosh's Colt
 
 var float ReloadMulti;
 var float BulletLoadRate;   // how long does it takes to load a single bullet
@@ -39,7 +42,7 @@ simulated function WeaponTick(float dt)
             }
         }
     }
-    
+
     if ( Role < ROLE_Authority )
     return;
 
@@ -59,7 +62,7 @@ simulated function WeaponTick(float dt)
                     bInterruptedReload = True; //prevents interrupt if loaded 6 rounds, since it's actually built into the animation
                     ActuallyFinishReloading(); //force reload to finish
                 }
-                
+
                 //interrupt if full
                 if ( MagAmmoRemaining > 5 || MagAmmoRemaining >= AmmoAmount(0) ) {
                     if ( NumLoadedThisReload != 6)
@@ -91,28 +94,28 @@ simulated function WeaponTick(float dt)
                 ServerSpawnLight();
             }
         }
-    }    
+    }
 }
 
 
 simulated function bool AllowReload()
 {
     if ( bIsReloading || MagAmmoRemaining >= AmmoAmount(0) )
-    return false;
-    
+        return false;
+
     UpdateMagCapacity(Instigator.PlayerReplicationInfo);
     if ( MagAmmoRemaining >= MagCapacity )
-    return false;
+        return false;
 
     if( KFInvasionBot(Instigator.Controller) != none || KFFriendlyAI(Instigator.Controller) != none )
-    return true;
+        return true;
 
-    return !FireMode[0].IsFiring() && !FireMode[1].IsFiring() 
-    && Level.TimeSeconds > (FireMode[0].NextFireTime - 0.1);
+    return !FireMode[0].IsFiring() && !FireMode[1].IsFiring()
+            && Level.TimeSeconds > (FireMode[0].NextFireTime - 0.1);
 }
 
 
-// Since vanilla reloading replication is totally fucked, I moved base code into separate, 
+// Since vanilla reloading replication is totally fucked, I moved base code into separate,
 // replication-free function, which is executed on both server and client side
 // -- PooSH
 simulated function DoReload()
@@ -126,15 +129,15 @@ simulated function DoReload()
     }
 
     if ( KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo) != none && KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo).ClientVeteranSkill != none )
-    ReloadMulti = KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo).ClientVeteranSkill.Static.GetReloadSpeedModifier(KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo), self);
+        ReloadMulti = KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo).ClientVeteranSkill.Static.GetReloadSpeedModifier(KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo), self);
     else
-    ReloadMulti = 1.0;
+        ReloadMulti = 1.0;
 
     bIsReloading = true;
     bInterruptedReload = false;
-    
-    //BulletUnloadRate = default.BulletUnloadRate / ReloadMulti; 
-    BulletLoadRate = default.BulletLoadRate / ReloadMulti; 
+
+    //BulletUnloadRate = default.BulletUnloadRate / ReloadMulti;
+    BulletLoadRate = default.BulletLoadRate / ReloadMulti;
     //NextBulletLoadTime = Level.TimeSeconds + BulletUnloadRate + BulletLoadRate; //BulletUnloadRate disabled
     NextBulletLoadTime = Level.TimeSeconds + BulletLoadRate;
     // more bullets left = less time to reload
@@ -144,28 +147,28 @@ simulated function DoReload()
 
     Instigator.SetAnimAction(WeaponReloadAnim);
 }
-// This function is triggered by client, replicated to server and NOT EXECUTED on client, 
+// This function is triggered by client, replicated to server and NOT EXECUTED on client,
 // even if marked as simulated
 
 exec function ReloadMeNow()
 {
     local KFPlayerController PC;
-    
-    if ( !AllowReload() ) 
-    return;
-    
+
+    if ( !AllowReload() )
+        return;
+
     DoReload();
     ClientReload();
-    
+
     NumLoadedThisReload = 0;
-    
+
     PC = KFPlayerController(Instigator.Controller);
-    if ( PC != none && Level.Game.NumPlayers > 1 && KFGameType(Level.Game).bWaveInProgress 
+    if ( PC != none && Level.Game.NumPlayers > 1 && KFGameType(Level.Game).bWaveInProgress
             && Level.TimeSeconds - PC.LastReloadMessageTime > PC.ReloadMessageDelay )
     {
         KFPlayerController(Instigator.Controller).Speech('AUTO', 2, "");
         KFPlayerController(Instigator.Controller).LastReloadMessageTime = Level.TimeSeconds;
-    }    
+    }
 }
 
 function ServerRequestAutoReload()
@@ -189,10 +192,10 @@ function AddReloadedAmmo() {} // magazine is filled in WeaponTick now
 
 simulated function bool StartFire(int Mode)
 {
-    if ( MagAmmoRemaining <= 0 ) 
-    return false;
+    if ( MagAmmoRemaining <= 0 )
+        return false;
     if ( bIsReloading ) {
-        InterruptReload(); 
+        InterruptReload();
         return false;
     }
     return super(Weapon).StartFire(Mode);
@@ -213,7 +216,7 @@ simulated function bool InterruptReload()
         // that's very lame how to do stuff like that - don't repeat it at home ;)
         // in theory client should send server a request to interrupt the reload,
         // and the server send back accept to client.
-        // But in such case we have a double chance of screwing the shit up, so let's just 
+        // But in such case we have a double chance of screwing the shit up, so let's just
         // do it lazy way.
         ServerInterruptReload();
         ClientInterruptReload();
@@ -247,21 +250,22 @@ simulated exec function ToggleIronSights()
 {
     if( bHasAimingMode ) {
         if( bAimingRifle )
-        PerformZoom(false);
+            PerformZoom(false);
         else
-        IronSightZoomIn();
+            IronSightZoomIn();
     }
 }
 
 simulated exec function IronSightZoomIn()
 {
     if( bHasAimingMode ) {
-        if( Owner != none && Owner.Physics == PHYS_Falling 
+        if( Owner != none && Owner.Physics == PHYS_Falling
                 && Owner.PhysicsVolume.Gravity.Z <= class'PhysicsVolume'.default.Gravity.Z )
         return;
-        
-        if( bIsReloading )
-        InterruptReload(); // finish reloading while zooming in  -- PooSH
+
+        if( bIsReloading ) {
+            InterruptReload(); // finish reloading while zooming in  -- PooSH
+        }
         PerformZoom(True);
     }
 }
@@ -272,10 +276,10 @@ simulated function bool PutDown()
 
     // continue here, because there is nothing to stop us from interrupting the reload  -- PooSH
     if ( bIsReloading )
-    InterruptReload(); 
+        InterruptReload();
 
     if( bAimingRifle )
-    ZoomOut(False);
+        ZoomOut(False);
 
     // From Weapon.uc
     if (ClientState == WS_BringUp || ClientState == WS_ReadyToFire)
@@ -286,13 +290,13 @@ simulated function bool PutDown()
             {
                 // if _RO_
                 if( FireMode[Mode] == none )
-                continue;
+                    continue;
                 // End _RO_
 
                 if ( FireMode[Mode].bFireOnRelease && FireMode[Mode].bIsFiring )
-                return false;
+                    return false;
                 if ( FireMode[Mode].NextFireTime > Level.TimeSeconds + FireMode[Mode].FireRate*(1.f - MinReloadPct))
-                DownDelay = FMax(DownDelay, FireMode[Mode].NextFireTime - Level.TimeSeconds - FireMode[Mode].FireRate*(1.f - MinReloadPct));
+                    DownDelay = FMax(DownDelay, FireMode[Mode].NextFireTime - Level.TimeSeconds - FireMode[Mode].FireRate*(1.f - MinReloadPct));
             }
         }
 
@@ -302,34 +306,30 @@ simulated function bool PutDown()
             {
                 // if _RO_
                 if( FireMode[Mode] == none )
-                continue;
+                    continue;
                 // End _RO_
 
                 if ( FireMode[Mode].bIsFiring )
-                ClientStopFire(Mode);
+                    ClientStopFire(Mode);
             }
 
             if (  DownDelay <= 0  || KFPawn(Instigator).bIsQuickHealing > 0)
             {
                 if ( ClientState == WS_BringUp || KFPawn(Instigator).bIsQuickHealing > 0 )
-                TweenAnim(SelectAnim,PutDownTime);
+                    TweenAnim(SelectAnim,PutDownTime);
                 else if ( HasAnim(PutDownAnim) )
                 {
                     if( ClientGrenadeState == GN_TempDown || KFPawn(Instigator).bIsQuickHealing > 0)
-                    {
                         PlayAnim(PutDownAnim, PutDownAnimRate * (PutDownTime/QuickPutDownTime), 0.0);
-                    }
                     else
-                    {
                         PlayAnim(PutDownAnim, PutDownAnimRate, 0.0);
-                    }
 
                 }
             }
         }
         ClientState = WS_PutDown;
         if ( Level.GRI.bFastWeaponSwitching )
-        DownDelay = 0;
+            DownDelay = 0;
         if ( DownDelay > 0 )
         {
             SetTimer(DownDelay, false);
@@ -350,7 +350,7 @@ simulated function bool PutDown()
     {
         // if _RO_
         if( FireMode[Mode] == none )
-        continue;
+            continue;
         // End _RO_
 
         FireMode[Mode].bServerDelayStartFire = false;
@@ -364,12 +364,10 @@ simulated function bool PutDown()
 defaultproperties
 {
      FireModeClass(0)=Class'ScrnBalanceSrv.ScrnM32Fire'
-     //ReloadRate=10.204 //added to support new reload
-     //BulletLoadRate=1.50 // increased base reload speed from original value 1.634
-     //ReloadAnimRate=1.0893000 //speed up animation to match
-     ReloadRate=10.00//10.204
-     BulletLoadRate=1.467 // 1.634
-     ReloadAnimRate=1.12//1.0893000
+     ReloadRate=9.604 //added to support new reload
+     BulletLoadRate=1.40 // increased base reload speed from original value 1.634
+     ReloadAnimRate=1.167143 //speed up animation to match
+
      PickupClass=Class'ScrnBalanceSrv.ScrnM32Pickup'
      ItemName="M32 Grenade Launcher SE"
 }
