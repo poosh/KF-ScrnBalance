@@ -7,6 +7,7 @@ defaultproperties
      FireModeClass(0)=Class'ScrnBalanceSrv.ScrnBenelliFire'
      Description="A military tactical shotgun with semi automatic fire capability. Holds up to 6 shells. Special shell construction allow pellets to penetrate fat much easier."
      PickupClass=Class'ScrnBalanceSrv.ScrnBenelliPickup'
+     AttachmentClass=Class'ScrnBalanceSrv.ScrnBenelliAttachment' //New attachment to fix broken BenelliAttachment class
      ItemName="Combat Shotgun SE"
      PlayerViewPivot=(Pitch=-47,Roll=0,Yaw=-5) //fix to make sight centered
 }
