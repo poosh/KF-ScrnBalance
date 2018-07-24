@@ -12,14 +12,14 @@ simulated function bool AllowReload()
     UpdateMagCapacity(Instigator.PlayerReplicationInfo);
 
     if(KFInvasionBot(Instigator.Controller) != none && !bIsReloading && MagAmmoRemaining < MagCapacity && AmmoAmount(0) > MagAmmoRemaining)
-    return true;
+        return true;
 
     if(KFFriendlyAI(Instigator.Controller) != none && !bIsReloading && MagAmmoRemaining < MagCapacity && AmmoAmount(0) > MagAmmoRemaining)
-    return true;
-
+        return true;
 
     if(FireMode[0].IsFiring() || FireMode[1].IsFiring() || bIsReloading || MagAmmoRemaining >= MagCapacity || ClientState == WS_BringUp || AmmoAmount(0) <= MagAmmoRemaining ||(FireMode[0].NextFireTime - Level.TimeSeconds) > 0.1 )
-    return false;
+        return false;
+
     return true;
 }
 
@@ -28,9 +28,9 @@ exec function ReloadMeNow()
     local float ReloadMulti;
 
     if(!AllowReload())
-    return;
-    if ( bHasAimingMode && bAimingRifle )
-    {
+        return;
+
+    if ( bHasAimingMode && bAimingRifle ) {
         FireMode[1].bIsFiring = False;
 
         ZoomOut(false);
@@ -39,22 +39,21 @@ exec function ReloadMeNow()
     }
 
     if ( KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo) != none && KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo).ClientVeteranSkill != none )
-    ReloadMulti = KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo).ClientVeteranSkill.Static.GetReloadSpeedModifier(KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo), self);
+        ReloadMulti = KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo).ClientVeteranSkill.Static.GetReloadSpeedModifier(KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo), self);
     else
-    ReloadMulti = 1.0;
+        ReloadMulti = 1.0;
 
     bIsReloading = true;
     ReloadTimer = Level.TimeSeconds;
     bShortReload = MagAmmoRemaining > 0 && ReloadShortAnim != '';
     if ( bShortReload )
-    ReloadRate = Default.ReloadShortRate / ReloadMulti;
+        ReloadRate = Default.ReloadShortRate / ReloadMulti;
     else
-    ReloadRate = Default.ReloadRate / ReloadMulti;
+        ReloadRate = Default.ReloadRate / ReloadMulti;
 
     if( bHoldToReload )
-    {
         NumLoadedThisReload = 0;
-    }
+
     ClientReload();
     Instigator.SetAnimAction(WeaponReloadAnim);
     if ( Level.Game.NumPlayers > 1 && KFGameType(Level.Game).bWaveInProgress && KFPlayerController(Instigator.Controller) != none &&
@@ -74,13 +73,13 @@ simulated function ClientReload()
 
         ZoomOut(false);
         if( Role < ROLE_Authority)
-        ServerZoomOut(false);
+            ServerZoomOut(false);
     }
 
     if ( KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo) != none && KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo).ClientVeteranSkill != none )
-    ReloadMulti = KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo).ClientVeteranSkill.Static.GetReloadSpeedModifier(KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo), self);
+        ReloadMulti = KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo).ClientVeteranSkill.Static.GetReloadSpeedModifier(KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo), self);
     else
-    ReloadMulti = 1.0;
+        ReloadMulti = 1.0;
 
     bIsReloading = true;
     if ( MagAmmoRemaining <= 0 || ReloadShortAnim == '' )
@@ -119,16 +118,17 @@ function AddReloadedAmmo()
     //if there is a fakedshell destroy it
     if ( FakedShell != none )
     {
-        FakedShell.Destroy();	
+        FakedShell.Destroy();
     }
 
     a = MagCapacity;
     //if ( bShortReload )
-    //a++; // 1 bullet already bolted //disabled because aa-12 is an open bolt weapon
+    //  a++; // 1 bullet already bolted //disabled because aa-12 is an open bolt weapon
     if ( AmmoAmount(0) >= a )
-    MagAmmoRemaining = a;
+        MagAmmoRemaining = a;
     else
-    MagAmmoRemaining = AmmoAmount(0);
+        MagAmmoRemaining = AmmoAmount(0);
+
     if ( PlayerController(Instigator.Controller) != none && KFSteamStatsAndAchievements(PlayerController(Instigator.Controller).SteamStatsAndAchievements) != none )
     {
         KFSteamStatsAndAchievements(PlayerController(Instigator.Controller).SteamStatsAndAchievements).OnWeaponReloaded();
@@ -138,7 +138,8 @@ function AddReloadedAmmo()
 simulated function Destroyed()
 {
     if ( FakedShell != None )
-    FakedShell.Destroy();
+        FakedShell.Destroy();
+
     super.Destroyed();
 }
 
