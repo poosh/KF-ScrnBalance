@@ -71,6 +71,7 @@ simulated function WeaponTick(float dt)
                     }
                 }
                 NextBulletLoadTime += BulletLoadRate;
+                Instigator.SetAnimAction(WeaponReloadAnim); //Loop thirdperson reload animation
             }
         }
     }
