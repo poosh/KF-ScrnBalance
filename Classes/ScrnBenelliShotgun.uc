@@ -1,5 +1,34 @@
 class ScrnBenelliShotgun extends BenelliShotgun;
 
+simulated function ClientFinishReloading()
+{
+	bIsReloading = false;
+
+    // The reload animation is complete, but there is still some animation to play
+    // Let's reward player for waiting the full reload time by playing the full reload animation (Can be skipped by firing)
+    // Benelli's animation is 30 frames long, so 1.0 seconds
+    if ( NumLoadedThisReload == MagCapacity)
+    {
+        //PlayIdle();
+        SetTimer(1.0, false); 
+    }
+    else
+    {
+        PlayIdle();
+    }
+
+	if(Instigator.PendingWeapon != none && Instigator.PendingWeapon != self)
+		Instigator.Controller.ClientSwitchToBestWeapon();
+}
+
+simulated function Timer()
+{
+    if ( ClientState == WS_ReadyToFire )
+        PlayIdle();
+    else
+        super.Timer();
+}
+
 defaultproperties
 {
      ReloadRate=0.750000
