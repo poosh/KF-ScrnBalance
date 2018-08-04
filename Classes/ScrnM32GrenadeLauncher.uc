@@ -367,7 +367,7 @@ defaultproperties
      FireModeClass(0)=Class'ScrnBalanceSrv.ScrnM32Fire'
      ReloadRate=9.604 //added to support new reload
      BulletLoadRate=1.40 // increased base reload speed from original value 1.634
-     ReloadAnimRate=1.167143 //speed up animation to match
+     ReloadAnimRate=1.17857 //speed up animation to match
 
      PickupClass=Class'ScrnBalanceSrv.ScrnM32Pickup'
      ItemName="M32 Grenade Launcher SE"
