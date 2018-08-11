@@ -1,9 +1,12 @@
 ﻿Total rebalance of the game. Adds new guns, Gunslinger perk and server-side achievements.
 Now it IS COMPATIBLE with Objective Mode! Select "Objective Mode [ScrN]" for a proper gameplay.
-Version 9.60.4.
+Version 9.60.5.
 
-[URL=http://steamcommunity.com/groups/ScrNBalance][IMG]https://www.dropbox.com/s/mv0zdjrpujrg9fm/ButtonSteamGroup.png[/IMG][/URL]  [URL=http://steamcommunity.com/groups/ScrNBalance/discussions/2/][IMG]https://www.dropbox.com/s/3634z1xcj4xlp4i/ButtonDownload.png[/IMG][/URL]  [URL=https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=VFARLRAL7CNJ4&lc=LV&item_name=Scrake%20Naders%20Community&item_number=ScrnBalance&currency_code=EUR&bn=PP%2dDonationsBF%3abtn_donateCC_LG%2egif%3aNonHosted][IMG]https://www.dropbox.com/s/k45xt5myzul70l6/ButtonDonate.png[/IMG][/URL]
-[i]If you have any questions about this mod, then please press "Join Steam Group" button above and post your questions there.[/i]
+→ [URL=http://steamcommunity.com/groups/ScrNBalance]OFFICIAL STEAM GROUP[/URL] ←
+→ [URL=https://steamcommunity.com/groups/ScrNBalance/discussions/2/483368526570475472/]DOWNLOAD[/URL] ←
+→ [URL=https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=VFARLRAL7CNJ4&lc=LV&item_name=Scrake%20Naders%20Community&item_number=ScrnBalance&currency_code=EUR&bn=PP%2dDonationsBF%3abtn_donateCC_LG%2egif%3aNonHosted]DONATE[/URL] ←
+
+[i]If you have any questions about this mod, then post them on the Official Steam Group forums.[/i]
 
 Main features:
 [list]

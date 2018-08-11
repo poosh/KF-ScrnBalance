@@ -11,7 +11,7 @@ class ScrnBalance extends Mutator
 #exec OBJ LOAD FILE=ScrnAch_T.utx
 
 
-const VERSION = 96004;
+const VERSION = 96005;
 
 var ScrnBalance Mut; // pointer to self to use in static functions, i.e class'ScrnBalance'.default.Mut
 
@@ -239,6 +239,7 @@ var globalconfig bool bSpawnRateFix;
 var globalconfig bool bServerInfoVeterancy;
 
 var transient array<KFUseTrigger> DoorKeys;
+var transient array<KFUseTrigger> DoubleDoorKeys; // keys with at least 2 doors
 
 var StaticMesh          AmmoBoxMesh;
 var float               AmmoBoxDrawScale;
@@ -2732,8 +2733,9 @@ function InitDoors()
     local KFUseTrigger t;
 
     foreach DynamicActors(class'KFUseTrigger', t) {
+        DoorKeys[DoorKeys.Length] = t;
         if ( t.DoorOwners.Length >= 2 )
-            DoorKeys[DoorKeys.Length] = t;
+            DoubleDoorKeys[DoubleDoorKeys.Length] = t;
     }
 }
 
@@ -2743,8 +2745,8 @@ function CheckDoors()
     local bool bBlowDoors;
     local KFUseTrigger key;
 
-    for ( i=0; i<DoorKeys.length; ++i) {
-        key = DoorKeys[i];
+    for ( i=0; i<DoubleDoorKeys.length; ++i ) {
+        key = DoubleDoorKeys[i];
         bBlowDoors = false;
         for ( j=1; j<key.DoorOwners.Length; ++j ) {
             // blow all doors if one is blown
@@ -2761,6 +2763,71 @@ function CheckDoors()
         }
     }
 
+}
+
+function RespawnDoors()
+{
+    local int i, j;
+    local KFUseTrigger key;
+
+    for ( i = 0; i < DoorKeys.length; ++i ) {
+        key = DoorKeys[i];
+        for ( j = 0; j < key.DoorOwners.Length; ++j ) {
+            key.DoorOwners[j].RespawnDoor();
+        }
+    }
+}
+
+function BlowDoors()
+{
+    local int i, j;
+    local KFUseTrigger key;
+
+    for ( i = 0; i < DoorKeys.length; ++i ) {
+        key = DoorKeys[i];
+        for ( j = 0; j < key.DoorOwners.Length; ++j ) {
+            if (!key.DoorOwners[j].bDoorIsDead) {
+                key.DoorOwners[j].GoBang(none, vect(0,0,0), vect(0,0,0), none);
+            }
+        }
+    }
+}
+
+function WeldDoors(float WeldPct)
+{
+    local int i, j;
+    local KFUseTrigger key;
+
+    for ( i = 0; i < DoorKeys.length; ++i ) {
+        key = DoorKeys[i];
+        if ( WeldPct ~= -1.0 )
+            key.WeldStrength = frand() * key.MaxWeldStrength;
+        else
+            key.WeldStrength = WeldPct * key.MaxWeldStrength;
+
+        for ( j = 0; j < key.DoorOwners.Length; ++j ) {
+            key.DoorOwners[j].RespawnDoor();
+            if ( !key.DoorOwners[j].bNoSeal ) {
+                key.DoorOwners[j].SetWeldStrength(key.WeldStrength);
+            }
+        }
+    }
+}
+
+function UnweldDoors()
+{
+    local int i, j;
+    local KFUseTrigger key;
+
+    for ( i = 0; i < DoorKeys.length; ++i ) {
+        key = DoorKeys[i];
+        key.WeldStrength = 0;
+        for ( j = 0; j < key.DoorOwners.Length; ++j ) {
+            if ( !key.DoorOwners[j].bDoorIsDead ) {
+                key.DoorOwners[j].SetWeldStrength(0);
+            }
+        }
+    }
 }
 
 static function class<ScrnVeterancyTypes> PickRandomPerk(ScrnClientPerkRepLink L)

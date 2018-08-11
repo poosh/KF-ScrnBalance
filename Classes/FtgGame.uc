@@ -29,7 +29,7 @@ function SetupWave()
 
     super.SetupWave();
 
-    if ( WaveNum > 0 ) {
+    if ( (ScrnGameLength != none && ScrnGameLength.Wave.bOpenTrader) || (ScrnGameLength == none && WaveNum > 0) ) {
         ZedSpawnLoc = ZSLOC_CLOSER;
         //TotalMaxMonsters *= 0.75; // reduce amount of zeds in wave
         FriendlyFireScale = HDmgScale;
@@ -246,18 +246,21 @@ State MatchInProgress
 {
     function DoWaveEnd()
     {
-        KillAllStinkyClots();
         if ( bSingleTeamGame )
             super(ScrnGameType).DoWaveEnd(); // bypass TSC
         else
             super.DoWaveEnd();
+
+        if ( ScrnGameLength == none || ScrnGameLength.Wave.bOpenTrader ) {
+            KillAllStinkyClots();
+        }
     }
 
     function BattleTimer()
     {
         super.BattleTimer();
 
-        if ( WaveNum > 0 && NextStinkySpawnTime < Level.TimeSeconds
+        if ( NextStinkySpawnTime < Level.TimeSeconds
                 && (bWaveBossInProgress || TotalMaxMonsters > 0)
                 && ( (StinkyControllers[1] == none && TeamBases[1].bActive)
                     || (!bSingleTeamGame && StinkyControllers[0] == none && TeamBases[0].bActive) )

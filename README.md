@@ -19,6 +19,21 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+### v9.60.5
+#### ScrN Waves
+- `bStartAtTrader` - new or dead players spawn next to the Trader
+- `DoorControl` - respawn, blow up or weld doors at the beginning of the wave
+- Fixed Boss healing level scaling respective to health
+
+#### FTG
+- Stinky Clot spawns on wave 1 if trader doors were open
+- Stinky Clot continues to carry the Guardian between waves if the trader doors stay closed
+
+#### Other changes
+- Fixed bug where HuskGun consumed double ammo per charged shot
+- Cannot buy ammo in trader for weapons with negative ammo cost
+
+
 ### v9.60.4
 - `FirstStatBonusMult` now is used for winning custom maps too
 

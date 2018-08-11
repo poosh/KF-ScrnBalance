@@ -9,6 +9,9 @@ Move DLCLocks from ScrnbalanceSrv.ini
 
 Brown Cloud: blaming players make them fart
 
-SCAR Tactical Reload
-
 A Blank Page
+
+? ScrnWaveInfo: Door Control: Respawn, BlowUp, WeldFull, WeldHalf, Weld1p.
+? ScrnWaveInfo: bSpawnAtTrader
+
+? SBZ Boss Overhealing bug
