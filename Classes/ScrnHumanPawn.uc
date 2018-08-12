@@ -801,7 +801,7 @@ function bool AddShieldStrength(int AmountToAdd)
         return false;
 
     // this was added to make compatible with current KF shield system
-    if ( (AmountToAdd == 100 && ShieldStrengthMax < 100) || CurrentVestClass == NoVestClass )
+    if ( AmountToAdd > LightVestClass.default.ShieldCapacity && ShieldStrengthMax < StandardVestClass.default.ShieldCapacity )
         SetVestClass(StandardVestClass);
     // if can't wear combat armor, try light armor
     if ( CurrentVestClass == NoVestClass )
