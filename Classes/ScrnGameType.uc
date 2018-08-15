@@ -49,6 +49,7 @@ enum EDropKind {
 };
 
 var bool bZedTimeEnabled;  // set it to false to completely disable the Zed Time in the game
+var transient byte PlayerSpawnTraderTeleportIndex;
 
 event InitGame( string Options, out string Error )
 {
@@ -1034,6 +1035,7 @@ static function string ZedSquadToString(out array< class<KFMonster> > Squad)
 
     return str;
 }
+
 function bool AddSquad()
 {
     if ( ScrnGameLength == none )
@@ -1132,6 +1134,28 @@ function bool ShouldKillOnTeamChange(Pawn TeamChanger)
     return true;
 }
 
+// implemented only in MatchInProgress state
+function SelectShop() { }
+
+function bool IsShopTeleporter(ShopVolume Shop, Teleporter Tel)
+{
+    local int i;
+
+    if ( Shop == none || Tel == none )
+        return false;
+
+    for (i = 0; i < Shop.TelList.length; ++i) {
+        if ( Tel == Shop.TelList[i] )
+            return true;
+    }
+    return false;
+}
+
+function ShopVolume TeamShop(byte TeamIndex)
+{
+    return ScrnGRI.CurrentShop;
+}
+
 function ShowPathTo(PlayerController CI, int DestinationIndex)
 {
     local ShopVolume shop;
@@ -1145,19 +1169,14 @@ function ShowPathTo(PlayerController CI, int DestinationIndex)
         return;
     }
 
-    if ( TSCGameReplicationInfo(GameReplicationInfo) != none )
-        shop = TSCGameReplicationInfo(GameReplicationInfo).GetPlayerShop(CI.PlayerReplicationInfo);
-    else
-        shop = ScrnGRI.CurrentShop;
-
+    // take TeamNum from PRI, because KFMod hard-codes it to 0
+    TeamNum = CI.PlayerReplicationInfo.Team.TeamIndex;
+    shop = TeamShop(TeamNum);
     if( shop == none )
         return;
 
     if ( !shop.bTelsInit )
         shop.InitTeleports();
-
-    // take TeamNum from PRI, because KFMod hard-codes it to 0
-    TeamNum = CI.PlayerReplicationInfo.Team.TeamIndex;
 
     if ( shop.TelList[0] != None && CI.FindPathToward(shop.TelList[0], false) != None ) {
         WWclass = class<WillowWhisp>(DynamicLoadObject(PathWhisps[TeamNum], class'Class'));
@@ -1449,6 +1468,32 @@ function UninvitePlayer(PlayerController PC)
             return;
         }
     }
+}
+
+function NavigationPoint FindPlayerStart( Controller Player, optional byte InTeam, optional string incomingName )
+{
+    local byte TeamIndex;
+    local ShopVolume shop;
+
+    TeamIndex = InTeam;
+    if ( Player != None && Player.PlayerReplicationInfo != None )
+        TeamIndex = Player.PlayerReplicationInfo.Team.TeamIndex;
+
+    if ( ScrnGameLength != none && ScrnGameLength.Wave.bStartAtTrader ) {
+        shop = TeamShop(TeamIndex);
+        if ( shop != none ) {
+            if ( !shop.bTelsInit ) {
+                shop.InitTeleports();
+            }
+            if ( shop.TelList.Length > 0 ) {
+                if ( PlayerSpawnTraderTeleportIndex >= shop.TelList.Length )
+                    PlayerSpawnTraderTeleportIndex = 0;
+                return shop.TelList[PlayerSpawnTraderTeleportIndex++];
+            }
+        }
+    }
+
+    return super.FindPlayerStart(Player, TeamIndex, incomingName);
 }
 
 function RestartPlayer( Controller aPlayer )
@@ -1822,16 +1867,6 @@ function AmmoPickedUp(KFAmmoPickup PickedUp)
     }
 }
 
-function RespawnDoors()
-{
-    local KFDoorMover KFDM;
-
-    if ( ScrnBalanceMut.bRespawnDoors || ScrnBalanceMut.bTSCGame ) {
-        foreach DynamicActors(class'KFDoorMover', KFDM)
-            KFDM.RespawnDoor();
-    }
-}
-
 function StartWaveBoss()
 {
     local int i;
@@ -1986,6 +2021,9 @@ function float GetPlayerCountForMonsterHealth()
 function OverrideMonsterHealth(KFMonster M)
 {
     local float UsedNumPlayers;
+    local ZombieBoss Boss;
+
+    Boss = ZombieBoss(M);
 
     if ( ScrnGameLength != none && ScrnGameLength.PlayerCountOverrideForHealth > 0.9999 ) {
         UsedNumPlayers = ScrnGameLength.PlayerCountOverrideForHealth;
@@ -2010,6 +2048,13 @@ function OverrideMonsterHealth(KFMonster M)
             M.Health = M.HealthMax;
             M.HeadHealth *= ScrnGameLength.Wave.SpecialSquadHealthMod;
         }
+    }
+
+    if ( Boss != none ) {
+        Boss.HealingLevels[0] = Boss.Health * 0.80;
+        Boss.HealingLevels[1] = Boss.Health * 0.50;
+        Boss.HealingLevels[2] = Boss.Health * 0.31;
+        Boss.HealingAmount = Boss.Health * 0.25;
     }
 }
 
@@ -2234,6 +2279,8 @@ State MatchInProgress
 {
     function BeginState()
     {
+        SelectShop(); // shop must be selected in case players need to spawn next to it
+
         Super.BeginState();
 
         if ( ScrnGameLength != none ) {
@@ -2550,6 +2597,7 @@ State MatchInProgress
                 return;
             }
             if ( !ScrnGameLength.Wave.bOpenTrader ) {
+                SelectShop(); // change shop for every wave, even if trader stays closed
                 SetupPickups();
                 ScrnBalanceMut.SetupPickups(false, true); // no trader = people need more ammo
                 ScrnBalanceMut.bPickupSetupReduced = true; // don't let ScrnBalance to reduce pickups again
@@ -2600,7 +2648,9 @@ State MatchInProgress
         }
         bUpdateViewTargs = True;
         if ( WaveNum < FinalWave && (ScrnGameLength == none || ScrnGameLength.Wave.bOpenTrader) ) {
-            RespawnDoors();
+            if ( ScrnGameLength == none && (ScrnBalanceMut.bRespawnDoors || ScrnBalanceMut.bTSCGame) ) {
+                ScrnBalanceMut.RespawnDoors();
+            }
             BroadcastLocalizedMessage(class'ScrnBalanceSrv.ScrnWaitingMessage', 2);
         }
     }
@@ -2641,6 +2691,48 @@ State MatchInProgress
                 if( KFPC(C) != none ) {
                     KFPC.SetShowPathToTrader(true);
                     KFPC.ClientLocationalVoiceMessage(C.PlayerReplicationInfo, none, 'TRADER', TraderMessageIndex);
+                }
+            }
+        }
+    }
+
+    // C&P to replace AllActors with DynamicActors - performance tweak
+    function CloseShops()
+    {
+        local int i;
+        local Controller C;
+        local KFPlayerController KFPC;
+        local Pickup Pickup;
+
+        bTradingDoorsOpen = False;
+        for( i=0; i<ShopList.Length; i++ ) {
+            if( ShopList[i].bCurrentlyOpen )
+                ShopList[i].CloseShop();
+        }
+
+        SelectShop();
+
+        foreach DynamicActors(class'Pickup', Pickup) {
+            if ( Pickup.bDropped ) {
+                Pickup.Destroy();
+            }
+        }
+
+        // Tell all players to stop showing the path to the trader
+        for ( C = Level.ControllerList; C != none; C = C.NextController ) {
+            if ( C.Pawn != none && C.Pawn.Health > 0 ) {
+                // Restore pawn collision during trader time
+                C.Pawn.bBlockActors = C.Pawn.default.bBlockActors;
+
+                KFPC = KFPlayerController(C);
+                if ( KFPC != none ) {
+                    KFPC.SetShowPathToTrader(false);
+                    KFPC.ClientForceCollectGarbage();
+
+                    if ( WaveNum < FinalWave - 1 ) {
+                        // Have Trader tell players that the Shop's Closed
+                        KFPC.ClientLocationalVoiceMessage(C.PlayerReplicationInfo, none, 'TRADER', 6);
+                    }
                 }
             }
         }

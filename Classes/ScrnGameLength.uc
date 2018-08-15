@@ -310,6 +310,8 @@ function bool LoadWave(int WaveNum)
         }
     }
 
+    DoorControl();
+
     return true;
 }
 
@@ -376,6 +378,41 @@ function WaveTimer()
 
         case RULE_GrabAmmo:
             Game.ScrnGRI.WaveCounter = max(0, WaveCounter - Game.ScrnBalanceMut.GameRules.WaveAmmoPickups);
+            break;
+    }
+}
+
+function DoorControl()
+{
+    switch (Wave.DoorControl) {
+        case DOOR_Default:
+            if (Game.ScrnBalanceMut.bRespawnDoors || Game.ScrnBalanceMut.bTSCGame) {
+                Game.ScrnBalanceMut.RespawnDoors();
+            }
+            break;
+        case DOOR_Respawn:
+            Game.ScrnBalanceMut.RespawnDoors();
+            break;
+        case DOOR_Blow:
+            Game.ScrnBalanceMut.BlowDoors();
+            break;
+        case DOOR_Unweld:
+            Game.ScrnBalanceMut.UnweldDoors();
+            break;
+        case DOOR_UnweldRespawn:
+            Game.ScrnBalanceMut.WeldDoors(0);
+            break;
+        case DOOR_Weld1p:
+            Game.ScrnBalanceMut.WeldDoors(0.01);
+            break;
+        case DOOR_WeldHalf:
+            Game.ScrnBalanceMut.WeldDoors(0.5);
+            break;
+        case DOOR_WeldFull:
+            Game.ScrnBalanceMut.WeldDoors(1.0);
+            break;
+        case DOOR_WeldRandom:
+            Game.ScrnBalanceMut.WeldDoors(-1.0);
             break;
     }
 }

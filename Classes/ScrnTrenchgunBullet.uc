@@ -19,12 +19,10 @@ simulated function ProcessTouch (Actor Other, vector HitLocation)
     if ( Other == none || Other == Instigator || Other.Base == Instigator || !Other.bBlockHitPointTraces  )
         return;
 
-    KFPRI = KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo);    
+    KFPRI = KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo);
     X = Vector(Rotation);
-    
-    KFMonsterVictim = KFMonster(Other);
 
-     if( ROBulletWhipAttachment(Other) != none )
+    if( ROBulletWhipAttachment(Other) != none )
     {
         if(!Other.Base.bDeleteMe)
         {
@@ -57,18 +55,22 @@ simulated function ProcessTouch (Actor Other, vector HitLocation)
     }
     else
     {
+        if ( ExtendedZCollision(Other) != none)
+            Other = Other.Owner; // ExtendedZCollision is attached to and owned by a KFMonster
+        KFMonsterVictim = KFMonster(Other);
+
         HSDamage = Damage;
         if (Pawn(Other) != none && Pawn(Other).IsHeadShot(HitLocation, X, 1.0))
             HSDamage *= HeadShotDamageMult;
- 
+
         if ( KFMonsterVictim != none && KFMonsterVictim.Health > 0 && class'ScrnBalance'.default.Mut.BurnMech != none)
             class'ScrnBalance'.default.Mut.BurnMech.MakeBurnDamage(
-                KFMonsterVictim, HSDamage, Instigator, HitLocation, MomentumTransfer * Normal(Velocity), MyDamageType);        
+                KFMonsterVictim, HSDamage, Instigator, HitLocation, MomentumTransfer * Normal(Velocity), MyDamageType);
         else
            Other.TakeDamage(HSDamage, Instigator, HitLocation, MomentumTransfer * Normal(Velocity), MyDamageType);
-         
+
     }
-    
+
     if ( KFPRI != none && KFPRI.ClientVeteranSkill != none )
     {
            PenDamageReduction = KFPRI.ClientVeteranSkill.static.GetShotgunPenetrationDamageMulti(KFPRI,default.PenDamageReduction);
@@ -79,10 +81,10 @@ simulated function ProcessTouch (Actor Other, vector HitLocation)
        }
     // loose penetrational damage after hitting specific zeds -- PooSH
     if (KFMonsterVictim != none)
-        PenDamageReduction *= ZedPenDamageReduction(KFMonsterVictim);    
+        PenDamageReduction *= ZedPenDamageReduction(KFMonsterVictim);
 
        Damage *= PenDamageReduction; // Keep going, but lose effectiveness each time.
-    
+
     // if we've struck through more than the max number of foes, destroy.
     // MaxPenetrations now really means number of max penetration off-perk -- PooSH
     if ( Damage / default.Damage < (default.PenDamageReduction ** MaxPenetrations) + 0.0001 )
@@ -107,14 +109,14 @@ simulated function ProcessTouch (Actor Other, vector HitLocation)
  */
 simulated function float ZedPenDamageReduction(KFMonster Monster)
 {
-    if ( Monster == none ) 
+    if ( Monster == none )
         return 1.0;
-    
+
     if ( Monster.default.Health >= BigZedMinHealth )
         return BigZedPenDmgReduction;
     else if ( Monster.default.Health >= MediumZedMinHealth )
         return MediumZedPenDmgReduction;
-    
+
     return 1.0;
 }
 

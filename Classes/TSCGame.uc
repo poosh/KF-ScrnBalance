@@ -29,7 +29,7 @@ var byte NextSquadTeam;
 var bool bCheckSquadTeam; // should NextSquadTeam be checked in FindSquadTarget()?
 var array < class<KFMonster> > PendingSpecialSquad;
 
-var    TSCTeam TSCTeams[2];
+var TSCTeam TSCTeams[2];
 var class<TSCBaseGuardian> BaseGuardianClasses[2];
 var ShopVolume TeamShops[2];
 var class<WillowWhisp> BaseWhisp;
@@ -1000,9 +1000,14 @@ function ShowPathToBase(PlayerController P)
     }
 }
 
-// implemented only in MatchInProgress state
-function SelectShop() { }
-
+function ShopVolume TeamShop(byte TeamIndex)
+{
+    switch (TeamIndex) {
+        case 0: return TSCGRI.CurrentShop;
+        case 1: return TSCGRI.BlueShop;
+    }
+    return none;
+}
 
 State MatchInProgress
 {

@@ -1,21 +1,14 @@
 class ScrnHuskGunFire extends HuskGunFire;
 
-var int         AmmoInCharge;     //current charged amount      
+var int         AmmoInCharge;     //current charged amount
 var() int       MaxChargeAmmo;    //maximum charge
 
 
 function Timer()
 {
-    //local PlayerController Player;
-    
     //consume ammo while charging
-    if ( HoldTime > 0.0  && !bNowWaiting && AmmoInCharge < MaxChargeAmmo && Weapon.AmmoAmount(ThisModeNum) > 0 ) {   
+    if ( HoldTime > 0.0  && !bNowWaiting && AmmoInCharge < MaxChargeAmmo && Weapon.AmmoAmount(ThisModeNum) > 0 ) {
         Charge();
-        // if (AmmoInCharge == MaxChargeAmmo) {
-            // Player = Level.GetLocalPlayerController();
-            // if (Player != none)
-                // Player.ReceiveLocalizedMessage(class'ScrnBalanceSrv.ScrnPlayerMessage',0);
-        // }
     }
     super.Timer();
 }
@@ -23,14 +16,14 @@ function Timer()
 function Charge()
 {
     local int AmmoShouldConsumed;
-    
+
     if( HoldTime < MaxChargeTime)
         AmmoShouldConsumed = clamp(round(MaxChargeAmmo*HoldTime/MaxChargeTime), 1, MaxChargeAmmo);
     else
         AmmoShouldConsumed = MaxChargeAmmo;// full charge
 
     if (AmmoShouldConsumed != AmmoInCharge) {
-        if (AmmoShouldConsumed - AmmoInCharge > Weapon.AmmoAmount(ThisModeNum)) 
+        if (AmmoShouldConsumed - AmmoInCharge > Weapon.AmmoAmount(ThisModeNum))
             AmmoShouldConsumed = Weapon.AmmoAmount(ThisModeNum) + AmmoInCharge;
         Weapon.ConsumeAmmo(ThisModeNum, AmmoShouldConsumed - AmmoInCharge);
         SetChargeAmount(AmmoShouldConsumed);
@@ -40,7 +33,7 @@ function Charge()
 function SetChargeAmount(int amount)
 {
     AmmoInCharge = amount;
-    ScrnHuskGun(Weapon).ChargeAmount = GetChargeAmount(); 
+    ScrnHuskGun(Weapon).ChargeAmount = GetChargeAmount();
 }
 
 function float GetChargeAmount()
@@ -58,7 +51,7 @@ simulated function bool AllowFire()
 function PostSpawnProjectile(Projectile P)
 {
     local HuskGunProjectile HGP;
-    
+
     super(KFShotgunFire).PostSpawnProjectile(P);
 
     HGP = HuskGunProjectile(p);
@@ -90,7 +83,7 @@ function ModeDoFire()
     Spread = Default.Spread;
     Rec = 1;
 
-  
+
     if ( KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo) != none && KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo).ClientVeteranSkill != none )
     {
         Spread *= KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo).ClientVeteranSkill.Static.ModifyRecoilSpread(KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo), self, Rec);
@@ -179,20 +172,22 @@ function ModeDoFire()
     }
 }
 
-function StopFiring()
-{
-    super.StopFiring();
-    SetChargeAmount(0);
-}
+// function StopFiring()
+// {
+//     super.StopFiring();
+//     SetChargeAmount(0);
+// }
 
 defaultproperties
 {
+    MaxHoldTime=0.0 // no auto fire
+    MaxChargeTime=3.0 // 3s to full charge
     MaxChargeAmmo=10
     WeakProjectileClass=Class'ScrnBalanceSrv.ScrnHuskGunProjectile_Weak'
     StrongProjectileClass=Class'ScrnBalanceSrv.ScrnHuskGunProjectile_Strong'
     AmmoClass=Class'ScrnBalanceSrv.ScrnHuskGunAmmo'
     ProjectileClass=Class'ScrnBalanceSrv.ScrnHuskGunProjectile'
-    
+
     SpreadStyle=SS_None
     Spread=0
 }

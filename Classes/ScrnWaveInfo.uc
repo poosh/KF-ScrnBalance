@@ -13,9 +13,23 @@ enum EWaveEndRule {
     RULE_GrabAmmo
 };
 
+enum EDoorControl {
+    DOOR_Default,
+    DOOR_Respawn,
+    DOOR_Blow,
+    DOOR_Unweld,
+    DOOR_UnweldRespawn,
+    DOOR_Weld1p,
+    DOOR_WeldHalf,
+    DOOR_WeldFull,
+    DOOR_WeldRandom
+};
+
 var config string Title, Message, TraderMessage;
 var config int TraderTime;
 var config bool bOpenTrader;
+var config bool bStartAtTrader;
+var config EDoorControl DoorControl;
 var config EWaveEndRule EndRule;
 var config int Counter, MaxCounter;
 var config float PerPlayerMult;
@@ -33,6 +47,7 @@ defaultproperties
 {
     TraderTime=60
     bOpenTrader=true
+    DoorControl=DOOR_Default
     EndRule=RULE_KillEmAll
     Counter=30
     SpecialSquadHealthMod=1.0

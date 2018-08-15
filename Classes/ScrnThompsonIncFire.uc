@@ -6,10 +6,10 @@ state FireLoop
     function BeginState()
     {
         super.BeginState();
-        
+
         NextFireTime = Level.TimeSeconds - 0.000001; //fire now!
     }
-}  
+}
 
 // Overwritten to switch damage types for the firebug
 function DoTrace(Vector Start, Rotator Dir)
@@ -68,10 +68,13 @@ function DoTrace(Vector Start, Rotator Dir)
             }
             else
             {
+                if ( ExtendedZCollision(Other) != none)
+                    Other = Other.Owner; // ExtendedZCollision is attached to and owned by a KFMonster
                 KFMonsterVictim = KFMonster(Other);
-                if ( KFMonsterVictim != none && KFMonsterVictim.Health > 0 
+                if ( KFMonsterVictim != none && KFMonsterVictim.Health > 0
                         && ClassIsChildOf(DamageType, class'DamTypeMAC10MPInc')
-                        && class'ScrnBalance'.default.Mut.BurnMech != none) {
+                        && class'ScrnBalance'.default.Mut.BurnMech != none)
+                {
                     class'ScrnBalance'.default.Mut.BurnMech.MakeBurnDamage(
                         KFMonsterVictim, DamageMax, Instigator, HitLocation, Momentum * X, DamageType);
                 }
@@ -102,7 +105,7 @@ defaultproperties
 {
     DamageType=Class'KFMod.DamTypeMAC10MP'
     AmmoClass=Class'ScrnBalanceSrv.ScrnThompsonIncAmmo'
-    
+
     DamageMin=40
     DamageMax=40
 }
