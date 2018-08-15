@@ -2,6 +2,7 @@ class ScrnFNFALFire extends FNFALFire;
 
 var int BurstSize;
 var transient int BurstShotCount; //how many bullets were fired in the current burst?
+var transient float FireBurstEndTime; //this is just to be sure we don't stuck inside FireBurst state, if shit happens
 
 // fixes double shot bug -- PooSH
 state FireLoop
@@ -29,6 +30,7 @@ state FireBurst
         NumShotsInBurst = 0;
         BurstShotCount = 0;
         NextFireTime = Level.TimeSeconds - 0.0001; //fire now!
+        FireBurstEndTime = Level.TimeSeconds + ( FireRate * BurstSize ) + 0.1; // if shit happens - get us out of this state when this time hits 
     }
 
     function EndState()
@@ -47,6 +49,11 @@ state FireBurst
         
         if ( !bIsFiring ||  !AllowFire() )  // stopped firing, magazine empty
             GotoState('');
+        else if ( Level.TimeSeconds > FireBurstEndTime )
+        {
+            GotoState('');
+            log("ScrnM4203BulletFire stuck inside FireBurst state after making "$BurstShotCount$" shots! Getting us out of it.", 'ScrnBalance');
+        }
     }
 
     // Calculate modifications to spread
