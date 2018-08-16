@@ -85,12 +85,14 @@ simulated function ClientReload()
     if ( MagAmmoRemaining <= 0 || ReloadShortAnim == '' )
     {
         PlayAnim(ReloadAnim, ReloadAnimRate*ReloadMulti, 0.1);
+        if ( FakedShell != none )
         FakedShell.Destroy(); //try destroying the faked shell to prevent it from appearing
     }
     else if ( MagAmmoRemaining >= 1 )
     {
         PlayAnim(ReloadShortAnim, ReloadAnimRate*ReloadMulti, 0.1);
         SetAnimFrame(29.35, 0 , 1); //go straight to frame 29.35
+        if ( FakedShell == none )
         AttachShell();
     }
 }
