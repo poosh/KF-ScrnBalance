@@ -11,7 +11,7 @@ class ScrnBalance extends Mutator
 #exec OBJ LOAD FILE=ScrnAch_T.utx
 
 
-const VERSION = 96007;
+const VERSION = 96008;
 
 var ScrnBalance Mut; // pointer to self to use in static functions, i.e class'ScrnBalance'.default.Mut
 
@@ -2807,7 +2807,6 @@ function WeldDoors(float WeldPct)
 
         for ( j = 0; j < key.DoorOwners.Length; ++j ) {
             key.DoorOwners[j].RespawnDoor();
-            key.DoorOwners[j].DoClose();
             if ( !key.DoorOwners[j].bNoSeal ) {
                 key.DoorOwners[j].SetWeldStrength(key.WeldStrength);
             }
