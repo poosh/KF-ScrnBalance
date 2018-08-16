@@ -24,10 +24,11 @@ defaultproperties
          UniformSize=True
          AutomaticInitialSpawning=False
          UseVelocityScale=True
-         Acceleration=(X=70.000000,Z=20.000000)
+         Acceleration=(X=35.000000,Z=10.000000) //70, 20
          ColorScale(0)=(Color=(B=60,G=225,R=255,A=255))
          ColorScale(1)=(RelativeTime=1.000000,Color=(B=60,G=225,R=255,A=255))
-         FadeOutStartTime=0.950000
+         FadeOutStartTime=0.350000 //old fade 0.95
+         Opacity=0.70 //added this
          MaxParticles=200
          UseRotationFrom=PTRS_Actor
          SpinsPerSecondRange=(X=(Min=-0.075000,Max=0.075000))
@@ -35,17 +36,17 @@ defaultproperties
          SizeScale(1)=(RelativeTime=0.070000,RelativeSize=1.000000)
          SizeScale(2)=(RelativeTime=0.370000,RelativeSize=2.200000)
          SizeScale(3)=(RelativeTime=1.000000,RelativeSize=4.000000)
-         StartSizeRange=(X=(Min=15.000000,Max=30.000000))
-         ParticlesPerSecond=25.000000
-         InitialParticlesPerSecond=25.000000
+         StartSizeRange=(X=(Min=6.000000,Max=14.000000)) //min 15 max 30
+         ParticlesPerSecond=50.000000 //25
+         InitialParticlesPerSecond=50.000000 //25
          DrawStyle=PTDS_AlphaBlend
          Texture=Texture'Effects_Tex.explosions.DSmoke_2'
-         LifetimeRange=(Max=5.000000)
-         StartVelocityRange=(X=(Min=45.000000,Max=45.000000),Y=(Min=-45.000000,Max=45.000000),Z=(Min=-45.000000,Max=45.000000))
+         LifetimeRange=(Max=2.000000) //5.0
+         StartVelocityRange=(X=(Min=15.000000,Max=15.000000),Y=(Min=-15.000000,Max=15.000000),Z=(Min=-15.000000,Max=15.000000)) //45 on all
          VelocityLossRange=(X=(Min=1.000000,Max=1.000000),Y=(Min=1.000000,Max=1.000000),Z=(Min=1.000000,Max=1.000000))
          VelocityScale(0)=(RelativeVelocity=(X=1.000000,Y=1.000000,Z=1.000000))
-         VelocityScale(1)=(RelativeTime=0.300000,RelativeVelocity=(X=0.200000,Y=1.000000,Z=1.000000))
-         VelocityScale(2)=(RelativeTime=1.000000,RelativeVelocity=(Y=0.400000,Z=0.400000))
+         VelocityScale(1)=(RelativeTime=0.300000,RelativeVelocity=(X=0.200000,Y=1.000000,Z=1.000000)) //0.2, 1.0, 1.0
+         VelocityScale(2)=(RelativeTime=1.000000,RelativeVelocity=(Y=0.400000,Z=0.400000)) //0.4, 0.4    
      End Object
      Emitters(0)=SpriteEmitter'ScrnBalanceSrv.ScrnFlameNadeTrail.SpriteEmitter0'
 
@@ -59,11 +60,12 @@ defaultproperties
          UniformSize=True
          AutomaticInitialSpawning=False
          UseVelocityScale=True
-         Acceleration=(X=70.000000,Z=20.000000)
+         Acceleration=(X=35.000000,Z=10.000000) //70, 20
          ColorScale(0)=(Color=(B=60,G=100,R=120,A=255))
          ColorScale(1)=(RelativeTime=1.000000,Color=(B=120,G=200,R=240,A=255))
-         FadeOutStartTime=1.200000
+         FadeOutStartTime=0.500000 //1.2
          MaxParticles=200
+         Opacity=0.70 //added this
          AutoResetTimeRange=(Min=5.000000,Max=10.000000)
          UseRotationFrom=PTRS_Actor
          SpinsPerSecondRange=(X=(Min=-0.075000,Max=0.075000))
@@ -71,12 +73,13 @@ defaultproperties
          SizeScale(1)=(RelativeTime=0.070000,RelativeSize=1.000000)
          SizeScale(2)=(RelativeTime=0.370000,RelativeSize=2.200000)
          SizeScale(3)=(RelativeTime=1.000000,RelativeSize=3.000000)
-         StartSizeRange=(X=(Min=11.000000,Max=21.000000))
-         ParticlesPerSecond=25.000000
-         InitialParticlesPerSecond=25.000000
+         StartSizeRange=(X=(Min=5.000000,Max=10.000000)) //11, 21
+         ParticlesPerSecond=50.000000 //25
+         InitialParticlesPerSecond=50.000000 //25
          DrawStyle=PTDS_AlphaBlend
          Texture=Texture'Effects_Tex.explosions.DSmoke_2'
-         StartVelocityRange=(X=(Min=40.000000,Max=80.000000),Y=(Min=-45.000000,Max=45.000000),Z=(Min=-45.000000,Max=45.000000))
+         LifetimeRange=(Max=1.700000) //4.0
+         StartVelocityRange=(X=(Min=10.000000,Max=20.000000),Y=(Min=-15.000000,Max=15.000000),Z=(Min=-15.000000,Max=15.000000)) //a mess of numbers
          VelocityLossRange=(X=(Min=2.000000,Max=2.000000),Y=(Min=2.000000,Max=2.000000),Z=(Min=2.000000,Max=2.000000))
          VelocityScale(0)=(RelativeVelocity=(X=1.000000,Y=1.000000,Z=1.000000))
          VelocityScale(1)=(RelativeTime=0.400000,RelativeVelocity=(X=0.150000,Y=1.000000,Z=1.000000))

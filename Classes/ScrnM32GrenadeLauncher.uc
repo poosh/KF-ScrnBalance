@@ -71,6 +71,7 @@ simulated function WeaponTick(float dt)
                     }
                 }
                 NextBulletLoadTime += BulletLoadRate;
+                Instigator.SetAnimAction(WeaponReloadAnim); //Loop thirdperson reload animation
             }
         }
     }
@@ -144,8 +145,8 @@ simulated function DoReload()
     ReloadRate = default.ReloadRate / ReloadMulti;
     ReloadRate -= MagAmmoRemaining * BulletLoadRate;
     ReloadTimer = Level.TimeSeconds + ReloadRate;
-
-    Instigator.SetAnimAction(WeaponReloadAnim);
+    if ( MagAmmoRemaining != MagCapacity && AmmoAmount(0) > MagAmmoRemaining)
+    Instigator.SetAnimAction(WeaponReloadAnim); //loop animation unless full or out of ammo
 }
 // This function is triggered by client, replicated to server and NOT EXECUTED on client,
 // even if marked as simulated
@@ -366,7 +367,7 @@ defaultproperties
      FireModeClass(0)=Class'ScrnBalanceSrv.ScrnM32Fire'
      ReloadRate=9.604 //added to support new reload
      BulletLoadRate=1.40 // increased base reload speed from original value 1.634
-     ReloadAnimRate=1.167143 //speed up animation to match
+     ReloadAnimRate=1.17857 //speed up animation to match
 
      PickupClass=Class'ScrnBalanceSrv.ScrnM32Pickup'
      ItemName="M32 Grenade Launcher SE"

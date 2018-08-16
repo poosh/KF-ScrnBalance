@@ -110,6 +110,15 @@ simulated function ProcessTouch(Actor Other, Vector HitLocation)
 
 defaultproperties
 {
-     ExplosionClass=Class'KFMod.LawExplosion'
+     ExplosionClass=Class'ScrnBalanceSrv.ScrnLawExplosion'
      Damage=1000.000000
+     
+     //adds light to projectile
+     LightType=LT_Steady
+     LightBrightness=128.0 //128
+     LightRadius=6.000000 //4.0
+     LightHue=25
+     LightSaturation=100
+     LightCone=16
+     bDynamicLight=True
 }

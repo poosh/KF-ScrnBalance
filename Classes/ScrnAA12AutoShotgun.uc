@@ -85,12 +85,14 @@ simulated function ClientReload()
     if ( MagAmmoRemaining <= 0 || ReloadShortAnim == '' )
     {
         PlayAnim(ReloadAnim, ReloadAnimRate*ReloadMulti, 0.1);
-        FakedShell.Destroy();
+        if ( FakedShell != none )
+        FakedShell.Destroy(); //try destroying the faked shell to prevent it from appearing
     }
     else if ( MagAmmoRemaining >= 1 )
     {
         PlayAnim(ReloadShortAnim, ReloadAnimRate*ReloadMulti, 0.1);
         SetAnimFrame(29.35, 0 , 1); //go straight to frame 29.35
+        if ( FakedShell == none )
         AttachShell();
     }
 }
@@ -98,6 +100,7 @@ simulated function ClientReload()
 simulated function AttachShell() {
     if ( Level.NetMode != NM_DedicatedServer )
     {
+        if ( FakedShell == none ) //only spawn fakedshell once
         FakedShell = spawn(class'MyFakedShotgunShell',self);
         if ( FakedShell != none )
         {
@@ -114,12 +117,6 @@ function AddReloadedAmmo()
     local int a;
 
     UpdateMagCapacity(Instigator.PlayerReplicationInfo);
-    //the faked shell should be destroyed after the tactical reload completes, but I'm not sure where to put this, how about here
-    //if there is a fakedshell destroy it
-    if ( FakedShell != none )
-    {
-        FakedShell.Destroy();
-    }
 
     a = MagCapacity;
     //if ( bShortReload )
@@ -135,6 +132,16 @@ function AddReloadedAmmo()
     }
 }
 
+simulated function ClientReloadEffects()
+{
+    //the faked shell should be destroyed after the tactical reload completes, but I'm not sure where to put this, how about here
+    //if there is a fakedshell destroy it
+    if ( FakedShell != none )
+    {
+        FakedShell.Destroy();
+    }
+}
+
 simulated function Destroyed()
 {
     if ( FakedShell != None )
@@ -142,7 +149,6 @@ simulated function Destroyed()
 
     super.Destroyed();
 }
-
 
 defaultproperties
 {
@@ -153,6 +159,4 @@ defaultproperties
     Description="An advanced fully automatic shotgun. Delivers less per-bullet damage, but awesome penetration and fire rate make it the best choise to kill everything... while you have ammo remaining"
     PickupClass=Class'ScrnBalanceSrv.ScrnAA12Pickup'
     ItemName="AA12 SE"
-    PrePivot=(Z=0.15) //rotational fix for ironsight alignment
-    PlayerViewPivot=(Pitch=-35,Roll=0,Yaw=0) //correction of sight position after rotation fix
 }

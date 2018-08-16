@@ -104,6 +104,8 @@ defaultproperties
     ReloadAnim="Reload"
     ReloadRate=3.066
     
+    ZoomedDisplayFOV=55 //fix for cool hud
+    
     HealAmmoCharge=0
     FireModeClass(0)=Class'ScrnBalanceSrv.ScrnM7A3MFire'
     FireModeClass(1)=Class'ScrnBalanceSrv.ScrnM7A3MAltFire'
