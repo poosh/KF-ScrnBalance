@@ -146,7 +146,7 @@ simulated function DoReload()
     ReloadRate -= MagAmmoRemaining * BulletLoadRate;
     ReloadTimer = Level.TimeSeconds + ReloadRate;
     if ( MagAmmoRemaining != MagCapacity && AmmoAmount(0) > MagAmmoRemaining)
-    Instigator.SetAnimAction(WeaponReloadAnim); //loop animation unless full or out of ammo
+        Instigator.SetAnimAction(WeaponReloadAnim); //loop animation unless full or out of ammo
 }
 // This function is triggered by client, replicated to server and NOT EXECUTED on client,
 // even if marked as simulated

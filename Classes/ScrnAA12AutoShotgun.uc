@@ -101,7 +101,7 @@ simulated function AttachShell() {
     if ( Level.NetMode != NM_DedicatedServer )
     {
         if ( FakedShell == none ) //only spawn fakedshell once
-        FakedShell = spawn(class'MyFakedShotgunShell',self);
+            FakedShell = spawn(class'MyFakedShotgunShell',self);
         if ( FakedShell != none )
         {
             AttachToBone(FakedShell, 'Magazine'); //attach faked shell to AA12 magazine
@@ -136,15 +136,13 @@ simulated function ClientReloadEffects()
 {
     //the faked shell should be destroyed after the tactical reload completes, but I'm not sure where to put this, how about here
     //if there is a fakedshell destroy it
-    if ( FakedShell != none )
-    {
+    if ( FakedShell != none && !FakedShell.bDeleteMe )
         FakedShell.Destroy();
-    }
 }
 
 simulated function Destroyed()
 {
-    if ( FakedShell != None )
+    if ( FakedShell != none && !FakedShell.bDeleteMe )
         FakedShell.Destroy();
 
     super.Destroyed();

@@ -19,6 +19,17 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+### v9.60.7
+- DoorControl: Doors are closed before being welded (thanks to *nmmblez*)
+- Fixed bug when Husk Gun charge was not applied on point-blank shots (thanks to *Scuddles*)
+- Reduced grenade trails (by *Scuddles*)
+- M32 thirdperson reload animation fix (by *Scuddles*)
+- AA-12 tactical reload faked shell fix (by *Scuddles*)
+- Fixed Benelli thirdperson weapon model (by *Scuddles*)
+- Added LAW rocket lights (by *Scuddles*)
+- Reload animation sync for single shell loading weapons like winchester, shotgun, trenchgun etc. (by *Scuddles*)
+
+
 ### v9.60.6
 - Berserker gained additional 20% damage reduction from Doom Monsters (60% in total)
 - Fixed bug where headshots from MAC10, TommyGunInc and Trenchgun didn't use ScrN Burn Mechanism
