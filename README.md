@@ -19,6 +19,12 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+### v9.60.9
+- Fixed DoorControl (again)
+
+### v9.60.8
+- Broke DoorControl
+
 ### v9.60.7
 - DoorControl: Doors are closed before being welded (thanks to *nmmblez*)
 - Fixed bug when Husk Gun charge was not applied on point-blank shots (thanks to *Scuddles*)
