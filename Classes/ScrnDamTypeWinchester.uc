@@ -1,5 +1,5 @@
 class ScrnDamTypeWinchester extends DamTypeWinchester
-	abstract;
+    abstract;
 
 static function AwardKill(KFSteamStatsAndAchievements KFStatsAndAchievements, KFPlayerController Killer, KFMonster Killed )
 {

@@ -12,7 +12,7 @@ function TakeDamage( int Damage, Pawn InstigatedBy, Vector Hitlocation, Vector M
             Disintegrate(HitLocation, vect(0,0,1));
     }
     else if ( !bDud && Damage >= 200 ) {
-        if ( (VSizeSquared(Location - OrigLoc) < ArmDistSquared) || OrigLoc == vect(0,0,0))  
+        if ( (VSizeSquared(Location - OrigLoc) < ArmDistSquared) || OrigLoc == vect(0,0,0))
             Disintegrate(HitLocation, vect(0,0,1));
         else
             Explode(HitLocation, vect(0,0,0));
@@ -60,7 +60,7 @@ simulated function Explode(vector HitLocation, vector HitNormal)
 simulated function ProcessTouch(Actor Other, Vector HitLocation)
 {
     // Don't let it hit this player, or blow up on another player
-    if ( Other == none || Other == Instigator || Other.Base == Instigator )
+    if ( Other == none || Other == Instigator || Other.Base == Instigator || !Other.bBlockHitPointTraces )
         return;
 
     // Don't collide with bullet whip attachments
@@ -70,8 +70,8 @@ simulated function ProcessTouch(Actor Other, Vector HitLocation)
     }
 
     // Don't allow hits on people on the same team - except hardcore mode
-    if( !class'ScrnBalance'.default.Mut.bHardcore && KFHumanPawn(Other) != none && Instigator != none
-        && KFHumanPawn(Other).PlayerReplicationInfo.Team.TeamIndex == Instigator.PlayerReplicationInfo.Team.TeamIndex )
+    if( !class'ScrnBalance'.default.Mut.bHardcore && KFPawn(Other) != none && Instigator != none
+            && KFPawn(Other).GetTeamNum() == Instigator.GetTeamNum() )
     {
         return;
     }
@@ -110,6 +110,15 @@ simulated function ProcessTouch(Actor Other, Vector HitLocation)
 
 defaultproperties
 {
-     ExplosionClass=Class'KFMod.LawExplosion'
+     ExplosionClass=Class'ScrnBalanceSrv.ScrnLawExplosion'
      Damage=1000.000000
+     
+     //adds light to projectile
+     LightType=LT_Steady
+     LightBrightness=128.0 //128
+     LightRadius=6.000000 //4.0
+     LightHue=25
+     LightSaturation=100
+     LightCone=16
+     bDynamicLight=True
 }

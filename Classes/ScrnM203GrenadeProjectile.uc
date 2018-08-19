@@ -1,9 +1,11 @@
 class ScrnM203GrenadeProjectile extends M203GrenadeProjectile;
 
+var class<PanzerfaustTrail> SmokeTrailClass;
+
 simulated function ProcessTouch(Actor Other, Vector HitLocation)
 {
     // Don't let it hit this player, or blow up on another player
-    if ( Other == none || Other == Instigator || Other.Base == Instigator )
+    if ( Other == none || Other == Instigator || Other.Base == Instigator || !Other.bBlockHitPointTraces )
         return;
 
     // Don't collide with bullet whip attachments
@@ -13,8 +15,8 @@ simulated function ProcessTouch(Actor Other, Vector HitLocation)
     }
 
     // Don't allow hits on people on the same team - except hardcore mode
-    if( !class'ScrnBalance'.default.Mut.bHardcore && KFHumanPawn(Other) != none && Instigator != none
-        && KFHumanPawn(Other).PlayerReplicationInfo.Team.TeamIndex == Instigator.PlayerReplicationInfo.Team.TeamIndex )
+    if( !class'ScrnBalance'.default.Mut.bHardcore && KFPawn(Other) != none && Instigator != none
+            && KFPawn(Other).GetTeamNum() == Instigator.GetTeamNum() )
     {
         return;
     }
@@ -50,8 +52,36 @@ simulated function ProcessTouch(Actor Other, Vector HitLocation)
 }
 
 
+//overrided to change smoke emiter
+simulated function PostBeginPlay()
+{
+    local rotator SmokeRotation;
+    BCInverse = 1 / BallisticCoefficient;
+    if ( Level.NetMode != NM_DedicatedServer)
+    {
+        SmokeTrail = Spawn(SmokeTrailClass,self);
+        SmokeTrail.SetBase(self);
+        SmokeRotation.Pitch = 32768;
+        SmokeTrail.SetRelativeRotation(SmokeRotation);
+        //Corona = Spawn(class'KFMod.KFLAWCorona',self);
+    }
+    OrigLoc = Location;
+    if( !bDud )
+    {
+        Dir = vector(Rotation);
+        Velocity = speed * Dir;
+    }
+    if (PhysicsVolume.bWaterVolume)
+    {
+        bHitWater = True;
+        Velocity=0.6*Velocity;
+    }
+    super(Projectile).PostBeginPlay();
+}
+
 defaultproperties
 {
      DamageRadius=450.000000
      Damage=400
+     SmokeTrailClass=Class'ScrnBalanceSrv.ReducedGrenadeTrail'
 }

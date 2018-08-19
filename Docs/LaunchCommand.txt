@@ -1,14 +1,21 @@
-KF-ScrnTestGrounds.rom?Listen?Game=ScrnBalanceSrv.ScrnGameType?Difficulty=7?GameLength=8?VACSecured=true?MaxPlayers=6?Mutator=ScrnSP.ServerPerksMutSE,ScrnBalanceSrv.ScrnBalance
-KF-BioticsLab.rom?Listen?Game=ScrnBalanceSrv.ScrnGameType?Difficulty=7?GameLength=1?VACSecured=true?MaxPlayers=6?Mutator=ScrnSP.ServerPerksMutSE,ScrnBalanceSrv.ScrnBalance
-KF-BioticsLab.rom?Listen?Game=ScrnBalanceSrv.FscGame?Difficulty=2?GameLength=2?VACSecured=true?MaxPlayers=6?Mutator=ScrnSP.ServerPerksMutSE,ScrnBalanceSrv.ScrnBalance
-KF-BioticsLab.rom?Listen?Game=ScrnBalanceSrv.TSCGame?Difficulty=2?GameLength=2?VACSecured=true?MaxPlayers=6?Mutator=ScrnSP.ServerPerksMutSE,ScrnBalanceSrv.ScrnBalance
-KF-Hospitalhorrors.rom?Listen?Game=ScrnBalanceSrv.FtgGame?Difficulty=2?GameLength=2?VACSecured=true?MaxPlayers=6?Mutator=ScrnSP.ServerPerksMutSE,ScrnBalanceSrv.ScrnBalance
+# Test
+KF-ScrnTestGrounds.rom?Listen?Game=ScrnBalanceSrv.ScrnGameType?Difficulty=7?GameLength=8?VACSecured=true?MaxPlayers=6
+KF-NightAngkor-SE?Listen?Game=ScrnBalanceSrv.ScrnGameType?Difficulty=5?GameLength=8?VACSecured=true?MaxPlayers=6
+KF-TheGreatPyramid-Arena?Listen?Game=ScrnBalanceSrv.ScrnGameType?Difficulty=5?GameLength=8?VACSecured=true?MaxPlayers=6
+KF-CountyJail.rom?Listen?Game=ScrnBalanceSrv.ScrnGameType?Difficulty=5?GameLength=8?VACSecured=true?MaxPlayers=6
+
+
+KF-BioticsLab.rom?Listen?Game=ScrnBalanceSrv.ScrnGameType?Difficulty=7?GameLength=1?VACSecured=true?MaxPlayers=6
+KF-BioticsLab.rom?Listen?Game=ScrnBalanceSrv.FscGame?Difficulty=2?GameLength=2?VACSecured=true?MaxPlayers=6
+KF-BioticsLab.rom?Listen?Game=ScrnBalanceSrv.TSCGame?Difficulty=2?GameLength=2?VACSecured=true?MaxPlayers=6
+KF-Hospitalhorrors.rom?Listen?Game=ScrnBalanceSrv.FtgGame?Difficulty=2?GameLength=2?VACSecured=true?MaxPlayers=6
 
 # Mystery Mode
-KF-BioticsLab.rom?Listen?Game=ScrnBalanceSrv.ScrnGameType?Difficulty=5?GameLength=21?VACSecured=true?MaxPlayers=6?Mutator=ScrnSP.ServerPerksMutSE,ScrnBalanceSrv.ScrnBalance
+KF-BioticsLab.rom?Listen?Game=ScrnBalanceSrv.ScrnGameType?Difficulty=5?GameLength=21?VACSecured=true?MaxPlayers=6
+KF-NightAngkor-SE?Listen?Game=ScrnBalanceSrv.ScrnGameType?Difficulty=5?GameLength=21?VACSecured=true?MaxPlayers=6
 
 # Small Big Zeds
-KF-BioticsLab.rom?Listen?Game=ScrnBalanceSrv.ScrnGameType?Difficulty=4?GameLength=22?VACSecured=true?MaxPlayers=6?Mutator=ScrnSP.ServerPerksMutSE,ScrnBalanceSrv.ScrnBalance
+KF-BioticsLab.rom?Listen?Game=ScrnBalanceSrv.ScrnGameType?Difficulty=4?GameLength=22?VACSecured=true?MaxPlayers=6
 
 KF-BioticsLab.rom?Listen?Game=ScrnBalanceSrv.ScrnGameType?Difficulty=5?GameLength=12?VACSecured=true?MaxPlayers=6?Mutator=ScrnSP.ServerPerksMutSE,ScrnBalanceSrv.ScrnBalance,ScrnDoom3KF.Doom3Mutator
 
@@ -27,3 +34,19 @@ KF-Suburbia.rom?Listen?Game=ScrnBalanceSrv.FtgGame?Difficulty=2?GameLength=1?VAC
 say ^0Black ^1Red ^2Green ^3Yellow ^4Blue ^5Cyan ^6Purple ^7White ^8Orange ^9Gray
 say ^w$white ^r$red ^g$green ^b$blue ^c$cyan ^o$orange ^u$purple ^s$skyblue ^y$yellow ^o$brown
 say ^W$gray ^R$red ^G$green ^B$blue ^C$cyan ^O$orange ^U$pink ^S$skyblue ^Y$yellow ^O$brown
+
+
+KF-NightAngkor-SE?Listen?Game=ScrnBalanceSrv.ScrnGameType?Difficulty=2?GameLength=2?VACSecured=true?MaxPlayers=6?Mutator=ScrnSP.ServerPerksMutSE,ScrnBalanceSrv.ScrnBalance
+
+KF-NightAngkor-SE?Listen?Game=ScrnBalanceSrv.ScrnGameType?Difficulty=5?GameLength=111?VACSecured=true?MaxPlayers=6
+
+KF-NightAngkor-SE?Listen?Game=ScrnBalanceSrv.ScrnGameType?Difficulty=5?GameLength=8?VACSecured=true?MaxPlayers=6
+
+
+KF-BioticsLab.rom?Listen?Game=ScrnBalanceSrv.ScrnGameType?Difficulty=7?GameLength=8?VACSecured=true?MaxPlayers=6
+
+KF-NightAngkor-SE?Listen?Game=ScrnBalanceSrv.ScrnGameType?Difficulty=7?GameLength=8?VACSecured=true?MaxPlayers=6
+
+KF-NightAngkor-SE?Listen?Game=ScrnBalanceSrv.FtgGame?Difficulty=4?GameLength=25?VACSecured=true?MaxPlayers=6
+
+KF-NightAngkor-SE?Listen?Game=ScrnBalanceSrv.ScrnGameType?Difficulty=7?GameLength=114?VACSecured=true?MaxPlayers=6?Mutator=ScrnSP.ServerPerksMutSE,ScrnBalanceSrv.ScrnBalance,KFMoreDramaSE.KFMoreDramaSE,BleedLolz.BleedLolz

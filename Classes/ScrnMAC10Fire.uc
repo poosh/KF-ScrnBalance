@@ -60,10 +60,13 @@ function DoTrace(Vector Start, Rotator Dir)
             }
             else
             {
+                if ( ExtendedZCollision(Other) != none)
+                    Other = Other.Owner; // ExtendedZCollision is attached to and owned by a KFMonster
                 KFMonsterVictim = KFMonster(Other);
-                if ( KFMonsterVictim != none && KFMonsterVictim.Health > 0 
+                if ( KFMonsterVictim != none && KFMonsterVictim.Health > 0
                         && ClassIsChildOf(DamageType, class'DamTypeMAC10MPInc')
-                        && class'ScrnBalance'.default.Mut.BurnMech != none) {
+                        && class'ScrnBalance'.default.Mut.BurnMech != none)
+                {
                     class'ScrnBalance'.default.Mut.BurnMech.MakeBurnDamage(
                         KFMonsterVictim, DamageMax, Instigator, HitLocation, Momentum * X, DamageType);
                 }

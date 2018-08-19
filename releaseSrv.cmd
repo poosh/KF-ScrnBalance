@@ -30,7 +30,9 @@ mkdir %outputdir%\Sounds
 mkdir %outputdir%\uz2
 
 
-copy /y %KFDIR%\system\ScrnBalanceSrv.* %outputdir%\System\
+copy /y %KFDIR%\system\ScrnBalanceSrv.int %outputdir%\System\
+copy /y %KFDIR%\system\ScrnBalanceSrv.u %outputdir%\System\
+copy /y %KFDIR%\system\ScrnBalanceSrv.ucl %outputdir%\System\
 copy /y %KFDIR%\system\ScrnSP.* %outputdir%\System\
 copy /y %KFDIR%\system\ScrnVotingHandlerV4.* %outputdir%\system\
 copy /y %STEAMDIR%\textures\ScrnTex.utx %outputdir%\Textures\

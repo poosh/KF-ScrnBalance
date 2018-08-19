@@ -95,6 +95,9 @@ static function int ReduceDamage(KFPlayerReplicationInfo KFPRI, KFPawn Injured, 
     if ( DmgType == class'DamTypeVomit' ) {
         InDamage *= 0.20; // 80% reduced Bloat Bile damage
     }
+    else if ( Instigator != none && Instigator.IsA('DoomMonster') ) {
+        InDamage *= 0.40; // 60% reduced damage from Doom Demons
+    }
     else {
         if ( KFPawn(Instigator) != none )
             InDamage *= 0.70; // v7.46: player-to-player damage
@@ -159,7 +162,7 @@ defaultproperties
     DefaultDamageTypeNoBonus=Class'ScrnBalanceSrv.ScrnDamTypeZerkerBase'
     SamePerkAch="OP_Berserker"
 
-    SkillInfo="PERK SKILLS:|30% faster movement speed|80% less damage from Bloat Bile|40% resistance to all damage|Can't be grabbed by Clots|Up to 4 Zed-Time Extensions"
+    SkillInfo="PERK SKILLS:|30% faster movement speed|80% less damage from Bloat Bile|60% less damage from Doom Demons|40% resistance to all damage|Can't be grabbed by Clots|Up to 4 Zed-Time Extensions"
     CustomLevelInfo="PERK BONUSES (LEVEL %L):|%x more Melee damage|%s faster melee attacks|%a extra Chainsaw Fuel|%$ discount on Melee Weapons"
 
     PerkIndex=4

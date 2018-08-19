@@ -19,6 +19,60 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+### v9.60.9
+- Fixed DoorControl (again)
+
+### v9.60.8
+- Broke DoorControl
+
+### v9.60.7
+- DoorControl: Doors are closed before being welded (thanks to *nmmblez*)
+- Fixed bug when Husk Gun charge was not applied on point-blank shots (thanks to *Scuddles*)
+- Reduced grenade trails (by *Scuddles*)
+- M32 thirdperson reload animation fix (by *Scuddles*)
+- AA-12 tactical reload faked shell fix (by *Scuddles*)
+- Fixed Benelli thirdperson weapon model (by *Scuddles*)
+- Added LAW rocket lights (by *Scuddles*)
+- Reload animation sync for single shell loading weapons like winchester, shotgun, trenchgun etc. (by *Scuddles*)
+
+
+### v9.60.6
+- Berserker gained additional 20% damage reduction from Doom Monsters (60% in total)
+- Fixed bug where headshots from MAC10, TommyGunInc and Trenchgun didn't use ScrN Burn Mechanism
+- When picking up small vests (e.g. armor on KF-TheGreatPyramid-Arena) the armor type doesn't change to
+  Combat Armor anymore.
+
+### v9.60.5
+#### ScrN Waves
+- `bStartAtTrader` - new or dead players spawn next to the Trader
+- `DoorControl` - respawn, blow up or weld doors at the beginning of the wave
+- Fixed Boss healing level scaling respective to health
+
+#### FTG
+- Stinky Clot spawns on wave 1 if trader doors were open
+- Stinky Clot continues to carry the Guardian between waves if the trader doors stay closed
+
+#### Other changes
+- Fixed bug where HuskGun consumed double ammo per charged shot
+- Cannot buy ammo in trader for weapons with negative ammo cost
+
+
+### v9.60.4
+- `FirstStatBonusMult` now is used for winning custom maps too
+
+### v9.60.3
+- Added tactical reload for AA12 (by *Scuddles*)
+- Enhanced M32 reload (by *Scuddles*)
+- Fixed tactical reload for SCAR (by *Scuddles*)
+- Adjusted iron sights for MP5, M4, M4-203 and M4-203M (by *Scuddles*)
+- Buffed Combat Shotgun's penetration vs big zeds
+- Lowered spread Combat Shotgun's spread while aiming down the sights
+- Raised spread of Nailgun multi fire (1250 -> 1750)
+- Added Nailgun single fire sound (thanks to *Scuddles* for idea)
+- Fixed issue in Support Spec. perk that prevented penetration damage reduction lowering below x0.60
+- Significantly nerfed nail over penetration (damage reduction: x0.75 -> x0.33)
+- Nails cannot penetrate big or medium zeds anymore (Bloat, Husk, SC, FP, etc.)
+
 ### v9.60.2
 - Fixed bug when `ZombieVolume.bVolumeIsEnabled` flag was ignored when choosing spawn volume.
 - Lowered falling damage. Traded realism for fun.

@@ -14,13 +14,14 @@ simulated function float ZedPenDamageReduction(KFMonster Monster)
         if (SeqName == 'Siren_Scream') {
             return 10;
         }
-    }    
-    
+    }
+
     return super.ZedPenDamageReduction(Monster);
 }
 
 defaultproperties
 {
+     BigZedPenDmgReduction=0.75  // buff from 0.50 in v9.60.3
      MediumZedPenDmgReduction=1.000000
      MyDamageType=Class'KFMod.DamTypeBenelli'
 }

@@ -1276,6 +1276,11 @@ function BecomeActivePlayer()
 
 function Possess(Pawn aPawn)
 {
+    local Rotator R, R2Door;
+    local KFTraderDoor door, BestDoor;
+    local ShopVolume shop;
+    local bool bTurnAroundValid;
+
     //ClientMessage("Possess("$aPawn$"). Current Pawn="$Pawn);
     if ( Role == ROLE_Authority && Mut != none ) {
         if ( bHadPawn )
@@ -1283,9 +1288,39 @@ function Possess(Pawn aPawn)
         else
             StartCash = max(StartCash, Mut.KF.StartingCash);
 
+        if ( Mut.ScrnGT != none && Mut.ScrnGT.ScrnGameLength != none && Mut.ScrnGT.ScrnGameLength.Wave.bStartAtTrader )
+        {
+            R = aPawn.Rotation;
+            // spawnned at the trader on a trader teleporter.
+            // Releporters usually are facing away from the trader, so turn 180
+            R.yaw += 32768;
+            R = Normalize(R);
+
+            shop = Mut.ScrnGT.TeamShop(PlayerReplicationInfo.Team.TeamIndex);
+            foreach aPawn.VisibleCollidingActors(class'KFTraderDoor', door, 1000, aPawn.Location) {
+                if ( door.Tag == shop.Event ) {
+                    if ( BestDoor == none )
+                        BestDoor = door;
+                    R2Door = R;
+                    R2Door.yaw = rotator(door.Location - aPawn.Location).yaw;
+                    if ( abs(Normalize(R2Door - R).yaw) < 4096 ) {
+                        // rotation to the door is almost the same as rotation by 180.
+                        // In that case use turnaround as it looks better
+                        bTurnAroundValid = true;
+                    }
+                    break;
+                }
+            }
+            if ( !bTurnAroundValid && BestDoor != none ) {
+                // turnaround doesn't face any of trader doors. Rotate to door directly
+                R.yaw = rotator(door.Location - aPawn.Location).yaw;
+            }
+            aPawn.SetRotation(R);
+        }
     }
 
     super.Possess(aPawn);
+    
     // show path to trader if respawned during the trader time
     if ( Role == ROLE_Authority && Pawn != none && Mut != none && Mut.KF.bTradingDoorsOpen )
         SetShowPathToTrader(true);

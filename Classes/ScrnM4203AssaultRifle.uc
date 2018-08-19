@@ -196,4 +196,6 @@ defaultproperties
     InventoryGroup=3
     PickupClass=Class'ScrnBalanceSrv.ScrnM4203Pickup'
     ItemName="M4 203 SE"
+    PrePivot=(Z=-0.35) //rotational fix for ironsight alignment
+    PlayerViewPivot=(Pitch=30,Roll=0,Yaw=5) //correction of sight position after rotation fix
 }
