@@ -19,6 +19,15 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+### v9.60.10
+- Reworked **Medic nades**. They do not bounce of the floor and do damage on impact.
+- Net code of medic nades should be more reliable (unless introduced new bugs)
+- Lowered cost of medic nades to $30 (down from $40)
+- Set base price of **Medic Grenade Launcher** to $500. Removed perk discount.
+- Fixed Tesla Bomber achievement
+- Fixed bug where player start event is not triggered when spawning at trader.
+  For example, this event is triggering chopper on West London to fly away.
+
 ### v9.60.9
 - Fixed DoorControl (again)
 

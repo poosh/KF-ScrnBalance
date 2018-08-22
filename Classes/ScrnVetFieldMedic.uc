@@ -107,14 +107,13 @@ static function float AddExtraAmmoFor(KFPlayerReplicationInfo KFPRI, Class<Ammun
 // v6.10 - all medic guns have regular discount rate
 static function float GetCostScaling(KFPlayerReplicationInfo KFPRI, class<Pickup> Item)
 {
-    if ( Item == class'Vest' || ClassIsChildOf(Item, class'ScrnBalanceSrv.ScrnVestPickup')
+    if ( Item == class'Vest' || ClassIsChildOf(Item, class'ScrnVestPickup')
                 || ClassIsChildOf(Item, class'MP7MPickup')
                 || ClassIsChildOf(Item, class'MP5MPickup')
                 || ClassIsChildOf(Item, class'M7A3MPickup')
                 || ClassIsChildOf(Item, class'KrissMPickup')
                 || ClassIsChildOf(Item, class'BlowerThrowerPickup')
-                || ClassIsChildOf(Item, class'ScrnBalanceSrv.ScrnM79MPickup')
-                || ClassIsChildOf(Item, class'ScrnBalanceSrv.ScrnM4203MPickup')
+                || ClassIsChildOf(Item, class'ScrnM4203MPickup')
             || ClassIsInArray(default.PerkedPickups, Item) )
     {
         // 30% base discount + 5% extra per level
