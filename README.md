@@ -19,6 +19,9 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+### v9.60.13
+- Fixed bug in M79M reloading animation
+
 ### v9.60.12
 - Gray and Gold perk icons made prettier
 - **KF-NightAngkor-SE** added to map achievements
@@ -29,7 +32,7 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 - Medic nade also bounces when shooting at your feet. It is a feature not a bug :)
 
 ### v9.60.10
-- Reworked **Medic nades**. They do not bounce of the floor and do damage on impact.
+- Reworked **Medic nades**. They now do damage on impact and less bounce.
 - Net code of medic nades should be more reliable (unless introduced new bugs)
 - Lowered cost of medic nades to $30 (down from $40)
 - Set base price of **Medic Grenade Launcher** to $500. Removed perk discount.
