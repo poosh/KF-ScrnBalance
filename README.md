@@ -19,6 +19,11 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+### v9.60.11
+- Fixed (I hope) medic nade replication issues
+- Medic nade healing now lasts 10 seconds (up from 8)
+- Medic nade also bounces when shooting at your feet. It is a feature not a bug :)
+
 ### v9.60.10
 - Reworked **Medic nades**. They do not bounce of the floor and do damage on impact.
 - Net code of medic nades should be more reliable (unless introduced new bugs)

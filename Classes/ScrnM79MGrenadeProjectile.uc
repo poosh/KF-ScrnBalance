@@ -1,4 +1,4 @@
-class ScrnM79MGrenadeProjectile extends M79GrenadeProjectile;
+class ScrnM79MGrenadeProjectile extends ScrnM79GrenadeProjectile;
 
 #exec OBJ LOAD FILE=KF_GrenadeSnd.uax
 #exec OBJ LOAD FILE=Inf_WeaponsTwo.uax
@@ -24,7 +24,7 @@ var() float DampenFactor, DampenFactorParallel;
 
 replication
 {
-    reliable if ( Role==ROLE_Authority )
+    reliable if ( Role==ROLE_Authority && (bNetInitial || bNetDirty) )
         bHealing;
 }
 
@@ -32,7 +32,6 @@ simulated function PostNetReceive()
 {
     if (Role == ROLE_Authority)
         return; // just to be sure
-
 
     // sync states with server based on flags
     if( bHidden ) {
@@ -56,34 +55,20 @@ simulated function PostNetReceive()
 //overrided to disable smoke trail
 simulated function PostBeginPlay()
 {
-    BCInverse = 1 / BallisticCoefficient;
+    super.PostBeginPlay();
 
-    OrigLoc = Location;
-
-    if( !bDud )
-    {
-        Dir = vector(Rotation);
-        Velocity = speed * Dir;
-        SetRotation(Rotation + IntitialRotationAdjustment);
-    }
-
-    if ( Level.NetMode != NM_DedicatedServer && !bHidden )
-    {
-        SmokeTrail = Spawn(class'ScrnBalanceSrv.ScrnMedicNadeTrail',self);
-        SmokeTrail.SetBase(self);
+    if ( SmokeTrail != none )
         SmokeTrail.SetRelativeRotation(rot(32768,0,0));
-        //Corona = Spawn(class'KFMod.KFLAWCorona',self);
-    }
-
-    if (PhysicsVolume.bWaterVolume)
-    {
-        bHitWater = True;
-        Velocity=0.6*Velocity;
-    }
-    super(Projectile).PostBeginPlay();
 
     if ( Instigator != none)
         InstigatorWeapon = KFWeapon(Instigator.Weapon);
+}
+
+simulated function PostNetBeginPlay()
+{
+    if ( Role < ROLE_Authority ) {
+        PostNetReceive();
+    }
 }
 
 function Timer()
@@ -93,6 +78,10 @@ function Timer()
 simulated function Tick( float DeltaTime )
 {
     SetRotation(IntitialRotationAdjustment + Rotator(Normal(Velocity)));
+
+    if ( bHealing && !bHasExploded && Role < ROLE_Authority ) {
+        GoToState('Healing');
+    }
 }
 
 simulated function Disintegrate(vector HitLocation, vector HitNormal)
@@ -129,7 +118,7 @@ function TakeDamage( int Damage, Pawn InstigatedBy, Vector Hitlocation, Vector M
 simulated function ProcessTouch( actor Other, vector HitLocation )
 {
     // Don't let it hit this player, or blow up on another player
-    if ( Other == none || Other == Instigator || Other.Base == Instigator || bDud )
+    if ( Other == none || Other == Instigator || Other.Base == Instigator )
         return;
 
     // Don't collide with bullet whip attachments
@@ -161,12 +150,12 @@ simulated function HitWall( vector HitNormal, actor Wall )
     VNorm = (Velocity dot HitNormal) * HitNormal;
     Velocity = -VNorm * DampenFactor + (Velocity - VNorm) * DampenFactorParallel;
     Speed = VSize(Velocity);
-    ImpactDamage *= DampenFactorParallel;
+    ImpactDamage *= DampenFactor;
     SetPhysics(PHYS_Falling);
     GotoState('FallingDown');
 }
 
-event Landed( vector HitNormal )
+simulated function Landed( vector HitNormal )
 {
     GotoState('Healing');
 }
@@ -302,7 +291,7 @@ simulated state FallingDown
 
 simulated state Dropping extends FallingDown
 {
-    ignores HitWall, ProcessTouch;
+    ignores HitWall, ProcessTouch, Tick;
 }
 
 simulated state Healing
@@ -311,11 +300,7 @@ simulated state Healing
 
     simulated function BeginState()
     {
-        Disable('Tick');
-
-        bAlwaysRelevant = true; // not sure if it can be set outside of defaultproperties
         bSkipActorPropertyReplication = false;
-        bReplicateMovement = true;
         bUpdateSimulatedPosition = true;
 
         bHealing = true;
@@ -330,7 +315,7 @@ simulated state Healing
 
         if ( Level.NetMode != NM_DedicatedServer ) {
             GreenCloud = Spawn(GreenCloudClass,self,, Location, rotator(vect(0,0,1)));
-            GreenCloud.SetBase(self);
+            // GreenCloud.SetBase(self);
             Spawn(ExplosionDecal,self,,Location, rotator(vect(0,0,-1)));
         }
 
@@ -341,6 +326,12 @@ simulated state Healing
         LifeSpan = MaxHeals * HealTimer + 2;
         SetTimer(HealTimer, true);
         Timer();
+
+        if( Role == ROLE_Authority ) {
+            Disable('Tick');
+            NetUpdateTime = Level.TimeSeconds - 1; // update now
+        }
+
     }
 
     simulated function EndState()
@@ -355,7 +346,7 @@ simulated state Healing
         }
     }
 
-    function Timer()
+    simulated function Timer()
     {
         HealRadius(Damage, DamageRadius, Location);
         if (--MaxHeals <= 0) {
@@ -363,6 +354,12 @@ simulated state Healing
         }
     }
 
+    simulated function Tick( float DeltaTime )
+    {
+        if ( bHidden ) {
+            GoToState('Disintegrating');
+        }
+    }
 }
 
 simulated state Disintegrating
@@ -401,7 +398,7 @@ defaultproperties
 {
     Damage=4
     DamageRadius=200.000000
-    MaxHeals=16
+    MaxHeals=20
     HealTimer=0.5
     LifeSpan=15 // make sure the LifeSpan is longer than MaxHeals * HealTimer
     ImpactDamage=200
@@ -416,16 +413,18 @@ defaultproperties
     DampenFactor=0.25
     DampenFactorParallel=0.25  // 0.40
     MyDamageType=Class'KFMod.DamTypeMedicNade'
-    ExplosionDecal=Class'KFMod.MedicNadeDecal'
+    ExplosionDecal=Class'ScrnBalanceSrv.ScrnMedicNadeDecal'
     SoundVolume=150
     SoundRadius=100.000000
     TransientSoundRadius=200.000000
     bBounce=False
+    SmokeTrailClass=Class'ScrnBalanceSrv.ScrnMedicNadeTrail'
     GreenCloudClass=Class'ScrnBalanceSrv.ScrnNadeHealing'
     HealingSound=Sound'Inf_WeaponsTwo.smoke_loop'
 
     RemoteRole=ROLE_SimulatedProxy
     bNetNotify=true
+    bUpdateSimulatedPosition=true
 
     DrawScale=2.0
 

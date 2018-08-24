@@ -37,7 +37,7 @@ defaultproperties
          ColorScale(0)=(Color=(G=255,R=128,A=255))
          ColorScale(1)=(RelativeTime=1.000000,Color=(B=61,G=105,R=61,A=255))
          FadeOutFactor=(W=0.000000,X=0.000000,Y=0.000000,Z=0.000000)
-         FadeOutStartTime=7.000000
+         FadeOutStartTime=9.000000
          SpinsPerSecondRange=(Y=(Min=0.050000,Max=0.100000),Z=(Min=0.050000,Max=0.100000))
          StartSpinRange=(X=(Min=-0.500000,Max=0.500000),Y=(Max=1.000000),Z=(Max=1.000000))
          SizeScale(0)=(RelativeSize=1.000000)
@@ -48,7 +48,7 @@ defaultproperties
          Texture=Texture'kf_fx_trip_t.Misc.smoke_animated'
          TextureUSubdivisions=8
          TextureVSubdivisions=8
-         LifetimeRange=(Min=10.000000,Max=10.000000)
+         LifetimeRange=(Min=12.000000,Max=12.000000)
          StartVelocityRange=(X=(Min=-750.000000,Max=750.000000),Y=(Min=-750.000000,Max=750.000000))
          VelocityLossRange=(X=(Min=10.000000,Max=10.000000),Y=(Min=10.000000,Max=10.000000),Z=(Min=10.000000,Max=10.000000))
      End Object
