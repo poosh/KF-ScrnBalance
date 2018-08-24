@@ -19,6 +19,10 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+### v9.60.12
+- Gray and Gold perk icons made prettier
+- **KF-NightAngkor-SE** added to map achievements
+
 ### v9.60.11
 - Fixed (I hope) medic nade replication issues
 - Medic nade healing now lasts 10 seconds (up from 8)
