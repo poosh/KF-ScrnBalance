@@ -703,25 +703,6 @@ function MonsterDamaged(int Damage, KFMonster Victim, ScrnPlayerInfo InstigatorI
 
 }
 
-function NetDamage( int Damage, pawn injured, pawn instigatedBy, vector HitLocation, out vector Momentum,
-    class<DamageType> DamType )
-{
-    local int index;
-
-    //Level.GetLocalPlayerController().ClientMessage("NetDamage: " $ injured $ " took "$Damage$"/"$injured.Health$"dmg from " $ instigatedBy $ " with " $ DamType);
-
-    // monster2monster damage
-    if ( injured != instigatedBy && KFMonster(injured) != none && KFMonster(instigatedBy) != none) {
-        if ( injured.Health > 0 && Damage > injured.Health && instigatedBy.IsA('TeslaHusk') && GetItemName(string(DamType)) == "DamTypeEMP" ) {
-            index = GameRules.GetMonsterIndex(KFMonster(instigatedBy));
-            if ( GameRules.MonsterInfos[index].KillAss1 != none
-                    && (GameRules.MonsterInfos[index].DamageFlags1 & DF_DECAP) > 0 )
-                GameRules.MonsterInfos[index].KillAss1.ProgressAchievement('TeslaBomber', 1); // monster killed by TeslaHusk's EMP charge
-        }
-    }
-}
-
-
 function MonsterKilled(KFMonster Victim, ScrnPlayerInfo KillerInfo, class<KFWeaponDamageType> DamType)
 {
     local int index;
@@ -783,6 +764,10 @@ function MonsterKilled(KFMonster Victim, ScrnPlayerInfo KillerInfo, class<KFWeap
         KillerInfo.ProgressAchievement('PrematureDetonation', 1);
     }
 
+    if ( DamType.name == 'DamTypeEMP' ) {
+        KillerInfo.ProgressAchievement('TeslaBomber', 1);
+    }
+
     if ( KillerInfoPawn != none) {
         // don't give Combat Medic, if healed person is dead, healed himself, or was healed by another person later
         if ( KillerInfoPawn.IsMedic() && KillerInfoPawn.LastHealed != none && KillerInfoPawn.LastHealed !=KillerInfoPawn
@@ -807,7 +792,6 @@ function MonsterKilled(KFMonster Victim, ScrnPlayerInfo KillerInfo, class<KFWeap
             }
         }
     }
-
 
     if ( ZombieClot(Victim) == none )
         KillerInfo.SetCustomValue(self, 'RowClotKills', 0, false);

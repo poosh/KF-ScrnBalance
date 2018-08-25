@@ -1320,7 +1320,7 @@ function Possess(Pawn aPawn)
     }
 
     super.Possess(aPawn);
-    
+
     // show path to trader if respawned during the trader time
     if ( Role == ROLE_Authority && Pawn != none && Mut != none && Mut.KF.bTradingDoorsOpen )
         SetShowPathToTrader(true);
@@ -2614,8 +2614,6 @@ exec function TestQuickMelee()
 
 }
 
-
-
 exec function FixQuickMelee()
 {
     local Inventory inv;
@@ -2660,104 +2658,81 @@ function ServerFixQuickMelee()
 
 // ======================== COMMENT BEFORE RELEASE !!! =====================
 
-// exec function WaveNum(byte w)
-// {
-    // if ( Level.NetMode == NM_Standalone ) {
-        // KFGameType(Level.Game).WaveNum = w;
-        // KFGameReplicationInfo(Level.GRI).WaveNumber = KFGameType(Level.Game).WaveNum;
-    // }
-// }
-
-// exec function FinalWave(byte w)
-// {
-    // if ( Level.NetMode == NM_Standalone ) {
-        // KFGameType(Level.Game).FinalWave = w;
-        // KFGameReplicationInfo(Level.GRI).FinalWave = KFGameType(Level.Game).FinalWave;
-    // }
-// }
-
-
 // exec function SetSID64(coerce string SteamID64)
 // {
-    // //if ( Level.NetMode == NM_Standalone )
-    // if ( Role == ROLE_Authority )
-        // class'ScrnCustomPRI'.static.FindMe(PlayerReplicationInfo).SetSteamID64(SteamID64);
+//     //if ( Level.NetMode == NM_Standalone )
+//     if ( Role == ROLE_Authority )
+//         class'ScrnCustomPRI'.static.FindMe(PlayerReplicationInfo).SetSteamID64(SteamID64);
 // }
+//
 // exec function TestSID()
 // {
-    // SetSID64("76561197992537591");
+//     SetSID64("76561197992537591");
 // }
-
+//
 // exec function PerkLevel(int L)
 // {
 //     if ( Role == ROLE_Authority )
 //         KFPlayerReplicationInfo(PlayerReplicationInfo).ClientVeteranSkillLevel = L;
 // }
-
+//
 // exec function TestZedTime(optional float DesiredZedTimeDuration)
 // {
-    // KFGameType(Level.Game).DramaticEvent(1.0, DesiredZedTimeDuration);
+//     if ( Role == ROLE_Authority )
+//     KFGameType(Level.Game).DramaticEvent(1.0, DesiredZedTimeDuration);
 // }
-
-
-/*
-exec function IncAch(name AchID)
-{
-    if ( Level.NetMode == NM_Standalone )
-        class'ScrnAchievements'.static.ProgressAchievementByID(Class'ScrnClientPerkRepLink'.Static.FindMe(self), AchID, 1);
-}
-
-exec function GiveAch(name AchID)
-{
-    if ( Level.NetMode == NM_Standalone )
-        class'ScrnAchievements'.static.ProgressAchievementByID(Class'ScrnClientPerkRepLink'.Static.FindMe(self), AchID, 1000);
-}
-
-exec function BuyAll()
-{
-    local int i;
-    local ScrnClientPerkRepLink L;
-
-    if ( Role < ROLE_Authority )
-        return;
-
-    PlayerReplicationInfo.Score = 1000000;
-    ScrnPawn = ScrnHumanPawn(Pawn);
-    L = class'ScrnClientPerkRepLink'.static.FindMe(self);
-    for ( i=0; i<L.ShopInventory.length; ++i ) {
-        ScrnPawn.DropAllWeapons(ScrnPawn);
-        ScrnPawn.ServerBuyWeapon(class<Weapon>(L.ShopInventory[i].PC.default.InventoryType), 0);
-    }
-}
-
-
-exec function GiveSpawnInv()
-{
-    if ( Role != ROLE_Authority )
-        return;
-
-    KFPlayerReplicationInfo(PlayerReplicationInfo).ClientVeteranSkill.static.AddDefaultInventory(KFPlayerReplicationInfo(PlayerReplicationInfo), Pawn);
-}
-
-exec function TestWaveSize(int PlayerCount)
-{
-    Mut.KF.TotalMaxMonsters = 10000;
-    Mut.GameRules.PlayersAlive.Length = PlayerCount;
-    Mut.KF.NumBots = 0;
-    Mut.GameRules.SetupWaveSize();
-}
-
-
-exec function TestEndGame()
-{
-    Mut.GameRules.bSuperPat = true;
-    Mut.GameRules.DoomHardcorePointsGained = 6;
-    Mut.GameRules.HardcoreLevel = 15;
-    Mut.KF.WaveNum = Mut.KF.FinalWave + 1;
-    Mut.KF.CheckEndGame(PlayerReplicationInfo, "Test");
-}
-
-*/
+//
+// exec function IncAch(name AchID)
+// {
+//     if ( Level.NetMode == NM_Standalone )
+//         class'ScrnAchievements'.static.ProgressAchievementByID(Class'ScrnClientPerkRepLink'.Static.FindMe(self), AchID, 1);
+// }
+//
+// exec function GiveAch(name AchID)
+// {
+//     if ( Level.NetMode == NM_Standalone )
+//         class'ScrnAchievements'.static.ProgressAchievementByID(Class'ScrnClientPerkRepLink'.Static.FindMe(self), AchID, 1000);
+// }
+//
+// exec function BuyAll()
+// {
+//     local int i;
+//     local ScrnClientPerkRepLink L;
+//     local ScrnHumanPawn ScrnPawn;
+//
+//     if ( Role != ROLE_Authority )
+//         return;
+//
+//     PlayerReplicationInfo.Score = 1000000;
+//     ScrnPawn = ScrnHumanPawn(Pawn);
+//     L = class'ScrnClientPerkRepLink'.static.FindMe(self);
+//     for ( i=0; i<L.ShopInventory.length; ++i ) {
+//         ScrnPawn.DropAllWeapons(ScrnPawn);
+//         ScrnPawn.ServerBuyWeapon(class<Weapon>(L.ShopInventory[i].PC.default.InventoryType), 0);
+//     }
+// }
+//
+//
+// exec function GiveSpawnInv()
+// {
+//     if ( Role != ROLE_Authority )
+//         return;
+//
+//     KFPlayerReplicationInfo(PlayerReplicationInfo).ClientVeteranSkill.static.AddDefaultInventory(KFPlayerReplicationInfo(PlayerReplicationInfo), Pawn);
+// }
+//
+// exec function TestEndGame()
+// {
+//     if ( Role != ROLE_Authority )
+//         return;
+//
+//     Mut.GameRules.bSuperPat = true;
+//     Mut.GameRules.bHasCustomZeds = true;
+//     Mut.GameRules.GameDoom3Kills = 100;
+//     Mut.GameRules.HardcoreLevel = 15;
+//     Mut.KF.WaveNum = Mut.KF.FinalWave + 1;
+//     Mut.KF.CheckEndGame(PlayerReplicationInfo, "Test");
+// }
 
 
 defaultproperties

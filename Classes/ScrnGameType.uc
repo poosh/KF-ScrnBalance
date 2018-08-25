@@ -50,6 +50,7 @@ enum EDropKind {
 
 var bool bZedTimeEnabled;  // set it to false to completely disable the Zed Time in the game
 var transient byte PlayerSpawnTraderTeleportIndex;
+var name PlayerStartEvent;
 
 event InitGame( string Options, out string Error )
 {
@@ -91,6 +92,8 @@ event InitGame( string Options, out string Error )
             bKillMessages = false;
         }
     }
+
+    InitNavigationPoints();
 
     if ( IsTestMap() ) {
         bAntiBlocker = false; // disable AntiBlocker on test map
@@ -1470,6 +1473,32 @@ function UninvitePlayer(PlayerController PC)
     }
 }
 
+function InitNavigationPoints()
+{
+    local NavigationPoint N;
+    local PlayerStart P;
+    local bool bLookForPlayerStartEvent;
+
+    bLookForPlayerStartEvent = true;
+    for ( N = Level.NavigationPointList; N != none; N = N.NextNavigationPoint ) {
+        P = PlayerStart(N);
+        if ( P != none ) {
+            if ( bLookForPlayerStartEvent && P.Event != '' && P.Event != PlayerStartEvent ) {
+                if ( PlayerStartEvent == '' ) {
+                    // all player starts having the same event. Most-likely it should be triggered on player each spawn
+                    PlayerStartEvent = P.Event;
+                }
+                else {
+                    // different events for player starts - those are linked to particular spawn point no the game itself
+                    PlayerStartEvent = '';
+                    bLookForPlayerStartEvent = false;
+                }
+            }
+        }
+    }
+}
+
+
 function NavigationPoint FindPlayerStart( Controller Player, optional byte InTeam, optional string incomingName )
 {
     local byte TeamIndex;
@@ -1515,9 +1544,15 @@ function RestartPlayer( Controller aPlayer )
 
     super.RestartPlayer(aPlayer);
 
-    if ( bTradingDoorsOpen && aPlayer.bIsPlayer && aPlayer.Pawn != none )
-    {
-        aPlayer.Pawn.bBlockActors = !bAntiBlocker;
+    if ( aPlayer.Pawn != none ) {
+        if ( bTradingDoorsOpen && aPlayer.bIsPlayer ) {
+            aPlayer.Pawn.bBlockActors = !bAntiBlocker;
+        }
+
+        if ( PlayerStartEvent != '' && aPlayer.Pawn.Anchor.Event != PlayerStartEvent ) {
+            // triggers PlayerStart.Event despite is is spawn elsewhere, e.g. at trader
+            TriggerEvent(PlayerStartEvent, aPlayer.Pawn.Anchor, aPlayer.Pawn);
+        }
     }
 
     if ( CI != none && CI.Pawn != none ) {

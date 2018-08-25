@@ -107,14 +107,13 @@ static function float AddExtraAmmoFor(KFPlayerReplicationInfo KFPRI, Class<Ammun
 // v6.10 - all medic guns have regular discount rate
 static function float GetCostScaling(KFPlayerReplicationInfo KFPRI, class<Pickup> Item)
 {
-    if ( Item == class'Vest' || ClassIsChildOf(Item, class'ScrnBalanceSrv.ScrnVestPickup')
+    if ( Item == class'Vest' || ClassIsChildOf(Item, class'ScrnVestPickup')
                 || ClassIsChildOf(Item, class'MP7MPickup')
                 || ClassIsChildOf(Item, class'MP5MPickup')
                 || ClassIsChildOf(Item, class'M7A3MPickup')
                 || ClassIsChildOf(Item, class'KrissMPickup')
                 || ClassIsChildOf(Item, class'BlowerThrowerPickup')
-                || ClassIsChildOf(Item, class'ScrnBalanceSrv.ScrnM79MPickup')
-                || ClassIsChildOf(Item, class'ScrnBalanceSrv.ScrnM4203MPickup')
+                || ClassIsChildOf(Item, class'ScrnM4203MPickup')
             || ClassIsInArray(default.PerkedPickups, Item) )
     {
         // 30% base discount + 5% extra per level
@@ -191,7 +190,7 @@ defaultproperties
     OnHUDIcon=Texture'KillingFloorHUD.Perks.Perk_Medic'
     OnHUDGoldIcon=Texture'KillingFloor2HUD.Perk_Icons.Perk_Medic_Gold'
     OnHUDIcons(0)=(PerkIcon=Texture'ScrnTex.Perks.Perk_Medic_Gray',StarIcon=Texture'ScrnTex.Perks.Hud_Perk_Star_Gray',DrawColor=(B=255,G=255,R=255,A=255))
-    OnHUDIcons(1)=(PerkIcon=Texture'KillingFloor2HUD.Perk_Icons.Perk_Medic_Gold',StarIcon=Texture'KillingFloor2HUD.Perk_Icons.Hud_Perk_Star_Gold',DrawColor=(B=255,G=255,R=255,A=255))
+    OnHUDIcons(1)=(PerkIcon=Texture'ScrnTex.Perks.Perk_Medic_Gold',StarIcon=Texture'ScrnTex.Perks.Hud_Perk_Star_Gold',DrawColor=(B=255,G=255,R=255,A=255))
     OnHUDIcons(2)=(PerkIcon=Texture'ScrnTex.Perks.Perk_Medic_Green',StarIcon=Texture'ScrnTex.Perks.Hud_Perk_Star_Green',DrawColor=(B=255,G=255,R=255,A=255))
     OnHUDIcons(3)=(PerkIcon=Texture'ScrnTex.Perks.Perk_Medic_Blue',StarIcon=Texture'ScrnTex.Perks.Hud_Perk_Star_Blue',DrawColor=(B=255,G=255,R=255,A=255))
     OnHUDIcons(4)=(PerkIcon=Texture'ScrnTex.Perks.Perk_Medic_Purple',StarIcon=Texture'ScrnTex.Perks.Hud_Perk_Star_Purple',DrawColor=(B=255,G=255,R=255,A=255))

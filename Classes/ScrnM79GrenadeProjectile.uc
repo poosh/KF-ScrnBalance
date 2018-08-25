@@ -2,6 +2,38 @@ class ScrnM79GrenadeProjectile extends M79GrenadeProjectile;
 
 var class<PanzerfaustTrail> SmokeTrailClass;
 
+//overrided to change smoke emiter
+simulated function PostBeginPlay()
+{
+    local rotator SmokeRotation;
+
+    BCInverse = 1 / BallisticCoefficient;
+
+    if ( Level.NetMode != NM_DedicatedServer)
+    {
+        SmokeTrail = Spawn(SmokeTrailClass,self);
+        SmokeTrail.SetBase(self);
+        SmokeRotation.Pitch = 32768;
+        SmokeTrail.SetRelativeRotation(SmokeRotation);
+        //Corona = Spawn(class'KFMod.KFLAWCorona',self);
+    }
+
+    OrigLoc = Location;
+
+    if( !bDud )
+    {
+        Dir = vector(Rotation);
+        Velocity = speed * Dir;
+    }
+
+    if (PhysicsVolume.bWaterVolume)
+    {
+        bHitWater = True;
+        Velocity=0.6*Velocity;
+    }
+    super(Projectile).PostBeginPlay();
+}
+
 simulated function ProcessTouch(Actor Other, Vector HitLocation)
 {
     // Don't let it hit this player, or blow up on another player
@@ -49,38 +81,6 @@ simulated function ProcessTouch(Actor Other, Vector HitLocation)
     {
        Explode(HitLocation,Normal(HitLocation-Other.Location));
     }
-}
-
-//overrided to change smoke emiter
-simulated function PostBeginPlay()
-{
-    local rotator SmokeRotation;
-
-    BCInverse = 1 / BallisticCoefficient;
-
-    if ( Level.NetMode != NM_DedicatedServer)
-    {
-        SmokeTrail = Spawn(SmokeTrailClass,self);
-        SmokeTrail.SetBase(self);
-        SmokeRotation.Pitch = 32768;
-        SmokeTrail.SetRelativeRotation(SmokeRotation);
-        //Corona = Spawn(class'KFMod.KFLAWCorona',self);
-    }
-
-    OrigLoc = Location;
-
-    if( !bDud )
-    {
-        Dir = vector(Rotation);
-        Velocity = speed * Dir;
-    }
-
-    if (PhysicsVolume.bWaterVolume)
-    {
-        bHitWater = True;
-        Velocity=0.6*Velocity;
-    }
-    super(Projectile).PostBeginPlay();
 }
 
 defaultproperties

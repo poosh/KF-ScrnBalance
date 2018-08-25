@@ -4,7 +4,7 @@ defaultproperties
 {
      cost=2500
      BuyClipSize=1
-     AmmoCost=40
+     AmmoCost=30
      PowerValue=30
      Description="An assault rifle with an attached healing grenade launcher. Shoots in 3-bullet fixed-burst mode."
      ItemName="M4-203M Medic Rifle"
