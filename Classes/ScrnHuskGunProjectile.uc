@@ -1,5 +1,6 @@
 class ScrnHuskGunProjectile extends HuskGunProjectile;
 
+var bool bAppliedCharge;
 
 //overrided to use alternate burning mechanism
 simulated function HurtRadius( float DamageAmount, float DamageRadius, class<DamageType> DamageType, float Momentum, vector HitLocation )
@@ -125,6 +126,19 @@ simulated function HurtRadius( float DamageAmount, float DamageRadius, class<Dam
     bHurtEntry = false;
 }
 
+// in case when the projectile touched a victim on spawn and WeaponFire haven't applied charge yet
+function CheckCharge()
+{
+    local ScrnHuskGunFire FireMode;
+
+    if ( bAppliedCharge )
+        return;
+
+    if ( Instigator != none && Instigator.Weapon != none )
+        FireMode = ScrnHuskGunFire( Instigator.Weapon.GetFireMode(0) );
+    if ( FireMode != none )
+        FireMode.ApplyCharge(self);
+}
 
 simulated function ProcessTouch(Actor Other, Vector HitLocation)
 {
@@ -134,77 +148,48 @@ simulated function ProcessTouch(Actor Other, Vector HitLocation)
     local KFPawn HitPawn;
 
     // Don't let it hit this player, or blow up on another player
-    if ( Other == none || Other == Instigator || Other.Base == Instigator )
+    if ( Other == none || Other == Instigator || Other.Base == Instigator || !Other.bBlockHitPointTraces )
         return;
-
-    // Don't collide with bullet whip attachments
-    if( KFBulletWhipAttachment(Other) != none )
-    {
-        return;
-    }
-
-    // Don't allow hits on poeple on the same team
-    if( KFHumanPawn(Other) != none && Instigator != none
-        && KFHumanPawn(Other).PlayerReplicationInfo.Team.TeamIndex == Instigator.PlayerReplicationInfo.Team.TeamIndex )
-    {
-        return;
-    }
 
     // Use the instigator's location if it exists. This fixes issues with
     // the original location of the projectile being really far away from
     // the real Origloc due to it taking a couple of milliseconds to
     // replicate the location to the client and the first replicated location has
     // already moved quite a bit.
-    if( Instigator != none )
-    {
+    if( Instigator != none ) {
         OrigLoc = Instigator.Location;
     }
 
     X = Vector(Rotation);
     OtherLocation = Other.Location;
 
-    if( Role == ROLE_Authority )
-    {
-         if( ROBulletWhipAttachment(Other) != none )
-        {
-            if(!Other.Base.bDeleteMe)
-            {
-                Other = Instigator.HitPointTrace(TempHitLocation, HitNormal, HitLocation + (200 * X), HitPoints, HitLocation,, 1);
+     if( Instigator != none && ROBulletWhipAttachment(Other) != none ) {
+        // we touched player's auxilary collision cylinder, not let's trace to the player himself
+        // Other.Base = KFPawn
+        if( Other.Base == none || Other.Base.bDeleteMe )
+            return;
 
-                if( Other == none || HitPoints.Length == 0 )
-                    return;
+        Other = Instigator.HitPointTrace(TempHitLocation, HitNormal, HitLocation + (200 * X), HitPoints, HitLocation,, 1);
 
-                HitPawn = KFPawn(Other);
+        if( Other == none || HitPoints.Length == 0 || Other.bDeleteMe )
+            return; // bullet didn't hit a pawn
 
-                if (Role == ROLE_Authority)
-                {
-                    if ( HitPawn != none )
-                    {
-                         // Hit detection debugging
-                        /*log("Bullet hit "$HitPawn.PlayerReplicationInfo.PlayerName);
-                        HitPawn.HitStart = HitLocation;
-                        HitPawn.HitEnd = HitLocation + (65535 * X);*/
-
-                        if( !HitPawn.bDeleteMe )
-                            HitPawn.ProcessLocationalDamage(ImpactDamage, Instigator, TempHitLocation, MomentumTransfer * Normal(Velocity), ImpactDamageType,HitPoints);
-
-
-                        // Hit detection debugging
-                        //if( Level.NetMode == NM_Standalone)
-                        //    HitPawn.DrawBoneLocation();
-                    }
-                }
-            }
-        }
-        else
-        {
-            Other.TakeDamage(ImpactDamage, Instigator, HitLocation, MomentumTransfer * Normal(Velocity), ImpactDamageType);
+        HitPawn = KFPawn(Other);
+        if ( HitPawn != none ) {
+            // Don't allow hits on people on the same team - except hardcore mode
+            if ( !class'ScrnBalance'.default.Mut.bHardcore && HitPawn.GetTeamNum() == Instigator.GetTeamNum() )
+                return;
+            CheckCharge();
+            HitPawn.ProcessLocationalDamage(Damage, Instigator, TempHitLocation, MomentumTransfer * Normal(Velocity), MyDamageType,HitPoints);
         }
     }
+    else {
+        CheckCharge();
+        Other.TakeDamage(ImpactDamage, Instigator, HitLocation, MomentumTransfer * Normal(Velocity), ImpactDamageType);
+    }
 
-    if( !bDud )
-    {
-       Explode(HitLocation,Normal(HitLocation-OtherLocation));
+    if( !bDud ) {
+        Explode(HitLocation,Normal(HitLocation-OtherLocation));
     }
 }
 

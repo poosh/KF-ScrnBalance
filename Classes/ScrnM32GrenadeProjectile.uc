@@ -5,7 +5,7 @@ var class<PanzerfaustTrail> SmokeTrailClass;
 simulated function ProcessTouch(Actor Other, Vector HitLocation)
 {
     // Don't let it hit this player, or blow up on another player
-    if ( Other == none || Other == Instigator || Other.Base == Instigator )
+    if ( Other == none || Other == Instigator || Other.Base == Instigator || !Other.bBlockHitPointTraces )
         return;
 
     // Don't collide with bullet whip attachments
@@ -15,8 +15,8 @@ simulated function ProcessTouch(Actor Other, Vector HitLocation)
     }
 
     // Don't allow hits on people on the same team - except hardcore mode
-    if( !class'ScrnBalance'.default.Mut.bHardcore && KFHumanPawn(Other) != none && Instigator != none
-        && KFHumanPawn(Other).PlayerReplicationInfo.Team.TeamIndex == Instigator.PlayerReplicationInfo.Team.TeamIndex )
+    if( !class'ScrnBalance'.default.Mut.bHardcore && KFPawn(Other) != none && Instigator != none
+            && KFPawn(Other).GetTeamNum() == Instigator.GetTeamNum() )
     {
         return;
     }

@@ -61,15 +61,12 @@ simulated function ProcessTouch (Actor Other, vector HitLocation)
 
         Other = Instigator.HitPointTrace(TempHitLocation, HitNormal, HitLocation + (200 * X), HitPoints, HitLocation,, 1);
 
-        if( Other == none || HitPoints.Length == 0 )
+        if( Other == none || HitPoints.Length == 0 || Other.bDeleteMe )
             return; // bullet didn't hit a pawn
 
         HitPawn = KFPawn(Other);
-
-        if (Role == ROLE_Authority) {
-            if ( HitPawn != none && !HitPawn.bDeleteMe ) {
-                HitPawn.ProcessLocationalDamage(Damage, Instigator, TempHitLocation, MomentumTransfer * Normal(Velocity), MyDamageType,HitPoints);
-            }
+        if ( HitPawn != none ) {
+            HitPawn.ProcessLocationalDamage(Damage, Instigator, TempHitLocation, MomentumTransfer * Normal(Velocity), MyDamageType,HitPoints);
         }
     }
     else {

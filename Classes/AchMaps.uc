@@ -129,7 +129,7 @@ defaultproperties
      AchDefs(113)=(id="KF-HarbourV3Hard",DisplayName="Boatswain",Description="Harbour",Icon=Texture'ScrnAch_T.Maps.Harbour_1')
      AchDefs(114)=(id="KF-HarbourV3Sui",DisplayName="Maritime Pilot",Description="Harbour",Icon=Texture'ScrnAch_T.Maps.Harbour_2')
      AchDefs(115)=(id="KF-HarbourV3HoE",DisplayName="Demonic Captain",Description="Harbour",Icon=Texture'ScrnAch_T.Maps.Harbour_3')
-     
+
      AchDefs(116)=(id="Kf-Hell",DisplayName="Imp",Description="Hell",Icon=Texture'KillingFloor2HUD.Achievements.Achievement_243')
      AchDefs(117)=(id="Kf-HellHard",DisplayName="Mancubus",Description="Hell",Icon=Texture'KillingFloor2HUD.Achievements.Achievement_244')
      AchDefs(118)=(id="Kf-HellSui",DisplayName="Hell Knight",Description="Hell",Icon=Texture'KillingFloor2HUD.Achievements.Achievement_245')
@@ -178,12 +178,12 @@ defaultproperties
      AchDefs(152)=(id="KF-ZedDisco",DisplayName="Backing Dancer",Description="ZED Disco",Icon=Texture'ScrnAch_T.Maps.ZedDisco_0')
      AchDefs(153)=(id="KF-ZedDiscoHard",DisplayName="DJ Skully",Description="ZED Disco",Icon=Texture'ScrnAch_T.Maps.ZedDisco_1')
      AchDefs(154)=(id="KF-ZedDiscoSui",DisplayName="King of the Dance Floor",Description="ZED Disco",Icon=Texture'ScrnAch_T.Maps.ZedDisco_2')
-     AchDefs(155)=(id="KF-ZedDiscoHoE",DisplayName="Devil Dance",Description="ZED Disco",Icon=Texture'ScrnAch_T.Maps.ZedDisco_3')     
+     AchDefs(155)=(id="KF-ZedDiscoHoE",DisplayName="Devil Dance",Description="ZED Disco",Icon=Texture'ScrnAch_T.Maps.ZedDisco_3')
 
      AchDefs(156)=(id="KF-CountyJail",DisplayName="Drunken Farmer Jail",Description="County Jail",Icon=Texture'ScrnAch_T.Maps.CountyJail_0')
      AchDefs(157)=(id="KF-CountyJailHard",DisplayName="Maximum Security Prison",Description="County Jail",Icon=Texture'ScrnAch_T.Maps.CountyJail_1')
      AchDefs(158)=(id="KF-CountyJailSui",DisplayName="Death Row",Description="County Jail",Icon=Texture'ScrnAch_T.Maps.CountyJail_2')
-     AchDefs(159)=(id="KF-CountyJailHoE",DisplayName="Prison Break",Description="County Jail",Icon=Texture'ScrnAch_T.Maps.CountyJail_3')     
+     AchDefs(159)=(id="KF-CountyJailHoE",DisplayName="Prison Break",Description="County Jail",Icon=Texture'ScrnAch_T.Maps.CountyJail_3')
 
      AchDefs(160)=(id="KF-Steamland",DisplayName="Astro Buffer Afficiando",Description="Steamland",Icon=Texture'KillingFloor2HUD.Achievements.Achievement_209')
      AchDefs(161)=(id="KF-SteamlandHard",DisplayName="Modified Psychoacceleration Achiever",Description="Steamland",Icon=Texture'KillingFloor2HUD.Achievements.Achievement_210')
@@ -194,7 +194,7 @@ defaultproperties
      AchDefs(165)=(id="KF-FrightYardHard",DisplayName="Gang Crew",Description="Fright Yard",Icon=Texture'KillingFloor2HUD.Achievements.Achievement_229')
      AchDefs(166)=(id="KF-FrightYardSui",DisplayName="Stevedore",Description="Fright Yard",Icon=Texture'KillingFloor2HUD.Achievements.Achievement_230')
      AchDefs(167)=(id="KF-FrightYardHoe",DisplayName="Wharfinger",Description="Fright Yard",Icon=Texture'KillingFloor2HUD.Achievements.Achievement_231')
-     
+
      AchDefs(168)=(id="KF-Forgotten",DisplayName="Brain Fart",Description="Forgotten",Icon=Texture'KillingFloor2HUD.Achievements.Achievement_247')
      AchDefs(169)=(id="KF-ForgottenHard",DisplayName="Agnosia",Description="Forgotten",Icon=Texture'KillingFloor2HUD.Achievements.Achievement_248')
      AchDefs(170)=(id="KF-ForgottenSui",DisplayName="Amnesia",Description="Forgotten",Icon=Texture'KillingFloor2HUD.Achievements.Achievement_249')
@@ -204,12 +204,12 @@ defaultproperties
      AchDefs(173)=(id="KF-SirensBelchHard",DisplayName="Micro Brewer",Description="Siren's Belch",Icon=Texture'KillingFloor2HUD.Achievements.Achievement_253')
      AchDefs(174)=(id="KF-SirensBelchSui",DisplayName="Master Brewer",Description="Siren's Belch",Icon=Texture'KillingFloor2HUD.Achievements.Achievement_254')
      AchDefs(175)=(id="KF-SirensBelchHoe",DisplayName="Trappist Monk",Description="Siren's Belch",Icon=Texture'KillingFloor2HUD.Achievements.Achievement_255')
-     
+
      AchDefs(176)=(id="KF-Stronghold",DisplayName="Peasant",Description="Stronghold",Icon=Texture'KillingFloor2HUD.Achievements.Achievement_256')
      AchDefs(177)=(id="KF-StrongholdHard",DisplayName="Squire",Description="Stronghold",Icon=Texture'KillingFloor2HUD.Achievements.Achievement_257')
      AchDefs(178)=(id="KF-StrongholdSui",DisplayName="Prince",Description="Stronghold",Icon=Texture'KillingFloor2HUD.Achievements.Achievement_258')
      AchDefs(179)=(id="KF-StrongholdHoe",DisplayName="King",Description="Stronghold",Icon=Texture'KillingFloor2HUD.Achievements.Achievement_259')
-     
+
      AchDefs(180)=(id="KF-Transit",DisplayName="Cattle Class",Description="Transit",Icon=Texture'KillingFloor2HUD.Achievements.Achievement_260')
      AchDefs(181)=(id="KF-TransitHard",DisplayName="Economy Comfort",Description="Transit",Icon=Texture'KillingFloor2HUD.Achievements.Achievement_261')
      AchDefs(182)=(id="KF-TransitSui",DisplayName="Business Class",Description="Transit",Icon=Texture'KillingFloor2HUD.Achievements.Achievement_262')
@@ -224,7 +224,7 @@ defaultproperties
      AchDefs(189)=(id="KF-ThrillsChillsHard",DisplayName="Cavern of Pain",Description="Thrills Chills",Icon=Texture'KillingFloor2HUD.Achievements.Achievement_281')
      AchDefs(190)=(id="KF-ThrillsChillsSui",DisplayName="Grotto of Terror",Description="Thrills Chills",Icon=Texture'KillingFloor2HUD.Achievements.Achievement_282')
      AchDefs(191)=(id="KF-ThrillsChillsHoe",DisplayName="Hollow of Horror",Description="Thrills Chills",Icon=Texture'KillingFloor2HUD.Achievements.Achievement_283')
-     
+
      AchDefs(192)=(id="KF-TheGreatPyramid-Arena",DisplayName="The First Encounter",Description="Great Pyramid",Icon=Texture'ScrnAch_T.Maps.Pyramid_0')
      AchDefs(193)=(id="KF-TheGreatPyramid-ArenaHard",DisplayName="The First Encounter: HD",Description="Great Pyramid",Icon=Texture'ScrnAch_T.Maps.Pyramid_1')
      AchDefs(194)=(id="KF-TheGreatPyramid-ArenaSui",DisplayName="Are You SERIOUS?",Description="Great Pyramid",Icon=Texture'ScrnAch_T.Maps.Pyramid_2')
@@ -234,7 +234,7 @@ defaultproperties
      AchDefs(197)=(id="KF-PandorasBoxHard",DisplayName="Hard Box",Description="Pandora's Box",Icon=Texture'ScrnAch_T.Maps.Pandora_1')
      AchDefs(198)=(id="KF-PandorasBoxSui",DisplayName="Opening the Pandora's Box",Description="Pandora's Box",Icon=Texture'ScrnAch_T.Maps.Pandora_2')
      AchDefs(199)=(id="KF-PandorasBoxHoe",DisplayName="Unleashing Evil into Devil",Description="Pandora's Box",Icon=Texture'ScrnAch_T.Maps.Pandora_3')
-     
+
      AchDefs(200)=(id="KF-ScrapHeap",DisplayName="Scrap Metal Merchant",Description="Scrap Heap",Icon=Texture'ScrnAch_T.Maps.ScrapHeap_0')
      AchDefs(201)=(id="KF-ScrapHeapHard",DisplayName="Underground Boxer",Description="Scrap Heap",Icon=Texture'ScrnAch_T.Maps.ScrapHeap_1')
      AchDefs(202)=(id="KF-ScrapHeapSui",DisplayName="King of the Box Ring",Description="Scrap Heap",Icon=Texture'ScrnAch_T.Maps.ScrapHeap_2')
@@ -249,4 +249,9 @@ defaultproperties
      AchDefs(209)=(id="KF-WickedCityHard",DisplayName="Citizen of Wicked City",Description="Wicked City",Icon=Texture'ScrnAch_T.Maps.WickedCity_1')
      AchDefs(210)=(id="KF-WickedCitySui",DisplayName="Wicked City's First Maniac",Description="Wicked City",Icon=Texture'ScrnAch_T.Maps.WickedCity_2')
      AchDefs(211)=(id="KF-WickedCityHoe",DisplayName="Wicked Hell",Description="Wicked City",Icon=Texture'ScrnAch_T.Maps.WickedCity_3')
+
+     AchDefs(212)=(id="KF-NightAngkor-SE",DisplayName="Entering Ancient Ruins",Description="Night Angkor",Icon=Texture'ScrnAch_T.Maps.NightAngkor_0')
+     AchDefs(213)=(id="KF-NightAngkor-SEHard",DisplayName="Hardcore Anthropologist",Description="Night Angkor",Icon=Texture'ScrnAch_T.Maps.NightAngkor_1')
+     AchDefs(214)=(id="KF-NightAngkor-SESui",DisplayName="Trampoline Jumper",Description="Night Angkor",Icon=Texture'ScrnAch_T.Maps.NightAngkor_2')
+     AchDefs(215)=(id="KF-NightAngkor-SEHoe",DisplayName="Demon's Paradise",Description="Night Angkor",Icon=Texture'ScrnAch_T.Maps.NightAngkor_3')
 }

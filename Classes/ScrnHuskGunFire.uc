@@ -50,26 +50,29 @@ simulated function bool AllowFire()
 //(c) PooSH
 function PostSpawnProjectile(Projectile P)
 {
-    local HuskGunProjectile HGP;
-
     super(KFShotgunFire).PostSpawnProjectile(P);
+    ApplyCharge(ScrnHuskGunProjectile(P));
+}
 
-    HGP = HuskGunProjectile(p);
-    if ( HGP != none ) {
-        if( AmmoInCharge < MaxChargeAmmo )
-        {
-            HGP.ImpactDamage *= AmmoInCharge;
-            HGP.Damage *= 1.0 + GetChargeAmount(); // up to 2x damage
-            HGP.DamageRadius *= 1.0 + GetChargeAmount();// up 2x the damage radius
-        }
-        else
-        {
-            HGP.ImpactDamage *= MaxChargeAmmo; //650 max, down from 750
-            HGP.Damage *= 2.0; // up from 2x
-            HGP.DamageRadius *= 2.0; // down from x3
-        }
-        SetChargeAmount(0);
+function ApplyCharge(ScrnHuskGunProjectile proj)
+{
+    if ( proj == none || proj.bAppliedCharge )
+        return;
+
+    if( AmmoInCharge < MaxChargeAmmo )
+    {
+        proj.ImpactDamage *= AmmoInCharge;
+        proj.Damage *= 1.0 + GetChargeAmount(); // up to 2x damage
+        proj.DamageRadius *= 1.0 + GetChargeAmount();// up 2x the damage radius
     }
+    else
+    {
+        proj.ImpactDamage *= MaxChargeAmmo; //650 max, down from 750
+        proj.Damage *= 2.0; // up from 2x
+        proj.DamageRadius *= 2.0; // down from x3
+    }
+    proj.bAppliedCharge = true;
+    SetChargeAmount(0);
 }
 
 //copy pasted and cutted out ammo consuming, because we did it in time

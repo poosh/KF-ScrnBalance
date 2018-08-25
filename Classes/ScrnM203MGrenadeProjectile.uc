@@ -1,10 +1,10 @@
 class ScrnM203MGrenadeProjectile extends ScrnM79MGrenadeProjectile;
 
 
-function SuccessfulHealMessage(int HealedCount, int HealedAmount)
+function SuccessfulHealMessage()
 {
     if ( ScrnM4203MMedicGun(InstigatorWeapon) != none )
-        ScrnM4203MMedicGun(InstigatorWeapon).ClientSuccessfulHeal(HealedPlayers.length, HealedAmount);
+        ScrnM4203MMedicGun(InstigatorWeapon).ClientSuccessfulHeal(HealedPlayers.length, HealedHP);
 }
 
 defaultproperties

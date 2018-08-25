@@ -22,6 +22,11 @@ simulated function Tick( float DeltaTime )
     Disable('Tick');
 }
 
+auto state DoNothing
+{
+
+}
+
 /*
 
 simulated function ProcessTouch( actor Other, vector HitLocation )
@@ -42,7 +47,7 @@ simulated function PostNetReceive()
 
 
 */
- 
+
 
 defaultproperties
 {
@@ -57,7 +62,7 @@ defaultproperties
     bReplicateMovement=false
     bUpdateSimulatedPosition=false
     bNetNotify=false
-    bAlwaysRelevant=true
+    bAlwaysRelevant=false
 
     Physics=PHYS_None
     bCollideActors=false
@@ -66,4 +71,6 @@ defaultproperties
     bBlockProjectiles=false
     bBlockHitPointTraces=false
     DrawScale=3.5
+
+    PrePivot=(Z=0)
 }

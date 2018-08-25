@@ -42,14 +42,14 @@ simulated function Explode(vector HitLocation, vector HitNormal)
     local PlayerController  LocalPlayer;
 
     bHasExploded = True;
-    
+
     // Don't explode if this is a dud
     if( bDud )
     {
         Velocity = vect(0,0,0);
         LifeSpan=1.0;
         SetPhysics(PHYS_Falling);
-    }    
+    }
 
     // Incendiary Effects..
     PlaySound(sound'KF_GrenadeSnd.FlameNade_Explode',,100.5*TransientSoundVolume);
@@ -95,7 +95,7 @@ simulated function HurtRadius( float DamageAmount, float DamageRadius, class<Dam
         P = none;
         KFMonsterVictim = none;
         KFP = none;
-        
+
         // don't let blast damage affect fluid - VisibleCollisingActors doesn't really work for them - jag
         if( (Victims != self) && (Hurtwall != Victims) && (Victims.Role == ROLE_Authority) && !Victims.IsA('FluidSurfaceInfo')
          && ExtendedZCollision(Victims)==None )
@@ -233,7 +233,7 @@ simulated function HurtRadius( float DamageAmount, float DamageRadius, class<Dam
 simulated function ProcessTouch(Actor Other, Vector HitLocation)
 {
     // Don't let it hit this player, or blow up on another player
-    if ( Other == none || Other == Instigator || Other.Base == Instigator )
+    if ( Other == none || Other == Instigator || Other.Base == Instigator || !Other.bBlockHitPointTraces )
         return;
 
     // Don't collide with bullet whip attachments
@@ -243,8 +243,8 @@ simulated function ProcessTouch(Actor Other, Vector HitLocation)
     }
 
     // Don't allow hits on people on the same team - except hardcore mode
-    if( !class'ScrnBalance'.default.Mut.bHardcore && KFHumanPawn(Other) != none && Instigator != none
-        && KFHumanPawn(Other).PlayerReplicationInfo.Team.TeamIndex == Instigator.PlayerReplicationInfo.Team.TeamIndex )
+    if( !class'ScrnBalance'.default.Mut.bHardcore && KFPawn(Other) != none && Instigator != none
+            && KFPawn(Other).GetTeamNum() == Instigator.GetTeamNum() )
     {
         return;
     }

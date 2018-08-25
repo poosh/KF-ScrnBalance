@@ -19,6 +19,44 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+### v9.60.13
+- Fixed bug in M79M reloading animation
+
+### v9.60.12
+- Gray and Gold perk icons made prettier
+- **KF-NightAngkor-SE** added to map achievements
+
+### v9.60.11
+- Fixed (I hope) medic nade replication issues
+- Medic nade healing now lasts 10 seconds (up from 8)
+- Medic nade also bounces when shooting at your feet. It is a feature not a bug :)
+
+### v9.60.10
+- Reworked **Medic nades**. They now do damage on impact and less bounce.
+- Net code of medic nades should be more reliable (unless introduced new bugs)
+- Lowered cost of medic nades to $30 (down from $40)
+- Set base price of **Medic Grenade Launcher** to $500. Removed perk discount.
+- Fixed Tesla Bomber achievement
+- Fixed bug where player start event is not triggered when spawning at trader.
+  For example, this event is triggering chopper on West London to fly away.
+
+### v9.60.9
+- Fixed DoorControl (again)
+
+### v9.60.8
+- Broke DoorControl
+
+### v9.60.7
+- DoorControl: Doors are closed before being welded (thanks to *nmmblez*)
+- Fixed bug when Husk Gun charge was not applied on point-blank shots (thanks to *Scuddles*)
+- Reduced grenade trails (by *Scuddles*)
+- M32 thirdperson reload animation fix (by *Scuddles*)
+- AA-12 tactical reload faked shell fix (by *Scuddles*)
+- Fixed Benelli thirdperson weapon model (by *Scuddles*)
+- Added LAW rocket lights (by *Scuddles*)
+- Reload animation sync for single shell loading weapons like winchester, shotgun, trenchgun etc. (by *Scuddles*)
+
+
 ### v9.60.6
 - Berserker gained additional 20% damage reduction from Doom Monsters (60% in total)
 - Fixed bug where headshots from MAC10, TommyGunInc and Trenchgun didn't use ScrN Burn Mechanism
