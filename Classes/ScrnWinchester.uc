@@ -33,6 +33,8 @@ simulated function Timer()
 
 defaultproperties
 {
+    SelectAnim="Select " //thanks tripwire
+    SelectAnimRate=1.9
     MeshRef="KF_Weapons_Trip.Winchester_Trip"
     SkinRefs(0)="KF_Weapons_Trip_T.Rifles.winchester_cmb"
     HudImageRef="KillingFloorHUD.WeaponSelect.winchester_unselected"
