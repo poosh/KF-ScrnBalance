@@ -5,7 +5,7 @@ var         float         ReloadShortRate;
 
 var transient bool bShortReload;
 
-var MyFakedShotgunShell FakedShell;
+var ScrnFakedProjectile FakedShell;
 
 simulated function bool AllowReload()
 {
@@ -86,14 +86,14 @@ simulated function ClientReload()
     {
         PlayAnim(ReloadAnim, ReloadAnimRate*ReloadMulti, 0.1);
         if ( FakedShell != none )
-        FakedShell.Destroy(); //try destroying the faked shell to prevent it from appearing
+            FakedShell.Destroy(); //try destroying the faked shell to prevent it from appearing
     }
     else if ( MagAmmoRemaining >= 1 )
     {
         PlayAnim(ReloadShortAnim, ReloadAnimRate*ReloadMulti, 0.1);
         SetAnimFrame(29.35, 0 , 1); //go straight to frame 29.35
         if ( FakedShell == none )
-        AttachShell();
+            AttachShell();
     }
 }
 
@@ -101,7 +101,7 @@ simulated function AttachShell() {
     if ( Level.NetMode != NM_DedicatedServer )
     {
         if ( FakedShell == none ) //only spawn fakedshell once
-            FakedShell = spawn(class'MyFakedShotgunShell',self);
+            FakedShell = spawn(class'ScrnFakedShell',self);
         if ( FakedShell != none )
         {
             AttachToBone(FakedShell, 'Magazine'); //attach faked shell to AA12 magazine
