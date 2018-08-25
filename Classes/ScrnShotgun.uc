@@ -10,7 +10,7 @@ simulated function ClientFinishReloading()
     if ( NumLoadedThisReload == MagCapacity)
     {
         //PlayIdle();
-        SetTimer(0.76, false); 
+        SetTimer(0.76/ReloadMulti, false); 
     }
     else
     {
