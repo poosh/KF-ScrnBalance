@@ -20,11 +20,11 @@ simulated function ClientFinishReloading()
         }
         //PlayIdle();
         SetTimer(0.76/ReloadMulti, false); 
-    }
-    else
-    {
-        PlayIdle();
-    }
+        }
+        else
+        {
+            PlayIdle();
+        }
 
 	if(Instigator.PendingWeapon != none && Instigator.PendingWeapon != self)
 		Instigator.Controller.ClientSwitchToBestWeapon();
