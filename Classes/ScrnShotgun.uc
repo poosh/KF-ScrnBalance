@@ -3,8 +3,8 @@ class ScrnShotgun extends Shotgun;
 simulated function ClientFinishReloading()
 {
     local float ReloadMulti;
-	bIsReloading = false;
-
+    bIsReloading = false;
+    
     // The reload animation is complete, but there is still some animation to play
     // Let's reward player for waiting the full reload time by playing the full reload animation (Can be skipped by firing)
     // Shotgun's animation is 23 frames long, so 0.76 seconds
@@ -20,14 +20,14 @@ simulated function ClientFinishReloading()
         }
         //PlayIdle();
         SetTimer(0.76/ReloadMulti, false); 
-        }
-        else
-        {
-            PlayIdle();
-        }
+    }
+    else
+    {
+        PlayIdle();
+    }
 
-	if(Instigator.PendingWeapon != none && Instigator.PendingWeapon != self)
-		Instigator.Controller.ClientSwitchToBestWeapon();
+    if(Instigator.PendingWeapon != none && Instigator.PendingWeapon != self)
+        Instigator.Controller.ClientSwitchToBestWeapon();
 }
 
 simulated function Timer()
