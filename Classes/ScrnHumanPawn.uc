@@ -72,6 +72,9 @@ var transient KFMeleeGun QuickMeleeWeapon;
 var transient KFWeapon WeaponToFixClientState;
 var transient bool bQuickMeleeInProgress;
 
+var localized string BlameStrM99;
+var localized string BlameStrRPG;
+
 replication
 {
     reliable if( bNetOwner && Role == ROLE_Authority )
@@ -1269,7 +1272,9 @@ function ServerBuyWeapon( Class<Weapon> WClass, float ItemWeight )
     local float Price,Weight, SellValue, SingleSellValue, SingleWeight;
     local Inventory I;
     local int c;
+    local KFWeapon KFW;
     local Class<KFWeaponPickup> WP;
+    local ScrnBalance Mut;
 
     if( !CanBuyNow() || Class<KFWeapon>(WClass)==None || HasWeaponClass(WClass) )
         Return;
@@ -1284,10 +1289,12 @@ function ServerBuyWeapon( Class<Weapon> WClass, float ItemWeight )
     if( PerkLink!=None && !PerkLink.CanBuyPickup(WP) )
         return;
 
+    Mut = class'ScrnBalance'.default.Mut;
+
     Price = WP.Default.Cost;
     if ( ScrnPerk != none ) {
         Price *= ScrnPerk.static.GetCostScaling(KFPRI, WP);
-        if  (class'ScrnBalance'.default.Mut.bBuyPerkedWeaponsOnly
+        if  (Mut.bBuyPerkedWeaponsOnly
                 && WP.default.CorrespondingPerkIndex != 7
                 && WP.default.CorrespondingPerkIndex != ScrnPerk.default.PerkIndex
                 && !ScrnPerk.static.OverridePerkIndex(WP) )
@@ -1348,12 +1355,16 @@ function ServerBuyWeapon( Class<Weapon> WClass, float ItemWeight )
     I = Spawn(WClass, self);
     if ( I != none )
     {
-        if ( KFGameType(Level.Game) != none )
-            KFGameType(Level.Game).WeaponSpawned(I);
+        KFW = KFWeapon(I);
 
-        KFWeapon(I).UpdateMagCapacity(PlayerReplicationInfo);
-        KFWeapon(I).FillToInitialAmmo();
-        KFWeapon(I).SellValue = SellValue;
+        if ( KFW != none ) {
+            Mut.KF.WeaponSpawned(KFW);
+            KFW.UpdateMagCapacity(PlayerReplicationInfo);
+            KFW.FillToInitialAmmo();
+            KFW.SellValue = SellValue;
+            CheckBlame(KFW);
+        }
+
         I.GiveTo(self);
         PlayerReplicationInfo.Score -= Price;
         UsedStartCash(Price);
@@ -1362,6 +1373,26 @@ function ServerBuyWeapon( Class<Weapon> WClass, float ItemWeight )
     else ClientMessage("Error: Weapon failed to spawn.");
 
     SetTraderUpdate();
+}
+
+// blames the player for buying particular guns
+function CheckBlame(KFWeapon GunToBlameFor)
+{
+    local string BlameStr;
+    local ScrnBalance Mut;
+
+    Mut = class'ScrnBalance'.default.Mut;
+
+    if ( M99SniperRifle(GunToBlameFor) != none )
+        BlameStr = BlameStrM99;
+    else if ( Mut.ScrnGT != none && Mut.ScrnGT.bUseEndGameBoss && Mut.ScrnGT.WaveNum >= Mut.ScrnGT.FinalWave ) {
+        // buying guns for boss wave
+        if ( GunToBlameFor.IsA('RPG') )
+            BlameStr = BlameStrRPG;
+    }
+
+    if ( BlameStr != "" )
+        Mut.BlamePlayer(ScrnPlayerController(Controller), BlameStr);
 }
 
 // allows to adjust player's health
@@ -2551,4 +2582,6 @@ defaultproperties
      TraderSpeedBoost=1.5
      PrevPerkLevel=-1
      MaxFallSpeed=750
+     BlameStrM99="%p blamed for using a Noobgun"
+     BlameStrRPG="%p blamed for buying an RPG on Boss wave"
 }

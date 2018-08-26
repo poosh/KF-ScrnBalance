@@ -19,6 +19,15 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+### v9.60.15
+- Players will be blamed for buying an RPG-7 before the Boss wave. However, it is fine
+  to buy an RPG earlier (e.g., before wave 10) and keep it for Boss.
+- Fixed "teleporting" effect of medic nade due to lag
+- Fixed M32 thirdperson reload always playing one more time than it should  (by *Scuddles*)
+- Fixed winchester select animation  (by *Scuddles*)
+- Fixed idle delay after finishing full reload for single shell reload weapons  (by *Scuddles*)
+- Tweaked M79M projectile initial rotation  (by *Scuddles*)
+
 ### v9.60.14
 - Fixed (again) medic nade replication
 - Fixed AA12 reloading animation (by *Duckbuster*)

@@ -301,8 +301,9 @@ simulated state Healing
     simulated function BeginState()
     {
         // turn on actor property replication to set the correct position of the healing grenade
-        bSkipActorPropertyReplication = false;
-        bUpdateSimulatedPosition = true;
+        // actually it is ugly - nade teleports half a meter away from target due to lag. Rolling back...
+        // bSkipActorPropertyReplication = false;
+        // bUpdateSimulatedPosition = true;
 
         bHealing = true;
         bHasExploded = true;
