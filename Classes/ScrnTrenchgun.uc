@@ -2,23 +2,32 @@ class ScrnTrenchgun extends Trenchgun;
 
 simulated function ClientFinishReloading()
 {
-	bIsReloading = false;
+    local float ReloadMulti;
+    bIsReloading = false;
 
     // The reload animation is complete, but there is still some animation to play
     // Let's reward player for waiting the full reload time by playing the full reload animation (Can be skipped by firing)
     // Trenchgun's animation is 30 frames long, so 1.0 seconds
     if ( NumLoadedThisReload == MagCapacity)
     {
+        if ( KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo) != none && KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo).ClientVeteranSkill != none )
+        {
+            ReloadMulti = KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo).ClientVeteranSkill.Static.GetReloadSpeedModifier(KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo), self);
+        }
+        else
+        {
+            ReloadMulti = 1.0;
+        }
         //PlayIdle();
-        SetTimer(1.0, false); 
+        SetTimer(1.0/ReloadMulti, false); 
     }
     else
     {
         PlayIdle();
     }
 
-	if(Instigator.PendingWeapon != none && Instigator.PendingWeapon != self)
-		Instigator.Controller.ClientSwitchToBestWeapon();
+    if(Instigator.PendingWeapon != none && Instigator.PendingWeapon != self)
+        Instigator.Controller.ClientSwitchToBestWeapon();
 }
 
 simulated function Timer()
