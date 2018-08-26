@@ -19,6 +19,11 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+### v9.60.16
+- Medic nade is now properly falling on ground instead of getting stuck inside a floor
+- Fixed rare bug where medic nades could get though walls
+
+
 ### v9.60.15
 - Players will be blamed for buying an RPG-7 before the Boss wave. However, it is fine
   to buy an RPG earlier (e.g., before wave 10) and keep it for Boss.
