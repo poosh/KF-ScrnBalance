@@ -2,6 +2,7 @@ class ScrnTrenchgun extends Trenchgun;
 
 simulated function ClientFinishReloading()
 {
+    local float ReloadMulti;
 	bIsReloading = false;
 
     // The reload animation is complete, but there is still some animation to play
@@ -9,6 +10,14 @@ simulated function ClientFinishReloading()
     // Trenchgun's animation is 30 frames long, so 1.0 seconds
     if ( NumLoadedThisReload == MagCapacity)
     {
+        if ( KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo) != none && KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo).ClientVeteranSkill != none )
+        {
+            ReloadMulti = KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo).ClientVeteranSkill.Static.GetReloadSpeedModifier(KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo), self);
+        }
+        else
+        {
+            ReloadMulti = 1.0;
+        }
         //PlayIdle();
         SetTimer(1.0/ReloadMulti, false); 
     }
