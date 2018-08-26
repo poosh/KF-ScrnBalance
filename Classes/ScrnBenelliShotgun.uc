@@ -1,7 +1,10 @@
 class ScrnBenelliShotgun extends BenelliShotgun;
 
+
+
 simulated function ClientFinishReloading()
 {
+    local float ReloadMulti;
 	bIsReloading = false;
 
     // The reload animation is complete, but there is still some animation to play
@@ -9,6 +12,14 @@ simulated function ClientFinishReloading()
     // Benelli's animation is 30 frames long, so 1.0 seconds
     if ( NumLoadedThisReload == MagCapacity)
     {
+    	if ( KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo) != none && KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo).ClientVeteranSkill != none )
+        {
+            ReloadMulti = KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo).ClientVeteranSkill.Static.GetReloadSpeedModifier(KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo), self);
+        }
+        else
+        {
+            ReloadMulti = 1.0;
+        }
         //PlayIdle();
         SetTimer(1.0/ReloadMulti, false); 
     }
@@ -37,6 +48,10 @@ defaultproperties
      Description="A military tactical shotgun with semi automatic fire capability. Holds up to 6 shells. Special shell construction allow pellets to penetrate fat much easier."
      PickupClass=Class'ScrnBalanceSrv.ScrnBenelliPickup'
      AttachmentClass=Class'ScrnBalanceSrv.ScrnBenelliAttachment' //New attachment to fix broken BenelliAttachment class
+     ItemName="Combat Shotgun SE"
+     PlayerViewPivot=(Pitch=-47,Roll=0,Yaw=-5) //fix to make sight centered
+}
+
      ItemName="Combat Shotgun SE"
      PlayerViewPivot=(Pitch=-47,Roll=0,Yaw=-5) //fix to make sight centered
 }
