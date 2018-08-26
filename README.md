@@ -19,6 +19,12 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+### v9.60.14
+- Fixed (again) medic nade replication
+- Fixed AA12 reloading animation (by *Duckbuster*)
+- `MyFakedShotgunShell` renamed to `ScrnFakedShell` and extends from `ScrnFakedProjectile`.
+  From now on, the latter is the base class for all faked projectiles that are in use in weapon animations.
+
 ### v9.60.13
 - Fixed bug in M79M reloading animation
 

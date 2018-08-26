@@ -300,6 +300,7 @@ simulated state Healing
 
     simulated function BeginState()
     {
+        // turn on actor property replication to set the correct position of the healing grenade
         bSkipActorPropertyReplication = false;
         bUpdateSimulatedPosition = true;
 
@@ -423,10 +424,15 @@ defaultproperties
     HealingSound=Sound'Inf_WeaponsTwo.smoke_loop'
 
     RemoteRole=ROLE_SimulatedProxy
+    bNetInitialRotation=true
     bNetNotify=true
-    bUpdateSimulatedPosition=true
+    bUpdateSimulatedPosition=false
+    bSkipActorPropertyReplication=true
+    bNetTemporary=false  // Need to be false, otherwise no replication will happen after the spawn
 
     DrawScale=2.0
+    bUnlit=false
+    bAcceptsProjectors=true
 
     IntitialRotationAdjustment=(Pitch=-8192,Roll=16384)
 }
