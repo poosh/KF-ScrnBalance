@@ -1,7 +1,6 @@
 class ScrnBenelliShotgun extends BenelliShotgun;
 
 
-
 simulated function ClientFinishReloading()
 {
     local float ReloadMulti;
