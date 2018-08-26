@@ -434,5 +434,5 @@ defaultproperties
     bUnlit=false
     bAcceptsProjectors=true
 
-    IntitialRotationAdjustment=(Pitch=-8192,Roll=16384)
+    IntitialRotationAdjustment=(Pitch=-10010,Roll=16384) //old value (Pitch=-8192,Roll=16384)
 }
