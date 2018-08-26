@@ -4,7 +4,7 @@ class ScrnWinchester extends Winchester;
 simulated function ClientFinishReloading()
 {
     local float ReloadMulti;
-	bIsReloading = false;
+    bIsReloading = false;
 
     // The reload animation is complete, but there is still some animation to play
     // Let's reward player for waiting the full reload time by playing the full reload animation (Can be skipped by firing)
@@ -27,8 +27,8 @@ simulated function ClientFinishReloading()
         PlayIdle();
     }
 
-	if(Instigator.PendingWeapon != none && Instigator.PendingWeapon != self)
-		Instigator.Controller.ClientSwitchToBestWeapon();
+    if(Instigator.PendingWeapon != none && Instigator.PendingWeapon != self)
+        Instigator.Controller.ClientSwitchToBestWeapon();
 }
 
 simulated function Timer()
