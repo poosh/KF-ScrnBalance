@@ -13,7 +13,10 @@ static function string GetString(
     s = super.GetString(switch, RelatedPRI_1, RelatedPRI_2, OptionalObject);
     if ( switch == 1 || switch == 3 ) {
         ScrnGRI = ScrnGameReplicationInfo(class'ScrnBalance'.default.Mut.Level.GRI);
-        if ( ScrnGRI != none && ScrnGRI.WaveTitle != "" ) {
+        if ( ScrnGRI != none ) {
+            if ( ScrnGRI.WaveHeader != "" )
+                s = ScrnGRI.WaveHeader; // overwrite default "NEXT/FINAL WAVE INBOUND"
+
             s $= "|" $ ScrnGRI.WaveTitle;
             if ( ScrnGRI.WaveMessage != "" )
                 s $= "|" $ ScrnGRI.WaveMessage;

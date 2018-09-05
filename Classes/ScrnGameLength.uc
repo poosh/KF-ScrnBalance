@@ -294,6 +294,7 @@ function bool LoadWave(int WaveNum)
         }
     }
 
+    Game.ScrnGRI.bTraderArrow = Wave.bTraderArrow || Wave.bOpenTrader;
     Game.ScrnGRI.WaveEndRule = Wave.EndRule;
     Game.bZedPickupDosh = Wave.EndRule == RULE_GrabDoshZed;
     Game.bZedDropDosh = Wave.EndRule == RULE_GrabDoshZed || Wave.EndRule == RULE_GrabDosh;
@@ -320,10 +321,16 @@ function RunWave()
     local string s;
 
     SetWaveInfo();
+    Game.ScrnGRI.bTraderArrow = Wave.bTraderArrow;
     if ( Game.ScrnGRI.WaveTitle != "" || Game.ScrnGRI.WaveMessage != "" ) {
-        s = Game.ScrnBalanceMut.ColorString(Game.ScrnGRI.WaveTitle, 255, 204, 1);
-        if ( Game.ScrnGRI.WaveMessage != "" )
-            s $= ": " $ Game.ScrnGRI.WaveMessage;
+        if ( Game.ScrnGRI.WaveTitle != "" ) {
+            s = Game.ScrnBalanceMut.ColorString(Game.ScrnGRI.WaveTitle, 255, 204, 1);
+        }
+        if ( Game.ScrnGRI.WaveMessage != "" ) {
+            if ( s != "" )
+                s $= ": ";
+            s $= Game.ScrnGRI.WaveMessage;
+        }
         Game.Broadcast(Game, s);
     }
 }
@@ -344,7 +351,7 @@ function SetWaveInfo()
     }
     if (Wave.MaxCounter > 0 && WaveCounter > Wave.MaxCounter)
         WaveCounter = Wave.MaxCounter;
-    WaveEndTime = Game.Level.TimeSeconds + WaveCounter;
+    WaveEndTime = Game.Level.TimeSeconds + WaveCounter + 0.1;
 
     switch (Wave.EndRule) {
         case RULE_GrabAmmo:
@@ -354,6 +361,7 @@ function SetWaveInfo()
             break;
     }
 
+    Game.ScrnGRI.WaveHeader = Wave.Header;
     Game.ScrnGRI.WaveTitle = Wave.Title;
     Game.ScrnGRI.WaveMessage = Wave.Message;
     ReplaceText(Game.ScrnGRI.WaveMessage, "%c", string(WaveCounter));
@@ -367,7 +375,9 @@ function WaveTimer()
     switch (Wave.EndRule) {
         case RULE_Timeout:
             Game.WaveEndTime = WaveEndTime;
-            Game.ScrnGRI.TimeToNextWave = WaveEndTime - Game.Level.TimeSeconds;
+            if ( Game.bWaveBossInProgress || Game.bWaveInProgress) {
+                Game.ScrnGRI.TimeToNextWave = WaveEndTime - Game.Level.TimeSeconds;
+            }
             break;
 
         case RULE_EarnDosh:

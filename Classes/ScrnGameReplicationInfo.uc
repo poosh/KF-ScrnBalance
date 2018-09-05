@@ -1,9 +1,10 @@
 class ScrnGameReplicationInfo extends KFGameReplicationInfo;
 
 var string GameTitle;
-var string WaveTitle, WaveMessage;
+var string WaveHeader, WaveTitle, WaveMessage;
 var byte WaveEndRule;
 var int WaveCounter;
+var bool bTraderArrow;
 
 var byte FakedPlayers, FakedAlivePlayers;
 
@@ -13,7 +14,7 @@ replication
         GameTitle;
 
     reliable if( (bNetInitial || bNetDirty) && Role == ROLE_Authority )
-        WaveTitle, WaveMessage, WaveEndRule;
+        WaveHeader, WaveTitle, WaveMessage, WaveEndRule, bTraderArrow;
 
     reliable if( (bNetInitial || bNetDirty) && Role == ROLE_Authority )
         WaveCounter;
@@ -25,4 +26,5 @@ replication
 defaultproperties
 {
     WaveEndRule=0 // RULE_KillEmAll
+    bTraderArrow=True
 }

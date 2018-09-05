@@ -20,7 +20,6 @@ var localized string strOurBase;
 var localized string strGnome;
 var localized string strCarrier;
 var localized string strEnemyBase;
-var    localized string strTrader;
 
 
 // TSC hints
@@ -936,7 +935,6 @@ defaultproperties
     WaveGB[2]=Material'KillingFloorHUD.HUD.Hud_Bio_Circle'
     WaveGB[3]=Material'TSC_T.HUD.Hud_Bio_Circle'
 
-    strTrader="Trader: "
     strBase="Base: "
     strOurBase="Our Base: "
     strGnome="Guardian: "

@@ -19,6 +19,13 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+### v9.60.17
+#### ScrN Waves
+- `bTraderArrow` - allows hiding trader arrow. This property is ignored during the Trader Time
+  if trader doors are open.
+- `Header` - text to replace "NEXT WAVE INBOUND" message. If empty, then default text is used.
+
+
 ### v9.60.16
 - Medic nade is now properly falling on ground instead of getting stuck inside a floor
 - Fixed rare bug where medic nades could get though walls
