@@ -1,6 +1,31 @@
 // Impact effect for flare pistol
 class ScrnFlareRevolverImpact extends FlameImpact;
 
+simulated function PostBeginPlay()
+{
+	Super.Postbeginplay();
+	DoLight();
+}
+simulated function DoLight()
+{
+	if ( !Level.bDropDetail && (Instigator != None)
+		&& ((Level.TimeSeconds - LastRenderTime < 0.2) || (PlayerController(Instigator.Controller) != None)) )
+	{
+		bDynamicLight = true;
+		SetTimer(0.1, true);
+	}
+	else Timer();
+}
+
+simulated function Timer()
+{
+    LightRadius = LightRadius*0.8;
+    LightBrightness = LightBrightness*0.8;
+    if (LightRadius < 2)
+	bDynamicLight = false;
+}
+
+
 defaultproperties
 {
     //red smoke
@@ -207,17 +232,28 @@ defaultproperties
     SoundRadius = 100
     bFullVolume = false
     AmbientSound = Sound'Amb_Destruction.Kessel_Fire_Small_Vehicle'//Sound'GeneralAmbience.firefx12' KFTODO: Replace this
-
+/*
     LightRadius = 3
     LightType = LT_Steady //LT_Pulse
 
     LightBrightness = 170 //255
     LightHue = 255
     LightSaturation = 64 //64
-    bDynamicLight = true
+    bDynamicLight = false //true
+*/
+
+    LightType=LT_Steady
+    LightBrightness=255
+    LightRadius=16.000000
+    LightHue=255
+    LightSaturation=64
+    LightCone=16
+    bDynamicLight=false //true
 
     FlameDamage = 10
     BurnInterval = 1
 
     LifeSpan=6
+    
+    
 }
