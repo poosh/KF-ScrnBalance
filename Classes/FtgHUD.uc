@@ -63,7 +63,7 @@ simulated function DrawTSCHUDTextElements(Canvas C)
             BaseDirPointer.UV2Texture = ConstantColor'TSC_T.HUD.GreenCol';
         }
 
-        bDrawShopDirPointer = !KFGRI.bWaveInProgress; // always draw Trader Arrow during the Trader Time
+        bDrawShopDirPointer = !KFGRI.bWaveInProgress && (ScrnGRI == none || ScrnGRI.bTraderArrow); // always draw Trader Arrow during the Trader Time
         bAtOwnBase = TSCGRI.AtBase(PawnOwner.Location, TeamBase);
         if ( TeamBase.bActive ) {
             s = strOurBase;
@@ -85,7 +85,7 @@ simulated function DrawTSCHUDTextElements(Canvas C)
         DrawDirPointer(C, BaseDirPointer, TeamBase.GetLocation(), row, 0, false, s);
     }
     else
-        bDrawShopDirPointer = true; // no gnome = draw shop arrow
+        bDrawShopDirPointer = (ScrnGRI == none || ScrnGRI.bTraderArrow); // no gnome = draw shop arrow
 
     // hints
     if ( bHideTSCHints || KFGRI.EndGameType > 0 )

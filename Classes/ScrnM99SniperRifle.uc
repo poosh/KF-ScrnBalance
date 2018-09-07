@@ -1,7 +1,5 @@
 class ScrnM99SniperRifle extends M99SniperRifle;
 
-var localized string BlameStr;
-
 //disable skipping realod animation
 //v4.39 - you need to reload, but can skip aiming animation
 simulated function bool PutDown()
@@ -18,12 +16,6 @@ simulated function bool PutDown()
   return super.PutDown();
 }
 
-function GiveTo( pawn Other, optional Pickup Pickup )
-{
-    super.GiveTo(Other, Pickup);
-    if ( !bDeleteMe )
-        class'ScrnBalance'.default.Mut.BlamePlayer(ScrnPlayerController(Other.Controller), BlameStr);
-}
 
 defaultproperties
 {
@@ -32,5 +24,4 @@ defaultproperties
     MinReloadPct=0.800000
     PickupClass=Class'ScrnBalanceSrv.ScrnM99Pickup'
     ItemName="M99AMR 'The NoobGun'"
-    BlameStr="%p blamed for using a Noobgun"
 }

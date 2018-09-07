@@ -15,18 +15,17 @@ replication
 simulated function PostBeginPlay()
 {
     super.PostBeginPlay();
-    
+
     if ( Level.NetMode != NM_DedicatedServer ) {
         SetBoneScale (58, 0.0, 'M203_EmptyShell');
 
         FakedNade = spawn(class'ScrnFakedHealingGrenade',self);
         if ( FakedNade != none ) {
-            //FakedNade.SetDrawScale(4.0);
             SetBoneRotation('M203_Round', rot(0, 6000, 0));
             // bone must have a size to properly adjust rotation
             SetBoneScale (59, 0.0001, 'M203_Round');
             AttachToBone(FakedNade, 'M203_Round');
-        }        
+        }
     }
 }
 
@@ -42,12 +41,12 @@ simulated function Destroyed()
 simulated function ClientSuccessfulHeal(int HealedPlayerCount, int HealedAmount)
 {
     local string str;
-    
+
     if( PlayerController(Instigator.Controller) != none ) {
         str = SuccessfulHealMessage;
         ReplaceText(str, "%c", String(HealedPlayerCount));
         ReplaceText(str, "%a", String(HealedAmount));
-        
+
         PlayerController(Instigator.controller).ClientMessage(str, 'CriticalEvent');
     }
 }

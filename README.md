@@ -19,6 +19,33 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+### v9.60.17
+#### ScrN Waves
+- `bTraderArrow` - allows hiding trader arrow. This property is ignored during the Trader Time
+  if trader doors are open.
+- `Header` - text to replace "NEXT WAVE INBOUND" message. If empty, then default text is used.
+
+
+### v9.60.16
+- Medic nade is now properly falling on ground instead of getting stuck inside a floor
+- Fixed rare bug where medic nades could get though walls
+
+
+### v9.60.15
+- Players will be blamed for buying an RPG-7 before the Boss wave. However, it is fine
+  to buy an RPG earlier (e.g., before wave 10) and keep it for Boss.
+- Fixed "teleporting" effect of medic nade due to lag
+- Fixed M32 thirdperson reload always playing one more time than it should  (by *Scuddles*)
+- Fixed winchester select animation  (by *Scuddles*)
+- Fixed idle delay after finishing full reload for single shell reload weapons  (by *Scuddles*)
+- Tweaked M79M projectile initial rotation  (by *Scuddles*)
+
+### v9.60.14
+- Fixed (again) medic nade replication
+- Fixed AA12 reloading animation (by *Duckbuster*)
+- `MyFakedShotgunShell` renamed to `ScrnFakedShell` and extends from `ScrnFakedProjectile`.
+  From now on, the latter is the base class for all faked projectiles that are in use in weapon animations.
+
 ### v9.60.13
 - Fixed bug in M79M reloading animation
 

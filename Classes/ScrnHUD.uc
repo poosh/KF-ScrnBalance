@@ -51,6 +51,7 @@ var transient float CriticalOverlayTimer;
 
 var config byte SpecHeaderFont;
 var localized string strFollowing;
+var localized string strTrader;
 
 var config bool bCoolHud;
 var config float CoolHudScale;
@@ -2524,8 +2525,6 @@ simulated function DrawKFHUDTextElements(Canvas C)
     local float    XL, YL;
     local int      NumZombies, Min;
     local string   S;
-    local vector   Pos, FixedZPos;
-    local rotator  ShopDirPointerRotation;
     local float    CircleSize;
     local float    ResScale;
 
@@ -2615,53 +2614,14 @@ simulated function DrawKFHUDTextElements(Canvas C)
     }
 
     // Draw the shop pointer
-    if ( ShopDirPointer == None )
-    {
-        ShopDirPointer = Spawn(Class'KFShopDirectionPointer');
-        ShopDirPointer.bHidden = bHideHud;
-    }
-
-    Pos.X = C.SizeX / 18.0;
-    Pos.Y = C.SizeX / 18.0;
-    Pos = PlayerOwner.Player.Console.ScreenToWorld(Pos) * 10.f * (PlayerOwner.default.DefaultFOV / PlayerOwner.FovAngle) + PlayerOwner.CalcViewLocation;
-    ShopDirPointer.SetLocation(Pos);
-
-    if ( KFGRI.CurrentShop != none )
-    {
-        // Let's check for a real Z difference (i.e. different floor) doesn't make sense to rotate the arrow
-        // only because the trader is a midget or placed slightly wrong
-        if ( KFGRI.CurrentShop.Location.Z > PawnOwner.Location.Z + 50.f || KFGRI.CurrentShop.Location.Z < PawnOwner.Location.Z - 50.f )
-        {
-            ShopDirPointerRotation = rotator(KFGRI.CurrentShop.Location - PawnOwner.Location);
+    if ( KFGRI.CurrentShop != none && (ScrnGRI == none || ScrnGRI.bTraderArrow) ) {
+        if ( ShopDirPointer == None ) {
+            ShopDirPointer = Spawn(Class'KFShopDirectionPointer');
+            ShopDirPointer.bHidden = true;
         }
-        else
-        {
-            FixedZPos = KFGRI.CurrentShop.Location;
-            FixedZPos.Z = PawnOwner.Location.Z;
-            ShopDirPointerRotation = rotator(FixedZPos - PawnOwner.Location);
-        }
+        C.DrawColor = TextColors[TeamIndex];
+        DrawDirPointer(C, ShopDirPointer,  KFGRI.CurrentShop.Location, 0, 0, false, strTrader);
     }
-    else
-    {
-        ShopDirPointer.bHidden = true;
-        return;
-    }
-
-       ShopDirPointer.SetRotation(ShopDirPointerRotation);
-
-    if ( Level.TimeSeconds > Hint_45_Time && Level.TimeSeconds < Hint_45_Time + 2 )
-    {
-        if ( KFPlayerController(PlayerOwner) != none )
-        {
-            KFPlayerController(PlayerOwner).CheckForHint(45);
-        }
-    }
-
-    C.DrawActor(None, False, True); // Clear Z.
-    ShopDirPointer.bHidden = false;
-    C.DrawActor(ShopDirPointer, False, false);
-    ShopDirPointer.bHidden = true;
-    DrawTraderDistance(C);
 }
 
 
@@ -3355,6 +3315,7 @@ defaultproperties
     bDrawSpecDeaths=True
 
     strFollowing="FOLLOWING:"
+    strTrader="Trader: "
     strPendingItems="Waiting for shop items from server: "
 
     DigitsSmall=(DigitTexture=Texture'KillingFloorHUD.Generic.HUD',TextureCoords[0]=(X1=8,Y1=6,X2=32,Y2=38),TextureCoords[1]=(X1=50,Y1=6,X2=68,Y2=38),TextureCoords[2]=(X1=83,Y1=6,X2=113,Y2=38),TextureCoords[3]=(X1=129,Y1=6,X2=157,Y2=38),TextureCoords[4]=(X1=169,Y1=6,X2=197,Y2=38),TextureCoords[5]=(X1=206,Y1=6,X2=235,Y2=38),TextureCoords[6]=(X1=241,Y1=6,X2=269,Y2=38),TextureCoords[7]=(X1=285,Y1=6,X2=315,Y2=38),TextureCoords[8]=(X1=318,Y1=6,X2=348,Y2=38),TextureCoords[9]=(X1=357,Y1=6,X2=388,Y2=38),TextureCoords[10]=(X1=390,Y1=6,X2=428,Y2=38))

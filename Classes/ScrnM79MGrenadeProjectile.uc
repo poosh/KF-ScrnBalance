@@ -300,14 +300,21 @@ simulated state Healing
 
     simulated function BeginState()
     {
-        bSkipActorPropertyReplication = false;
-        bUpdateSimulatedPosition = true;
+        local rotator R;
+        // turn on actor property replication to set the correct position of the healing grenade
+        // actually it is ugly - nade teleports half a meter away from target due to lag. Rolling back...
+        // bSkipActorPropertyReplication = false;
+        // bUpdateSimulatedPosition = true;
 
         bHealing = true;
         bHasExploded = true;
         Speed = 0;
         Velocity = Vect(0,0,0);
         SetPhysics(PHYS_None);
+        // land on the ground, keep yaw
+        R = IntitialRotationAdjustment;
+        R.Yaw = Rotation.Yaw;
+        SetRotation(R);
 
         BlowUp(Location);
         PlaySound(ExplosionSound,,TransientSoundVolume);
@@ -315,7 +322,7 @@ simulated state Healing
 
         if ( Level.NetMode != NM_DedicatedServer ) {
             GreenCloud = Spawn(GreenCloudClass,self,, Location, rotator(vect(0,0,1)));
-            // GreenCloud.SetBase(self);
+            GreenCloud.SetBase(self);
             Spawn(ExplosionDecal,self,,Location, rotator(vect(0,0,-1)));
         }
 
@@ -397,7 +404,8 @@ simulated state Disintegrating
 defaultproperties
 {
     Damage=4
-    DamageRadius=200.000000
+    // Slightly raised the radius to compensate nade location offset between server and client due to lag
+    DamageRadius=225  // 200
     MaxHeals=20
     HealTimer=0.5
     LifeSpan=15 // make sure the LifeSpan is longer than MaxHeals * HealTimer
@@ -423,10 +431,19 @@ defaultproperties
     HealingSound=Sound'Inf_WeaponsTwo.smoke_loop'
 
     RemoteRole=ROLE_SimulatedProxy
+    bNetInitialRotation=true
     bNetNotify=true
-    bUpdateSimulatedPosition=true
+    bUpdateSimulatedPosition=false
+    bSkipActorPropertyReplication=true
+    bNetTemporary=false  // Need to be false, otherwise no replication will happen after the spawn
 
     DrawScale=2.0
+    bUnlit=false
+    bAcceptsProjectors=true
 
-    IntitialRotationAdjustment=(Pitch=-8192,Roll=16384)
+    CollisionRadius=10.000000
+    CollisionHeight=1.000000
+    bUseCylinderCollision=True
+
+    IntitialRotationAdjustment=(Pitch=-10010,Roll=16384) //old value (Pitch=-8192,Roll=16384)
 }

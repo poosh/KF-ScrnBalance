@@ -25,10 +25,11 @@ enum EDoorControl {
     DOOR_WeldRandom
 };
 
-var config string Title, Message, TraderMessage;
+var config string Header, Title, Message, TraderMessage;
 var config int TraderTime;
 var config bool bOpenTrader;
 var config bool bStartAtTrader;
+var config bool bTraderArrow;
 var config EDoorControl DoorControl;
 var config EWaveEndRule EndRule;
 var config int Counter, MaxCounter;
@@ -47,6 +48,7 @@ defaultproperties
 {
     TraderTime=60
     bOpenTrader=true
+    bTraderArrow=true
     DoorControl=DOOR_Default
     EndRule=RULE_KillEmAll
     Counter=30
