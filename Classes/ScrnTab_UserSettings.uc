@@ -43,6 +43,8 @@ var automated moSlider                sl_HudScale;
 var automated moSlider                sl_HudAmmoScale;
 var automated moSlider                sl_HudY;
 
+var automated moSlider                sl_3DScopeSensScale; //I added this
+
 var array<localized string>           BarStyleItems;
 var array<localized string>           HudStyleItems;
 
@@ -169,6 +171,7 @@ function ShowPanel(bool bShow)
     sl_HudScale.SetValue(H.CoolHudScale);
     sl_HudAmmoScale.SetValue(H.CoolHudAmmoScale);
     sl_HudY.SetValue(H.CoolHudAmmoOffsetY);
+
 
     RefreshInfo();
     bFillPlayerList = true; // fill player list in 1s
@@ -520,6 +523,15 @@ function InternalOnLoadINI(GUIComponent Sender, string s)
                 sl_BarScale.EnableMe();
             }
             break;
+        case sl_3DScopeSensScale:
+            if ( H == none ) {
+                sl_3DScopeSensScale.DisableMe();
+                sl_3DScopeSensScale.DisableMe();
+            }
+            else {
+                sl_3DScopeSensScale.EnableMe();
+            }
+            break;
     }
 }
 
@@ -642,7 +654,12 @@ function InternalOnChange(GUIComponent Sender)
                 H.SaveConfig();
             }
             break;
-
+            
+        case sl_3DScopeSensScale:
+                PC.Custom3DScopeSens = sl_3DScopeSensScale.GetValue();
+                PC.SaveConfig();
+            break;
+            
         case cbx_Player:
             LoadPlayerData(cbx_Player.GetText());
             break;
@@ -1114,7 +1131,28 @@ defaultproperties
     End Object
     b_Accuracy=GUIButton'ScrnBalanceSrv.ScrnTab_UserSettings.AccuracyButton'
 
-
+    Begin Object Class=moSlider Name=Custom3DScopeSens
+        MinValue=5
+        MaxValue=75
+        bIntSlider=True
+        LabelJustification=TXTA_Center
+        ComponentJustification=TXTA_Left
+        CaptionWidth=0 //0
+        Caption=""
+        LabelColor=(B=255,G=255,R=255)
+        Hint="Adjust mouse sensitivity scale when using 3D scopes (Value in FOV, 24 for vanilla behaviour)"
+        WinTop=0.43 //0.38 + 0.05
+        WinLeft=0.31 //0.31
+        WinWidth=0.175 //0.175 //        WinLeft=0.015        WinWidth=0.288
+        WinHeight=0.045
+        //RenderWeight=1.0
+        TabOrder=18
+        OnChange=ScrnTab_UserSettings.InternalOnChange
+        OnLoadINI=ScrnTab_UserSettings.InternalOnLoadINI
+        OnCreateComponent=Custom3DScopeSens.InternalOnCreateComponent
+    End Object
+    sl_3DScopeSensScale=moSlider'ScrnBalanceSrv.ScrnTab_UserSettings.Custom3DScopeSens'
+    
     // HUD & INFO ----------------------------------------------------------------------
     Begin Object Class=GUISectionBackground Name=HUDBG
         Caption="HUD & Info"

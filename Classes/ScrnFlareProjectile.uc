@@ -95,6 +95,17 @@ defaultproperties
     HeadShotDamageMult=1.5  // applied only on burn damage. Impact's headshot mult. is set in damage type
     ImpactDamage=85 // 100
     Damage=30.0 // initial fire damage
+    ExplosionEmitter=Class'ScrnBalanceSrv.ScrnFlareRevolverImpact'
+    FlameTrailEmitterClass=Class'ScrnBalanceSrv.ScrnFlareRevolverTrail'
     ImpactDamageType=Class'ScrnBalanceSrv.ScrnDamTypeFlareProjectileImpact'
     MyDamageType=Class'ScrnBalanceSrv.ScrnDamTypeFlare'
+    
+    //reducing brightness of dynamic light by 70%
+    LightBrightness=170 //255
+    LightSaturation=64
+    LightCone=16
+
+    AmbientGlow=170 //254
+    AmbientVolumeScale=2.5
+    
 }
