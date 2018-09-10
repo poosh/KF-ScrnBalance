@@ -17,6 +17,7 @@ var transient int NextReloadSoundIndex;
 var transient bool bBlownUpThisReload;
 
 var transient int OldMagAmmoRemaining;
+var ScrnFakedProjectile FakedGasCan; //adds a faked gas can during reload
 
 simulated function PostNetReceive()
 {
@@ -92,8 +93,24 @@ static function bool UnloadAssets()
 simulated function PostBeginPlay()
 {
     super.PostBeginPlay();
+    AttachGasCan();
 
     CalcReloadSoundDuration();
+}
+
+simulated function AttachGasCan() {
+    if ( Level.NetMode != NM_DedicatedServer )
+    {
+        if ( FakedGasCan == none ) //only spawn FakedGasCan once
+            FakedGasCan = spawn(class'ScrnFakedGasCan',self);
+        if ( FakedGasCan != none )
+        {
+            AttachToBone(FakedGasCan, 'Chainsaw'); //attach faked shell to chainsaw
+            FakedGasCan.SetDrawScale(0.01); //test
+            FakedGasCan.SetRelativeLocation(vect(-3, 2, 3)); //x y z
+            FakedGasCan.SetRelativeRotation(rot(-4000, 38000, 12000)); //pitch yaw roll
+        }
+    }
 }
 
 simulated function CalcReloadSoundDuration()
@@ -164,7 +181,8 @@ simulated function bool ConsumeAmmo( int Mode, float Load, optional bool bAmount
 simulated function ClientReload()
 {
     super.ClientReload();
-
+    if (FakedGasCan != none)
+    FakedGasCan.SetDrawScale(2); //test
     // if MagAmmoRemaining == 0, chaisaw is already stopped
     if ( MagAmmoRemaining > 0 )
         PlaySound(EngineStopSound);
@@ -177,7 +195,8 @@ simulated function ClientReload()
 simulated function ActuallyFinishReloading()
 {
     super.ActuallyFinishReloading();
-
+    if (FakedGasCan != none)
+    FakedGasCan.SetDrawScale(0.01); //test
     IdleFuelConsumeTime = default.IdleFuelConsumeTime;
     GotoState('');
     if ( MagAmmoRemaining > 0) {
@@ -259,6 +278,9 @@ simulated state Reloading
             if ( FuelInTank < 1 )
                 return;
             nade = spawn(class'ScrnBalanceSrv.ScrnFlameNade');
+            if ( FakedGasCan != none )
+            FakedGasCan.SetDrawScale(0.01);
+            AttachToBone(nade, 'Chainsaw'); //attempt to move explosion onto chainsaw to make it obvious that the gas can caused the explosion
             nade.SetTimer(0, false); // it will be blown up manualy
             nade.Instigator = Instigator;
             // the more fuel in tank, the higher is explosion
