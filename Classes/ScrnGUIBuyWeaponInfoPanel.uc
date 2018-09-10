@@ -7,6 +7,9 @@ var automated    ScrnGUIWeaponBar     barDamage, barDPS, barDPM, barRange, barMa
 
 var automated     moCheckBox           ch_FireMode0, ch_FireMode1;
 
+//adds headshot damage display toggle checkbox
+var automated     moCheckBox           ch_HSDmgCheck;
+var bool bHSDamage;
 
 var int TopDamage, TopDPM, TopMag, TopAmmo;
 var float TopDPS, TopRange, TopRadius;
@@ -43,7 +46,7 @@ function float GetBarPct(float Value, float MaxValue)
     return Sqrt(Value) / Sqrt(MaxValue);
 }
 
-function LoadStats(GUIBuyable NewBuyable, byte FireMode, optional bool bSetTopValuesOnly)
+function LoadStats(GUIBuyable NewBuyable, byte FireMode, optional bool bSetTopValuesOnly, optional bool bHSDamage)
 {
     local KFPlayerReplicationInfo KFPRI;
     local class<KFVeterancyTypes> Perk;
@@ -54,12 +57,16 @@ function LoadStats(GUIBuyable NewBuyable, byte FireMode, optional bool bSetTopVa
     local class<Projectile> ProjClass;
     local class<KFMeleeFire> MeeleeFireClass;
     local class<DamageType> DamType;
+    local class<KFWeaponDamageType> DamTypeImpact;
     local class<KFWeaponDamageType> KFDamType;
     local int BaseDmg, PerkedValue, Mult;
     local float FireTime, ReloadTime, dmg, range, ammo, MagTime;
     local float PerkBonus;
+    local float HSMult; //headshot multiplier
     local String s;
     local int MagCapacity, MagCount, TotalAmmo;
+    local class<M99bullet> M99Proj;
+    local class<CrossbowArrow> CrossbowProj;
 
     // reset values
     if ( !bSetTopValuesOnly ) {
@@ -124,7 +131,7 @@ function LoadStats(GUIBuyable NewBuyable, byte FireMode, optional bool bSetTopVa
                 barDPM.SetHighlight(false);
             }
             if ( NewBuyable.ItemWeaponClass.default.bHoldToReload ) 
-                ReloadTime *= MagCapacity; // per-buller reload        
+                ReloadTime *= MagCapacity; // per-bullet reload        
         }
         else {
             ReloadTime = 0.000001;
@@ -168,11 +175,47 @@ function LoadStats(GUIBuyable NewBuyable, byte FireMode, optional bool bSetTopVa
     if ( IFClass != none ) {
         BaseDmg = IFClass.default.DamageMax;
         DamType = IFClass.default.DamageType;
+        KFDamType = class<KFWeaponDamageType>(DamType);
+        HSMult = KFDamType.default.HeadShotDamageMult;
         Mult = WF.default.AmmoPerFire;
     }
     else if ( ProjFireClass != none && ProjClass != none ) {
         BaseDmg = ProjClass.default.Damage;
         DamType = ProjClass.default.MyDamageType;
+        KFDamType = class<KFWeaponDamageType>(DamType); //usually they are roballisticprojectile
+        DamType = ProjClass.default.MyDamageType;
+
+        HSMult = KFDamType.default.HeadShotDamageMult;
+        
+        //handle headshot calculation for M99 and derived projectiles
+        if ( class<M99Bullet>(ProjClass) != none)
+        {
+            HSMult = class<M99Bullet>(ProjClass).default.HeadShotDamageMult;
+        }
+        //handle headshot damage calculation for Crossbow and derived projectiles
+        if ( class<CrossbowArrow>(ProjClass) != none)
+        {
+            HSMult = class<CrossbowArrow>(ProjClass).default.HeadShotDamageMult;
+        }
+        
+        //handle headshot and impact damage calculation for M79 derived projectiles
+        if ( bHSDamage && class<M79GrenadeProjectile>(ProjClass) != none)
+        {
+            DamType = class<M79GrenadeProjectile>(ProjClass).default.ImpactDamageType;
+            BaseDmg = class<M79GrenadeProjectile>(ProjClass).default.ImpactDamage;
+            KFDamType = class<DamTypeRocketImpact>(DamType);
+            HSMult = KFDamType.default.HeadShotDamageMult;
+        }
+        
+        //handle headshot and impact damage calculation for LAW derived projectiles
+        if ( bHSDamage && class<LAWProj>(ProjClass) != none )
+        {
+            DamType = class<LAWProj>(ProjClass).default.ImpactDamageType;
+            BaseDmg = class<LAWProj>(ProjClass).default.ImpactDamage;
+            KFDamType = class<DamTypeRocketImpact>(DamType);
+            HSMult = KFDamType.default.HeadShotDamageMult;
+        }
+        
         Mult = WF.default.AmmoPerFire * ProjFireClass.default.ProjPerFire;
         
         range = ProjClass.default.DamageRadius;
@@ -184,7 +227,9 @@ function LoadStats(GUIBuyable NewBuyable, byte FireMode, optional bool bSetTopVa
     }
     else if ( MeeleeFireClass != none ) {
         BaseDmg = MeeleeFireClass.default.MeleeDamage;
-        DamType = MeeleeFireClass.default.hitDamageClass;    
+        DamType = MeeleeFireClass.default.hitDamageClass;
+        KFDamType = class<KFWeaponDamageType>(DamType);
+        HSMult = KFDamType.default.HeadShotDamageMult;     
         Mult = 1;
         
         range = MeeleeFireClass.default.weaponRange;
@@ -204,6 +249,13 @@ function LoadStats(GUIBuyable NewBuyable, byte FireMode, optional bool bSetTopVa
     else 
         PerkedValue = BaseDmg;
     
+    if ( KFPRI != none && Perk != none )
+        HSMult *= Perk.static.GetHeadShotDamMulti(KFPRI, KFPawn(PlayerOwner().Pawn), DamType);
+
+    if (bHSDamage)
+    PerkedValue = PerkedValue * HSMult;
+
+     
     if ( class<LAWProj>(ProjClass) != none ) {
         // huskgun and flare revolvers deal both impact+fire damage
         if ( class<FlareRevolverProjectile>(ProjClass) != none || class<HuskGunProjectile>(ProjClass) != none ) {
@@ -212,7 +264,7 @@ function LoadStats(GUIBuyable NewBuyable, byte FireMode, optional bool bSetTopVa
             if ( Perk != none )
                 PerkedValue += Perk.static.AddDamage(KFPRI, none, KFPawn(PlayerOwner().Pawn), dmg, class<LAWProj>(ProjClass).default.ImpactDamageType); 
             else 
-                PerkedValue += dmg; 
+                PerkedValue += dmg;            
         }
     }
         
@@ -344,8 +396,7 @@ function Display(GUIBuyable NewBuyable)
         ch_FireMode1.SetVisibility(true);
         
         
-        
-        LoadStats(NewBuyable, byte(ch_FireMode1.IsChecked()), false);
+        LoadStats(NewBuyable, byte(ch_FireMode1.IsChecked()), false, bHSDamage);
         
         barDamage.SetVisibility(barDamage.Value > 0);            
         lblDamage.SetVisibility(barDamage.bVisible);
@@ -379,6 +430,7 @@ function Display(GUIBuyable NewBuyable)
         WeightLabel.Caption = "";
         ch_FireMode0.SetVisibility(false);
         ch_FireMode1.SetVisibility(false);
+        ch_HSDmgCheck.SetVisibility(false);
         
         lblDamage.SetVisibility(false);
         barDamage.SetVisibility(false);        
@@ -408,6 +460,15 @@ function FireModeChange(GUIComponent Sender)
         else
             Display(LastBuyable);
     }
+}
+
+function HSDamageToggle(GUIComponent Sender)
+{
+    bHSDamage = ch_HSDmgCheck.IsChecked();
+    if ( ScrnTab_BuyMenu(MenuOwner) != none )
+        Display(ScrnTab_BuyMenu(MenuOwner).TheBuyable);
+    else
+        Display(LastBuyable);
 }
 
 
@@ -524,7 +585,27 @@ defaultproperties
      End Object
      ch_FireMode1=moCheckBox'ScrnBalanceSrv.ScrnGUIBuyWeaponInfoPanel.Mode1Check'     
 
-
+    
+    //adds checkbox next to damage bar
+    Begin Object Class=moCheckBox Name=HSDmgCheck
+        CaptionWidth=0.95
+        OnCreateComponent=Mode1Check.InternalOnCreateComponent
+        bFlipped=True
+        Caption=""
+        Hint="Toggle headshot damage display"
+        WinTop=0.580000 //same height as damage display
+        WinLeft=0.25 //0.50 for primary fire checkbox
+        WinWidth=0.40
+        TabOrder=2
+        ComponentClassName="ScrnBalanceSrv.ScrnGUICheckBoxButton"
+        IniOption="@Internal"
+        OnChange=ScrnGUIBuyWeaponInfoPanel.HSDamageToggle
+        RenderWeight=3
+        bBoundToParent=True
+        bScaleToParent=True        
+        bVisible=False
+     End Object
+     ch_HSDmgCheck=moCheckBox'ScrnBalanceSrv.ScrnGUIBuyWeaponInfoPanel.HSDmgCheck'   
 
     Begin Object Class=GUILabel Name=DamageCap
         Caption="Damage:"
@@ -542,7 +623,7 @@ defaultproperties
         bScaleToParent=True
         bVisible=False
     End Object
-    lblDamage=GUILabel'ScrnBalanceSrv.ScrnGUIBuyWeaponInfoPanel.DamageCap'    
+    lblDamage=GUILabel'ScrnBalanceSrv.ScrnGUIBuyWeaponInfoPanel.DamageCap'      
     
     Begin Object Class=ScrnGUIWeaponBar Name=DamageBar
         Hint="Weapon damage"
