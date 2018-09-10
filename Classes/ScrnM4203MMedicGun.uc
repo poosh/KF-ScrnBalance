@@ -64,6 +64,4 @@ defaultproperties
      ItemName="M4-203M Medic Rifle"
      SkinRefs(0)="ScrnTex.Weapons.M4203M"
      Priority=70 // to switch after MP5M
-     PrePivot=(Z=-0.35) //rotational fix for ironsight alignment
-     PlayerViewPivot=(Pitch=30,Roll=0,Yaw=5) //correction of sight position after rotation fix
 }
