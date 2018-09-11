@@ -10,7 +10,6 @@ var         float             ReloadShortRate;
 var transient bool  bShortReload;
 var vector ZoomedViewOffset; //to fix sight in RenderOverlays
 
-
 //copypaste to add additional offset
 simulated event RenderOverlays( Canvas Canvas )
 {
