@@ -15,8 +15,8 @@ simulated function Timer()
 {
     if (bIsReloading)
         AnimSkipToMagChange(); //skip to mag change frame
-    else
-    PlayIdle();
+    //else
+    //PlayIdle();
     Super.Timer();
 }
 
@@ -96,10 +96,12 @@ simulated function ClientReload()
     bIsReloading = true;
     if (MagAmmoRemaining <= 0)
     {
+        bShortReload = false;
         PlayAnim(ReloadAnim, ReloadAnimRate*ReloadMulti, 0.1);
     }
     else if (MagAmmoRemaining >= 1)
     {
+        bShortReload = true;
         PlayAnim(ReloadShortAnim, ReloadShortAnimRate*ReloadMulti, 0.001); //reduced tween time for charginghandle
         SetTimer(0.2/ReloadMulti, false); //for tactical reload, skip reload animation only after 7 frames of anim so it looks good
         //
