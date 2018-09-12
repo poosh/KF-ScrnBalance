@@ -123,7 +123,7 @@ simulated function ClientFinishReloading()
     if(bShortReload)
         StartTweeningSlide(); //start tweening slide back
     else
-        ResetSlidePosition();
+        ResetSlidePosition(); //since deagle has additional slide correction
     bIsReloading = false;
 
     if(Instigator.PendingWeapon != none && Instigator.PendingWeapon != self)
@@ -192,11 +192,13 @@ simulated function ClientReload()
     bIsReloading = true;
     if (MagAmmoRemaining <= 0)
     {
+        bShortReload = false;
         PlayAnim(ReloadAnim, ReloadAnimRate*ReloadMulti, 0.001);
         SetBoneLocation( 'Slide', -0.45*PistolSlideOffset, 100 ); //special case for deagle because default slide animation sucks
     }
     else if (MagAmmoRemaining >= 1)
     {
+        bShortReload = true;
         PlayAnim(ReloadShortAnim, ReloadAnimRate*ReloadMulti, 0.001); //reduced tween time to prevent slide from sliding
         SetBoneLocation( 'Slide', PistolSlideOffset, 100 ); //move the slide forward
         SetBoneRotation( 'Hammer', PistolHammerRotation, , 100); //fix hammer rotation so it looks good

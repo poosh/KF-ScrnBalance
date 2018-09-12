@@ -144,11 +144,13 @@ simulated function ClientReload()
     bIsReloading = true;
     if (MagAmmoRemaining <= 0)
     {
+        bShortReload = false;
         PlayAnim(ReloadAnim, ReloadAnimRate*ReloadMulti, 0.001);
         SetBoneLocation( 'Slide', PistolSlideOffset, 0 ); //reset slide so that the animation's slide position gets used
     }
     else if (MagAmmoRemaining >= 1)
     {
+        bShortReload = true;
         PlayAnim(ReloadShortAnim, ReloadAnimRate*ReloadMulti, 0.001); //reduced tween time to prevent slide from sliding
         SetBoneLocation( 'Slide', PistolSlideOffset, 100 ); //move the slide forward
     }

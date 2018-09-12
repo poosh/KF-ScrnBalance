@@ -47,7 +47,6 @@ simulated function WeaponTick(float dt)
             bTweeningSlide = false;
         }
     }
-    
 	Super.WeaponTick(dt);
 }
 
@@ -148,11 +147,13 @@ simulated function ClientReload()
     bSlideLocked = false; //reset bool
     if (MagAmmoRemaining <= 0)
     {
+        bShortReload = false;
         PlayAnim(ReloadAnim, ReloadAnimRate*ReloadMulti, 0.001);
         SetBoneLocation( '9mm_Slide', PistolSlideOffset, 0 ); //reset Slide so that the animation's Slide position gets used
     }
     else if (MagAmmoRemaining >= 1)
     {
+        bShortReload = true;
         PlayAnim(ReloadShortAnim, ReloadAnimRate*ReloadMulti, 0.001); //reduced tween time to prevent Slide from sliding
         SetBoneLocation( '9mm_Slide', PistolSlideOffset, 100 ); //move the Slide forward
     }
@@ -171,9 +172,12 @@ function AddReloadedAmmo()
     UpdateMagCapacity(Instigator.PlayerReplicationInfo);
     
     a = MagCapacity;
+    //StartTweeningSlide(); //putting this here fixed tactical reload but broke empty
     if ( bShortReload )
+    {
+        //StartTweeningSlide(); //trying this again
         a++; // 1 bullet already bolted
-
+    }
     if ( AmmoAmount(0) >= a )
         MagAmmoRemaining = a;
     else

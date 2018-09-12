@@ -127,12 +127,14 @@ simulated function ClientReload()
     bIsReloading = true;
     if (bBoltClosed)
     {
+        bShortReload = false;
         PlayAnim(ReloadAnim, ReloadAnimRate*ReloadMulti, 0.001);
         SetAnimFrame(1, 0, 1); //skip frame 0 because it has the bolt back for some reason
         SetBoneLocation( 'MAC11_Bolt', ChargingHandleOffset, 0 ); //reset bolt so that the animation's Bolt position gets used
     }
     else if (MagAmmoRemaining >= 1 || !bBoltClosed)
     {
+        bShortReload = true;
         PlayAnim(ReloadShortAnim, ReloadAnimRate*ReloadMulti, 0.001); //reduced tween time to prevent Bolt from sliding
         SetAnimFrame(1, 0, 1); //skip frame 0 because it has the bolt back for some reason
         SetBoneLocation( 'MAC11_Bolt', ChargingHandleOffset, 100 ); //move the bolt back

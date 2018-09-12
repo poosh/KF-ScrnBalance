@@ -130,11 +130,13 @@ simulated function ClientReload()
     bIsReloading = true;
     if (bBoltClosed)
     {
+        bShortReload = false;
         PlayAnim(ReloadAnim, ReloadAnimRate*ReloadMulti, 0.001);
         SetBoneLocation( 'Bolt', ChargingHandleOffset, 0 ); //reset bolt so that the animation's Bolt position gets used
     }
     else if (MagAmmoRemaining >= 1 || !bBoltClosed)
     {
+        bShortReload = true;
         PlayAnim(ReloadShortAnim, ReloadAnimRate*ReloadMulti, 0.001); //reduced tween time to prevent Bolt from sliding
         SetBoneLocation( 'Bolt', ChargingHandleOffset, 100 ); //move the bolt back
     }
@@ -153,7 +155,8 @@ function AddReloadedAmmo()
     UpdateMagCapacity(Instigator.PlayerReplicationInfo);
 
     a = MagCapacity;
-    //if ( bShortReload )
+    //if ( bShortReload || !bBoltClosed)
+        //StartTweeningBolt();
     //    a++; // 1 bullet already bolted
     //removed +1 on tactical reload because MKb42(H) is an open bolt weapon
     
@@ -162,6 +165,8 @@ function AddReloadedAmmo()
     else
         MagAmmoRemaining = AmmoAmount(0);
 
+    //reset bolt closed bool here because it seems to not work in simulated function?          
+    bBoltClosed = false;
     // this seems redudant -- PooSH
     // if( !bHoldToReload )
     // {

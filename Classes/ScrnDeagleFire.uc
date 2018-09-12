@@ -7,6 +7,10 @@ var bool  bCheck4Ach;
 //lock slide back if fired last round
 simulated function bool AllowFire()
 {
+    if( Level.TimeSeconds - LastClickTime>FireRate )
+    {
+    	LastClickTime = Level.TimeSeconds;
+    }
 	if(KFWeapon(Weapon).MagAmmoRemaining <= 1 && !KFWeapon(Weapon).bIsReloading )
 	{
     	if( Level.TimeSeconds - LastClickTime>FireRate )
