@@ -4,6 +4,23 @@ var float PenDmgReduction; //penetration damage reduction. 1.0 - no reduction, 2
 var byte  MaxPenetrations; //how many enemies can penetrate a single bullet
 var bool  bCheck4Ach;
 
+//lock slide back if fired last round
+simulated function bool AllowFire()
+{
+	if(KFWeapon(Weapon).MagAmmoRemaining <= 1 && !KFWeapon(Weapon).bIsReloading )
+	{
+    	if( Level.TimeSeconds - LastClickTime>FireRate )
+            ScrnDeagle(Weapon).LockSlideBack(); //lock slide back
+	}
+	if(KFWeapon(Weapon).MagAmmoRemaining >= 2 && !KFWeapon(Weapon).bIsReloading && Level.TimeSeconds - LastClickTime>FireRate )
+	{
+    	if( Level.TimeSeconds - LastClickTime>FireRate )
+            ScrnDeagle(Weapon).AddExtraSlideMovement( GetFireSpeed() ); //add extra slide movement
+	}
+	return Super.AllowFire();
+}
+
+
 function DoTrace(Vector Start, Rotator Dir)
 {
     local Vector X,Y,Z, End, HitLocation, HitNormal, ArcEnd;

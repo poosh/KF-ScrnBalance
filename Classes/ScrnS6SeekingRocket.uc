@@ -5,7 +5,6 @@ simulated function Timer()
 {
     local vector ForceDir;
     local float VelMag;
-    local rotator HeadBoneCoords;
     local vector LocalSeekingLocation;
 
     if ( InitialDir == vect(0,0,0) )

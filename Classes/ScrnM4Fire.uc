@@ -13,5 +13,6 @@ state FireLoop
 
 defaultproperties
 {
+     FireLoopAnimRate=1.59
      DamageType=Class'ScrnBalanceSrv.ScrnDamTypeM4AssaultRifle'
 }

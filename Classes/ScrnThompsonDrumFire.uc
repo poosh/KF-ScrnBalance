@@ -1,5 +1,16 @@
 class ScrnThompsonDrumFire extends ThompsonDrumFire;
 
+//close bolt if attempted to fire when empty
+simulated function bool AllowFire()
+{
+	if(KFWeapon(Weapon).MagAmmoRemaining == 0 && !KFWeapon(Weapon).bIsReloading )
+	{
+    	if( Level.TimeSeconds - LastClickTime>FireRate )
+            ScrnThompsonDrum(Weapon).MoveBoltForward(); //close bolt on empty chamber
+	}
+	return Super.AllowFire();
+}
+
 // fixes double shot bug -- PooSH
 state FireLoop
 {

@@ -4,8 +4,20 @@ var         name         ReloadShortAnim;
 var         float         ReloadShortRate;
 
 var transient bool bShortReload;
+var transient bool bBoltClosed; //tracks state of bolt
 
 var ScrnFakedProjectile FakedShell;
+
+//added bBoltClosed bool
+simulated function ClientFinishReloading()
+{
+    PlayIdle();
+    bBoltClosed = false; //reset bool
+    bIsReloading = false;
+
+    if(Instigator.PendingWeapon != none && Instigator.PendingWeapon != self)
+        Instigator.Controller.ClientSwitchToBestWeapon();
+}
 
 simulated function bool AllowReload()
 {
@@ -45,7 +57,8 @@ exec function ReloadMeNow()
 
     bIsReloading = true;
     ReloadTimer = Level.TimeSeconds;
-    bShortReload = MagAmmoRemaining > 0 && ReloadShortAnim != '';
+    //bShortReload = MagAmmoRemaining > 0 && ReloadShortAnim != '';
+    bShortReload = !bBoltClosed;
     if ( bShortReload )
         ReloadRate = Default.ReloadShortRate / ReloadMulti;
     else
@@ -82,7 +95,7 @@ simulated function ClientReload()
         ReloadMulti = 1.0;
 
     bIsReloading = true;
-    if ( MagAmmoRemaining <= 0 || ReloadShortAnim == '' )
+    if ( bBoltClosed && ReloadShortAnim == '' )
     {
         PlayAnim(ReloadAnim, ReloadAnimRate*ReloadMulti, 0.1);
         if ( FakedShell != none )

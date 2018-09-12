@@ -22,7 +22,10 @@ simulated function Timer()
     LightRadius = LightRadius*0.8;
     LightBrightness = LightBrightness*0.8;
     if (LightRadius < 2)
-	bDynamicLight = false;
+    {
+        bDynamicLight = false;
+        SetTimer(0, false); //disable timer
+    }
 }
 
 

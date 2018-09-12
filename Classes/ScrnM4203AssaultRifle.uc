@@ -8,7 +8,8 @@ var         name             ReloadShortAnim;
 var         float             ReloadShortRate;
 
 var transient bool  bShortReload;
-var vector ZoomedViewOffset; //to fix sight in RenderOverlays
+var vector ZoomedViewOffset;
+
 
 //copypaste to add additional offset
 simulated event RenderOverlays( Canvas Canvas )
@@ -44,7 +45,7 @@ simulated event RenderOverlays( Canvas Canvas )
 	bDrawingFirstPerson = false;
 }
 
-
+    
 simulated function bool StartFire(int Mode)
 {
     if ( Mode > 0 ) {
@@ -221,6 +222,7 @@ function AddReloadedAmmo()
 
 defaultproperties
 {
+    IdleAnimRate=0.33 //fix because animation package has idle at 30fps
     ReloadShortAnim="Reload"
     ReloadShortRate=1.9
     ReloadRate=2.794846

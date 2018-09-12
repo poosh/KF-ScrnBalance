@@ -5,7 +5,62 @@ var         name            ReloadShortAnim;
 var         float           ReloadShortRate;
 
 var transient bool  bShortReload;
+var transient bool bTweeningBolt;
+var transient bool bBoltClosed;
+var float TweenEndTime;
+var vector ChargingHandleOffset; //for tactical reload
 
+simulated function BringUp(optional Weapon PrevWeapon)
+{
+	Super.BringUp(PrevWeapon);
+    if (bBoltClosed)
+        MoveBoltForward();
+}
+
+simulated function ResetBoltPosition()
+{
+    SetBoneLocation( 'Bolt', ChargingHandleOffset, 0 ); //reset charging handle position
+}
+
+simulated function MoveBoltForward()
+{
+    SetBoneLocation( 'Bolt', -ChargingHandleOffset, 100 ); //move bolt forward
+    bBoltClosed = true; //set this bool so weapon bolt will stay closed if dropped
+}
+
+simulated function InterpolateBolt(float time)
+{
+    SetBoneLocation( 'Bolt', ChargingHandleOffset, (time*500) ); //smooth moves
+}
+
+simulated function WeaponTick(float dt)
+{
+    if (bTweeningBolt && TweenEndTime > 0)
+    {
+        if (TweenEndTime - Level.TimeSeconds > 0)
+            InterpolateBolt(TweenEndTime - Level.TimeSeconds);
+        if (TweenEndTime - Level.TimeSeconds < 0)
+        {
+            ResetBoltPosition();
+            TweenEndTime = 0;
+            bTweeningBolt = false;
+        }
+    }
+    
+	Super.WeaponTick(dt);
+}
+
+simulated function ClientFinishReloading()
+{
+    PlayIdle();
+    if(bShortReload)
+        StartTweeningBolt(); //start tweening Bolt back
+    bBoltClosed = false; //reset bool
+    bIsReloading = false;
+
+    if(Instigator.PendingWeapon != none && Instigator.PendingWeapon != self)
+        Instigator.Controller.ClientSwitchToBestWeapon();
+}
 
 exec function ReloadMeNow()
 {
@@ -29,7 +84,7 @@ exec function ReloadMeNow()
         
     bIsReloading = true;
     ReloadTimer = Level.TimeSeconds;
-    bShortReload = MagAmmoRemaining > 0;
+    bShortReload = !bBoltClosed; //short reload now depends on if bolt is closed or not
     if ( bShortReload )
         ReloadRate = Default.ReloadShortRate / ReloadMulti;
     else
@@ -67,14 +122,22 @@ simulated function ClientReload()
         ReloadMulti = 1.0;
         
     bIsReloading = true;
-    if (MagAmmoRemaining <= 0)
+    if (bBoltClosed)
     {
-        PlayAnim(ReloadAnim, ReloadAnimRate*ReloadMulti, 0.1);
+        PlayAnim(ReloadAnim, ReloadAnimRate*ReloadMulti, 0.001);
+        SetBoneLocation( 'Bolt', ChargingHandleOffset, 0 ); //reset bolt so that the animation's Bolt position gets used
     }
-    else if (MagAmmoRemaining >= 1)
+    else if (MagAmmoRemaining >= 1 || !bBoltClosed)
     {
-        PlayAnim(ReloadShortAnim, ReloadAnimRate*ReloadMulti, 0.1);
+        PlayAnim(ReloadShortAnim, ReloadAnimRate*ReloadMulti, 0.001); //reduced tween time to prevent Bolt from sliding
+        SetBoneLocation( 'Bolt', ChargingHandleOffset, 100 ); //move the bolt back
     }
+}
+
+simulated function StartTweeningBolt()
+{   
+    bTweeningBolt = true; //start bolt tweening
+    TweenEndTime = Level.TimeSeconds + 0.2;
 }
 
 function AddReloadedAmmo()
@@ -105,11 +168,13 @@ function AddReloadedAmmo()
     }
 }
 
+
 defaultproperties
 {
      ReloadShortAnim="Reload"
-     ReloadShortRate=1.9
+     ReloadShortRate=1.87
      FireModeClass(0)=Class'ScrnBalanceSrv.ScrnMKb42Fire'
      PickupClass=Class'ScrnBalanceSrv.ScrnMKb42Pickup'
      ItemName="MKb42 SE"
+     ChargingHandleOffset=(X=0.0,Y=0.057,Z=0)
  }

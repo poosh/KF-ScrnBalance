@@ -31,9 +31,9 @@ exec function ReloadMeNow()
     ReloadTimer = Level.TimeSeconds;
     bShortReload = MagAmmoRemaining > 0;
     if ( bShortReload )
-        ReloadRate = Default.ReloadShortRate / ReloadMulti;
+        ReloadRate = default.ReloadShortRate / ReloadMulti;
     else
-        ReloadRate = Default.ReloadRate / ReloadMulti;
+        ReloadRate = default.ReloadRate / ReloadMulti;
         
     if( bHoldToReload )
     {
@@ -111,7 +111,6 @@ defaultproperties
     ReloadShortRate=1.9
     ReloadRate=2.794846
     ReloadAnimRate=1.3
-
     MagCapacity=32
     FireModeClass(0)=Class'ScrnBalanceSrv.ScrnM4Fire'
     Description="A compact assault rifle. Damage could be better, but accuracy, fast reload and a lot of ammo makes it a good choise in a battle."

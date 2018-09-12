@@ -254,7 +254,7 @@ function float GetMouseModifier()
 
 	if (weap== none )
 		return -1.0;
-
+    
 	if(weap.KFScopeDetail == KF_ModelScope && weap.ShouldDrawPortal())
 	{
 		return Custom3DScopeSens;
