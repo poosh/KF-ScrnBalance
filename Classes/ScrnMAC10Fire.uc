@@ -3,31 +3,6 @@
 //=============================================================================
 class ScrnMAC10Fire extends MAC10Fire;
 
-var float FireUnaimedEndAnimRate; //used to speed up unaimed hipfire end anim
-
-//adding custom fire end anim for hipfire
-simulated function PlayFireEnd()
-{
-    if ( Weapon.Mesh != none )
-    {
-        if( KFWeap.bAimingRifle )
-		{
-            if( Weapon.HasAnim(FireEndAimedAnim) )
-			{
-                Weapon.PlayAnim(FireEndAimedAnim, FireEndAnimRate, TweenTime);
-			}
-			else if(Weapon.HasAnim(FireEndAnim))
-			{
-                Weapon.PlayAnim(FireEndAnim, FireUnaimedEndAnimRate, TweenTime); //changed anim rate var
-			}
-		}
-		else if(Weapon.HasAnim(FireEndAnim))
-		{
-            Weapon.PlayAnim(FireEndAnim, FireEndAnimRate, TweenTime);
-		}
-	}
-}
-
 //close bolt if attempted to fire when empty
 simulated function bool AllowFire()
 {
@@ -131,6 +106,8 @@ function DoTrace(Vector Start, Rotator Dir)
 
 defaultproperties
 {
-    FireAnimRate=5.00 //used for single fire only, this fixes aiming after single hipfire
-    FireUnaimedEndAnimRate=5.00 //fix for aiming after auto hipfire
+    FireAnim=Fire_Iron
+    FireEndAnim=Fire_Iron_End
+    //FireAnimRate=5.00 //used for single fire only, this fixes aiming after single hipfire
+    //FireUnaimedEndAnimRate=5.00 //fix for aiming after auto hipfire
 }
