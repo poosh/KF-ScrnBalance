@@ -6,9 +6,15 @@ var         float           ReloadShortRate;
 
 var transient bool  bShortReload;
 var transient bool bTweeningBolt;
-var transient bool bBoltClosed;
+var bool bBoltClosed;
 var float TweenEndTime;
 var vector ChargingHandleOffset; //for tactical reload
+
+//allow firemode switch even if empty
+simulated function AltFire(float F)
+{
+    DoToggle();
+}
 
 simulated function BringUp(optional Weapon PrevWeapon)
 {
@@ -25,7 +31,8 @@ simulated function ResetBoltPosition()
 simulated function MoveBoltForward()
 {
     SetBoneLocation( 'Bolt', -ChargingHandleOffset, 100 ); //move bolt forward
-    bBoltClosed = true; //set this bool so weapon bolt will stay closed if dropped
+    //bBoltClosed = true; //setting this again here makes ClientReload's tactical reload work, but DoReload
+    //bShortReload = false; //this doesn't work as expected, but leaving it here
 }
 
 simulated function InterpolateBolt(float time)
@@ -53,9 +60,9 @@ simulated function WeaponTick(float dt)
 simulated function ClientFinishReloading()
 {
     PlayIdle();
-    if(bShortReload)
-        StartTweeningBolt(); //start tweening Bolt back
-    bBoltClosed = false; //reset bool
+    if(bShortReload) 
+        StartTweeningBolt(); //start tweening Bolt backonly for short reload
+    bBoltClosed = false; //this is needed to reset bolt position after reload
     bIsReloading = false;
 
     if(Instigator.PendingWeapon != none && Instigator.PendingWeapon != self)
@@ -122,15 +129,14 @@ simulated function ClientReload()
         ReloadMulti = 1.0;
         
     bIsReloading = true;
-    if (bBoltClosed)
+    bShortReload = !bBoltClosed; //copypaste from exec function
+    if (!bShortReload)
     {
-        bShortReload = false;
         PlayAnim(ReloadAnim, ReloadAnimRate*ReloadMulti, 0.001);
         SetBoneLocation( 'Bolt', ChargingHandleOffset, 0 ); //reset bolt so that the animation's Bolt position gets used
     }
-    else if (MagAmmoRemaining >= 1 || !bBoltClosed)
+    else
     {
-        bShortReload = true;
         PlayAnim(ReloadShortAnim, ReloadAnimRate*ReloadMulti, 0.001); //reduced tween time to prevent Bolt from sliding
         SetBoneLocation( 'Bolt', ChargingHandleOffset, 100 ); //move the bolt back
     }
@@ -158,8 +164,7 @@ function AddReloadedAmmo()
     else
         MagAmmoRemaining = AmmoAmount(0);
 
-    //reset bolt closed bool here because it seems to not work in simulated function?    
-    bBoltClosed = false;
+    bBoltClosed = false; //this is needed to fix reload time after empty reload
     
     // this seems redudant -- PooSH
     // if( !bHoldToReload )

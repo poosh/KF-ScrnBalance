@@ -1,12 +1,19 @@
 class ScrnMKb42Fire extends MKb42Fire;
 
 //close bolt if attempted to fire when empty
-simulated function bool AllowFire()
+function bool AllowFire()
 {
-	if(KFWeapon(Weapon).MagAmmoRemaining == 0 && !KFWeapon(Weapon).bIsReloading )
+    if(KFWeapon(Weapon).MagAmmoRemaining == 0 )
+    {
+        ScrnMKb42AssaultRifle(Weapon).bBoltClosed = true;
+    }
+	if(!KFWeapon(Weapon).bIsReloading )
 	{
-    	if( Level.TimeSeconds - LastClickTime>FireRate )
+        if(KFWeapon(Weapon).MagAmmoRemaining == 0 )
+        {
             ScrnMKb42AssaultRifle(Weapon).MoveBoltForward(); //close bolt on empty chamber
+            ScrnMKb42AssaultRifle(Weapon).bBoltClosed = true; //setting this here makes ClientReload's bShortReload work
+        }
 	}
 	return Super.AllowFire();
 }
