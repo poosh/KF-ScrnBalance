@@ -35,7 +35,7 @@ simulated function ClientFinishReloading()
             ReloadMulti = 1.0;
         }
         //PlayIdle();
-        SetTimer(1.0/ReloadMulti, false); 
+        //SetTimer(1.0/ReloadMulti, false); 
     }
     else
     {
@@ -45,7 +45,7 @@ simulated function ClientFinishReloading()
     if(Instigator.PendingWeapon != none && Instigator.PendingWeapon != self)
         Instigator.Controller.ClientSwitchToBestWeapon();
 }
-
+/*
 simulated function Timer()
 {
     //if ( ClientState == WS_ReadyToFire )
@@ -53,7 +53,7 @@ simulated function Timer()
     //else
         super.Timer();
 }
-
+*/
 
 defaultproperties
 {

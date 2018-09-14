@@ -15,6 +15,13 @@ var vector ChargingHandleOffset;
 var bool bBoltReleased;
 var transient bool bBoltLockQueued;
 var float BoltLockTime;
+var float BoltReleaseTime;
+
+//allow firemode switch even if empty
+simulated function AltFire(float F)
+{
+    DoToggle();
+}
 
 //called to set bolt at end position at end of timer
 simulated function MoveBoltForward()
@@ -48,7 +55,7 @@ simulated function WeaponTick(float dt)
         }
     }
     //handles releasing bolt after reload
-    if(bIsReloading && !bBoltReleased && Level.TimeSeconds - ReloadTimer >= ReloadRate*0.89)
+    if(bIsReloading && !bBoltReleased && Level.TimeSeconds >= BoltReleaseTime)
 	{
 		bBoltReleased = true;
 		MoveBoltForward(); //move bolt forward (only noticeable for empty reload)
@@ -83,6 +90,8 @@ exec function ReloadMeNow()
         ReloadRate = Default.ReloadShortRate / ReloadMulti;
     else
         ReloadRate = Default.ReloadRate / ReloadMulti;
+
+    
         
     if( bHoldToReload )
     {
@@ -101,6 +110,7 @@ exec function ReloadMeNow()
 simulated function ClientReload()
 {
     local float ReloadMulti;
+    bBoltLockQueued = false;
     if ( bHasAimingMode && bAimingRifle )
     {
         FireMode[1].bIsFiring = False;
@@ -120,6 +130,7 @@ simulated function ClientReload()
     {
         PlayAnim(ReloadAnim, ReloadAnimRate*ReloadMulti, 0.1);
         MoveBoltToLocked(); //shouldn't be needed but I put it here anyway to make sure it works
+        BoltReleaseTime = Level.TimeSeconds + 0.89*Default.ReloadRate/ReloadMulti;
     }
     else if (MagAmmoRemaining >= 1)
     {
@@ -130,10 +141,9 @@ simulated function ClientReload()
 simulated function ClientFinishReloading()
 {
     bBoltReleased = false; //allow bolt to be released again
+    MoveBoltForward(); //force bolt forward in case setting it in weapontick is broken
     Super.ClientFinishReloading();
 }
-
-
 
 function AddReloadedAmmo()
 {
