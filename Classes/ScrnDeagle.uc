@@ -20,12 +20,12 @@ var vector PistolSlideOffset; //for tactical reload
 var vector PistolSlideLockedOffset; //for tactical reload
 var rotator PistolHammerRotation; //for deagle's stupid hammer
 
-/*
-simulated function PostBeginPlay()
+simulated function BringUp(optional Weapon PrevWeapon)
 {
-    Super.PostBeginPlay();
+	Super.BringUp(PrevWeapon);
+    if (MagAmmoRemaining == 0)
+        LockSlideBack();
 }
-*/
 
 simulated function ResetSlidePosition()
 {

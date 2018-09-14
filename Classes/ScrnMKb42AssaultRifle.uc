@@ -4,7 +4,7 @@ class ScrnMKb42AssaultRifle extends MKb42AssaultRifle
 var         name            ReloadShortAnim;
 var         float           ReloadShortRate;
 
-var transient bool  bShortReload;
+var transient bool bShortReload;
 var transient bool bTweeningBolt;
 var bool bBoltClosed;
 var float TweenEndTime;

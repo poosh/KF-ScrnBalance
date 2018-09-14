@@ -5,7 +5,6 @@ var         float           ReloadShortRate;
 
 var transient bool  bShortReload;
 var transient bool bTweeningSlide;
-var bool bSlideLocked;
 var float TweenEndTime;
 var vector PistolSlideOffset; //for tactical reload
 var vector PistolSlideLockedOffset; //for tactical reload
@@ -14,7 +13,7 @@ var vector PistolSlideLockedOffset; //for tactical reload
 simulated function BringUp(optional Weapon PrevWeapon)
 {
 	Super.BringUp(PrevWeapon);
-    if (MagAmmoRemaining == 0 || bSlideLocked)
+    if (MagAmmoRemaining == 0)
         LockSlideBack();
 }
 
@@ -26,7 +25,6 @@ simulated function ResetSlidePosition()
 simulated function LockSlideBack()
 {
     SetBoneLocation( '9mm_Slide', -PistolSlideOffset, 100 ); //lock Slide back
-    bSlideLocked = true; //set this bool so weapon Slide will stay locked if dropped
 }
 
 simulated function InterpolateSlide(float time)
@@ -144,7 +142,6 @@ simulated function ClientReload()
         ReloadMulti = 1.0;
         
     bIsReloading = true;
-    bSlideLocked = false; //reset bool
     if (MagAmmoRemaining <= 0)
     {
         bShortReload = false;

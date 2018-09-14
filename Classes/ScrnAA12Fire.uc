@@ -1,5 +1,5 @@
 class ScrnAA12Fire extends AA12Fire;
-
+/*
 //close bolt if attempted to fire when empty
 simulated function bool AllowFire()
 {
@@ -10,7 +10,7 @@ simulated function bool AllowFire()
 	}
 	return Super.AllowFire();
 }
-
+*/
 defaultproperties
 {
      ProjectileClass=Class'ScrnBalanceSrv.ScrnAA12Bullet'

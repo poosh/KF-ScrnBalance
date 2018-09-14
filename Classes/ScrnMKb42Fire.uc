@@ -1,5 +1,7 @@
 class ScrnMKb42Fire extends MKb42Fire;
 
+//KF_FNFALSnd.FNFAL_Bolt_Forward
+
 //close bolt if attempted to fire when empty
 simulated function bool AllowFire()
 {
@@ -17,4 +19,5 @@ simulated function bool AllowFire()
 defaultproperties
 {
      DamageType=Class'ScrnBalanceSrv.ScrnDamTypeMKb42AssaultRifle'
+     NoAmmoSoundRef="KF_FNFALSnd.FNFAL_Bolt_Forward"
 }

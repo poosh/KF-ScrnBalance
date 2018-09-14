@@ -3,6 +3,20 @@
 //=============================================================================
 class ScrnSCARMK17Fire extends SCARMK17Fire;
 
+//lock charging handle after firing last shot
+simulated function bool AllowFire()
+{   
+	if(KFWeapon(Weapon).MagAmmoRemaining <= 1 && !KFWeapon(Weapon).bIsReloading )
+	{
+    	if( Level.TimeSeconds - LastClickTime>FireRate )
+        {
+            ScrnSCARMK17AssaultRifle(Weapon).bBoltLockQueued = true; //move bolt to locked position after 0.066 seconds
+            ScrnSCARMK17AssaultRifle(Weapon).BoltLockTime = (Level.TimeSeconds + 0.075); //move bolt to locked position after 0.075 seconds
+        }
+	}
+	return Super.AllowFire();
+}
+
 defaultproperties
 {
      DamageType=Class'ScrnBalanceSrv.ScrnDamTypeSCARMK17AssaultRifle'

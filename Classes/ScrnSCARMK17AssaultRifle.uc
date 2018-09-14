@@ -10,6 +10,52 @@ var         float             ReloadShortRate;
 var transient bool  bShortReload;
 
 
+//bolt moving things
+var vector ChargingHandleOffset;
+var bool bBoltReleased;
+var transient bool bBoltLockQueued;
+var float BoltLockTime;
+
+//called to set bolt at end position at end of timer
+simulated function MoveBoltForward()
+{
+    SetBoneLocation( 'Charging_Bolt', ChargingHandleOffset, 0 ); //move bolt to forward position
+}
+
+//called to set bolt at end position at end of timer
+simulated function MoveBoltToLocked()
+{
+    SetBoneLocation( 'Charging_Bolt', ChargingHandleOffset, 100 ); //move bolt to locked open position
+}
+
+//lock bolt if empty and selected
+simulated function BringUp(optional Weapon PrevWeapon)
+{
+	Super.BringUp(PrevWeapon);
+    if (MagAmmoRemaining == 0 )
+        MoveBoltToLocked();
+}
+
+simulated function WeaponTick(float dt)
+{
+    //handles locking bolt
+    if (BoltLockTime > 0)
+    {
+        if(bBoltLockQueued && Level.TimeSeconds > BoltLockTime)
+        {
+            MoveBoltToLocked(); //lock bolt back
+            BoltLockTime = 0;
+        }
+    }
+    //handles releasing bolt after reload
+    if(bIsReloading && !bBoltReleased && Level.TimeSeconds - ReloadTimer >= ReloadRate*0.89)
+	{
+		bBoltReleased = true;
+		MoveBoltForward(); //move bolt forward (only noticeable for empty reload)
+	}
+    Super.WeaponTick(dt);
+}
+ 
 exec function ReloadMeNow()
 {
     local float ReloadMulti;
@@ -70,6 +116,7 @@ simulated function ClientReload()
         ReloadMulti = 1.0;
         
     bIsReloading = true;
+    bBoltReleased = false; //allow bolt to be locked again
     if (MagAmmoRemaining <= 0)
     {
         PlayAnim(ReloadAnim, ReloadAnimRate*ReloadMulti, 0.1);
@@ -112,8 +159,8 @@ defaultproperties
 {
     ReloadShortAnim="Reload"
     ReloadShortRate=2.27 //2.966000
-
     FireModeClass(0)=Class'ScrnBalanceSrv.ScrnSCARMK17Fire'
     PickupClass=Class'ScrnBalanceSrv.ScrnSCARMK17Pickup'
     ItemName="SCARMK17 SE"
+    ChargingHandleOffset=(X=-0.067,Y=0.0,Z=0.0)
 }
