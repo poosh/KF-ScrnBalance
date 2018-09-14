@@ -1,5 +1,20 @@
 class ScrnTrenchgun extends Trenchgun;
 
+var int AmmoLoadedThisReload; //for some reason using NumLoadedThisReload doesn't work in multiplayer
+
+//count ammo loaded
+simulated function AddReloadedAmmo()
+{
+    AmmoLoadedThisReload++;
+    Super.AddReloadedAmmo();
+}
+
+simulated function ClientReload()
+{
+    AmmoLoadedThisReload = 0;
+    Super.ClientReload();
+}
+
 simulated function ClientFinishReloading()
 {
     local float ReloadMulti;
@@ -8,7 +23,7 @@ simulated function ClientFinishReloading()
     // The reload animation is complete, but there is still some animation to play
     // Let's reward player for waiting the full reload time by playing the full reload animation (Can be skipped by firing)
     // Trenchgun's animation is 30 frames long, so 1.0 seconds
-    if ( NumLoadedThisReload == MagCapacity)
+    if ( AmmoLoadedThisReload == MagCapacity)
     {
         if ( KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo) != none && KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo).ClientVeteranSkill != none )
         {

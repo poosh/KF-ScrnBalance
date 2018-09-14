@@ -1,6 +1,21 @@
 class ScrnWinchester extends Winchester;
 
+var int AmmoLoadedThisReload; //for some reason using NumLoadedThisReload doesn't work in multiplayer
 
+//count ammo loaded
+simulated function AddReloadedAmmo()
+{
+    AmmoLoadedThisReload++;
+    Super.AddReloadedAmmo();
+}
+
+simulated function ClientReload()
+{
+    AmmoLoadedThisReload = 0;
+    Super.ClientReload();
+}
+
+//this is called when out of ammo to load, or mag is full
 simulated function ClientFinishReloading()
 {
     local float ReloadMulti;
@@ -9,7 +24,7 @@ simulated function ClientFinishReloading()
     // The reload animation is complete, but there is still some animation to play
     // Let's reward player for waiting the full reload time by playing the full reload animation (Can be skipped by firing)
     // Winchester's animation is 30 frames long, so 1.0 seconds
-    if ( NumLoadedThisReload == MagCapacity)
+    if ( AmmoLoadedThisReload == MagCapacity)
     {
         if ( KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo) != none && KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo).ClientVeteranSkill != none )
         {
@@ -33,9 +48,9 @@ simulated function ClientFinishReloading()
 
 simulated function Timer()
 {
-    if ( ClientState == WS_ReadyToFire )
-        PlayIdle();
-    else
+    //if ( ClientState == WS_ReadyToFire )
+        //PlayIdle();
+    //else
         super.Timer();
 }
 

@@ -6,9 +6,8 @@ var byte  MaxPenetrations; //how many enemies can penetrate a single bullet
 //lock slide back if fired last round
 simulated function bool AllowFire()
 {
-	if(KFWeapon(Weapon).MagAmmoRemaining <= 1 && !KFWeapon(Weapon).bIsReloading )
+	if( (Level.TimeSeconds - LastFireTime > FireRate) && KFWeapon(Weapon).MagAmmoRemaining <= 1 && !KFWeapon(Weapon).bIsReloading )
 	{
-    	if( Level.TimeSeconds - LastClickTime>FireRate )
             ScrnMK23Pistol(Weapon).LockSlideBack(); //lock slide back
 	}
 	return Super.AllowFire();

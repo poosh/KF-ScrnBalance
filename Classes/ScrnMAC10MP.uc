@@ -179,7 +179,7 @@ function AddReloadedAmmo()
 defaultproperties
 {
      ReloadShortAnim="Reload"
-     ReloadShortRate=2.1
+     ReloadShortRate=2.16 //2.1
      FireModeClass(0)=Class'ScrnBalanceSrv.ScrnMAC10Fire'
      PickupClass=Class'ScrnBalanceSrv.ScrnMAC10Pickup'
      ItemName="MAC10 SE"

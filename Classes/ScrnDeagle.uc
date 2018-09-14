@@ -37,6 +37,12 @@ simulated function LockSlideBack()
     SetBoneLocation( 'Slide', -1.4*PistolSlideOffset, 100 ); //lock slide back a lot
 }
 
+simulated function RotateHammerBack()
+{
+    SetBoneRotation( 'Hammer', -1*PistolHammerRotation, , 100); //set hammer rotation for empty reload
+}
+
+
 //used for tactical reload
 simulated function InterpolateSlide(float time)
 {
@@ -195,6 +201,7 @@ simulated function ClientReload()
         bShortReload = false;
         PlayAnim(ReloadAnim, ReloadAnimRate*ReloadMulti, 0.001);
         SetBoneLocation( 'Slide', -0.45*PistolSlideOffset, 100 ); //special case for deagle because default slide animation sucks
+        SetBoneRotation( 'Hammer', PistolHammerRotation, , 0); //reset hammer rotation on reload start
     }
     else if (MagAmmoRemaining >= 1)
     {

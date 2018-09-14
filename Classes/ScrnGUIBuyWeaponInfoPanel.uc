@@ -57,13 +57,15 @@ function LoadStats(GUIBuyable NewBuyable, byte FireMode, optional bool bSetTopVa
     local class<Projectile> ProjClass;
     local class<KFMeleeFire> MeeleeFireClass;
     local class<DamageType> DamType;
+    local class<DamTypeFlareProjectileImpact> FlareImpactDamType;
     local class<KFWeaponDamageType> DamTypeImpact;
     local class<KFWeaponDamageType> KFDamType;
-    local int BaseDmg, PerkedValue, Mult;
+    local int BaseDmg, PerkedValue, Mult, OldPerkedValue;
     local float FireTime, ReloadTime, dmg, range, ammo, MagTime;
     local float PerkBonus;
-    local float HSMult; //headshot multiplier
+    local float HSMult, OldHSMult; //headshot multiplier
     local String s;
+    local string ProjName;
     local int MagCapacity, MagCount, TotalAmmo;
     local class<M99bullet> M99Proj;
     local class<CrossbowArrow> CrossbowProj;
@@ -139,8 +141,6 @@ function LoadStats(GUIBuyable NewBuyable, byte FireMode, optional bool bSetTopVa
         }
     }
     
-
-    
     // total ammo
     TotalAmmo = 0;
     if ( WF.default.AmmoClass != none ) {
@@ -171,12 +171,13 @@ function LoadStats(GUIBuyable NewBuyable, byte FireMode, optional bool bSetTopVa
     ProjClass = WF.default.ProjectileClass;
     MeeleeFireClass = class<KFMeleeFire>(WF);
 
+    
     // damage
     if ( IFClass != none ) {
         BaseDmg = IFClass.default.DamageMax;
         DamType = IFClass.default.DamageType;
         KFDamType = class<KFWeaponDamageType>(DamType);
-        HSMult = KFDamType.default.HeadShotDamageMult;
+        HSMult = KFDamType.default.HeadShotDamageMult; //attempt to get hitscan weapons working
         Mult = WF.default.AmmoPerFire;
     }
     else if ( ProjFireClass != none && ProjClass != none ) {
@@ -185,7 +186,7 @@ function LoadStats(GUIBuyable NewBuyable, byte FireMode, optional bool bSetTopVa
         KFDamType = class<KFWeaponDamageType>(DamType); //usually they are roballisticprojectile
         DamType = ProjClass.default.MyDamageType;
 
-        HSMult = KFDamType.default.HeadShotDamageMult;
+        
         
         //handle headshot calculation for M99 and derived projectiles
         if ( class<M99Bullet>(ProjClass) != none)
@@ -198,7 +199,7 @@ function LoadStats(GUIBuyable NewBuyable, byte FireMode, optional bool bSetTopVa
             HSMult = class<CrossbowArrow>(ProjClass).default.HeadShotDamageMult;
         }
         
-        //handle headshot and impact damage calculation for M79 derived projectiles
+        //handle headshot and impact damage calculation for M79 derived projectiles (show only dud damage)
         if ( bHSDamage && class<M79GrenadeProjectile>(ProjClass) != none)
         {
             DamType = class<M79GrenadeProjectile>(ProjClass).default.ImpactDamageType;
@@ -207,7 +208,7 @@ function LoadStats(GUIBuyable NewBuyable, byte FireMode, optional bool bSetTopVa
             HSMult = KFDamType.default.HeadShotDamageMult;
         }
         
-        //handle headshot and impact damage calculation for LAW derived projectiles
+        //handle headshot and impact damage calculation for LAW derived projectiles (show only dud damage)
         if ( bHSDamage && class<LAWProj>(ProjClass) != none )
         {
             DamType = class<LAWProj>(ProjClass).default.ImpactDamageType;
@@ -215,7 +216,56 @@ function LoadStats(GUIBuyable NewBuyable, byte FireMode, optional bool bSetTopVa
             KFDamType = class<DamTypeRocketImpact>(DamType);
             HSMult = KFDamType.default.HeadShotDamageMult;
         }
+        /*
+        //handle headshot and impact damage calculation for ZED gun and derived projectiles
+        if ( bHSDamage && class<ZEDGunProjectile>(ProjClass) != none )
+        {
+            DamType = class<ZEDGunProjectile>(ProjClass).default.ImpactDamageType;
+            BaseDmg = class<ZEDGunProjectile>(ProjClass).default.ImpactDamage;
+            KFDamType = class<DamTypeZEDGun>(DamType);
+            //HSMult = KFDamType.default.HeadShotDamageMult;
+            //HSMult = 1.1;
+        }
         
+        //handle headshot and impact damage calculation for ZED gun MKII primary fire
+        if ( bHSDamage && class<ZEDMKIIPrimaryProjectile>(ProjClass) != none )
+        {
+            DamType = class<ZEDMKIIPrimaryProjectile>(ProjClass).default.ImpactDamageType;
+            BaseDmg = class<ZEDMKIIPrimaryProjectile>(ProjClass).default.ImpactDamage;
+            KFDamType = class<DamTypeZEDGunMKII>(DamType);
+            //HSMult = KFDamType.default.HeadShotDamageMult;
+            //HSMult = 1.1;
+        }
+        
+        //handle headshot and impact damage calculation for ZED gun MKII secondary fire
+        if ( bHSDamage && class<ZEDMKIISecondaryProjectile>(ProjClass) != none )
+        {
+            DamType = class<ZEDMKIISecondaryProjectile>(ProjClass).default.ImpactDamageType;
+            //BaseDmg = 0;
+            KFDamType = class<DamTypeZEDGunMKII>(DamType);
+            //HSMult = KFDamType.default.HeadShotDamageMult;
+        }
+        
+        //this case is intended to handle MTS255 without depending on its class
+        if ( bHSDamage && class<SPGrenadeProjectile>(ProjClass) != none )
+        {
+            DamType = class<LAWProj>(ProjClass).default.ImpactDamageType;
+            BaseDmg = class<LAWProj>(ProjClass).default.ImpactDamage;
+            KFDamType = class<DamTypeRocketImpact>(DamType);
+            HSMult = KFDamType.default.HeadShotDamageMult;
+        }
+        */
+        
+        /*
+        //handle headshot and impact damage calculation for Huskgun (65 impact and about 70 burn on perk damage)
+        if (bHSDamage && class<HuskGunProjectile>(ProjClass) != none)
+        {
+            DamType = class<HuskGunProjectile>(ProjClass).default.ImpactDamageType;
+            BaseDmg = class<HuskGunProjectile>(ProjClass).default.ImpactDamage;
+            KFDamType = class<ScrnDamTypeHuskGunProjectileImpact>(DamType);
+            HSMult = KFDamType.default.HeadShotDamageMult;
+        }
+        */
         Mult = WF.default.AmmoPerFire * ProjFireClass.default.ProjPerFire;
         
         range = ProjClass.default.DamageRadius;
@@ -245,29 +295,186 @@ function LoadStats(GUIBuyable NewBuyable, byte FireMode, optional bool bSetTopVa
         BaseDmg *= 1.5; // stupid fire damage multiplier in KFMonster.TakeDamage()
     
     if ( BaseDmg > 0 && Perk != none )
+    {
+        OldPerkedValue = PerkedValue; //store old perked value
         PerkedValue = Perk.static.AddDamage(KFPRI, none, KFPawn(PlayerOwner().Pawn), BaseDmg, DamType);
+    }
     else 
+    {
         PerkedValue = BaseDmg;
+    }
     
-    if ( KFPRI != none && Perk != none )
-        HSMult *= Perk.static.GetHeadShotDamMulti(KFPRI, KFPawn(PlayerOwner().Pawn), DamType);
-
-    if (bHSDamage)
-    PerkedValue = PerkedValue * HSMult;
-
-     
-    if ( class<LAWProj>(ProjClass) != none ) {
-        // huskgun and flare revolvers deal both impact+fire damage
-        if ( class<FlareRevolverProjectile>(ProjClass) != none || class<HuskGunProjectile>(ProjClass) != none ) {
-            dmg = class<LAWProj>(ProjClass).default.ImpactDamage;
-            BaseDmg += dmg;
-            if ( Perk != none )
-                PerkedValue += Perk.static.AddDamage(KFPRI, none, KFPawn(PlayerOwner().Pawn), dmg, class<LAWProj>(ProjClass).default.ImpactDamageType); 
-            else 
-                PerkedValue += dmg;            
+    if ( bHSDamage && KFPRI != none && Perk != none )
+    {
+        OldHSMult = HSMult;
+        HSMult *= Perk.static.GetHeadShotDamMulti(KFPRI, KFPawn(PlayerOwner().Pawn), DamType); //check if perk boosts HS damage (for demo projectiles Damtype is changed to impact)
+        OldPerkedValue = PerkedValue;
+        PerkedValue = PerkedValue * HSMult; //hopefully this affects hitscan stuff only
+    }
+    
+    //Handle LAWProjs headshot damage (impact only)
+    if ( bHSDamage && class<LawProj>(ProjClass) != none ) {
+        dmg = class<LawProj>(ProjClass).default.ImpactDamage; //impact damage
+        HSMult = 2.0; //hardcoded
+        HSMult *= Perk.static.GetHeadShotDamMulti(KFPRI, KFPawn(PlayerOwner().Pawn), class<LawProj>(ProjClass).default.ImpactDamageType);
+        //get bonus impact damage
+        BaseDmg = class<LawProj>(ProjClass).default.ImpactDamage;
+        if ( Perk != none )
+        {
+            BaseDmg = BaseDmg + Perk.static.AddDamage(KFPRI, none, KFPawn(PlayerOwner().Pawn), BaseDmg, class<LawProj>(ProjClass).default.ImpactDamageType);
+            //show impact damage only
+            OldPerkedValue = BaseDmg;
+            PerkedValue = (BaseDmg * HSMult); //get only headshot boosted damage
         }
     }
-        
+    
+    //special handling for flare projectiles
+    if (bHSDamage && class<FlareRevolverProjectile>(ProjClass) != none)
+    {
+        OldPerkedValue = PerkedValue;
+        PerkedValue = PerkedValue * HSMult;
+    }
+
+    //special handling for huskgun
+    if (bHSDamage && class<HuskGunProjectile>(ProjClass) != none)
+    {
+        OldPerkedValue = PerkedValue;
+        PerkedValue = PerkedValue * HSMult;
+    }
+
+    //flare damage calculation (both impact+fire damage)
+    if ( class<FlareRevolverProjectile>(ProjClass) != none ) {
+        dmg = class<FlareRevolverProjectile>(ProjClass).default.ImpactDamage; //impact damage
+        if (bHSDamage)
+        {
+            /*
+            DamType = class<FlareRevolverProjectile>(ProjClass).default.ImpactDamageType;
+            FlareImpactDamType = class<DamTypeFlareProjectileImpact>(DamType);
+            HSMult = FlareImpactDamType.default.HeadShotDamageMult;
+            HSMult *= Perk.static.GetHeadShotDamMulti(KFPRI, KFPawn(PlayerOwner().Pawn), class<FlareRevolverProjectile>(ProjClass).default.ImpactDamageType);
+            dmg = dmg*HSMult; //multiply impact damage by headshot bonus multiplier
+            */
+            //it was all too difficult so hardcoding to 2.0x so it'll at least be correct
+            HSMult = 2.0;
+            HSMult *= Perk.static.GetHeadShotDamMulti(KFPRI, KFPawn(PlayerOwner().Pawn), class<FlareRevolverProjectile>(ProjClass).default.ImpactDamageType);
+        }
+        //base dmg is burn damage (vanilla base 25)
+        //get bonus burn damage only
+        BaseDmg = class<FlareRevolverProjectile>(ProjClass).default.Damage;
+        if ( Perk != none )
+            BaseDmg += Perk.static.AddDamage(KFPRI, none, KFPawn(PlayerOwner().Pawn), BaseDmg, class<FlareRevolverProjectile>(ProjClass).default.MyDamageType); //attempt to fix wrong value
+        BaseDmg *= 0.92; //correction for some unknown reason
+        if (!bHSDamage)
+        {
+            PerkedValue = BaseDmg + dmg;
+        }
+        else
+        {
+            //show impact damage only
+            OldPerkedValue = dmg;
+            PerkedValue = (dmg * HSMult); //get only headshot boosted damage
+        }
+            
+        /*    
+        if ( Perk != none )
+            PerkedValue += Perk.static.AddDamage(KFPRI, none, KFPawn(PlayerOwner().Pawn), dmg, class<LAWProj>(ProjClass).default.ImpactDamageType);
+        else 
+            PerkedValue += dmg; 
+        */
+    }
+    
+    //huskgun damage calculation
+    if ( class<ScrnHuskGunProjectile>(ProjClass) != none ) {
+        // huskgun and flare revolvers deal both impact+fire damage
+        if ( class<ScrnHuskGunProjectile>(ProjClass) != none ) {
+            dmg = class<ScrnHuskGunProjectile>(ProjClass).default.ImpactDamage; //impact damage
+            if (bHSDamage)
+            {
+                //couldn't get headshot multiplier out of damage type by code
+                //it was all too difficult so hardcoding to 2.4x so it'll at least be correct
+                HSMult = 2.4;
+                HSMult *= Perk.static.GetHeadShotDamMulti(KFPRI, KFPawn(PlayerOwner().Pawn), class<ScrnHuskGunProjectile>(ProjClass).default.ImpactDamageType);
+            }
+            //base dmg is burn damage (vanilla base 25)
+            //get bonus burn damage only
+            BaseDmg = class<ScrnHuskGunProjectile>(ProjClass).default.Damage;
+            if ( Perk != none )
+                BaseDmg += Perk.static.AddDamage(KFPRI, none, KFPawn(PlayerOwner().Pawn), BaseDmg, class<ScrnHuskGunProjectile>(ProjClass).default.MyDamageType); //attempt to fix wrong value
+            BaseDmg *= 0.92; //correction for some unknown reason
+            if (!bHSDamage)
+            {
+                PerkedValue = BaseDmg + dmg;
+            }
+            else
+            {
+                //show impact damage only
+                OldPerkedValue = dmg;
+                PerkedValue = (dmg * HSMult); //get only headshot boosted damage
+            }
+                
+            /*    old poosh code
+            if ( Perk != none )
+                PerkedValue += Perk.static.AddDamage(KFPRI, none, KFPawn(PlayerOwner().Pawn), dmg, class<LAWProj>(ProjClass).default.ImpactDamageType);
+            else 
+                PerkedValue += dmg; 
+            */
+        }
+    } 
+    /*
+    //zed gun damage calculation
+    //zedgun projectiles do damage only
+    if ( class<ZEDGunProjectile>(ProjClass) != none ) {
+        dmg = class<ZEDGunProjectile>(ProjClass).default.Damage; //impact damage
+        if (bHSDamage)
+        {
+            //couldn't get headshot multiplier out of damage type by code
+            //it was all too difficult so hardcoding to 1.1x so it'll at least be correct
+            HSMult = 1.1;
+            HSMult *= Perk.static.GetHeadShotDamMulti(KFPRI, KFPawn(PlayerOwner().Pawn), class<ZEDGunProjectile>(ProjClass).default.MyDamageType);
+        }
+        //base dmg is impact damage
+        //get bonus impact damage
+        BaseDmg = class<ZEDGunProjectile>(ProjClass).default.Damage; //get only impact damage
+        if ( Perk != none )
+            BaseDmg = dmg + Perk.static.AddDamage(KFPRI, none, KFPawn(PlayerOwner().Pawn), dmg, class<ZEDGunProjectile>(ProjClass).default.MyDamageType); //attempt to fix wrong value
+        if (!bHSDamage)
+        {
+            PerkedValue = BaseDmg; //removed +dmg
+        }
+        else
+        {
+            OldPerkedValue = BaseDmg;
+            PerkedValue = (BaseDmg * HSMult); //get headshot boosted damage
+        }
+    }
+    
+    //zed gun mk ii damage calculation
+    //zedgun projectiles do damage only
+    if ( class<ZEDMKIIPrimaryProjectile>(ProjClass) != none ) {
+        dmg = class<ZEDMKIIPrimaryProjectile>(ProjClass).default.Damage; //impact damage
+        if (bHSDamage)
+        {
+            //couldn't get headshot multiplier out of damage type by code
+            //it was all too difficult so hardcoding to 1.1x so it'll at least be correct
+            HSMult = 1.1;
+            HSMult *= Perk.static.GetHeadShotDamMulti(KFPRI, KFPawn(PlayerOwner().Pawn), class<ZEDMKIIPrimaryProjectile>(ProjClass).default.MyDamageType);
+        }
+        //base dmg is impact damage
+        //get bonus impact damage
+        BaseDmg = class<ZEDMKIIPrimaryProjectile>(ProjClass).default.Damage; //get only impact damage
+        if ( Perk != none )
+            BaseDmg = dmg + Perk.static.AddDamage(KFPRI, none, KFPawn(PlayerOwner().Pawn), dmg, class<ZEDMKIIPrimaryProjectile>(ProjClass).default.MyDamageType); //attempt to fix wrong value
+        if (!bHSDamage)
+        {
+            PerkedValue = BaseDmg; //removed +dmg
+        }
+        else
+        {
+            OldPerkedValue = BaseDmg;
+            PerkedValue = (BaseDmg * HSMult); //get headshot boosted damage
+        }
+    }
+    */
     if ( Mult == 1 ) {
         s = string(PerkedValue);
     }
@@ -280,12 +487,37 @@ function LoadStats(GUIBuyable NewBuyable, byte FireMode, optional bool bSetTopVa
     
     if ( !bSetTopValuesOnly ) {
         barDamage.Value = barDamage.High * GetBarPct(PerkedValue, TopDamage);
-        barDamage.SetHighlight(PerkedValue > BaseDmg);
-        if ( PerkedValue != BaseDmg ) {
+        //handle setting highlight
+        if (!bHSDamage)
+        {
+            barDamage.SetHighlight(OldPerkedValue > BaseDmg);
+        }
+        else
+        {
+            barDamage.SetHighlight(OldHSMult > HSMult);
+        }
+        
+        if ( !bHSDamage && PerkedValue != BaseDmg ) {
             if ( PerkedValue > BaseDmg )
                 S @= "("$string(BaseDmg)$"+"$string(PerkedValue-BaseDmg)$")";
             else
                 S @= "("$string(BaseDmg)$string(PerkedValue-BaseDmg)$")";
+        }
+        else if ( bHSDamage && PerkedValue != BaseDmg ) {
+            if ( OldPerkedValue > BaseDmg && class<FlareRevolverProjectile>(ProjClass) == none )
+                S @= "("$string(BaseDmg)$"+"$string(OldPerkedValue-BaseDmg)$")*"$string(HSMult)$"";
+            else
+            {
+                if (class<FlareRevolverProjectile>(ProjClass) == none)
+                {
+                    S @= "("$string(OldPerkedValue)$")*"$string(HSMult)$"";
+                }
+                else
+                {
+                    //Case for flare projectiles (Show impact damage only)
+                    S @= "("$string(OldPerkedValue)$")*"$string(HSMult)$"";
+                } 
+            }
         }
         barDamage.Caption = S;
     }

@@ -116,16 +116,24 @@ simulated function ClientReload()
         ReloadMulti = 1.0;
         
     bIsReloading = true;
-    bBoltReleased = false; //allow bolt to be locked again
     if (MagAmmoRemaining <= 0)
     {
         PlayAnim(ReloadAnim, ReloadAnimRate*ReloadMulti, 0.1);
+        MoveBoltToLocked(); //shouldn't be needed but I put it here anyway to make sure it works
     }
     else if (MagAmmoRemaining >= 1)
     {
         PlayAnim(ReloadShortAnim, ReloadAnimRate*ReloadMulti, 0.1);
     }
 }
+
+simulated function ClientFinishReloading()
+{
+    bBoltReleased = false; //allow bolt to be released again
+    Super.ClientFinishReloading();
+}
+
+
 
 function AddReloadedAmmo()
 {
