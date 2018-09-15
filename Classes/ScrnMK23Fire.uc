@@ -8,7 +8,7 @@ simulated function bool AllowFire()
 {
 	if( (Level.TimeSeconds - LastFireTime > FireRate) && KFWeapon(Weapon).MagAmmoRemaining <= 1 && !KFWeapon(Weapon).bIsReloading )
 	{
-            ScrnMK23Pistol(Weapon).LockSlideBack(); //lock slide back
+        ScrnMK23Pistol(Weapon).LockSlideBack(); //lock slide back
 	}
 	return Super.AllowFire();
 }

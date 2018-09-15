@@ -9,10 +9,20 @@ var float TweenEndTime;
 var vector PistolSlideOffset; //for tactical reload
 var vector PistolSlideLockedOffset; //for tactical reload
 
+var bool bAnimatingHammer;
+var rotator PistolHammerRotation; //for 9mm's stupid hammer
+var transient float HammerRotateRate; 
+var transient float HammerRotateBackTime;
+var transient float HammerRotateForwardTime;
+var transient float HammerRotateMult;
+
+var float DefaultHammerRotateMult;
+var float DefaultHammerRotateRate;
 
 simulated function BringUp(optional Weapon PrevWeapon)
 {
 	Super.BringUp(PrevWeapon);
+    RotateHammerBack(); //always do this
     if (MagAmmoRemaining == 0)
         LockSlideBack();
 }
@@ -20,6 +30,11 @@ simulated function BringUp(optional Weapon PrevWeapon)
 simulated function ResetSlidePosition()
 {
     SetBoneLocation( '9mm_Slide', PistolSlideOffset, 0 ); //reset Slide position
+}
+
+simulated function RotateHammerBack()
+{
+    SetBoneRotation( '9mm_hammer', -1*PistolHammerRotation, , 100); //rotate hammer to cocked position
 }
 
 simulated function LockSlideBack()
@@ -31,6 +46,29 @@ simulated function InterpolateSlide(float time)
 {
     SetBoneLocation( '9mm_Slide', PistolSlideOffset, (time*500) ); //
 }
+
+
+//used for enhanced hammer rotation forwards during firing
+simulated function RotateHammerSmooth(float rate, bool bRotatingHammerBack)
+{
+    local float RateMult;
+    //calculate how much rate should be multiplied by to give 100 at end
+    RateMult = 100/HammerRotateRate;
+    if(bRotatingHammerBack )
+        SetBoneRotation( '9mm_hammer', -DefaultHammerRotateMult*PistolHammerRotation, ,100 - Rate*RateMult/3 ); //needs to move from 0 to -120
+     else 
+        SetBoneRotation( '9mm_hammer', 0.5*DefaultHammerRotateMult*PistolHammerRotation, , 100 - Rate*RateMult*2 ); //needs to move from 0 to 45
+}
+
+//this function sets the times for hammer drop
+simulated function DoHammerDrop(float FireRateMod)
+{
+    bAnimatingHammer = True;
+    HammerRotateRate = DefaultHammerRotateRate/FireRateMod; //0.08
+    HammerRotateForwardTime = Level.TimeSeconds + HammerRotateRate; //set time
+    HammerRotateBackTime = Level.TimeSeconds + 4*HammerRotateRate; //set time (3 times longer than)
+}
+
 
 simulated function WeaponTick(float dt)
 {
@@ -45,6 +83,18 @@ simulated function WeaponTick(float dt)
             bTweeningSlide = false;
         }
     }
+    if (bAnimatingHammer)
+    {
+        if (Level.TimeSeconds < HammerRotateForwardTime && Level.TimeSeconds < HammerRotateBackTime )
+            RotateHammerSmooth(HammerRotateForwardTime - Level.TimeSeconds, false); //rotate hammer forwards
+        if (Level.TimeSeconds > HammerRotateForwardTime )
+            RotateHammerSmooth(HammerRotateBackTime - Level.TimeSeconds, true); //rotate hammer backwards
+        if (Level.TimeSeconds > HammerRotateBackTime )
+        {
+            bAnimatingHammer = false; //finished rotating hammer
+            RotateHammerBack(); //reset it to normal position
+        }
+    } 
 	Super.WeaponTick(dt);
 }
 
@@ -230,4 +280,7 @@ defaultproperties
     Priority=4
     bKFNeverThrow=False
     Weight=0
+    PistolHammerRotation=(Pitch=140,Yaw=0,Roll=0) //tripwire why did you do this
+    DefaultHammerRotateRate = 0.015
+    DefaultHammerRotateMult = 1.0
 }

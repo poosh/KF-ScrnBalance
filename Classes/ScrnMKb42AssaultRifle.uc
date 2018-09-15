@@ -31,7 +31,7 @@ simulated function ResetBoltPosition()
 simulated function MoveBoltForward()
 {
     SetBoneLocation( 'Bolt', -ChargingHandleOffset, 100 ); //move bolt forward
-    //bBoltClosed = true; //setting this again here makes ClientReload's tactical reload work, but DoReload
+    bBoltClosed = true; //this doesn't seem to fix anything
     //bShortReload = false; //this doesn't work as expected, but leaving it here
 }
 
@@ -111,6 +111,21 @@ exec function ReloadMeNow()
     }
 }
 
+//added bool here maybe it'll fix it
+simulated function Fire(float F)
+{
+	if( bModeZeroCanDryFire && MagAmmoRemaining < 1 && !bIsReloading &&
+		 FireMode[0].NextFireTime <= Level.TimeSeconds )
+	{
+		// We're dry, ask the server to autoreload
+		ServerRequestAutoReload();
+        bBoltClosed = true; //set bool here
+		PlayOwnedSound(FireMode[0].NoAmmoSound,SLOT_None,2.0,,,,false);
+	}
+
+	super.Fire(F);
+}
+
 simulated function ClientReload()
 {
     local float ReloadMulti;
@@ -181,6 +196,7 @@ function AddReloadedAmmo()
 
 defaultproperties
 {
+     bModeZeroCanDryFire = true;
      ReloadShortAnim="Reload"
      ReloadShortRate=1.87
      FireModeClass(0)=Class'ScrnBalanceSrv.ScrnMKb42Fire'
