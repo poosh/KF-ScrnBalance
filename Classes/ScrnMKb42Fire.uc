@@ -1,13 +1,11 @@
 class ScrnMKb42Fire extends MKb42Fire;
 
-//KF_FNFALSnd.FNFAL_Bolt_Forward
-
 //close bolt if attempted to fire when empty
 simulated function bool AllowFire()
 {
 	if(!KFWeapon(Weapon).bIsReloading )
 	{
-        if(KFWeapon(Weapon).MagAmmoRemaining == 0 )
+        if(KFWeapon(Weapon).MagAmmoRemaining <= 0 )
         {
             ScrnMKb42AssaultRifle(Weapon).MoveBoltForward(); //close bolt on empty chamber
             ScrnMKb42AssaultRifle(Weapon).bBoltClosed = true; //setting this here makes ClientReload's bShortReload work
@@ -19,5 +17,4 @@ simulated function bool AllowFire()
 defaultproperties
 {
      DamageType=Class'ScrnBalanceSrv.ScrnDamTypeMKb42AssaultRifle'
-     NoAmmoSoundRef="KF_FNFALSnd.FNFAL_Bolt_Forward"
 }

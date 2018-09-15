@@ -111,21 +111,6 @@ exec function ReloadMeNow()
     }
 }
 
-//added bool here maybe it'll fix it
-simulated function Fire(float F)
-{
-	if( bModeZeroCanDryFire && MagAmmoRemaining < 1 && !bIsReloading &&
-		 FireMode[0].NextFireTime <= Level.TimeSeconds )
-	{
-		// We're dry, ask the server to autoreload
-		ServerRequestAutoReload();
-        bBoltClosed = true; //set bool here
-		PlayOwnedSound(FireMode[0].NoAmmoSound,SLOT_None,2.0,,,,false);
-	}
-
-	super.Fire(F);
-}
-
 simulated function ClientReload()
 {
     local float ReloadMulti;

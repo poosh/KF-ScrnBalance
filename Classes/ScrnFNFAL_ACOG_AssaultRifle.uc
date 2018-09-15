@@ -134,6 +134,13 @@ simulated function MoveMagBullet()
     SetBoneLocation('Bullets', BulletMoveOffset, 100); //apply offset
 }
 
+//delayed mag bullet move to prevent bullet from clipping out of rifle
+simulated function Timer()
+{
+    MoveMagBullet();
+    Super.Timer();
+}
+
 simulated function ClientReload()
 {
     local float ReloadMulti;
@@ -160,7 +167,7 @@ simulated function ClientReload()
     {
         PlayAnim(ReloadShortAnim, ReloadAnimRate*ReloadMulti, 0.1);
         if (MagAmmoRemaining >= 2)
-            MoveMagBullet(); //fix for tactical reload
+            SetTimer(0.2,false);    
     }
 }
 

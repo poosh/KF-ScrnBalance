@@ -9,7 +9,6 @@ var         float             ReloadShortRate;
 
 var transient bool  bShortReload;
 
-
 //bolt moving things
 var vector ChargingHandleOffset;
 var bool bBoltReleased;
@@ -42,17 +41,7 @@ simulated function BringUp(optional Weapon PrevWeapon)
     if (MagAmmoRemaining == 0 )
         MoveBoltToLocked();
 }
-/*
-//attempt to fix bolt not locking at 0
-simulated function Fire(float F)
-{
-	if( bModeZeroCanDryFire && MagAmmoRemaining <= 1 && !bIsReloading  )
-	{
-    
-	}
-	super.Fire(F);
-}
-*/
+
 simulated function WeaponTick(float dt)
 {
     //handles locking bolt

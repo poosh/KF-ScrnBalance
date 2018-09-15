@@ -4,6 +4,7 @@ var         name         ReloadShortAnim;
 var         float         ReloadShortRate;
 
 var transient bool bShortReload;
+//var bool bBoltClosed; //unused until bug free implementation is found due to aa12 reload mechanics (charge first)
 
 var ScrnFakedProjectile FakedShell;
 
@@ -67,11 +68,12 @@ exec function ReloadMeNow()
     bIsReloading = true;
     ReloadTimer = Level.TimeSeconds;
     bShortReload = MagAmmoRemaining > 0 && ReloadShortAnim != '';
+
     if ( bShortReload )
         ReloadRate = Default.ReloadShortRate / ReloadMulti;
     else
         ReloadRate = Default.ReloadRate / ReloadMulti;
-
+        
     if( bHoldToReload )
         NumLoadedThisReload = 0;
 
@@ -103,14 +105,16 @@ simulated function ClientReload()
         ReloadMulti = 1.0;
 
     bIsReloading = true;
-    if ( MagAmmoRemaining <= 0 || ReloadShortAnim == '' )
+    
+    //if ( MagAmmoRemaining <= 0 || ReloadShortAnim == '' )
+    if ( bBoltClosed )
     {
         PlayAnim(ReloadAnim, ReloadAnimRate*ReloadMulti, 0.1);
         HideFakedShell();
     }
-    else if ( MagAmmoRemaining >= 1 )
+    else 
     {
-        PlayAnim(ReloadShortAnim, ReloadAnimRate*ReloadMulti, 0.1);
+        PlayAnim(ReloadAnim, ReloadAnimRate*ReloadMulti, 0.1);
         SetTimer(0.25/ReloadMulti, false); //for tactical reload, skip reload animation only after 7.5 frames of anim so it looks good
         ShowFakedShell();
     }
@@ -120,7 +124,9 @@ simulated function ClientReload()
 simulated function Timer()
 {
     if (bIsReloading)
+    {
         SetAnimFrame(29.35, 0 , 1); //go straight to frame 29.35
+    }
     Super.Timer();
 }
 
