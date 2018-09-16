@@ -106,8 +106,6 @@ function DoTrace(Vector Start, Rotator Dir)
 
 defaultproperties
 {
-    FireAnim=Fire_Iron
-    FireEndAnim=Fire_Iron_End
-    //FireAnimRate=5.00 //used for single fire only, this fixes aiming after single hipfire
-    //FireUnaimedEndAnimRate=5.00 //fix for aiming after auto hipfire
+    FireAnim=Fire_Iron //fix annoying hipfire messing up aiming after firing
+    FireEndAnim=Fire_Iron_End //fix annoying hipfire messing up aiming after firing
 }

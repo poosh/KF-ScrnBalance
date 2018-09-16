@@ -182,8 +182,8 @@ simulated function ClientReload()
 {
     super.ClientReload();
     if (FakedGasCan != none)
-    FakedGasCan.SetDrawScale(2); //test
-    // if MagAmmoRemaining == 0, chaisaw is already stopped
+        FakedGasCan.SetDrawScale(2); //test
+        // if MagAmmoRemaining == 0, chaisaw is already stopped
     if ( MagAmmoRemaining > 0 )
         PlaySound(EngineStopSound);
     ThirdPersonActor.AmbientSound = none;
@@ -196,7 +196,7 @@ simulated function ActuallyFinishReloading()
 {
     super.ActuallyFinishReloading();
     if (FakedGasCan != none)
-    FakedGasCan.SetDrawScale(0.01); //test
+        FakedGasCan.SetDrawScale(0.01); //test
     IdleFuelConsumeTime = default.IdleFuelConsumeTime;
     GotoState('');
     if ( MagAmmoRemaining > 0) {
@@ -279,7 +279,7 @@ simulated state Reloading
                 return;
             nade = spawn(class'ScrnBalanceSrv.ScrnFlameNade');
             if ( FakedGasCan != none )
-            FakedGasCan.SetDrawScale(0.01);
+                FakedGasCan.SetDrawScale(0.01);
             AttachToBone(nade, 'Chainsaw'); //attempt to move explosion onto chainsaw to make it obvious that the gas can caused the explosion
             nade.SetTimer(0, false); // it will be blown up manualy
             nade.Instigator = Instigator;
