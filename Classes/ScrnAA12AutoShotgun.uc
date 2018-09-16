@@ -106,8 +106,7 @@ simulated function ClientReload()
 
     bIsReloading = true;
     
-    //if ( MagAmmoRemaining <= 0 || ReloadShortAnim == '' )
-    if ( bBoltClosed )
+    if ( MagAmmoRemaining <= 0 || ReloadShortAnim == '' )
     {
         PlayAnim(ReloadAnim, ReloadAnimRate*ReloadMulti, 0.1);
         HideFakedShell();
