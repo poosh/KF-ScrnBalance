@@ -57,21 +57,6 @@ simulated function WeaponTick(float dt)
 	Super.WeaponTick(dt);
 }
 
-//copy pasta
-simulated function Fire(float F)
-{
-	if( bModeZeroCanDryFire && MagAmmoRemaining < 1 && !bIsReloading &&
-		 FireMode[0].NextFireTime <= Level.TimeSeconds )
-	{
-		// We're dry, ask the server to autoreload
-		ServerRequestAutoReload();
-        FireMode[0].ModeDoFire(); //force mode do fire
-		PlayOwnedSound(FireMode[0].NoAmmoSound,SLOT_None,2.0,,,,false);
-	}
-
-	super.Fire(F);
-}
-
 // request an auto reload on the server - happens when the player dry fires
 function ServerRequestAutoReload()
 {
