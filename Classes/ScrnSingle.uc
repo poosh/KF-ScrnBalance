@@ -7,7 +7,6 @@ var transient bool  bShortReload;
 var transient bool bTweeningSlide;
 var float TweenEndTime;
 var vector PistolSlideOffset; //for tactical reload
-var vector PistolSlideLockedOffset; //for tactical reload
 
 var bool bAnimatingHammer;
 var rotator PistolHammerRotation; //for 9mm's stupid hammer
@@ -273,7 +272,6 @@ defaultproperties
     ReloadShortRate=1.4
     ReloadShortAnim="Reload"
     PistolSlideOffset=(X=0.02330,Y=0.0,Z=0.0)
-    PistolSlideLockedOffset=(X=-0.02330,Y=0,Z=0) //locked pistol Slide position
     FireModeClass(0)=Class'ScrnBalanceSrv.ScrnSingleFire'
     PickupClass=Class'ScrnBalanceSrv.ScrnSinglePickup'
     ItemName="9mm Tactical SE"

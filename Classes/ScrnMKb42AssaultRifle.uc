@@ -57,6 +57,28 @@ simulated function WeaponTick(float dt)
 	Super.WeaponTick(dt);
 }
 
+//copy pasta
+simulated function Fire(float F)
+{
+	if( bModeZeroCanDryFire && MagAmmoRemaining < 1 && !bIsReloading &&
+		 FireMode[0].NextFireTime <= Level.TimeSeconds )
+	{
+		// We're dry, ask the server to autoreload
+		ServerRequestAutoReload();
+        FireMode[0].ModeDoFire(); //force mode do fire
+		PlayOwnedSound(FireMode[0].NoAmmoSound,SLOT_None,2.0,,,,false);
+	}
+
+	super.Fire(F);
+}
+
+// request an auto reload on the server - happens when the player dry fires
+function ServerRequestAutoReload()
+{
+    bBoltClosed = true;
+    Super.ServerRequestAutoReload();
+}
+
 simulated function ClientFinishReloading()
 {
     PlayIdle();
@@ -64,6 +86,7 @@ simulated function ClientFinishReloading()
         StartTweeningBolt(); //start tweening Bolt backonly for short reload
     bBoltClosed = false; //this is needed to reset bolt position after reload
     bIsReloading = false;
+    log("Reload finished, ClientFinishReloading bBoltClosed is "@ bBoltClosed, 'ScrnMKb42'); 
 
     if(Instigator.PendingWeapon != none && Instigator.PendingWeapon != self)
         Instigator.Controller.ClientSwitchToBestWeapon();
@@ -72,6 +95,8 @@ simulated function ClientFinishReloading()
 exec function ReloadMeNow()
 {
     local float ReloadMulti;
+    if (NumClicks > 0)
+        bBoltClosed = true;
     
     if(!AllowReload())
         return;
@@ -88,10 +113,12 @@ exec function ReloadMeNow()
         ReloadMulti = KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo).ClientVeteranSkill.Static.GetReloadSpeedModifier(KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo), self);
     else
         ReloadMulti = 1.0;
-        
+    
     bIsReloading = true;
     ReloadTimer = Level.TimeSeconds;
     bShortReload = !bBoltClosed; //short reload now depends on if bolt is closed or not
+    log("Reload started, ReloadMeNow bBoltClosed is "@ bBoltClosed, 'ScrnMKb42');      
+    log("Reload started, ReloadMeNow bShortReload is "@ bShortReload, 'ScrnMKb42');
     if ( bShortReload )
         ReloadRate = Default.ReloadShortRate / ReloadMulti;
     else
@@ -113,6 +140,7 @@ exec function ReloadMeNow()
 
 simulated function ClientReload()
 {
+
     local float ReloadMulti;
     if ( bHasAimingMode && bAimingRifle )
     {
@@ -122,7 +150,7 @@ simulated function ClientReload()
         if( Role < ROLE_Authority)
             ServerZoomOut(false);
     }
-    
+       
     if ( KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo) != none && KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo).ClientVeteranSkill != none )
         ReloadMulti = KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo).ClientVeteranSkill.Static.GetReloadSpeedModifier(KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo), self);
     else
@@ -130,6 +158,7 @@ simulated function ClientReload()
         
     bIsReloading = true;
     bShortReload = !bBoltClosed; //copypaste from exec function
+    log("Reload started, ClientReload bBoltClosed is "@ bBoltClosed, 'ScrnMKb42'); 
     if (!bShortReload)
     {
         PlayAnim(ReloadAnim, ReloadAnimRate*ReloadMulti, 0.001);
@@ -165,6 +194,7 @@ function AddReloadedAmmo()
         MagAmmoRemaining = AmmoAmount(0);
 
     bBoltClosed = false; //this is needed to fix reload time after empty reload
+    log("Reload finished, AddReloadedAmmo bBoltClosed is "@ bBoltClosed, 'ScrnMKb42'); 
     
     // this seems redudant -- PooSH
     // if( !bHoldToReload )
@@ -181,7 +211,7 @@ function AddReloadedAmmo()
 
 defaultproperties
 {
-     bModeZeroCanDryFire = true;
+     bModeZeroCanDryFire = true
      ReloadShortAnim="Reload"
      ReloadShortRate=1.87
      FireModeClass(0)=Class'ScrnBalanceSrv.ScrnMKb42Fire'

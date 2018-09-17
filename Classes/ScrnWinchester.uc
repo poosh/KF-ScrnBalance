@@ -7,6 +7,8 @@ simulated function AddReloadedAmmo()
 {
     AmmoLoadedThisReload++;
     Super.AddReloadedAmmo();
+    log("AddReloadedAmmo: AmmoLoadedThisReload is  "@ AmmoLoadedThisReload, 'ScrnWinchester'); 
+    log("AddReloadedAmmo: NumLoadedThisReload is  "@ NumLoadedThisReload, 'ScrnWinchester'); 
 }
 
 simulated function ClientReload()
@@ -20,6 +22,9 @@ simulated function ClientFinishReloading()
 {
     local float ReloadMulti;
     bIsReloading = false;
+    
+    log("ClientFinishReloading: AmmoLoadedThisReload is  "@ AmmoLoadedThisReload, 'ScrnWinchester'); 
+    log("ClientFinishReloading: NumLoadedThisReload is  "@ NumLoadedThisReload, 'ScrnWinchester'); 
 
     // The reload animation is complete, but there is still some animation to play
     // Let's reward player for waiting the full reload time by playing the full reload animation (Can be skipped by firing)
@@ -58,7 +63,7 @@ simulated function Timer()
 defaultproperties
 {
     SelectAnim="Select " //thanks tripwire
-    SelectAnimRate=1.9
+    SelectAnimRate=2.25
     MeshRef="KF_Weapons_Trip.Winchester_Trip"
     SkinRefs(0)="KF_Weapons_Trip_T.Rifles.winchester_cmb"
     HudImageRef="KillingFloorHUD.WeaponSelect.winchester_unselected"
