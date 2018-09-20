@@ -349,7 +349,7 @@ function LoadStats(GUIBuyable NewBuyable, byte FireMode, optional bool bSetTopVa
         }
         else {
             //s = Mult $ "x" $ PerkedValueHS @ "=" @ PerkedValueHS*Mult; //all ints
-            s = Mult $ "x(" $PerkedValue@"*"@HSMult@") =" @ PerkedValueHS*Mult; //all ints
+            s = Mult $ "x("$PerkedValue@"*"@HSMult@") ="@PerkedValueHS*Mult; //all ints
             PerkedValue *= Mult;
             BaseDmg *= Mult;
         }
@@ -393,10 +393,17 @@ function LoadStats(GUIBuyable NewBuyable, byte FireMode, optional bool bSetTopVa
         {
             S @= "(No headshot damage)";
         }
-        
         barDamage.Caption = S;
     }
     BaseDmg = PerkedValue;
+    if (!bHSDamage)
+    {
+        //do nothing
+    }
+    else
+    {
+        BaseDmg = PerkedValueHS; //use headshot damage 
+    }
     
     if ( BaseDmg > 0 ) {
         // DPS
