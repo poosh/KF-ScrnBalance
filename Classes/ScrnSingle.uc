@@ -278,7 +278,7 @@ defaultproperties
     Priority=4
     bKFNeverThrow=False
     Weight=0
-    PistolHammerRotation=(Pitch=140,Yaw=0,Roll=0) //tripwire why did you do this
+    PistolHammerRotation=(Pitch=145,Yaw=0,Roll=0) //tripwire why did you do this
     DefaultHammerRotateRate = 0.015
     DefaultHammerRotateMult = 1.0
 }

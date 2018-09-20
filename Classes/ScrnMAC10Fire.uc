@@ -3,6 +3,26 @@
 //=============================================================================
 class ScrnMAC10Fire extends MAC10Fire;
 
+var() Sound BoltCloseSound;
+var string BoltCloseSoundRef;
+var bool bClientEffectPlayed;
+
+//load additional sound
+static function PreloadAssets(LevelInfo LevelInfo, optional KFFire Spawned)
+{
+    local ScrnMac10Fire ScrnSpawned;
+    super.PreloadAssets(LevelInfo, Spawned);
+	if ( default.BoltCloseSoundRef != "" )
+	{
+		default.BoltCloseSound = sound(DynamicLoadObject(default.BoltCloseSoundRef, class'Sound', true));
+	}
+    ScrnSpawned = ScrnMac10Fire(Spawned);
+    if ( ScrnSpawned != none )
+    {
+        ScrnSpawned.BoltCloseSound = default.BoltCloseSound;
+    }
+}
+
 //close bolt if attempted to fire when empty
 simulated function bool AllowFire()
 {
@@ -12,6 +32,36 @@ simulated function bool AllowFire()
             ScrnMAC10MP(Weapon).MoveBoltForward(); //close bolt on empty chamber
 	}
 	return Super.AllowFire();
+}
+
+
+//sets bCloseBolt and plays sound
+function CloseBolt()
+{
+    if (KFWeap != none)
+        ScrnMac10MP(KFWeap).bBoltClosed = true;
+    if (BoltCloseSound != none && !bClientEffectPlayed )
+    {
+        Weapon.PlayOwnedSound(BoltCloseSound,SLOT_Interact,TransientSoundVolume * 0.85,,TransientSoundRadius,1.00,false);
+    }
+    bClientEffectPlayed = true;
+}
+
+//setting bBoltClosed in a non simulated function test
+function ModeDoFire()
+{
+    if (KFWeap.MagAmmoRemaining <= 0 && !KFWeapon(Weapon).bIsReloading && ( Level.TimeSeconds - LastFireTime>FireRate ) && !ScrnMAC10MP(KFWeap).bBoltClosed )
+    {
+        LastFireTime = Level.TimeSeconds; //moved to allowfire
+        ScrnMAC10MP(KFWeap).MoveBoltForward(); //visual effect only
+        CloseBolt(); //plays sound and sets bBoltClosed
+        ScrnMAC10MP(KFWeap).bBoltClosed = true; //attempt force setting it here
+    }
+    else
+    {
+        bClientEffectPlayed = false; //reset if not empty
+    }
+    Super.ModeDoFire();
 }
 
 // Overwritten to switch damage types for the firebug
@@ -106,6 +156,7 @@ function DoTrace(Vector Start, Rotator Dir)
 
 defaultproperties
 {
+    BoltCloseSoundRef="KF_FNFALSnd.FNFAL_Bolt_Forward"
     FireAnim=Fire_Iron //fix annoying hipfire messing up aiming after firing
     FireEndAnim=Fire_Iron_End //fix annoying hipfire messing up aiming after firing
 }
