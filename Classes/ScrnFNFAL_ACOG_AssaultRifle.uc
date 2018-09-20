@@ -118,6 +118,13 @@ exec function ReloadMeNow()
     }
 }
 
+//make sure bullet doesn't have old offset when reload finishes
+simulated function ClientFinishReloading()
+{
+    Super.ClientFinishReloading();
+    ResetBulletPosition(); //undo offset 
+}
+
 //ClientReloadEffects is called by WeaponTick halfway through reload, perfect for a tactical reload 
 simulated function ClientReloadEffects()
 {

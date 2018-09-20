@@ -2,6 +2,16 @@ class ScrnTrenchgun extends Trenchgun;
 
 var int AmmoLoadedThisReload; //for some reason using NumLoadedThisReload doesn't work in multiplayer
 
+simulated function HideBullet()
+{
+    SetBoneScale(1, 0.001, 'Shell');
+}
+
+simulated function ShowBullet()
+{
+    SetBoneScale(1, 1.0, 'Shell');
+}
+
 //count ammo loaded
 simulated function AddReloadedAmmo()
 {
@@ -11,6 +21,7 @@ simulated function AddReloadedAmmo()
 
 simulated function ClientReload()
 {
+    ShowBullet();
     AmmoLoadedThisReload = 0;
     Super.ClientReload();
 }

@@ -2,17 +2,19 @@ class ScrnWinchester extends Winchester;
 
 var int AmmoLoadedThisReload; //for some reason using NumLoadedThisReload doesn't work in multiplayer
 
-//count ammo loaded
-simulated function AddReloadedAmmo()
+simulated function HideBullet()
 {
-    AmmoLoadedThisReload++;
-    Super.AddReloadedAmmo();
-    log("AddReloadedAmmo: AmmoLoadedThisReload is  "@ AmmoLoadedThisReload, 'ScrnWinchester'); 
-    log("AddReloadedAmmo: NumLoadedThisReload is  "@ NumLoadedThisReload, 'ScrnWinchester'); 
+    SetBoneScale(1, 0.001, 'Bullet');
+}
+
+simulated function ShowBullet()
+{
+    SetBoneScale(1, 1.0, 'Bullet');
 }
 
 simulated function ClientReload()
 {
+    ShowBullet();
     AmmoLoadedThisReload = 0;
     Super.ClientReload();
 }
@@ -23,8 +25,8 @@ simulated function ClientFinishReloading()
     local float ReloadMulti;
     bIsReloading = false;
     
-    log("ClientFinishReloading: AmmoLoadedThisReload is  "@ AmmoLoadedThisReload, 'ScrnWinchester'); 
-    log("ClientFinishReloading: NumLoadedThisReload is  "@ NumLoadedThisReload, 'ScrnWinchester'); 
+    //log("ClientFinishReloading: AmmoLoadedThisReload is  "@ AmmoLoadedThisReload, 'ScrnWinchester'); 
+    //log("ClientFinishReloading: NumLoadedThisReload is  "@ NumLoadedThisReload, 'ScrnWinchester'); 
 
     // The reload animation is complete, but there is still some animation to play
     // Let's reward player for waiting the full reload time by playing the full reload animation (Can be skipped by firing)
