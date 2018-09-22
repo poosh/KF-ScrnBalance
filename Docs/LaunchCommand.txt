@@ -17,12 +17,12 @@ KF-NightAngkor-SE?Listen?Game=ScrnBalanceSrv.ScrnGameType?Difficulty=5?GameLengt
 # Small Big Zeds
 KF-BioticsLab.rom?Listen?Game=ScrnBalanceSrv.ScrnGameType?Difficulty=4?GameLength=22?VACSecured=true?MaxPlayers=6
 
-KF-BioticsLab.rom?Listen?Game=ScrnBalanceSrv.ScrnGameType?Difficulty=5?GameLength=12?VACSecured=true?MaxPlayers=6?Mutator=ScrnSP.ServerPerksMutSE,ScrnBalanceSrv.ScrnBalance,ScrnDoom3KF.Doom3Mutator
+KF-BioticsLab.rom?Listen?Game=ScrnBalanceSrv.ScrnGameType?Difficulty=5?GameLength=12?VACSecured=true?MaxPlayers=6
 
 
 # Pure Doom 3 test
-KF-ScrnTestGrounds.rom?Listen?Game=ScrnBalanceSrv.ScrnGameType?Difficulty=7?GameLength=13?VACSecured=true?MaxPlayers=6?Mutator=ScrnSP.ServerPerksMutSE,ScrnBalanceSrv.ScrnBalance,ScrnDoom3KF.Doom3Mutator
-KF-WestLondon.rom?Listen?Game=ScrnBalanceSrv.ScrnGameType?Difficulty=7?GameLength=13?VACSecured=true?MaxPlayers=6?Mutator=ScrnSP.ServerPerksMutSE,ScrnBalanceSrv.ScrnBalance,ScrnDoom3KF.Doom3Mutator
+KF-ScrnTestGrounds.rom?Listen?Game=ScrnBalanceSrv.ScrnGameType?Difficulty=7?GameLength=13?VACSecured=true?MaxPlayers=6
+KF-WestLondon.rom?Listen?Game=ScrnBalanceSrv.ScrnGameType?Difficulty=7?GameLength=13?VACSecured=true?MaxPlayers=6
 
 KF-Suburbia.rom?Listen?Game=ScrnBalanceSrv.FtgGame?Difficulty=2?GameLength=1?VACSecured=true?MaxPlayers=6?Mutator=ScrnSP.ServerPerksMutSE,ScrnBalanceSrv.ScrnBalance
 
@@ -36,7 +36,7 @@ say ^w$white ^r$red ^g$green ^b$blue ^c$cyan ^o$orange ^u$purple ^s$skyblue ^y$y
 say ^W$gray ^R$red ^G$green ^B$blue ^C$cyan ^O$orange ^U$pink ^S$skyblue ^Y$yellow ^O$brown
 
 
-KF-NightAngkor-SE?Listen?Game=ScrnBalanceSrv.ScrnGameType?Difficulty=2?GameLength=2?VACSecured=true?MaxPlayers=6?Mutator=ScrnSP.ServerPerksMutSE,ScrnBalanceSrv.ScrnBalance
+KF-NightAngkor-SE?Listen?Game=ScrnBalanceSrv.ScrnGameType?Difficulty=2?GameLength=2?VACSecured=true?MaxPlayers=6
 
 KF-NightAngkor-SE?Listen?Game=ScrnBalanceSrv.ScrnGameType?Difficulty=5?GameLength=111?VACSecured=true?MaxPlayers=6
 
@@ -49,4 +49,6 @@ KF-NightAngkor-SE?Listen?Game=ScrnBalanceSrv.ScrnGameType?Difficulty=7?GameLengt
 
 KF-NightAngkor-SE?Listen?Game=ScrnBalanceSrv.FtgGame?Difficulty=4?GameLength=25?VACSecured=true?MaxPlayers=6
 
-KF-NightAngkor-SE?Listen?Game=ScrnBalanceSrv.ScrnGameType?Difficulty=7?GameLength=114?VACSecured=true?MaxPlayers=6?Mutator=ScrnSP.ServerPerksMutSE,ScrnBalanceSrv.ScrnBalance,KFMoreDramaSE.KFMoreDramaSE,BleedLolz.BleedLolz
+KF-NightAngkor-SE?Listen?Game=ScrnBalanceSrv.ScrnGameType?Difficulty=7?GameLength=114?VACSecured=true?MaxPlayers=6
+
+KF-NightAngkor-SE?Listen?Game=ScrnBalanceSrv.ScrnGameType?Difficulty=7?GameLength=124?VACSecured=true?MaxPlayers=6

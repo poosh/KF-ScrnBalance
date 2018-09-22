@@ -20,7 +20,7 @@ var             GUIBuyable            LastBuyable;
 function InitComponent(GUIController MyController, GUIComponent MyOwner)
 {
     super.InitComponent(MyController, MyOwner);
-    
+
     ch_FireMode0.Checked(true);
 }
 
@@ -39,10 +39,10 @@ function float GetBarPct(float Value, float MaxValue)
 {
     if ( Value == 0 || MaxValue == 0 )
         return 0.f;
-    
+
     if ( Value ~= MaxValue )
         return 1.0;
-        
+
     return Sqrt(Value) / Sqrt(MaxValue);
 }
 
@@ -57,17 +57,13 @@ function LoadStats(GUIBuyable NewBuyable, byte FireMode, optional bool bSetTopVa
     local class<Projectile> ProjClass;
     local class<KFMeleeFire> MeeleeFireClass;
     local class<DamageType> DamType;
-    local class<KFWeaponDamageType> DamTypeImpact;
     local class<KFWeaponDamageType> KFDamType;
-    local int BaseDmg, PerkedValue, Mult, OldPerkedValue, BaseImpactDmg, PerkedValueHS;
+    local int BaseDmg, PerkedValue, Mult, PerkedValueHS;
     local float FireTime, ReloadTime, dmg, range, ammo, MagTime;
     local float PerkBonus;
     local float HSMult, OldHSMult; //headshot multiplier
     local String s;
-    local string ProjName;
     local int MagCapacity, MagCount, TotalAmmo;
-    local class<M99bullet> M99Proj;
-    local class<CrossbowArrow> CrossbowProj;
 
     // reset values
     if ( !bSetTopValuesOnly ) {
@@ -78,13 +74,13 @@ function LoadStats(GUIBuyable NewBuyable, byte FireMode, optional bool bSetTopVa
         barMag.Value = 0;
         barAmmo.Value = 0;
     }
-    
+
     if ( NewBuyable == none )
         return;
-        
+
     if ( NewBuyable.ItemWeaponClass == none )
         return; // todo - show armor %
-        
+
     WF = NewBuyable.ItemWeaponClass.default.FireModeClass[FireMode];
     if ( WF == none || WF == class'KFMod.NoFire' )
         return;
@@ -94,12 +90,12 @@ function LoadStats(GUIBuyable NewBuyable, byte FireMode, optional bool bSetTopVa
         Perk = KFPlayerReplicationInfo(PlayerOwner().PlayerReplicationInfo).ClientVeteranSkill;
         ScrnPerk = class<ScrnVeterancyTypes>(Perk);
     }
-        
+
     // magazine
     if ( FireMode == 0 ) {
         MagCapacity = NewBuyable.ItemWeaponClass.default.MagCapacity;
         if ( MagCapacity > 1 ) {
-            // vanilla perks require weapon instance to be passed (not the class), 
+            // vanilla perks require weapon instance to be passed (not the class),
             // so bonuses can be shown only for ScrN perks
             if ( ScrnPerk != none )
                 PerkedValue = MagCapacity * ScrnPerk.Static.GetMagCapacityModStatic(KFPRI, NewBuyable.ItemWeaponClass);
@@ -120,7 +116,7 @@ function LoadStats(GUIBuyable NewBuyable, byte FireMode, optional bool bSetTopVa
                 barMag.Caption = S;
             }
             MagCapacity = PerkedValue;
-            
+
             //reload
             ReloadTime = NewBuyable.ItemWeaponClass.default.ReloadRate;
             if ( ScrnPerk != none ) {
@@ -131,15 +127,15 @@ function LoadStats(GUIBuyable NewBuyable, byte FireMode, optional bool bSetTopVa
             else {
                 barDPM.SetHighlight(false);
             }
-            if ( NewBuyable.ItemWeaponClass.default.bHoldToReload ) 
-                ReloadTime *= MagCapacity; // per-bullet reload        
+            if ( NewBuyable.ItemWeaponClass.default.bHoldToReload )
+                ReloadTime *= MagCapacity; // per-bullet reload
         }
         else {
             ReloadTime = 0.000001;
             barDPM.SetHighlight(false);
         }
     }
-    
+
     // total ammo
     TotalAmmo = 0;
     if ( WF.default.AmmoClass != none ) {
@@ -163,14 +159,14 @@ function LoadStats(GUIBuyable NewBuyable, byte FireMode, optional bool bSetTopVa
         }
         TotalAmmo = PerkedValue;
     }
-            
-    
+
+
     IFClass = class<InstantFire>(WF);
     ProjFireClass = class<BaseProjectileFire>(WF);
     ProjClass = WF.default.ProjectileClass;
     MeeleeFireClass = class<KFMeleeFire>(WF);
 
-    
+
     // damage
     if ( IFClass != none ) {
         BaseDmg = IFClass.default.DamageMax;
@@ -181,7 +177,7 @@ function LoadStats(GUIBuyable NewBuyable, byte FireMode, optional bool bSetTopVa
         //set HSMult to 0 if DamType can't do headshots
         if (KFDamType.default.bCheckForHeadShots == false)
             HSMult = 0;
-        
+
     }
     //projectile
     else if ( ProjFireClass != none && ProjClass != none ) {
@@ -191,41 +187,41 @@ function LoadStats(GUIBuyable NewBuyable, byte FireMode, optional bool bSetTopVa
         DamType = ProjClass.default.MyDamageType;
 
         if (bHSDamage)
-        {   
+        {
             //first, set HSMult to 0 so if projectile headshot mult isn't detected there won't be a stupid value displayed
             HSMult = 0; //test
 
             //a ton of things extend shotgunbullet so handle it first and set it again later
-            
+
             //handle shotgun projectiles
             if ( class<ShotgunBullet>(ProjClass) != none )
                 HSMult = KFDamType.default.HeadShotDamageMult;; //usually 1.1x
-                
+
             //The Shotguns actually do 1.65x because of two multipliers, handle them seperately like this
             // prevent other non-shotgun shotgunbullets from getting 1.65x (Mainly Horzine Tech Cryo dart weapons)
             if ( class<ScrnCustomShotgunBullet>(ProjClass) != none )
                 HSMult = class<ScrnCustomShotgunBullet>(ProjClass).default.HeadShotDamageMult * KFDamType.default.HeadShotDamageMult; //1.1 * 1.5 = 1.65
-                
+
             //quick hack to stop flamethrower from displaying 1.1x headshot damage
             if ( class<FlameTendril>(ProjClass) != none )
-                HSMult = 0; 
-                
+                HSMult = 0;
+
             //handle Trenchgun projectiles
             if ( class<TrenchgunBullet>(ProjClass) != none )
                 HSMult = class<TrenchgunBullet>(ProjClass).default.HeadShotDamageMult * KFDamType.default.HeadShotDamageMult;
-            
+
             //handle buzzsaw bow and derived projectiles
             if ( class<CrossBuzzsawBlade>(ProjClass) != none )
                 HSMult = class<CrossBuzzsawBlade>(ProjClass).default.HeadShotDamageMult;
-            
+
             //handle m99 and derived projectiles
             if ( class<M99Bullet>(ProjClass) != none )
                 HSMult = class<M99Bullet>(ProjClass).default.HeadShotDamageMult;
-                
+
             //handle CrossbowArrow and derived projectiles
             if ( class<CrossbowArrow>(ProjClass) != none )
                 HSMult = class<CrossbowArrow>(ProjClass).default.HeadShotDamageMult;
-                
+
             //handle M79 projectiles (HS multiplier is in impact damage type)
             if ( class<M79GrenadeProjectile>(ProjClass) != none )
             {
@@ -233,7 +229,7 @@ function LoadStats(GUIBuyable NewBuyable, byte FireMode, optional bool bSetTopVa
                 DamType = class<M79GrenadeProjectile>(ProjClass).default.ImpactDamageType;
                 HSMult = Class<KFWeaponDamageType>(DamType).default.HeadShotDamageMult;
             }
-            
+
             //handle SP grenade projectiles (HS multiplier is in impact damage type)
             if ( class<SPGrenadeProjectile>(ProjClass) != none )
             {
@@ -241,7 +237,7 @@ function LoadStats(GUIBuyable NewBuyable, byte FireMode, optional bool bSetTopVa
                 DamType = class<SPGrenadeProjectile>(ProjClass).default.ImpactDamageType;
                 HSMult = Class<KFWeaponDamageType>(DamType).default.HeadShotDamageMult;
             }
-            
+
             //handle LAW projectiles, but ignore classes that don't use it's impact damage (ZED Guns)
             if ( class<LAWProj>(ProjClass) != none && class<ZEDGunProjectile>(ProjClass) == none && class<ZEDMKIIPrimaryProjectile>(ProjClass) == none
             && class<ZEDMKIISecondaryProjectile>(ProjClass) == none )
@@ -250,7 +246,7 @@ function LoadStats(GUIBuyable NewBuyable, byte FireMode, optional bool bSetTopVa
                 DamType = class<LAWProj>(ProjClass).default.ImpactDamageType;
                 HSMult = Class<KFWeaponDamageType>(DamType).default.HeadShotDamageMult;
             }
-            
+
             //handle the ZED gun projectiles (Uses HS Damage in Damtype)
             else if ( class<ZEDGunProjectile>(ProjClass) != none || class<ZEDMKIIPrimaryProjectile>(ProjClass) != none
             || class<ZEDMKIISecondaryProjectile>(ProjClass) != none )
@@ -259,52 +255,52 @@ function LoadStats(GUIBuyable NewBuyable, byte FireMode, optional bool bSetTopVa
                 DamType = class<LAWProj>(ProjClass).default.MyDamageType;
                 HSMult = Class<KFWeaponDamageType>(DamType).default.HeadShotDamageMult;
             }
-            
+
             //now recast DamType as a KFDamType and check if projclass's MyDamageType does not check for headshots (fix cryo thrower)
             KFDamType = class<KFWeaponDamageType>(DamType);
             if (KFDamType.default.bCheckForHeadShots == false)
                 HSMult = 0;
-            
+
         }
 
         Mult = WF.default.AmmoPerFire * ProjFireClass.default.ProjPerFire;
-        
+
         range = ProjClass.default.DamageRadius;
         TopRadius = max(TopRadius, range);
         if ( !bSetTopValuesOnly ) {
             barRange.Value = barRange.High * range/TopRadius;
             barRange.Caption = string(range/50) @ strMeters;
-        }            
+        }
     }
     //melee
     else if ( MeeleeFireClass != none ) {
         BaseDmg = MeeleeFireClass.default.MeleeDamage;
         DamType = MeeleeFireClass.default.hitDamageClass;
         KFDamType = class<KFWeaponDamageType>(DamType);
-        HSMult = KFDamType.default.HeadShotDamageMult;     
+        HSMult = KFDamType.default.HeadShotDamageMult;
         Mult = 1;
-        
+
         range = MeeleeFireClass.default.weaponRange;
         TopRange = max(TopRange, range);
         if ( !bSetTopValuesOnly ) {
             barRange.Value = barRange.High * range/TopRange;
             barRange.Caption = string(range/50) @ strMeters;
-        }        
+        }
     }
-    
+
     KFDamType = class<KFWeaponDamageType>(DamType);
     if ( KFDamType != none && KFDamType.default.bDealBurningDamage && class<DamTypeMAC10MPInc>(KFDamType) == none )
         BaseDmg *= 1.5; // stupid fire damage multiplier in KFMonster.TakeDamage()
-    
+
     //handles old non headshot calculations
     if (!bHSDamage)
     {
         if ( BaseDmg > 0 && Perk != none )
             PerkedValue = Perk.static.AddDamage(KFPRI, none, KFPawn(PlayerOwner().Pawn), BaseDmg, DamType);
-        else 
+        else
             PerkedValue = BaseDmg;
-    
-        //calculation for flares and huskguns 
+
+        //calculation for flares and huskguns
         if ( class<FlareRevolverProjectile>(ProjClass) != none || class<HuskGunProjectile>(ProjClass) != none  ) {
             dmg = class<LAWProj>(ProjClass).default.ImpactDamage; //impact damage
             //base dmg is burn damage (vanilla base 25)
@@ -318,9 +314,9 @@ function LoadStats(GUIBuyable NewBuyable, byte FireMode, optional bool bSetTopVa
             PerkedValue = BaseDmg+dmg; //damage is burn damage + impact damage
             BaseDmg = dmg; //change base dmg to impact damage for display purposes
         }
-    
+
         if ( Mult == 1 ) {
-            s = string(PerkedValue); 
+            s = string(PerkedValue);
         }
         else {
             s = Mult $ "x" $ PerkedValue @ "=" @ PerkedValue*Mult;
@@ -335,9 +331,9 @@ function LoadStats(GUIBuyable NewBuyable, byte FireMode, optional bool bSetTopVa
             //get perk boosted damage value
             if ( BaseDmg > 0 && Perk != none )
                 PerkedValue = Perk.static.AddDamage(KFPRI, none, KFPawn(PlayerOwner().Pawn), BaseDmg, DamType);
-            else 
+            else
                 PerkedValue = BaseDmg;
-                
+
             //get headshot damage
             OldHSMult = HSMult; //store HSMult
             HSMult *= Perk.static.GetHeadShotDamMulti(KFPRI, KFPawn(PlayerOwner().Pawn), DamType); //get perk boosted HS multiplier
@@ -354,9 +350,9 @@ function LoadStats(GUIBuyable NewBuyable, byte FireMode, optional bool bSetTopVa
             BaseDmg *= Mult;
         }
     }
-    
+
     TopDamage = max(TopDamage, PerkedValue);
-    
+
     //sets numbers in info box
     if ( !bSetTopValuesOnly ) {
         barDamage.Value = barDamage.High * GetBarPct(PerkedValue, TopDamage);
@@ -369,7 +365,7 @@ function LoadStats(GUIBuyable NewBuyable, byte FireMode, optional bool bSetTopVa
         {
             barDamage.SetHighlight(HSMult > OldHSMult || (PerkedValue > BaseDmg));
         }
-        
+
         if (!bHSDamage && BaseDmg > 0 && Mult == 1)
         {
             if ( PerkedValue != BaseDmg ) {
@@ -402,9 +398,9 @@ function LoadStats(GUIBuyable NewBuyable, byte FireMode, optional bool bSetTopVa
     }
     else
     {
-        BaseDmg = PerkedValueHS; //use headshot damage 
+        BaseDmg = PerkedValueHS; //use headshot damage
     }
-    
+
     if ( BaseDmg > 0 ) {
         // DPS
         FireTime = WF.default.FireRate;
@@ -424,13 +420,13 @@ function LoadStats(GUIBuyable NewBuyable, byte FireMode, optional bool bSetTopVa
             barDPS.Value = barDPS.High * GetBarPct(dmg, TopDPS);
             barDPS.Caption = int(dmg) $ "," @ FireTime $ strSecondsPerShot;
         }
-        
+
         // DPM
         MagCount = 0;
         if ( MagCapacity <= 1 ) {
             // no reload = no problem
             ammo = 60.0 / FireTime;
-        } 
+        }
         else {
             // how long does it takes to shot whole magazine?
             MagTime = MagCapacity * FireTime / WF.default.AmmoPerFire;
@@ -446,7 +442,7 @@ function LoadStats(GUIBuyable NewBuyable, byte FireMode, optional bool bSetTopVa
                 // how meany bullets we can shoot from last reloaded magazine?
                 ammo += (60.0 - MagCount*(MagTime + ReloadTime)) / FireTime;
             }
-                
+
         }
         if ( TotalAmmo > 0 )
             ammo = min(TotalAmmo / WF.default.AmmoPerFire, ammo);
@@ -460,7 +456,7 @@ function LoadStats(GUIBuyable NewBuyable, byte FireMode, optional bool bSetTopVa
             if ( MagCount > 0 )
                 S $= Repl(StrReloadsInDPM, "%r", MagCount);
             barDPM.Caption = S;
-        }        
+        }
     }
     else if ( !bSetTopValuesOnly ) {
         barDPS.Value = 0;
@@ -471,24 +467,24 @@ function LoadStats(GUIBuyable NewBuyable, byte FireMode, optional bool bSetTopVa
 function Display(GUIBuyable NewBuyable)
 {
     local ScrnCustomPRI ScrnPRI;
-    
+
     // just in case
     b_power.SetVisibility(false);
     b_speed.SetVisibility(false);
     b_range.SetVisibility(false);
     ItemPower.SetVisibility(false);
     ItemRange.SetVisibility(false);
-    ItemSpeed.SetVisibility(false);    
+    ItemSpeed.SetVisibility(false);
 
     LastBuyable = NewBuyable;
     if ( NewBuyable != none ) {
         ItemName.Caption = NewBuyable.ItemName;
-        
+
         ItemImage.Image = NewBuyable.ItemImage;
         ItemImage.SetVisibility(true);
         ScrnLogo.SetVisibility(false);
         TourneyLogo.SetVisibility(false);
-        
+
         WeightLabel.Caption = Repl(Weight, "%i", int(NewBuyable.ItemWeight));
         if ( NewBuyable.bSaleList && !KFPawn(PlayerOwner().Pawn).CanCarry(NewBuyable.ItemWeight) ) {
             WeightLabel.TextColor.R=192;
@@ -503,26 +499,26 @@ function Display(GUIBuyable NewBuyable)
 
         FavoriteButton.SetVisibility(NewBuyable.bSaleList);
         bFavorited = (NewBuyable.ItemPickupClass!=None && Class'SRClientSettings'.Static.IsFavorite( NewBuyable.ItemPickupClass ));
-        RefreshFavoriteButton();        
+        RefreshFavoriteButton();
         OldPickupClass = NewBuyable.ItemPickupClass;
         ch_FireMode0.SetVisibility(true);
         ch_FireMode1.SetVisibility(true);
-        
-        
+
+
         LoadStats(NewBuyable, byte(ch_FireMode1.IsChecked()), false, bHSDamage);
-        
-        barDamage.SetVisibility(barDamage.Value > 0);            
+
+        barDamage.SetVisibility(barDamage.Value > 0);
         lblDamage.SetVisibility(barDamage.bVisible);
-        barDPS.SetVisibility(barDPS.Value > 0);            
+        barDPS.SetVisibility(barDPS.Value > 0);
         lblDPS.SetVisibility(barDPS.bVisible);
-        barDPM.SetVisibility(barDPM.Value > 0);            
+        barDPM.SetVisibility(barDPM.Value > 0);
         lblDPM.SetVisibility(barDPM.bVisible);
-        barRange.SetVisibility(barRange.Value > 0);            
+        barRange.SetVisibility(barRange.Value > 0);
         lblRange.SetVisibility(barRange.bVisible);
-        barMag.SetVisibility(barMag.Value > 0);            
+        barMag.SetVisibility(barMag.Value > 0);
         lblMag.SetVisibility(barMag.bVisible);
-        barAmmo.SetVisibility(barAmmo.Value > 0);            
-        lblAmmo.SetVisibility(barAmmo.bVisible);        
+        barAmmo.SetVisibility(barAmmo.Value > 0);
+        lblAmmo.SetVisibility(barAmmo.bVisible);
     }
     else {
         ScrnPRI = class'ScrnCustomPRI'.static.FindMe(PlayerOwner().PlayerReplicationInfo);
@@ -536,7 +532,7 @@ function Display(GUIBuyable NewBuyable)
             ScrnLogo.SetVisibility(true);
             TourneyLogo.SetVisibility(false);
         }
-        
+
         ItemImage.SetVisibility(false);
         FavoriteButton.SetVisibility(false);
         FavoriteButton.SetVisibility(false);
@@ -544,13 +540,13 @@ function Display(GUIBuyable NewBuyable)
         ch_FireMode0.SetVisibility(false);
         ch_FireMode1.SetVisibility(false);
         ch_HSDmgCheck.SetVisibility(false);
-        
+
         lblDamage.SetVisibility(false);
-        barDamage.SetVisibility(false);        
+        barDamage.SetVisibility(false);
         lblDPS.SetVisibility(false);
-        barDPS.SetVisibility(false);        
+        barDPS.SetVisibility(false);
         lblDPM.SetVisibility(false);
-        barDPM.SetVisibility(false);        
+        barDPM.SetVisibility(false);
         lblRange.SetVisibility(false);
         barRange.SetVisibility(false);
         lblMag.SetVisibility(false);
@@ -567,7 +563,7 @@ function FireModeChange(GUIComponent Sender)
             ch_FireMode1.Checked(!ch_FireMode0.IsChecked());
         else if ( Sender == ch_FireMode1 )
             ch_FireMode0.Checked(!ch_FireMode1.IsChecked());
-            
+
         if ( ScrnTab_BuyMenu(MenuOwner) != none )
             Display(ScrnTab_BuyMenu(MenuOwner).TheBuyable);
         else
@@ -598,7 +594,7 @@ defaultproperties
          RenderWeight=2.000000
      End Object
      ItemImage=GUIImage'ScrnBalanceSrv.ScrnGUIBuyWeaponInfoPanel.IImage'
-     
+
      Begin Object Class=GUIImage Name=ILogo
         Image=texture'ScrnTex.HUD.ScrNBalanceLogo256'
         ImageColor=(B=255,G=255,R=255,A=64)
@@ -612,9 +608,9 @@ defaultproperties
          RenderWeight=1.000000
      End Object
      ScrnLogo=GUIImage'ScrnBalanceSrv.ScrnGUIBuyWeaponInfoPanel.ILogo'
-     
+
      Begin Object Class=GUIImage Name=TSCLogo
-        Image=Texture'ScrnTex.Tourney.TourneyMember' 
+        Image=Texture'ScrnTex.Tourney.TourneyMember'
         ImageColor=(B=255,G=255,R=255,A=255)
          ImageStyle=ISTY_Scaled
          WinTop=0.15
@@ -626,7 +622,7 @@ defaultproperties
          RenderWeight=2.000000
          bVisible=False
      End Object
-     TourneyLogo=GUIImage'ScrnBalanceSrv.ScrnGUIBuyWeaponInfoPanel.TSCLogo'     
+     TourneyLogo=GUIImage'ScrnBalanceSrv.ScrnGUIBuyWeaponInfoPanel.TSCLogo'
 
      Begin Object Class=GUIImage Name=LWeightBG
          //Image=Texture'KF_InterfaceArt_tex.Menu.Innerborder_transparent'
@@ -657,7 +653,7 @@ defaultproperties
      End Object
      WeightLabel=GUILabel'ScrnBalanceSrv.ScrnGUIBuyWeaponInfoPanel.LWeight'
      Weight="%i blocks"
-     
+
      Begin Object Class=moCheckBox Name=Mode0Check
         CaptionWidth=0.95
         OnCreateComponent=Mode0Check.InternalOnCreateComponent
@@ -673,11 +669,11 @@ defaultproperties
         OnChange=ScrnGUIBuyWeaponInfoPanel.FireModeChange
         RenderWeight=3
         bBoundToParent=True
-        bScaleToParent=True    
-        bVisible=False        
+        bScaleToParent=True
+        bVisible=False
      End Object
-     ch_FireMode0=moCheckBox'ScrnBalanceSrv.ScrnGUIBuyWeaponInfoPanel.Mode0Check'     
-     
+     ch_FireMode0=moCheckBox'ScrnBalanceSrv.ScrnGUIBuyWeaponInfoPanel.Mode0Check'
+
      Begin Object Class=moCheckBox Name=Mode1Check
         CaptionWidth=0.95
         OnCreateComponent=Mode1Check.InternalOnCreateComponent
@@ -693,12 +689,12 @@ defaultproperties
         OnChange=ScrnGUIBuyWeaponInfoPanel.FireModeChange
         RenderWeight=3
          bBoundToParent=True
-         bScaleToParent=True        
+         bScaleToParent=True
         bVisible=False
      End Object
-     ch_FireMode1=moCheckBox'ScrnBalanceSrv.ScrnGUIBuyWeaponInfoPanel.Mode1Check'     
+     ch_FireMode1=moCheckBox'ScrnBalanceSrv.ScrnGUIBuyWeaponInfoPanel.Mode1Check'
 
-    
+
     //adds checkbox next to damage bar
     Begin Object Class=moCheckBox Name=HSDmgCheck
         CaptionWidth=0.95
@@ -715,17 +711,17 @@ defaultproperties
         OnChange=ScrnGUIBuyWeaponInfoPanel.HSDamageToggle
         RenderWeight=3
         bBoundToParent=True
-        bScaleToParent=True        
+        bScaleToParent=True
         bVisible=False
      End Object
-     ch_HSDmgCheck=moCheckBox'ScrnBalanceSrv.ScrnGUIBuyWeaponInfoPanel.HSDmgCheck'   
+     ch_HSDmgCheck=moCheckBox'ScrnBalanceSrv.ScrnGUIBuyWeaponInfoPanel.HSDmgCheck'
 
     Begin Object Class=GUILabel Name=DamageCap
         Caption="Damage:"
         Hint="Weapon actual damage, including perk bonus"
         TextColor=(B=158,G=176,R=175)
         TextAlign=TXTA_Left
-        VertAlign=TXTA_Center        
+        VertAlign=TXTA_Center
         TextFont="UT2SmallFont"
         FontScale=FNS_Medium
         WinTop=0.58
@@ -736,8 +732,8 @@ defaultproperties
         bScaleToParent=True
         bVisible=False
     End Object
-    lblDamage=GUILabel'ScrnBalanceSrv.ScrnGUIBuyWeaponInfoPanel.DamageCap'      
-    
+    lblDamage=GUILabel'ScrnBalanceSrv.ScrnGUIBuyWeaponInfoPanel.DamageCap'
+
     Begin Object Class=ScrnGUIWeaponBar Name=DamageBar
         Hint="Weapon damage"
         BorderSize=3.000000
@@ -749,15 +745,15 @@ defaultproperties
         bScaleToParent=True
         bVisible=False
     End Object
-    barDamage=ScrnGUIWeaponBar'ScrnBalanceSrv.ScrnGUIBuyWeaponInfoPanel.DamageBar'     
-    
-    
+    barDamage=ScrnGUIWeaponBar'ScrnBalanceSrv.ScrnGUIBuyWeaponInfoPanel.DamageBar'
+
+
     Begin Object Class=GUILabel Name=DPSCap
         Caption="per second:"
         Hint="Damage per second"
         TextColor=(B=158,G=176,R=175)
         TextAlign=TXTA_Left
-        VertAlign=TXTA_Center        
+        VertAlign=TXTA_Center
         TextFont="UT2SmallFont"
         FontScale=FNS_Medium
         WinTop=0.65
@@ -768,8 +764,8 @@ defaultproperties
         bScaleToParent=True
         bVisible=False
     End Object
-    lblDPS=GUILabel'ScrnBalanceSrv.ScrnGUIBuyWeaponInfoPanel.DPSCap'    
-    
+    lblDPS=GUILabel'ScrnBalanceSrv.ScrnGUIBuyWeaponInfoPanel.DPSCap'
+
     Begin Object Class=ScrnGUIWeaponBar Name=DPSBar
         Hint="Damage per second or magazine (if able to shoot whole magazine"
         BorderSize=3.000000
@@ -781,15 +777,15 @@ defaultproperties
         bScaleToParent=True
         bVisible=False
     End Object
-    barDPS=ScrnGUIWeaponBar'ScrnBalanceSrv.ScrnGUIBuyWeaponInfoPanel.DPSBar'    
+    barDPS=ScrnGUIWeaponBar'ScrnBalanceSrv.ScrnGUIBuyWeaponInfoPanel.DPSBar'
     strSecondsPerShot="s/shot"
-    
+
     Begin Object Class=GUILabel Name=DPMCap
         Caption="per minute:"
         Hint="Damage per minute, including reloads"
         TextColor=(B=158,G=176,R=175)
         TextAlign=TXTA_Left
-        VertAlign=TXTA_Center        
+        VertAlign=TXTA_Center
         TextFont="UT2SmallFont"
         FontScale=FNS_Medium
         WinTop=0.72
@@ -800,8 +796,8 @@ defaultproperties
         bScaleToParent=True
         bVisible=False
     End Object
-    lblDPM=GUILabel'ScrnBalanceSrv.ScrnGUIBuyWeaponInfoPanel.DPMCap'    
-    
+    lblDPM=GUILabel'ScrnBalanceSrv.ScrnGUIBuyWeaponInfoPanel.DPMCap'
+
     Begin Object Class=ScrnGUIWeaponBar Name=DPMBar
         Hint="Damage per minute, including reloads"
         BorderSize=3.000000
@@ -813,16 +809,16 @@ defaultproperties
         bScaleToParent=True
         bVisible=False
     End Object
-    barDPM=ScrnGUIWeaponBar'ScrnBalanceSrv.ScrnGUIBuyWeaponInfoPanel.DPMBar'    
+    barDPM=ScrnGUIWeaponBar'ScrnBalanceSrv.ScrnGUIBuyWeaponInfoPanel.DPMBar'
     StrReloadsInDPM=", incl. %r reloads"
 
-    
+
     Begin Object Class=GUILabel Name=RangeCap
         Caption="Range:"
         Hint="Weapon range (for melee weapons) or blast radius (for explosives and fire)"
         TextColor=(B=158,G=176,R=175)
         TextAlign=TXTA_Left
-        VertAlign=TXTA_Center        
+        VertAlign=TXTA_Center
         TextFont="UT2SmallFont"
         FontScale=FNS_Medium
         WinTop=0.79
@@ -833,8 +829,8 @@ defaultproperties
         bScaleToParent=True
         bVisible=False
     End Object
-    lblRange=GUILabel'ScrnBalanceSrv.ScrnGUIBuyWeaponInfoPanel.RangeCap'    
-    
+    lblRange=GUILabel'ScrnBalanceSrv.ScrnGUIBuyWeaponInfoPanel.RangeCap'
+
     Begin Object Class=ScrnGUIWeaponBar Name=RangeBar
         Hint="Weapon range (for melee weapons) or blast radius (for explosives and fire)"
         BorderSize=3.000000
@@ -848,14 +844,14 @@ defaultproperties
     End Object
     barRange=ScrnGUIWeaponBar'ScrnBalanceSrv.ScrnGUIBuyWeaponInfoPanel.RangeBar'
     strMeters="meters"
-    
-    
+
+
     Begin Object Class=GUILabel Name=MagCap
         Caption="Magazine:"
         Hint="Ammo count in magazine"
         TextColor=(B=158,G=176,R=175)
         TextAlign=TXTA_Left
-        VertAlign=TXTA_Center        
+        VertAlign=TXTA_Center
         TextFont="UT2SmallFont"
         FontScale=FNS_Medium
         WinTop=0.86
@@ -866,8 +862,8 @@ defaultproperties
         bScaleToParent=True
         bVisible=False
     End Object
-    lblMag=GUILabel'ScrnBalanceSrv.ScrnGUIBuyWeaponInfoPanel.MagCap'    
-    
+    lblMag=GUILabel'ScrnBalanceSrv.ScrnGUIBuyWeaponInfoPanel.MagCap'
+
     Begin Object Class=ScrnGUIWeaponBar Name=MagBar
         Hint="Ammo count in magazine"
         BorderSize=3.000000
@@ -879,15 +875,15 @@ defaultproperties
         bScaleToParent=True
         bVisible=False
     End Object
-    barMag=ScrnGUIWeaponBar'ScrnBalanceSrv.ScrnGUIBuyWeaponInfoPanel.MagBar'    
-    
-    
+    barMag=ScrnGUIWeaponBar'ScrnBalanceSrv.ScrnGUIBuyWeaponInfoPanel.MagBar'
+
+
     Begin Object Class=GUILabel Name=AmmoCap
         Caption="Total Ammo:"
         Hint="Total amount of ammo that can be carried for this weapon"
         TextColor=(B=158,G=176,R=175)
         TextAlign=TXTA_Left
-        VertAlign=TXTA_Center        
+        VertAlign=TXTA_Center
         TextFont="UT2SmallFont"
         FontScale=FNS_Medium
         WinTop=0.93
@@ -898,8 +894,8 @@ defaultproperties
         bScaleToParent=True
         bVisible=False
     End Object
-    lblAmmo=GUILabel'ScrnBalanceSrv.ScrnGUIBuyWeaponInfoPanel.AmmoCap'    
-    
+    lblAmmo=GUILabel'ScrnBalanceSrv.ScrnGUIBuyWeaponInfoPanel.AmmoCap'
+
     Begin Object Class=ScrnGUIWeaponBar Name=AmmoBar
         Hint="Total amount of ammo that can be carried for this weapon"
         BorderSize=3.000000
@@ -910,6 +906,6 @@ defaultproperties
         bBoundToParent=True
         bScaleToParent=True
         bVisible=False
-    End Object    
-    barAmmo=ScrnGUIWeaponBar'ScrnBalanceSrv.ScrnGUIBuyWeaponInfoPanel.AmmoBar'    
+    End Object
+    barAmmo=ScrnGUIWeaponBar'ScrnBalanceSrv.ScrnGUIBuyWeaponInfoPanel.AmmoBar'
 }

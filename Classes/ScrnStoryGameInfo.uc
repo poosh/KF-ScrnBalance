@@ -11,11 +11,22 @@ event InitGame( string Options, out string Error )
     ConfigMaxPlayers = default.MaxPlayers;
 
     super.InitGame(Options, Error);
+    CheckScrnBalance();
 
     MaxPlayers = Clamp(GetIntOption( Options, "MaxPlayers", MaxPlayers ),0,32);
     default.MaxPlayers = Clamp( ConfigMaxPlayers, 0, 32 );
 
     log("MonsterCollection = " $ MonsterCollection);
+}
+
+protected function CheckScrnBalance()
+{
+    if ( ScrnBalanceMut == none ) {
+        log("ScrnBalance is not loaded! Loading it now...", class.name);
+        AddMutator(class.outer.name $ ".ScrnBalance", false);
+        if ( ScrnBalanceMut == none )
+            log("Unable to spawn ScrnBalance!", class.name);
+    }
 }
 
 event PostLogin( PlayerController NewPlayer )
