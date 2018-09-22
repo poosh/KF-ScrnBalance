@@ -11,7 +11,7 @@ var vector PistolSlideLockedOffset; //for tactical reload
 
 simulated function BringUp(optional Weapon PrevWeapon)
 {
-	Super.BringUp(PrevWeapon);
+    Super.BringUp(PrevWeapon);
     if (MagAmmoRemaining == 0)
         LockSlideBack();
 }
@@ -45,7 +45,7 @@ simulated function WeaponTick(float dt)
         }
     }
     
-	Super.WeaponTick(dt);
+    Super.WeaponTick(dt);
 }
 
 //allowing +1 reload with full mag

@@ -41,8 +41,8 @@ simulated function ClientFinishReloading()
         PlayIdle();
     }
 
-	if(Instigator.PendingWeapon != none && Instigator.PendingWeapon != self)
-		Instigator.Controller.ClientSwitchToBestWeapon();
+    if(Instigator.PendingWeapon != none && Instigator.PendingWeapon != self)
+        Instigator.Controller.ClientSwitchToBestWeapon();
 }
 
 simulated function Timer()

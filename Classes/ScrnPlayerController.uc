@@ -245,28 +245,28 @@ function InitPlayerReplicationInfo()
 //copypaste from KFPlayerController with constant value of 24 replaced by Custom3DScopeSens to set custom sensitivity for 3D scopes
 function float GetMouseModifier()
 {
-	local KFWeapon weap;
+    local KFWeapon weap;
     
-	if (Pawn == none || Pawn.Weapon == none)
-		return -1.0;
+    if (Pawn == none || Pawn.Weapon == none)
+        return -1.0;
 
-	weap = KFWeapon(Pawn.Weapon);
+    weap = KFWeapon(Pawn.Weapon);
 
-	if (weap== none )
-		return -1.0;
+    if (weap== none )
+        return -1.0;
     
-	if(weap.KFScopeDetail == KF_ModelScope && weap.ShouldDrawPortal())
-	{
-		return Custom3DScopeSens;
-	}
-	else if(weap.KFScopeDetail == KF_ModelScopeHigh && weap.ShouldDrawPortal())
-	{
-		return Custom3DScopeSens;
-	}
-	else
-	{
-		return -1.0;
-	}
+    if(weap.KFScopeDetail == KF_ModelScope && weap.ShouldDrawPortal())
+    {
+        return Custom3DScopeSens;
+    }
+    else if(weap.KFScopeDetail == KF_ModelScopeHigh && weap.ShouldDrawPortal())
+    {
+        return Custom3DScopeSens;
+    }
+    else
+    {
+        return -1.0;
+    }
 }
 
 simulated function ClientForceCollectGarbage()

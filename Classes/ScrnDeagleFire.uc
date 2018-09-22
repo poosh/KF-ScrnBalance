@@ -7,26 +7,26 @@ var bool  bCheck4Ach;
 //lock slide back if fired last round
 simulated function bool AllowFire()
 {
-	if( (Level.TimeSeconds - LastFireTime > FireRate) && KFWeapon(Weapon).MagAmmoRemaining <= 1 && !KFWeapon(Weapon).bIsReloading )
-	{
-    	if( Level.TimeSeconds - LastClickTime>FireRate )
+    if( (Level.TimeSeconds - LastFireTime > FireRate) && KFWeapon(Weapon).MagAmmoRemaining <= 1 && !KFWeapon(Weapon).bIsReloading )
+    {
+        if( Level.TimeSeconds - LastClickTime>FireRate )
         {
             ScrnDeagle(Weapon).LockSlideBack(); //lock slide back
             ScrnDeagle(Weapon).RotateHammerBack(); //rotate hammer back
         }
-	}
+    }
     
-	if( (Level.TimeSeconds - LastFireTime > FireRate) && KFWeapon(Weapon).MagAmmoRemaining >= 2 && !KFWeapon(Weapon).bIsReloading )
-	{
-    	if( Level.TimeSeconds - LastClickTime>FireRate )
+    if( (Level.TimeSeconds - LastFireTime > FireRate) && KFWeapon(Weapon).MagAmmoRemaining >= 2 && !KFWeapon(Weapon).bIsReloading )
+    {
+        if( Level.TimeSeconds - LastClickTime>FireRate )
             ScrnDeagle(Weapon).AddExtraSlideMovement( GetFireSpeed() ); //add extra slide movement
-	}
+    }
     if( (Level.TimeSeconds - LastFireTime > FireRate) && KFWeapon(Weapon).MagAmmoRemaining >= 1 && !KFWeapon(Weapon).bIsReloading )
-	{
-    	if( Level.TimeSeconds - LastClickTime>FireRate )
+    {
+        if( Level.TimeSeconds - LastClickTime>FireRate )
             ScrnDeagle(Weapon).DoHammerDrop( GetFireSpeed() ); //drop hammer
     }
-	return Super.AllowFire();
+    return Super.AllowFire();
 }
 
 

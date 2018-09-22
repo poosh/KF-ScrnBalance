@@ -28,9 +28,9 @@ simulated function bool AllowFire()
 event ModeDoFire()
 {
     if( KFWeapon(Weapon).MagAmmoRemaining <= 1 && !KFWeapon(Weapon).bIsReloading )
-	{
+    {
         ScrnWinchester(Weapon).HideBullet(); //hide bullet
-	}
+    }
     super(KFFire).ModeDoFire(); // skip WinchesterFire
 }
 

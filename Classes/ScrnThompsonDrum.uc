@@ -13,7 +13,7 @@ var vector ChargingHandleOffset; //for tactical reload
 
 simulated function BringUp(optional Weapon PrevWeapon)
 {
-	Super.BringUp(PrevWeapon);
+    Super.BringUp(PrevWeapon);
     if (bBoltClosed)
         MoveBoltForward();
 }
@@ -53,7 +53,7 @@ simulated function WeaponTick(float dt)
         }
     }
     
-	Super.WeaponTick(dt);
+    Super.WeaponTick(dt);
 }
 
 simulated function ClientFinishReloading()

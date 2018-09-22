@@ -3,18 +3,18 @@ class ScrnFlareRevolverImpact extends FlameImpact;
 
 simulated function PostBeginPlay()
 {
-	Super.Postbeginplay();
-	DoLight();
+    Super.Postbeginplay();
+    DoLight();
 }
 simulated function DoLight()
 {
-	if ( !Level.bDropDetail && (Instigator != None)
-		&& ((Level.TimeSeconds - LastRenderTime < 0.2) || (PlayerController(Instigator.Controller) != None)) )
-	{
-		bDynamicLight = true;
-		SetTimer(0.1, true);
-	}
-	else Timer();
+    if ( !Level.bDropDetail && (Instigator != None)
+        && ((Level.TimeSeconds - LastRenderTime < 0.2) || (PlayerController(Instigator.Controller) != None)) )
+    {
+        bDynamicLight = true;
+        SetTimer(0.1, true);
+    }
+    else Timer();
 }
 
 simulated function Timer()

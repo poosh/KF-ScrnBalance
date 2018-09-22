@@ -37,7 +37,7 @@ simulated function MoveBoltToLocked()
 //lock bolt if empty and selected
 simulated function BringUp(optional Weapon PrevWeapon)
 {
-	Super.BringUp(PrevWeapon);
+    Super.BringUp(PrevWeapon);
     if (MagAmmoRemaining == 0 )
         MoveBoltToLocked();
 }
@@ -55,10 +55,10 @@ simulated function WeaponTick(float dt)
     }
     //handles releasing bolt after reload
     if(bIsReloading && !bBoltReleased && Level.TimeSeconds >= BoltReleaseTime)
-	{
-		bBoltReleased = true;
-		MoveBoltForward(); //move bolt forward (only noticeable for empty reload)
-	}
+    {
+        bBoltReleased = true;
+        MoveBoltForward(); //move bolt forward (only noticeable for empty reload)
+    }
     Super.WeaponTick(dt);
 }
  

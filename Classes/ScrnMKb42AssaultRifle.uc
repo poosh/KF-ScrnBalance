@@ -18,7 +18,7 @@ simulated function AltFire(float F)
 
 simulated function BringUp(optional Weapon PrevWeapon)
 {
-	Super.BringUp(PrevWeapon);
+    Super.BringUp(PrevWeapon);
     if (bBoltClosed)
         MoveBoltForward();
 }
@@ -54,7 +54,7 @@ simulated function WeaponTick(float dt)
         }
     }
     
-	Super.WeaponTick(dt);
+    Super.WeaponTick(dt);
 }
 
 // request an auto reload on the server - happens when the player dry fires

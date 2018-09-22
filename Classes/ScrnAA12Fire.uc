@@ -5,11 +5,11 @@ class ScrnAA12Fire extends AA12Fire;
 simulated function bool AllowFire()
 {
 
-	if( KFWeapon(Weapon).MagAmmoRemaining <= 0 && !KFWeapon(Weapon).bIsReloading )
-	{
+    if( KFWeapon(Weapon).MagAmmoRemaining <= 0 && !KFWeapon(Weapon).bIsReloading )
+    {
         ScrnAA12AutoShotgun(Weapon).bBoltClosed = true; //set flag
-	}
-	return Super.AllowFire();
+    }
+    return Super.AllowFire();
 }
 */
 defaultproperties

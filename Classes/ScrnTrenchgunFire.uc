@@ -27,9 +27,9 @@ simulated function bool AllowFire()
 event ModeDoFire()
 {
     if( KFWeapon(Weapon).MagAmmoRemaining <= 1 && !KFWeapon(Weapon).bIsReloading )
-	{
+    {
         ScrnTrenchgun(Weapon).HideBullet(); //hide bullet
-	}
+    }
     Super.ModeDoFire();
 }
 

@@ -110,7 +110,7 @@ simulated function ClientReload()
 
 simulated function ClientFinishReloading()
 {
-	bIsReloading = false;
+    bIsReloading = false;
     if (!bShortReload )
         PlayIdle();
     if (bShortReload )
@@ -118,8 +118,8 @@ simulated function ClientFinishReloading()
         PlayReloadEndAnim();
     }
 
-	if(Instigator.PendingWeapon != none && Instigator.PendingWeapon != self)
-		Instigator.Controller.ClientSwitchToBestWeapon();
+    if(Instigator.PendingWeapon != none && Instigator.PendingWeapon != self)
+        Instigator.Controller.ClientSwitchToBestWeapon();
 }
 
 function AddReloadedAmmo()

@@ -10,7 +10,7 @@ simulated function Timer()
     if ( InitialDir == vect(0,0,0) )
         InitialDir = Normal(Velocity);
 
-	Acceleration = vect(0,0,0);
+    Acceleration = vect(0,0,0);
     Super.Timer();
     if ( (Seeking != None) && (Seeking != Instigator) )
     {
@@ -19,19 +19,19 @@ simulated function Timer()
         LocalSeekingLocation = Seeking.GetBoneCoords(Pawn(Seeking).HeadBone).origin; //get HeadBone name and location
         else
         LocalSeekingLocation = Seeking.Location; //get Actor's location
-		// Do normal guidance to target.
-		ForceDir = Normal(LocalSeekingLocation - Location);
+        // Do normal guidance to target.
+        ForceDir = Normal(LocalSeekingLocation - Location);
 
-		if( (ForceDir Dot InitialDir) > 0 )
-		{
-			VelMag = VSize(Velocity);
+        if( (ForceDir Dot InitialDir) > 0 )
+        {
+            VelMag = VSize(Velocity);
             // Increase the multiplier that is currently 0.8 to make the rocket track better if you need to
-			ForceDir = Normal(ForceDir * 0.8 * VelMag + Velocity);
-			Velocity =  VelMag * ForceDir;
-			Acceleration += 5 * ForceDir;
-		}
-		// Update rocket so it faces in the direction its going.
-		SetRotation(rotator(Velocity));
+            ForceDir = Normal(ForceDir * 0.8 * VelMag + Velocity);
+            Velocity =  VelMag * ForceDir;
+            Acceleration += 5 * ForceDir;
+        }
+        // Update rocket so it faces in the direction its going.
+        SetRotation(rotator(Velocity));
     }
 }
 

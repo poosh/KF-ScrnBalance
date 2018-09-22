@@ -14,35 +14,35 @@ var vector ZoomedViewOffset;
 //copypaste to add additional offset
 simulated event RenderOverlays( Canvas Canvas )
 {
-	local int m;
+    local int m;
     local vector DrawOffset;
-	if (Instigator == None)
-		return;
+    if (Instigator == None)
+        return;
 
-	if ( Instigator.Controller != None )
-		Hand = Instigator.Controller.Handedness;
+    if ( Instigator.Controller != None )
+        Hand = Instigator.Controller.Handedness;
 
-	if ((Hand < -1.0) || (Hand > 1.0))
-		return;
+    if ((Hand < -1.0) || (Hand > 1.0))
+        return;
 
-	// draw muzzleflashes/smoke for all fire modes so idle state won't
-	// cause emitters to just disappear
-	for (m = 0; m < NUM_FIRE_MODES; m++)
-	{
-		if (FireMode[m] != None)
-		{
-			FireMode[m].DrawMuzzleFlash(Canvas);
-		}
-	}
+    // draw muzzleflashes/smoke for all fire modes so idle state won't
+    // cause emitters to just disappear
+    for (m = 0; m < NUM_FIRE_MODES; m++)
+    {
+        if (FireMode[m] != None)
+        {
+            FireMode[m].DrawMuzzleFlash(Canvas);
+        }
+    }
     DrawOffset = (90/DisplayFOV * ZoomedViewOffset) >> Instigator.GetViewRotation(); //calculate additional offset
-	SetLocation( Instigator.Location + Instigator.CalcDrawOffset(self) + DrawOffset); //add additional offset
-	SetRotation( Instigator.GetViewRotation() + ZoomRotInterp);
+    SetLocation( Instigator.Location + Instigator.CalcDrawOffset(self) + DrawOffset); //add additional offset
+    SetRotation( Instigator.GetViewRotation() + ZoomRotInterp);
 
-	//PreDrawFPWeapon();	// Laurent -- Hook to override things before render (like rotation if using a staticmesh)
+    //PreDrawFPWeapon();    // Laurent -- Hook to override things before render (like rotation if using a staticmesh)
 
-	bDrawingFirstPerson = true;
-	Canvas.DrawActor(self, false, false, DisplayFOV);
-	bDrawingFirstPerson = false;
+    bDrawingFirstPerson = true;
+    Canvas.DrawActor(self, false, false, DisplayFOV);
+    bDrawingFirstPerson = false;
 }
 
     

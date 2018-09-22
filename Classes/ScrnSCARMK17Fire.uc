@@ -11,7 +11,7 @@ simulated function bool AllowFire()
         ScrnSCARMK17AssaultRifle(Weapon).bBoltLockQueued = true; //make sure it only gets set once
         ScrnSCARMK17AssaultRifle(Weapon).BoltLockTime = (Level.TimeSeconds + 0.075); //move bolt to locked position after 0.075 seconds
     }
-	return Super.AllowFire();
+    return Super.AllowFire();
 }
 
 defaultproperties

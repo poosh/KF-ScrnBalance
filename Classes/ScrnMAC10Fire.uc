@@ -12,10 +12,10 @@ static function PreloadAssets(LevelInfo LevelInfo, optional KFFire Spawned)
 {
     local ScrnMac10Fire ScrnSpawned;
     super.PreloadAssets(LevelInfo, Spawned);
-	if ( default.BoltCloseSoundRef != "" )
-	{
-		default.BoltCloseSound = sound(DynamicLoadObject(default.BoltCloseSoundRef, class'Sound', true));
-	}
+    if ( default.BoltCloseSoundRef != "" )
+    {
+        default.BoltCloseSound = sound(DynamicLoadObject(default.BoltCloseSoundRef, class'Sound', true));
+    }
     ScrnSpawned = ScrnMac10Fire(Spawned);
     if ( ScrnSpawned != none )
     {
@@ -26,12 +26,12 @@ static function PreloadAssets(LevelInfo LevelInfo, optional KFFire Spawned)
 //close bolt if attempted to fire when empty
 simulated function bool AllowFire()
 {
-	if(KFWeapon(Weapon).MagAmmoRemaining == 0 && !KFWeapon(Weapon).bIsReloading )
-	{
-    	if( Level.TimeSeconds - LastClickTime>FireRate )
+    if(KFWeapon(Weapon).MagAmmoRemaining == 0 && !KFWeapon(Weapon).bIsReloading )
+    {
+        if( Level.TimeSeconds - LastClickTime>FireRate )
             ScrnMAC10MP(Weapon).MoveBoltForward(); //close bolt on empty chamber
-	}
-	return Super.AllowFire();
+    }
+    return Super.AllowFire();
 }
 
 

@@ -9,10 +9,10 @@ static function PreloadAssets(LevelInfo LevelInfo, optional KFFire Spawned)
 {
     local ScrnMKb42Fire ScrnSpawned;
     super.PreloadAssets(LevelInfo, Spawned);
-	if ( default.BoltCloseSoundRef != "" )
-	{
-		default.BoltCloseSound = sound(DynamicLoadObject(default.BoltCloseSoundRef, class'Sound', true));
-	}
+    if ( default.BoltCloseSoundRef != "" )
+    {
+        default.BoltCloseSound = sound(DynamicLoadObject(default.BoltCloseSoundRef, class'Sound', true));
+    }
     ScrnSpawned = ScrnMKb42Fire(Spawned);
     if ( ScrnSpawned != none )
     {

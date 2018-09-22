@@ -4,24 +4,24 @@ class ScrnLAWExplosion extends LAWExplosion;
 //added nadelight
 simulated function PostBeginPlay()
 {
-	Super.Postbeginplay();
-	NadeLight();
+    Super.Postbeginplay();
+    NadeLight();
 }
 
 simulated function NadeLight()
 {
-	if ( !Level.bDropDetail && (Instigator != None)
-		&& ((Level.TimeSeconds - LastRenderTime < 0.2) || (PlayerController(Instigator.Controller) != None)) )
-	{
-		bDynamicLight = true;
-		SetTimer(0.5, false); //0.25
-	}
-	else Timer();
+    if ( !Level.bDropDetail && (Instigator != None)
+        && ((Level.TimeSeconds - LastRenderTime < 0.2) || (PlayerController(Instigator.Controller) != None)) )
+    {
+        bDynamicLight = true;
+        SetTimer(0.5, false); //0.25
+    }
+    else Timer();
 }
 
 simulated function Timer()
 {
-	bDynamicLight = false;
+    bDynamicLight = false;
 }
 
 defaultproperties
