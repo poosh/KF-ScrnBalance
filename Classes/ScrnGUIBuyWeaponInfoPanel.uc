@@ -7,6 +7,9 @@ var automated    ScrnGUIWeaponBar     barDamage, barDPS, barDPM, barRange, barMa
 
 var automated     moCheckBox           ch_FireMode0, ch_FireMode1;
 
+//adds headshot damage display toggle checkbox
+var automated     moCheckBox           ch_HSDmgCheck;
+var bool bHSDamage;
 
 var int TopDamage, TopDPM, TopMag, TopAmmo;
 var float TopDPS, TopRange, TopRadius;
@@ -43,7 +46,7 @@ function float GetBarPct(float Value, float MaxValue)
     return Sqrt(Value) / Sqrt(MaxValue);
 }
 
-function LoadStats(GUIBuyable NewBuyable, byte FireMode, optional bool bSetTopValuesOnly)
+function LoadStats(GUIBuyable NewBuyable, byte FireMode, optional bool bSetTopValuesOnly, optional bool bHSDamage)
 {
     local KFPlayerReplicationInfo KFPRI;
     local class<KFVeterancyTypes> Perk;
@@ -54,12 +57,17 @@ function LoadStats(GUIBuyable NewBuyable, byte FireMode, optional bool bSetTopVa
     local class<Projectile> ProjClass;
     local class<KFMeleeFire> MeeleeFireClass;
     local class<DamageType> DamType;
+    local class<KFWeaponDamageType> DamTypeImpact;
     local class<KFWeaponDamageType> KFDamType;
-    local int BaseDmg, PerkedValue, Mult;
+    local int BaseDmg, PerkedValue, Mult, OldPerkedValue, BaseImpactDmg, PerkedValueHS;
     local float FireTime, ReloadTime, dmg, range, ammo, MagTime;
     local float PerkBonus;
+    local float HSMult, OldHSMult; //headshot multiplier
     local String s;
+    local string ProjName;
     local int MagCapacity, MagCount, TotalAmmo;
+    local class<M99bullet> M99Proj;
+    local class<CrossbowArrow> CrossbowProj;
 
     // reset values
     if ( !bSetTopValuesOnly ) {
@@ -124,15 +132,13 @@ function LoadStats(GUIBuyable NewBuyable, byte FireMode, optional bool bSetTopVa
                 barDPM.SetHighlight(false);
             }
             if ( NewBuyable.ItemWeaponClass.default.bHoldToReload ) 
-                ReloadTime *= MagCapacity; // per-buller reload        
+                ReloadTime *= MagCapacity; // per-bullet reload        
         }
         else {
             ReloadTime = 0.000001;
             barDPM.SetHighlight(false);
         }
     }
-    
-
     
     // total ammo
     TotalAmmo = 0;
@@ -164,15 +170,103 @@ function LoadStats(GUIBuyable NewBuyable, byte FireMode, optional bool bSetTopVa
     ProjClass = WF.default.ProjectileClass;
     MeeleeFireClass = class<KFMeleeFire>(WF);
 
+    
     // damage
     if ( IFClass != none ) {
         BaseDmg = IFClass.default.DamageMax;
         DamType = IFClass.default.DamageType;
+        KFDamType = class<KFWeaponDamageType>(DamType);
+        HSMult = KFDamType.default.HeadShotDamageMult; //this works for all hitscan weapons
         Mult = WF.default.AmmoPerFire;
+        //set HSMult to 0 if DamType can't do headshots
+        if (KFDamType.default.bCheckForHeadShots == false)
+            HSMult = 0;
+        
     }
+    //projectile
     else if ( ProjFireClass != none && ProjClass != none ) {
         BaseDmg = ProjClass.default.Damage;
         DamType = ProjClass.default.MyDamageType;
+        KFDamType = class<KFWeaponDamageType>(DamType);
+        DamType = ProjClass.default.MyDamageType;
+
+        if (bHSDamage)
+        {   
+            //first, set HSMult to 0 so if projectile headshot mult isn't detected there won't be a stupid value displayed
+            HSMult = 0; //test
+
+            //a ton of things extend shotgunbullet so handle it first and set it again later
+            
+            //handle shotgun projectiles
+            if ( class<ShotgunBullet>(ProjClass) != none )
+                HSMult = KFDamType.default.HeadShotDamageMult;; //usually 1.1x
+                
+            //The Shotguns actually do 1.65x because of two multipliers, handle them seperately like this
+            // prevent other non-shotgun shotgunbullets from getting 1.65x (Mainly Horzine Tech Cryo dart weapons)
+            if ( class<ScrnCustomShotgunBullet>(ProjClass) != none )
+                HSMult = class<ScrnCustomShotgunBullet>(ProjClass).default.HeadShotDamageMult * KFDamType.default.HeadShotDamageMult; //1.1 * 1.5 = 1.65
+                
+            //quick hack to stop flamethrower from displaying 1.1x headshot damage
+            if ( class<FlameTendril>(ProjClass) != none )
+                HSMult = 0; 
+                
+            //handle Trenchgun projectiles
+            if ( class<TrenchgunBullet>(ProjClass) != none )
+                HSMult = class<TrenchgunBullet>(ProjClass).default.HeadShotDamageMult * KFDamType.default.HeadShotDamageMult;
+            
+            //handle buzzsaw bow and derived projectiles
+            if ( class<CrossBuzzsawBlade>(ProjClass) != none )
+                HSMult = class<CrossBuzzsawBlade>(ProjClass).default.HeadShotDamageMult;
+            
+            //handle m99 and derived projectiles
+            if ( class<M99Bullet>(ProjClass) != none )
+                HSMult = class<M99Bullet>(ProjClass).default.HeadShotDamageMult;
+                
+            //handle CrossbowArrow and derived projectiles
+            if ( class<CrossbowArrow>(ProjClass) != none )
+                HSMult = class<CrossbowArrow>(ProjClass).default.HeadShotDamageMult;
+                
+            //handle M79 projectiles (HS multiplier is in impact damage type)
+            if ( class<M79GrenadeProjectile>(ProjClass) != none )
+            {
+                BaseDmg = class<M79GrenadeProjectile>(ProjClass).default.ImpactDamage;
+                DamType = class<M79GrenadeProjectile>(ProjClass).default.ImpactDamageType;
+                HSMult = Class<KFWeaponDamageType>(DamType).default.HeadShotDamageMult;
+            }
+            
+            //handle SP grenade projectiles (HS multiplier is in impact damage type)
+            if ( class<SPGrenadeProjectile>(ProjClass) != none )
+            {
+                BaseDmg = class<SPGrenadeProjectile>(ProjClass).default.ImpactDamage;
+                DamType = class<SPGrenadeProjectile>(ProjClass).default.ImpactDamageType;
+                HSMult = Class<KFWeaponDamageType>(DamType).default.HeadShotDamageMult;
+            }
+            
+            //handle LAW projectiles, but ignore classes that don't use it's impact damage (ZED Guns)
+            if ( class<LAWProj>(ProjClass) != none && class<ZEDGunProjectile>(ProjClass) == none && class<ZEDMKIIPrimaryProjectile>(ProjClass) == none
+            && class<ZEDMKIISecondaryProjectile>(ProjClass) == none )
+            {
+                BaseDmg = class<LAWProj>(ProjClass).default.ImpactDamage;
+                DamType = class<LAWProj>(ProjClass).default.ImpactDamageType;
+                HSMult = Class<KFWeaponDamageType>(DamType).default.HeadShotDamageMult;
+            }
+            
+            //handle the ZED gun projectiles (Uses HS Damage in Damtype)
+            else if ( class<ZEDGunProjectile>(ProjClass) != none || class<ZEDMKIIPrimaryProjectile>(ProjClass) != none
+            || class<ZEDMKIISecondaryProjectile>(ProjClass) != none )
+            {
+                BaseDmg = class<LAWProj>(ProjClass).default.Damage;
+                DamType = class<LAWProj>(ProjClass).default.MyDamageType;
+                HSMult = Class<KFWeaponDamageType>(DamType).default.HeadShotDamageMult;
+            }
+            
+            //now recast DamType as a KFDamType and check if projclass's MyDamageType does not check for headshots (fix cryo thrower)
+            KFDamType = class<KFWeaponDamageType>(DamType);
+            if (KFDamType.default.bCheckForHeadShots == false)
+                HSMult = 0;
+            
+        }
+
         Mult = WF.default.AmmoPerFire * ProjFireClass.default.ProjPerFire;
         
         range = ProjClass.default.DamageRadius;
@@ -182,9 +276,12 @@ function LoadStats(GUIBuyable NewBuyable, byte FireMode, optional bool bSetTopVa
             barRange.Caption = string(range/50) @ strMeters;
         }            
     }
+    //melee
     else if ( MeeleeFireClass != none ) {
         BaseDmg = MeeleeFireClass.default.MeleeDamage;
-        DamType = MeeleeFireClass.default.hitDamageClass;    
+        DamType = MeeleeFireClass.default.hitDamageClass;
+        KFDamType = class<KFWeaponDamageType>(DamType);
+        HSMult = KFDamType.default.HeadShotDamageMult;     
         Mult = 1;
         
         range = MeeleeFireClass.default.weaponRange;
@@ -199,46 +296,114 @@ function LoadStats(GUIBuyable NewBuyable, byte FireMode, optional bool bSetTopVa
     if ( KFDamType != none && KFDamType.default.bDealBurningDamage && class<DamTypeMAC10MPInc>(KFDamType) == none )
         BaseDmg *= 1.5; // stupid fire damage multiplier in KFMonster.TakeDamage()
     
-    if ( BaseDmg > 0 && Perk != none )
-        PerkedValue = Perk.static.AddDamage(KFPRI, none, KFPawn(PlayerOwner().Pawn), BaseDmg, DamType);
-    else 
-        PerkedValue = BaseDmg;
+    //handles old non headshot calculations
+    if (!bHSDamage)
+    {
+        if ( BaseDmg > 0 && Perk != none )
+            PerkedValue = Perk.static.AddDamage(KFPRI, none, KFPawn(PlayerOwner().Pawn), BaseDmg, DamType);
+        else 
+            PerkedValue = BaseDmg;
     
-    if ( class<LAWProj>(ProjClass) != none ) {
-        // huskgun and flare revolvers deal both impact+fire damage
-        if ( class<FlareRevolverProjectile>(ProjClass) != none || class<HuskGunProjectile>(ProjClass) != none ) {
-            dmg = class<LAWProj>(ProjClass).default.ImpactDamage;
-            BaseDmg += dmg;
+        //calculation for flares and huskguns 
+        if ( class<FlareRevolverProjectile>(ProjClass) != none || class<HuskGunProjectile>(ProjClass) != none  ) {
+            dmg = class<LAWProj>(ProjClass).default.ImpactDamage; //impact damage
+            //base dmg is burn damage (vanilla base 25)
+            //get bonus burn damage
+            BaseDmg = class<LAWProj>(ProjClass).default.Damage;
             if ( Perk != none )
-                PerkedValue += Perk.static.AddDamage(KFPRI, none, KFPawn(PlayerOwner().Pawn), dmg, class<LAWProj>(ProjClass).default.ImpactDamageType); 
-            else 
-                PerkedValue += dmg; 
+            {
+                BaseDmg += Perk.static.AddDamage(KFPRI, none, KFPawn(PlayerOwner().Pawn), BaseDmg, class<LAWProj>(ProjClass).default.MyDamageType); //attempt to fix wrong value
+                BaseDmg *= 0.92; //correction for some unknown reason
+            }
+            PerkedValue = BaseDmg+dmg; //damage is burn damage + impact damage
+            BaseDmg = dmg; //change base dmg to impact damage for display purposes
+        }
+    
+        if ( Mult == 1 ) {
+            s = string(PerkedValue); 
+        }
+        else {
+            s = Mult $ "x" $ PerkedValue @ "=" @ PerkedValue*Mult;
+            PerkedValue *= Mult;
+            BaseDmg *= Mult;
         }
     }
-        
-    if ( Mult == 1 ) {
-        s = string(PerkedValue);
+    //calculate headshot damage
+    if (bHSDamage )
+    {
+        //handle hitscan weapons
+            //get perk boosted damage value
+            if ( BaseDmg > 0 && Perk != none )
+                PerkedValue = Perk.static.AddDamage(KFPRI, none, KFPawn(PlayerOwner().Pawn), BaseDmg, DamType);
+            else 
+                PerkedValue = BaseDmg;
+                
+            //get headshot damage
+            OldHSMult = HSMult; //store HSMult
+            HSMult *= Perk.static.GetHeadShotDamMulti(KFPRI, KFPawn(PlayerOwner().Pawn), DamType); //get perk boosted HS multiplier
+            //OldPerkedValue = PerkedValue; //store old perked value
+            PerkedValueHS = PerkedValue * HSMult; //hopefully this affects hitscan stuff only
+
+        if ( Mult == 1 ) {
+            s = string(PerkedValueHS);
+        }
+        else {
+            //s = Mult $ "x" $ PerkedValueHS @ "=" @ PerkedValueHS*Mult; //all ints
+            s = Mult $ "x("$PerkedValue@"*"@HSMult@") ="@PerkedValueHS*Mult; //all ints
+            PerkedValue *= Mult;
+            BaseDmg *= Mult;
+        }
     }
-    else {
-        s = Mult $ "x" $ PerkedValue @ "=" @ PerkedValue*Mult;
-        PerkedValue *= Mult;
-        BaseDmg *= Mult;
-    }
+    
     TopDamage = max(TopDamage, PerkedValue);
     
+    //sets numbers in info box
     if ( !bSetTopValuesOnly ) {
         barDamage.Value = barDamage.High * GetBarPct(PerkedValue, TopDamage);
-        barDamage.SetHighlight(PerkedValue > BaseDmg);
-        if ( PerkedValue != BaseDmg ) {
+        //handle setting highlight
+        if (!bHSDamage)
+        {
+            barDamage.SetHighlight(PerkedValue > BaseDmg);
+        }
+        else
+        {
+            barDamage.SetHighlight(HSMult > OldHSMult || (PerkedValue > BaseDmg));
+        }
+        
+        if (!bHSDamage && BaseDmg > 0 && Mult == 1)
+        {
+            if ( PerkedValue != BaseDmg ) {
+                if ( PerkedValue > BaseDmg )
+                    S @= "("$string(BaseDmg)$"+"$string(PerkedValue-BaseDmg)$")";
+                else
+                    S @= "("$string(BaseDmg)$string(PerkedValue-BaseDmg)$")";
+            }
+            barDamage.Caption = S;
+        }
+        else if (HSMult > 0 && BaseDmg > 0 && Mult == 1)
+        {
+            //this is the headshots string display, PerkedDamage is the headshot damage
             if ( PerkedValue > BaseDmg )
-                S @= "("$string(BaseDmg)$"+"$string(PerkedValue-BaseDmg)$")";
+                S @= "("$string(BaseDmg)$"+"$string(PerkedValue-BaseDmg)$")*"$string(HSMult)$"";
             else
-                S @= "("$string(BaseDmg)$string(PerkedValue-BaseDmg)$")";
+                S @= "("$string(BaseDmg)$")*"$string(HSMult)$"";
+
+        }
+        if (bHSDamage && HSMult == 0 )
+        {
+            S @= "(No headshot damage)";
         }
         barDamage.Caption = S;
     }
     BaseDmg = PerkedValue;
-    
+    if (!bHSDamage)
+    {
+        //do nothing
+    }
+    else
+    {
+        BaseDmg = PerkedValueHS; //use headshot damage 
+    }
     
     if ( BaseDmg > 0 ) {
         // DPS
@@ -344,8 +509,7 @@ function Display(GUIBuyable NewBuyable)
         ch_FireMode1.SetVisibility(true);
         
         
-        
-        LoadStats(NewBuyable, byte(ch_FireMode1.IsChecked()), false);
+        LoadStats(NewBuyable, byte(ch_FireMode1.IsChecked()), false, bHSDamage);
         
         barDamage.SetVisibility(barDamage.Value > 0);            
         lblDamage.SetVisibility(barDamage.bVisible);
@@ -379,6 +543,7 @@ function Display(GUIBuyable NewBuyable)
         WeightLabel.Caption = "";
         ch_FireMode0.SetVisibility(false);
         ch_FireMode1.SetVisibility(false);
+        ch_HSDmgCheck.SetVisibility(false);
         
         lblDamage.SetVisibility(false);
         barDamage.SetVisibility(false);        
@@ -408,6 +573,15 @@ function FireModeChange(GUIComponent Sender)
         else
             Display(LastBuyable);
     }
+}
+
+function HSDamageToggle(GUIComponent Sender)
+{
+    bHSDamage = ch_HSDmgCheck.IsChecked();
+    if ( ScrnTab_BuyMenu(MenuOwner) != none )
+        Display(ScrnTab_BuyMenu(MenuOwner).TheBuyable);
+    else
+        Display(LastBuyable);
 }
 
 
@@ -524,7 +698,27 @@ defaultproperties
      End Object
      ch_FireMode1=moCheckBox'ScrnBalanceSrv.ScrnGUIBuyWeaponInfoPanel.Mode1Check'     
 
-
+    
+    //adds checkbox next to damage bar
+    Begin Object Class=moCheckBox Name=HSDmgCheck
+        CaptionWidth=0.95
+        OnCreateComponent=Mode1Check.InternalOnCreateComponent
+        bFlipped=True
+        Caption=""
+        Hint="Toggle headshot damage display"
+        WinTop=0.580000 //same height as damage display
+        WinLeft=0.25 //0.50 for primary fire checkbox
+        WinWidth=0.40
+        TabOrder=2
+        ComponentClassName="ScrnBalanceSrv.ScrnGUICheckBoxButton"
+        IniOption="@Internal"
+        OnChange=ScrnGUIBuyWeaponInfoPanel.HSDamageToggle
+        RenderWeight=3
+        bBoundToParent=True
+        bScaleToParent=True        
+        bVisible=False
+     End Object
+     ch_HSDmgCheck=moCheckBox'ScrnBalanceSrv.ScrnGUIBuyWeaponInfoPanel.HSDmgCheck'   
 
     Begin Object Class=GUILabel Name=DamageCap
         Caption="Damage:"
@@ -542,7 +736,7 @@ defaultproperties
         bScaleToParent=True
         bVisible=False
     End Object
-    lblDamage=GUILabel'ScrnBalanceSrv.ScrnGUIBuyWeaponInfoPanel.DamageCap'    
+    lblDamage=GUILabel'ScrnBalanceSrv.ScrnGUIBuyWeaponInfoPanel.DamageCap'      
     
     Begin Object Class=ScrnGUIWeaponBar Name=DamageBar
         Hint="Weapon damage"

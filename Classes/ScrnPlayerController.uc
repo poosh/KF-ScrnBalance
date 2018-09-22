@@ -23,7 +23,8 @@ var byte VeterancyChangeWave; // wave number, when player has changed his perk
 
 var globalconfig bool bManualReload, bOtherPlayerLasersBlue;
 var globalconfig bool bAlwaysDisplayAchProgression; // always display a message on any achievement progress
-var globalconfig int AchGroupIndex;
+var globalconfig int AchGroupIndex; 
+var globalconfig int Custom3DScopeSens;
 
 var globalconfig bool bSpeechVote; //allow using speeches Yes and No in voting
 
@@ -239,6 +240,33 @@ function InitPlayerReplicationInfo()
     }
     else
         warn("Can not create ScrnCustomPRI: " $ CustomPlayerReplicationInfoClass);
+}
+
+//copypaste from KFPlayerController with constant value of 24 replaced by Custom3DScopeSens to set custom sensitivity for 3D scopes
+function float GetMouseModifier()
+{
+	local KFWeapon weap;
+    
+	if (Pawn == none || Pawn.Weapon == none)
+		return -1.0;
+
+	weap = KFWeapon(Pawn.Weapon);
+
+	if (weap== none )
+		return -1.0;
+    
+	if(weap.KFScopeDetail == KF_ModelScope && weap.ShouldDrawPortal())
+	{
+		return Custom3DScopeSens;
+	}
+	else if(weap.KFScopeDetail == KF_ModelScopeHigh && weap.ShouldDrawPortal())
+	{
+		return Custom3DScopeSens;
+	}
+	else
+	{
+		return -1.0;
+	}
 }
 
 simulated function ClientForceCollectGarbage()
@@ -2741,6 +2769,7 @@ defaultproperties
     bDamageAck=True
     AchievementDisplayCooldown=5.000000
     bChangedPerkDuringGame=True
+    Custom3DScopeSens=24
     ProfilePageClassString="ScrnBalanceSrv.ScrnProfilePage"
     LobbyMenuClassString="ScrnBalanceSrv.ScrnLobbyMenu"
     TSCLobbyMenuClassString="ScrnBalanceSrv.TSCLobbyMenu"

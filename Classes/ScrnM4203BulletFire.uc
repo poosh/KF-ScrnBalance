@@ -172,8 +172,8 @@ defaultproperties
      BurstSize=3
      DamageType=Class'ScrnBalanceSrv.ScrnDamTypeM4203AssaultRifle'
      DamageMax=41
-     FireAnimRate=0.750000
-     FireLoopAnimRate=0.750000
+     FireAnimRate=0.75
+     FireLoopAnimRate=1.4 //0.750000
      FireRate=0.100000
      AmmoClass=Class'KFMod.M4203Ammo'
 }

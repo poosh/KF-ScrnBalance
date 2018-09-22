@@ -1,5 +1,41 @@
 class ScrnS6SeekingRocket extends SeekerSixSeekingRocketProjectile;
 
+//copypasta from SeekerSixSeekingRocketProjectile and added lock on to head
+simulated function Timer()
+{
+    local vector ForceDir;
+    local float VelMag;
+    local vector LocalSeekingLocation;
+
+    if ( InitialDir == vect(0,0,0) )
+        InitialDir = Normal(Velocity);
+
+	Acceleration = vect(0,0,0);
+    Super.Timer();
+    if ( (Seeking != None) && (Seeking != Instigator) )
+    {
+        //if target has a headbone use those coords, otherwise lock onto position
+        if (Pawn(Seeking).HeadBone != '')
+        LocalSeekingLocation = Seeking.GetBoneCoords(Pawn(Seeking).HeadBone).origin; //get HeadBone name and location
+        else
+        LocalSeekingLocation = Seeking.Location; //get Actor's location
+		// Do normal guidance to target.
+		ForceDir = Normal(LocalSeekingLocation - Location);
+
+		if( (ForceDir Dot InitialDir) > 0 )
+		{
+			VelMag = VSize(Velocity);
+            // Increase the multiplier that is currently 0.8 to make the rocket track better if you need to
+			ForceDir = Normal(ForceDir * 0.8 * VelMag + Velocity);
+			Velocity =  VelMag * ForceDir;
+			Acceleration += 5 * ForceDir;
+		}
+		// Update rocket so it faces in the direction its going.
+		SetRotation(rotator(Velocity));
+    }
+}
+
+
 //don't blow up on minor damage
 function TakeDamage( int Damage, Pawn InstigatedBy, Vector Hitlocation, Vector Momentum, class<DamageType> damageType, optional int HitIndex)
 {

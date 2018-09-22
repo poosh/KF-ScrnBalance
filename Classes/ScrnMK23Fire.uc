@@ -3,6 +3,15 @@ class ScrnMK23Fire extends MK23Fire;
 var float PenDmgReduction; //penetration damage reduction. 1.0 - no reduction, 0 - no penetration, 0.75 - 25% reduction
 var byte  MaxPenetrations; //how many enemies can penetrate a single bullet
 
+//lock slide back if fired last round
+simulated function bool AllowFire()
+{
+	if( (Level.TimeSeconds - LastFireTime > FireRate) && KFWeapon(Weapon).MagAmmoRemaining <= 1 && !KFWeapon(Weapon).bIsReloading )
+	{
+        ScrnMK23Pistol(Weapon).LockSlideBack(); //lock slide back
+	}
+	return Super.AllowFire();
+}
 
 // Remove left gun's aiming bug  (c) PooSH
 // Thanks to n87, Benjamin

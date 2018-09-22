@@ -8,6 +8,42 @@ var         name             ReloadShortAnim;
 var         float             ReloadShortRate;
 
 var transient bool  bShortReload;
+var vector ZoomedViewOffset;
+
+
+//copypaste to add additional offset
+simulated event RenderOverlays( Canvas Canvas )
+{
+	local int m;
+    local vector DrawOffset;
+	if (Instigator == None)
+		return;
+
+	if ( Instigator.Controller != None )
+		Hand = Instigator.Controller.Handedness;
+
+	if ((Hand < -1.0) || (Hand > 1.0))
+		return;
+
+	// draw muzzleflashes/smoke for all fire modes so idle state won't
+	// cause emitters to just disappear
+	for (m = 0; m < NUM_FIRE_MODES; m++)
+	{
+		if (FireMode[m] != None)
+		{
+			FireMode[m].DrawMuzzleFlash(Canvas);
+		}
+	}
+    DrawOffset = (90/DisplayFOV * ZoomedViewOffset) >> Instigator.GetViewRotation(); //calculate additional offset
+	SetLocation( Instigator.Location + Instigator.CalcDrawOffset(self) + DrawOffset); //add additional offset
+	SetRotation( Instigator.GetViewRotation() + ZoomRotInterp);
+
+	//PreDrawFPWeapon();	// Laurent -- Hook to override things before render (like rotation if using a staticmesh)
+
+	bDrawingFirstPerson = true;
+	Canvas.DrawActor(self, false, false, DisplayFOV);
+	bDrawingFirstPerson = false;
+}
 
     
 simulated function bool StartFire(int Mode)
@@ -186,6 +222,7 @@ function AddReloadedAmmo()
 
 defaultproperties
 {
+    IdleAnimRate=0.33 //fix because animation package has idle at 30fps
     ReloadShortAnim="Reload"
     ReloadShortRate=1.9
     ReloadRate=2.794846
@@ -196,6 +233,7 @@ defaultproperties
     InventoryGroup=3
     PickupClass=Class'ScrnBalanceSrv.ScrnM4203Pickup'
     ItemName="M4 203 SE"
-    PrePivot=(Z=-0.35) //rotational fix for ironsight alignment
-    PlayerViewPivot=(Pitch=30,Roll=0,Yaw=5) //correction of sight position after rotation fix
+    //PrePivot=(Z=-0.35) //rotational fix for ironsight alignment
+    ZoomedViewOffset=(X=0.000000,Y=0.000000,Z=-0.250000) //new sight alignment fix
+    PlayerViewPivot=(Pitch=25,Roll=0,Yaw=5) //sight fix
 }
