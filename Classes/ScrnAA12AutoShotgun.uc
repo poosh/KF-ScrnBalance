@@ -4,8 +4,30 @@ var         name         ReloadShortAnim;
 var         float         ReloadShortRate;
 
 var transient bool bShortReload;
+//var bool bBoltClosed; //unused until bug free implementation is found due to aa12 reload mechanics (charge first)
 
 var ScrnFakedProjectile FakedShell;
+
+simulated function PostBeginPlay()
+{
+    super.PostBeginPlay();
+    if ( Level.NetMode != NM_DedicatedServer )
+    {
+        if ( FakedShell == none ) //only spawn fakedshell once
+            FakedShell = spawn(class'ScrnFakedShell',self);
+        if ( FakedShell != none )
+        {
+            AttachToBone(FakedShell, 'Magazine'); //attach faked shell to AA12 magazine
+            FakedShell.SetDrawScale(4.7); //4.7
+            FakedShell.SetRelativeLocation(vect(0.15, 0, 4.00));
+            FakedShell.SetRelativeRotation(rot(0,32768,0));
+            //attempt to set shell to have same skin as AA12 (for cases where player is using golden aa12 or something)
+            if (self.Skins[1] != none)
+                FakedShell.Skins[0] = self.Skins[1];
+        }
+    }
+}
+
 
 simulated function bool AllowReload()
 {
@@ -46,11 +68,12 @@ exec function ReloadMeNow()
     bIsReloading = true;
     ReloadTimer = Level.TimeSeconds;
     bShortReload = MagAmmoRemaining > 0 && ReloadShortAnim != '';
+
     if ( bShortReload )
         ReloadRate = Default.ReloadShortRate / ReloadMulti;
     else
         ReloadRate = Default.ReloadRate / ReloadMulti;
-
+        
     if( bHoldToReload )
         NumLoadedThisReload = 0;
 
@@ -82,35 +105,30 @@ simulated function ClientReload()
         ReloadMulti = 1.0;
 
     bIsReloading = true;
+    
     if ( MagAmmoRemaining <= 0 || ReloadShortAnim == '' )
     {
         PlayAnim(ReloadAnim, ReloadAnimRate*ReloadMulti, 0.1);
-        if ( FakedShell != none )
-            FakedShell.Destroy(); //try destroying the faked shell to prevent it from appearing
+        HideFakedShell();
     }
-    else if ( MagAmmoRemaining >= 1 )
+    else 
     {
-        PlayAnim(ReloadShortAnim, ReloadAnimRate*ReloadMulti, 0.1);
-        SetAnimFrame(29.35, 0 , 1); //go straight to frame 29.35
-        if ( FakedShell == none )
-            AttachShell();
+        PlayAnim(ReloadAnim, ReloadAnimRate*ReloadMulti, 0.1);
+        SetTimer(0.25/ReloadMulti, false); //for tactical reload, skip reload animation only after 7.5 frames of anim so it looks good
+        ShowFakedShell();
     }
 }
 
-simulated function AttachShell() {
-    if ( Level.NetMode != NM_DedicatedServer )
+//added this for a somewhat smoother transition for tactical reload start
+simulated function Timer()
+{
+    if (bIsReloading)
     {
-        if ( FakedShell == none ) //only spawn fakedshell once
-            FakedShell = spawn(class'ScrnFakedShell',self);
-        if ( FakedShell != none )
-        {
-            AttachToBone(FakedShell, 'Magazine'); //attach faked shell to AA12 magazine
-            FakedShell.SetDrawScale(4.7); //4.7
-            FakedShell.SetRelativeLocation(vect(0.15, 0, 4.00));
-            FakedShell.SetRelativeRotation(rot(0,32768,0));
-        }
+        SetAnimFrame(29.35, 0 , 1); //go straight to frame 29.35
     }
+    Super.Timer();
 }
+
 
 function AddReloadedAmmo()
 {
@@ -132,12 +150,21 @@ function AddReloadedAmmo()
     }
 }
 
+simulated function ShowFakedShell()
+{
+    if ( FakedShell != none )
+        FakedShell.SetDrawScale(4.7); //4.7
+}
+
+simulated function HideFakedShell()
+{
+    if ( FakedShell != none )
+        FakedShell.SetDrawScale(0.01); //4.7
+}
+
 simulated function ClientReloadEffects()
 {
-    //the faked shell should be destroyed after the tactical reload completes, but I'm not sure where to put this, how about here
-    //if there is a fakedshell destroy it
-    if ( FakedShell != none && !FakedShell.bDeleteMe )
-        FakedShell.Destroy();
+    HideFakedShell();
 }
 
 simulated function Destroyed()
@@ -151,7 +178,7 @@ simulated function Destroyed()
 defaultproperties
 {
     FireModeClass(0)=Class'ScrnBalanceSrv.ScrnAA12Fire'
-    ReloadShortRate=2.10 //tactical reload
+    ReloadShortRate=2.35 //tactical reload (added 0.25)
     ReloadShortAnim="Reload" //tactical reload
     ReloadAnimRate=1.000000
     Description="An advanced fully automatic shotgun. Delivers less per-bullet damage, but awesome penetration and fire rate make it the best choise to kill everything... while you have ammo remaining"

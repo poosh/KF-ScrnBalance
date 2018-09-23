@@ -29,6 +29,52 @@ ScrnBalance (ScrnBalanceSrv.ScrnBalance).</em></li>
 <hr />
 <h2>VERSION 9</h2>
 <hr />
+<h3>v9.60.18</h3>
+<h4>ScrN Waves</h4>
+<ul>
+<li>Added random waves, e.g., <code>Waves=Wave2a|Wave2b|Wave2c</code></li>
+<li>Added <code>Mutators</code> to ScrnGameLength.</li>
+</ul>
+<h4>Mutators</h4>
+<p>From now on, in most cases there is no need to specify any mutators in server command line or KFMapVote.ini.
+Any ScrN game type automatically loads ScrnBalance mutator, which in turn loads ServerPerksMut.
+Then ScrnBalance loads all mutators listed in <code>AutoLoadMutators</code> array (ScrnBalance.ini).
+And finally <code>ScrnGameLength.Mutators</code> are loaded.</p>
+<h6>Mutator load order (if ScrnBalance is NOT in the server command line):</h6>
+<ol>
+<li>Mutators from the command line (KFMapVote.ini)</li>
+<li>ServerPerks (<code>ScrnBalance.ServerPerksPkgName</code>, default <code>ScrnSP.ServerPerksMutSE</code>)</li>
+<li><code>ScrnBalance.AutoLoadMutators</code></li>
+<li>ScrnBalance itself</li>
+<li><code>ScrnGameLength.Mutators</code></li>
+</ol>
+<h6>Mutator load order (if ScrnBalance is in the server command line):</h6>
+<ol>
+<li>Mutators from the command line prior to ScrnBalance.</li>
+<li>ServerPerks (<code>ScrnBalance.ServerPerksPkgName</code>, default <code>ScrnSP.ServerPerksMutSE</code>)</li>
+<li><code>ScrnBalance.AutoLoadMutators</code></li>
+<li>ScrnBalance itself</li>
+<li>Mutators from the command line after ScrnBalance</li>
+<li><code>ScrnGameLength.Mutators</code></li>
+</ol>
+<h4>Weapon Fixes and QoL Improvements (by Scuddles)</h4>
+<ul>
+<li>Attempted fix for AA12 tactical reload faked shell display for golden skins</li>
+<li>Added faked gas can to Chainsaw reload to highlight gas explosion mechanic</li>
+<li>Added tactical reload to 9mm, Handcannon and MK23</li>
+<li>Visual improvements to handcannon's slide, and 9mm and handcannon's hammer</li>
+<li>Bullet in old mag for FN FAL tactical reload now visible</li>
+<li>New flare explosion effect</li>
+<li>New flare cloud effect</li>
+<li>Added headshot damage display checkbox to weapon buy info panel</li>
+<li>Fixed M4 M203's sight fix to work at all angles</li>
+<li>Updated M4 and M4 M203 fire animation rate to match actual firerates</li>
+<li>Added tactical reload to MAC10, Thompson Drum SMG and MP5M Medic Gun</li>
+<li>Added 3d scope sensitivity adjust slider in ScrN User Settings tab (Adjustable from 1 to 75, default KF value is 24)</li>
+<li>Tweaked Seeker Six SE rocket to seek target's head instead of body</li>
+<li>SCAR MK17's charging handle locks back on last round fired</li>
+<li>Winchester and Trenchgun firing animation doesn't show another round getting chambered when firing last round</li>
+</ul>
 <h3>v9.60.17</h3>
 <h4>ScrN Waves</h4>
 <ul>

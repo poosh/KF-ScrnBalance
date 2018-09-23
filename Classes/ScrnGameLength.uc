@@ -6,8 +6,10 @@ Class ScrnGameLength extends Object
 var ScrnGameType Game;
 
 var config string GameTitle;
+var config string Author;
 var config float BountyScale;
 var config int StartingCashBonus;
+var config array<string> Mutators;
 var config array<string> Waves;
 var config array<string> Zeds;
 var config bool bLogStats;
@@ -61,6 +63,13 @@ function LoadGame(ScrnGameType MyGame)
 
     Game = MyGame;
 
+    for ( i = 0; i < Mutators.length; ++i ) {
+        if ( Mutators[i] != "" )  {
+            Log("Loading additional mutator: " $ Mutators[i], 'ScrnGameLength');
+            Game.AddMutator(Mutators[i], true);
+        }
+    }
+
     ZedInfos.length = Zeds.length;
     for ( i = 0; i < Zeds.length; ++i ) {
         zi = new(none, Zeds[i]) class'ScrnZedInfo';
@@ -74,7 +83,7 @@ function LoadGame(ScrnGameType MyGame)
 
             zedc = class<KFMonster>(DynamicLoadObject(zi.Zeds[j].ZedClass, class'Class'));
             if ( zedc == none ) {
-                log("Unable to load zed class '" $ zi.Zeds[j].ZedClass $ "' for " $ zi.Zeds[j].Alias, 'ScrnBalance');
+                log("Unable to load zed class '" $ zi.Zeds[j].ZedClass $ "' for " $ zi.Zeds[j].Alias, class.name);
                 continue;
             }
 
@@ -107,7 +116,7 @@ function LoadGame(ScrnGameType MyGame)
         Wave = new(none, "Wave1") class'ScrnWaveInfo';
     }
     else {
-        Wave = new(none, Waves[0]) class'ScrnWaveInfo';
+        Wave = CreateWave(Waves[0]);
     }
 }
 
@@ -266,13 +275,13 @@ function bool LoadWave(int WaveNum)
     if ( WaveNum >= Waves.length ) {
         warn("ScrnGameLength: Illegal wave number: " $ WaveNum);
         if (Wave == none ) {
-            log("Using fallback wave info", 'ScrnBalance');
+            log("Using fallback wave info", class.name);
             Wave = new(none, "Wave1") class'ScrnWaveInfo';
         }
         return false;
     }
 
-    Wave = new(none, Waves[WaveNum]) class'ScrnWaveInfo';
+    Wave = CreateWave(Waves[WaveNum]);
 
     for ( i = 0; i < ActiveZeds.length; ++i ) {
         ActiveZeds[i].WaveSpawns = 0;
@@ -284,7 +293,7 @@ function bool LoadWave(int WaveNum)
         }
     }
     if ( Squads.length == 0 ) {
-        log("No squads in wave", 'ScrnBalance');
+        log("No squads in wave", class.name);
         return false;
     }
 
@@ -314,6 +323,21 @@ function bool LoadWave(int WaveNum)
     DoorControl();
 
     return true;
+}
+
+function ScrnWaveInfo CreateWave(string WaveDefinition)
+{
+    local array<string> Parts;
+    local string WaveName;
+
+    // get rid of spaces
+    WaveName = Repl(WaveDefinition, " ", "", true);
+    if ( InStr(WaveName, "|") != -1 ) {
+        Split(WaveName, "|", Parts);
+        WaveName = Parts[rand(Parts.length)];
+    }
+    log("Creating wave " $ WaveName, class.name);
+    return new(none, WaveName) class'ScrnWaveInfo';
 }
 
 function RunWave()
@@ -436,7 +460,7 @@ function LogStats()
     if ( total == 0 )
         return;
 
-    log("Spawn Stats for " $ string(Wave.name) $ ":", 'ScrnBalance');
+    log("Spawn Stats for " $ string(Wave.name) $ ":", class.name);
     for ( i = 0; i < ActiveZeds.length; ++i ) {
         if ( ActiveZeds[i].WaveSpawns > 0 )
             log(ActiveZeds[i].Alias $ ": " $ ActiveZeds[i].WaveSpawns $ " / "
@@ -648,7 +672,7 @@ function bool ParseSquad(string SquadDef, out SSquad Squad)
         } until ( idx != -1 || fallback == "" );
 
         if ( idx == -1 ) {
-            log("No zeds available to fit " $ parts[i] $ " in " $ SquadDef, 'ScrnBalance');
+            log("No zeds available to fit " $ parts[i] $ " in " $ SquadDef, class.name);
             Squad.Members.length = 0;
             return false;
         }
@@ -670,7 +694,7 @@ function int FindActiveZed(string alias)
         if ( ActiveZeds[i].Alias == alias )
             return i;
     }
-    log("Zed with alias '"$alias$"' not found", 'ScrnBalance');
+    log("Zed with alias '"$alias$"' not found", class.name);
     return -1;
 }
 
@@ -716,7 +740,7 @@ function RecalculateSpawnChances()
 
     for ( i = 0; i < ActiveZeds.length; ++i ) {
         if ( ActiveZeds[i].Candidates.length == 0 ) {
-            log("Alias " $ ActiveZeds[i].Alias $ " has no zeds", 'ScrnBalance');
+            log("Alias " $ ActiveZeds[i].Alias $ " has no zeds", class.name);
             ActiveZeds[i].Candidates.remove(i--, 1);
             continue;
         }

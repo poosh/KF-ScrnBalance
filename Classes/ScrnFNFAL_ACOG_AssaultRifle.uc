@@ -9,13 +9,13 @@ var         name             ReloadShortAnim;
 var         float             ReloadShortRate;
 
 var transient bool  bShortReload;
+var vector BulletMoveOffset; //for tactical reload
 
 replication
 {
     reliable if(Role < ROLE_Authority)
         ServerChangeFireModeEx;
 }
-
 
 // Toggle semi/auto fire
 simulated function DoToggle ()
@@ -40,8 +40,6 @@ function ServerChangeFireModeEx(int NewFireModeEx)
     FireModeEx = NewFireModeEx;
     FireMode[0].bWaitForRelease = NewFireModeEx == 1;
 }
-
-
 
 simulated function bool StartFire(int Mode)
 {
@@ -120,6 +118,36 @@ exec function ReloadMeNow()
     }
 }
 
+//make sure bullet doesn't have old offset when reload finishes
+simulated function ClientFinishReloading()
+{
+    Super.ClientFinishReloading();
+    ResetBulletPosition(); //undo offset 
+}
+
+//ClientReloadEffects is called by WeaponTick halfway through reload, perfect for a tactical reload 
+simulated function ClientReloadEffects()
+{
+    ResetBulletPosition(); //undo offset 
+}
+
+simulated function ResetBulletPosition()
+{
+    SetBoneLocation('Bullets', BulletMoveOffset, 0); //undo offset
+}
+
+simulated function MoveMagBullet()
+{
+    SetBoneLocation('Bullets', BulletMoveOffset, 100); //apply offset
+}
+
+//delayed mag bullet move to prevent bullet from clipping out of rifle
+simulated function Timer()
+{
+    MoveMagBullet();
+    Super.Timer();
+}
+
 simulated function ClientReload()
 {
     local float ReloadMulti;
@@ -145,6 +173,8 @@ simulated function ClientReload()
     else if (MagAmmoRemaining >= 1)
     {
         PlayAnim(ReloadShortAnim, ReloadAnimRate*ReloadMulti, 0.1);
+        if (MagAmmoRemaining >= 2)
+            SetTimer(0.2,false);    
     }
 }
 
@@ -186,4 +216,5 @@ defaultproperties
     Description="Classic NATO battle rifle. Can penetrate small targets and has a fixed-burst mode."
     PickupClass=Class'ScrnBalanceSrv.ScrnFNFAL_ACOG_Pickup'
     ItemName="FNFAL SE"
+    BulletMoveOffset=(X=0,Y=0,Z=0.03) //for tactical reload
 }

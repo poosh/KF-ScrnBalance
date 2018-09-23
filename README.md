@@ -19,6 +19,51 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+### v9.60.18
+#### ScrN Waves
+- Added random waves, e.g., `Waves=Wave2a|Wave2b|Wave2c`
+- Added `Mutators` to ScrnGameLength.
+
+#### Mutators
+From now on, in most cases there is no need to specify any mutators in server command line or KFMapVote.ini.
+Any ScrN game type automatically loads ScrnBalance mutator, which in turn loads ServerPerksMut.
+Then ScrnBalance loads all mutators listed in `AutoLoadMutators` array (ScrnBalance.ini).
+And finally `ScrnGameLength.Mutators` are loaded.
+
+###### Mutator load order (if ScrnBalance is NOT in the server command line):
+1. Mutators from the command line (KFMapVote.ini)
+2. ServerPerks (`ScrnBalance.ServerPerksPkgName`, default `ScrnSP.ServerPerksMutSE`)
+3. `ScrnBalance.AutoLoadMutators`
+4. ScrnBalance itself
+5. `ScrnGameLength.Mutators`
+
+###### Mutator load order (if ScrnBalance is in the server command line):
+1. Mutators from the command line prior to ScrnBalance.
+2. ServerPerks (`ScrnBalance.ServerPerksPkgName`, default `ScrnSP.ServerPerksMutSE`)
+3. `ScrnBalance.AutoLoadMutators`
+4. ScrnBalance itself
+5. Mutators from the command line after ScrnBalance
+6. `ScrnGameLength.Mutators`
+
+
+#### Weapon Fixes and QoL Improvements (by Scuddles)
+- Attempted fix for AA12 tactical reload faked shell display for golden skins
+- Added faked gas can to Chainsaw reload to highlight gas explosion mechanic
+- Added tactical reload to 9mm, Handcannon and MK23
+- Visual improvements to handcannon's slide, and 9mm and handcannon's hammer
+- Bullet in old mag for FN FAL tactical reload now visible
+- New flare explosion effect
+- New flare cloud effect
+- Added headshot damage display checkbox to weapon buy info panel
+- Fixed M4 M203's sight fix to work at all angles
+- Updated M4 and M4 M203 fire animation rate to match actual firerates
+- Added tactical reload to MAC10, Thompson Drum SMG and MP5M Medic Gun
+- Added 3d scope sensitivity adjust slider in ScrN User Settings tab (Adjustable from 1 to 75, default KF value is 24)
+- Tweaked Seeker Six SE rocket to seek target's head instead of body
+- SCAR MK17's charging handle locks back on last round fired
+- Winchester and Trenchgun firing animation doesn't show another round getting chambered when firing last round
+
+
 ### v9.60.17
 #### ScrN Waves
 - `bTraderArrow` - allows hiding trader arrow. This property is ignored during the Trader Time

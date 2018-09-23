@@ -24,6 +24,16 @@ simulated function bool AllowFire()
     return super(WeaponFire).AllowFire();
 }
 
+event ModeDoFire()
+{
+    if( KFWeapon(Weapon).MagAmmoRemaining <= 1 && !KFWeapon(Weapon).bIsReloading )
+    {
+        ScrnTrenchgun(Weapon).HideBullet(); //hide bullet
+    }
+    Super.ModeDoFire();
+}
+
+
 defaultproperties
 {
      ProjectileClass=Class'ScrnBalanceSrv.ScrnTrenchgunBullet'
