@@ -19,6 +19,10 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+### v9.60.19
+- Fixed bug where Stinky Clot was moving to a wrong trader if in the previous wave doors were closed
+
+
 ### v9.60.18
 #### ScrN Waves
 - Added random waves, e.g., `Waves=Wave2a|Wave2b|Wave2c`
