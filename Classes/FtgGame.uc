@@ -246,6 +246,8 @@ State MatchInProgress
 {
     function DoWaveEnd()
     {
+        local byte t;
+
         if ( bSingleTeamGame )
             super(ScrnGameType).DoWaveEnd(); // bypass TSC
         else
@@ -253,6 +255,15 @@ State MatchInProgress
 
         if ( ScrnGameLength == none || ScrnGameLength.Wave.bOpenTrader ) {
             KillAllStinkyClots();
+        }
+        else {
+            // Wave ended but trader doors are closed.
+            // Keep the stinky clots but apply new trader destinations.
+            for ( t = 0; t < 2; ++t ) {
+                if ( StinkyControllers[t] != none && StinkyControllers[t].MoveTargets.length != 0 ) {
+                    StinkyControllers[t].MoveTargets[StinkyControllers[t].MoveTargets.length-1] = TeamShops[t].TelList[t];
+                }
+            }
         }
     }
 
