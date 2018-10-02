@@ -13,14 +13,20 @@ var transient bool bEnhancedSlideMovement; //adding extra slide movement to fire
 var transient float SlideMoveRate; //stores total amount of time each slide movement is (in cases where fire animation is sped up)
 var transient float SlideMoveBackTime;
 var transient float SlideMoveForwardTime;
-var transient float SlideLockMult;
+//var transient float SlideLockMult;
+
+var bool bSlideReturned;
+var float DefaultSlideReturnStartMult; //multiplier for reload timer to start slide return
+var float DefaultSlideReturnEndMult; //multiplier for reload timer to start slide return
+var float SlideReturnStartTime; //time to that slide finishes moving forward for empty reload (in multiplier of reloadrate)
+var float SlideReturnEndTime; //time to that slide finishes moving forward for empty reload (in multiplier of reloadrate)
+var float SlideReturnDuration; //amount of time in seconds the slide returns for
 
 var transient float HammerRotateRate; 
 var transient float HammerRotateBackTime;
 var transient float HammerRotateForwardTime;
 var transient float HammerRotateMult;
 
-var float DefaultSlideMoveRate;
 var float DefaultSlideMoveMult;
 
 var float DefaultHammerRotateMult;
@@ -33,7 +39,7 @@ var rotator PistolHammerRotation; //for deagle's stupid hammer
 
 simulated function BringUp(optional Weapon PrevWeapon)
 {
-    Super.BringUp(PrevWeapon);
+	Super.BringUp(PrevWeapon);
     RotateHammerBack(); //always do this now
     if (MagAmmoRemaining == 0)
         LockSlideBack();
@@ -88,16 +94,34 @@ simulated function RotateHammerSmooth(float rate, bool bRotatingHammerBack)
     //calculate how much rate should be multiplied by to give 100 at end
     RateMult = 100/HammerRotateRate;
     if(bRotatingHammerBack )
-        SetBoneRotation( 'Hammer', -DefaultHammerRotateMult*PistolHammerRotation, ,100 - Rate*RateMult/3 ); //needs to move from 0 to -120
+        SetBoneRotation( 'Hammer', -1*PistolHammerRotation, ,100 - Rate*RateMult/3 ); //needs to move from 0 to -120
      else 
-        SetBoneRotation( 'Hammer', 0.3*DefaultHammerRotateMult*PistolHammerRotation, , 100- Rate*RateMult ); //needs to move from 0 to 45
+        SetBoneRotation( 'Hammer', 0.3*PistolHammerRotation, , 100- Rate*RateMult ); //needs to move from 0 to 45
+}
+
+//returns slide after empty reload
+simulated function DoSlideReturn()
+{
+    bSlideReturned = false;
+    SlideReturnStartTime = Level.TimeSeconds + DefaultSlideReturnStartMult*ReloadRate;
+    SlideReturnEndTime = Level.TimeSeconds + DefaultSlideReturnEndMult*ReloadRate;
+    SlideReturnDuration = SlideReturnEndTime - SlideReturnStartTime;
+}
+
+simulated function ReturnSlideSmooth(float rate)
+{
+    local float RateMult;
+    RateMult = 100/SlideReturnDuration;
+    //calculate how much rate should be multiplied by to give 100 at end
+    SetBoneLocation( 'Slide', -0.45*DefaultSlideMoveMult*PistolSlideOffset, (rate*rateMult) ); //return slide back from -0.45 to 0
+    SetBoneRotation( 'Hammer', -1*PistolHammerRotation, ,100 - (rate*rateMult) ); //needs to move from 0 to -120
 }
 
 //this function makes slide move back more when firing because default animation moves less than 9mm and looks really bad
 simulated function AddExtraSlideMovement(float FireRateMod)
 {
     bEnhancedSlideMovement = True;
-    SlideMoveRate = DefaultSlideMoveRate/FireRateMod; //0.08
+    SlideMoveRate = 0.04/FireRateMod; //0.08
     SlideMoveBackTime = Level.TimeSeconds + SlideMoveRate; //set time
     SlideMoveForwardTime = Level.TimeSeconds + 2*SlideMoveRate; //set time
 }
@@ -106,14 +130,14 @@ simulated function AddExtraSlideMovement(float FireRateMod)
 simulated function DoHammerDrop(float FireRateMod)
 {
     bAnimatingHammer = True;
-    HammerRotateRate = DefaultHammerRotateRate/FireRateMod; //0.08
+    HammerRotateRate = 0.04/FireRateMod; //0.08
     HammerRotateForwardTime = Level.TimeSeconds + HammerRotateRate; //set time
     HammerRotateBackTime = Level.TimeSeconds + 4*HammerRotateRate; //set time (3 times longer than)
 }
 
-simulated function WeaponTick(float dt)
+function HandleSlideMovement()
 {
-    if (bTweeningSlide && TweenEndTime > 0)
+    if (TweenEndTime > 0)
     {
         if (TweenEndTime - Level.TimeSeconds > 0)
             InterpolateSlide(TweenEndTime - Level.TimeSeconds);
@@ -124,31 +148,71 @@ simulated function WeaponTick(float dt)
             bTweeningSlide = false;
         }
     }
-    if (bEnhancedSlideMovement)
+}
+
+function EnhanceSlideMovement()
+{
+    if (Level.TimeSeconds < SlideMoveBackTime && Level.TimeSeconds < SlideMoveForwardTime )
+        MoveSlideSmooth(SlideMoveBackTime - Level.TimeSeconds, false); //move slide backwards with vector and "rate" 
+    if (Level.TimeSeconds > SlideMoveBackTime )
+        MoveSlideSmooth(SlideMoveForwardTime - Level.TimeSeconds, true); //move slide forwards with vector and "rate" 
+    if (Level.TimeSeconds > SlideMoveForwardTime )
     {
-        if (Level.TimeSeconds < SlideMoveBackTime && Level.TimeSeconds < SlideMoveForwardTime )
-            MoveSlideSmooth(SlideMoveBackTime - Level.TimeSeconds, false); //move slide backwards with vector and "rate" 
-        if (Level.TimeSeconds > SlideMoveBackTime )
-            MoveSlideSmooth(SlideMoveForwardTime - Level.TimeSeconds, true); //move slide forwards with vector and "rate" 
-        if (Level.TimeSeconds > SlideMoveForwardTime )
+        bEnhancedSlideMovement = false; //finished moving slide
+        ResetSlidePosition(); //reset it to normal position
+    }
+}
+
+function DoHammerRotation()
+{
+    if (Level.TimeSeconds < HammerRotateForwardTime && Level.TimeSeconds < HammerRotateBackTime )
+        RotateHammerSmooth(HammerRotateForwardTime - Level.TimeSeconds, false); //rotate hammer forwards
+    if (Level.TimeSeconds > HammerRotateForwardTime )
+        RotateHammerSmooth(HammerRotateBackTime - Level.TimeSeconds, true); //rotate hammer backwards
+    if (Level.TimeSeconds > HammerRotateBackTime )
+    {
+        bAnimatingHammer = false; //finished rotating hammer
+        RotateHammerBack(); //reset it to normal position
+        ResetSlidePosition();
+    }
+}
+
+function ReleaseEnhancedSlide()
+{
+    if (bIsReloading && !bShortReload && !bSlideReturned && Level.TimeSeconds > SlideReturnStartTime && Level.TimeSeconds < SlideReturnEndTime)
+    {
+        ReturnSlideSmooth( SlideReturnEndTime - Level.TimeSeconds ); //0 to 100
+    }
+    if (Level.TimeSeconds > SlideReturnEndTime)
+    {
+        bSlideReturned = true;
+        SlideReturnEndTime = 0;
+        RotateHammerBack(); //reset it to normal position
+    }   
+}
+
+simulated function WeaponTick(float dt)
+{
+    if (Level.NetMode != NM_DedicatedServer)
+    {
+        if (bTweeningSlide )
         {
-            bEnhancedSlideMovement = false; //finished moving slide
-            ResetSlidePosition(); //reset it to normal position
+            HandleSlideMovement();
+        }
+        if (bEnhancedSlideMovement)
+        {
+            EnhanceSlideMovement();
+        }
+        if (bAnimatingHammer)
+        {
+            DoHammerRotation();
+        }
+        if (SlideReturnEndTime > 0)
+        {
+            ReleaseEnhancedSlide();
         }
     }
-    if (bAnimatingHammer)
-    {
-        if (Level.TimeSeconds < HammerRotateForwardTime && Level.TimeSeconds < HammerRotateBackTime )
-            RotateHammerSmooth(HammerRotateForwardTime - Level.TimeSeconds, false); //rotate hammer forwards
-        if (Level.TimeSeconds > HammerRotateForwardTime )
-            RotateHammerSmooth(HammerRotateBackTime - Level.TimeSeconds, true); //rotate hammer backwards
-        if (Level.TimeSeconds > HammerRotateBackTime )
-        {
-            bAnimatingHammer = false; //finished rotating hammer
-            RotateHammerBack(); //reset it to normal position
-        }
-    }    
-    Super.WeaponTick(dt);
+	Super.WeaponTick(dt);
 }
 
 //allowing +1 reload with full mag
@@ -246,14 +310,17 @@ simulated function ClientReload()
         ReloadMulti = KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo).ClientVeteranSkill.Static.GetReloadSpeedModifier(KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo), self);
     else
         ReloadMulti = 1.0;
-        
+   
+    
     bIsReloading = true;
     ResetHammerRotation(); //use reload animation's
     if (MagAmmoRemaining <= 0)
     {
         bShortReload = false;
         PlayAnim(ReloadAnim, ReloadAnimRate*ReloadMulti, 0.001);
+        
         SetBoneLocation( 'Slide', -0.45*PistolSlideOffset, 100 ); //special case for deagle because default slide animation sucks
+        DoSlideReturn(); //sets times for slide return
     }
     else if (MagAmmoRemaining >= 1)
     {
@@ -297,7 +364,6 @@ function AddReloadedAmmo()
 }
 
 
-
 simulated function bool PutDown()
 {
     if ( Instigator.PendingWeapon.class == class'ScrnBalanceSrv.ScrnDualDeagle' )
@@ -330,16 +396,14 @@ defaultproperties
 {
      ReloadShortRate=1.66
      ReloadShortAnim="Reload"
-     ReloadRate=1.96 //1.96
+     ReloadRate=2.2
      PistolSlideOffset=(X=0.01970,Y=0.0,Z=0.0)
      PistolHammerRotation=(Pitch=120,Yaw=0,Roll=0) //tripwire why did you do this
      FireModeClass(0)=Class'ScrnBalanceSrv.ScrnDeagleFire'
      PickupClass=Class'ScrnBalanceSrv.ScrnDeaglePickup'
      ItemName="Handcannon SE"
      Weight=4
-     DefaultSlideMoveRate = 0.04
      DefaultSlideMoveMult = 1.4
-     SlideLockMult = 0.5
-     DefaultHammerRotateRate = 0.04
-     DefaultHammerRotateMult = 1.0
+     DefaultSlideReturnStartMult=0.84848 //for timing slide release with empty reload
+     DefaultSlideReturnEndMult=0.87878 //for timing slide release with empty reload
 }

@@ -1,37 +1,46 @@
 class ScrnMP5MMedicGun extends MP5MMedicGun;
 
-var         name            ReloadShortAnim;
 var         float           ReloadShortRate;
-var         float           ReloadShortAnimRate;
-var float ShortReloadFrameSkip;
-var float ShortReloadPostFrameSkip;
+var string NewAnimRef;
+var MeshAnimation NewAnim; //test
+var ScrnMP5MBullets MP5MBullets; //for tactical reload
 
 var transient bool  bShortReload;
-var vector ChargingHandleOffset; //for tactical reload
-var rotator ChargingHandleRotation; //mp5 charging handle needs rotation correction too
 
-//added this for a somewhat smoother transition for tactical reload start and end
-simulated function Timer()
+//new anim in PostBeginPlay because adding it in PreloadAssets didn't work
+function PostBeginPlay()
 {
-    if (bIsReloading)
-        AnimSkipToMagChange(); //skip to mag change frame
-    //else
-    //PlayIdle();
-    Super.Timer();
+    local MeshAnimation MP5MAnim;
+    super.PostBeginPlay();
+    if (Level.NetMode != NM_DedicatedServer)
+    {
+        NewAnim = MeshAnimation(DynamicLoadObject(NewAnimRef, class'MeshAnimation', true));
+        if (NewAnim != none)
+        {
+            LinkSkelAnim(NewAnim); //load new anim
+        }
+        MP5MAnim = MeshAnimation(DynamicLoadObject("KF_Wep_MP5.Mp5_anim", class'MeshAnimation', true)); //old anim
+        if (MP5MAnim != none)
+        {
+            LinkSkelAnim(MP5MAnim); //for some reason linking the new anim removed the link to the old one, so this is needed
+        }
+        //attach bullets to old mag for tactical reload
+        if ( MP5MBullets == none )
+        {
+            MP5MBullets = spawn(class'ScrnMP5MBullets',self);
+        }
+		if ( MP5MBullets != none ) {
+			AttachToBone(MP5MBullets, 'Empty_Magazine');
+		}
+    }
 }
 
-simulated function AnimSkipToMagChange()
+//destroy mp5m bullets when done
+simulated function Destroyed()
 {
-    SetAnimFrame(ShortReloadFrameSkip, 0 , 1);  
-    SetBoneLocation( 'Bolt', ChargingHandleOffset, 100 ); //move the charging handle
-    SetBoneRotation( 'Bolt', ChargingHandleRotation, , 100 ); //rotate the charging handle
-}
-
-simulated function PlayReloadEndAnim()
-{
-    SetAnimFrame(ShortReloadPostFrameSkip, 0 , 1);  //do this to avoid mag switch and make tactical reload end look good    
-    SetBoneLocation( 'Bolt', ChargingHandleOffset, 0 ); 
-    SetBoneRotation( 'Bolt', ChargingHandleRotation, , 0 ); 
+    if ( MP5MBullets != None )
+        MP5MBullets.Destroy();
+    super.Destroyed();
 }
 
 exec function ReloadMeNow()
@@ -98,24 +107,38 @@ simulated function ClientReload()
     {
         bShortReload = false;
         PlayAnim(ReloadAnim, ReloadAnimRate*ReloadMulti, 0.1);
+        if (MP5MBullets != none)
+        {
+            MP5MBullets.SetDrawScale(0.0);
+        }
     }
     else if (MagAmmoRemaining >= 1)
     {
         bShortReload = true;
-        PlayAnim(ReloadShortAnim, ReloadShortAnimRate*ReloadMulti, 0.001); //reduced tween time for charginghandle
-        SetTimer(0.2/ReloadMulti, false); //for tactical reload, skip reload animation only after 7 frames of anim so it looks good
-        //
+        
+        if (NewAnim != none && HasAnim('reloadshort'))
+        {
+            PlayAnim('reloadshort', ReloadAnimRate*ReloadMulti, 0.1); 
+        }
+        else
+        {
+            PlayAnim(ReloadAnim, ReloadAnimRate*ReloadMulti*(ReloadRate/ReloadShortRate), 0.1);
+        }
+        if (MP5MBullets != none)
+        {
+            MP5MBullets.SetDrawScale(1.0);
+            MP5MBullets.HandleBulletScale(MagAmmoRemaining); //this doesn't work, so its disabled for now
+        }
     }
 }
 
+//added delay after reload and moved idle into timer
 simulated function ClientFinishReloading()
 {
     bIsReloading = false;
     if (!bShortReload )
-        PlayIdle();
-    if (bShortReload )
     {
-        PlayReloadEndAnim();
+        PlayIdle(); //don't play blend for tactical reload to avoid magazine tween
     }
 
     if(Instigator.PendingWeapon != none && Instigator.PendingWeapon != self)
@@ -151,9 +174,7 @@ function AddReloadedAmmo()
     
 defaultproperties
 {
-    ReloadShortAnim="Reload"
     ReloadShortRate=1.9
-    ReloadShortAnimRate=1.2
     ReloadAnim="Reload"
     ReloadRate=2.75
     ReloadAnimRate=1.35
@@ -167,8 +188,5 @@ defaultproperties
     PickupClass=Class'ScrnBalanceSrv.ScrnMP5MPickup'
     ItemName="MP5M Medic Gun SE"
     PlayerViewPivot=(Pitch=45,Roll=0,Yaw=5) //fix to make sight centered
-    ChargingHandleOffset=(X=0.0,Y=-0.031,Z=0)
-    ChargingHandleRotation=(Pitch=-70,Yaw=0,Roll=0)
-    ShortReloadFrameSkip=31.0;
-    ShortReloadPostFrameSkip=109.0;
+    NewAnimRef="ScrnAnims.mp5_anim_new"
 }

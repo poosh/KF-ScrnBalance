@@ -3,16 +3,20 @@ class ScrnSingleFire extends SingleFire;
 //lock slide back if fired last round
 simulated function bool AllowFire()
 {
-    if( (Level.TimeSeconds - LastFireTime > FireRate) && KFWeapon(Weapon).MagAmmoRemaining <= 1 && !KFWeapon(Weapon).bIsReloading )
+    if (Level.NetMode != NM_DedicatedServer)
     {
-            ScrnSingle(Weapon).LockSlideBack(); //lock slide back
+        if( (Level.TimeSeconds - LastFireTime > FireRate) && !KFWeapon(Weapon).bIsReloading )
+        {
+            if (KFWeapon(Weapon).MagAmmoRemaining >= 1)
+            {
+                ScrnSingle(Weapon).DoHammerDrop( GetFireSpeed() ); //drop hammer
+            }
+            if (KFWeapon(Weapon).MagAmmoRemaining <= 1) 
+            {
+                ScrnSingle(Weapon).LockSlideBack(); //lock slide back
+            }
     }
-    if( (Level.TimeSeconds - LastFireTime > FireRate) && KFWeapon(Weapon).MagAmmoRemaining >= 1 && !KFWeapon(Weapon).bIsReloading )
-    {
-        if( Level.TimeSeconds - LastClickTime>FireRate )
-            ScrnSingle(Weapon).DoHammerDrop( GetFireSpeed() ); //drop hammer
-    }
-    return Super.AllowFire();
+	return Super.AllowFire();
 }
 
 defaultproperties

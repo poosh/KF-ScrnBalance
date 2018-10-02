@@ -3,6 +3,50 @@ class ScrnDualMK23Fire extends DualMK23Fire;
 var float PenDmgReduction; //penetration damage reduction. 1.0 - no reduction, 0 - no penetration, 0.75 - 25% reduction
 var byte  MaxPenetrations; //how many enemies can penetrate a single bullet
 
+//lock slide back if fired last round
+simulated function bool AllowFire()
+{
+    if (Level.NetMode != NM_DedicatedServer)
+    {
+        if( (Level.TimeSeconds - LastFireTime > FireRate) && KFWeapon(Weapon).MagAmmoRemaining <= 2 && !KFWeapon(Weapon).bIsReloading )
+        {
+            if (KFWeapon(Weapon).MagAmmoRemaining == 2)
+            {
+                ScrnDualMK23Pistol(Weapon).LockLeftSlideBack();
+                ScrnDualMK23Pistol(Weapon).bTweenLeftSlide = true;
+            }
+            else if (KFWeapon(Weapon).MagAmmoRemaining <= 1)
+            {
+                ScrnDualMK23Pistol(Weapon).LockLeftSlideBack();
+
+                ScrnDualMK23Pistol(Weapon).LockRightSlideBack();
+                ScrnDualMK23Pistol(Weapon).bTweenLeftSlide = true;
+                ScrnDualMK23Pistol(Weapon).bTweenRightSlide = true;
+            }
+        }
+    }
+	return Super.AllowFire();
+}
+
+//called after reload and on zoom toggle, sets next pistol to fire to sync with slide lock order
+function SetPistolFireOrder()
+{
+    //this gets toggled before firing, amazingly
+    if (ScrnDualMK23Pistol(Weapon).MagAmmoRemaining%2 == 0)
+    {
+        FireAnim2 = default.FireAnim;
+        FireAimedAnim2 = default.FireAimedAnim;
+        FireAnim = default.FireAnim2;
+        FireAimedAnim = default.FireAimedAnim2;
+    }
+    if (ScrnDualMK23Pistol(Weapon).MagAmmoRemaining%2 == 1)
+    {
+        FireAnim2 = default.FireAnim2;
+        FireAimedAnim2 = default.FireAimedAnim2;
+        FireAnim = default.FireAnim;
+        FireAimedAnim = default.FireAimedAnim;
+    }
+}
 
 function DoTrace(Vector Start, Rotator Dir)
 {

@@ -7,18 +7,15 @@ var transient bool  bShortReload;
 var transient bool bTweeningSlide;
 var float TweenEndTime;
 var vector PistolSlideOffset; //for tactical reload
-var vector PistolSlideLockedOffset; //for tactical reload
 
 simulated function BringUp(optional Weapon PrevWeapon)
 {
-    Super.BringUp(PrevWeapon);
-    if (MagAmmoRemaining == 0)
-        LockSlideBack();
-}
-
-simulated function ResetSlidePosition()
-{
-    SetBoneLocation( 'Slide', PistolSlideOffset, 0 ); //reset slide position
+    if (Level.NetMode != NM_DedicatedServer)
+    {
+        Super.BringUp(PrevWeapon);
+        if (MagAmmoRemaining == 0)
+            LockSlideBack();
+    }
 }
 
 simulated function LockSlideBack()
@@ -26,26 +23,33 @@ simulated function LockSlideBack()
     SetBoneLocation( 'Slide', -PistolSlideOffset, 100 ); //lock slide back
 }
 
-simulated function InterpolateSlide(float time)
+//only called by clients
+function HandleSlideMovement()
 {
-    SetBoneLocation( 'Slide', PistolSlideOffset, (time*500) ); //
+    if ( TweenEndTime > 0 )
+    {
+        if (TweenEndTime - Level.TimeSeconds > 0)
+            SetBoneLocation( 'Slide', PistolSlideOffset, (TweenEndTime - Level.TimeSeconds)*500 ); //
+        if (TweenEndTime - Level.TimeSeconds < 0)
+        {
+            SetBoneLocation( 'Slide', PistolSlideOffset, 0 ); //reset slide position
+            TweenEndTime = 0;
+            bTweeningSlide = false;
+        }
+    } 
 }
 
 simulated function WeaponTick(float dt)
 {
-    if (bTweeningSlide && TweenEndTime > 0)
+    //client side only
+    if (Level.NetMode != NM_DedicatedServer)
     {
-        if (TweenEndTime - Level.TimeSeconds > 0)
-            InterpolateSlide(TweenEndTime - Level.TimeSeconds);
-        if (TweenEndTime - Level.TimeSeconds < 0)
+        if (bTweeningSlide)
         {
-            ResetSlidePosition();
-            TweenEndTime = 0;
-            bTweeningSlide = false;
+            HandleSlideMovement();
         }
     }
-    
-    Super.WeaponTick(dt);
+	Super.WeaponTick(dt);
 }
 
 //allowing +1 reload with full mag
@@ -156,6 +160,7 @@ simulated function ClientReload()
     }
 }
 
+//called by clientfinishreloading
 simulated function StartTweeningSlide()
 {   
     bTweeningSlide = true; //start slide tweening

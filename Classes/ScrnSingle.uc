@@ -20,32 +20,19 @@ var float DefaultHammerRotateRate;
 
 simulated function BringUp(optional Weapon PrevWeapon)
 {
-    Super.BringUp(PrevWeapon);
-    RotateHammerBack(); //always do this
-    if (MagAmmoRemaining == 0)
-        LockSlideBack();
+	Super.BringUp(PrevWeapon);
+    if (Level.NetMode != NM_DedicatedServer)
+    {
+        SetBoneRotation( '9mm_hammer', -1*PistolHammerRotation, , 100); //rotate hammer to cocked position
+        if (MagAmmoRemaining == 0)
+            LockSlideBack(); //lock Slide back
+    }
 }
 
-simulated function ResetSlidePosition()
-{
-    SetBoneLocation( '9mm_Slide', PistolSlideOffset, 0 ); //reset Slide position
-}
-
-simulated function RotateHammerBack()
-{
-    SetBoneRotation( '9mm_hammer', -1*PistolHammerRotation, , 100); //rotate hammer to cocked position
-}
-
-simulated function LockSlideBack()
+function LockSlideBack()
 {
     SetBoneLocation( '9mm_Slide', -PistolSlideOffset, 100 ); //lock Slide back
 }
-
-simulated function InterpolateSlide(float time)
-{
-    SetBoneLocation( '9mm_Slide', PistolSlideOffset, (time*500) ); //
-}
-
 
 //used for enhanced hammer rotation forwards during firing
 simulated function RotateHammerSmooth(float rate, bool bRotatingHammerBack)
@@ -59,8 +46,8 @@ simulated function RotateHammerSmooth(float rate, bool bRotatingHammerBack)
         SetBoneRotation( '9mm_hammer', 0.5*DefaultHammerRotateMult*PistolHammerRotation, , 100 - Rate*RateMult*2 ); //needs to move from 0 to 45
 }
 
-//this function sets the times for hammer drop
-simulated function DoHammerDrop(float FireRateMod)
+//this function sets the times for hammer drop, and is called by ScrnSingleFire
+function DoHammerDrop(float FireRateMod)
 {
     bAnimatingHammer = True;
     HammerRotateRate = DefaultHammerRotateRate/FireRateMod; //0.08
@@ -68,33 +55,51 @@ simulated function DoHammerDrop(float FireRateMod)
     HammerRotateBackTime = Level.TimeSeconds + 4*HammerRotateRate; //set time (3 times longer than)
 }
 
-
-simulated function WeaponTick(float dt)
+//only called by clients
+function HandleSlideMovement()
 {
-    if (bTweeningSlide && TweenEndTime > 0)
+    if ( bTweeningSlide && TweenEndTime > 0 )
     {
         if (TweenEndTime - Level.TimeSeconds > 0)
-            InterpolateSlide(TweenEndTime - Level.TimeSeconds);
+            SetBoneLocation( '9mm_Slide', PistolSlideOffset, (TweenEndTime - Level.TimeSeconds)*500 ); //
         if (TweenEndTime - Level.TimeSeconds < 0)
         {
-            ResetSlidePosition();
+            SetBoneLocation( '9mm_Slide', PistolSlideOffset, 0 ); //reset slide position
             TweenEndTime = 0;
             bTweeningSlide = false;
         }
-    }
-    if (bAnimatingHammer)
-    {
-        if (Level.TimeSeconds < HammerRotateForwardTime && Level.TimeSeconds < HammerRotateBackTime )
-            RotateHammerSmooth(HammerRotateForwardTime - Level.TimeSeconds, false); //rotate hammer forwards
-        if (Level.TimeSeconds > HammerRotateForwardTime )
-            RotateHammerSmooth(HammerRotateBackTime - Level.TimeSeconds, true); //rotate hammer backwards
-        if (Level.TimeSeconds > HammerRotateBackTime )
-        {
-            bAnimatingHammer = false; //finished rotating hammer
-            RotateHammerBack(); //reset it to normal position
-        }
     } 
-    Super.WeaponTick(dt);
+}
+
+//only called by clients
+function HandleHammerRotation()
+{
+    if (Level.TimeSeconds < HammerRotateForwardTime && Level.TimeSeconds < HammerRotateBackTime )
+        RotateHammerSmooth(HammerRotateForwardTime - Level.TimeSeconds, false); //rotate hammer forwards
+    if (Level.TimeSeconds > HammerRotateForwardTime )
+        RotateHammerSmooth(HammerRotateBackTime - Level.TimeSeconds, true); //rotate hammer backwards
+    if (Level.TimeSeconds > HammerRotateBackTime )
+    {
+        bAnimatingHammer = false; //finished rotating hammer
+        SetBoneRotation( '9mm_hammer', -1*PistolHammerRotation, , 100); //rotate hammer to cocked position
+    }
+}
+
+simulated function WeaponTick(float dt)
+{   
+    //client side only
+    if (Level.NetMode != NM_DedicatedServer)
+    {
+        if (bTweeningSlide)
+        {
+            HandleSlideMovement();
+        }
+        if (bAnimatingHammer)
+        {
+            HandleHammerRotation();
+        }
+    }
+	Super.WeaponTick(dt);
 }
 
 //allowing +1 reload with full mag
@@ -205,7 +210,8 @@ simulated function ClientReload()
     }
 }
 
-simulated function StartTweeningSlide()
+//called by clientfinishreloading()
+function StartTweeningSlide()
 {   
     bTweeningSlide = true; //start Slide tweening
     TweenEndTime = Level.TimeSeconds + 0.2;
@@ -272,13 +278,13 @@ defaultproperties
     ReloadShortRate=1.4
     ReloadShortAnim="Reload"
     PistolSlideOffset=(X=0.02330,Y=0.0,Z=0.0)
+    PistolHammerRotation=(Pitch=145,Yaw=0,Roll=0) //tripwire why did you do this
     FireModeClass(0)=Class'ScrnBalanceSrv.ScrnSingleFire'
     PickupClass=Class'ScrnBalanceSrv.ScrnSinglePickup'
     ItemName="9mm Tactical SE"
     Priority=4
     bKFNeverThrow=False
     Weight=0
-    PistolHammerRotation=(Pitch=145,Yaw=0,Roll=0) //tripwire why did you do this
-    DefaultHammerRotateRate = 0.015
+    DefaultHammerRotateRate = 0.02
     DefaultHammerRotateMult = 1.0
 }

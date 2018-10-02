@@ -1,10 +1,23 @@
 class ScrnDualMK23Pistol extends DualMK23Pistol;
 
+var         name            ReloadShortAnim;
+var         float           ReloadShortRate;
+var         float           ReloadHalfShortRate;
+
+var transient bool bShortReload;
+var transient bool bHalfShortReload;
+var transient bool bTweeningSlide;
+var transient bool bTweenLeftSlide;
+var transient bool bTweenRightSlide;
+var transient bool bFrameSkipRequired; //because of mk23's tactical reload
+var float TweenEndTime;
+
+var vector PistolSlideOffset; //for tactical reload
+
 function AttachToPawn(Pawn P)
 {
     super(Dualies).AttachToPawn(P); // skip code duplication in Dual44Magnum
 }
-
 
 function bool HandlePickupQuery( pickup Item )
 {
@@ -87,9 +100,246 @@ simulated function bool PutDown()
     return super.PutDown();
 }
 
+simulated function ResetLeftSlidePosition()
+{
+    SetBoneLocation( 'Slide01', PistolSlideOffset, 0 ); //reset Slide position
+}
+
+simulated function ResetRightSlidePosition()
+{
+    SetBoneLocation( 'Slide', PistolSlideOffset, 0 ); //reset Slide position
+}
+
+simulated function LockLeftSlideBack()
+{
+    SetBoneLocation( 'Slide01', -PistolSlideOffset, 100 ); //lock slide back
+}
+
+simulated function LockRightSlideBack()
+{
+    SetBoneLocation( 'Slide', -PistolSlideOffset, 100 ); //lock slide back
+}
+
+simulated function InterpolateRightSlide(float time)
+{
+    SetBoneLocation( 'Slide', PistolSlideOffset, (time*500)); //after tactical reload tween this from 100 to 0
+}
+
+simulated function InterpolateLeftSlide(float time)
+{
+    SetBoneLocation( 'Slide01', PistolSlideOffset, (time*500)); //after tactical reload tween this from 100 to 0
+}
+
+
+function HandleSlideMovement()
+{
+    if (TweenEndTime - Level.TimeSeconds > 0)
+    {
+        if (bTweenRightSlide)
+            InterpolateRightSlide(TweenEndTime - Level.TimeSeconds);
+        if (bTweenLeftSlide)
+            InterpolateLeftSlide(TweenEndTime - Level.TimeSeconds);
+    }
+    if (TweenEndTime - Level.TimeSeconds < 0)
+    {
+        ResetLeftSlidePosition();
+        ResetRightSlidePosition();
+        TweenEndTime = 0;
+        bTweeningSlide = false;
+        bTweenLeftSlide = false;
+        bTweenRightSlide = false;
+    }
+}
+
+function HandleFrameSkip()
+ {
+    if (Level.TimeSeconds - ReloadTimer >= ReloadRate*0.648)
+    {
+        DoFrameSkip(); //do animation frame skip
+        bFrameSkipRequired = false;
+    }
+}
+
+simulated function WeaponTick(float dt)
+{
+    if (Level.NetMode != NM_DedicatedServer)
+    {
+        if ( bTweeningSlide && TweenEndTime > 0 )
+        {
+            HandleSlideMovement();
+        } 
+        if (bIsReloading && bFrameSkipRequired)
+        {
+            HandleFrameSkip();
+        }
+    }
+	Super.WeaponTick(dt);
+}
+
+//skip from ~frame 50 to 75
+simulated function DoFrameSkip()
+{
+    SetAnimFrame(75, , 1);
+    //left pistol slide gets released after this skip so reset left slide's position
+    SetBoneLocation( 'Slide01', PistolSlideOffset, 0); //reset left slide position
+}
+
+
+simulated function StartTweeningSlide()
+{   
+    bTweeningSlide = true; //start Slide tweening
+    TweenEndTime = Level.TimeSeconds + 0.2;
+}
+
+//after reload tween slide back if tactical reload
+simulated function ClientFinishReloading()
+{
+    if( bShortReload || bHalfShortReload )
+    {
+        StartTweeningSlide(); //start tweening Slide back
+    }
+    ScrnDualMK23Fire(GetFireMode(0)).SetPistolFireOrder();
+	Super.ClientFinishReloading();
+}
+
+simulated exec function ToggleIronSights()
+{
+    if (Level.NetMode != NM_DedicatedServer)
+    {
+        ScrnDualMK23Fire(GetFireMode(0)).SetPistolFireOrder(); //make pistol fire order synced between zooms
+    }
+    Super.ToggleIronSights();
+}
+
+
+//added slide offset to reload animation
+simulated function ClientReload()
+{
+    local float ReloadMulti;
+    if ( bHasAimingMode && bAimingRifle )
+    {
+        FireMode[1].bIsFiring = False;
+
+        ZoomOut(false);
+        if( Role < ROLE_Authority)
+            ServerZoomOut(false);
+    }
+    
+    if ( KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo) != none && KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo).ClientVeteranSkill != none )
+        ReloadMulti = KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo).ClientVeteranSkill.Static.GetReloadSpeedModifier(KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo), self);
+    else
+        ReloadMulti = 1.0;
+        
+    bIsReloading = true;
+    if (MagAmmoRemaining <= 0)
+    {
+        bShortReload = false;
+        bHalfShortReload = false;
+        PlayAnim(ReloadAnim, ReloadAnimRate*ReloadMulti, 0.001);
+        SetBoneLocation( 'Slide', PistolSlideOffset, 0 ); //reset Slide so that the animation's Slide position gets used
+        SetBoneLocation( 'Slide01', PistolSlideOffset, 0 ); //reset Slide so that the animation's Slide position gets used
+    }
+    else if (MagAmmoRemaining == 1)
+    {
+        bShortReload = false;
+        bHalfShortReload = true;
+        PlayAnim(ReloadAnim, ReloadAnimRate*ReloadMulti, 0.001); 
+        SetBoneLocation( 'Slide', PistolSlideOffset, 100 ); //move right slide forward
+        SetBoneLocation( 'Slide01', PistolSlideOffset, 0 ); //reset left slide so that the animation's slide position gets used
+        bTweenRightSlide = true;
+    }
+    else if (MagAmmoRemaining >= 2)
+    {
+        bShortReload = true;
+        bHalfShortReload = false;
+        bFrameSkipRequired = true;
+        bTweenRightSlide = true; //this is needed
+        PlayAnim(ReloadAnim, ReloadAnimRate*ReloadMulti, 0.001); 
+        SetBoneLocation( 'Slide', PistolSlideOffset, 100 ); //move slide forward
+        SetBoneLocation( 'Slide01', PistolSlideOffset, 100 ); //move slide forward
+    }
+}
+
+function AddReloadedAmmo()
+{
+    local int a;
+    
+    UpdateMagCapacity(Instigator.PlayerReplicationInfo);
+    
+    a = MagCapacity;
+    if ( bShortReload )
+        a+=2; // 2 bullets already bolted
+    if ( bHalfShortReload )
+        a++; // 1 bullet already bolted
+
+    if ( AmmoAmount(0) >= a )
+        MagAmmoRemaining = a;
+    else
+        MagAmmoRemaining = AmmoAmount(0);
+
+    // this seems redudant -- PooSH
+    // if( !bHoldToReload )
+    // {
+        // ClientForceKFAmmoUpdate(MagAmmoRemaining,AmmoAmount(0));
+    // }
+
+    if ( PlayerController(Instigator.Controller) != none && KFSteamStatsAndAchievements(PlayerController(Instigator.Controller).SteamStatsAndAchievements) != none )
+    {
+        KFSteamStatsAndAchievements(PlayerController(Instigator.Controller).SteamStatsAndAchievements).OnWeaponReloaded();
+    }
+}
+
+exec function ReloadMeNow()
+{
+    local float ReloadMulti;
+    
+    if(!AllowReload())
+        return;
+    if ( bHasAimingMode && bAimingRifle )
+    {
+        FireMode[1].bIsFiring = False;
+
+        ZoomOut(false);
+        if( Role < ROLE_Authority)
+            ServerZoomOut(false);
+    }
+    
+    if ( KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo) != none && KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo).ClientVeteranSkill != none )
+        ReloadMulti = KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo).ClientVeteranSkill.Static.GetReloadSpeedModifier(KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo), self);
+    else
+        ReloadMulti = 1.0;
+        
+    bIsReloading = true;
+    ReloadTimer = Level.TimeSeconds;
+    bShortReload = MagAmmoRemaining > 0;
+    
+    if ( MagAmmoRemaining >= 2 )
+        ReloadRate = default.ReloadShortRate / ReloadMulti;
+    else if (MagAmmoRemaining == 1)
+        ReloadRate = default.ReloadHalfShortRate / ReloadMulti;
+    else if (MagAmmoRemaining <= 0)
+        ReloadRate = default.ReloadRate / ReloadMulti;
+        
+    if( bHoldToReload )
+    {
+        NumLoadedThisReload = 0;
+    }
+    ClientReload();
+    Instigator.SetAnimAction(WeaponReloadAnim);
+    if ( Level.Game.NumPlayers > 1 && KFGameType(Level.Game).bWaveInProgress && KFPlayerController(Instigator.Controller) != none &&
+        Level.TimeSeconds - KFPlayerController(Instigator.Controller).LastReloadMessageTime > KFPlayerController(Instigator.Controller).ReloadMessageDelay )
+    {
+        KFPlayerController(Instigator.Controller).Speech('AUTO', 2, "");
+        KFPlayerController(Instigator.Controller).LastReloadMessageTime = Level.TimeSeconds;
+    }
+}
+
 
 defaultproperties
 {
+     ReloadShortRate = 2.57 //no slides locked back
+     ReloadHalfShortRate = 3.35 //left slide locked back
+     PistolSlideOffset=(X=0,Y=-0.0235000,Z=0.0)
      FireModeClass(0)=Class'ScrnBalanceSrv.ScrnDualMK23Fire'
      DemoReplacement=Class'ScrnBalanceSrv.ScrnMK23Pistol'
      PickupClass=Class'ScrnBalanceSrv.ScrnDualMK23Pickup'
