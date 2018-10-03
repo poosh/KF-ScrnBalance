@@ -38,15 +38,18 @@ simulated function bool AllowFire()
     {
         if( (Level.TimeSeconds - LastFireTime > FireRate) && !KFWeapon(Weapon).bIsReloading )
         {
-            if (KFWeapon(Weapon).MagAmmoRemaining%2 == 0) 
+            if (KFWeapon(Weapon).MagAmmoRemaining > 2)
             {
-                ScrnDualDeagle(Weapon).DoRightHammerDrop( GetFireSpeed() ); //drop hammer
-                ScrnDualDeagle(Weapon).AddExtraRightSlideMovement( GetFireSpeed() ); //add extra slide movement
-            }
-            if (KFWeapon(Weapon).MagAmmoRemaining%2 == 1) 
-            {
-                ScrnDualDeagle(Weapon).DoLeftHammerDrop( GetFireSpeed() ); //drop hammer
-                ScrnDualDeagle(Weapon).AddExtraLeftSlideMovement( GetFireSpeed() ); //add extra slide movement
+                if (KFWeapon(Weapon).MagAmmoRemaining%2 == 0) 
+                {
+                    ScrnDualDeagle(Weapon).DoRightHammerDrop( GetFireSpeed() ); //drop hammer
+                    ScrnDualDeagle(Weapon).AddExtraRightSlideMovement( GetFireSpeed() ); //add extra slide movement
+                }
+                if (KFWeapon(Weapon).MagAmmoRemaining%2 == 1) 
+                {
+                    ScrnDualDeagle(Weapon).DoLeftHammerDrop( GetFireSpeed() ); //drop hammer
+                    ScrnDualDeagle(Weapon).AddExtraLeftSlideMovement( GetFireSpeed() ); //add extra slide movement
+                }
             }
             if (KFWeapon(Weapon).MagAmmoRemaining == 2)
             {

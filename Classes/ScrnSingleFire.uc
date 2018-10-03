@@ -15,6 +15,7 @@ simulated function bool AllowFire()
             {
                 ScrnSingle(Weapon).LockSlideBack(); //lock slide back
             }
+        }
     }
 	return Super.AllowFire();
 }

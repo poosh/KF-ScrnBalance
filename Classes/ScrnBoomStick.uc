@@ -2,8 +2,7 @@ class ScrnBoomStick extends BoomStick;
 
 var() float SingleShellReloadRatio; //comparing to full reload rate. 2.0 = twice faster reload 
 var string NewAnimRef;
-var MeshAnimation NewAnim; //test
-
+var MeshAnimation NewAnim; 
 var float ReloadHalfAnimRate; //animation playrate modifier for reload_half
 
 replication

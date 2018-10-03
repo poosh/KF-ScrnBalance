@@ -8,8 +8,10 @@ var int FireModeExCount;
 var         name             ReloadShortAnim;
 var         float             ReloadShortRate;
 
+
 var transient bool  bShortReload;
 var vector BulletMoveOffset; //for tactical reload
+var bool bBulletMoveQueued; //for tactical reload
 
 replication
 {
@@ -141,11 +143,17 @@ simulated function MoveMagBullet()
     SetBoneLocation('Bullets', BulletMoveOffset, 100); //apply offset
 }
 
-//delayed mag bullet move to prevent bullet from clipping out of rifle
-simulated function Timer()
-{
-    MoveMagBullet();
-    Super.Timer();
+simulated function WeaponTick(float dt)
+{   
+    if (Level.NetMode != NM_DedicatedServer)
+    {
+        if ( bBulletMoveQueued && bIsReloading && MagAmmoRemaining > 1 && (Level.TimeSeconds - ReloadTimer) > ReloadRate*0.12 )
+        {
+            bBulletMoveQueued = false;
+            MoveMagBullet();
+        }
+    }
+    Super.WeaponTick(dt);
 }
 
 simulated function ClientReload()
@@ -174,7 +182,7 @@ simulated function ClientReload()
     {
         PlayAnim(ReloadShortAnim, ReloadAnimRate*ReloadMulti, 0.1);
         if (MagAmmoRemaining >= 2)
-            SetTimer(0.2,false);    
+        bBulletMoveQueued = true; //set flag for tactical reload
     }
 }
 
