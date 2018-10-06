@@ -18,7 +18,6 @@ simulated function bool AllowFire()
             else if (KFWeapon(Weapon).MagAmmoRemaining <= 1)
             {
                 ScrnDualMK23Pistol(Weapon).LockLeftSlideBack();
-
                 ScrnDualMK23Pistol(Weapon).LockRightSlideBack();
                 ScrnDualMK23Pistol(Weapon).bTweenLeftSlide = true;
                 ScrnDualMK23Pistol(Weapon).bTweenRightSlide = true;
@@ -39,7 +38,7 @@ function SetPistolFireOrder()
         FireAnim = default.FireAnim2;
         FireAimedAnim = default.FireAimedAnim2;
     }
-    if (ScrnDualMK23Pistol(Weapon).MagAmmoRemaining%2 == 1)
+    else
     {
         FireAnim2 = default.FireAnim2;
         FireAimedAnim2 = default.FireAimedAnim2;

@@ -10,9 +10,9 @@ var vector PistolSlideOffset; //for tactical reload
 
 simulated function BringUp(optional Weapon PrevWeapon)
 {
+    Super.BringUp(PrevWeapon);
     if (Level.NetMode != NM_DedicatedServer)
     {
-        Super.BringUp(PrevWeapon);
         if (MagAmmoRemaining == 0)
             LockSlideBack();
     }

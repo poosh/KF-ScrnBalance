@@ -16,7 +16,7 @@ simulated function bool AllowFire()
                 ScrnDeagle(Weapon).LockSlideBack(); //lock slide back
                 ScrnDeagle(Weapon).RotateHammerBack(); //rotate hammer back
             }
-            if(KFWeapon(Weapon).MagAmmoRemaining > 1  )
+            else
             {
                 ScrnDeagle(Weapon).AddExtraSlideMovement( GetFireSpeed() ); //add extra slide movement
                 ScrnDeagle(Weapon).DoHammerDrop( GetFireSpeed() ); //drop hammer

@@ -22,7 +22,7 @@ function SetPistolFireOrder()
         FireAnim = default.FireAnim2;
         FireAimedAnim = default.FireAimedAnim2;
     }
-    if (ScrnDualDeagle(Weapon).MagAmmoRemaining%2 == 0)
+    else 
     {
         FireAnim2 = default.FireAnim2;
         FireAimedAnim2 = default.FireAimedAnim2;

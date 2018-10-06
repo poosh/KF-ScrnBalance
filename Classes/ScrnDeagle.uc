@@ -39,7 +39,7 @@ var rotator PistolHammerRotation; //for deagle's stupid hammer
 
 simulated function BringUp(optional Weapon PrevWeapon)
 {
-	Super.BringUp(PrevWeapon);
+    Super.BringUp(PrevWeapon);
     RotateHammerBack(); //always do this now
     if (MagAmmoRemaining == 0)
         LockSlideBack();
@@ -212,7 +212,7 @@ simulated function WeaponTick(float dt)
             ReleaseEnhancedSlide();
         }
     }
-	Super.WeaponTick(dt);
+    Super.WeaponTick(dt);
 }
 
 //allowing +1 reload with full mag

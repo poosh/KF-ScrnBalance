@@ -90,6 +90,21 @@ function DropFrom(vector StartLocation)
     Destroy();
 }
 
+simulated function BringUp(optional Weapon PrevWeapon)
+{
+	Super.BringUp(PrevWeapon);
+    if (Level.NetMode != NM_DedicatedServer)
+    {
+        if (MagAmmoRemaining == 0)
+        {
+            LockLeftSlideBack();
+            LockRightSlideBack();
+        }
+        if (MagAmmoRemaining == 1)
+            LockLeftSlideBack();   
+    }
+}
+
 simulated function bool PutDown()
 {
     if ( Instigator.PendingWeapon == none || Instigator.PendingWeapon.class == class'ScrnBalanceSrv.ScrnMK23Pistol' )
