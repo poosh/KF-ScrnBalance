@@ -92,7 +92,7 @@ function DropFrom(vector StartLocation)
 
 simulated function BringUp(optional Weapon PrevWeapon)
 {
-	Super.BringUp(PrevWeapon);
+    Super.BringUp(PrevWeapon);
     if (Level.NetMode != NM_DedicatedServer)
     {
         if (MagAmmoRemaining == 0)
