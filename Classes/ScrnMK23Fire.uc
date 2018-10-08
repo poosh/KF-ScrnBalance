@@ -6,11 +6,14 @@ var byte  MaxPenetrations; //how many enemies can penetrate a single bullet
 //lock slide back if fired last round
 simulated function bool AllowFire()
 {
-    if( (Level.TimeSeconds - LastFireTime > FireRate) && KFWeapon(Weapon).MagAmmoRemaining <= 1 && !KFWeapon(Weapon).bIsReloading )
+    if (Level.NetMode != NM_DedicatedServer)
     {
-        ScrnMK23Pistol(Weapon).LockSlideBack(); //lock slide back
+        if( (Level.TimeSeconds - LastFireTime > FireRate) && KFWeapon(Weapon).MagAmmoRemaining <= 1 && !KFWeapon(Weapon).bIsReloading )
+        {
+            ScrnMK23Pistol(Weapon).LockSlideBack(); //lock slide back
+        }
     }
-    return Super.AllowFire();
+	return Super.AllowFire();
 }
 
 // Remove left gun's aiming bug  (c) PooSH

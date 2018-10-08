@@ -11,6 +11,62 @@ function DoFireEffect()
     super(KFFire).DoFireEffect();
 }
 
+//called after reload and on zoom toggle, sets next pistol to fire to sync with slide lock order
+function SetPistolFireOrder()
+{
+    //this gets toggled before firing, amazingly
+    if (ScrnDualDeagle(Weapon).MagAmmoRemaining%2 == 1)
+    {
+        FireAnim2 = default.FireAnim;
+        FireAimedAnim2 = default.FireAimedAnim;
+        FireAnim = default.FireAnim2;
+        FireAimedAnim = default.FireAimedAnim2;
+    }
+    else 
+    {
+        FireAnim2 = default.FireAnim2;
+        FireAimedAnim2 = default.FireAimedAnim2;
+        FireAnim = default.FireAnim;
+        FireAimedAnim = default.FireAimedAnim;
+    }
+}
+
+//lock slide back if fired last round
+simulated function bool AllowFire()
+{
+    if (Level.NetMode != NM_DedicatedServer)
+    {
+        if( (Level.TimeSeconds - LastFireTime > FireRate) && !KFWeapon(Weapon).bIsReloading )
+        {
+            if (KFWeapon(Weapon).MagAmmoRemaining > 2)
+            {
+                if (KFWeapon(Weapon).MagAmmoRemaining%2 == 0) 
+                {
+                    ScrnDualDeagle(Weapon).DoRightHammerDrop( GetFireSpeed() ); //drop hammer
+                    ScrnDualDeagle(Weapon).AddExtraRightSlideMovement( GetFireSpeed() ); //add extra slide movement
+                }
+                if (KFWeapon(Weapon).MagAmmoRemaining%2 == 1) 
+                {
+                    ScrnDualDeagle(Weapon).DoLeftHammerDrop( GetFireSpeed() ); //drop hammer
+                    ScrnDualDeagle(Weapon).AddExtraLeftSlideMovement( GetFireSpeed() ); //add extra slide movement
+                }
+            }
+            if (KFWeapon(Weapon).MagAmmoRemaining == 2)
+            {
+                ScrnDualDeagle(Weapon).LockRightSlideBack();
+                ScrnDualDeagle(Weapon).bTweenLeftSlide = true;
+            }
+            else if (KFWeapon(Weapon).MagAmmoRemaining <= 1)
+            {
+                ScrnDualDeagle(Weapon).LockLeftSlideBack();
+                ScrnDualDeagle(Weapon).LockRightSlideBack();
+            }
+        }
+    }
+	return Super.AllowFire();
+}
+
+
 function DoTrace(Vector Start, Rotator Dir)
 {
     local Vector X,Y,Z, End, HitLocation, HitNormal, ArcEnd;

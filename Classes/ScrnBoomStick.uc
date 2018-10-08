@@ -1,12 +1,46 @@
 class ScrnBoomStick extends BoomStick;
 
 var() float SingleShellReloadRatio; //comparing to full reload rate. 2.0 = twice faster reload 
-
+var string NewAnimRef;
+var MeshAnimation NewAnim; 
+var float ReloadHalfAnimRate; //animation playrate modifier for reload_half
 
 replication
 {
     reliable if(Role == ROLE_Authority)
         ClientPlayReloadAnim, ClientSetWaitingToLoadShotty;
+}
+
+/*
+static function PreloadAssets(Inventory Inv, optional bool bSkipRefCount)
+{
+	super.PreloadAssets(Inv, bSkipRefCount);
+    NewAnim = MeshAnimation(DynamicLoadObject(NewAnimRef, class'MeshAnimation', true));
+    if (NewAnim != none)
+    {
+        LinkSkelAnim(NewAnim); //load new anim
+    }
+}
+*/
+
+//new anim in PostBeginPlay because adding it in PreloadAssets didn't work
+function PostBeginPlay()
+{
+    local MeshAnimation BoomstickAnim;
+    super.PostBeginPlay();
+    if (Level.NetMode != NM_DedicatedServer)
+    {
+        NewAnim = MeshAnimation(DynamicLoadObject(NewAnimRef, class'MeshAnimation', true));
+        if (NewAnim != none)
+        {
+            LinkSkelAnim(NewAnim); //load new anim
+        }
+        BoomstickAnim = MeshAnimation(DynamicLoadObject("KF_Weapons_Trip.boomstick_anim", class'MeshAnimation', true)); //old anim
+        if (BoomstickAnim != none)
+        {
+            LinkSkelAnim(BoomstickAnim); //for some reason linking the new anim removed the link to the old one, so this is needed
+        }
+    }
 }
 
 simulated function WeaponTick(float dt)
@@ -77,7 +111,6 @@ simulated function ClientSetWaitingToLoadShotty(bool bNewWaitingToLoadShotty)
     bWaitingToLoadShotty = bNewWaitingToLoadShotty;
 }
 
-
 simulated function ClientPlayReloadAnim(float AnimRatio)
 {
     if (!Instigator.IsLocallyControlled())
@@ -87,11 +120,17 @@ simulated function ClientPlayReloadAnim(float AnimRatio)
         AnimRatio = 1.0;
         
     bWaitingToLoadShotty = true;    
-
-    PlayAnim(BoomStickAltFire(FireMode[0]).FireLastAnim, 
-        FireMode[0].FireAnimRate * AnimRatio, 
-        FireMode[0].TweenTime, 0);
-    SetAnimFrame(4, 0 , 1); //skip fire animation and jump to reload
+    if (HasAnim('reload_half'))
+    {
+        PlayAnim('reload_half', ReloadHalfAnimRate, 0.1);  //noreload multi because no firerate bonus for boomstick
+    }
+    else
+    {
+        PlayAnim(BoomStickAltFire(FireMode[0]).FireLastAnim, 
+            FireMode[0].FireAnimRate * AnimRatio, 
+            FireMode[0].TweenTime, 0);
+        SetAnimFrame(4, 0 , 1); //skip fire animation and jump to reload
+    }
 }
 
 
@@ -171,10 +210,12 @@ defaultproperties
 {
     ReloadRate=2.750000 // set here to properly calc stats
     SingleShellReloadRatio=1.750000
+    ReloadHalfAnimRate = 1.4633 //to play 69 frames in 1.5714 seconds
     FireModeClass(0)=Class'ScrnBalanceSrv.ScrnBoomStickAltFire'
     FireModeClass(1)=Class'ScrnBalanceSrv.ScrnBoomStickFire'
     Description="This is my BOOMstick (c) Ash, Evil Dead - Army of Darkness, 1992.|Has been used through the centuries to hunt down Demons, Aliens and Zombies. Now it's time for the ZEDs.|Can shoot from one or two barrels simultaneousely. Single shell reload is avaliable."
     PickupClass=Class'ScrnBalanceSrv.ScrnBoomStickPickup'
     ItemName="Boomstick"
     //Priority=220 // 160 - switch before aa12
+    NewAnimRef="ScrnAnims.boomstick_anim_new"
 }
