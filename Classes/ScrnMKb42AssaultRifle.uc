@@ -10,6 +10,12 @@ var bool bBoltClosed;
 var float TweenEndTime;
 var vector ChargingHandleOffset; //for tactical reload
 
+replication
+{
+    reliable if(Role < ROLE_Authority)
+        ServerCloseBolt;
+}
+
 //allow firemode switch even if empty
 simulated function AltFire(float F)
 {
@@ -25,14 +31,28 @@ simulated function BringUp(optional Weapon PrevWeapon)
 
 simulated function ResetBoltPosition()
 {
-    SetBoneLocation( 'Bolt', ChargingHandleOffset, 0 ); //reset charging handle position
+    if ( Level.NetMode != NM_DedicatedServer )
+        SetBoneLocation( 'Bolt', ChargingHandleOffset, 0 ); //reset charging handle position
 }
 
 simulated function MoveBoltForward()
 {
-    SetBoneLocation( 'Bolt', -ChargingHandleOffset, 100 ); //move bolt forward
-    bBoltClosed = true; //this doesn't seem to fix anything
-    //bShortReload = false; //this doesn't work as expected, but leaving it here
+    if ( Level.NetMode != NM_DedicatedServer )
+        SetBoneLocation( 'Bolt', -ChargingHandleOffset, 100 ); //move bolt forward
+}
+
+function ServerCloseBolt()
+{
+    bBoltClosed = true;
+    bShortReload = false;
+}
+
+simulated function CloseBolt()
+{
+    ServerCloseBolt();
+    bBoltClosed = true;
+    bShortReload = false;
+    MoveBoltForward();
 }
 
 simulated function InterpolateBolt(float time)
@@ -53,25 +73,17 @@ simulated function WeaponTick(float dt)
             bTweeningBolt = false;
         }
     }
-    
-    Super.WeaponTick(dt);
-}
 
-// request an auto reload on the server - happens when the player dry fires
-function ServerRequestAutoReload()
-{
-    bBoltClosed = true;
-    Super.ServerRequestAutoReload();
+    Super.WeaponTick(dt);
 }
 
 simulated function ClientFinishReloading()
 {
     PlayIdle();
-    if(bShortReload) 
+    if(bShortReload)
         StartTweeningBolt(); //start tweening Bolt backonly for short reload
     bBoltClosed = false; //this is needed to reset bolt position after reload
     bIsReloading = false;
-    log("Reload finished, ClientFinishReloading bBoltClosed is "@ bBoltClosed, 'ScrnMKb42'); 
 
     if(Instigator.PendingWeapon != none && Instigator.PendingWeapon != self)
         Instigator.Controller.ClientSwitchToBestWeapon();
@@ -80,9 +92,10 @@ simulated function ClientFinishReloading()
 exec function ReloadMeNow()
 {
     local float ReloadMulti;
+
     if (NumClicks > 0)
         bBoltClosed = true;
-    
+
     if(!AllowReload())
         return;
     if ( bHasAimingMode && bAimingRifle )
@@ -93,22 +106,20 @@ exec function ReloadMeNow()
         if( Role < ROLE_Authority)
             ServerZoomOut(false);
     }
-    
+
     if ( KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo) != none && KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo).ClientVeteranSkill != none )
         ReloadMulti = KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo).ClientVeteranSkill.Static.GetReloadSpeedModifier(KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo), self);
     else
         ReloadMulti = 1.0;
-    
+
     bIsReloading = true;
     ReloadTimer = Level.TimeSeconds;
     bShortReload = !bBoltClosed; //short reload now depends on if bolt is closed or not
-    log("Reload started, ReloadMeNow bBoltClosed is "@ bBoltClosed, 'ScrnMKb42');      
-    log("Reload started, ReloadMeNow bShortReload is "@ bShortReload, 'ScrnMKb42');
     if ( bShortReload )
         ReloadRate = Default.ReloadShortRate / ReloadMulti;
     else
         ReloadRate = Default.ReloadRate / ReloadMulti;
-        
+
     if( bHoldToReload )
     {
         NumLoadedThisReload = 0;
@@ -125,8 +136,8 @@ exec function ReloadMeNow()
 
 simulated function ClientReload()
 {
-
     local float ReloadMulti;
+
     if ( bHasAimingMode && bAimingRifle )
     {
         FireMode[1].bIsFiring = False;
@@ -135,15 +146,14 @@ simulated function ClientReload()
         if( Role < ROLE_Authority)
             ServerZoomOut(false);
     }
-       
+
     if ( KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo) != none && KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo).ClientVeteranSkill != none )
         ReloadMulti = KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo).ClientVeteranSkill.Static.GetReloadSpeedModifier(KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo), self);
     else
         ReloadMulti = 1.0;
-        
+
     bIsReloading = true;
     bShortReload = !bBoltClosed; //copypaste from exec function
-    log("Reload started, ClientReload bBoltClosed is "@ bBoltClosed, 'ScrnMKb42'); 
     if (!bShortReload)
     {
         PlayAnim(ReloadAnim, ReloadAnimRate*ReloadMulti, 0.001);
@@ -157,7 +167,7 @@ simulated function ClientReload()
 }
 
 simulated function StartTweeningBolt()
-{   
+{
     bTweeningBolt = true; //start bolt tweening
     TweenEndTime = Level.TimeSeconds + 0.2;
 }
@@ -165,22 +175,21 @@ simulated function StartTweeningBolt()
 function AddReloadedAmmo()
 {
     local int a;
-    
+
     UpdateMagCapacity(Instigator.PlayerReplicationInfo);
 
     a = MagCapacity;
-    
+
     //    a++; // 1 bullet already bolted
     //removed +1 on tactical reload because MKb42(H) is an open bolt weapon
-    
+
     if ( AmmoAmount(0) >= a )
         MagAmmoRemaining = a;
     else
         MagAmmoRemaining = AmmoAmount(0);
 
     bBoltClosed = false; //this is needed to fix reload time after empty reload
-    log("Reload finished, AddReloadedAmmo bBoltClosed is "@ bBoltClosed, 'ScrnMKb42'); 
-    
+
     // this seems redudant -- PooSH
     // if( !bHoldToReload )
     // {

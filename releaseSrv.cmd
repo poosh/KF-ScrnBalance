@@ -24,12 +24,14 @@ rem del %KFDIR%\System\ScrnBalanceSrvOrig.int
 
 echo.
 echo Copying release files...
+mkdir %outputdir%\Animations
 mkdir %outputdir%\System
 mkdir %outputdir%\Textures
 mkdir %outputdir%\Sounds
 mkdir %outputdir%\uz2
 
 
+copy /y %KFDIR%\animations\ScrnAnims.ukx %outputdir%\Animations\
 copy /y %KFDIR%\system\ScrnBalanceSrv.int %outputdir%\System\
 copy /y %KFDIR%\system\ScrnBalanceSrv.u %outputdir%\System\
 copy /y %KFDIR%\system\ScrnBalanceSrv.ucl %outputdir%\System\
@@ -48,6 +50,7 @@ copy /y *.ini  %outputdir%
 
 
 echo Compressing to .uz2...
+%KFDIR%\system\ucc compress %KFDIR%\animations\ScrnAnims.ukx
 %KFDIR%\system\ucc compress %KFDIR%\system\ScrnBalanceSrv.u
 %KFDIR%\system\ucc compress %STEAMDIR%\textures\ScrnTex.utx
 %KFDIR%\system\ucc compress %STEAMDIR%\textures\ScrnAch_T.utx
@@ -55,6 +58,7 @@ echo Compressing to .uz2...
 %KFDIR%\system\ucc compress %STEAMDIR%\sounds\ScrnSnd.uax
 %KFDIR%\system\ucc compress %KFDIR%\system\ScrnVotingHandlerV4.u
 
+move /y %KFDIR%\animations\ScrnAnims.ukx.uz2 %outputdir%\uz2
 move /y %KFDIR%\system\ScrnBalanceSrv.u.uz2 %outputdir%\uz2
 move /y %KFDIR%\system\ScrnVotingHandlerV4.u.uz2 %outputdir%\uz2
 move /y %STEAMDIR%\textures\ScrnTex.utx.uz2 %outputdir%\uz2

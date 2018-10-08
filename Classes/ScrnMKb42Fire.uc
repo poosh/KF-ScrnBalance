@@ -8,6 +8,7 @@ var bool bClientEffectPlayed;
 static function PreloadAssets(LevelInfo LevelInfo, optional KFFire Spawned)
 {
     local ScrnMKb42Fire ScrnSpawned;
+
     super.PreloadAssets(LevelInfo, Spawned);
     if ( default.BoltCloseSoundRef != "" )
     {
@@ -20,34 +21,36 @@ static function PreloadAssets(LevelInfo LevelInfo, optional KFFire Spawned)
     }
 }
 
-//sets bCloseBolt and plays sound
-function CloseBolt()
+static function bool UnloadAssets()
 {
-    if (KFWeap != none)
-        ScrnMKb42AssaultRifle(KFWeap).bBoltClosed = true;
+    default.BoltCloseSound = none;
+    return super.UnloadAssets();
+}
+
+function DoCloseBolt()
+{
+    ScrnMKb42AssaultRifle(KFWeap).CloseBolt();
+
     if (BoltCloseSound != none && !bClientEffectPlayed )
     {
         Weapon.PlayOwnedSound(BoltCloseSound,SLOT_Interact,TransientSoundVolume * 0.85,,TransientSoundRadius,1.00,false);
-        //log("ClosedBolt() played empty sound", 'ScrnMKb42Fire');
+        bClientEffectPlayed = true;
     }
-    bClientEffectPlayed = true;
-    //log("ClosedBolt() ended, bBoltClosed is "@ ScrnMKb42AssaultRifle(KFWeap).bBoltClosed, 'ScrnMKb42Fire');
 }
 
-//setting bBoltClosed in a non simulated function test
 function ModeDoFire()
 {
-    if (KFWeap.MagAmmoRemaining <= 0 && !KFWeapon(Weapon).bIsReloading && ( Level.TimeSeconds - LastFireTime>FireRate ) && !ScrnMKb42AssaultRifle(KFWeap).bBoltClosed )
-    {
-        LastFireTime = Level.TimeSeconds; //moved to allowfire
-        ScrnMKb42AssaultRifle(KFWeap).MoveBoltForward(); //visual effect only
-        CloseBolt(); //plays sound and sets bBoltClosed
-        ScrnMKb42AssaultRifle(KFWeap).bBoltClosed = true; //attempt force setting it here
-        //log("ModeDoFire ScrnMKb42 moved bolt forward, bBoltClosed is "@ ScrnMKb42AssaultRifle(KFWeap).bBoltClosed, 'ScrnMKb42Fire');
-    }
-    else
-    {
-        bClientEffectPlayed = false; //reset if not empty
+    if ( Instigator != none && Instigator.IsLocallyControlled() ) {
+        if (KFWeap.MagAmmoRemaining <= 0 && !KFWeap.bIsReloading && ( Level.TimeSeconds - LastFireTime>FireRate )
+                && !ScrnMKb42AssaultRifle(KFWeap).bBoltClosed )
+        {
+            LastFireTime = Level.TimeSeconds; //moved to allowfire
+            DoCloseBolt(); //plays sound and sets bBoltClosed
+        }
+        else
+        {
+            bClientEffectPlayed = false; //reset if not empty
+        }
     }
     Super.ModeDoFire();
 }
