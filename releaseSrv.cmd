@@ -50,7 +50,7 @@ copy /y *.ini  %outputdir%
 
 
 echo Compressing to .uz2...
-%KFDIR%\animations\ucc compress %KFDIR%\animations\ScrnAnims.ukx
+%KFDIR%\system\ucc compress %KFDIR%\animations\ScrnAnims.ukx
 %KFDIR%\system\ucc compress %KFDIR%\system\ScrnBalanceSrv.u
 %KFDIR%\system\ucc compress %STEAMDIR%\textures\ScrnTex.utx
 %KFDIR%\system\ucc compress %STEAMDIR%\textures\ScrnAch_T.utx
