@@ -1,16 +1,24 @@
 class ScrnMK23Fire extends MK23Fire;
 
+var ScrnMK23Pistol ScrnWeap; // avoid typecasting
+
 var float PenDmgReduction; //penetration damage reduction. 1.0 - no reduction, 0 - no penetration, 0.75 - 25% reduction
 var byte  MaxPenetrations; //how many enemies can penetrate a single bullet
+
+simulated function PostBeginPlay()
+{
+    super.PostBeginPlay();
+    ScrnWeap = ScrnMK23Pistol(Weapon);
+}
 
 //lock slide back if fired last round
 simulated function bool AllowFire()
 {
     if (Level.NetMode != NM_DedicatedServer)
     {
-        if( (Level.TimeSeconds - LastFireTime > FireRate) && KFWeapon(Weapon).MagAmmoRemaining <= 1 && !KFWeapon(Weapon).bIsReloading )
+        if( (Level.TimeSeconds - LastFireTime > FireRate) && ScrnWeap.MagAmmoRemaining <= 1 && !ScrnWeap.bIsReloading )
         {
-            ScrnMK23Pistol(Weapon).LockSlideBack(); //lock slide back
+            ScrnWeap.LockSlideBack(); //lock slide back
         }
     }
 	return Super.AllowFire();
@@ -34,7 +42,7 @@ function DoTrace(Vector Start, Rotator Dir)
     local array<Actor>    IgnoreActors;
     local Pawn DamagePawn;
     local int i;
-    
+
     local KFMonster Monster;
     local bool bWasDecapitated;
     //local int OldHealth;
@@ -55,9 +63,9 @@ function DoTrace(Vector Start, Rotator Dir)
     X = Vector(Dir);
     End = Start + TraceRange * X;
     HitDamage = DamageMax;
-    
+
     // HitCount isn't a number of max penetration. It is just to be sure we won't stuck in infinite loop
-    While( ++HitCount < 127 ) 
+    While( ++HitCount < 127 )
     {
         DamagePawn = none;
         Monster = none;
@@ -122,15 +130,15 @@ function DoTrace(Vector Start, Rotator Dir)
                 }
                 bWasDecapitated = Monster != none && Monster.bDecapitated;
                 Other.TakeDamage(int(HitDamage), Instigator, HitLocation, Momentum*X, DamageType);
-                if ( DamagePawn != none && (DamagePawn.Health <= 0 || (Monster != none 
-                        && !bWasDecapitated && Monster.bDecapitated)) ) 
+                if ( DamagePawn != none && (DamagePawn.Health <= 0 || (Monster != none
+                        && !bWasDecapitated && Monster.bDecapitated)) )
                 {
                     KillCount++;
                 }
 
                 // debug info
                 // if ( KFMonster(Other) != none )
-                    // log(String(class) $ ": Damage("$PenCounter$") = " 
+                    // log(String(class) $ ": Damage("$PenCounter$") = "
                         // $ int(HitDamage) $"/"$ (OldHealth-KFMonster(Other).Health)
                         // @ KFMonster(Other).MenuName , 'ScrnBalance');
             }

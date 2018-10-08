@@ -1,25 +1,33 @@
 class ScrnDeagleFire extends DeagleFire;
 
+var ScrnDeagle ScrnWeap; // avoid typecasting
+
 var float PenDmgReduction; //penetration damage reduction. 1.0 - no reduction, 25% reduction
 var byte  MaxPenetrations; //how many enemies can penetrate a single bullet
 var bool  bCheck4Ach;
+
+simulated function PostBeginPlay()
+{
+    super.PostBeginPlay();
+    ScrnWeap = ScrnDeagle(Weapon);
+}
 
 //lock slide back if fired last round
 simulated function bool AllowFire()
 {
     if (Level.NetMode != NM_DedicatedServer)
     {
-        if( (Level.TimeSeconds - LastFireTime > FireRate) && !KFWeapon(Weapon).bIsReloading )
+        if( (Level.TimeSeconds - LastFireTime > FireRate) && !ScrnWeap.bIsReloading )
         {
-            if(KFWeapon(Weapon).MagAmmoRemaining <= 1  )
+            if(ScrnWeap.MagAmmoRemaining <= 1  )
             {
-                ScrnDeagle(Weapon).LockSlideBack(); //lock slide back
-                ScrnDeagle(Weapon).RotateHammerBack(); //rotate hammer back
+                ScrnWeap.LockSlideBack(); //lock slide back
+                ScrnWeap.RotateHammerBack(); //rotate hammer back
             }
             else
             {
-                ScrnDeagle(Weapon).AddExtraSlideMovement( GetFireSpeed() ); //add extra slide movement
-                ScrnDeagle(Weapon).DoHammerDrop( GetFireSpeed() ); //drop hammer
+                ScrnWeap.AddExtraSlideMovement( GetFireSpeed() ); //add extra slide movement
+                ScrnWeap.DoHammerDrop( GetFireSpeed() ); //drop hammer
             }
         }
     }
@@ -38,7 +46,7 @@ function DoTrace(Vector Start, Rotator Dir)
     local array<Actor>    IgnoreActors;
     local Pawn DamagePawn;
     local int i;
-    
+
     local KFMonster Monster;
     local bool bWasDecapitated;
     //local int OldHealth;
@@ -59,9 +67,9 @@ function DoTrace(Vector Start, Rotator Dir)
     X = Vector(Dir);
     End = Start + TraceRange * X;
     HitDamage = DamageMax;
-    
+
     // HitCount isn't a number of max penetration. It is just to be sure we won't stuck in infinite loop
-    While( ++HitCount < 127 ) 
+    While( ++HitCount < 127 )
     {
         DamagePawn = none;
         Monster = none;
@@ -126,15 +134,15 @@ function DoTrace(Vector Start, Rotator Dir)
                 }
                 bWasDecapitated = Monster != none && Monster.bDecapitated;
                 Other.TakeDamage(int(HitDamage), Instigator, HitLocation, Momentum*X, DamageType);
-                if ( DamagePawn != none && (DamagePawn.Health <= 0 || (Monster != none 
-                        && !bWasDecapitated && Monster.bDecapitated)) ) 
+                if ( DamagePawn != none && (DamagePawn.Health <= 0 || (Monster != none
+                        && !bWasDecapitated && Monster.bDecapitated)) )
                 {
                     KillCount++;
                 }
 
                 // debug info
                 // if ( KFMonster(Other) != none )
-                    // log(String(class) $ ": Damage("$PenCounter$") = " 
+                    // log(String(class) $ ": Damage("$PenCounter$") = "
                         // $ int(HitDamage) $"/"$ (OldHealth-KFMonster(Other).Health)
                         // @ KFMonster(Other).MenuName , 'ScrnBalance');
             }
@@ -163,12 +171,12 @@ function DoTrace(Vector Start, Rotator Dir)
         }
     }
 
-    if ( Weapon.Role == Role_Authority && bCheck4Ach && KillCount >= 4 && Weapon.Instigator.PlayerReplicationInfo != none 
+    if ( Weapon.Role == Role_Authority && bCheck4Ach && KillCount >= 4 && Weapon.Instigator.PlayerReplicationInfo != none
             && SRStatsBase(Weapon.Instigator.PlayerReplicationInfo.SteamStatsAndAchievements) != none ) {
         class'ScrnBalanceSrv.ScrnAchievements'.static.ProgressAchievementByID(SRStatsBase(Weapon.Instigator.PlayerReplicationInfo.SteamStatsAndAchievements).Rep, 'HC4Kills', 1);
         bCheck4Ach = false;
     }
-    
+
 }
 
 defaultproperties

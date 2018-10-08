@@ -4,9 +4,15 @@ var         name         ReloadShortAnim;
 var         float         ReloadShortRate;
 
 var transient bool bShortReload;
-//var bool bBoltClosed; //unused until bug free implementation is found due to aa12 reload mechanics (charge first)
+var bool bBoltClosed;
 
 var ScrnFakedProjectile FakedShell;
+
+replication
+{
+    reliable if(Role < ROLE_Authority)
+        ServerCloseBolt;
+}
 
 simulated function PostBeginPlay()
 {
@@ -28,6 +34,31 @@ simulated function PostBeginPlay()
     }
 }
 
+simulated function ResetBoltPosition()
+{
+    // if ( Level.NetMode != NM_DedicatedServer )
+        // TODO :SetBoneLocation( 'Bolt', ChargingHandleOffset, 0 ); //reset charging handle position
+}
+
+simulated function MoveBoltForward()
+{
+    // if ( Level.NetMode != NM_DedicatedServer )
+        // TODO: SetBoneLocation( 'Bolt', -ChargingHandleOffset, 100 ); //move bolt forward
+}
+
+function ServerCloseBolt()
+{
+    bBoltClosed = true;
+    bShortReload = false;
+}
+
+simulated function CloseBolt()
+{
+    ServerCloseBolt();
+    bBoltClosed = true;
+    bShortReload = false;
+    MoveBoltForward();
+}
 
 simulated function bool AllowReload()
 {
@@ -67,13 +98,13 @@ exec function ReloadMeNow()
 
     bIsReloading = true;
     ReloadTimer = Level.TimeSeconds;
-    bShortReload = MagAmmoRemaining > 0 && ReloadShortAnim != '';
+    bShortReload = !bBoltClosed;
 
     if ( bShortReload )
         ReloadRate = Default.ReloadShortRate / ReloadMulti;
     else
         ReloadRate = Default.ReloadRate / ReloadMulti;
-        
+
     if( bHoldToReload )
         NumLoadedThisReload = 0;
 
@@ -105,18 +136,28 @@ simulated function ClientReload()
         ReloadMulti = 1.0;
 
     bIsReloading = true;
-    
-    if ( MagAmmoRemaining <= 0 || ReloadShortAnim == '' )
+
+    if ( MagAmmoRemaining > 0 )
+        ShowFakedShell();
+    else
+        HideFakedShell();
+
+    if ( !bShortReload )
     {
         PlayAnim(ReloadAnim, ReloadAnimRate*ReloadMulti, 0.1);
-        HideFakedShell();
     }
-    else 
+    else
     {
         PlayAnim(ReloadAnim, ReloadAnimRate*ReloadMulti, 0.1);
         SetTimer(0.25/ReloadMulti, false); //for tactical reload, skip reload animation only after 7.5 frames of anim so it looks good
-        ShowFakedShell();
     }
+}
+
+simulated function ClientFinishReloading()
+{
+    super.ClientFinishReloading();
+    bBoltClosed = false; //this is needed to reset bolt position after reload
+    bShortReload = true;
 }
 
 //added this for a somewhat smoother transition for tactical reload start
@@ -143,6 +184,9 @@ function AddReloadedAmmo()
         MagAmmoRemaining = a;
     else
         MagAmmoRemaining = AmmoAmount(0);
+
+    bBoltClosed = false;
+    bShortReload = true;
 
     if ( PlayerController(Instigator.Controller) != none && KFSteamStatsAndAchievements(PlayerController(Instigator.Controller).SteamStatsAndAchievements) != none )
     {
