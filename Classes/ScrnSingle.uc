@@ -73,7 +73,7 @@ function bool HandlePickupQuery( pickup Item )
     return Super.HandlePickupQuery(Item);
 }
 
-function LockSlideBack()
+simulated function LockSlideBack()
 {
     SetBoneLocation( '9mm_Slide', -PistolSlideOffset, 100 ); //lock Slide back
 }
@@ -91,7 +91,7 @@ simulated function RotateHammerSmooth(float rate, bool bRotatingHammerBack)
 }
 
 //this function sets the times for hammer drop, and is called by ScrnSingleFire
-function DoHammerDrop(float FireRateMod)
+simulated function DoHammerDrop(float FireRateMod)
 {
     bAnimatingHammer = True;
     HammerRotateRate = DefaultHammerRotateRate/FireRateMod; //0.08
@@ -116,7 +116,7 @@ simulated function HandleSlideMovement()
 }
 
 //only called by clients
-function HandleHammerRotation()
+simulated function HandleHammerRotation()
 {
     if (Level.TimeSeconds < HammerRotateForwardTime && Level.TimeSeconds < HammerRotateBackTime )
         RotateHammerSmooth(HammerRotateForwardTime - Level.TimeSeconds, false); //rotate hammer forwards
