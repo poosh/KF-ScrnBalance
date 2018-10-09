@@ -19,8 +19,11 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+### v9.60.21
+- Hotfix for animations
+
 ### v9.60.20
-- New animation package: **ScrnAnims.ukx** 
+- New animation package: **ScrnAnims.ukx**
 - Added bolt behavior for AA12, MKb42 and RS Tommy Gun
 - Added tactical reload for dual pistols (by *Scuddles*)
 - Added new animation for MP5M tactical reload (by *Scuddles*)

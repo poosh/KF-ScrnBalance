@@ -1,9 +1,11 @@
 class ScrnBoomStick extends BoomStick;
 
-var() float SingleShellReloadRatio; //comparing to full reload rate. 2.0 = twice faster reload 
+var() float SingleShellReloadRatio; //comparing to full reload rate. 2.0 = twice faster reload
 var string NewAnimRef;
-var MeshAnimation NewAnim; 
+var string OldAnimRef;
+var MeshAnimation NewAnim;
 var float ReloadHalfAnimRate; //animation playrate modifier for reload_half
+var name ReloadHalfAnim;
 
 replication
 {
@@ -11,43 +13,50 @@ replication
         ClientPlayReloadAnim, ClientSetWaitingToLoadShotty;
 }
 
-/*
 static function PreloadAssets(Inventory Inv, optional bool bSkipRefCount)
 {
-	super.PreloadAssets(Inv, bSkipRefCount);
-    NewAnim = MeshAnimation(DynamicLoadObject(NewAnimRef, class'MeshAnimation', true));
-    if (NewAnim != none)
-    {
-        LinkSkelAnim(NewAnim); //load new anim
+    local ScrnBoomStick spawned;
+
+    super.PreloadAssets(Inv, bSkipRefCount);
+
+    default.NewAnim = MeshAnimation(DynamicLoadObject(default.NewAnimRef, class'MeshAnimation', true));
+
+    spawned = ScrnBoomStick(Inv);
+    if( spawned != none ) {
+        spawned.NewAnim = default.NewAnim;
+        spawned.AddNewAnim();
     }
 }
-*/
-/*
-//new anim in PostBeginPlay because adding it in PreloadAssets didn't work
-function PostBeginPlay()
+
+static function bool UnloadAssets()
 {
-    local MeshAnimation BoomstickAnim;
-    super.PostBeginPlay();
-    if (Level.NetMode != NM_DedicatedServer)
-    {
-        NewAnim = MeshAnimation(DynamicLoadObject(NewAnimRef, class'MeshAnimation', true));
-        if (NewAnim != none)
-        {
-            LinkSkelAnim(NewAnim); //load new anim
-        }
-        BoomstickAnim = MeshAnimation(DynamicLoadObject("KF_Weapons_Trip.boomstick_anim", class'MeshAnimation', true)); //old anim
-        if (BoomstickAnim != none)
-        {
-            LinkSkelAnim(BoomstickAnim); //for some reason linking the new anim removed the link to the old one, so this is needed
-        }
-    }
+    default.NewAnim = none;
+    return super.UnloadAssets();
 }
-*/
+
+//new anim in PostBeginPlay because adding it in PreloadAssets didn't work
+simulated function PostBeginPlay()
+{
+    super.PostBeginPlay();
+
+    AddNewAnim();
+}
+
+simulated function AddNewAnim()
+{
+    if (NewAnim == none)
+        return;
+
+    LinkSkelAnim(NewAnim); //load new anim
+    //for some reason linking the new anim removed the link to the old one, so we need to load it again
+    LinkSkelAnim(MeshAnimation(DynamicLoadObject(OldAnimRef, class'MeshAnimation', true)));
+}
+
 simulated function WeaponTick(float dt)
 {
     super(KFWeaponShotgun).WeaponTick(dt);
 
-    if( Role == ROLE_Authority ) 
+    if( Role == ROLE_Authority )
     {
         if( bWaitingToLoadShotty )
         {
@@ -92,7 +101,7 @@ function SetPendingReload()
 simulated function bool ConsumeAmmo( int Mode, float Load, optional bool bAmountNeededIsMax )
 {
     local bool result;
-    
+
     result = super.ConsumeAmmo(0, Load, bAmountNeededIsMax);
 
     if ( AmmoAmount(0) == 0 && MagAmmoRemaining == 0 ) {
@@ -113,34 +122,29 @@ simulated function ClientSetWaitingToLoadShotty(bool bNewWaitingToLoadShotty)
 
 simulated function ClientPlayReloadAnim(float AnimRatio)
 {
-    if (!Instigator.IsLocallyControlled())
-        return;
-
-    if (AnimRatio ~= 0) 
+    if (AnimRatio ~= 0)
         AnimRatio = 1.0;
-        
-    bWaitingToLoadShotty = true;    
-    if (HasAnim('reload_half'))
+
+    bWaitingToLoadShotty = true;
+    if ( NewAnim != none )
     {
-        PlayAnim('reload_half', ReloadHalfAnimRate, 0.1);  //noreload multi because no firerate bonus for boomstick
+        PlayAnim(ReloadHalfAnim, ReloadHalfAnimRate, 0.1);  //noreload multi because no firerate bonus for boomstick
     }
     else
     {
-        PlayAnim(BoomStickAltFire(FireMode[0]).FireLastAnim, 
-            FireMode[0].FireAnimRate * AnimRatio, 
+        PlayAnim(BoomStickAltFire(FireMode[0]).FireLastAnim,
+            FireMode[0].FireAnimRate * AnimRatio,
             FireMode[0].TweenTime, 0);
         SetAnimFrame(4, 0 , 1); //skip fire animation and jump to reload
     }
 }
-
-
 
 //allow reload single shell
 function bool AllowReload()
 {
     if ( bWaitingToLoadShotty )
         return false;
-        
+
     return super(KFWeaponShotgun).AllowReload();
 }
 
@@ -148,7 +152,7 @@ exec function ReloadMeNow()
 {
     if(!AllowReload())
         return;
-        
+
     if ( SingleShotCount < MagCapacity && !bWaitingToLoadShotty && AmmoAmount(0) > 0 ) {
         bWaitingToLoadShotty = true;
         if ( SingleShotCount > 0 ) {
@@ -159,7 +163,7 @@ exec function ReloadMeNow()
             CurrentReloadCountDown = ReloadCountDown;
             ClientPlayReloadAnim(1.0);
         }
-    } 
+    }
 }
 
 
@@ -178,7 +182,7 @@ simulated function bool PutDown()
 function GiveAmmo(int m, WeaponPickup WP, bool bJustSpawned)
 {
     super(KFWeapon).GiveAmmo(m,WP,bJustSpawned);
-    
+
         // Update the singleshotcount if we pick this weapon up
     if( WP != none )
     {
@@ -196,8 +200,8 @@ function GiveAmmo(int m, WeaponPickup WP, bool bJustSpawned)
             ClientSetSingleShotCount(SingleShotCount);
             NetUpdateTime = Level.TimeSeconds - 1;
         }
-    }  
-}    
+    }
+}
 
 simulated function ClientSetSingleShotCount(float NewSingleShotCount)
 {
@@ -210,6 +214,7 @@ defaultproperties
 {
     ReloadRate=2.750000 // set here to properly calc stats
     SingleShellReloadRatio=1.750000
+    ReloadHalfAnim="reload_half"
     ReloadHalfAnimRate = 1.4633 //to play 69 frames in 1.5714 seconds
     FireModeClass(0)=Class'ScrnBalanceSrv.ScrnBoomStickAltFire'
     FireModeClass(1)=Class'ScrnBalanceSrv.ScrnBoomStickFire'
@@ -218,4 +223,5 @@ defaultproperties
     ItemName="Boomstick"
     //Priority=220 // 160 - switch before aa12
     NewAnimRef="ScrnAnims.boomstick_anim_new"
+    OldAnimRef="KF_Weapons_Trip.boomstick_anim"
 }

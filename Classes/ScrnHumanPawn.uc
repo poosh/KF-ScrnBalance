@@ -603,6 +603,9 @@ function CheckPerkAchievements()
     local ClientPerkRepLink StatRep;
     local int i;
 
+    if ( Role < ROLE_Authority )
+        return; // ROLE_AutonomousProxy can execute non-simulated functions too
+
     ScrnPlayer = ScrnPlayerController(Controller);
     if ( KFPRI == none || KFPRI.ClientVeteranSkill == none || ScrnPlayer == none )
         return;
