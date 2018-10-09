@@ -56,7 +56,7 @@ function DoHammerDrop(float FireRateMod)
 }
 
 //only called by clients
-function HandleSlideMovement()
+simulated function HandleSlideMovement()
 {
     if ( bTweeningSlide && TweenEndTime > 0 )
     {
@@ -211,7 +211,7 @@ simulated function ClientReload()
 }
 
 //called by clientfinishreloading()
-function StartTweeningSlide()
+simulated function StartTweeningSlide()
 {   
     bTweeningSlide = true; //start Slide tweening
     TweenEndTime = Level.TimeSeconds + 0.2;

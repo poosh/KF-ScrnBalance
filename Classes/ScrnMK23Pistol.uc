@@ -24,7 +24,7 @@ simulated function LockSlideBack()
 }
 
 //only called by clients
-function HandleSlideMovement()
+simulated function HandleSlideMovement()
 {
     if ( TweenEndTime > 0 )
     {

@@ -195,7 +195,7 @@ simulated function InterpolateLeftSlide(float time)
 }
 
 //handles all slide movement
-function HandleSlideMovement()
+simulated function HandleSlideMovement()
 {
     if (bTweeningSlide && TweenEndTime > 0)
     {
