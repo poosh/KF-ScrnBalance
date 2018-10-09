@@ -22,7 +22,7 @@ static function PreloadAssets(Inventory Inv, optional bool bSkipRefCount)
     }
 }
 */
-
+/*
 //new anim in PostBeginPlay because adding it in PreloadAssets didn't work
 function PostBeginPlay()
 {
@@ -42,7 +42,7 @@ function PostBeginPlay()
         }
     }
 }
-
+*/
 simulated function WeaponTick(float dt)
 {
     super(KFWeaponShotgun).WeaponTick(dt);
