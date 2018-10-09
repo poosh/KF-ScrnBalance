@@ -226,7 +226,7 @@ simulated function ReturnLeftSlideSmooth(float rate)
 }
 
 //handles all slide movement
-function HandleSlideMovement()
+simulated function HandleSlideMovement()
 {
     if (bEnhancedRightSlideMovement)
     {

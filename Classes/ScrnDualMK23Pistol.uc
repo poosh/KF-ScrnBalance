@@ -14,6 +14,8 @@ var float TweenEndTime;
 
 var vector PistolSlideOffset; //for tactical reload
 
+var float ShortReloadFrameSkip; //for tactical reload
+
 function AttachToPawn(Pawn P)
 {
     super(Dualies).AttachToPawn(P); // skip code duplication in Dual44Magnum
@@ -146,7 +148,7 @@ simulated function InterpolateLeftSlide(float time)
 }
 
 
-function HandleSlideMovement()
+simulated function HandleSlideMovement()
 {
     if (TweenEndTime - Level.TimeSeconds > 0)
     {
@@ -166,11 +168,11 @@ function HandleSlideMovement()
     }
 }
 
-function HandleFrameSkip()
+simulated function HandleFrameSkip()
  {
     if (Level.TimeSeconds - ReloadTimer >= ReloadRate*0.648)
     {
-        DoFrameSkip(); //do animation frame skip
+        //DoFrameSkip(); //do animation frame skip
         bFrameSkipRequired = false;
     }
 }
@@ -183,12 +185,24 @@ simulated function WeaponTick(float dt)
         {
             HandleSlideMovement();
         } 
+        /*
         if (bIsReloading && bFrameSkipRequired)
         {
             HandleFrameSkip();
         }
+        */
     }
 	Super.WeaponTick(dt);
+}
+
+//added this to replace old reloadtimer mult check
+simulated function Timer()
+{
+    if (bIsReloading)
+        DoFrameSkip(); //skip to mag change frame
+    //else
+    //PlayIdle();
+    Super.Timer();
 }
 
 //skip from ~frame 50 to 75
@@ -272,6 +286,8 @@ simulated function ClientReload()
         PlayAnim(ReloadAnim, ReloadAnimRate*ReloadMulti, 0.001); 
         SetBoneLocation( 'Slide', PistolSlideOffset, 100 ); //move slide forward
         SetBoneLocation( 'Slide01', PistolSlideOffset, 100 ); //move slide forward
+        SetTimer(1.667/ReloadMulti, false); //timer skips from frame 50 to 75
+        
     }
 }
 
@@ -359,4 +375,5 @@ defaultproperties
      DemoReplacement=Class'ScrnBalanceSrv.ScrnMK23Pistol'
      PickupClass=Class'ScrnBalanceSrv.ScrnDualMK23Pickup'
      ItemName="Dual MK23 SE"
+     ShortReloadFrameSkip=75
 }

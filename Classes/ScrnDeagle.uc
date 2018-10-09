@@ -135,7 +135,7 @@ simulated function DoHammerDrop(float FireRateMod)
     HammerRotateBackTime = Level.TimeSeconds + 4*HammerRotateRate; //set time (3 times longer than)
 }
 
-function HandleSlideMovement()
+simulated function HandleSlideMovement()
 {
     if (TweenEndTime > 0)
     {
@@ -150,7 +150,7 @@ function HandleSlideMovement()
     }
 }
 
-function EnhanceSlideMovement()
+simulated function EnhanceSlideMovement()
 {
     if (Level.TimeSeconds < SlideMoveBackTime && Level.TimeSeconds < SlideMoveForwardTime )
         MoveSlideSmooth(SlideMoveBackTime - Level.TimeSeconds, false); //move slide backwards with vector and "rate" 
