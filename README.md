@@ -19,7 +19,7 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 ## VERSION 9
 
 -------------------------------------------------------------------------------
-### v9.60.21
+### v9.60.22
 - Hotfix for animations
 
 ### v9.60.20
