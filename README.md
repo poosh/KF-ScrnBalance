@@ -19,6 +19,9 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+### v9.60.23
+- Fixed netcode of slide lock on empty magazine for HC and MK23
+
 ### v9.60.22
 - Hotfix for animations
 

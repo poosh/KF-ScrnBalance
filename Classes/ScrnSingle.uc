@@ -10,13 +10,32 @@ var vector PistolSlideOffset; //for tactical reload
 
 var bool bAnimatingHammer;
 var rotator PistolHammerRotation; //for 9mm's stupid hammer
-var transient float HammerRotateRate; 
+var transient float HammerRotateRate;
 var transient float HammerRotateBackTime;
 var transient float HammerRotateForwardTime;
 var transient float HammerRotateMult;
 
 var float DefaultHammerRotateMult;
 var float DefaultHammerRotateRate;
+
+var bool bFiringLastRound;
+
+simulated function PostNetReceive()
+{
+    super.PostNetReceive();
+
+    if ( Role < ROLE_Authority ) {
+        if ( MagAmmoRemaining == 0 && !bIsReloading ) {
+            LockSlideBack();
+        }
+    }
+}
+
+simulated function Fire(float F)
+{
+    bFiringLastRound = MagAmmoRemaining == 1;
+    super.Fire(f);
+}
 
 simulated function BringUp(optional Weapon PrevWeapon)
 {
@@ -27,6 +46,31 @@ simulated function BringUp(optional Weapon PrevWeapon)
         if (MagAmmoRemaining == 0)
             LockSlideBack(); //lock Slide back
     }
+}
+
+simulated function bool PutDown()
+{
+    if (  Instigator.PendingWeapon != none && Instigator.PendingWeapon.class == class'ScrnDualies' )
+    {
+        bIsReloading = false;
+    }
+
+    return super.PutDown();
+}
+
+function bool HandlePickupQuery( pickup Item )
+{
+    if ( Item.InventoryType == Class )
+    {
+        if ( KFPlayerController(Instigator.Controller) != none )
+        {
+            KFPlayerController(Instigator.Controller).PendingAmmo = WeaponPickup(Item).AmmoAmount[0];
+        }
+
+        return false; // Allow to "pickup" so this weapon can be replaced with dual deagle.
+    }
+
+    return Super.HandlePickupQuery(Item);
 }
 
 function LockSlideBack()
@@ -42,7 +86,7 @@ simulated function RotateHammerSmooth(float rate, bool bRotatingHammerBack)
     RateMult = 100/HammerRotateRate;
     if(bRotatingHammerBack )
         SetBoneRotation( '9mm_hammer', -DefaultHammerRotateMult*PistolHammerRotation, ,100 - Rate*RateMult/3 ); //needs to move from 0 to -120
-     else 
+     else
         SetBoneRotation( '9mm_hammer', 0.5*DefaultHammerRotateMult*PistolHammerRotation, , 100 - Rate*RateMult*2 ); //needs to move from 0 to 45
 }
 
@@ -68,7 +112,7 @@ simulated function HandleSlideMovement()
             TweenEndTime = 0;
             bTweeningSlide = false;
         }
-    } 
+    }
 }
 
 //only called by clients
@@ -86,7 +130,7 @@ function HandleHammerRotation()
 }
 
 simulated function WeaponTick(float dt)
-{   
+{
     //client side only
     if (Level.NetMode != NM_DedicatedServer)
     {
@@ -139,7 +183,7 @@ simulated function ClientFinishReloading()
 exec function ReloadMeNow()
 {
     local float ReloadMulti;
-    
+
     if(!AllowReload())
         return;
     if ( bHasAimingMode && bAimingRifle )
@@ -150,12 +194,12 @@ exec function ReloadMeNow()
         if( Role < ROLE_Authority)
             ServerZoomOut(false);
     }
-    
+
     if ( KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo) != none && KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo).ClientVeteranSkill != none )
         ReloadMulti = KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo).ClientVeteranSkill.Static.GetReloadSpeedModifier(KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo), self);
     else
         ReloadMulti = 1.0;
-        
+
     bIsReloading = true;
     ReloadTimer = Level.TimeSeconds;
     bShortReload = MagAmmoRemaining > 0;
@@ -163,7 +207,7 @@ exec function ReloadMeNow()
         ReloadRate = Default.ReloadShortRate / ReloadMulti;
     else
         ReloadRate = Default.ReloadRate / ReloadMulti;
-        
+
     if( bHoldToReload )
     {
         NumLoadedThisReload = 0;
@@ -189,12 +233,12 @@ simulated function ClientReload()
         if( Role < ROLE_Authority)
             ServerZoomOut(false);
     }
-    
+
     if ( KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo) != none && KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo).ClientVeteranSkill != none )
         ReloadMulti = KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo).ClientVeteranSkill.Static.GetReloadSpeedModifier(KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo), self);
     else
         ReloadMulti = 1.0;
-        
+
     bIsReloading = true;
     if (MagAmmoRemaining <= 0)
     {
@@ -212,7 +256,7 @@ simulated function ClientReload()
 
 //called by clientfinishreloading()
 simulated function StartTweeningSlide()
-{   
+{
     bTweeningSlide = true; //start Slide tweening
     TweenEndTime = Level.TimeSeconds + 0.2;
 }
@@ -220,9 +264,9 @@ simulated function StartTweeningSlide()
 function AddReloadedAmmo()
 {
     local int a;
-    
+
     UpdateMagCapacity(Instigator.PlayerReplicationInfo);
-    
+
     a = MagCapacity;
     //StartTweeningSlide(); //putting this here fixed tactical reload but broke empty
     if ( bShortReload )
@@ -245,32 +289,6 @@ function AddReloadedAmmo()
     {
         KFSteamStatsAndAchievements(PlayerController(Instigator.Controller).SteamStatsAndAchievements).OnWeaponReloaded();
     }
-}
-
-
-simulated function bool PutDown()
-{
-    if (  Instigator.PendingWeapon != none && Instigator.PendingWeapon.class == class'ScrnDualies' )
-    {
-        bIsReloading = false;
-    }
-
-    return super.PutDown();
-}
-
-function bool HandlePickupQuery( pickup Item )
-{
-    if ( Item.InventoryType == Class )
-    {
-        if ( KFPlayerController(Instigator.Controller) != none )
-        {
-            KFPlayerController(Instigator.Controller).PendingAmmo = WeaponPickup(Item).AmmoAmount[0];
-        }
-
-        return false; // Allow to "pickup" so this weapon can be replaced with dual deagle.
-    }
-
-    return Super.HandlePickupQuery(Item);
 }
 
 defaultproperties

@@ -6,32 +6,32 @@ var float PenDmgReduction; //penetration damage reduction. 1.0 - no reduction, 2
 var byte  MaxPenetrations; //how many enemies can penetrate a single bullet
 var bool  bCheck4Ach;
 
-simulated function PostBeginPlay()
+function PostBeginPlay()
 {
     super.PostBeginPlay();
     ScrnWeap = ScrnDeagle(Weapon);
 }
 
-//lock slide back if fired last round
-simulated function bool AllowFire()
+event ModeDoFire()
 {
-    if (Level.NetMode != NM_DedicatedServer)
-    {
-        if( (Level.TimeSeconds - LastFireTime > FireRate) && !ScrnWeap.bIsReloading )
-        {
-            if(ScrnWeap.MagAmmoRemaining <= 1  )
-            {
-                ScrnWeap.LockSlideBack(); //lock slide back
-                ScrnWeap.RotateHammerBack(); //rotate hammer back
-            }
-            else
-            {
-                ScrnWeap.AddExtraSlideMovement( GetFireSpeed() ); //add extra slide movement
-                ScrnWeap.DoHammerDrop( GetFireSpeed() ); //drop hammer
-            }
+    if ( !AllowFire() )
+        return;
+
+    super.ModeDoFire();
+
+    if ( ScrnWeap.Instigator != none && ScrnWeap.Instigator.IsLocallyControlled() ) {
+        // The problem is that we MagAmmoRemaining is changed by ConsumeAmmo() on server-side only
+        // and we cannon be sure if the replication happened at this moment or not yet
+        if( ScrnWeap.MagAmmoRemaining == 0 || ScrnWeap.bFiringLastRound ) {
+            //lock slide back if fired last round
+            ScrnWeap.LockSlideBack();
+            ScrnWeap.RotateHammerBack();
+        }
+        else {
+            ScrnWeap.AddExtraSlideMovement( GetFireSpeed() );
+            ScrnWeap.DoHammerDrop( GetFireSpeed() );
         }
     }
-	return Super.AllowFire();
 }
 
 
