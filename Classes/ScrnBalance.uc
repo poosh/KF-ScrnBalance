@@ -7,6 +7,7 @@
 class ScrnBalance extends Mutator
     Config(ScrnBalanceSrv);
 
+#exec OBJ LOAD FILE=ScrnAnims.ukx
 #exec OBJ LOAD FILE=ScrnTex.utx
 #exec OBJ LOAD FILE=ScrnAch_T.utx
 
@@ -2604,6 +2605,7 @@ function PostBeginPlay()
     else
         CurrentEventNum = int(KF.GetSpecialEventType()); // autodetect event
 
+    AddToPackageMap("ScrnAnims.ukx");
     AddToPackageMap("ScrnSnd.uax"); // Promoted!!!!!!!!!! :)
 
     if ( !bStoryMode ) {
