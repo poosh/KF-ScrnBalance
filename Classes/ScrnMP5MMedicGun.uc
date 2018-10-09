@@ -6,7 +6,7 @@ var MeshAnimation NewAnim; //test
 var ScrnMP5MBullets MP5MBullets; //for tactical reload
 
 var transient bool  bShortReload;
-
+/*
 //new anim in PostBeginPlay because adding it in PreloadAssets didn't work
 function PostBeginPlay()
 {
@@ -34,7 +34,7 @@ function PostBeginPlay()
 		}
     }
 }
-
+*/
 //destroy mp5m bullets when done
 simulated function Destroyed()
 {
@@ -127,7 +127,7 @@ simulated function ClientReload()
         if (MP5MBullets != none)
         {
             MP5MBullets.SetDrawScale(1.0);
-            MP5MBullets.HandleBulletScale(MagAmmoRemaining); //this doesn't work, so its disabled for now
+            MP5MBullets.HandleBulletScale(MagAmmoRemaining); 
         }
     }
 }
