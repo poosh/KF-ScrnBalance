@@ -1,23 +1,26 @@
 class ScrnSingleFire extends SingleFire;
 
-//lock slide back if fired last round
-simulated function bool AllowFire()
+var ScrnSingle ScrnWeap; // avoid typecasting
+
+function PostBeginPlay()
 {
-    if (Level.NetMode != NM_DedicatedServer)
-    {
-        if( (Level.TimeSeconds - LastFireTime > FireRate) && !KFWeapon(Weapon).bIsReloading )
-        {
-            if (KFWeapon(Weapon).MagAmmoRemaining >= 1)
-            {
-                ScrnSingle(Weapon).DoHammerDrop( GetFireSpeed() ); //drop hammer
-            }
-            if (KFWeapon(Weapon).MagAmmoRemaining <= 1) 
-            {
-                ScrnSingle(Weapon).LockSlideBack(); //lock slide back
-            }
-        }
+    super.PostBeginPlay();
+    ScrnWeap = ScrnSingle(Weapon);
+}
+
+function PlayFiring()
+{
+    super.PlayFiring();
+
+    // The problem is that we MagAmmoRemaining is changed by ConsumeAmmo() on server-side only
+    // and we cannon be sure if the replication happened at this moment or not yet
+    if( ScrnWeap.MagAmmoRemaining == 0 || ScrnWeap.bFiringLastRound ) {
+        //lock slide back if fired last round
+        ScrnWeap.LockSlideBack();
     }
-	return Super.AllowFire();
+    else {
+        ScrnWeap.DoHammerDrop( GetFireSpeed() );
+    }
 }
 
 defaultproperties

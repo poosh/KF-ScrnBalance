@@ -8,14 +8,44 @@ var transient bool bTweeningSlide;
 var float TweenEndTime;
 var vector PistolSlideOffset; //for tactical reload
 
+var bool bFiringLastRound;
+
+simulated function PostNetReceive()
+{
+    super.PostNetReceive();
+
+    if ( Role < ROLE_Authority ) {
+        if ( MagAmmoRemaining == 0 && !bIsReloading ) {
+            LockSlideBack();
+        }
+    }
+}
+
+simulated function Fire(float F)
+{
+    bFiringLastRound = MagAmmoRemaining == 1;
+    super.Fire(f);
+}
+
 simulated function BringUp(optional Weapon PrevWeapon)
 {
     Super.BringUp(PrevWeapon);
     if (Level.NetMode != NM_DedicatedServer)
     {
-        if (MagAmmoRemaining == 0)
+        if ( MagAmmoRemaining == 0 ) {
             LockSlideBack();
+        }
     }
+}
+
+simulated function bool PutDown()
+{
+    if ( Instigator.PendingWeapon.class == class'ScrnBalanceSrv.ScrnDualMK23Pistol' )
+    {
+        bIsReloading = false;
+    }
+
+    return super(KFWeapon).PutDown();
 }
 
 simulated function LockSlideBack()
@@ -24,7 +54,7 @@ simulated function LockSlideBack()
 }
 
 //only called by clients
-function HandleSlideMovement()
+simulated function HandleSlideMovement()
 {
     if ( TweenEndTime > 0 )
     {
@@ -36,7 +66,7 @@ function HandleSlideMovement()
             TweenEndTime = 0;
             bTweeningSlide = false;
         }
-    } 
+    }
 }
 
 simulated function WeaponTick(float dt)
@@ -49,7 +79,7 @@ simulated function WeaponTick(float dt)
             HandleSlideMovement();
         }
     }
-	Super.WeaponTick(dt);
+    Super.WeaponTick(dt);
 }
 
 //allowing +1 reload with full mag
@@ -89,7 +119,7 @@ simulated function ClientFinishReloading()
 exec function ReloadMeNow()
 {
     local float ReloadMulti;
-    
+
     if(!AllowReload())
         return;
     if ( bHasAimingMode && bAimingRifle )
@@ -100,12 +130,12 @@ exec function ReloadMeNow()
         if( Role < ROLE_Authority)
             ServerZoomOut(false);
     }
-    
+
     if ( KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo) != none && KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo).ClientVeteranSkill != none )
         ReloadMulti = KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo).ClientVeteranSkill.Static.GetReloadSpeedModifier(KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo), self);
     else
         ReloadMulti = 1.0;
-        
+
     bIsReloading = true;
     ReloadTimer = Level.TimeSeconds;
     bShortReload = MagAmmoRemaining > 0;
@@ -113,7 +143,7 @@ exec function ReloadMeNow()
         ReloadRate = Default.ReloadShortRate / ReloadMulti;
     else
         ReloadRate = Default.ReloadRate / ReloadMulti;
-        
+
     if( bHoldToReload )
     {
         NumLoadedThisReload = 0;
@@ -139,12 +169,12 @@ simulated function ClientReload()
         if( Role < ROLE_Authority)
             ServerZoomOut(false);
     }
-    
+
     if ( KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo) != none && KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo).ClientVeteranSkill != none )
         ReloadMulti = KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo).ClientVeteranSkill.Static.GetReloadSpeedModifier(KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo), self);
     else
         ReloadMulti = 1.0;
-        
+
     bIsReloading = true;
     if (MagAmmoRemaining <= 0)
     {
@@ -162,7 +192,7 @@ simulated function ClientReload()
 
 //called by clientfinishreloading
 simulated function StartTweeningSlide()
-{   
+{
     bTweeningSlide = true; //start slide tweening
     TweenEndTime = Level.TimeSeconds + 0.2;
 }
@@ -170,9 +200,9 @@ simulated function StartTweeningSlide()
 function AddReloadedAmmo()
 {
     local int a;
-    
+
     UpdateMagCapacity(Instigator.PlayerReplicationInfo);
-    
+
     a = MagCapacity;
     if ( bShortReload )
         a++; // 1 bullet already bolted
@@ -192,17 +222,6 @@ function AddReloadedAmmo()
     {
         KFSteamStatsAndAchievements(PlayerController(Instigator.Controller).SteamStatsAndAchievements).OnWeaponReloaded();
     }
-}
-
-
-simulated function bool PutDown()
-{
-    if ( Instigator.PendingWeapon.class == class'ScrnBalanceSrv.ScrnDualMK23Pistol' )
-    {
-        bIsReloading = false;
-    }
-
-    return super(KFWeapon).PutDown();
 }
 
 //original TWI code contained some gay issues like always -- by PooSH
@@ -228,10 +247,10 @@ function GiveTo( pawn Other, optional Pickup Pickup )
 
     KFPRI = KFPlayerReplicationInfo(Other.PlayerReplicationInfo);
     WeapPickup = KFWeaponPickup(Pickup);
-    
+
     //pick the lowest sell value
     if ( WeapPickup != None && KFPRI != None && KFPRI.ClientVeteranSkill != none ) {
-        SellValue = 0.75 * min(WeapPickup.Cost, WeapPickup.default.Cost 
+        SellValue = 0.75 * min(WeapPickup.Cost, WeapPickup.default.Cost
             * KFPRI.ClientVeteranSkill.static.GetCostScaling(KFPRI, WeapPickup.class));
     }
 

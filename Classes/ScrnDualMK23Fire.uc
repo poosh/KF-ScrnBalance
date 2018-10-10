@@ -1,38 +1,27 @@
 class ScrnDualMK23Fire extends DualMK23Fire;
 
+var ScrnDualMK23Pistol ScrnWeap; // avoid typecasting
+
 var float PenDmgReduction; //penetration damage reduction. 1.0 - no reduction, 0 - no penetration, 0.75 - 25% reduction
 var byte  MaxPenetrations; //how many enemies can penetrate a single bullet
 
-//lock slide back if fired last round
-simulated function bool AllowFire()
+var protected bool bFireLeft;
+
+function PostBeginPlay()
 {
-    if (Level.NetMode != NM_DedicatedServer)
-    {
-        if( (Level.TimeSeconds - LastFireTime > FireRate) && KFWeapon(Weapon).MagAmmoRemaining <= 2 && !KFWeapon(Weapon).bIsReloading )
-        {
-            if (KFWeapon(Weapon).MagAmmoRemaining == 2)
-            {
-                ScrnDualMK23Pistol(Weapon).LockLeftSlideBack();
-                ScrnDualMK23Pistol(Weapon).bTweenLeftSlide = true;
-            }
-            else if (KFWeapon(Weapon).MagAmmoRemaining <= 1)
-            {
-                ScrnDualMK23Pistol(Weapon).LockLeftSlideBack();
-                ScrnDualMK23Pistol(Weapon).LockRightSlideBack();
-                ScrnDualMK23Pistol(Weapon).bTweenLeftSlide = true;
-                ScrnDualMK23Pistol(Weapon).bTweenRightSlide = true;
-            }
-        }
-    }
-	return Super.AllowFire();
+    super.PostBeginPlay();
+    ScrnWeap = ScrnDualMK23Pistol(Weapon);
 }
 
 //called after reload and on zoom toggle, sets next pistol to fire to sync with slide lock order
-function SetPistolFireOrder()
+function SetPistolFireOrder(bool bNextFireLeft)
 {
-    //this gets toggled before firing, amazingly
-    if (ScrnDualMK23Pistol(Weapon).MagAmmoRemaining%2 == 0)
+    bFireLeft = bNextFireLeft;
+
+    if (bFireLeft)
     {
+        ScrnWeap.altFlashBoneName = ScrnWeap.default.FlashBoneName;
+        ScrnWeap.FlashBoneName = ScrnWeap.default.altFlashBoneName;
         FireAnim2 = default.FireAnim;
         FireAimedAnim2 = default.FireAimedAnim;
         FireAnim = default.FireAnim2;
@@ -40,10 +29,59 @@ function SetPistolFireOrder()
     }
     else
     {
+        ScrnWeap.altFlashBoneName = ScrnWeap.default.altFlashBoneName;
+        ScrnWeap.FlashBoneName = ScrnWeap.default.FlashBoneName;
         FireAnim2 = default.FireAnim2;
         FireAimedAnim2 = default.FireAimedAnim2;
         FireAnim = default.FireAnim;
         FireAimedAnim = default.FireAimedAnim;
+    }
+}
+
+function bool GetPistolFireOrder()
+{
+    return bFireLeft;
+}
+
+event ModeDoFire()
+{
+    if ( !AllowFire() )
+        return;
+
+    super(KFFire).ModeDoFire();
+
+    InitEffects();
+    SetPistolFireOrder(!bFireLeft);
+}
+
+function PlayFiring()
+{
+    local int MagAmmoRemainingAfterShot;
+
+    super.PlayFiring();
+
+    // The problem is that we MagAmmoRemaining is changed by ConsumeAmmo() on server-side only
+    // and we cannon be sure if the replication happened at this moment or not yet
+    // FiringRound stores MagAmmoRemaining on client before the fire.
+    // If FiringRound == MagAmmoRemaining, then property is not replicated yet.
+    // If FiringRound - 1 == MagAmmoRemaining, then property is already replicated.
+    if ( ScrnWeap.FiringRound <= ScrnWeap.MagAmmoRemaining ) {
+        MagAmmoRemainingAfterShot = ScrnWeap.FiringRound - 1;
+    }
+    else {
+        MagAmmoRemainingAfterShot = ScrnWeap.MagAmmoRemaining;
+    }
+
+    if( MagAmmoRemainingAfterShot == 0 ) {
+        ScrnWeap.LockLeftSlideBack();
+        ScrnWeap.LockRightSlideBack();
+        ScrnWeap.bTweenLeftSlide = true;
+        ScrnWeap.bTweenRightSlide = true;
+
+    }
+    else if ( MagAmmoRemainingAfterShot == 1 ) {
+        ScrnWeap.LockRightSlideBack();
+        ScrnWeap.bTweenLeftSlide = true;
     }
 }
 
@@ -58,7 +96,7 @@ function DoTrace(Vector Start, Rotator Dir)
     local array<Actor>    IgnoreActors;
     local Pawn DamagePawn;
     local int i;
-    
+
     local KFMonster Monster;
     local bool bWasDecapitated;
     //local int OldHealth;
@@ -79,9 +117,9 @@ function DoTrace(Vector Start, Rotator Dir)
     X = Vector(Dir);
     End = Start + TraceRange * X;
     HitDamage = DamageMax;
-    
+
     // HitCount isn't a number of max penetration. It is just to be sure we won't stuck in infinite loop
-    While( ++HitCount < 127 ) 
+    While( ++HitCount < 127 )
     {
         DamagePawn = none;
         Monster = none;
@@ -146,15 +184,15 @@ function DoTrace(Vector Start, Rotator Dir)
                 }
                 bWasDecapitated = Monster != none && Monster.bDecapitated;
                 Other.TakeDamage(int(HitDamage), Instigator, HitLocation, Momentum*X, DamageType);
-                if ( DamagePawn != none && (DamagePawn.Health <= 0 || (Monster != none 
-                        && !bWasDecapitated && Monster.bDecapitated)) ) 
+                if ( DamagePawn != none && (DamagePawn.Health <= 0 || (Monster != none
+                        && !bWasDecapitated && Monster.bDecapitated)) )
                 {
                     KillCount++;
                 }
 
                 // debug info
                 // if ( KFMonster(Other) != none )
-                    // log(String(class) $ ": Damage("$PenCounter$") = " 
+                    // log(String(class) $ ": Damage("$PenCounter$") = "
                         // $ int(HitDamage) $"/"$ (OldHealth-KFMonster(Other).Health)
                         // @ KFMonster(Other).MenuName , 'ScrnBalance');
             }
@@ -184,21 +222,6 @@ function DoTrace(Vector Start, Rotator Dir)
     }
 }
 
-/*
-simulated function float GetSpread()
-{
-    local float AccuracyMod;
-
-    AccuracyMod = 1.0;
-
-    // Spread bonus while using laser sights
-    if ( ScrnDualMK23Laser(Weapon) != none && ScrnDualMK23Laser(Weapon).bLaserActive) 
-        AccuracyMod = 0.5;
-    
-    return AccuracyMod * super.GetSpread();
-}
-*/
-
 // Remove left gun's aiming bug  (c) PooSH
 // Thanks to n87, Benjamin
 function DoFireEffect()
@@ -208,6 +231,6 @@ function DoFireEffect()
 
 defaultproperties
 {
-     PenDmgReduction=0.500000
-     DamageType=Class'ScrnBalanceSrv.ScrnDamTypeDualMK23Pistol'
+    PenDmgReduction=0.500000
+    DamageType=Class'ScrnBalanceSrv.ScrnDamTypeDualMK23Pistol'
 }

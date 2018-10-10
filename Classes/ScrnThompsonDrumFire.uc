@@ -45,7 +45,7 @@ function ModeDoFire()
         if (KFWeap.MagAmmoRemaining <= 0 && !KFWeap.bIsReloading && ( Level.TimeSeconds - LastFireTime>FireRate )
                 && !ScrnThompsonDrum(KFWeap).bBoltClosed )
         {
-            LastFireTime = Level.TimeSeconds; //moved to allowfire
+            LastFireTime = Level.TimeSeconds; 
             DoCloseBolt(); //plays sound and sets bBoltClosed
         }
         else

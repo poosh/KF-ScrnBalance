@@ -18,7 +18,7 @@ simulated function InitEffects()
 
     // don't do this on server
     if ( (Level.NetMode == NM_DedicatedServer) || (AIController(Instigator.Controller) != None) )
-		return;
+        return;
     if (ShellEjectEmitter != None)
     {
         ShellEjectEmitter.SetRelativeRotation(rot(-10000,0,0));
