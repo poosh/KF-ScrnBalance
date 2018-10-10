@@ -12,28 +12,22 @@ function PostBeginPlay()
     ScrnWeap = ScrnDeagle(Weapon);
 }
 
-event ModeDoFire()
+function PlayFiring()
 {
-    if ( !AllowFire() )
-        return;
+    super.PlayFiring();
 
-    super.ModeDoFire();
-
-    if ( ScrnWeap.Instigator != none && ScrnWeap.Instigator.IsLocallyControlled() ) {
-        // The problem is that we MagAmmoRemaining is changed by ConsumeAmmo() on server-side only
-        // and we cannon be sure if the replication happened at this moment or not yet
-        if( ScrnWeap.MagAmmoRemaining == 0 || ScrnWeap.bFiringLastRound ) {
-            //lock slide back if fired last round
-            ScrnWeap.LockSlideBack();
-            ScrnWeap.RotateHammerBack();
-        }
-        else {
-            ScrnWeap.AddExtraSlideMovement( GetFireSpeed() );
-            ScrnWeap.DoHammerDrop( GetFireSpeed() );
-        }
+    // The problem is that we MagAmmoRemaining is changed by ConsumeAmmo() on server-side only
+    // and we cannon be sure if the replication happened at this moment or not yet
+    if( ScrnWeap.MagAmmoRemaining == 0 || ScrnWeap.bFiringLastRound ) {
+        //lock slide back if fired last round
+        ScrnWeap.LockSlideBack();
+        ScrnWeap.RotateHammerBack();
+    }
+    else {
+        ScrnWeap.AddExtraSlideMovement( GetFireSpeed() );
+        ScrnWeap.DoHammerDrop( GetFireSpeed() );
     }
 }
-
 
 function DoTrace(Vector Start, Rotator Dir)
 {

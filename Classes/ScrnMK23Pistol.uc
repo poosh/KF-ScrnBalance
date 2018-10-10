@@ -79,7 +79,7 @@ simulated function WeaponTick(float dt)
             HandleSlideMovement();
         }
     }
-	Super.WeaponTick(dt);
+    Super.WeaponTick(dt);
 }
 
 //allowing +1 reload with full mag

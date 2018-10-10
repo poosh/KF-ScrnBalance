@@ -44,20 +44,49 @@ var float LeftSlideReturnEndTime; //time to that slide finishes moving forward f
 var float LeftSlideReturnDuration; //amount of time in seconds the slide returns for
 
 var transient float HammerRotateMult;
-var transient float HammerRotateRate; 
+var transient float HammerRotateRate;
 
 var float DefaultHammerRotateMult;
 var float DefaultHammerRotateRate;
 
 var float TweenEndTime;
 
-
 var vector PistolSlideOffset; //for tactical reload
 var rotator PistolHammerRotation;
 
+var transient int ClientMagAmmoRemaining;
+var transient int FiringRound;
+
+
+simulated function PostNetReceive()
+{
+    super.PostNetReceive();
+
+    if ( Role < ROLE_Authority ) {
+        if ( ClientMagAmmoRemaining != MagAmmoRemaining ) {
+            if ( MagAmmoRemaining > ClientMagAmmoRemaining ) {
+                // mag update after reload
+                ScrnDualDeagleFire(GetFireMode(0)).SetPistolFireOrder( (MagAmmoRemaining%2) == 1 );
+            }
+            if ( MagAmmoRemaining <= 1 ) {
+                LockRightSlideBack();
+                if ( MagAmmoRemaining == 0 )
+                    LockLeftSlideBack();
+            }
+            ClientMagAmmoRemaining = MagAmmoRemaining;
+        }
+    }
+}
+
+simulated function Fire(float F)
+{
+    FiringRound = MagAmmoRemaining;
+    super.Fire(f);
+}
+
 simulated function BringUp(optional Weapon PrevWeapon)
 {
-	Super.BringUp(PrevWeapon);
+    Super.BringUp(PrevWeapon);
     if (Level.NetMode != NM_DedicatedServer)
     {
         RotateHammersBack(); //always do this now
@@ -67,8 +96,18 @@ simulated function BringUp(optional Weapon PrevWeapon)
             LockRightSlideBack();
         }
         if (MagAmmoRemaining == 1)
-            LockRightSlideBack();   
+            LockRightSlideBack();
     }
+}
+
+simulated function bool PutDown()
+{
+    if ( Instigator.PendingWeapon.class == DemoReplacement )
+    {
+        bIsReloading = false;
+    }
+
+    return super.PutDown();
 }
 
 simulated function RotateHammersBack()
@@ -97,12 +136,12 @@ simulated function DoRightHammerDrop(float FireRateMod)
 
 simulated function RotateLeftHammerBack()
 {
-    SetBoneRotation( 'Hammer01', -1*PistolHammerRotation, , 100); //set hammer rotation 
+    SetBoneRotation( 'Hammer01', -1*PistolHammerRotation, , 100); //set hammer rotation
 }
 
 simulated function RotateRightHammerBack()
 {
-    SetBoneRotation( 'Hammer', -1*PistolHammerRotation, , 100); //set hammer rotation 
+    SetBoneRotation( 'Hammer', -1*PistolHammerRotation, , 100); //set hammer rotation
 }
 
 //used for enhanced hammer rotation forwards during firing
@@ -113,7 +152,7 @@ simulated function RotateLeftHammerSmooth(float rate, bool bRotatingHammerBack)
     RateMult = 100/HammerRotateRate;
     if(bRotatingHammerBack )
         SetBoneRotation( 'Hammer01', -DefaultHammerRotateMult*PistolHammerRotation, ,100 - Rate*RateMult/3 ); //needs to move from 0 to -120
-     else 
+     else
         SetBoneRotation( 'Hammer01', 0.3*DefaultHammerRotateMult*PistolHammerRotation, , 100- Rate*RateMult ); //needs to move from 0 to 45
 }
 
@@ -125,7 +164,7 @@ simulated function RotateRightHammerSmooth(float rate, bool bRotatingHammerBack)
     RateMult = 100/HammerRotateRate;
     if(bRotatingHammerBack )
         SetBoneRotation( 'Hammer', -DefaultHammerRotateMult*PistolHammerRotation, ,100 - Rate*RateMult/3 ); //needs to move from 0 to -120
-     else 
+     else
         SetBoneRotation( 'Hammer', 0.3*DefaultHammerRotateMult*PistolHammerRotation, , 100- Rate*RateMult ); //needs to move from 0 to 45
 }
 
@@ -133,7 +172,7 @@ simulated function RotateRightHammerSmooth(float rate, bool bRotatingHammerBack)
 simulated function AddExtraRightSlideMovement(float FireRateMod)
 {
     bEnhancedRightSlideMovement = True;
-    SlideMoveRate = 0.04/FireRateMod; 
+    SlideMoveRate = 0.04/FireRateMod;
     RightSlideMoveBackTime = Level.TimeSeconds + SlideMoveRate; //set time
     RightSlideMoveForwardTime = Level.TimeSeconds + 2*SlideMoveRate; //set time
 }
@@ -142,7 +181,7 @@ simulated function AddExtraRightSlideMovement(float FireRateMod)
 simulated function AddExtraLeftSlideMovement(float FireRateMod)
 {
     bEnhancedLeftSlideMovement = True;
-    SlideMoveRate = 0.04/FireRateMod; 
+    SlideMoveRate = 0.04/FireRateMod;
     LeftSlideMoveBackTime = Level.TimeSeconds + SlideMoveRate; //set time
     LeftSlideMoveForwardTime = Level.TimeSeconds + 2*SlideMoveRate; //set time
 }
@@ -155,8 +194,8 @@ simulated function MoveRightSlideSmooth(float rate, bool bMovingSlideBack)
     RateMult = 100/SlideMoveRate;
     if(bMovingSlideBack )
         SetBoneLocation( 'Slide', -DefaultSlideMoveMult*PistolSlideOffset, Rate*RateMult ); //move slide back
-     else 
-        SetBoneLocation( 'Slide', -DefaultSlideMoveMult*PistolSlideOffset, 100 - Rate*RateMult ); //move slide forward   
+     else
+        SetBoneLocation( 'Slide', -DefaultSlideMoveMult*PistolSlideOffset, 100 - Rate*RateMult ); //move slide forward
 }
 
 //used for enhanced slide movement backwards during firing
@@ -167,8 +206,8 @@ simulated function MoveLeftSlideSmooth(float rate, bool bMovingSlideBack)
     RateMult = 100/SlideMoveRate;
     if(bMovingSlideBack )
         SetBoneLocation( 'Slide01', -DefaultSlideMoveMult*PistolSlideOffset, Rate*RateMult ); //move slide back
-     else 
-        SetBoneLocation( 'Slide01', -DefaultSlideMoveMult*PistolSlideOffset, 100 - Rate*RateMult ); //move slide forward   
+     else
+        SetBoneLocation( 'Slide01', -DefaultSlideMoveMult*PistolSlideOffset, 100 - Rate*RateMult ); //move slide forward
 }
 
 simulated function ResetLeftSlidePosition()
@@ -184,11 +223,15 @@ simulated function ResetRightSlidePosition()
 simulated function LockLeftSlideBack()
 {
     SetBoneLocation( 'Slide01', -1.4*PistolSlideOffset, 100 ); //lock slide back
+    bEnhancedLeftSlideMovement = false;
+    LeftSlideReturnEndTime = 0;
 }
 
 simulated function LockRightSlideBack()
 {
     SetBoneLocation( 'Slide', -1.4*PistolSlideOffset, 100 ); //lock slide back
+    bEnhancedRightSlideMovement = false;
+    RightSlideReturnEndTime = 0;
 }
 
 simulated function InterpolateRightSlide(float time)
@@ -231,9 +274,9 @@ simulated function HandleSlideMovement()
     if (bEnhancedRightSlideMovement)
     {
         if (Level.TimeSeconds < RightSlideMoveBackTime && Level.TimeSeconds < RightSlideMoveForwardTime )
-            MoveRightSlideSmooth(RightSlideMoveBackTime - Level.TimeSeconds, false); //move slide backwards with vector and "rate" 
+            MoveRightSlideSmooth(RightSlideMoveBackTime - Level.TimeSeconds, false); //move slide backwards with vector and "rate"
         if (Level.TimeSeconds > RightSlideMoveBackTime )
-            MoveRightSlideSmooth(RightSlideMoveForwardTime - Level.TimeSeconds, true); //move slide forwards with vector and "rate" 
+            MoveRightSlideSmooth(RightSlideMoveForwardTime - Level.TimeSeconds, true); //move slide forwards with vector and "rate"
         if (Level.TimeSeconds > RightSlideMoveForwardTime )
         {
             bEnhancedRightSlideMovement = false; //finished moving slide
@@ -243,9 +286,9 @@ simulated function HandleSlideMovement()
     if (bEnhancedLeftSlideMovement)
     {
         if (Level.TimeSeconds < LeftSlideMoveBackTime && Level.TimeSeconds < LeftSlideMoveForwardTime )
-            MoveLeftSlideSmooth(LeftSlideMoveBackTime - Level.TimeSeconds, false); //move slide backwards with vector and "rate" 
+            MoveLeftSlideSmooth(LeftSlideMoveBackTime - Level.TimeSeconds, false); //move slide backwards with vector and "rate"
         if (Level.TimeSeconds > LeftSlideMoveBackTime )
-            MoveLeftSlideSmooth(LeftSlideMoveForwardTime - Level.TimeSeconds, true); //move slide forwards with vector and "rate" 
+            MoveLeftSlideSmooth(LeftSlideMoveForwardTime - Level.TimeSeconds, true); //move slide forwards with vector and "rate"
         if (Level.TimeSeconds > LeftSlideMoveForwardTime )
         {
             bEnhancedLeftSlideMovement = false; //finished moving slide
@@ -282,7 +325,7 @@ simulated function HandleSlideMovement()
             bRightSlideReturned = true;
             RightSlideReturnEndTime = 0;
             RotateRightHammerBack(); //reset it to normal position
-        }   
+        }
     }
     if (LeftSlideReturnEndTime > 0)
     {
@@ -295,12 +338,12 @@ simulated function HandleSlideMovement()
             bLeftSlideReturned = true;
             LeftSlideReturnEndTime = 0;
             RotateLeftHammerBack(); //reset it to normal position
-        }   
+        }
     }
 }
 
 //handles all hammer rotation
-function HandleHammerRotation()
+simulated function HandleHammerRotation()
 {
     if (bAnimatingLeftHammer)
     {
@@ -313,7 +356,7 @@ function HandleHammerRotation()
             bAnimatingLeftHammer = false; //finished rotating hammer
             RotateLeftHammerBack(); //reset it to normal position
         }
-    } 
+    }
     if (bAnimatingRightHammer)
     {
         if (Level.TimeSeconds < RightHammerRotateForwardTime && Level.TimeSeconds < RightHammerRotateBackTime )
@@ -325,7 +368,7 @@ function HandleHammerRotation()
             bAnimatingRightHammer = false; //finished rotating hammer
             RotateRightHammerBack(); //reset it to normal position
         }
-    } 
+    }
 }
 
 simulated function WeaponTick(float dt)
@@ -335,11 +378,11 @@ simulated function WeaponTick(float dt)
         HandleSlideMovement();
         HandleHammerRotation();
     }
-	Super.WeaponTick(dt);
+    Super.WeaponTick(dt);
 }
 
 simulated function StartTweeningSlide()
-{   
+{
     bTweeningSlide = true; //start Slide tweening
     TweenEndTime = Level.TimeSeconds + 0.2;
 }
@@ -362,18 +405,7 @@ simulated function ClientFinishReloading()
         SetBoneLocation( 'Slide01', PistolSlideOffset, 0 ); //reset left slide position
         SetBoneLocation( 'Slide', PistolSlideOffset, 0 ); //reset right slide position
     }
-    ScrnDualDeagleFire(GetFireMode(0)).SetPistolFireOrder();
-
-	Super.ClientFinishReloading();
-}
-
-simulated exec function ToggleIronSights()
-{
-    if (Level.NetMode != NM_DedicatedServer)
-    {
-        ScrnDualDeagleFire(GetFireMode(0)).SetPistolFireOrder(); //make pistol fire order synced between zooms}
-    }
-    Super.ToggleIronSights();
+    Super.ClientFinishReloading();
 }
 
 //added slide offset to reload animation
@@ -388,12 +420,12 @@ simulated function ClientReload()
         if( Role < ROLE_Authority)
             ServerZoomOut(false);
     }
-    
+
     if ( KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo) != none && KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo).ClientVeteranSkill != none )
         ReloadMulti = KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo).ClientVeteranSkill.Static.GetReloadSpeedModifier(KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo), self);
     else
         ReloadMulti = 1.0;
-        
+
     bIsReloading = true;
     bAnimatingLeftHammer = false;
     bAnimatingRightHammer = false;
@@ -401,7 +433,7 @@ simulated function ClientReload()
     bEnhancedRightSlideMovement = false;
     SetBoneRotation( 'Hammer', PistolHammerRotation, , 0); //always reset hammer rotations
     SetBoneRotation( 'Hammer01', PistolHammerRotation, , 0); //always reset hammer rotations
-    
+
     if (MagAmmoRemaining <= 0)
     {
         bShortReload = false;
@@ -409,12 +441,12 @@ simulated function ClientReload()
         PlayAnim(ReloadAnim, ReloadAnimRate*ReloadMulti, 0.001);
         SetBoneLocation( 'Slide', -0.45*PistolSlideOffset, 100 ); //special case for deagle because default slide animation sucks
         SetBoneLocation( 'Slide01', -0.45*PistolSlideOffset, 100 ); //special case for deagle because default slide animation sucks
-        
+
         bRightSlideReturned = false;
         RightSlideReturnStartTime = Level.TimeSeconds + 0.88571*ReloadRate;
         RightSlideReturnEndTime = Level.TimeSeconds + 0.90476*ReloadRate;
         RightSlideReturnDuration = 2/(30*reloadmulti); //its 2 frames
-        
+
         bLeftSlideReturned = false;
         LeftSlideReturnStartTime = Level.TimeSeconds + 0.93333*ReloadRate;
         LeftSlideReturnEndTime = Level.TimeSeconds + 0.95238*ReloadRate;
@@ -424,7 +456,7 @@ simulated function ClientReload()
     {
         bShortReload = false;
         bHalfShortReload = true;
-        PlayAnim(ReloadAnim, ReloadAnimRate*ReloadMulti, 0.001); 
+        PlayAnim(ReloadAnim, ReloadAnimRate*ReloadMulti, 0.001);
         SetBoneLocation( 'Slide01', PistolSlideOffset, 100 ); //move left slide forward
         SetBoneLocation( 'Slide', -0.45*PistolSlideOffset, 100 ); //special case for deagle because default slide animation sucks
         bTweenLeftSlide = true;
@@ -439,7 +471,7 @@ simulated function ClientReload()
     {
         bShortReload = true;
         bHalfShortReload = false;
-        PlayAnim(ReloadAnim, ReloadAnimRate*ReloadMulti, 0.001); 
+        PlayAnim(ReloadAnim, ReloadAnimRate*ReloadMulti, 0.001);
         SetBoneLocation( 'Slide', PistolSlideOffset, 100 ); //move slide forward
         SetBoneLocation( 'Slide01', PistolSlideOffset, 100 ); //move slide forward
         bTweenLeftSlide = true;
@@ -450,7 +482,7 @@ simulated function ClientReload()
 exec function ReloadMeNow()
 {
     local float ReloadMulti;
-    
+
     if(!AllowReload())
         return;
     if ( bHasAimingMode && bAimingRifle )
@@ -461,23 +493,23 @@ exec function ReloadMeNow()
         if( Role < ROLE_Authority)
             ServerZoomOut(false);
     }
-    
+
     if ( KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo) != none && KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo).ClientVeteranSkill != none )
         ReloadMulti = KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo).ClientVeteranSkill.Static.GetReloadSpeedModifier(KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo), self);
     else
         ReloadMulti = 1.0;
-        
+
     bIsReloading = true;
     ReloadTimer = Level.TimeSeconds;
     bShortReload = MagAmmoRemaining > 0;
-    
+
     if ( MagAmmoRemaining >= 2 )
         ReloadRate = default.ReloadShortRate / ReloadMulti;
     else if (MagAmmoRemaining == 1)
         ReloadRate = default.ReloadHalfShortRate / ReloadMulti;
     else if (MagAmmoRemaining <= 0)
         ReloadRate = default.ReloadRate / ReloadMulti;
-        
+
     if( bHoldToReload )
     {
         NumLoadedThisReload = 0;
@@ -495,9 +527,9 @@ exec function ReloadMeNow()
 function AddReloadedAmmo()
 {
     local int a;
-    
+
     UpdateMagCapacity(Instigator.PlayerReplicationInfo);
-    
+
     a = MagCapacity;
     if ( bShortReload )
         a+=2; // 2 bullets already bolted
@@ -569,7 +601,7 @@ function DropFrom(vector StartLocation)
         SinglePistol.Ammo[0].AmmoAmount = OtherAmmo;
         SinglePistol.MagAmmoRemaining = MagAmmoRemaining / 2;
         MagAmmoRemaining = Max(MagAmmoRemaining-SinglePistol.MagAmmoRemaining,0);
-        
+
         Pickup = KFWeaponPickup(Spawn(SinglePistol.PickupClass,,, StartLocation));
     }
     else
@@ -582,7 +614,7 @@ function DropFrom(vector StartLocation)
         Pickup.Velocity = Velocity;
         //fixing dropping exploit
         Pickup.SellValue = SellValue / 2;
-        Pickup.Cost = Pickup.SellValue / 0.75; 
+        Pickup.Cost = Pickup.SellValue / 0.75;
         Pickup.AmmoAmount[0] = AmmoThrown;
         Pickup.MagAmmoRemaining = MagAmmoRemaining;
         if (Instigator.Health > 0)
@@ -593,18 +625,10 @@ function DropFrom(vector StartLocation)
     Destroy();
 }
 
-simulated function bool PutDown()
-{
-    if ( Instigator.PendingWeapon.class == DemoReplacement )
-    {
-        bIsReloading = false;
-    }
-
-    return super.PutDown();
-}
-
 defaultproperties
 {
+    MagAmmoRemaining=16
+    ClientMagAmmoRemaining=16
     ReloadShortRate = 2.9333 //no slides locked back
     ReloadHalfShortRate = 3.2333 //right slide locked back
     ReloadRate=3.500000 //default

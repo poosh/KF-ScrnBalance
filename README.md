@@ -19,6 +19,9 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+### v9.60.25
+- Fixed slide lock for all pistols, including dualies and KF2 Medic Pistol
+
 ### v9.60.23
 - Fixed netcode of slide lock on empty magazine for HC and MK23
 

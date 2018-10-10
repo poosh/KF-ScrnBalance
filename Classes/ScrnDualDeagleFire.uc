@@ -1,29 +1,38 @@
 class ScrnDualDeagleFire extends DualDeagleFire;
 
+var ScrnDualDeagle ScrnWeap; // avoid typecasting
+
 var float PenDmgReduction; //penetration damage reduction. 1.0 - no reduction, 25% reduction
 var byte  MaxPenetrations; //how many enemies can penetrate a single bullet
 var bool  bCheck4Ach;
 
-// Remove left gun's aiming bug  (c) PooSH
-// Thanks to n87, Benjamin
-function DoFireEffect()
+var protected bool bFireLeft;
+
+
+function PostBeginPlay()
 {
-    super(KFFire).DoFireEffect();
+    super.PostBeginPlay();
+    ScrnWeap = ScrnDualDeagle(Weapon);
 }
 
 //called after reload and on zoom toggle, sets next pistol to fire to sync with slide lock order
-function SetPistolFireOrder()
+function SetPistolFireOrder(bool bNextFireLeft)
 {
-    //this gets toggled before firing, amazingly
-    if (ScrnDualDeagle(Weapon).MagAmmoRemaining%2 == 1)
+    bFireLeft = bNextFireLeft;
+
+    if (bFireLeft)
     {
+        ScrnWeap.altFlashBoneName = ScrnWeap.default.FlashBoneName;
+        ScrnWeap.FlashBoneName = ScrnWeap.default.altFlashBoneName;
         FireAnim2 = default.FireAnim;
         FireAimedAnim2 = default.FireAimedAnim;
         FireAnim = default.FireAnim2;
         FireAimedAnim = default.FireAimedAnim2;
     }
-    else 
+    else
     {
+        ScrnWeap.altFlashBoneName = ScrnWeap.default.altFlashBoneName;
+        ScrnWeap.FlashBoneName = ScrnWeap.default.FlashBoneName;
         FireAnim2 = default.FireAnim2;
         FireAimedAnim2 = default.FireAimedAnim2;
         FireAnim = default.FireAnim;
@@ -31,41 +40,57 @@ function SetPistolFireOrder()
     }
 }
 
-//lock slide back if fired last round
-simulated function bool AllowFire()
+function bool GetPistolFireOrder()
 {
-    if (Level.NetMode != NM_DedicatedServer)
-    {
-        if( (Level.TimeSeconds - LastFireTime > FireRate) && !KFWeapon(Weapon).bIsReloading )
-        {
-            if (KFWeapon(Weapon).MagAmmoRemaining > 2)
-            {
-                if (KFWeapon(Weapon).MagAmmoRemaining%2 == 0) 
-                {
-                    ScrnDualDeagle(Weapon).DoRightHammerDrop( GetFireSpeed() ); //drop hammer
-                    ScrnDualDeagle(Weapon).AddExtraRightSlideMovement( GetFireSpeed() ); //add extra slide movement
-                }
-                if (KFWeapon(Weapon).MagAmmoRemaining%2 == 1) 
-                {
-                    ScrnDualDeagle(Weapon).DoLeftHammerDrop( GetFireSpeed() ); //drop hammer
-                    ScrnDualDeagle(Weapon).AddExtraLeftSlideMovement( GetFireSpeed() ); //add extra slide movement
-                }
-            }
-            if (KFWeapon(Weapon).MagAmmoRemaining == 2)
-            {
-                ScrnDualDeagle(Weapon).LockRightSlideBack();
-                ScrnDualDeagle(Weapon).bTweenLeftSlide = true;
-            }
-            else if (KFWeapon(Weapon).MagAmmoRemaining <= 1)
-            {
-                ScrnDualDeagle(Weapon).LockLeftSlideBack();
-                ScrnDualDeagle(Weapon).LockRightSlideBack();
-            }
-        }
-    }
-	return Super.AllowFire();
+    return bFireLeft;
 }
 
+event ModeDoFire()
+{
+    if ( !AllowFire() )
+        return;
+
+    super(KFFire).ModeDoFire();
+
+    InitEffects();
+    SetPistolFireOrder(!bFireLeft);
+}
+
+function PlayFiring()
+{
+    local int MagAmmoRemainingAfterShot;
+
+    super.PlayFiring();
+
+    // The problem is that we MagAmmoRemaining is changed by ConsumeAmmo() on server-side only
+    // and we cannon be sure if the replication happened at this moment or not yet
+    // FiringRound stores MagAmmoRemaining on client before the fire.
+    // If FiringRound == MagAmmoRemaining, then property is not replicated yet.
+    // If FiringRound - 1 == MagAmmoRemaining, then property is already replicated.
+    if ( ScrnWeap.FiringRound <= ScrnWeap.MagAmmoRemaining ) {
+        MagAmmoRemainingAfterShot = ScrnWeap.FiringRound - 1;
+    }
+    else {
+        MagAmmoRemainingAfterShot = ScrnWeap.MagAmmoRemaining;
+    }
+
+    if( MagAmmoRemainingAfterShot == 0 ) {
+        ScrnWeap.LockLeftSlideBack();
+        ScrnWeap.LockRightSlideBack();
+    }
+    else if ( MagAmmoRemainingAfterShot == 1 ) {
+        ScrnWeap.LockRightSlideBack();
+        ScrnWeap.bTweenLeftSlide = true;
+    }
+    else if ( bFireLeft ) {
+        ScrnWeap.DoLeftHammerDrop( GetFireSpeed() );
+        ScrnWeap.AddExtraLeftSlideMovement( GetFireSpeed() );
+    }
+    else {
+        ScrnWeap.DoRightHammerDrop( GetFireSpeed() );
+        ScrnWeap.AddExtraRightSlideMovement( GetFireSpeed() );
+    }
+}
 
 function DoTrace(Vector Start, Rotator Dir)
 {
@@ -78,7 +103,7 @@ function DoTrace(Vector Start, Rotator Dir)
     local array<Actor>    IgnoreActors;
     local Pawn DamagePawn;
     local int i;
-    
+
     local KFMonster Monster;
     local bool bWasDecapitated;
     //local int OldHealth;
@@ -99,9 +124,9 @@ function DoTrace(Vector Start, Rotator Dir)
     X = Vector(Dir);
     End = Start + TraceRange * X;
     HitDamage = DamageMax;
-    
+
     // HitCount isn't a number of max penetration. It is just to be sure we won't stuck in infinite loop
-    While( ++HitCount < 127 ) 
+    While( ++HitCount < 127 )
     {
         DamagePawn = none;
         Monster = none;
@@ -166,15 +191,15 @@ function DoTrace(Vector Start, Rotator Dir)
                 }
                 bWasDecapitated = Monster != none && Monster.bDecapitated;
                 Other.TakeDamage(int(HitDamage), Instigator, HitLocation, Momentum*X, DamageType);
-                if ( DamagePawn != none && (DamagePawn.Health <= 0 || (Monster != none 
-                        && !bWasDecapitated && Monster.bDecapitated)) ) 
+                if ( DamagePawn != none && (DamagePawn.Health <= 0 || (Monster != none
+                        && !bWasDecapitated && Monster.bDecapitated)) )
                 {
                     KillCount++;
                 }
 
                 // debug info
                 // if ( KFMonster(Other) != none )
-                    // log(String(class) $ ": Damage("$PenCounter$") = " 
+                    // log(String(class) $ ": Damage("$PenCounter$") = "
                         // $ int(HitDamage) $"/"$ (OldHealth-KFMonster(Other).Health)
                         // @ KFMonster(Other).MenuName , 'ScrnBalance');
             }
@@ -203,12 +228,12 @@ function DoTrace(Vector Start, Rotator Dir)
         }
     }
 
-    if ( Weapon.Role == Role_Authority && bCheck4Ach && KillCount >= 4 && Weapon.Instigator.PlayerReplicationInfo != none 
+    if ( Weapon.Role == Role_Authority && bCheck4Ach && KillCount >= 4 && Weapon.Instigator.PlayerReplicationInfo != none
             && SRStatsBase(Weapon.Instigator.PlayerReplicationInfo.SteamStatsAndAchievements) != none ) {
         class'ScrnBalanceSrv.ScrnAchievements'.static.ProgressAchievementByID(SRStatsBase(Weapon.Instigator.PlayerReplicationInfo.SteamStatsAndAchievements).Rep, 'HC4Kills', 1);
         bCheck4Ach = false;
     }
-    
+
 }
 
 defaultproperties

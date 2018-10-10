@@ -39,7 +39,7 @@ simulated function Fire(float F)
 
 simulated function BringUp(optional Weapon PrevWeapon)
 {
-	Super.BringUp(PrevWeapon);
+    Super.BringUp(PrevWeapon);
     if (Level.NetMode != NM_DedicatedServer)
     {
         SetBoneRotation( '9mm_hammer', -1*PistolHammerRotation, , 100); //rotate hammer to cocked position
@@ -143,7 +143,7 @@ simulated function WeaponTick(float dt)
             HandleHammerRotation();
         }
     }
-	Super.WeaponTick(dt);
+    Super.WeaponTick(dt);
 }
 
 //allowing +1 reload with full mag

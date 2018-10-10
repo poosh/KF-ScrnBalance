@@ -15,6 +15,35 @@ var float TweenEndTime;
 var vector PistolSlideOffset; //for tactical reload
 
 var float ShortReloadFrameSkip; //for tactical reload
+var transient int ClientMagAmmoRemaining;
+var transient int FiringRound;
+
+
+simulated function PostNetReceive()
+{
+    super.PostNetReceive();
+
+    if ( Role < ROLE_Authority ) {
+        if ( ClientMagAmmoRemaining != MagAmmoRemaining ) {
+            if ( MagAmmoRemaining > ClientMagAmmoRemaining ) {
+                // mag update after reload
+                ScrnDualMK23Fire(GetFireMode(0)).SetPistolFireOrder( (MagAmmoRemaining%2) == 1 );
+            }
+            if ( MagAmmoRemaining <= 1 ) {
+                LockRightSlideBack();
+                if ( MagAmmoRemaining == 0 )
+                    LockLeftSlideBack();
+            }
+            ClientMagAmmoRemaining = MagAmmoRemaining;
+        }
+    }
+}
+
+simulated function Fire(float F)
+{
+    FiringRound = MagAmmoRemaining;
+    super.Fire(f);
+}
 
 function AttachToPawn(Pawn P)
 {
@@ -80,7 +109,7 @@ function DropFrom(vector StartLocation)
         Pickup.Velocity = Velocity;
         //fixing dropping exploit
         Pickup.SellValue = SellValue / 2;
-        Pickup.Cost = Pickup.SellValue / 0.75; 
+        Pickup.Cost = Pickup.SellValue / 0.75;
         Pickup.AmmoAmount[0] = AmmoThrown;
         Pickup.MagAmmoRemaining = MagAmmoRemaining;
         if (Instigator.Health > 0)
@@ -103,7 +132,7 @@ simulated function BringUp(optional Weapon PrevWeapon)
             LockRightSlideBack();
         }
         if (MagAmmoRemaining == 1)
-            LockLeftSlideBack();   
+            LockLeftSlideBack();
     }
 }
 
@@ -184,7 +213,7 @@ simulated function WeaponTick(float dt)
         if ( bTweeningSlide && TweenEndTime > 0 )
         {
             HandleSlideMovement();
-        } 
+        }
         /*
         if (bIsReloading && bFrameSkipRequired)
         {
@@ -192,7 +221,7 @@ simulated function WeaponTick(float dt)
         }
         */
     }
-	Super.WeaponTick(dt);
+    Super.WeaponTick(dt);
 }
 
 //added this to replace old reloadtimer mult check
@@ -215,7 +244,7 @@ simulated function DoFrameSkip()
 
 
 simulated function StartTweeningSlide()
-{   
+{
     bTweeningSlide = true; //start Slide tweening
     TweenEndTime = Level.TimeSeconds + 0.2;
 }
@@ -227,19 +256,8 @@ simulated function ClientFinishReloading()
     {
         StartTweeningSlide(); //start tweening Slide back
     }
-    ScrnDualMK23Fire(GetFireMode(0)).SetPistolFireOrder();
-	Super.ClientFinishReloading();
+    Super.ClientFinishReloading();
 }
-
-simulated exec function ToggleIronSights()
-{
-    if (Level.NetMode != NM_DedicatedServer)
-    {
-        ScrnDualMK23Fire(GetFireMode(0)).SetPistolFireOrder(); //make pistol fire order synced between zooms
-    }
-    Super.ToggleIronSights();
-}
-
 
 //added slide offset to reload animation
 simulated function ClientReload()
@@ -253,12 +271,12 @@ simulated function ClientReload()
         if( Role < ROLE_Authority)
             ServerZoomOut(false);
     }
-    
+
     if ( KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo) != none && KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo).ClientVeteranSkill != none )
         ReloadMulti = KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo).ClientVeteranSkill.Static.GetReloadSpeedModifier(KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo), self);
     else
         ReloadMulti = 1.0;
-        
+
     bIsReloading = true;
     if (MagAmmoRemaining <= 0)
     {
@@ -272,7 +290,7 @@ simulated function ClientReload()
     {
         bShortReload = false;
         bHalfShortReload = true;
-        PlayAnim(ReloadAnim, ReloadAnimRate*ReloadMulti, 0.001); 
+        PlayAnim(ReloadAnim, ReloadAnimRate*ReloadMulti, 0.001);
         SetBoneLocation( 'Slide', PistolSlideOffset, 100 ); //move right slide forward
         SetBoneLocation( 'Slide01', PistolSlideOffset, 0 ); //reset left slide so that the animation's slide position gets used
         bTweenRightSlide = true;
@@ -283,20 +301,20 @@ simulated function ClientReload()
         bHalfShortReload = false;
         bFrameSkipRequired = true;
         bTweenRightSlide = true; //this is needed
-        PlayAnim(ReloadAnim, ReloadAnimRate*ReloadMulti, 0.001); 
+        PlayAnim(ReloadAnim, ReloadAnimRate*ReloadMulti, 0.001);
         SetBoneLocation( 'Slide', PistolSlideOffset, 100 ); //move slide forward
         SetBoneLocation( 'Slide01', PistolSlideOffset, 100 ); //move slide forward
         SetTimer(1.667/ReloadMulti, false); //timer skips from frame 50 to 75
-        
+
     }
 }
 
 function AddReloadedAmmo()
 {
     local int a;
-    
+
     UpdateMagCapacity(Instigator.PlayerReplicationInfo);
-    
+
     a = MagCapacity;
     if ( bShortReload )
         a+=2; // 2 bullets already bolted
@@ -323,7 +341,7 @@ function AddReloadedAmmo()
 exec function ReloadMeNow()
 {
     local float ReloadMulti;
-    
+
     if(!AllowReload())
         return;
     if ( bHasAimingMode && bAimingRifle )
@@ -334,23 +352,23 @@ exec function ReloadMeNow()
         if( Role < ROLE_Authority)
             ServerZoomOut(false);
     }
-    
+
     if ( KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo) != none && KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo).ClientVeteranSkill != none )
         ReloadMulti = KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo).ClientVeteranSkill.Static.GetReloadSpeedModifier(KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo), self);
     else
         ReloadMulti = 1.0;
-        
+
     bIsReloading = true;
     ReloadTimer = Level.TimeSeconds;
     bShortReload = MagAmmoRemaining > 0;
-    
+
     if ( MagAmmoRemaining >= 2 )
         ReloadRate = default.ReloadShortRate / ReloadMulti;
     else if (MagAmmoRemaining == 1)
         ReloadRate = default.ReloadHalfShortRate / ReloadMulti;
     else if (MagAmmoRemaining <= 0)
         ReloadRate = default.ReloadRate / ReloadMulti;
-        
+
     if( bHoldToReload )
     {
         NumLoadedThisReload = 0;
@@ -368,6 +386,8 @@ exec function ReloadMeNow()
 
 defaultproperties
 {
+     MagAmmoRemaining=24
+     ClientMagAmmoRemaining=24
      ReloadShortRate = 2.57 //no slides locked back
      ReloadHalfShortRate = 3.35 //left slide locked back
      PistolSlideOffset=(X=0,Y=-0.0235000,Z=0.0)
