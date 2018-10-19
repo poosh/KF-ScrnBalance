@@ -19,6 +19,13 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+### v9.60.26
+#### ScrN Waves
+- `bRespawnDeadPlayers` - allows controlling if dead players are allowed to respawn at the beginning of the wave
+- `XP_Bonus` and `XP_BonusAlive` - Allows granting XP bonus for completing the wave (and not dying respectively)
+    Overrides `ScrnBalance.EndGameStatBonus`
+
+
 ### v9.60.25
 - Fixed slide lock for all pistols, including dualies and KF2 Medic Pistol
 

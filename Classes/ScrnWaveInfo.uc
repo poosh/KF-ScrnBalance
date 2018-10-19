@@ -28,6 +28,7 @@ enum EDoorControl {
 var config string Header, Title, Message, TraderMessage;
 var config int TraderTime;
 var config bool bOpenTrader;
+var config bool bRespawnDeadPlayers;
 var config bool bStartAtTrader;
 var config bool bTraderArrow;
 var config EDoorControl DoorControl;
@@ -36,6 +37,7 @@ var config int Counter, MaxCounter;
 var config float PerPlayerMult;
 var config float SpawnRateMod;
 var config float BountyScale;
+var config float XP_Bonus, XP_BonusAlive;
 
 var config float SpecialSquadHealthMod;
 var config int ZedsPerSpecialSquad;
@@ -48,6 +50,7 @@ defaultproperties
 {
     TraderTime=60
     bOpenTrader=true
+    bRespawnDeadPlayers=true
     bTraderArrow=true
     DoorControl=DOOR_Default
     EndRule=RULE_KillEmAll

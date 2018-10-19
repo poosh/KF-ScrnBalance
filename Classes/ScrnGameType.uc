@@ -2622,6 +2622,7 @@ State MatchInProgress
 
         ScrnGRI.WaveNumber = WaveNum;
         if ( ScrnGameLength != none ) {
+            ScrnGameLength.WaveEnded();
             if ( !ScrnGameLength.LoadWave(WaveNum) ) {
                 DoWaveEnd();
                 return;
@@ -2665,7 +2666,9 @@ State MatchInProgress
                 if ( KFPRI.ClientVeteranSkill != KFPC.SelectedVeterancy )
                     KFPC.SendSelectedVeterancyToServer();
 
-                if ( KFPC.Pawn == none && !KFPRI.bOnlySpectator ) {
+                if ( KFPC.Pawn == none && !KFPRI.bOnlySpectator
+                        && (ScrnGameLength == none || ScrnGameLength.Wave.bRespawnDeadPlayers) )
+                {
                     KFPRI.Score = Max(MinRespawnCash, KFPRI.Score);
                     KFPC.GotoState('PlayerWaiting');
                     KFPC.SetViewTarget(C);
@@ -2681,6 +2684,7 @@ State MatchInProgress
                 KFPC.bSpawnedThisWave = WaveNum > FinalWave;
             }
         }
+
         bUpdateViewTargs = True;
         if ( WaveNum < FinalWave && (ScrnGameLength == none || ScrnGameLength.Wave.bOpenTrader) ) {
             if ( ScrnGameLength == none && (ScrnBalanceMut.bRespawnDoors || ScrnBalanceMut.bTSCGame) ) {

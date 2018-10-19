@@ -416,6 +416,26 @@ function WaveTimer()
     }
 }
 
+// Called by ScrnGameType at the end of the wave - just before loading the next wave
+function WaveEnded()
+{
+    local ScrnPlayerInfo SPI;
+
+    if ( !(Wave.XP_Bonus ~= 0 && Wave.XP_BonusAlive ~= 0) ) {
+        for ( SPI=Game.ScrnBalanceMut.GameRules.PlayerInfo; SPI!=none; SPI=SPI.NextPlayerInfo ) {
+            if ( SPI.PlayerOwner == none || SPI.PlayerOwner.PlayerReplicationInfo == none )
+                continue;
+
+            if ( SPI.bDied || Wave.XP_BonusAlive ~= 0 ) {
+                SPI.BonusStats(SPI.GameStartStats, Wave.XP_Bonus);
+            }
+            else {
+                SPI.BonusStats(SPI.GameStartStats, Wave.XP_BonusAlive);
+            }
+        }
+    }
+}
+
 function DoorControl()
 {
     switch (Wave.DoorControl) {
