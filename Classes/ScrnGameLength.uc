@@ -303,6 +303,11 @@ function bool LoadWave(int WaveNum)
         }
     }
 
+    if ( Wave.MaxZombiesOnce > 0 )
+        Game.MaxZombiesOnce = Wave.MaxZombiesOnce;
+    else
+        Game.MaxZombiesOnce = Game.StandardMaxZombiesOnce;
+
     Game.ScrnGRI.bTraderArrow = Wave.bTraderArrow || Wave.bOpenTrader;
     Game.ScrnGRI.WaveEndRule = Wave.EndRule;
     Game.bZedPickupDosh = Wave.EndRule == RULE_GrabDoshZed;
@@ -320,7 +325,7 @@ function bool LoadWave(int WaveNum)
         }
     }
 
-    DoorControl();
+    DoorControl(Wave.DoorControl);
 
     return true;
 }
@@ -345,6 +350,7 @@ function RunWave()
     local string s;
 
     SetWaveInfo();
+    DoorControl(Wave.DoorControl2);
     Game.ScrnGRI.bTraderArrow = Wave.bTraderArrow;
     if ( Game.ScrnGRI.WaveTitle != "" || Game.ScrnGRI.WaveMessage != "" ) {
         if ( Game.ScrnGRI.WaveTitle != "" ) {
@@ -436,9 +442,9 @@ function WaveEnded()
     }
 }
 
-function DoorControl()
+function DoorControl(ScrnWaveInfo.EDoorControl dc)
 {
-    switch (Wave.DoorControl) {
+    switch (dc) {
         case DOOR_Default:
             if (Game.ScrnBalanceMut.bRespawnDoors || Game.ScrnBalanceMut.bTSCGame) {
                 Game.ScrnBalanceMut.RespawnDoors();

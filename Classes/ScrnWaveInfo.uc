@@ -31,11 +31,12 @@ var config bool bOpenTrader;
 var config bool bRespawnDeadPlayers;
 var config bool bStartAtTrader;
 var config bool bTraderArrow;
-var config EDoorControl DoorControl;
+var config EDoorControl DoorControl, DoorControl2;
 var config EWaveEndRule EndRule;
 var config int Counter, MaxCounter;
 var config float PerPlayerMult;
 var config float SpawnRateMod;
+var config byte MaxZombiesOnce;
 var config float BountyScale;
 var config float XP_Bonus, XP_BonusAlive;
 

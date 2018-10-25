@@ -2633,7 +2633,7 @@ State MatchInProgress
                 return;
             }
             if ( !ScrnGameLength.Wave.bOpenTrader ) {
-                SelectShop(); // change shop for every wave, even if trader stays closed
+                // SelectShop(); // change shop for every wave, even if trader stays closed
                 SetupPickups();
                 ScrnBalanceMut.SetupPickups(false, true); // no trader = people need more ammo
                 ScrnBalanceMut.bPickupSetupReduced = true; // don't let ScrnBalance to reduce pickups again
