@@ -4,7 +4,7 @@ var bool bChamberThisReload; //if full reload is uninterrupted, play chambering 
 
 simulated function ClientReload()
 {
-    bChamberThisReload = MagAmmoRemaining == 0; //for chambering animation
+    bChamberThisReload = ( MagAmmoRemaining == 0 && (AmmoAmount(0) - MagAmmoRemaining > MagCapacity) ); //for chambering animation
     Super.ClientReload();
 }
 

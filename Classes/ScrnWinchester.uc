@@ -15,7 +15,7 @@ simulated function ShowBullet()
 simulated function ClientReload()
 {
     ShowBullet();
-    bChamberThisReload = MagAmmoRemaining == 0; //for chambering animation
+    bChamberThisReload = ( MagAmmoRemaining == 0 && (AmmoAmount(0) - MagAmmoRemaining > MagCapacity) ); //for chambering animation
     Super.ClientReload();
 }
 
