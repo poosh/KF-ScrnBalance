@@ -188,9 +188,12 @@ function LoadStats(GUIBuyable NewBuyable, byte FireMode, optional bool bSetTopVa
 
         if (bHSDamage)
         {
+            //current implementation works with projectiles extended from base classes
+            //unknown projectiles may be handled with if(int(ProjClass.GetPropertyText("HeadShotDamageMult"))>0)
+        
             //first, set HSMult to 0 so if projectile headshot mult isn't detected there won't be a stupid value displayed
-            HSMult = 0; //test
-
+            HSMult = 0; 
+            
             //a ton of things extend shotgunbullet so handle it first and set it again later
 
             //handle shotgun projectiles
