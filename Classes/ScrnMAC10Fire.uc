@@ -11,6 +11,7 @@ var bool bClientEffectPlayed;
 static function PreloadAssets(LevelInfo LevelInfo, optional KFFire Spawned)
 {
     local ScrnMac10Fire ScrnSpawned;
+    
     super.PreloadAssets(LevelInfo, Spawned);
     if ( default.BoltCloseSoundRef != "" )
     {
@@ -21,6 +22,12 @@ static function PreloadAssets(LevelInfo LevelInfo, optional KFFire Spawned)
     {
         ScrnSpawned.BoltCloseSound = default.BoltCloseSound;
     }
+}
+
+static function bool UnloadAssets()
+{
+    default.BoltCloseSound = none;
+    return super.UnloadAssets();
 }
 
 //close bolt if attempted to fire when empty
@@ -35,31 +42,30 @@ simulated function bool AllowFire()
 }
 
 
-//sets bCloseBolt and plays sound
-function CloseBolt()
+function DoCloseBolt()
 {
-    if (KFWeap != none)
-        ScrnMac10MP(KFWeap).bBoltClosed = true;
+    ScrnMAC10MP(KFWeap).CloseBolt();
+
     if (BoltCloseSound != none && !bClientEffectPlayed )
     {
         Weapon.PlayOwnedSound(BoltCloseSound,SLOT_Interact,TransientSoundVolume * 0.85,,TransientSoundRadius,1.00,false);
+        bClientEffectPlayed = true;
     }
-    bClientEffectPlayed = true;
 }
 
-//setting bBoltClosed in a non simulated function test
 function ModeDoFire()
 {
-    if (KFWeap.MagAmmoRemaining <= 0 && !KFWeapon(Weapon).bIsReloading && ( Level.TimeSeconds - LastFireTime>FireRate ) && !ScrnMAC10MP(KFWeap).bBoltClosed )
-    {
-        LastFireTime = Level.TimeSeconds; //moved to allowfire
-        ScrnMAC10MP(KFWeap).MoveBoltForward(); //visual effect only
-        CloseBolt(); //plays sound and sets bBoltClosed
-        ScrnMAC10MP(KFWeap).bBoltClosed = true; //attempt force setting it here
-    }
-    else
-    {
-        bClientEffectPlayed = false; //reset if not empty
+    if ( Instigator != none && Instigator.IsLocallyControlled() ) {
+        if (KFWeap.MagAmmoRemaining <= 0 && !KFWeap.bIsReloading && ( Level.TimeSeconds - LastFireTime>FireRate )
+                && !ScrnMAC10MP(KFWeap).bBoltClosed )
+        {
+            LastFireTime = Level.TimeSeconds; //moved to allowfire
+            DoCloseBolt(); //plays sound and sets bBoltClosed
+        }
+        else
+        {
+            bClientEffectPlayed = false; //reset if not empty
+        }
     }
     Super.ModeDoFire();
 }

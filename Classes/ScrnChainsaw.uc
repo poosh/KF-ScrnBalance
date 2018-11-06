@@ -19,6 +19,12 @@ var transient bool bBlownUpThisReload;
 var transient int OldMagAmmoRemaining;
 var ScrnFakedProjectile FakedGasCan; //adds a faked gas can during reload
 
+replication
+{
+	reliable if(Role == ROLE_Authority)
+		HideGasCan;
+}
+
 simulated function PostNetReceive()
 {
     super.PostNetReceive();
@@ -106,7 +112,7 @@ simulated function AttachGasCan() {
         if ( FakedGasCan != none )
         {
             AttachToBone(FakedGasCan, 'Chainsaw'); //attach faked shell to chainsaw
-            FakedGasCan.SetDrawScale(0.01); //test
+            FakedGasCan.SetDrawScale(0.01);
             FakedGasCan.SetRelativeLocation(vect(-3, 2, 3)); //x y z
             FakedGasCan.SetRelativeRotation(rot(-4000, 38000, 12000)); //pitch yaw roll
         }
@@ -195,8 +201,7 @@ simulated function ClientReload()
 simulated function ActuallyFinishReloading()
 {
     super.ActuallyFinishReloading();
-    if (FakedGasCan != none)
-        FakedGasCan.SetDrawScale(0.01); //test
+
     IdleFuelConsumeTime = default.IdleFuelConsumeTime;
     GotoState('');
     if ( MagAmmoRemaining > 0) {
@@ -204,6 +209,16 @@ simulated function ActuallyFinishReloading()
         ThirdPersonActor.AmbientSound = ThirdPersonActor.default.AmbientSound;
         TexPanner(Skins[1]).PanRate = 3; // start saw cycling
         PlayIdle();
+    }
+}
+
+simulated function ClientFinishReloading()
+{
+    super.ClientFinishReloading();
+    if ( Level.NetMode != NM_DedicatedServer )
+    {
+        if (FakedGasCan != none)
+            FakedGasCan.SetDrawScale(0.01); //hide gas can after reload
     }
 }
 
@@ -278,9 +293,9 @@ simulated state Reloading
             if ( FuelInTank < 1 )
                 return;
             nade = spawn(class'ScrnBalanceSrv.ScrnFlameNade');
-            if ( FakedGasCan != none )
-                FakedGasCan.SetDrawScale(0.01);
+            HideGasCan();
             AttachToBone(nade, 'Chainsaw'); //attempt to move explosion onto chainsaw to make it obvious that the gas can caused the explosion
+            nade.SetRelativeLocation(vect(-3, 2, 3)); //move nade to exact gas can location
             nade.SetTimer(0, false); // it will be blown up manualy
             nade.Instigator = Instigator;
             // the more fuel in tank, the higher is explosion
@@ -289,6 +304,23 @@ simulated state Reloading
             nade.Explode(Location, vect(0,0,1));
         }
     }
+}
+
+simulated function HideGasCan()
+{
+    if ( Level.NetMode != NM_DedicatedServer )
+    {
+        FakedGasCan.SetDrawScale(0.01); //hide gas can after reload
+    }
+}
+
+//destroy gas can on destroy
+simulated function Destroyed()
+{
+    if ( FakedGasCan != none && !FakedGasCan.bDeleteMe )
+        FakedGasCan.Destroy();
+
+    super.Destroyed();
 }
 
 simulated function PlayIdle()

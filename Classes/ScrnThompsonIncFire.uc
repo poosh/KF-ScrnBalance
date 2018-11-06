@@ -1,5 +1,45 @@
 class ScrnThompsonIncFire extends ThompsonFire;
 
+var() Sound BoltCloseSound;
+var string BoltCloseSoundRef;
+var bool bClientEffectPlayed;
+
+
+//load additional sound
+static function PreloadAssets(LevelInfo LevelInfo, optional KFFire Spawned)
+{
+    local ScrnThompsonIncFire ScrnSpawned;
+
+    super.PreloadAssets(LevelInfo, Spawned);
+    if ( default.BoltCloseSoundRef != "" )
+    {
+        default.BoltCloseSound = sound(DynamicLoadObject(default.BoltCloseSoundRef, class'Sound', true));
+    }
+    ScrnSpawned = ScrnThompsonIncFire(Spawned);
+    if ( ScrnSpawned != none )
+    {
+        ScrnSpawned.BoltCloseSound = default.BoltCloseSound;
+    }
+}
+
+static function bool UnloadAssets()
+{
+    default.BoltCloseSound = none;
+    return super.UnloadAssets();
+}
+
+function DoCloseBolt()
+{
+    ScrnThompsonInc(KFWeap).CloseBolt();
+
+    if (BoltCloseSound != none && !bClientEffectPlayed )
+    {
+        Weapon.PlayOwnedSound(BoltCloseSound,SLOT_Interact,TransientSoundVolume * 0.85,,TransientSoundRadius,1.00,false);
+        bClientEffectPlayed = true;
+    }
+}
+
+
 // fixes double shot bug -- PooSH
 state FireLoop
 {
@@ -9,6 +49,23 @@ state FireLoop
 
         NextFireTime = Level.TimeSeconds - 0.000001; //fire now!
     }
+}
+
+function ModeDoFire()
+{
+    if ( Instigator != none && Instigator.IsLocallyControlled() ) {
+        if (KFWeap.MagAmmoRemaining <= 0 && !KFWeap.bIsReloading && ( Level.TimeSeconds - LastFireTime>FireRate )
+                && !ScrnMKb42AssaultRifle(KFWeap).bBoltClosed )
+        {
+            LastFireTime = Level.TimeSeconds; //moved to allowfire
+            DoCloseBolt(); //plays sound and sets bBoltClosed
+        }
+        else
+        {
+            bClientEffectPlayed = false; //reset if not empty
+        }
+    }
+    Super.ModeDoFire();
 }
 
 // Overwritten to switch damage types for the firebug
@@ -105,7 +162,7 @@ defaultproperties
 {
     DamageType=Class'KFMod.DamTypeMAC10MP'
     AmmoClass=Class'ScrnBalanceSrv.ScrnThompsonIncAmmo'
-
+    BoltCloseSoundRef="KF_FNFALSnd.FNFAL_Bolt_Forward"
     DamageMin=40
     DamageMax=40
 }

@@ -12,6 +12,17 @@ var transient bool bBoltClosed;
 var float TweenEndTime;
 var vector ChargingHandleOffset; //for tactical reload
 
+replication
+{
+    reliable if(Role < ROLE_Authority)
+        ServerCloseBolt;
+}
+
+//allow firemode switch even if empty
+simulated function AltFire(float F)
+{
+    DoToggle();
+}
 
 simulated function BringUp(optional Weapon PrevWeapon)
 {
@@ -22,18 +33,37 @@ simulated function BringUp(optional Weapon PrevWeapon)
 
 simulated function ResetBoltPosition()
 {
-    SetBoneLocation( 'MAC11_Bolt', ChargingHandleOffset, 0 ); //reset charging handle position
+    if ( Level.NetMode != NM_DedicatedServer )
+        SetBoneLocation( 'MAC11_Bolt', ChargingHandleOffset, 0 ); //reset charging handle position
 }
 
 simulated function MoveBoltForward()
 {
-    SetBoneLocation( 'MAC11_Bolt', -ChargingHandleOffset, 100 ); //move bolt forward
-    bBoltClosed = true; //set this bool so weapon bolt will stay closed if dropped
+    if ( Level.NetMode != NM_DedicatedServer )
+    {
+        SetBoneLocation( 'MAC11_Bolt', -ChargingHandleOffset, 100 ); //move bolt forward
+        bBoltClosed = true; //set this bool so weapon bolt will stay closed if dropped
+    }
 }
 
 simulated function InterpolateBolt(float time)
 {
-    SetBoneLocation( 'MAC11_Bolt', ChargingHandleOffset, (time*500) ); //smooth moves
+    if ( Level.NetMode != NM_DedicatedServer )
+        SetBoneLocation( 'MAC11_Bolt', ChargingHandleOffset, (time*500) ); //smooth moves
+}
+
+function ServerCloseBolt()
+{
+    bBoltClosed = true;
+    bShortReload = false;
+}
+
+simulated function CloseBolt()
+{
+    ServerCloseBolt();
+    bBoltClosed = true;
+    bShortReload = false;
+    MoveBoltForward();
 }
 
 simulated function WeaponTick(float dt)
@@ -49,7 +79,6 @@ simulated function WeaponTick(float dt)
             bTweeningBolt = false;
         }
     }
-    
     Super.WeaponTick(dt);
 }
 
@@ -130,6 +159,7 @@ simulated function ClientReload()
         bShortReload = false;
         PlayAnim(ReloadAnim, ReloadAnimRate*ReloadMulti, 0.001);
         SetAnimFrame(1, 0, 1); //skip frame 0 because it has the bolt back for some reason
+        
         SetBoneLocation( 'MAC11_Bolt', ChargingHandleOffset, 0 ); //reset bolt so that the animation's Bolt position gets used
     }
     else if (MagAmmoRemaining >= 1 || !bBoltClosed)

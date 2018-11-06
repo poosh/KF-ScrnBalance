@@ -1,17 +1,10 @@
 class ScrnShotgun extends Shotgun;
 
-var int AmmoLoadedThisReload; //for some reason using NumLoadedThisReload doesn't work in multiplayer
-
-//count ammo loaded
-simulated function AddReloadedAmmo()
-{
-    AmmoLoadedThisReload++;
-    Super.AddReloadedAmmo();
-}
+var bool bChamberThisReload; //if full reload is uninterrupted, play chambering animation
 
 simulated function ClientReload()
 {
-    AmmoLoadedThisReload = 0;
+    bChamberThisReload = ( MagAmmoRemaining == 0 && (AmmoAmount(0) - MagAmmoRemaining > MagCapacity) ); //for chambering animation
     Super.ClientReload();
 }
 
@@ -19,38 +12,16 @@ simulated function ClientFinishReloading()
 {
     local float ReloadMulti;
     bIsReloading = false;
-    
-    // The reload animation is complete, but there is still some animation to play
-    // Let's reward player for waiting the full reload time by playing the full reload animation (Can be skipped by firing)
-    // Shotgun's animation is 23 frames long, so 0.76 seconds
-    if ( AmmoLoadedThisReload == MagCapacity)
-    {
-        if ( KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo) != none && KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo).ClientVeteranSkill != none )
-        {
-            ReloadMulti = KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo).ClientVeteranSkill.Static.GetReloadSpeedModifier(KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo), self);
-        }
-        else
-        {
-            ReloadMulti = 1.0;
-        }
-        //PlayIdle();
-        SetTimer(0.76/ReloadMulti, false); 
-    }
-    else
+
+    //play chambering animation if finished reloading from empty
+    if ( !bChamberThisReload )
     {
         PlayIdle();
     }
+    bChamberThisReload = false;
 
     if(Instigator.PendingWeapon != none && Instigator.PendingWeapon != self)
         Instigator.Controller.ClientSwitchToBestWeapon();
-}
-
-simulated function Timer()
-{
-    //if ( ClientState == WS_ReadyToFire )
-        //PlayIdle();
-    //else
-        super.Timer();
 }
 
 
