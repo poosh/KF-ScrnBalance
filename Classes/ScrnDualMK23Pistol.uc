@@ -30,9 +30,9 @@ simulated function PostNetReceive()
                 ScrnDualMK23Fire(GetFireMode(0)).SetPistolFireOrder( (MagAmmoRemaining%2) == 1 );
             }
             if ( MagAmmoRemaining <= 1 ) {
-                LockRightSlideBack();
+                LockLeftSlideBack();
                 if ( MagAmmoRemaining == 0 )
-                    LockLeftSlideBack();
+                    LockRightSlideBack();
             }
             ClientMagAmmoRemaining = MagAmmoRemaining;
         }
