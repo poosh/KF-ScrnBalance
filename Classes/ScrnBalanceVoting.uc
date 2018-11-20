@@ -674,7 +674,7 @@ function ApplyVoteValue(int VoteIndex, string VoteValue)
             break;
         case VOTE_DIFF:
             Mut.VotedDifficulty = byte(VoteValue);
-            Mut.static.VotedDifficulty = Mut.VotedDifficulty;
+            Mut.default.VotedDifficulty = Mut.VotedDifficulty;
             break;
 
         case VOTE_RKILL:
