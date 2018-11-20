@@ -21,7 +21,6 @@ simulated function ClientReload()
 
 simulated function ClientFinishReloading()
 {
-    local float ReloadMulti;
     bIsReloading = false;
 
     //play chambering animation if finished reloading from empty
@@ -45,7 +44,7 @@ defaultproperties
     SelectedHudImageRef="KillingFloorHUD.WeaponSelect.Winchester"
     SelectSoundRef="KF_RifleSnd.Rifle_Select"
     ReloadAnimRate=1.15000 //sync reload animation with reloadrate
-    
+
     FireModeClass(0)=Class'ScrnBalanceSrv.ScrnWinchesterFire'
     PickupClass=Class'ScrnBalanceSrv.ScrnWinchesterPickup'
     ItemName="Lever Action Rifle SE"

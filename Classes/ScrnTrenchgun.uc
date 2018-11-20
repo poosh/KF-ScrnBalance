@@ -21,7 +21,6 @@ simulated function ClientReload()
 
 simulated function ClientFinishReloading()
 {
-    local float ReloadMulti;
     bIsReloading = false;
 
     //play chambering animation if finished reloading from empty

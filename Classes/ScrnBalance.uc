@@ -12,7 +12,7 @@ class ScrnBalance extends Mutator
 #exec OBJ LOAD FILE=ScrnAch_T.utx
 
 
-const VERSION = 96027;
+const VERSION = 96100;
 
 var ScrnBalance Mut; // pointer to self to use in static functions, i.e class'ScrnBalance'.default.Mut
 
@@ -166,6 +166,8 @@ var globalconfig int  MaxVoteKillHP;
 var globalconfig bool bVoteKillCheckVisibility;
 var globalconfig float VoteKillPenaltyMult;
 var globalconfig byte MinVoteFF, MaxVoteFF;
+var globalconfig byte MinVoteDifficulty;
+var byte VotedDifficulty;
 
 var globalconfig bool bDynamicLevelCap;
 var int OriginalMaxLevel;
@@ -2569,6 +2571,7 @@ function PostBeginPlay()
     local ScrnVotingHandlerMut VH;
     local ScrnAchHandler AchHandler;
     local int i;
+    local KFGameReplicationInfo KFGRI;
 
     KF = KFGameType(Level.Game);
     if (KF == none) {
@@ -2576,6 +2579,7 @@ function PostBeginPlay()
         Destroy();
         return;
     }
+    KFGRI = KFGameReplicationInfo(Level.Game.GameReplicationInfo);
 
     if ( bLogObjectsAtMapStart )
         LogObjects();
@@ -2639,6 +2643,21 @@ function PostBeginPlay()
         Level.Game.ScoreBoardType = string(Class'ScrnBalanceSrv.ScrnScoreBoard');
 
     KF.LoginMenuClass = string(Class'ScrnBalanceSrv.ScrnInvasionLoginMenu');
+
+    if ( VotedDifficulty > 0 ) {
+        if ( VotedDifficulty == 6 || VotedDifficulty == 8 ) {
+            bHardcore = true;
+            KF.GameDifficulty = VotedDifficulty - 1;
+            log("Game difficulty: " $ string(KF.GameDifficulty) $ " + Hardcore", 'ScrnBalance');
+        }
+        else {
+            bHardcore = false;
+            KF.GameDifficulty = VotedDifficulty;
+            log("Game difficulty: " $ string(KF.GameDifficulty), 'ScrnBalance');
+        }
+        KFGRI.GameDiff = KF.GameDifficulty;
+        KFGRI.BaseDifficulty = KF.GameDifficulty;
+    }
 
     SetLevels();
     SetReplicationData();
@@ -2808,6 +2827,7 @@ function WeldDoors(float WeldPct)
             key.WeldStrength = WeldPct * key.MaxWeldStrength;
 
         for ( j = 0; j < key.DoorOwners.Length; ++j ) {
+            key.DoorOwners[j].bShouldBeOpen = false;
             key.DoorOwners[j].RespawnDoor();
             key.DoorOwners[j].DoClose();
             if ( !key.DoorOwners[j].bNoSeal ) {
@@ -2830,6 +2850,48 @@ function UnweldDoors()
                 key.DoorOwners[j].SetWeldStrength(0);
             }
         }
+    }
+}
+
+// 50% chance for dooor to be welded
+// 25% - unweld
+// 25% - blow
+function RandomizeDoors()
+{
+    local int i, j;
+    local KFUseTrigger key;
+    local float f;
+
+    for ( i = 0; i < DoorKeys.length; ++i ) {
+        key = DoorKeys[i];
+        f = frand();
+
+        if ( f > 0.505 ) {  // weld
+            key.WeldStrength = (f - 0.5) * 2.0;
+            for ( j = 0; j < key.DoorOwners.Length; ++j ) {
+                key.DoorOwners[j].bShouldBeOpen = false;
+                key.DoorOwners[j].RespawnDoor();
+                key.DoorOwners[j].DoClose();
+                if ( !key.DoorOwners[j].bNoSeal ) {
+                    key.DoorOwners[j].SetWeldStrength(key.WeldStrength);
+                }
+            }
+        }
+        else if ( f > 0.25 ) {  // unweld or respawn
+            key.WeldStrength = 0;
+            for ( j = 0; j < key.DoorOwners.Length; ++j ) {
+                key.DoorOwners[j].RespawnDoor();
+                key.DoorOwners[j].SetWeldStrength(0);
+            }
+        }
+        else {  // blow
+            for ( j = 0; j < key.DoorOwners.Length; ++j ) {
+                if ( !key.DoorOwners[j].bDoorIsDead ) {
+                    key.DoorOwners[j].GoBang(none, vect(0,0,0), vect(0,0,0), none);
+                }
+            }
+        }
+
     }
 }
 
@@ -3172,6 +3234,7 @@ defaultproperties
     MaxVoteKillHP=2000
     bVoteKillCheckVisibility=True
     VoteKillPenaltyMult=5.0
+    MinVoteDifficulty=2
     bTraderSpeedBoost=True
 
     BonusLevelNormalMax=4

@@ -22,12 +22,13 @@ const VOTE_MAPRESTART   = 16;
 const VOTE_FAKEDPLAYERS = 17;
 const VOTE_FAKEDCOUNT   = 18;
 const VOTE_FAKEDHEALTH  = 19;
+const VOTE_DIFF         = 20;
 const VOTE_RKILL        = 100;
 
 var localized string strCantEndTrade;
 var localized string strTooLate;
 var localized string strGamePaused, strSecondsLeft, strGameUnPaused, strPauseTraderOnly;
-var localized string viResume, viEndTrade;
+var localized string viResume, viEndTrade, viDifficulty;
 var localized string strZedSpawnsDoubled;
 var localized string strSquadNotFound, strCantSpawnSquadNow, strSquadList;
 var localized string strNotInStoryMode, strNotInTSC;
@@ -444,6 +445,20 @@ function int GetVoteIndex(PlayerController Sender, string Key, out string Value,
 
         return VOTE_FAKEDHEALTH;
     }
+    else if ( Key == "DIFF" || Key == "DIFFICULTY" ) {
+        if ( Value == "" ) {
+            Sender.ClientMessage("Usage: MVOTE DIFF DEFAULT|NORMAL|HARD|SUI|SUI+|HOE|HOE+");
+            return VOTE_LOCAL;
+        }
+        v = GetDifficulty(Value);
+        if ( v != 0 && v < Mut.MinVoteDifficulty || v > 8 )
+            return VOTE_ILLEGAL;
+        if ( v == byte(Mut.KF.GameDifficulty) )
+            return VOTE_NOEFECT;
+        VoteInfo = Value @ viDifficulty;
+        Value = string(v);
+        return VOTE_DIFF;
+    }
     else if ( Key == "R_KILL" ) {
         if ( !Sender.PlayerReplicationInfo.bAdmin || Mut.SrvTourneyMode == 0 ) {
             Sender.ClientMessage(strRCommands);
@@ -657,6 +672,10 @@ function ApplyVoteValue(int VoteIndex, string VoteValue)
         case VOTE_FAKEDHEALTH:
             Mut.ScrnGT.ScrnGRI.FakedAlivePlayers = byte(VoteValue);
             break;
+        case VOTE_DIFF:
+            Mut.VotedDifficulty = byte(VoteValue);
+            Mut.static.VotedDifficulty = Mut.VotedDifficulty;
+            break;
 
         case VOTE_RKILL:
             if ( VotingHandler.VotedPlayer != none && VotingHandler.VotedPlayer.Pawn != none ) {
@@ -807,6 +826,39 @@ function DoEndWave()
         VotingHandler.BroadcastMessage(strEndWavePenalty $ TotalPenalty);
 }
 
+function byte GetDifficulty(out string DiffStr)
+{
+    if ( DiffStr == "0" || DiffStr == "DEFAULT" || DiffStr == "OFF" ) {
+        DiffStr = "Default";
+        return 2;
+    }
+    else if ( DiffStr == "2" || DiffStr == "NORMAL" ) {
+        DiffStr = "Normal";
+        return 2;
+    }
+    else if ( DiffStr == "4" || DiffStr == "HARD" ) {
+        DiffStr = "Hard";
+        return 4;
+    }
+    else if ( DiffStr == "5" || DiffStr == "SUICIDAL" || DiffStr == "SUI" ) {
+        DiffStr = "Suicidal";
+        return 5;
+    }
+    else if ( DiffStr == "6" || DiffStr == "SUICIDAL+" || DiffStr == "SUI+" ) {
+        DiffStr = "Suicidal+";
+        return 6;
+    }
+    else if ( DiffStr == "7" || DiffStr == "HELLONEARTH" || DiffStr == "HOE" ) {
+        DiffStr = "HoE";
+        return 7;
+    }
+    else if ( DiffStr == "8" || DiffStr == "HELLONEARTH+" || DiffStr == "HOE+" ) {
+        DiffStr = "HoE+";
+        return 8;
+    }
+    return 255;
+}
+
 state GamePaused
 {
 Begin:
@@ -858,6 +910,7 @@ defaultproperties
     HelpInfo(14)="%gFAKED %yX %w Set Faked Players to X (FAKEDCOUNT+FAKEDHEALTH)"
     HelpInfo(15)="%gFAKEDCOUNT %yX %w Set Faked Players for zed count calculation"
     HelpInfo(16)="%gFAKEDHEALTH %yX %w Set Faked Players for zed health calculation"
+    HelpInfo(17)="%gDIFF %yX %w Changes map difficulty (2-8) for the next map"
 
     strCantEndTrade="Can not end trade time at the current moment"
     strTooLate="Too late"
@@ -877,4 +930,5 @@ defaultproperties
 
     viResume="RESUME GAME"
     viEndTrade="END TRADER TIME"
+    viDifficulty="Difficulty"
 }

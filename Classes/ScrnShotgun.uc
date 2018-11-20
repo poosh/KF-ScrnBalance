@@ -10,7 +10,6 @@ simulated function ClientReload()
 
 simulated function ClientFinishReloading()
 {
-    local float ReloadMulti;
     bIsReloading = false;
 
     //play chambering animation if finished reloading from empty
@@ -32,7 +31,7 @@ defaultproperties
     PickupClass=Class'ScrnBalanceSrv.ScrnShotgunPickup'
     ItemName="Shotgun SE"
     ReloadAnimRate=0.94 //sync animation to reloadrate
-    
+
     HudImageRef="KillingFloorHUD.WeaponSelect.combat_shotgun_unselected"
     SelectedHudImageRef="KillingFloorHUD.WeaponSelect.combat_shotgun"
     SelectSoundRef="KF_PumpSGSnd.SG_Select"

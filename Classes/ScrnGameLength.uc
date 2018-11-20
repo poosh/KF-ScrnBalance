@@ -345,6 +345,7 @@ function ScrnWaveInfo CreateWave(string WaveDefinition)
     return new(none, WaveName) class'ScrnWaveInfo';
 }
 
+// Called by Game.SetupWave() when Battle Time starts (Trader/Cooldown Time ends)
 function RunWave()
 {
     local string s;
@@ -352,6 +353,11 @@ function RunWave()
     SetWaveInfo();
     DoorControl(Wave.DoorControl2);
     Game.ScrnGRI.bTraderArrow = Wave.bTraderArrow;
+
+    if ( Wave.bRandomSpawnLoc ) {
+        Game.ZedSpawnLoc = ZSLOC_RANDOM;
+    }
+
     if ( Game.ScrnGRI.WaveTitle != "" || Game.ScrnGRI.WaveMessage != "" ) {
         if ( Game.ScrnGRI.WaveTitle != "" ) {
             s = Game.ScrnBalanceMut.ColorString(Game.ScrnGRI.WaveTitle, 255, 204, 1);
@@ -473,6 +479,9 @@ function DoorControl(ScrnWaveInfo.EDoorControl dc)
             break;
         case DOOR_WeldRandom:
             Game.ScrnBalanceMut.WeldDoors(-1.0);
+            break;
+        case DOOR_Randomize:
+            Game.ScrnBalanceMut.RandomizeDoors();
             break;
     }
 }

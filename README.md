@@ -19,6 +19,36 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+
+### v9.61
+#### ScrN Waves
+- Added `bRandomSpawnLoc` - spawns zeds randomly on the entire map instead of spawning them close to players.
+  Does not work in FTG.
+- Added `DOOR_Randomize` - randomly welds, unwelds, respawns or blows doors (thanks to *nmmblez*)
+- Fixed bug when DoorControl was incorrectly applied during door opening / closing (thanks to *nmmblez*)
+- Fixed bug when sometimes players respawned event if `bRespawnDeadPlayers=false`
+
+##### Console Commands
+- `mvote DIFF OFF|NORMAL|HARD|SUI|SUI+|HOE|HOE+` - Allows players to change game difficulty (map restart needed)
+  Also, allows voting for Hardcore Mode (SUI+ and HOE+)
+  Voted difficulty has higher priority that Server or KFMapVote settings.
+
+##### ScrnBalance.ini
+- `MinVoteDifficulty` - Minimum game difficulty that can be voted via `mvote DIFF`:
+  * 0 - DEFAULT. Restores server/config setting.
+  * 2 - NORMAL
+  * 4 - HARD
+  * 5 - SUICIDAL
+  * 6 - SUICIDAL+ (Hardcore Mode)
+  * 7 - HOE
+  * 8 - HOE+  (Hardcore Mode)
+
+#### Other changes
+- Fixed bug where `GunSkin` was applied for gun with no skins (thanks to *{ST}Chris*)
+- Disabled achievement popup on low texture detail modes
+- Adjusted weights in zed spawn volume pickup function
+
+-------------------------------------------------------------------------------
 ### v9.60.27
 #### ScrN Waves
 - Added `MaxZombiesOnce` to ScrnWaveInfo
