@@ -14,4 +14,5 @@ state FireLoop
 defaultproperties
 {
     DamageType=Class'ScrnBalanceSrv.ScrnDamTypeKrissM'
+    AmmoClass=Class'ScrnBalanceSrv.ScrnKrissMAmmo'
 }

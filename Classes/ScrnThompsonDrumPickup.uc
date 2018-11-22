@@ -8,7 +8,7 @@ defaultproperties
      InventoryType=Class'ScrnBalanceSrv.ScrnThompsonDrum'
 
      Weight=6
-     cost=1500
+     cost=2000
      AmmoCost=15
      BuyClipSize=50
      PowerValue=35
