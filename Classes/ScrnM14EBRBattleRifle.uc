@@ -340,5 +340,5 @@ defaultproperties
     AttachmentClass=Class'ScrnBalanceSrv.ScrnM14EBRAttachment'
     ItemName="M14EBR SE"
     ReloadShortAnim="Reload"
-    ReloadShortRate=2.5
+    ReloadShortRate=2.3
 }

@@ -67,6 +67,14 @@ state FireLoop
 
         NextFireTime = Level.TimeSeconds - 0.000001; //fire now!
     }
+    function ModeTick(float dt)
+    {
+        if( KFWeapon(Weapon).MagAmmoRemaining < 1 )
+        {
+            DoCloseBolt(); //plays sound and sets bBoltClosed
+        }
+	    Super.ModeTick(dt);
+    }
 }
 
 function PlayFiring()
@@ -160,8 +168,10 @@ function PlayFiring()
 }
 
 
+
+
 // Handles toggling the weapon attachment's ambient sound on and off
-// Overriden to change ambient sound pitch (to match FAL rpm to AUG LMG-T)
+// Overriden to change ambient sound pitch (700rpm to 800rpm)
 function PlayAmbientSound(Sound aSound)
 {
 	local WeaponAttachment WA;
@@ -199,9 +209,9 @@ defaultproperties
      maxHorizontalRecoilAngle=100
      DamageMax=40
      Momentum=12500.000000
-     FireRate=0.07 //0.085700
-     FireAnimRate=1.3
-     AmbientSoundPitchMult=1.3
+     FireRate=0.071 //0.085700
+     FireAnimRate=1.2
+     AmbientSoundPitchMult=1.2
      Spread=0.012000
      SpreadStyle=SS_Random
 }

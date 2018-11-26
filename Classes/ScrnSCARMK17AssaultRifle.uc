@@ -183,5 +183,5 @@ defaultproperties
     PickupClass=Class'ScrnBalanceSrv.ScrnSCARMK17Pickup'
     ItemName="SCARMK17 SE"
     ChargingHandleOffset=(X=-0.067,Y=0.0,Z=0.0)
-    BoltReleaseRotation=(Pitch=0,Yaw=0,Roll=0)
+    BoltReleaseRotation=(Pitch=0,Yaw=0,Roll=10)
 }

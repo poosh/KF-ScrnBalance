@@ -35,12 +35,14 @@ simulated function bool AllowFire()
 {
     if(KFWeapon(Weapon).MagAmmoRemaining == 0 && !KFWeapon(Weapon).bIsReloading )
     {
-        if( Level.TimeSeconds - LastClickTime>FireRate )
-            ScrnMAC10MP(Weapon).MoveBoltForward(); //close bolt on empty chamber
+        if( Level.TimeSeconds > NextFireTime && (Level.TimeSeconds > (KFWeapon(Weapon).ReloadTimer+FireRate) ))
+        {
+            DoCloseBolt();
+            bClientEffectPlayed = true; //set variable locally
+        }
     }
     return Super.AllowFire();
 }
-
 
 function DoCloseBolt()
 {

@@ -196,10 +196,10 @@ function AddReloadedAmmo()
 
 defaultproperties
 {
-    ReloadShortRate=1.9
+    ReloadShortRate=2.00
     ReloadAnim="Reload"
-    ReloadRate=2.75
-    ReloadAnimRate=1.35
+    ReloadRate=2.90
+    ReloadAnimRate=1.3
     Magcapacity=30
     HealAmmoCharge=0
     Weight=4.000000

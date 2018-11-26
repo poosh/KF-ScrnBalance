@@ -28,6 +28,20 @@ static function bool UnloadAssets()
     return super.UnloadAssets();
 }
 
+//close bolt if attempted to fire when empty
+simulated function bool AllowFire()
+{
+    if(KFWeapon(Weapon).MagAmmoRemaining == 0 && !KFWeapon(Weapon).bIsReloading )
+    {
+        if( Level.TimeSeconds > NextFireTime && (Level.TimeSeconds > (KFWeapon(Weapon).ReloadTimer+FireRate) ))
+        {
+            DoCloseBolt();
+            bClientEffectPlayed = true; //set variable locally
+        }
+    }
+    return Super.AllowFire();
+}
+
 function DoCloseBolt()
 {
     ScrnThompsonInc(KFWeap).CloseBolt();
@@ -55,7 +69,7 @@ function ModeDoFire()
 {
     if ( Instigator != none && Instigator.IsLocallyControlled() ) {
         if (KFWeap.MagAmmoRemaining <= 0 && !KFWeap.bIsReloading && ( Level.TimeSeconds - LastFireTime>FireRate )
-                && !ScrnMKb42AssaultRifle(KFWeap).bBoltClosed )
+                && !ScrnThompsonInc(KFWeap).bBoltClosed )
         {
             LastFireTime = Level.TimeSeconds; //moved to allowfire
             DoCloseBolt(); //plays sound and sets bBoltClosed
