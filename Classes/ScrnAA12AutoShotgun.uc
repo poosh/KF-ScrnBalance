@@ -142,6 +142,8 @@ simulated function ClientReload()
     else
         HideFakedShell();
 
+    bShortReload = !bBoltClosed; //bShortReload depends on bBoltClosed
+        
     if ( !bShortReload )
     {
         PlayAnim(ReloadAnim, ReloadAnimRate*ReloadMulti, 0.1);

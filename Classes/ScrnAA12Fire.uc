@@ -65,5 +65,6 @@ defaultproperties
 {
     BoltCloseSoundRef="KF_FNFALSnd.FNFAL_Bolt_Forward"
     ProjectileClass=Class'ScrnBalanceSrv.ScrnAA12Bullet'
+    AmmoClass=Class'ScrnBalanceSrv.ScrnAA12Ammo'
     Spread=1125.000000
 }
