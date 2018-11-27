@@ -51,7 +51,7 @@ defaultproperties
 {
      Weight=12.000000
      FireModeClass(0)=Class'ScrnBalanceSrv.ScrnLAWFire'
-     ForceZoomOutOnFireTime=0.1
+     ForceZoomOutOnFireTime=0.05
      PlayerIronSightFOV=65 //give some zoom when aiming
      RaiseAnimRate=2.7
      Description="Light Anti-tank Weapon. Designed to punch through armored vehicles... but can't kill even a Scrake! Maybe because he doesn't wear armor to punch through ^^"
