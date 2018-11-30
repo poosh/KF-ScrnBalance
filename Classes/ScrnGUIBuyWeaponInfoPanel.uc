@@ -349,7 +349,7 @@ function LoadStats(GUIBuyable NewBuyable, byte FireMode, optional bool bSetTopVa
         else {
             //s = Mult $ "x" $ PerkedValueHS @ "=" @ PerkedValueHS*Mult; //all ints
             s = Mult $ "x("$PerkedValue@"*"@HSMult@") ="@PerkedValueHS*Mult; //all ints
-            PerkedValue *= Mult;
+            PerkedValueHS *= Mult;
             BaseDmg *= Mult;
         }
     }
