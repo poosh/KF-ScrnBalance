@@ -29,6 +29,144 @@ ScrnBalance (ScrnBalanceSrv.ScrnBalance).</em></li>
 <hr />
 <h2>VERSION 9</h2>
 <hr />
+<h3>v9.61</h3>
+<h4>Weapons (by <em>Scuddles</em>)</h4>
+<ul>
+<li>Tactical reloads added for Incendinary Thompson, Steampunk Sniper, M14 EBR, KSG Shotgun.</li>
+<li>Fixed Dual MK23 pistol firing order.</li>
+<li>Fixed recoil not applying to M4 M203 and Seeker Six alternate fire modes.</li>
+<li>Added a backblast particle emitter to LAW.</li>
+<li>Fixed MAC10 and Thompson SMGs bolt locking mechanics on full auto.</li>
+<li>Slightly reduced opacity of medic grenade cloud.</li>
+</ul>
+<h5>Weapon Balance</h5>
+<ul>
+<li>Increased FN FAL ACOG headshot multiplier 1.2 -&gt; 1.3</li>
+<li>Increased Thompson Drum SMG firerate 700rpm -&gt; 845rpm, increased base cost 1500 -&gt; 2000</li>
+<li>Decreased Thompson base reload speed 1.0 -&gt; 0.9</li>
+<li>Commando does not get extra reload bonus with Tommy guns: 100% -&gt; 35%</li>
+<li>Increased M7A3 fire rate 360 -&gt; 400</li>
+<li>Decreased MP5M base reload speed 1.35 &gt; 1.3</li>
+<li>Decreased MP5M max ammo 512 -&gt; 480, magazine 32 -&gt; 30</li>
+<li>Increased KrissM max ammo 350 -&gt; 400</li>
+<li>Medic does not get reload speed bonus by default, unless weapon is marked as special (*) via <em>PerkedWeapons</em></li>
+<li>Increased LAW rocket blunt damage 200 -&gt; 350</li>
+<li>Lowered M14 headshot multiplier 2.30 -&gt; 2.15. Still 10 headshots to kill 6p HoE FP but requires two headshots
+to kill 5p Husk or Siren. Introduced to compensate tactical reload buff.</li>
+</ul>
+<h4>ScrN Waves</h4>
+<ul>
+<li>From now on, <em>KFMapVote.ini</em> is distributed with ScrN Balance package (same config as in bundle)</li>
+<li>Short Game is removed. GameLength=0 replaced with ScrN + Event Zeds Long Game.</li>
+<li>Difficulty voting removed from <em>KFMapVote.ini</em>. Use <code>mvote DIFF</code> to change difficulty.</li>
+<li>Added <code>bRandomSpawnLoc</code> - spawns zeds randomly on the entire map instead of spawning them close to players.
+Does not work in FTG.</li>
+<li>Added <code>DOOR_Randomize</code> - randomly welds, unwelds, respawns or blows doors (thanks to <em>nmmblez</em>)</li>
+<li>Fixed bug when DoorControl was incorrectly applied during door opening / closing (thanks to <em>nmmblez</em>)</li>
+<li>Fixed bug when sometimes players respawned event if <code>bRespawnDeadPlayers=false</code></li>
+</ul>
+<h5>New Game Modes (From the Contest)</h5>
+<ul>
+<li><strong>Ammo Hunt v3</strong>  - by <em>nmm</em></li>
+<li><strong>On The Doom Clock</strong>  - by <em>nmm</em></li>
+<li><strong>Fight the Patriarchs</strong>  - by <em>nmm</em></li>
+<li><strong>Short &amp; Dramatic</strong>  - by <em>nmm</em></li>
+<li><strong>On The Clock</strong>  - by <em>nmm</em></li>
+<li><strong>FTG: On The Clock</strong>  - by <em>nmm</em></li>
+<li><strong>Late Pure Doom</strong>  - by <em>nmm</em></li>
+<li><strong>Fight the Doom Bosses</strong>  - by <em>nmm</em></li>
+<li><strong>Welding Floor</strong>  - by <em>PooSH</em></li>
+</ul>
+<h5>Welding Floor</h5>
+<ul>
+<li>Enabled <code>bRandomSpawnLoc</code> for all Outbreak waves</li>
+<li>Lowered zed count for Outbreak waves to be 4 zeds per player (32 max)</li>
+</ul>
+<h5>Short &amp; Dramatic</h5>
+<ul>
+<li>Disabled bleeding by default. Uncomment the mutator to restore it.</li>
+</ul>
+<h4>Console Commands</h4>
+<ul>
+<li><code>mvote DIFF OFF|NORMAL|HARD|SUI|SUI+|HOE|HOE+</code> - Allows players to change game difficulty (map restart needed)
+Also, allows voting for Hardcore Mode (SUI+ and HOE+)
+Voted difficulty has higher priority that Server or KFMapVote settings.</li>
+</ul>
+<h4>ScrnBalance.ini</h4>
+<ul>
+<li><code>MinVoteDifficulty</code> - Minimum game difficulty that can be voted via <code>mvote DIFF</code>:
+<ul>
+<li>0 - DEFAULT. Restores server/config setting.</li>
+<li>2 - NORMAL</li>
+<li>4 - HARD</li>
+<li>5 - SUICIDAL</li>
+<li>6 - SUICIDAL+ (Hardcore Mode)</li>
+<li>7 - HOE</li>
+<li>8 - HOE+  (Hardcore Mode)</li>
+</ul>
+</li>
+</ul>
+<h4>Other changes</h4>
+<ul>
+<li>Fixed bug where <code>GunSkin</code> was applied for gun with no skins (thanks to <em>{ST}Chris</em>)</li>
+<li>Disabled achievement popup on low texture detail modes</li>
+<li>Adjusted weights in zed spawn volume pickup function</li>
+</ul>
+<h4>ScrN Weapon Pack (by <em>Scuddles</em>)</h4>
+<ul>
+<li><strong>AK12</strong>: Slightly tweaked firing animation, added ironsight idle animation.</li>
+<li><strong>AK74</strong>: Tweaked textures and resized firstperson model, now shares magazine model with AK12. Also tweaked firing
+animations.</li>
+<li><strong>SPAS12</strong>:
+<ul>
+<li>Flipped model and tweaked textures.</li>
+<li>Fixed recoil not applying to semiauto fire mode.</li>
+<li>New fire animation for semiauto fire and added shell ejection.</li>
+<li>Increased max ammo: 48 -&gt; 56 (base); 62 -&gt; 72 (lv6)</li>
+</ul>
+</li>
+<li><strong>SVD</strong>:
+<ul>
+<li>Slightly tweaked model, new aimed fire animation, added illuminated reticle</li>
+<li>Increased recoil</li>
+<li>Increased max ammo 70 -&gt; 80</li>
+</ul>
+</li>
+<li><strong>SVDS</strong>: Added illuminated reticle, increased recoil</li>
+<li><strong>Protecta</strong>: New firing animations, increased recoil</li>
+<li><strong>CZ805M</strong>:
+<ul>
+<li>New firing animations, new select and putdown animations, new ironsight idle animation</li>
+<li>Added medic dart attachment</li>
+<li>Magazines are now translucent.</li>
+<li>Muzzle flash and shell eject tweaked.</li>
+<li>Increased base damage from 35 -&gt; 41</li>
+<li>Increased rate of fire from 625rpm -&gt; 666rpm</li>
+<li>Decreased headshot multiplier from 1.5 -&gt; 1.2</li>
+</ul>
+</li>
+<li><strong>VAL</strong>: Texture adjusted</li>
+<li><strong>VSS</strong>: Texture adjusted, tweaked size of scope eyecup on model, new zoomed fire animation, added illuminated reticle</li>
+<li><strong>HRL</strong>: Increased blunt rocket damage 200 -&gt; 275</li>
+<li><strong>RPG</strong>:
+<ul>
+<li>Replaced with ScrN RPG which features a removable scope (toggle with altfire).</li>
+<li>Make sure to replace RPG with <code>ScrnRPG</code> and <code>ScrnRPGPickup</code> in .ini files.</li>
+<li>Rockets now travel slightly faster but also drop over distance.</li>
+<li>Increased max ammo 10 -&gt; 12 (base); 16 -&gt; 19 (lv6)</li>
+<li>Added 20% damage resistance to Patriarch</li>
+</ul>
+</li>
+</ul>
+<hr />
+<h3>v9.60.27</h3>
+<h4>ScrN Waves</h4>
+<ul>
+<li>Added <code>MaxZombiesOnce</code> to ScrnWaveInfo</li>
+<li>Added <code>DoorControl2</code> - same behavior as <code>DoorControl</code>, but the former is triggered AFTER the Trader Time (or Cooldown)</li>
+<li><code>DOOR_WeldRandom</code> now welds at least to 1% (lower values made door bugged) and cannot lower existing weld strength.</li>
+<li>Trader is not changed anymore when <code>bOpenTrader=false</code>. Set <code>bTraderArrow=false</code> to avoid revealing trader too early.</li>
+</ul>
 <h3>v9.60.26</h3>
 <h4>ScrN Waves</h4>
 <ul>

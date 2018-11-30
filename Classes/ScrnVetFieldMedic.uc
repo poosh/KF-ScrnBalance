@@ -57,7 +57,7 @@ static function int ReduceDamage(KFPlayerReplicationInfo KFPRI, KFPawn Injured, 
 //v9.17: removed reload bonus; base reloads made faster; short reloads introduced
 static function float GetReloadSpeedModifierStatic(KFPlayerReplicationInfo KFPRI, class<KFWeapon> Other)
 {
-    if ( ClassIsInArray(default.PerkedWeapons, Other) )
+    if ( ClassIsInArray(default.SpecialWeapons, Other) )
         return 1.5;
 
     return 1.0;

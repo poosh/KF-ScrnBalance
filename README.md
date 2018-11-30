@@ -21,19 +21,61 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 -------------------------------------------------------------------------------
 
 ### v9.61
+#### Weapons (by *Scuddles*)
+- Tactical reloads added for Incendinary Thompson, Steampunk Sniper, M14 EBR, KSG Shotgun.
+- Fixed Dual MK23 pistol firing order.
+- Fixed recoil not applying to M4 M203 and Seeker Six alternate fire modes.
+- Added a backblast particle emitter to LAW.
+- Fixed MAC10 and Thompson SMGs bolt locking mechanics on full auto.
+- Slightly reduced opacity of medic grenade cloud.
+
+##### Weapon Balance
+- Increased FN FAL ACOG headshot multiplier 1.2 -> 1.3
+- Increased Thompson Drum SMG firerate 700rpm -> 845rpm, increased base cost 1500 -> 2000
+- Decreased Thompson base reload speed 1.0 -> 0.9
+- Commando does not get extra reload bonus with Tommy guns: 100% -> 35%
+- Increased M7A3 fire rate 360 -> 400
+- Decreased MP5M base reload speed 1.35 > 1.3
+- Decreased MP5M max ammo 512 -> 480, magazine 32 -> 30
+- Increased KrissM max ammo 350 -> 400
+- Medic does not get reload speed bonus by default, unless weapon is marked as special (\*) via *PerkedWeapons*
+- Increased LAW rocket blunt damage 200 -> 350
+- Lowered M14 headshot multiplier 2.30 -> 2.15. Still 10 headshots to kill 6p HoE FP but requires two headshots
+  to kill 5p Husk or Siren. Introduced to compensate tactical reload buff.
+
 #### ScrN Waves
+- From now on, *KFMapVote.ini* is distributed with ScrN Balance package (same config as in bundle)
+- Short Game is removed. GameLength=0 replaced with ScrN + Event Zeds Long Game.
+- Difficulty voting removed from *KFMapVote.ini*. Use `mvote DIFF` to change difficulty.
 - Added `bRandomSpawnLoc` - spawns zeds randomly on the entire map instead of spawning them close to players.
   Does not work in FTG.
 - Added `DOOR_Randomize` - randomly welds, unwelds, respawns or blows doors (thanks to *nmmblez*)
 - Fixed bug when DoorControl was incorrectly applied during door opening / closing (thanks to *nmmblez*)
 - Fixed bug when sometimes players respawned event if `bRespawnDeadPlayers=false`
 
-##### Console Commands
+##### New Game Modes (From the Contest)
+- **Ammo Hunt v3**  - by *nmm*
+- **On The Doom Clock**  - by *nmm*
+- **Fight the Patriarchs**  - by *nmm*
+- **Short & Dramatic**  - by *nmm*
+- **On The Clock**  - by *nmm*
+- **FTG: On The Clock**  - by *nmm*
+- **Late Pure Doom**  - by *nmm*
+- **Fight the Doom Bosses**  - by *nmm*
+- **Welding Floor**  - by *PooSH*
+
+##### Welding Floor
+- Enabled `bRandomSpawnLoc` for all Outbreak waves
+- Lowered zed count for Outbreak waves to be 4 zeds per player (32 max)
+##### Short & Dramatic
+- Disabled bleeding by default. Uncomment the mutator to restore it.
+
+#### Console Commands
 - `mvote DIFF OFF|NORMAL|HARD|SUI|SUI+|HOE|HOE+` - Allows players to change game difficulty (map restart needed)
   Also, allows voting for Hardcore Mode (SUI+ and HOE+)
   Voted difficulty has higher priority that Server or KFMapVote settings.
 
-##### ScrnBalance.ini
+#### ScrnBalance.ini
 - `MinVoteDifficulty` - Minimum game difficulty that can be voted via `mvote DIFF`:
   * 0 - DEFAULT. Restores server/config setting.
   * 2 - NORMAL
@@ -47,6 +89,40 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 - Fixed bug where `GunSkin` was applied for gun with no skins (thanks to *{ST}Chris*)
 - Disabled achievement popup on low texture detail modes
 - Adjusted weights in zed spawn volume pickup function
+
+#### ScrN Weapon Pack (by *Scuddles*)
+- **AK12**: Slightly tweaked firing animation, added ironsight idle animation.
+- **AK74**: Tweaked textures and resized firstperson model, now shares magazine model with AK12. Also tweaked firing
+  animations.
+- **SPAS12**:
+  - Flipped model and tweaked textures.
+  - Fixed recoil not applying to semiauto fire mode.
+  - New fire animation for semiauto fire and added shell ejection.
+  - Increased max ammo: 48 -> 56 (base); 62 -> 72 (lv6)
+- **SVD**:
+  - Slightly tweaked model, new aimed fire animation, added illuminated reticle
+  - Increased recoil
+  - Increased max ammo 70 -> 80
+- **SVDS**: Added illuminated reticle, increased recoil
+- **Protecta**: New firing animations, increased recoil
+- **CZ805M**:
+  - New firing animations, new select and putdown animations, new ironsight idle animation
+  - Added medic dart attachment
+  - Magazines are now translucent.
+  - Muzzle flash and shell eject tweaked.
+  - Increased base damage from 35 -> 41
+  - Increased rate of fire from 625rpm -> 666rpm
+  - Decreased headshot multiplier from 1.5 -> 1.2
+- **VAL**: Texture adjusted
+- **VSS**: Texture adjusted, tweaked size of scope eyecup on model, new zoomed fire animation, added illuminated reticle
+- **HRL**: Increased blunt rocket damage 200 -> 275
+- **RPG**:
+  - Replaced with ScrN RPG which features a removable scope (toggle with altfire).
+  - Make sure to replace RPG with `ScrnRPG` and `ScrnRPGPickup` in .ini files.
+  - Rockets now travel slightly faster but also drop over distance.
+  - Increased max ammo 10 -> 12 (base); 16 -> 19 (lv6)
+  - Added 20% damage resistance to Patriarch
+
 
 -------------------------------------------------------------------------------
 ### v9.60.27

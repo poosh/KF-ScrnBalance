@@ -130,9 +130,6 @@ static function float ModifyRecoilSpread(KFPlayerReplicationInfo KFPRI, WeaponFi
 
 static function float GetReloadSpeedModifierStatic(KFPlayerReplicationInfo KFPRI, class<KFWeapon> Other)
 {
-    if ( ClassIsChildOf(Other, class'ThompsonSMG') )
-        return 2.0; // 100% faster reload speed for Tommy Guns
-
     return 1.35; // Up to 35% faster reload speed for any weapon
 }
 
