@@ -64,11 +64,11 @@ simulated function WeaponTick(float dt)
     }
     Super.WeaponTick(dt);
 }
- 
+
 exec function ReloadMeNow()
 {
     local float ReloadMulti;
-    
+
     if(!AllowReload())
         return;
     if ( bHasAimingMode && bAimingRifle )
@@ -79,12 +79,12 @@ exec function ReloadMeNow()
         if( Role < ROLE_Authority)
             ServerZoomOut(false);
     }
-    
+
     if ( KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo) != none && KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo).ClientVeteranSkill != none )
         ReloadMulti = KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo).ClientVeteranSkill.Static.GetReloadSpeedModifier(KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo), self);
     else
         ReloadMulti = 1.0;
-        
+
     bIsReloading = true;
     ReloadTimer = Level.TimeSeconds;
     bShortReload = MagAmmoRemaining > 0;
@@ -93,8 +93,8 @@ exec function ReloadMeNow()
     else
         ReloadRate = Default.ReloadRate / ReloadMulti;
 
-    
-        
+
+
     if( bHoldToReload )
     {
         NumLoadedThisReload = 0;
@@ -121,12 +121,12 @@ simulated function ClientReload()
         if( Role < ROLE_Authority)
             ServerZoomOut(false);
     }
-    
+
     if ( KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo) != none && KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo).ClientVeteranSkill != none )
         ReloadMulti = KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo).ClientVeteranSkill.Static.GetReloadSpeedModifier(KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo), self);
     else
         ReloadMulti = 1.0;
-        
+
     bIsReloading = true;
     if (MagAmmoRemaining <= 0)
     {
@@ -150,13 +150,13 @@ simulated function ClientFinishReloading()
 function AddReloadedAmmo()
 {
     local int a;
-    
+
     UpdateMagCapacity(Instigator.PlayerReplicationInfo);
 
     a = MagCapacity;
     if ( bShortReload )
         a++; // 1 bullet already bolted
-    
+
     if ( AmmoAmount(0) >= a )
         MagAmmoRemaining = a;
     else
@@ -173,8 +173,8 @@ function AddReloadedAmmo()
         KFSteamStatsAndAchievements(PlayerController(Instigator.Controller).SteamStatsAndAchievements).OnWeaponReloaded();
     }
 }
-        
-    
+
+
 defaultproperties
 {
     ReloadShortAnim="Reload"
@@ -183,5 +183,5 @@ defaultproperties
     PickupClass=Class'ScrnBalanceSrv.ScrnSCARMK17Pickup'
     ItemName="SCARMK17 SE"
     ChargingHandleOffset=(X=-0.067,Y=0.0,Z=0.0)
-    BoltReleaseRotation=(Pitch=0,Yaw=0,Roll=0)
+    BoltReleaseRotation=(Pitch=0,Yaw=0,Roll=10)
 }

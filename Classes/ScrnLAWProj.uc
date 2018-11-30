@@ -112,7 +112,7 @@ defaultproperties
 {
      ExplosionClass=Class'ScrnBalanceSrv.ScrnLawExplosion'
      Damage=1000.000000
-     
+     ImpactDamage=350
      //adds light to projectile
      LightType=LT_Steady
      LightBrightness=128.0 //128

@@ -51,7 +51,7 @@ simulated function AltFire(float F)
 }
 
 
-//bring Laser to current state, which is indicating by LaserType 
+//bring Laser to current state, which is indicating by LaserType
 simulated function ApplyLaserState()
 {
     bLaserActive = LaserType > 0;
@@ -60,10 +60,10 @@ simulated function ApplyLaserState()
 
     if ( ThirdPersonActor != none )
         ScrnLaserWeaponAttachment(ThirdPersonActor).SetLaserType(LaserType);
-    
+
     if ( !Instigator.IsLocallyControlled() )
         return;
-    
+
     if( bLaserActive ) {
         if ( LaserDot == none )
             LaserDot = Spawn(LaserDotClass, self);
@@ -73,7 +73,7 @@ simulated function ApplyLaserState()
             LaserAttachment = Spawn(LaserAttachmentClass,,,,);
             AttachToBone(LaserAttachment, LaserAttachmentBone);
         }
-        ConstantColor'ScrnTex.Laser.LaserColor'.Color = 
+        ConstantColor'ScrnTex.Laser.LaserColor'.Color =
             LaserDot.GetLaserColor(); // LaserAttachment's color
         LaserAttachment.bHidden = false;
 
@@ -88,10 +88,10 @@ simulated function ApplyLaserState()
 // Toggle laser modes: RED/GREEN/OFF
 simulated function ToggleLaser()
 {
-    if( !Instigator.IsLocallyControlled() ) 
+    if( !Instigator.IsLocallyControlled() )
         return;
 
-    if ( (++LaserType) > 2 )  
+    if ( (++LaserType) > 2 )
         LaserType = 0;
     ApplyLaserState();
 }
@@ -111,7 +111,7 @@ simulated function TurnOffLaser()
         ServerSetLaserType(0);
 
     bLaserActive = false;
-    //don't change Laser type here, because we need to restore it state 
+    //don't change Laser type here, because we need to restore it state
     //when next time weapon will be bringed up
     if ( LaserAttachment != none )
         LaserAttachment.bHidden = true;
@@ -125,8 +125,8 @@ simulated function TurnOffLaser()
 function ServerSetLaserType(byte NewLaserType)
 {
     LaserType = NewLaserType;
-    bLaserActive = NewLaserType > 0; 
-    ScrnLaserWeaponAttachment(ThirdPersonActor).SetLaserType(LaserType);   
+    bLaserActive = NewLaserType > 0;
+    ScrnLaserWeaponAttachment(ThirdPersonActor).SetLaserType(LaserType);
 }
 
 simulated function bool PutDown()
@@ -169,7 +169,7 @@ simulated function RenderOverlays( Canvas Canvas )
 
     SetLocation( Instigator.Location + Instigator.CalcDrawOffset(self) );
     SetRotation( Instigator.GetViewRotation() + ZoomRotInterp);
-    
+
     KFM = KFFire(FireMode[0]);
 
     // Handle drawing the laser dot
@@ -183,7 +183,7 @@ simulated function RenderOverlays( Canvas Canvas )
             Y = C.YAxis;
             Z = C.ZAxis;
         }
-        else 
+        else
             GetViewAxes(X, Y, Z);
 
         StartTrace = Instigator.Location + Instigator.EyePosition();
@@ -234,7 +234,7 @@ simulated function RenderOverlays( Canvas Canvas )
 exec function ReloadMeNow()
 {
     local float ReloadMulti;
-    
+
     if(!AllowReload())
         return;
     if ( bHasAimingMode && bAimingRifle )
@@ -245,12 +245,12 @@ exec function ReloadMeNow()
         if( Role < ROLE_Authority)
             ServerZoomOut(false);
     }
-    
+
     if ( KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo) != none && KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo).ClientVeteranSkill != none )
         ReloadMulti = KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo).ClientVeteranSkill.Static.GetReloadSpeedModifier(KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo), self);
     else
         ReloadMulti = 1.0;
-        
+
     bIsReloading = true;
     ReloadTimer = Level.TimeSeconds;
     bShortReload = MagAmmoRemaining > 0;
@@ -258,7 +258,7 @@ exec function ReloadMeNow()
         ReloadRate = default.ReloadShortRate / ReloadMulti;
     else
         ReloadRate = default.ReloadRate / ReloadMulti;
-        
+
     if( bHoldToReload )
     {
         NumLoadedThisReload = 0;
@@ -284,12 +284,12 @@ simulated function ClientReload()
         if( Role < ROLE_Authority)
             ServerZoomOut(false);
     }
-    
+
     if ( KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo) != none && KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo).ClientVeteranSkill != none )
         ReloadMulti = KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo).ClientVeteranSkill.Static.GetReloadSpeedModifier(KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo), self);
     else
         ReloadMulti = 1.0;
-        
+
     bIsReloading = true;
     if (MagAmmoRemaining <= 0)
     {
@@ -304,13 +304,13 @@ simulated function ClientReload()
 function AddReloadedAmmo()
 {
     local int a;
-    
+
     UpdateMagCapacity(Instigator.PlayerReplicationInfo);
 
     a = MagCapacity;
     if ( bShortReload )
         a++; // 1 bullet already bolted
-    
+
     if ( AmmoAmount(0) >= a )
         MagAmmoRemaining = a;
     else
@@ -327,7 +327,7 @@ function AddReloadedAmmo()
         KFSteamStatsAndAchievements(PlayerController(Instigator.Controller).SteamStatsAndAchievements).OnWeaponReloaded();
     }
 }
-    
+
 
 defaultproperties
 {
@@ -340,5 +340,5 @@ defaultproperties
     AttachmentClass=Class'ScrnBalanceSrv.ScrnM14EBRAttachment'
     ItemName="M14EBR SE"
     ReloadShortAnim="Reload"
-    ReloadShortRate=2.5
+    ReloadShortRate=2.3
 }

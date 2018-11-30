@@ -33,7 +33,9 @@ defaultproperties
          UseRegularSizeScale=False
          UniformSize=True
          AutomaticInitialSpawning=False
-         BlendBetweenSubdivisions=True
+         //BlendBetweenSubdivisions=True
+         Name="SpriteEmitter0"
+         Opacity=0.70000
          ColorScale(0)=(Color=(G=255,R=128,A=255))
          ColorScale(1)=(RelativeTime=1.000000,Color=(B=61,G=105,R=61,A=255))
          FadeOutFactor=(W=0.000000,X=0.000000,Y=0.000000,Z=0.000000)
@@ -59,3 +61,4 @@ defaultproperties
      RemoteRole=ROLE_None // don't replicate to clients
      bNotOnDedServer=True
 }
+

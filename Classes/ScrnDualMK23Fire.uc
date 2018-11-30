@@ -1,3 +1,4 @@
+//The dual MK23s firing order is actually reversed due to reload animation, so all references to bFireLeft actually fire the right
 class ScrnDualMK23Fire extends DualMK23Fire;
 
 var ScrnDualMK23Pistol ScrnWeap; // avoid typecasting
@@ -80,8 +81,8 @@ function PlayFiring()
 
     }
     else if ( MagAmmoRemainingAfterShot == 1 ) {
-        ScrnWeap.LockRightSlideBack();
-        ScrnWeap.bTweenLeftSlide = true;
+        ScrnWeap.LockLeftSlideBack();
+        ScrnWeap.bTweenRightSlide = true;
     }
 }
 
@@ -233,4 +234,8 @@ defaultproperties
 {
     PenDmgReduction=0.500000
     DamageType=Class'ScrnBalanceSrv.ScrnDamTypeDualMK23Pistol'
+    FireAnim="FireLeft"
+    FireAimedAnim2=FireRight_Iron
+    FireAimedAnim=FireLeft_Iron
+    FireAnim2="FireRight"
 }

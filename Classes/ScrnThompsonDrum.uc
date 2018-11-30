@@ -208,10 +208,10 @@ defaultproperties
      Weight=6
      MagCapacity=50
      ReloadShortAnim="Reload"
-     ReloadShortRate=2.6
+     ReloadShortRate=2.92
      ChargingHandleOffset=(X=-0.059,Y=0,Z=0)
-     ReloadRate=3.8 //3.8/1.15
-     ReloadAnimRate=1.0
+     ReloadRate=4.2 //3.8
+     ReloadAnimRate=0.9
 
      Description="This Tommy gun with a drum magazine was used heavily during the WWII pacific battles as seen in Rising Storm."
      Priority=124

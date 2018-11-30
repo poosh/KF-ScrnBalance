@@ -101,9 +101,10 @@ function AddReloadedAmmo()
 defaultproperties
 {
     ReloadShortAnim="Reload"
-    ReloadShortRate=2.276
+    ReloadShortRate=1.89//2.276
     ReloadAnim="Reload"
-    ReloadRate=3.33
+    ReloadAnimRate=1.2
+    ReloadRate=3.05 //3.33
     
     HealAmmoCharge=0
     AmmoRegenRate=0.25 // down from 0.2
