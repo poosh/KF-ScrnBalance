@@ -322,7 +322,7 @@ function LoadStats(GUIBuyable NewBuyable, byte FireMode, optional bool bSetTopVa
             s = string(PerkedValue);
         }
         else {
-            s = Mult $ "x" $ PerkedValue @ "=" @ PerkedValue*Mult;
+            s = Mult $ "x" $ PerkedValue $ "=" $ PerkedValue*Mult;
             PerkedValue *= Mult;
             BaseDmg *= Mult;
         }
@@ -348,7 +348,7 @@ function LoadStats(GUIBuyable NewBuyable, byte FireMode, optional bool bSetTopVa
         }
         else {
             //s = Mult $ "x" $ PerkedValueHS @ "=" @ PerkedValueHS*Mult; //all ints
-            s = Mult $ "x("$PerkedValue@"*"@HSMult@") ="@PerkedValueHS*Mult; //all ints
+            s = Mult $ "x("$PerkedValue$"*"$HSMult$")="$PerkedValueHS*Mult; //all ints
             PerkedValueHS *= Mult;
             BaseDmg *= Mult;
         }
