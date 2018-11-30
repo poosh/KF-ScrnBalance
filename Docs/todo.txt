@@ -5,13 +5,10 @@ Warning: ZombieCrawler_HALLOWEEN KF-ZedDiscoThe2ndFloor.ZombieCrawler_HALLOWEEN 
 
 Move DLCLocks from ScrnbalanceSrv.ini
 
-? Fix QuickMelee bug when player ends up with hidden weapon
-
 Brown Cloud: blaming players make them fart
 
 A Blank Page
 
-? ScrnWaveInfo: Door Control: Respawn, BlowUp, WeldFull, WeldHalf, Weld1p.
-? ScrnWaveInfo: bSpawnAtTrader
+? Disable achievement progress popup on very low video settings
 
-? SBZ Boss Overhealing bug
+? mvote DIFFICULTY

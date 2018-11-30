@@ -897,10 +897,11 @@ function float RateZombieVolume(ZombieVolume ZVol, Controller SpawnCloseTo, opti
         case ZSLOC_RANDOM:
             wDist = 0.10;
             wUsage = 0.30;
+            wDesire = 0.15;
             break;
 
         case ZSLOC_AUTO:
-            if (NumMonsters >= 25 && TotalMaxMonsters >= 25) {
+            if (NumMonsters >= 20 && TotalMaxMonsters >= 20) {
                 // many zeds already spawned, so spawn them more randomly
                 wDist = 0.15;
                 wUsage = 0.30;
@@ -1771,6 +1772,7 @@ function SetupWave()
     WaveMonsters = 0;
     WaveNumClasses = 0;
     WavePlayerCount = AlivePlayerCount;
+    ZedSpawnLoc = ZSLOC_AUTO;
 
     SetupPickups();
 
@@ -2603,6 +2605,7 @@ State MatchInProgress
         local Controller C;
         local KFPlayerController KFPC;
         local KFPlayerReplicationInfo KFPRI;
+        local bool bRespawnDeadPlayers;
 
         if ( !rewardFlag ) {
             RewardSurvivingPlayers();
@@ -2627,6 +2630,7 @@ State MatchInProgress
                 DoWaveEnd();
                 return;
             }
+            bRespawnDeadPlayers = ScrnGameLength.Wave.bRespawnDeadPlayers;
             WaveCountDown = ScrnGameLength.Wave.TraderTime;
             if ( WaveCountDown <= 0 ) {
                 SetupWave();
@@ -2640,6 +2644,7 @@ State MatchInProgress
             }
         }
         else {
+            bRespawnDeadPlayers = true;
             WaveCountDown = max(TimeBetweenWaves, 1);
         }
 
@@ -2655,8 +2660,10 @@ State MatchInProgress
             if ( C.PlayerReplicationInfo == none )
                 continue;
 
-            C.PlayerReplicationInfo.bOutOfLives = false;
-            C.PlayerReplicationInfo.NumLives = 0;
+            if ( bRespawnDeadPlayers ) {
+                C.PlayerReplicationInfo.bOutOfLives = false;
+                C.PlayerReplicationInfo.NumLives = 0;
+            }
 
             KFPC = KFPlayerController(C);
             KFPRI = KFPlayerReplicationInfo(C.PlayerReplicationInfo);
@@ -2666,8 +2673,7 @@ State MatchInProgress
                 if ( KFPRI.ClientVeteranSkill != KFPC.SelectedVeterancy )
                     KFPC.SendSelectedVeterancyToServer();
 
-                if ( KFPC.Pawn == none && !KFPRI.bOnlySpectator
-                        && (ScrnGameLength == none || ScrnGameLength.Wave.bRespawnDeadPlayers) )
+                if ( bRespawnDeadPlayers && KFPC.Pawn == none && !KFPRI.bOnlySpectator )
                 {
                     KFPRI.Score = Max(MinRespawnCash, KFPRI.Score);
                     KFPC.GotoState('PlayerWaiting');
@@ -2681,7 +2687,7 @@ State MatchInProgress
                 if ( KFSteamStatsAndAchievements(KFPC.SteamStatsAndAchievements) != none )
                     KFSteamStatsAndAchievements(KFPC.SteamStatsAndAchievements).WaveEnded();
 
-                KFPC.bSpawnedThisWave = WaveNum > FinalWave;
+                KFPC.bSpawnedThisWave = KFPC.Pawn != none && WaveNum > FinalWave;
             }
         }
 

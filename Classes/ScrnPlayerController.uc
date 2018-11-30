@@ -23,7 +23,7 @@ var byte VeterancyChangeWave; // wave number, when player has changed his perk
 
 var globalconfig bool bManualReload, bOtherPlayerLasersBlue;
 var globalconfig bool bAlwaysDisplayAchProgression; // always display a message on any achievement progress
-var globalconfig int AchGroupIndex; 
+var globalconfig int AchGroupIndex;
 var globalconfig int Custom3DScopeSens;
 
 var globalconfig bool bSpeechVote; //allow using speeches Yes and No in voting
@@ -246,7 +246,7 @@ function InitPlayerReplicationInfo()
 function float GetMouseModifier()
 {
     local KFWeapon weap;
-    
+
     if (Pawn == none || Pawn.Weapon == none)
         return -1.0;
 
@@ -254,7 +254,7 @@ function float GetMouseModifier()
 
     if (weap== none )
         return -1.0;
-    
+
     if(weap.KFScopeDetail == KF_ModelScope && weap.ShouldDrawPortal())
     {
         return Custom3DScopeSens;
@@ -2062,6 +2062,10 @@ exec function GunSkin(optional byte index, optional bool bTryNext)
     if ( W.SleeveNum == 0 )
         k = 1; // for weapons where hand skin is first in array
 
+    if ( k >= W.Skins.length ) {
+        warn(W.class $ " has no skins");
+        return;
+    }
 
     if ( index == 0 ) {
         bTryNext = true;

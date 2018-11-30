@@ -22,7 +22,8 @@ enum EDoorControl {
     DOOR_Weld1p,
     DOOR_WeldHalf,
     DOOR_WeldFull,
-    DOOR_WeldRandom
+    DOOR_WeldRandom,
+    DOOR_Randomize
 };
 
 var config string Header, Title, Message, TraderMessage;
@@ -40,6 +41,7 @@ var config byte MaxZombiesOnce;
 var config float BountyScale;
 var config float XP_Bonus, XP_BonusAlive;
 
+var config bool bRandomSpawnLoc;
 var config float SpecialSquadHealthMod;
 var config int ZedsPerSpecialSquad;
 var config bool bRandomSquads;
