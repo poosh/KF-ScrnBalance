@@ -28,19 +28,19 @@ mkdir %outputdir%\Animations
 mkdir %outputdir%\System
 mkdir %outputdir%\Textures
 mkdir %outputdir%\Sounds
-mkdir %outputdir%\uz2
+REM mkdir %outputdir%\uz2
 
 
-copy /y %KFDIR%\animations\ScrnAnims.ukx %outputdir%\Animations\
 copy /y %KFDIR%\system\ScrnBalanceSrv.int %outputdir%\System\
 copy /y %KFDIR%\system\ScrnBalanceSrv.u %outputdir%\System\
 copy /y %KFDIR%\system\ScrnBalanceSrv.ucl %outputdir%\System\
 copy /y %KFDIR%\system\ScrnSP.* %outputdir%\System\
 copy /y %KFDIR%\system\ScrnVotingHandlerV4.* %outputdir%\system\
+copy /y %STEAMDIR%\animations\ScrnAnims.ukx %outputdir%\Animations\
+copy /y %STEAMDIR%\sounds\ScrnSnd.uax %outputdir%\Sounds\
 copy /y %STEAMDIR%\textures\ScrnTex.utx %outputdir%\Textures\
 copy /y %STEAMDIR%\textures\ScrnAch_T.utx %outputdir%\Textures\
 copy /y %STEAMDIR%\Textures\TSC_T.utx %outputdir%\Textures\
-copy /y %STEAMDIR%\sounds\ScrnSnd.uax %outputdir%\Sounds\
 copy /y *.txt  %outputdir%
 copy /y *.md  %outputdir%
 copy /y README.md  D:\Dropbox\Public\KFSrc\ScrnBalanceVersionHistory.md

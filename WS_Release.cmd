@@ -20,23 +20,27 @@ echo Exporting .int file...
 
 echo.
 echo Copying release files...
+mkdir %outputdir%\Animations
 mkdir %outputdir%\System
 mkdir %outputdir%\Textures
-
+mkdir %outputdir%\Sounds
 
 copy /y %KFDIR%\system\ScrnBalance.* %outputdir%\System\
+copy /y %KFDIR%\system\ScrnSP.* %outputdir%\System\
+copy /y %KFDIR%\system\ScrnVotingHandlerV4.* %outputdir%\system\
+copy /y %STEAMDIR%\animations\ScrnAnims.ukx %outputdir%\Animations\
+copy /y %STEAMDIR%\sounds\ScrnSnd.uax %outputdir%\Sounds\
 copy /y %STEAMDIR%\textures\ScrnTex.utx %outputdir%\Textures\
 copy /y %STEAMDIR%\textures\ScrnAch_T.utx %outputdir%\Textures\
 copy /y %STEAMDIR%\Textures\TSC_T.utx %outputdir%\Textures\
-copy /y %KFDIR%\system\ScrnVotingHandlerMut*.* %outputdir%\system\
-copy /y readme.txt  %outputdir%
-copy /y changes.txt  %outputdir%
+copy /y *.txt  %outputdir%
+copy /y readme.md  %outputdir%
 rem don't suggest to overwrite existing .ini file
 copy /y *.ini  %outputdir%
 
 rem For Workshop
 copy /y *.ini  ..\System\
-copy /y LICENSE  ..\Help\ScrnBalanceEULA.txt
+rem copy /y LICENSE  ..\Help\ScrnBalanceEULA.txt
 
 
 echo Release is ready!

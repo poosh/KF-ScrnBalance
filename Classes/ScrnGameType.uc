@@ -611,6 +611,9 @@ function bool RewardSurvivingPlayers()
         if ( SurvivedPlayers[t] > 0 ) {
             moneyPerPlayer[t] = Teams[t].Score / SurvivedPlayers[t];
             Teams[t].NetUpdateTime = Level.TimeSeconds - 1;
+            log("Team " $ t $ " scored $" $  Teams[t].Score $ ". " $ SurvivedPlayers[t]
+                    $ " survivors, earned $" $ moneyPerPlayer[t] $ " each."
+                    , 'ScrnBalance');
         }
     }
 

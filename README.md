@@ -20,6 +20,10 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 
 -------------------------------------------------------------------------------
 
+### v9.61.02
+- Fixed ammo count display for LAW, HRL and RPG.
+
+
 ### v9.61.01
 #### Weapons (by *Scuddles*)
 - Tactical reloads added for Incendinary Thompson, Steampunk Sniper, M14 EBR, KSG Shotgun.

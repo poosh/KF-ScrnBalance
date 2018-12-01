@@ -58,4 +58,5 @@ defaultproperties
      PickupClass=Class'ScrnBalanceSrv.ScrnLAWPickup'
      AttachmentClass=Class'ScrnBalanceSrv.ScrnLAWAttachment'
      ItemName="L.A.W. SE"
+	 bHoldToReload=false // to show correct ammo amount on classic hud
 }
