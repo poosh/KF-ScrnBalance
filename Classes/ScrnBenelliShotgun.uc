@@ -17,7 +17,7 @@ var()    byte                                LaserType;       //current laser ty
 var const class<ScrnLocalLaserDot>          LaserDotClass;
 var     ScrnLocalLaserDot                   LaserDot;
 var     name                                LaserAttachmentBone;
-//var         float                         FireSpotRenrerTime;
+var         float                         FireSpotRenrerTime;
 
 //laser stuff
 replication
@@ -204,7 +204,7 @@ simulated function RenderOverlays( Canvas Canvas )
     local Actor Other;
     local vector X,Y,Z;
     local coords C;
-    //local KFFire KFM;
+    local KFShotgunFire KFSGM;
     local array<Actor> HitActors;
 
     if (Instigator == None)
@@ -226,11 +226,14 @@ simulated function RenderOverlays( Canvas Canvas )
     DrawOffset = (90/DisplayFOV * ReloadViewOffset) >> Instigator.GetViewRotation(); //calculate additional offset
     SetLocation( Instigator.Location + Instigator.CalcDrawOffset(self) + DrawOffset); //add additional offset
     SetRotation( Instigator.GetViewRotation() + ZoomRotInterp);
-   
+    
+    KFSGM = KFShotgunFire(FireMode[0]);
+
     // Handle drawing the laser dot
     if ( LaserDot != None )
     {
-        if( bIsReloading )
+        //move LaserDot during fire animation too  -- PooSH
+        if( bIsReloading || (Level.TimeSeconds < KFSGM.LastClickTime + FireSpotRenrerTime) )
         {
             C = GetBoneCoords(LaserAttachmentBone);
             X = C.XAxis;
@@ -324,5 +327,5 @@ defaultproperties
      LaserAttachmentBone="LightBone"
      LaserDotClass=Class'ScrnBalanceSrv.ScrnLocalLaserDot'
      LaserAttachmentClass=Class'ScrnBalanceSrv.ScrnLaserAttachmentFirstPerson'
-     //FireSpotRenrerTime=0.9
+     FireSpotRenrerTime=1.5
 }
