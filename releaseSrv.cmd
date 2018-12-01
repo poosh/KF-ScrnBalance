@@ -49,22 +49,22 @@ copy /y *.ini  %outputdir%
 
 
 
-echo Compressing to .uz2...
-%KFDIR%\system\ucc compress %KFDIR%\animations\ScrnAnims.ukx
-%KFDIR%\system\ucc compress %KFDIR%\system\ScrnBalanceSrv.u
-%KFDIR%\system\ucc compress %STEAMDIR%\textures\ScrnTex.utx
-%KFDIR%\system\ucc compress %STEAMDIR%\textures\ScrnAch_T.utx
-%KFDIR%\System\ucc compress %STEAMDIR%\Textures\TSC_T.utx
-%KFDIR%\system\ucc compress %STEAMDIR%\sounds\ScrnSnd.uax
-%KFDIR%\system\ucc compress %KFDIR%\system\ScrnVotingHandlerV4.u
-
-move /y %KFDIR%\animations\ScrnAnims.ukx.uz2 %outputdir%\uz2
-move /y %KFDIR%\system\ScrnBalanceSrv.u.uz2 %outputdir%\uz2
-move /y %KFDIR%\system\ScrnVotingHandlerV4.u.uz2 %outputdir%\uz2
-move /y %STEAMDIR%\textures\ScrnTex.utx.uz2 %outputdir%\uz2
-move /y %STEAMDIR%\textures\ScrnAch_T.utx.uz2 %outputdir%\uz2
-move /y %STEAMDIR%\Textures\TSC_T.utx.uz2 %outputdir%\uz2
-move /y %STEAMDIR%\sounds\ScrnSnd.uax.uz2 %outputdir%\uz2
+REM echo Compressing to .uz2...
+REM %KFDIR%\system\ucc compress %KFDIR%\animations\ScrnAnims.ukx
+REM %KFDIR%\system\ucc compress %KFDIR%\system\ScrnBalanceSrv.u
+REM %KFDIR%\system\ucc compress %STEAMDIR%\textures\ScrnTex.utx
+REM %KFDIR%\system\ucc compress %STEAMDIR%\textures\ScrnAch_T.utx
+REM %KFDIR%\System\ucc compress %STEAMDIR%\Textures\TSC_T.utx
+REM %KFDIR%\system\ucc compress %STEAMDIR%\sounds\ScrnSnd.uax
+REM %KFDIR%\system\ucc compress %KFDIR%\system\ScrnVotingHandlerV4.u
+REM
+REM move /y %KFDIR%\animations\ScrnAnims.ukx.uz2 %outputdir%\uz2
+REM move /y %KFDIR%\system\ScrnBalanceSrv.u.uz2 %outputdir%\uz2
+REM move /y %KFDIR%\system\ScrnVotingHandlerV4.u.uz2 %outputdir%\uz2
+REM move /y %STEAMDIR%\textures\ScrnTex.utx.uz2 %outputdir%\uz2
+REM move /y %STEAMDIR%\textures\ScrnAch_T.utx.uz2 %outputdir%\uz2
+REM move /y %STEAMDIR%\Textures\TSC_T.utx.uz2 %outputdir%\uz2
+REM move /y %STEAMDIR%\sounds\ScrnSnd.uax.uz2 %outputdir%\uz2
 
 echo Release is ready!
 

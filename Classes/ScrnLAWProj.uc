@@ -195,6 +195,9 @@ simulated function HurtRadius( float DamageAmount, float DamageRadius, class<Dam
                 }
             }
 
+            if ( ExtendedZCollision(Victims) != none )
+                KFMonsterVictim = KFMonster(Victims.Owner);
+
             if ( KFMonsterVictim != none ) {
                 damageScale *= ScaleMonsterDamage(KFMonsterVictim);
             }
@@ -228,7 +231,11 @@ simulated function HurtRadius( float DamageAmount, float DamageRadius, class<Dam
         if ( Instigator == None || Instigator.Controller == None )
             Victims.SetDelayedDamageInstigatorController(InstigatorController);
 
-        KFMonsterVictim = KFMonster(Victims);
+        if ( ExtendedZCollision(Victims) != none )
+            KFMonsterVictim = KFMonster(Victims.Owner);
+        else
+            KFMonsterVictim = KFMonster(Victims);
+            
         if( KFMonsterVictim != none && KFMonsterVictim.Health <= 0 ) {
             KFMonsterVictim = none;
         }

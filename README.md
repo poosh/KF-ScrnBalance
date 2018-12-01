@@ -20,7 +20,7 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 
 -------------------------------------------------------------------------------
 
-### v9.61
+### v9.61.01
 #### Weapons (by *Scuddles*)
 - Tactical reloads added for Incendinary Thompson, Steampunk Sniper, M14 EBR, KSG Shotgun.
 - Fixed Dual MK23 pistol firing order.
@@ -47,6 +47,7 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 - From now on, *KFMapVote.ini* is distributed with ScrN Balance package (same config as in bundle)
 - Short Game is removed. GameLength=0 replaced with ScrN + Event Zeds Long Game.
 - Difficulty voting removed from *KFMapVote.ini*. Use `mvote DIFF` to change difficulty.
+- GameLength numbers reordered. See *KFMapVote.ini* and *ScrnWaves.ini* for details.
 - Added `bRandomSpawnLoc` - spawns zeds randomly on the entire map instead of spawning them close to players.
   Does not work in FTG.
 - Added `DOOR_Randomize` - randomly welds, unwelds, respawns or blows doors (thanks to *nmmblez*)
