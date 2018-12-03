@@ -14,6 +14,9 @@ static function PreloadAssets(Inventory Inv, optional bool bSkipRefCount)
 
     super.PreloadAssets(Inv, bSkipRefCount);
 
+    if (default.NewAnimRef == "")
+        return;
+        
     default.NewAnim = MeshAnimation(DynamicLoadObject(default.NewAnimRef, class'MeshAnimation', true));
 
     spawned = ScrnMP5MMedicGun(Inv);
@@ -49,7 +52,7 @@ simulated function PostBeginPlay()
 
 simulated function AddNewAnim()
 {
-    if (NewAnim == none)
+    if (NewAnim == none || NewAnimRef == "")
         return;
 
     LinkSkelAnim(NewAnim); //load new anim
