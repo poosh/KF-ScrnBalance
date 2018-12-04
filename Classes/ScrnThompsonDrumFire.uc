@@ -69,7 +69,7 @@ state FireLoop
     }
     function ModeTick(float dt)
     {
-        if( KFWeapon(Weapon).MagAmmoRemaining < 1 )
+        if( KFWeap.MagAmmoRemaining < 1 )
         {
             DoCloseBolt(); //plays sound and sets bBoltClosed
         }
