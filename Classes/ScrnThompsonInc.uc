@@ -211,6 +211,7 @@ defaultproperties
     ReloadShortAnim="Reload"
     ReloadShortRate=2.33
     MagCapacity=20
+    BobDamping=6.0 //4.0
     ChargingHandleOffset=(X=-0.027,Y=0.0,Z=0)
     ItemName="Incendiary Tommy Gun SE"
     AppID=0
