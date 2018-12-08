@@ -1274,7 +1274,7 @@ defaultproperties
     SudDeathWaves=1 // if both team survived overtime waves, add a Sudden Death wave
     OvertimeTeamMoneyPenalty=0.33 // 33% less money each wave
     LateJoinerCashBonus=700 // $700 will be given before final wave. Cash bonus is proportionally smaller in earlier waves.
-    strBudgetCut="Team budgets were cut off by"
+    strBudgetCut="Team wallets were cut off by"
 
     SongRedWin="KF_WPrevention"
     SongBlueWin="KFh6_Launch"

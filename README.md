@@ -20,6 +20,20 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 
 -------------------------------------------------------------------------------
 
+### v9.61.03
+- **Combat Shotgun** got laser sight and improved reload(by *Scuddles*)
+- Flares now always ignite zeds, even if damage < 10
+- `ColoredServerName` temporary removed due to bugs
+- "Team Budget" renamed to **Team Wallet** in UI
+- Fixed a potential bug where going spectator could break Team Wallet
+- While own weapons are locked, player cannot pickup even starting weapons of other players anymore.
+  Made this way to allow players to avoid picking up garbage while looking for own guns.
+
+#### FTG
+- Fixed bug where base was not set if the Guardian was in a shop at wave begin
+- Fixed bug where at wave end the Guarding was not moved to the Trader if carried by a player
+
+
 ### v9.61.02
 - Fixed ammo count display for LAW, HRL and RPG.
 

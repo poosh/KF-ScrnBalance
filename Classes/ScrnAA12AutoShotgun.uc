@@ -28,7 +28,7 @@ simulated function PostBeginPlay()
             FakedShell.SetRelativeLocation(vect(0.15, 0, 4.00));
             FakedShell.SetRelativeRotation(rot(0,32768,0));
             //attempt to set shell to have same skin as AA12 (for cases where player is using golden aa12 or something)
-            if (self.Skins[1] != none)
+            if ( Skins.length > 1 && Skins[1] != none)
                 FakedShell.Skins[0] = self.Skins[1];
         }
     }
@@ -143,7 +143,7 @@ simulated function ClientReload()
         HideFakedShell();
 
     bShortReload = !bBoltClosed; //bShortReload depends on bBoltClosed
-        
+
     if ( !bShortReload )
     {
         PlayAnim(ReloadAnim, ReloadAnimRate*ReloadMulti, 0.1);

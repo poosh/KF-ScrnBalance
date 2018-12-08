@@ -25,7 +25,7 @@ Function Timer()
             HealSum = 50;
         else
             HealSum = Syringe(Weapon).HealBoostAmount;
-        
+
         HealSum    *= HealPotency;
         MedicReward = HealSum;
 
@@ -40,8 +40,8 @@ Function Timer()
 
         if ( ScrnHumanPawn(Healed) != none )
             ScrnHumanPawn(Healed).TakeHealing(ScrnHumanPawn(Instigator), HealSum, HealPotency, KFWeapon(Instigator.Weapon));
-        else 
-            Healed.GiveHealth(HealSum, Healed.HealthMax);            
+        else
+            Healed.GiveHealth(HealSum, Healed.HealthMax);
 
         // Tell them we're healing them
         PlayerController(Instigator.Controller).Speech('AUTO', 5, "");
@@ -58,13 +58,13 @@ Function Timer()
             MedicReward = int((FMin(float(MedicReward),Healed.HealthMax)/Healed.HealthMax) * 60); // Increased to 80 in Balance Round 6, reduced to 60 in Round 7
 
             if ( class'ScrnBalance'.default.Mut.bMedicRewardFromTeam && Healed.PlayerReplicationInfo != none && Healed.PlayerReplicationInfo.Team != none ) {
-                // give money from team budget
+                // give money from team wallet
                 if ( Healed.PlayerReplicationInfo.Team.Score >= MedicReward ) {
                     Healed.PlayerReplicationInfo.Team.Score -= MedicReward;
                     PRI.Score += MedicReward;
                 }
             }
-            else 
+            else
                 PRI.Score += MedicReward;
 
             if ( KFHumanPawn(Instigator) != none )
@@ -109,7 +109,7 @@ function float GetFireSpeed()
     return 1;
 }
 
-// client side only! On server will called AttemptHeal(), which will call super.ModeDoFire() 
+// client side only! On server will called AttemptHeal(), which will call super.ModeDoFire()
 event ModeDoFire()
 {
     local float Rec;
@@ -121,7 +121,7 @@ event ModeDoFire()
         if ( Level.TimeSeconds < PendingHealTime )
             return;
         PendingHealTime = Level.TimeSeconds + InjectDelay + 0.05;
-        
+
         // now medic has syring heal bonus
         Rec = GetFireSpeed();
         FireRate = default.FireRate/Rec;
@@ -136,7 +136,7 @@ event ModeDoFire()
 function AttemptHeal()
 {
     local float Rec;
-    
+
     if (!AllowFire())
         return;
 
@@ -145,14 +145,14 @@ function AttemptHeal()
         if ( Level.TimeSeconds < PendingHealTime )
             return;
         PendingHealTime = Level.TimeSeconds + InjectDelay + 0.05;
-        
+
         Rec = GetFireSpeed();
         FireRate = default.FireRate/Rec;
         FireAnimRate = default.FireAnimRate*Rec;
-        InjectDelay = default.InjectDelay/Rec;    
+        InjectDelay = default.InjectDelay/Rec;
     }
 
-    Super.AttemptHeal();    
+    Super.AttemptHeal();
 }
 
 defaultproperties

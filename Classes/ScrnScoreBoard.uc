@@ -596,7 +596,7 @@ simulated event UpdateScoreBoard(Canvas Canvas)
 
 defaultproperties
 {
-    TeamScoreString="Team Budget:"
+    TeamScoreString="Team Wallet:"
     AssHeaderText="Ass."
     KillsAssSeparator=" + "
     SpectatorsText="Spectators"

@@ -24,7 +24,7 @@ function GiveCashTo( Pawn Other )
 
 
     if( Other.Controller!=None && Other.Controller.PlayerReplicationInfo!=none ) {
-        CashAmount *= 2;  // both player and team parts go into the team budget
+        CashAmount *= 2;  // both player and team parts go into the team wallet
         Other.Controller.PlayerReplicationInfo.Team.Score += CashAmount;
         Other.Controller.PlayerReplicationInfo.Team.NetUpdateTime = Level.TimeSeconds - 1;
     }

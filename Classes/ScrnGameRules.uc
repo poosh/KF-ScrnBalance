@@ -1334,13 +1334,13 @@ function bool OverridePickupQuery(Pawn Other, Pickup item, out byte bAllowPickup
     if ( !result || bAllowPickup == 1 )    {
         if ( WP != none ) {
             // weapon lock and broadcast
-            if ( WP.SellValue > 0 && WP.DroppedBy != Other.Controller
+            if ( WP.DroppedBy != Other.Controller
                     && WP.DroppedBy != none && WP.DroppedBy.PlayerReplicationInfo != none )
             {
-                // ScrN Players can lock weapons from picking up by teammates
-                if ( ScrnPlayerController(WP.DroppedBy) != none && ScrnPlayerController(WP.DroppedBy).bWeaponsLocked
+                if ( WP.SellValue > 0 && ScrnPlayerController(WP.DroppedBy) != none && ScrnPlayerController(WP.DroppedBy).bWeaponsLocked
                         && (Other.PlayerReplicationInfo == none || WP.DroppedBy.PlayerReplicationInfo.Team == Other.PlayerReplicationInfo.Team) )
                 {
+                    // ScrN Players can lock weapons from picking up by teammates
                     result = true;
                     bAllowPickup = 0;
                     if ( ScrnPlayerController(Other.Controller) != none && Level.TimeSeconds > ScrnPlayerController(Other.Controller).LastLockMsgTime + 1.0 ) {
@@ -1352,6 +1352,7 @@ function bool OverridePickupQuery(Pawn Other, Pickup item, out byte bAllowPickup
                     }
                 }
                 else if ( ScrnPlayerController(Other.Controller) != none && ScrnPlayerController(Other.Controller).bWeaponsLocked ) {
+                    // Players cannot pick other's weapons while own weapons are locked
                     result = true;
                     bAllowPickup = 0;
                     if ( Level.TimeSeconds > ScrnPlayerController(Other.Controller).LastLockMsgTime + 1.0 ) {
@@ -1359,7 +1360,7 @@ function bool OverridePickupQuery(Pawn Other, Pickup item, out byte bAllowPickup
                         ScrnPlayerController(Other.Controller).LastLockMsgTime = Level.TimeSeconds;
                     }
                 }
-                else if ( Mut.bBroadcastPickups && !HasInventoryClass(Other, WP.InventoryType) )
+                else if ( WP.SellValue > 0 && Mut.bBroadcastPickups && !HasInventoryClass(Other, WP.InventoryType) )
                     Mut.StolenWeapon(Other, WP);
             }
         }

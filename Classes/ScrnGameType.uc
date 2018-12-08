@@ -437,16 +437,21 @@ function ScoreKill(Controller Killer, Controller Other)
 
     OtherPRI = Other.PlayerReplicationInfo;
     if ( OtherPRI != None ) {
+        if ( OtherPRI.bOnlySpectator )
+            return;  // player became a spectator
+
         OtherPRI.NumLives++;
         OtherPRI.Score -= (OtherPRI.Score * (GameDifficulty * 0.05));   // you Lose 35% of your current cash on Hell on Earth, 15% on normal.
-        OtherPRI.Team.Score -= OtherPRI.Team.Score / WavePlayerCount * (GameDifficulty * 0.05);
-
         if (OtherPRI.Score < 0 )
             OtherPRI.Score = 0;
-        if (OtherPRI.Team.Score < 0 )
-            OtherPRI.Team.Score = 0;
 
-        OtherPRI.Team.NetUpdateTime = Level.TimeSeconds - 1;
+        if ( OtherPRI.Team != none ) {
+            OtherPRI.Team.Score -= OtherPRI.Team.Score / WavePlayerCount * (GameDifficulty * 0.05);
+            if (OtherPRI.Team.Score < 0 )
+                OtherPRI.Team.Score = 0;
+            OtherPRI.Team.NetUpdateTime = Level.TimeSeconds - 1;
+        }
+
         OtherPRI.bOutOfLives = true;
         if( Killer!=None && Killer.PlayerReplicationInfo!=None && Killer.bIsPlayer )
             BroadcastLocalizedMessage(class'KFInvasionMessage',1,OtherPRI,Killer.PlayerReplicationInfo);
@@ -460,7 +465,7 @@ function ScoreKill(Controller Killer, Controller Other)
     if ( GameRulesModifiers != None )
         GameRulesModifiers.ScoreKill(Killer, Other);
 
-    if ( MonsterController(Killer) != None )
+    if ( !Killer.bIsPlayer || Killer.PlayerReplicationInfo == none )
         return;
 
     if ( Killer == Other || Killer == None )  {
@@ -472,10 +477,6 @@ function ScoreKill(Controller Killer, Controller Other)
         }
         return;
     }
-    else if ( !Killer.bIsPlayer || Killer.PlayerReplicationInfo == none ) {
-        return;
-    }
-
     if ( Other.bIsPlayer ) {
         // p2p kills
         if ( Killer.PlayerReplicationInfo.Team == Other.PlayerReplicationInfo.Team ) {
@@ -1194,9 +1195,10 @@ function ShowPathTo(PlayerController CI, int DestinationIndex)
 function GetServerInfo( out ServerResponseLine ServerState )
 {
     super.GetServerInfo(ServerState);
-    if ( ScrnBalanceMut.ColoredServerName != "" ) {
-        ServerState.ServerName = ScrnBalanceMut.ParseColorTags(ScrnBalanceMut.ColoredServerName);
-    }
+    // Removed in v9.60.02
+    // if ( ScrnBalanceMut.ColoredServerName != "" ) {
+    //     ServerState.ServerName = ScrnBalanceMut.ParseColorTags(ScrnBalanceMut.ColoredServerName);
+    // }
 }
 
 // entire C&CI from parent classes to clear garbage
@@ -1867,6 +1869,18 @@ function bool UpdateMonsterCount()
     return AlivePlayerCount > 0;
 }
 
+function bool BootShopPlayers()
+{
+    local int i;
+    local bool result;
+
+    for( i=0; i < ShopList.Length; ++i ) {
+        if( ShopList[i].BootPlayers() )
+            result = true;
+    }
+    return result;
+}
+
 function SetupPickups()
 {
     local int i, j;
@@ -2341,6 +2355,12 @@ State MatchInProgress
     function SetupPickups()
     {
         global.SetupPickups();
+    }
+
+
+    function bool BootShopPlayers()
+    {
+        return global.BootShopPlayers();
     }
 
     function BattleTimer()

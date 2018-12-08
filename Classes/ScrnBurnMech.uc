@@ -174,9 +174,11 @@ function MakeBurnDamage(KFMonster Victim, int Damage, Pawn InstigatedBy, Vector 
     // First we need to check if zed can be set on fire, otherwise don't apply burning mechanism
     // on it (e.g. some Doom3 monsters are immune to fire).
 
-    //Victim.HeatAmount += 5; // just to be sure this gay feature don't block zed's ignition
-    //damage zed and check if it's burning
+    if ( FlareDamType != none ) {
+        Victim.HeatAmount = 5; // just to be sure this gay feature don't block zed's ignition
+    }
     OldHealth = Victim.Health;
+    //damage zed and check if it's burning
     Victim.TakeDamage(Damage, instigatedBy, hitLocation, momentum, DamType, HitIndex);
     if ( bOutputDamage && InstigatedBy != none && PlayerController(InstigatedBy.Controller) != none )
         PlayerController(InstigatedBy.Controller).ClientMessage(

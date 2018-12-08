@@ -39,11 +39,11 @@ simulated function Destroyed()
 
     if (LaserAttachment != None)
         LaserAttachment.Destroy();
-        
+
     super(KFWeapon).Destroyed();
 }
 
-//bring Laser to current state, which is indicating by LaserType 
+//bring Laser to current state, which is indicating by LaserType
 simulated function ApplyLaserState()
 {
     //bLaserActive = LaserType > 0;
@@ -54,10 +54,10 @@ simulated function ApplyLaserState()
 
     if ( ThirdPersonActor != none )
         ScrnLaserWeaponAttachment(ThirdPersonActor).SetLaserType(LaserType);
-    
+
     if ( !Instigator.IsLocallyControlled() )
         return;
-    
+
     if( bLaserActive ) {
         if ( LaserDot == none )
             LaserDot = Spawn(LaserDotClass, self);
@@ -67,7 +67,7 @@ simulated function ApplyLaserState()
             LaserAttachment = Spawn(LaserAttachmentClass,,,,);
             AttachToBone(LaserAttachment, LaserAttachmentBone);
         }
-        ConstantColor'ScrnTex.Laser.LaserColor'.Color = 
+        ConstantColor'ScrnTex.Laser.LaserColor'.Color =
             LaserDot.GetLaserColor(); // LaserAttachment's color
         LaserAttachment.bHidden = false;
 
@@ -83,10 +83,10 @@ simulated function ApplyLaserState()
 // Toggle laser modes: RED/GREEN/OFF
 simulated function ToggleLaser()
 {
-    if( !Instigator.IsLocallyControlled() ) 
+    if( !Instigator.IsLocallyControlled() )
         return;
 
-    if ( (++LaserType) > 2 )  
+    if ( (++LaserType) > 2 )
         LaserType = 0;
     ApplyLaserState();
 }
@@ -115,8 +115,8 @@ simulated function ClientReload()
 function ServerSetLaserType(byte NewLaserType)
 {
     LaserType = NewLaserType;
-    bLaserActive = NewLaserType > 0; 
-    ScrnLaserWeaponAttachment(ThirdPersonActor).SetLaserType(LaserType);   
+    bLaserActive = NewLaserType > 0;
+    ScrnLaserWeaponAttachment(ThirdPersonActor).SetLaserType(LaserType);
 }
 
 simulated function bool PutDown()
@@ -142,7 +142,7 @@ simulated function TurnOffLaser()
         ServerSetLaserType(0);
 
     bLaserActive = false;
-    //don't change Laser type here, because we need to restore it state 
+    //don't change Laser type here, because we need to restore it state
     //when next time weapon will be bringed up
     if ( LaserAttachment != none )
         LaserAttachment.bHidden = true;
@@ -157,7 +157,7 @@ simulated function TweenToReloadOffset()
     if (ReloadTweenEndTime == 0)
     {
         return; //do nothing
-    }   
+    }
     if (Level.TimeSeconds > ReloadTweenEndTime)
     {
         ReloadViewOffset = TargetViewOffset; //set target
@@ -173,7 +173,7 @@ simulated function TweenToReloadOffset()
     }
 }
 
-//added function to calculate and apply reload view offset 
+//added function to calculate and apply reload view offset
 simulated function WeaponTick(float dt)
 {
     Super.WeaponTick(dt);
@@ -226,7 +226,7 @@ simulated function RenderOverlays( Canvas Canvas )
     DrawOffset = (90/DisplayFOV * ReloadViewOffset) >> Instigator.GetViewRotation(); //calculate additional offset
     SetLocation( Instigator.Location + Instigator.CalcDrawOffset(self) + DrawOffset); //add additional offset
     SetRotation( Instigator.GetViewRotation() + ZoomRotInterp);
-    
+
     KFSGM = KFShotgunFire(FireMode[0]);
 
     // Handle drawing the laser dot
@@ -240,7 +240,7 @@ simulated function RenderOverlays( Canvas Canvas )
             Y = C.YAxis;
             Z = C.ZAxis;
         }
-        else 
+        else
             GetViewAxes(X, Y, Z);
 
         StartTrace = Instigator.Location + Instigator.EyePosition();
@@ -297,7 +297,7 @@ simulated function ClientFinishReloading()
     ReloadTweenStartTime = Level.TimeSeconds;
     ReloadTweenEndTime = Level.TimeSeconds + ReloadTweenRate;
     ReloadViewOffsetInterp = ReloadViewOffset; //store values for interpolation
-    
+
     //play chambering animation if finished reloading from empty
     if ( !bChamberThisReload )
     {
@@ -322,10 +322,12 @@ defaultproperties
      ReloadViewOffset=(X=0.000000,Y=0.000000,Z=0.000000) //reload offset to get the weapon away from the center of the screen while reloading
      ReloadViewOffsetValue=(X=10.000000,Y=-5.000000,Z=-10.000000) //used to store the vector values
      ReloadTweenRate = 0.2 //little less than zoomtime
-     
+
      //laser stuff
      LaserAttachmentBone="LightBone"
      LaserDotClass=Class'ScrnBalanceSrv.ScrnLocalLaserDot'
      LaserAttachmentClass=Class'ScrnBalanceSrv.ScrnLaserAttachmentFirstPerson'
      FireSpotRenrerTime=1.5
+
+     ModeSwitchAnim="LightOn"
 }

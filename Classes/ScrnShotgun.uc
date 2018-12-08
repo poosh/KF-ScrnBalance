@@ -37,4 +37,6 @@ defaultproperties
     SelectSoundRef="KF_PumpSGSnd.SG_Select"
     MeshRef="KF_Weapons_Trip.Shotgun_Trip"
     SkinRefs(0)="KF_Weapons_Trip_T.Shotguns.shotgun_cmb"
+
+    ModeSwitchAnim="LightOn"
 }

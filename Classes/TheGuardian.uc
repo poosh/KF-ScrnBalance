@@ -1,6 +1,8 @@
 class TheGuardian extends TSCBaseGuardian
     abstract;
 
+var localized string strBlame;
+
 function PawnBaseDied()
 {
     local vector base_loc;
@@ -14,6 +16,25 @@ function PawnBaseDied()
             GotoState('SettingUp');
         else
             GotoState('Dropped');
+    }
+}
+
+function bool BaseSetupFailed()
+{
+    if ( LastHolder != none ) {
+        TscGame(Level.Game).ScrnBalanceMut.BlamePlayer(LastHolder, strBlame);
+    }
+    else if ( ScrnPlayerController(GetBaseSetter()) != none ) {
+        TscGame(Level.Game).ScrnBalanceMut.BlamePlayer(ScrnPlayerController(GetBaseSetter()), strBlame);
+    }
+
+    Drop(PhysicsVolume.Gravity); // in case it is held in invalid place like shop
+    MoveToShop(MyShop); // move to my shop
+    Score();
+
+    if ( !bActive ) {
+        log( "Base setup failed", class.name );
+        SendHome();
     }
 }
 
@@ -74,4 +95,6 @@ defaultproperties
     PrePivot=(Z=23)
     SameTeamCounter=25
     Damage=2 // do less damage to enemies due to moving
+
+    strBlame="%p blamed for base setup failure"
 }

@@ -21,6 +21,9 @@ var int StunDuration;
 var float StunFadeoutRate;
 var transient float StunDamage;
 
+var ShopVolume MyShop;
+var transient ScrnPlayerController LastHolder;
+
 replication
 {
     reliable if (bNetDirty && Role == ROLE_Authority)
@@ -144,6 +147,7 @@ function bool ValidPlaceForBase(Vector CheckLoc)
 {
     local TSCBaseGuardian EnemyBase;
     local ShopVolume Shop;
+    local PlayerController PC;
 
     EnemyBase = TSCBaseGuardian(TSCGRI.Teams[1-Team.TeamIndex].HomeBase);
     if ( TSCGRI.AtBase(CheckLoc, EnemyBase) )
@@ -152,17 +156,26 @@ function bool ValidPlaceForBase(Vector CheckLoc)
     // check for Z difference to prevent vertical intersection
     CheckLoc.Z += TSCGRI.MaxBaseZ + TSCGRI.MinBaseZ;
     if ( TSCGRI.AtBase(CheckLoc, EnemyBase) ) {
-        GetBaseSetter().ReceiveLocalizedMessage(class'TSCMessages', 310);
+        PC = GetBaseSetter();
+        if ( PC != none )
+            PC.ReceiveLocalizedMessage(class'TSCMessages', 310);
         return false;
     }
 
     // can't place a base inside a shop
     foreach TouchingActors(Class'ShopVolume',Shop) {
-        GetBaseSetter().ReceiveLocalizedMessage(class'TSCMessages', 313);
+        PC = GetBaseSetter();
+        if ( PC != none )
+            PC.ReceiveLocalizedMessage(class'TSCMessages', 313);
         return false;
     }
 
     return true;
+}
+
+function bool BaseSetupFailed()
+{
+    SendHome();
 }
 
 // Score() is used for setting up base
@@ -175,6 +188,9 @@ function Score()
         BaseSetter = Holder;
         GotoState('SettingUp');
     }
+    else {
+        log("Invalid place for base @ " $ Location, class.name);
+    }
 }
 
 // If base is not active, try setting it up.
@@ -185,12 +201,15 @@ function ScoreOrHome()
     Score();
       // if base still isn't established - send it home
     if ( !bActive )
-        SendHome();
+        BaseSetupFailed();
 }
 
 function MoveToShop(ShopVolume Shop)
 {
     local int i;
+
+    if ( Shop == none )
+        return;
 
     BaseSetter = none;
 
@@ -200,6 +219,7 @@ function MoveToShop(ShopVolume Shop)
     if ( Shop.TelList.Length == 1 ) {
         // from stupid maps with only 1 player teleport per trader
         if ( Shop.TelList[0].Accept(self, Shop) ) {
+            MyShop = Shop;
             GotoState('Dropped');
             return;
         }
@@ -207,6 +227,7 @@ function MoveToShop(ShopVolume Shop)
     else {
         for ( i=Team.TeamIndex; i<Shop.TelList.Length; ++i ) {
             if ( Shop.TelList[i].Accept(self, Shop) ) {
+                MyShop = Shop;
                 GotoState('Dropped');
                 return;
             }
@@ -240,8 +261,11 @@ function GiveToClosestPlayer(vector Loc)
 
 auto state Home
 {
+    ignores BaseSetupFailed;
+    
     function BeginState()
     {
+        // log("State --> Home", class.name);
         Disable('Touch');
         SetCollision(false, false);
         bCollideWorld=false;
@@ -249,10 +273,12 @@ auto state Home
         bHidden = true;
         LightType = LT_None;
         BaseSetter = none;
+        LastHolder = none;
     }
 
     function EndState()
     {
+        // log("State <-- Home", class.name);
         bHome = false;
         bHidden = false;
         TakenTime = Level.TimeSeconds;
@@ -265,6 +291,7 @@ state Dropped
 {
     function BeginState()
     {
+        // log("State --> Dropped", class.name);
         SetCollision(true, false);
         bCollideWorld=True;
         bHidden = false;
@@ -273,19 +300,27 @@ state Dropped
 
         super.BeginState();
     }
+
+    function EndState()
+    {
+        // log("State <-- Dropped", class.name);
+    }
 }
 
 state Held
 {
     function BeginState()
     {
+        // log("State --> Held", class.name);
         super.BeginState();
         Holder.bAlwaysRelevant = true;
         BaseSetter = none;
+        LastHolder = ScrnPlayerController(Holder.Controller);
     }
 
     function EndState()
     {
+        // log("State <-- Held", class.name);
         if ( Holder != none ) {
             Holder.bAlwaysRelevant = false;
             SetLocation(Holder.Location); // prevent holder to exploit GameObjOffset
@@ -297,6 +332,12 @@ state Held
     {
         global.SendHome();
     }
+
+    function MoveToShop(ShopVolume Shop)
+    {
+        Drop(PhysicsVolume.Gravity); // make sure the holder will not force his location after moving to shop
+        global.MoveToShop(Shop);
+    }
 }
 
 
@@ -306,6 +347,7 @@ state SettingUp
 
     function BeginState()
     {
+        // log("State --> SettingUp", class.name);
         bActive = true;
         Disable('Touch');
 
@@ -323,6 +365,7 @@ state SettingUp
 
     function EndState()
     {
+        // log("State <-- SettingUp", class.name);
         bActive = false;
         SetTimer(0, false);
     }
@@ -336,15 +379,16 @@ state SettingUp
         if ( !ValidPlaceForBase(Location) ) {
             // can't setup base here (probably dropped down to enemy base)
             // give gnome back to its last holder
-            if ( BaseSetter != none ) {
+            if ( TSCGRI.bWaveInProgress ) {
+                BaseSetupFailed();
+            }
+            else if ( BaseSetter != none ) {
                 SetPhysics(PHYS_None);
                 SetHolder(BaseSetter.Controller);
             }
             else {
                 GotoState('Dropped');
             }
-            if ( TSCGRI.bWaveInProgress )
-                SendHome(); // prevent carrying a base guardian during the wave
             return;
         }
 
@@ -374,6 +418,7 @@ state Guarding
         local ScrnPlayerController ScrnC;
         local rotator r;
 
+        // log("State --> Guarding", class.name);
         bActive = true;
         Disable('Touch');
 
@@ -402,6 +447,7 @@ state Guarding
 
     function EndState()
     {
+        // log("State <-- Guarding", class.name);
         bActive = false;
         SetTimer(0, false);
     }
@@ -515,6 +561,7 @@ state Stunned
     {
         local rotator r;
 
+        // log("State --> Stunned", class.name);
         r = Rotation;
         r.Pitch = -16384;
         r.Roll = 0;
@@ -530,6 +577,7 @@ state Stunned
 
     function EndState()
     {
+        // log("State <-- Stunned", class.name);
         LightRadius = default.LightRadius;
     }
 
@@ -547,6 +595,7 @@ state WakingUp
     {
         local rotator r;
 
+        // log("State --> WakingUp", class.name);
         r = Rotation;
         r.Pitch = 0;
         r.Roll = 0;
@@ -562,6 +611,7 @@ state WakingUp
 
     function EndState()
     {
+        // log("State <-- WakingUp", class.name);
         bActive = false;
     }
 

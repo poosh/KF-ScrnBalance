@@ -224,7 +224,7 @@ function HealRadius(float HealAmount, float HealRadius, vector HealLocation)
             MedicReward = int((FMin(float(MedicReward),Victim.HealthMax)/Victim.HealthMax) * 60);
 
             if ( class'ScrnBalance'.default.Mut.bMedicRewardFromTeam && Victim.PlayerReplicationInfo != none && Victim.PlayerReplicationInfo.Team != none ) {
-                // give money from team budget
+                // give money from team wallet
                 if ( Victim.PlayerReplicationInfo.Team.Score >= MedicReward ) {
                     Victim.PlayerReplicationInfo.Team.Score -= MedicReward;
                     KFPRI.Score += MedicReward;
