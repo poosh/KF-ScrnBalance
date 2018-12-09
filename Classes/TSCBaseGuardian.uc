@@ -170,10 +170,19 @@ function bool ValidPlaceForBase(Vector CheckLoc)
         return false;
     }
 
+    if ( Holder != none ) {
+        foreach Holder.TouchingActors(Class'ShopVolume',Shop) {
+            PC = GetBaseSetter();
+            if ( PC != none )
+                PC.ReceiveLocalizedMessage(class'TSCMessages', 313);
+            return false;
+        }
+    }
+
     return true;
 }
 
-function bool BaseSetupFailed()
+function BaseSetupFailed()
 {
     SendHome();
 }
@@ -184,12 +193,12 @@ function Score()
     if ( bDisabled || bActive )
         return;
 
-    if ( ValidPlaceForBase(Location) ) {
+    if ( ValidPlaceForBase(GetLocation()) ) {
         BaseSetter = Holder;
         GotoState('SettingUp');
     }
     else {
-        log("Invalid place for base @ " $ Location, class.name);
+        log("Invalid place for base @ " $ GetLocation(), class.name);
     }
 }
 
@@ -216,30 +225,29 @@ function MoveToShop(ShopVolume Shop)
     if ( !Shop.bTelsInit )
         Shop.InitTeleports();
 
-    if ( Shop.TelList.Length == 1 ) {
-        // from stupid maps with only 1 player teleport per trader
-        if ( Shop.TelList[0].Accept(self, Shop) ) {
-            MyShop = Shop;
-            GotoState('Dropped');
-            return;
+    if ( Shop.bHasTeles ) {
+        if ( Shop.TelList.length == 1 ) {
+            i = 0;
         }
-    }
-    else {
-        for ( i=Team.TeamIndex; i<Shop.TelList.Length; ++i ) {
-            if ( Shop.TelList[i].Accept(self, Shop) ) {
-                MyShop = Shop;
-                GotoState('Dropped');
-                return;
+        else if ( Team.TeamIndex == 0 ) {
+            i = Rand(Shop.TelList.length/2);
+        }
+        else {
+            i = ceil(Shop.TelList.length/2.0) + Rand(Shop.TelList.length/2);
+            // shouldn't happen, just to be 110% sure
+            if( i >= Shop.TelList.length ) {
+                i = Shop.TelList.length - 1;
             }
         }
+        SetLocation(Shop.TelList[i].Location + (vect(0,0,1) * CollisionHeight)) ;
+        SetPhysics(PHYS_Falling);
+        GotoState('Dropped');
     }
-
-    // foreach AllActors(class'LevelDesigner', LD)
-        // if ( LD.MadeThisMap() )
-            // LD.CutHisBallsOffAndFeedToZeds();
-
-    // if none of teleporters can accept us, just give me to the closest team member
-    GiveToClosestPlayer(Shop.Location);
+    else {
+        warn( Shop $ " has no teleporters" );
+        // if none of teleporters can accept us, just give me to the closest team member
+        GiveToClosestPlayer(Shop.Location);
+    }
 }
 
 function GiveToClosestPlayer(vector Loc)
@@ -262,7 +270,7 @@ function GiveToClosestPlayer(vector Loc)
 auto state Home
 {
     ignores BaseSetupFailed;
-    
+
     function BeginState()
     {
         // log("State --> Home", class.name);

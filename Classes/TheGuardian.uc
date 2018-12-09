@@ -19,17 +19,24 @@ function PawnBaseDied()
     }
 }
 
-function bool BaseSetupFailed()
+function BaseSetupFailed()
 {
+    local TscGame game;
+
+    game = TscGame(Level.Game);
+
     if ( LastHolder != none ) {
-        TscGame(Level.Game).ScrnBalanceMut.BlamePlayer(LastHolder, strBlame);
+        game.ScrnBalanceMut.BlamePlayer(LastHolder, strBlame);
     }
     else if ( ScrnPlayerController(GetBaseSetter()) != none ) {
-        TscGame(Level.Game).ScrnBalanceMut.BlamePlayer(ScrnPlayerController(GetBaseSetter()), strBlame);
+        game.ScrnBalanceMut.BlamePlayer(ScrnPlayerController(GetBaseSetter()), strBlame);
     }
 
-    Drop(PhysicsVolume.Gravity); // in case it is held in invalid place like shop
-    MoveToShop(MyShop); // move to my shop
+    if ( TSCGRI.bWaveInProgress ) {
+        game.BootShopPlayers();
+    }
+
+    MoveToShop(MyShop); // teleport next to shop
     Score();
 
     if ( !bActive ) {

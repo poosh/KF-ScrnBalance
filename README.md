@@ -20,6 +20,12 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 
 -------------------------------------------------------------------------------
 
+### v9.61.04
+- New game mode: **FTG: Fight The Patriarchs** (by *nmm*)
+- **Mystery Mode v2** - remake by *nmm*. Now it is pure mystery.
+- Fixed yet another bug that prevented teleporting the Guarding from a shop.
+
+
 ### v9.61.03
 - **Combat Shotgun** got laser sight and improved reload(by *Scuddles*)
 - Flares now always ignite zeds, even if damage < 10
