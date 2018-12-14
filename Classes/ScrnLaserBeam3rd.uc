@@ -29,8 +29,22 @@ simulated function byte GetLaserType()
     return LaserType;
 }
 
+simulated function ForceLaserType(out byte value)
+{
+    local ScrnPlayerController PC;
+
+    PC = ScrnPlayerController(Level.GetLocalPlayerController());
+    if( PC != none && PC.bOtherPlayerLasersBlue
+            && (Owner == none || Owner.Instigator == none || Owner.Instigator.Controller != PC) )
+    {
+        value = 3; // force blue laser color
+    }
+}
+
 simulated function SetLaserType(byte value)
 {
+    ForceLaserType(value);
+
     LaserDot.SetLaserType(value);
     LaserType = LaserDot.GetLaserType();
     Skins[0] = LaserDot.Lasers[LaserType].Skin3rd;
@@ -45,7 +59,7 @@ simulated function AdjustDotPosition()
     local Vector HitLocation, HitNormal;
     local Actor Other;
     // local Rotator R;
-    
+
     if ( LaserType == 0 || MyWeaponAttachment == none || Instigator == none || Instigator.IsFirstPerson() ) {
         // not replicated yet?
         bHidden = true;
@@ -53,7 +67,7 @@ simulated function AdjustDotPosition()
         LaserDot.ProjTexture = none;
         return;
     }
-    
+
     // if ( Level.TimeSeconds - MyWeaponAttachment.LastRenderTime < 1 ) {
         // weapon attachment replicated and updated
         bHidden = false;
@@ -61,7 +75,7 @@ simulated function AdjustDotPosition()
         mSpawnVecA = C.Origin;
         SetRotation(Rotator(-C.XAxis));
         SetLocation( mSpawnVecA + C.XAxis * 50 );
-        
+
         X = C.XAxis;
         StartTrace = Location;
     // }
@@ -69,11 +83,11 @@ simulated function AdjustDotPosition()
         // bHidden = true;
         // R = Instigator.GetViewRotation();
         // if ( Instigator.Controller == none ) // client, not owner
-            // R.Pitch = Instigator.ViewPitch; 
+            // R.Pitch = Instigator.ViewPitch;
         // GetAxes(R, X, Y, Z);
         // StartTrace = Instigator.Location + X*Instigator.CollisionRadius;
     // }
-    
+
     EndTrace = StartTrace + 5000*X;
     Other = Trace(HitLocation, HitNormal, EndTrace, StartTrace, true);
     if (Other != None && Other != Instigator && Other.Base != Instigator ) {
@@ -84,9 +98,9 @@ simulated function AdjustDotPosition()
         else
             LaserDot.SetRotation(Rotator(-HitNormal));
     }
-    else 
+    else
         LaserDot.bHidden = true;
-        
+
     if ( !LaserDot.bHidden && LaserDot.ProjTexture == none )
         LaserDot.SetLaserType(LaserType); // update proj texture
 }
@@ -103,7 +117,7 @@ defaultproperties
     LaserDotClass=class'ScrnLocalLaserDot'
     MyAttachmentBone="Tip"
     bHardAttach=False
-    
+
      //SpotProjectorPullback=1.000000
      mParticleType=PT_Beam
      mMaxParticles=3

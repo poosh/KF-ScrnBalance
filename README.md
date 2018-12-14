@@ -20,6 +20,21 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 
 -------------------------------------------------------------------------------
 
+### v9.61.05
+- Changed requirement for getting Suicidal Map achievements. Now those can be obtained by surviving TurboGame,
+  Nightmare Mode (GameLength=9) or any non-Doom non-FTG custom game modes (GameLength in [72..99])
+- Fixed bug where MVOTE DIFF sometimes did not work
+- Restored `bOtherPlayerLasersBlue` feature. It is not available in GUI yet, but it can be set in *User.ini*
+- Added `HardcoreLevel` to ScrN Waves. Allows forcing HL for each game length and for each difficulty.
+    ```
+    HardcoreLevel=(HL=10)
+    HardcoreLevel=(Difficulty=5,HL=15)
+    HardcoreLevel=(Difficulty=7,HL=20)
+    ```
+- New config file: **ScrnInternal.ini**. Created by ScrN Balance, used internally by ScrN Balance.
+  Users should not touch it.
+
+
 ### v9.61.04
 - New game mode: **FTG: Fight The Patriarchs** (by *nmm*)
 - **Mystery Mode v2** - remake by *nmm*. Now it is pure mystery.

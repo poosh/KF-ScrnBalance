@@ -8,13 +8,6 @@ struct SLaser {
 };
 var const array<SLaser> Lasers;
 
-enum ELaserColor {
-    LASER_None,
-    LASER_Red,
-    LASER_Green,
-    LASER_Blue,
-    LASER_Orange
-};
 var private byte LaserType;
 
 var()       float                       ProjectorPullback;      // Amount to pull back the laser dot projector from the hit location
@@ -30,7 +23,7 @@ static function Color GetLaserColorStatic(byte LaserType)
 {
     if ( LaserType >= default.Lasers.Length )
         LaserType = 0;
-    
+
     return default.Lasers[LaserType].LaserColor;
 }
 
@@ -41,9 +34,9 @@ simulated function byte GetLaserType()
 
 simulated function SetLaserType(byte value)
 {
-    if ( value >= Lasers.length ) 
+    if ( value >= Lasers.length )
         value = 0;
-    
+
     LaserType = value;
     ProjTexture = Lasers[LaserType].DotTexture;
     bHidden = LaserType == 0 || ProjTexture == none;
@@ -58,7 +51,7 @@ defaultproperties
     Lasers(2)=(LaserColor=(R=0,G=255,B=0,A=255),DotTexture=Texture'ScrnTex.Laser.Laser_Dot_Green',Skin3rd=Texture'ScrnTex.Laser.Laser_Green')
     Lasers(3)=(LaserColor=(R=0,G=150,B=255,A=255),DotTexture=Texture'ScrnTex.Laser.Laser_Dot_Blue',Skin3rd=Texture'ScrnTex.Laser.Laser_Blue')
     Lasers(4)=(LaserColor=(R=255,G=150,B=0,A=255),DotTexture=Texture'ScrnTex.Laser.Laser_Dot_Orange',Skin3rd=Texture'ScrnTex.Laser.Laser_Orange')
-    
+
     MaterialBlendingOp=PB_Add
     FrameBufferBlendingOp=PB_Add
     ProjTexture=none
@@ -76,6 +69,6 @@ defaultproperties
     bHidden=True
     RemoteRole=ROLE_None
     bSkipActorPropertyReplication=True
-    DrawScale=0.250000   
-    LifeSpan=100000000     
+    DrawScale=0.250000
+    LifeSpan=100000000
 }

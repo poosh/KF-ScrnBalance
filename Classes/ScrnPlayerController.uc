@@ -2790,6 +2790,7 @@ defaultproperties
     strNoPerkChanges="Mid-game perk changes disabled"
     strPerkLocked="Perk is locked"
     bWaveGarbageCollection=False
+    bOtherPlayerLasersBlue=true
 
     DualWieldables(0)=(Single=class'KFMod.Single',Dual=class'KFMod.Dualies')
     DualWieldables(1)=(Single=class'KFMod.Deagle',Dual=class'KFMod.DualDeagle')

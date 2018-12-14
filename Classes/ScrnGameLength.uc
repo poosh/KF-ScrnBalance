@@ -14,6 +14,12 @@ var config array<string> Waves;
 var config array<string> Zeds;
 var config bool bLogStats;
 
+struct SHL {
+    var byte Difficulty;
+    var int HL;
+};
+var config array<SHL> HardcoreLevel;
+
 var class<KFMonster> FallbackZed;
 var array<ScrnZedInfo> ZedInfos;
 var array<string> ZedVotes;
@@ -109,6 +115,18 @@ function LoadGame(ScrnGameType MyGame)
 
     if ( ZedVotes.length > 0 )
         AddVoting();
+
+    if ( HardcoreLevel.length > 0 ) {
+        j = 0;
+        for ( i = 0; i < HardcoreLevel.length; ++i ) {
+            if ( Game.GameDifficulty >= HardcoreLevel[i].Difficulty && j < HardcoreLevel[i].HL )
+                j = HardcoreLevel[i].HL;
+        }
+        if ( j > 0 ) {
+            log("HL forced to " $ j, class.name);
+            Game.ScrnBalanceMut.GameRules.ForceHardcoreLevel(j);
+        }
+    }
 
     // this makes sure the Wave is never none
     if ( Waves.length == 0 ) {

@@ -29,7 +29,47 @@ ScrnBalance (ScrnBalanceSrv.ScrnBalance).</em></li>
 <hr />
 <h2>VERSION 9</h2>
 <hr />
-<h3>v9.61</h3>
+<h3>v9.61.05</h3>
+<ul>
+<li>Changed requirement for getting Suicidal Map achievements. Now those can be obtained by surviving TurboGame,
+Nightmare Mode (GameLength=9) or any non-Doom non-FTG custom game modes (GameLength in [72..99])</li>
+<li>Fixed bug where MVOTE DIFF sometimes did not work</li>
+<li>Restored <code>bOtherPlayerLasersBlue</code> feature. It is not available in GUI yet, but it can be set in <em>User.ini</em></li>
+<li>Added <code>HardcoreLevel</code> to ScrN Waves. Allows forcing HL for each game length and for each difficulty.
+<pre><code>HardcoreLevel=(HL=10)
+HardcoreLevel=(Difficulty=5,HL=15)
+HardcoreLevel=(Difficulty=7,HL=20)
+</code></pre>
+</li>
+<li>New config file: <strong>ScrnInternal.ini</strong>. Created by ScrN Balance, used internally by ScrN Balance.
+Users should not touch it.</li>
+</ul>
+<h3>v9.61.04</h3>
+<ul>
+<li>New game mode: <strong>FTG: Fight The Patriarchs</strong> (by <em>nmm</em>)</li>
+<li><strong>Mystery Mode v2</strong> - remake by <em>nmm</em>. Now it is pure mystery.</li>
+<li>Fixed yet another bug that prevented teleporting the Guarding from a shop.</li>
+</ul>
+<h3>v9.61.03</h3>
+<ul>
+<li><strong>Combat Shotgun</strong> got laser sight and improved reload(by <em>Scuddles</em>)</li>
+<li>Flares now always ignite zeds, even if damage &lt; 10</li>
+<li><code>ColoredServerName</code> temporary removed due to bugs</li>
+<li>&quot;Team Budget&quot; renamed to <strong>Team Wallet</strong> in UI</li>
+<li>Fixed a potential bug where going spectator could break Team Wallet</li>
+<li>While own weapons are locked, player cannot pickup even starting weapons of other players anymore.
+Made this way to allow players to avoid picking up garbage while looking for own guns.</li>
+</ul>
+<h4>FTG</h4>
+<ul>
+<li>Fixed bug where base was not set if the Guardian was in a shop at wave begin</li>
+<li>Fixed bug where at wave end the Guarding was not moved to the Trader if carried by a player</li>
+</ul>
+<h3>v9.61.02</h3>
+<ul>
+<li>Fixed ammo count display for LAW, HRL and RPG.</li>
+</ul>
+<h3>v9.61.01</h3>
 <h4>Weapons (by <em>Scuddles</em>)</h4>
 <ul>
 <li>Tactical reloads added for Incendinary Thompson, Steampunk Sniper, M14 EBR, KSG Shotgun.</li>
@@ -59,6 +99,7 @@ to kill 5p Husk or Siren. Introduced to compensate tactical reload buff.</li>
 <li>From now on, <em>KFMapVote.ini</em> is distributed with ScrN Balance package (same config as in bundle)</li>
 <li>Short Game is removed. GameLength=0 replaced with ScrN + Event Zeds Long Game.</li>
 <li>Difficulty voting removed from <em>KFMapVote.ini</em>. Use <code>mvote DIFF</code> to change difficulty.</li>
+<li>GameLength numbers reordered. See <em>KFMapVote.ini</em> and <em>ScrnWaves.ini</em> for details.</li>
 <li>Added <code>bRandomSpawnLoc</code> - spawns zeds randomly on the entire map instead of spawning them close to players.
 Does not work in FTG.</li>
 <li>Added <code>DOOR_Randomize</code> - randomly welds, unwelds, respawns or blows doors (thanks to <em>nmmblez</em>)</li>

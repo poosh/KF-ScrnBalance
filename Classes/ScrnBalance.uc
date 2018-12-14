@@ -12,7 +12,7 @@ class ScrnBalance extends Mutator
 #exec OBJ LOAD FILE=ScrnAch_T.utx
 
 
-const VERSION = 96104;
+const VERSION = 96105;
 
 var ScrnBalance Mut; // pointer to self to use in static functions, i.e class'ScrnBalance'.default.Mut
 
@@ -167,7 +167,8 @@ var globalconfig bool bVoteKillCheckVisibility;
 var globalconfig float VoteKillPenaltyMult;
 var globalconfig byte MinVoteFF, MaxVoteFF;
 var globalconfig byte MinVoteDifficulty;
-var byte VotedDifficulty;
+
+var ScrnBalancePersistence Persistence;
 
 var globalconfig bool bDynamicLevelCap;
 var int OriginalMaxLevel;
@@ -2644,15 +2645,17 @@ function PostBeginPlay()
 
     KF.LoginMenuClass = string(Class'ScrnBalanceSrv.ScrnInvasionLoginMenu');
 
-    if ( VotedDifficulty > 0 ) {
-        if ( VotedDifficulty == 6 || VotedDifficulty == 8 ) {
+    Persistence = new class'ScrnBalancePersistence';
+
+    if ( Persistence.Difficulty > 0 ) {
+        if ( Persistence.Difficulty == 6 || Persistence.Difficulty == 8 ) {
             bHardcore = true;
-            KF.GameDifficulty = VotedDifficulty - 1;
+            KF.GameDifficulty = Persistence.Difficulty - 1;
             log("Game difficulty: " $ string(KF.GameDifficulty) $ " + Hardcore", 'ScrnBalance');
         }
         else {
             bHardcore = false;
-            KF.GameDifficulty = VotedDifficulty;
+            KF.GameDifficulty = Persistence.Difficulty;
             log("Game difficulty: " $ string(KF.GameDifficulty), 'ScrnBalance');
         }
         KFGRI.GameDiff = KF.GameDifficulty;

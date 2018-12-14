@@ -8,6 +8,7 @@ var bool bShowDamages;
 
 var int HardcoreLevel;
 var float HardcoreLevelFloat;
+var bool bForceHardcoreLevel;
 var localized string msgHardcore;
 var bool bUseAchievements;
 
@@ -414,7 +415,8 @@ function GiveMapAchievements(optional String MapName)
     }
     else {
         bGiveHardAch = HardcoreLevel >= 5 && HasCustomZeds();
-        bGiveSuiAch = HardcoreLevel >= 10 && (bDoomPat || bSuperPat) || Mut.KF.IsA('TurboGame') ;
+        bGiveSuiAch = HardcoreLevel >= 10 && ( Mut.KF.IsA('TurboGame') || Mut.KF.KFGameLength == 9
+                || (Mut.KF.KFGameLength >= 72 && Mut.KF.KFGameLength <= 99) );
         bGiveHoeAch = HardcoreLevel >= 15 && ( GameDoom3Kills > 0 ) || Mut.KF.IsA('FtgGame');
     }
 
@@ -1030,6 +1032,9 @@ function RaiseHardcoreLevel(float inc, string reason)
 {
     local string s;
 
+    if ( bForceHardcoreLevel )
+        return;
+
     if ( HardcoreLevelFloat < HardcoreLevel )
         HardcoreLevelFloat = HardcoreLevel; // just to be sure
 
@@ -1048,7 +1053,14 @@ function RaiseHardcoreLevel(float inc, string reason)
     }
 }
 
-
+function ForceHardcoreLevel(int value)
+{
+    HardcoreLevel = value;
+    HardcoreLevelFloat = value;
+    bForceHardcoreLevel = true;
+    // replicate to clients
+    Mut.HardcoreLevel = clamp(HardcoreLevel,0,255);
+}
 
 function WeaponReloaded(PlayerController WeaponOwner, KFWeapon W)
 {

@@ -453,7 +453,7 @@ function int GetVoteIndex(PlayerController Sender, string Key, out string Value,
         v = GetDifficulty(Value);
         if ( v != 0 && v < Mut.MinVoteDifficulty || v > 8 )
             return VOTE_ILLEGAL;
-        if ( v == byte(Mut.KF.GameDifficulty) )
+        if ( v == Mut.Persistence.Difficulty )
             return VOTE_NOEFECT;
         VoteInfo = Value @ viDifficulty;
         Value = string(v);
@@ -673,8 +673,8 @@ function ApplyVoteValue(int VoteIndex, string VoteValue)
             Mut.ScrnGT.ScrnGRI.FakedAlivePlayers = byte(VoteValue);
             break;
         case VOTE_DIFF:
-            Mut.VotedDifficulty = byte(VoteValue);
-            Mut.default.VotedDifficulty = Mut.VotedDifficulty;
+            Mut.Persistence.Difficulty = byte(VoteValue);
+            Mut.Persistence.SaveConfig();
             break;
 
         case VOTE_RKILL:
