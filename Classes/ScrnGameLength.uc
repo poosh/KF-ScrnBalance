@@ -13,6 +13,7 @@ var config array<string> Mutators;
 var config array<string> Waves;
 var config array<string> Zeds;
 var config bool bLogStats;
+var config bool Doom3DisableSuperMonsters;
 
 struct SHL {
     var byte Difficulty;
@@ -73,6 +74,16 @@ function LoadGame(ScrnGameType MyGame)
         if ( Mutators[i] != "" )  {
             Log("Loading additional mutator: " $ Mutators[i], 'ScrnGameLength');
             Game.AddMutator(Mutators[i], true);
+        }
+    }
+    Game.ScrnBalanceMut.CheckMutators();
+    if ( Doom3DisableSuperMonsters ) {
+        if ( Game.ScrnBalanceMut.Doom3Mut == none ) {
+            Log("Cannot disable super monsters. Doom 3 Mutator is not loaded", 'ScrnGameLength');
+        }
+        else {
+            Log("Disable Doom3 super monsters", 'ScrnGameLength');
+            Game.ScrnBalanceMut.Doom3Mut.GotoState('');
         }
     }
 
@@ -163,6 +174,7 @@ function AddVoting()
 function ZedCmd(PlayerController Sender, string cmd)
 {
     local array<string> args;
+    local int max_args;
     local int search_idx, cur_idx; // starts with 1
     local int BoolValue;
     local int i, j;
@@ -170,13 +182,16 @@ function ZedCmd(PlayerController Sender, string cmd)
     local color c;
     local float Pct;
     local bool bSetPct;
+    local byte SpawnCount, Spawned;
+    local bool bSummon;
+    local string msg;
 
     BoolValue = -1;
     c.B = 1;
 
     Split(cmd, " ", args);
     if ( args.length == 0 || args[0] == "" ) {
-        Sender.ClientMessage("MUTATE ZED LIST|(<alias> [<index> [ON|OFF] [PCT <val>]])");
+        Sender.ClientMessage("MUTATE ZED LIST|(<alias> [<index>] [ON|OFF] [PCT <val>] [SUMMON|(SPAWN <count>)])");
         return;
     }
 
@@ -185,21 +200,42 @@ function ZedCmd(PlayerController Sender, string cmd)
         return;
     }
 
-
-    if ( args.length >= 2 ) {
-        search_idx = int(args[1]);
-
-        for ( i = 2; i < args.length - 1; ++i ) {
-            if ( args[i] ~= "PCT" ) {
+    max_args = args.length;
+    if ( args.length > 1 ) {
+        for ( i = 1; i < args.length; ++i ) {
+            if ( args[i] ~= "PCT" && i < args.length - 1) {
                 bSetPct = true;
                 Pct = float(args[i+1]);
                 args.remove(i,2);
-                break;
+                max_args = i;
+            }
+            else if ( args[i] ~= "SUMMON" ) {
+                bSummon = true;
+                SpawnCount = 1;
+                args.remove(i,1);
+                max_args = i;
+            }
+            else if ( args[i] ~= "SPAWN" ) {
+                if ( i < args.length - 1 ) {
+                    SpawnCount = int(args[i+1]);
+                    if ( SpawnCount > 0 || args[i+1] == "0" )
+                        args.remove(i+1,1);
+                }
+                if ( SpawnCount == 0 )
+                    SpawnCount = 1;
+                args.remove(i,1);
+                max_args = i;
             }
         }
 
-        if ( args.length >= 3 ) {
-            BoolValue = class'ScrnVotingOptions'.static.TryStrToBoolStatic(args[2]);
+        if ( max_args > 1 ) {
+            search_idx = int(args[1]);
+            if ( max_args > 2 ) {
+                BoolValue = class'ScrnVotingOptions'.static.TryStrToBoolStatic(args[2]);
+            }
+        }
+        else {
+            search_idx = 1;
         }
     }
 
@@ -207,6 +243,7 @@ function ZedCmd(PlayerController Sender, string cmd)
     Sender.ClientMessage("=========================================================");
     for ( i = 0; i < ZedInfos.length; ++i ) {
         bChanged = false;
+
         for ( j = 0; j < ZedInfos[i].Zeds.length; ++j ) {
             if ( ZedInfos[i].Zeds[j].Alias == args[0] ) {
                 ++cur_idx;
@@ -218,6 +255,7 @@ function ZedCmd(PlayerController Sender, string cmd)
                     c.R = 1;
                     c.G = 255;
                 }
+
                 if ( cur_idx == search_idx ) {
                     if ( BoolValue != -1 ) {
                         ZedInfos[i].Zeds[j].bDisabled = !bool(BoolValue);
@@ -226,6 +264,15 @@ function ZedCmd(PlayerController Sender, string cmd)
                     if ( bSetPct) {
                         ZedInfos[i].Zeds[j].Pct = Pct;
                         bChanged = true;
+                    }
+                    if (bSummon) {
+                        Spawned = SummonZed(Sender, ZedInfos[i].Zeds[j].Alias, ZedInfos[i].Zeds[j].ZedClass, msg);
+                    }
+                    else if ( SpawnCount > 0 ) {
+                        Game.TotalMaxMonsters += SpawnCount;
+                        Spawned = SpawnZed(ZedInfos[i].Zeds[j].Alias, ZedInfos[i].Zeds[j].ZedClass, SpawnCount, msg);
+                        // if not all zeds are spawned, restore the original TotalMaxMonsters
+                        Game.TotalMaxMonsters -= (SpawnCount - Spawned);
                     }
                     c.R = 255;
                     c.G = 255;
@@ -244,6 +291,21 @@ function ZedCmd(PlayerController Sender, string cmd)
     if ( cur_idx == 0 ) {
         Sender.ClientMessage("No zeds with alias '"$args[0]$"' found!");
     }
+    else if ( bSummon ) {
+        if ( Spawned == 0 )
+            Sender.ClientMessage("Cannot summon " $ args[0]);
+        else
+            Sender.ClientMessage("Summoned " $ args[0]);
+    }
+    else if ( SpawnCount > 0 ) {
+        if ( Spawned == 0 )
+            Sender.ClientMessage("Cannot spawn " $ args[0]);
+        else
+            Sender.ClientMessage("Spawned " $ Spawned $ "*" $ args[0]);
+    }
+    if ( msg != "" ) {
+        Sender.ClientMessage(msg);
+    }
 }
 
 function PrintAliases(PlayerController Sender)
@@ -251,6 +313,7 @@ function PrintAliases(PlayerController Sender)
     local array<string> aliases;
     local array<int> count;
     local int i, j, k;
+    local string msg;
 
     Sender.ClientMessage("Zed aliases (candidate count):");
     for ( i = 0; i < ZedInfos.length; ++i ) {
@@ -270,8 +333,16 @@ function PrintAliases(PlayerController Sender)
     }
 
     for ( k = 0; k < aliases.length; ++k ) {
-        Sender.ClientMessage(aliases[k] $ " ("$count[k]$")");
+        msg $= aliases[k] $ " ("$count[k]$") ";
+        if ( len(msg) >= 80 ) {
+            Sender.ClientMessage(msg);
+            msg = "";
+        }
     }
+    if ( msg != "" ) {
+        Sender.ClientMessage(msg);
+    }
+
 }
 
 function bool LoadWave(int WaveNum)
@@ -839,6 +910,87 @@ function float GetBountyScale()
     if (Wave.BountyScale > 0)
         return Wave.BountyScale;
     return BountyScale;
+}
+
+function class<KFMonster> FindActiveZedByAlias(string Alias, optional string ZedClassStr) {
+    local int i, j;
+
+    for ( i = 0; i < ActiveZeds.length; ++i ) {
+        if (ActiveZeds[i].Alias == Alias) {
+            for ( j = 0; j < ActiveZeds[i].Candidates.length; ++j ) {
+                if ( ZedClassStr == "" || ZedClassStr ~= string(ActiveZeds[i].Candidates[j].ZedClass) ) {
+                    return ActiveZeds[i].Candidates[j].ZedClass;
+                }
+            }
+        }
+    }
+    return none;
+}
+
+function byte SummonZed(PlayerController Sender, string Alias, string ZedClassStr, out string msg)
+{
+     local class<KFMonster> zedc;
+     local Vector HitLoc, HitNormal;
+     local Vector SenderLoc, EndLoc;
+     local Vector x,y,z;
+     local Actor target;
+     local Vector SpawnLoc;
+     local KFMonster M;
+
+     zedc = FindActiveZedByAlias(Alias, ZedClassStr);
+     if ( zedc == none ) {
+         msg = "Zed " $ Alias @ ZedClassStr $ " is not loaded";
+         return 0;
+     }
+
+     GetAxes( Sender.Rotation, x, y, z);
+     EndLoc = SenderLoc + X*10000;
+     if ( Sender.Pawn != none ) {
+         SenderLoc = Sender.Pawn.Location;
+         target = Sender.Pawn.Trace(HitLoc, HitNormal, EndLoc);
+     }
+     else {
+         SenderLoc = Sender.Location;
+         target = Sender.Trace(HitLoc, HitNormal, EndLoc);
+     }
+
+     if ( target == none || !target.bWorldGeometry ) {
+         msg = "Look to the ground where to summon a zed";
+         return 0;
+     }
+
+     SpawnLoc = HitLoc;
+     SpawnLoc.Z += zedc.default.CollisionHeight + 25;
+     M = Game.Spawn(zedc,,,SpawnLoc);
+     if ( M == none ) {
+         msg = "Spawn failed";
+         return 0;
+     }
+
+     Game.OverrideMonsterHealth(M);
+     Game.ScrnBalanceMut.GameRules.ReinitMonster(M);
+     return 1;
+}
+
+function byte SpawnZed(string Alias, string ZedClassStr, byte count, out string msg)
+{
+    local int i;
+    local array< class<KFMonster> > Squad;
+
+    if ( count == 0 )
+        count = 1;
+    Squad.length = count;
+    Squad[0] = FindActiveZedByAlias(Alias, ZedClassStr);
+    if ( Squad[0] == none ) {
+        msg = "Zed " $ Alias @ ZedClassStr $ " is not loaded";
+        return 0;
+    }
+
+    for ( i = 1; i < count; ++i ) {
+        Squad[i] = Squad[0];
+    }
+
+    return Game.SpawnSquad(Game.FindSpawningVolumeForSquad(Squad, true), Squad, true);
 }
 
 defaultproperties

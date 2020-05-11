@@ -71,7 +71,7 @@ simulated function int AdjustZedDamage( int Damage, KFMonster Victim, bool bHead
          Damage *= 0.8; // 20% resistance to Pat
     else if ( Level.Game.GameDifficulty >= 5.0 && ZombieScrake(Victim) != none )
         Damage *= 0.5;
-        
+
     return Damage;
 }
 
@@ -86,6 +86,7 @@ simulated function HitWall( vector HitNormal, actor Wall )
 
 defaultproperties
 {
+    AmbientSoundRef=""
     DamageTypeHeadShot=Class'ScrnBalanceSrv.ScrnDamTypeM99HeadShot'
     MyDamageType=Class'ScrnBalanceSrv.ScrnDamTypeM99SniperRifle'
     HeadShotDamageMult=3.000000

@@ -913,7 +913,7 @@ simulated function CalcVestCost(class<ScrnVestPickup> VestClass, out int Cost, o
     AmountToBuy = VestClass.default.ShieldCapacity;
     Price1p = float(VestClass.default.Cost) / VestClass.default.ShieldCapacity;
     if ( KFPlayerReplicationInfo(PlayerReplicationInfo).ClientVeteranSkill != none)
-        Price1p *= KFPlayerReplicationInfo(PlayerReplicationInfo).ClientVeteranSkill.static.GetCostScaling(KFPlayerReplicationInfo(PlayerReplicationInfo), VestClass);;
+        Price1p *= KFPlayerReplicationInfo(PlayerReplicationInfo).ClientVeteranSkill.static.GetCostScaling(KFPlayerReplicationInfo(PlayerReplicationInfo), VestClass);
     Cost = ceil(AmountToBuy * Price1p);
 
     // No Refunds, if vest classes differs

@@ -57,6 +57,7 @@ struct MonsterInfo {
 
     // variables below are set after NetDamage() call
     var float LastHitTime; // time when Monster took last damage
+    var int MaxHeadHealth;
     var int HeadHealth; // track head health to check headshots
     var bool bWasDecapitated; // was the monster decapitated before last damage? If bWasDecapitated=true then bHeadshot=false
     var bool bWasBackstabbed; // previous hit was a melee backstab
@@ -600,6 +601,7 @@ function int NetDamage( int OriginalDamage, int Damage, pawn injured, pawn insti
     local bool bP2M;
     local ScrnPlayerController ScrnPC;
     local KFMonster ZedVictim;
+    local bool bDamageAck;
 
     // log("NetDamage: " $ injured $ " took damage from " $ instigatedBy $ " with " $ DamageType, 'ScrnBalance');
 
@@ -615,6 +617,7 @@ function int NetDamage( int OriginalDamage, int Damage, pawn injured, pawn insti
     bP2M = ZedVictim != none && KFDamType != none && instigatedBy != none && PlayerController(instigatedBy.Controller) != none;
     if ( instigatedBy != none )
         ScrnPC = ScrnPlayerController(instigatedBy.Controller);
+    bDamageAck = bShowDamages && ScrnPC != none && ScrnPC.bDamageAck;
 
     // prevent zed from rotating while stunned
     // Special case fo Husks -  201+ sniper damage stuns them
@@ -652,8 +655,26 @@ function int NetDamage( int OriginalDamage, int Damage, pawn injured, pawn insti
                 MonsterInfos[idx].OtherHits++;
         }
 
-        // display damages on the hud
-        if ( bShowDamages && ScrnPC != none && ScrnPC.bDamageAck ) {
+        if ( (MonsterInfos[idx].bHeadshot || ZedVictim.bDecapitated)
+                && KFDamType.default.HeadShotDamageMult < 1.0 && KFDamType.default.HeadShotDamageMult > 0 )
+        {
+            if ( bDamageAck && MonsterInfos[idx].bHeadshot ) {
+                ScrnPC.DamageMade(Damage, HitLocation, 1);
+            }
+            // weapon does less damage to head - make sure to do the rest of the damage to body
+            Damage = Damage / KFDamType.default.HeadShotDamageMult + 1;
+
+            if ( bDamageAck ) {
+                if (MonsterInfos[idx].bHeadshot) {
+                    ScrnPC.DamageMade(Damage - OriginalDamage, HitLocation, 0);
+                }
+                else {
+                    ScrnPC.DamageMade(Damage, HitLocation, 0);
+                }
+            }
+        }
+        else if ( bDamageAck ) {
+            // display damages on the hud
             if ( MonsterInfos[idx].bHeadshot )
                 DamTypeNum = 1;
             else if ( KFDamType.default.bDealBurningDamage )
@@ -837,6 +858,7 @@ function ClearMonsterInfo(int index)
     MonsterInfos[index].BodyShots = 0;
     MonsterInfos[index].OtherHits = 0;
     MonsterInfos[index].LastHitTime = 0;
+    MonsterInfos[index].MaxHeadHealth = 0;
     MonsterInfos[index].HeadHealth = 0;
     MonsterInfos[index].bWasDecapitated = false;
 }
@@ -871,7 +893,8 @@ function int GetMonsterIndex(KFMonster Monster)
     }
     ClearMonsterInfo(free_index);
     MonsterInfos[free_index].Monster = Monster;
-    MonsterInfos[free_index].HeadHealth = Monster.HeadHealth * Monster.DifficultyHeadHealthModifer() * Monster.NumPlayersHeadHealthModifer();
+    MonsterInfos[free_index].MaxHeadHealth = Monster.HeadHealth * Monster.DifficultyHeadHealthModifer() * Monster.NumPlayersHeadHealthModifer();
+    MonsterInfos[free_index].HeadHealth = MonsterInfos[free_index].MaxHeadHealth;
     MonsterInfos[free_index].SpawnTime = Level.TimeSeconds;
     LastFoundMonsterIndex = free_index;
     return free_index;
@@ -967,7 +990,11 @@ function InitBoss(KFMonster Monster)
 
 function ReinitMonster(KFMonster Monster)
 {
-    MonsterInfos[GetMonsterIndex(Monster)].HeadHealth = Monster.HeadHealth;
+    local int index;
+
+    index = GetMonsterIndex(Monster);
+    MonsterInfos[index].MaxHeadHealth = Monster.HeadHealth;
+    MonsterInfos[index].HeadHealth = Monster.HeadHealth;
 }
 
 // called from ScrnNade

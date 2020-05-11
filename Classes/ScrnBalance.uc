@@ -1,7 +1,7 @@
 /*****************************************************************************
  * ScrN Total Game Balance
  * @author [ScrN]PooSH, contact via steam: http://steamcommunity.com/id/scrn-poosh/
- * Copyright (c) 2012-2018 PU Developing IK, All Rights Reserved.
+ * Copyright (c) 2012-2020 PU Developing IK, All Rights Reserved.
  *****************************************************************************/
 
 class ScrnBalance extends Mutator
@@ -12,7 +12,7 @@ class ScrnBalance extends Mutator
 #exec OBJ LOAD FILE=ScrnAch_T.utx
 
 
-const VERSION = 96106;
+const VERSION = 96200;
 
 var ScrnBalance Mut; // pointer to self to use in static functions, i.e class'ScrnBalance'.default.Mut
 
@@ -150,7 +150,7 @@ var transient float FirstTickTime;
 var transient bool bTickExecuted;
 var transient bool bInitReplicationReceived;
 
-var Mutator ServerPerksMut;
+var Mutator ServerPerksMut, Doom3Mut;
 var transient bool bAllowAlwaysPerkChanges; // value replicated from ServerPerksMut
 
 var globalconfig bool bAllowVoting;
@@ -954,20 +954,26 @@ function BroadcastFakedAchievement(int AchIndex)
     }
 }
 
-function Mutator FindServerPerksMut()
+function CheckMutators()
 {
     local Mutator M;
 
+    for ( M = KF.BaseMutator; M != None; M = M.NextMutator ) {
+        if ( M.IsA('ServerPerksMut') ) {
+            ServerPerksMut = M;
+        }
+        else if ( M.IsA('Doom3Mutator') ) {
+            Doom3Mut = M;
+        }
+    }
+}
+
+function Mutator FindServerPerksMut()
+{
     if ( ServerPerksMut != none )
         return ServerPerksMut;
 
-    for ( M = KF.BaseMutator; M != None; M = M.NextMutator ) {
-
-        if ( M.IsA('ServerPerksMut') ) {
-            ServerPerksMut = M;
-            break;
-        }
-    }
+    CheckMutators();
     if ( ServerPerksMut == none ) {
         log("ServerPerksMut not found!", 'ScrnBalance');
     }

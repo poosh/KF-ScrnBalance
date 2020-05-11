@@ -135,7 +135,7 @@ function ShowPanel(bool bShow)
 
     log("ShowPanel: Set button visibility", class.name);
     lbl_Version.Caption = class'ScrnBalance'.default.FriendlyName @ class'ScrnBalance'.static.GetVersionStr();
-    lbl_CR.Caption = "Copyright (c) 2012-2018 PU Developing IK, Latvia. All Rights Reserved.";
+    lbl_CR.Caption = "Copyright (c) 2012-2020 PU Developing IK, Latvia. All Rights Reserved.";
     ServerStatus();
 
     PC = ScrnPlayerController(PlayerOwner());
@@ -654,12 +654,12 @@ function InternalOnChange(GUIComponent Sender)
                 H.SaveConfig();
             }
             break;
-            
+
         case sl_3DScopeSensScale:
                 PC.Custom3DScopeSens = sl_3DScopeSensScale.GetValue();
                 PC.SaveConfig();
             break;
-            
+
         case cbx_Player:
             LoadPlayerData(cbx_Player.GetText());
             break;
@@ -1152,7 +1152,7 @@ defaultproperties
         OnCreateComponent=Custom3DScopeSens.InternalOnCreateComponent
     End Object
     sl_3DScopeSensScale=moSlider'ScrnBalanceSrv.ScrnTab_UserSettings.Custom3DScopeSens'
-    
+
     // HUD & INFO ----------------------------------------------------------------------
     Begin Object Class=GUISectionBackground Name=HUDBG
         Caption="HUD & Info"

@@ -3,7 +3,7 @@
 setlocal
 color 07
 
-set KFDIR=D:\Games\kf
+set KFDIR=C:\Games\kf
 set STEAMDIR=c:\Steam\steamapps\common\KillingFloor
 rem remember current directory
 set CURDIR=%~dp0
@@ -41,11 +41,10 @@ echo Compile ERROR! Code = %ERR%.
 echo ################################
 
 :end
-pause
+REM pause
 
 rem return to previous directory
 cd /D %CURDIR%
 
-set ERRORLEVEL=%ERR%
-
-endlocal
+endlocal & SET EC=%ERR%
+exit /b %EC%

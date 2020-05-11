@@ -4,7 +4,7 @@
 
 ScrN Total Game Balance mutator for Killing Floor 1.
 
-*Copyright (c) 2012-2018 PU Developing IK, All Rights Reserved.*
+*Copyright (c) 2012-2020 PU Developing IK, All Rights Reserved.*
 
 -------------------------------------------------------------------------------
 
@@ -19,6 +19,46 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+
+### v9.62.00
+#### Features
+- Added a proper support for headshot multiplier below 1.
+  For instance, if `HeadShotDamageMult=0.3`, then 30% damage goes to the head, the remaining 70% damage the body.
+
+#### ScrN Waves
+- `Doom3DisableSuperMonsters` for *ScrnGameLength*. if true, prevents Doom3Mutator from randomly spawning mid-game
+  bosses. Use this, if bosses are controlled via ScrnWaves.ini. Requires **ScrnDoom3KF v9.62+**
+
+#### Bug Fix
+- Fixed a rare crash due to missing ambient sound for **xbow** and **M99**.
+
+#### Console Commands
+- `MUTATE ZED <alias> <index> SPAWN <count>` spawns zed(-s). Requires admin rights.
+  Only zeds that are enabled for the current game can be spawned.
+  Example: `MUTATE ZED FP 1 SPAWN 5` - spawns 5 Fleshpounds.
+- `MUTATE ZED <alias> <index> SUMMON` - similar to spawn, but instead of spawning zed in a *ZombieVolume*, summons it
+  in front of the player. Player needs to look at the ground where he wants to summon a zed.  
+  **WARNING!** Be extremely cautious when summoning a zed. If you miss the ground, you can summon it outside of the
+  map and screw up the entire game. Use summon for debug/test purpose only. `SPAWN` is much safer than `SUMMON`.
+
+#### Code Changes
+- Added `MaxHeadHealth` to `ScrnGameRules.MonsterInfo`
+- `ScrnFire` base class for instant fire with bullet penetration
+- `ScrnHighROFFire` base class for super-fast shooting weapons
+
+#### Heavy MachineGunner v5.00
+- Fixed Stinger fire sounds
+- Adjusted Stinger 1st person muzzle flash
+- Fixed Pat Chaingun bullet tracer
+- AUG A1 weight lowered to 8 (down from 9)
+- AUG A1 faster reload: 3.5s -> 2.8s
+- SA80 weight lowered to 7 (down from 11)
+- SA80 can slightly damage heads (HS mult. x0.3)
+- SA80 reduced magazine size down to 45 (90 @ L6) and total ammo
+- RPK47 weight raised to 9 (up from 8)
+- Added bullet penetration for RPK47, PKM, and M249
+
+
 
 ### v9.61.05
 - Changed requirement for getting Suicidal Map achievements. Now those can be obtained by surviving TurboGame,

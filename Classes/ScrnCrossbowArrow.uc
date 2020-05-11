@@ -11,7 +11,7 @@ simulated state OnWall
         PawnOther = Pawn(Other);
         if( PawnOther != none ) {
             for( inv=PawnOther.Inventory; inv != none; inv = inv.Inventory ) {
-                bow = Crossbow(inv); 
+                bow = Crossbow(inv);
                 if( bow != none ) {
                     if ( bow.AmmoAmount(0) < bow.MaxAmmo(0) ) {
                         bow.AddAmmo(1,0) ;
@@ -27,9 +27,10 @@ simulated state OnWall
             }
         }
     }
-}    
+}
 
 defaultproperties
 {
     LifeSpan=60
+    AmbientSoundRef=""
 }

@@ -99,6 +99,7 @@ event InitGame( string Options, out string Error )
         bAntiBlocker = false; // disable AntiBlocker on test map
     }
 
+    ScrnBalanceMut.CheckMutators();
     if ( TourneyMode > 0 )
         StartTourney();
 }
@@ -985,8 +986,8 @@ function bool CanSpawnInVolume(class<KFMonster> M, ZombieVolume ZVol)
     return true;
 }
 
-// added ZombieFlag check  -- PooSH
-function ZombieVolume FindSpawningVolume(optional bool bIgnoreFailedSpawnTime, optional bool bBossSpawning)
+function ZombieVolume FindSpawningVolumeForSquad(out array< class<KFMonster> > Squad,
+        optional bool bIgnoreFailedSpawnTime, optional bool bBossSpawning)
 {
     local ZombieVolume BestZ, CurZ;
     local float BestScore,tScore;
@@ -1007,8 +1008,8 @@ function ZombieVolume FindSpawningVolume(optional bool bIgnoreFailedSpawnTime, o
 
         bCanSpawnAll = true;
         bCanSpawnAny = false;
-        for ( j=0; j<NextSpawnSquad.length; ++j ) {
-            bCanSpawn = CanSpawnInVolume(NextSpawnSquad[j], CurZ);
+        for ( j=0; j<Squad.length; ++j ) {
+            bCanSpawn = CanSpawnInVolume(Squad[j], CurZ);
             bCanSpawnAll = bCanSpawnAll && bCanSpawn;
             bCanSpawnAny = bCanSpawnAny || bCanSpawn;
         }
@@ -1026,6 +1027,11 @@ function ZombieVolume FindSpawningVolume(optional bool bIgnoreFailedSpawnTime, o
         }
     }
     return BestZ;
+}
+
+function ZombieVolume FindSpawningVolume(optional bool bIgnoreFailedSpawnTime, optional bool bBossSpawning)
+{
+    return FindSpawningVolumeForSquad(NextSpawnSquad, bIgnoreFailedSpawnTime, bBossSpawning);
 }
 
 static function string ZedSquadToString(out array< class<KFMonster> > Squad)

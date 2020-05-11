@@ -175,7 +175,7 @@ function LoadStats(GUIBuyable NewBuyable, byte FireMode, optional bool bSetTopVa
         HSMult = KFDamType.default.HeadShotDamageMult; //this works for all hitscan weapons
         Mult = WF.default.AmmoPerFire;
         //set HSMult to 0 if DamType can't do headshots
-        if (KFDamType.default.bCheckForHeadShots == false)
+        if (KFDamType == none || !KFDamType.default.bCheckForHeadShots)
             HSMult = 0;
 
     }
@@ -190,10 +190,10 @@ function LoadStats(GUIBuyable NewBuyable, byte FireMode, optional bool bSetTopVa
         {
             //current implementation works with projectiles extended from base classes
             //unknown projectiles may be handled with if(int(ProjClass.GetPropertyText("HeadShotDamageMult"))>0)
-        
+
             //first, set HSMult to 0 so if projectile headshot mult isn't detected there won't be a stupid value displayed
-            HSMult = 0; 
-            
+            HSMult = 0;
+
             //a ton of things extend shotgunbullet so handle it first and set it again later
 
             //handle shotgun projectiles
