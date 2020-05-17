@@ -344,7 +344,7 @@ simulated protected function int GetAchGroupProgress(name GroupName)
         if ( GroupStatCache[i].ID == GroupName )
             return GroupStatCache[i].Value;
     }
-    class'ScrnAchievements'.static.GetGlobalAchievementStats(self, v, m, 0, GroupName);
+    class'ScrnAchCtrl'.static.GetGlobalAchievementStats(self, v, m, 0, GroupName);
     GroupStatCache.insert(i, 1);
     GroupStatCache[i].ID = GroupName;
     GroupStatCache[i].Value = v;
@@ -360,7 +360,7 @@ simulated function InitCustomLocks()
 
     // load and store map achievement stats
     for ( i=0; i<PermGroupStats.length; ++i ) {
-        class'ScrnAchievements'.static.GetGlobalAchievementStats(self, j, a, 0, PermGroupStats[i].ID);
+        class'ScrnAchCtrl'.static.GetGlobalAchievementStats(self, j, a, 0, PermGroupStats[i].ID);
         PermGroupStats[i].Value = j;
     }
 
@@ -388,7 +388,7 @@ simulated function InitCustomLocks()
                 break;
 
             case LOCK_Ach:
-                Locks[i].AchInfo = class'ScrnAchievements'.static.GetAchievementByID(self, Locks[i].ID);
+                Locks[i].AchInfo = class'ScrnAchCtrl'.static.GetAchievementByID(self, Locks[i].ID);
                 if ( Locks[i].AchInfo.AchHandler == none ) {
                     if ( Level.NetMode != NM_DedicatedServer ) {
                         Locks[i].Title = strUnknownAchTitle;
@@ -415,7 +415,7 @@ simulated function InitCustomLocks()
                     }
                 }
                 if ( Level.NetMode != NM_DedicatedServer ) {
-                    g = class'ScrnAchievements'.static.GroupCaption(self, Locks[i].ID);
+                    g = class'ScrnAchCtrl'.static.GroupCaption(self, Locks[i].ID);
                     s = strGrpTitle;
                     ReplaceText(s, "%C", string(Locks[i].MaxProgress));
                     ReplaceText(s, "%G", g);

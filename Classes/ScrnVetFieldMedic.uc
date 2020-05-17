@@ -105,13 +105,14 @@ static function float AddExtraAmmoFor(KFPlayerReplicationInfo KFPRI, Class<Ammun
 
 // Change the cost of particular items
 // v6.10 - all medic guns have regular discount rate
+// v9.62 - no more discount on MP7M
 static function float GetCostScaling(KFPlayerReplicationInfo KFPRI, class<Pickup> Item)
 {
+    if ( Item == class'ScrnMP7MPickup' )
+        return 1.0;  // v9.62 - no more discount on MP7M
+
     if ( Item == class'Vest' || ClassIsChildOf(Item, class'ScrnVestPickup')
-                || ClassIsChildOf(Item, class'MP7MPickup')
-                || ClassIsChildOf(Item, class'MP5MPickup')
-                || ClassIsChildOf(Item, class'M7A3MPickup')
-                || ClassIsChildOf(Item, class'KrissMPickup')
+                || ClassIsChildOf(Item, class'MedicGunPickup')
                 || ClassIsChildOf(Item, class'BlowerThrowerPickup')
                 || ClassIsChildOf(Item, class'ScrnM4203MPickup')
             || ClassIsInArray(default.PerkedPickups, Item) )

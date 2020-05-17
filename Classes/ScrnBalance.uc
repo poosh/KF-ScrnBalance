@@ -12,7 +12,7 @@ class ScrnBalance extends Mutator
 #exec OBJ LOAD FILE=ScrnAch_T.utx
 
 
-const VERSION = 96200;
+const VERSION = 96201;
 
 var ScrnBalance Mut; // pointer to self to use in static functions, i.e class'ScrnBalance'.default.Mut
 
@@ -2389,7 +2389,7 @@ function SetupRepLink(ClientPerkRepLink R)
     R.Destroy();
     R = ScrnRep;
 
-    class'ScrnAchievements'.static.InitAchievements(ScrnRep);
+    class'ScrnAchCtrl'.static.InitLink(ScrnRep);
 
     if ( bUseDLCLocks && !bTSCGame && (ScrnGT == none || !ScrnGT.IsTourney()) ) {
         ScrnRep.Locks.Length = LockCount;
@@ -2736,7 +2736,7 @@ function PostBeginPlay()
     SetupSrvInfo();
 
     if ( bStoryMode ) {
-        class'ScrnAchievements'.static.RegisterAchievements(class'AchObjMaps');
+        class'ScrnAchCtrl'.static.RegisterAchievements(class'AchObjMaps');
     }
 
     Log(FriendlyName @ GetVersionStr()$" loaded", 'ScrnBalance');
@@ -3040,7 +3040,7 @@ function ServerTraveling(string URL, bool bItems)
 
     if ( ScrnGT == none || ScrnGT.ScrnGameLength == none )
         class'ScrnGameRules'.static.ResetGameSquads(KF, CurrentEventNum);
-    class'ScrnAchievements'.static.ResetAchList();
+    class'ScrnAchCtrl'.static.Cleanup();
 
     if ( Level.NetMode == NM_DedicatedServer ) {
         // break links to self

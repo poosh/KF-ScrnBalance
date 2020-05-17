@@ -127,7 +127,7 @@ function UpdateMyAmmo()
 
 function UpdateMyBuyables()
 {
-    local GUIBuyable MyBuyable, KnifeBuyable, FragBuyable;
+    local GUIBuyable MyBuyable, KnifeBuyable, FragBuyable, TPBuyable;
     local Inventory CurInv;
     local float CurAmmo, MaxAmmo;
     local class<KFWeaponPickup> MyPickup,MyPrimaryPickup;
@@ -264,6 +264,11 @@ function UpdateMyBuyables()
             MyBuyable.bSellable    = false;
             FragBuyable = MyBuyable;
         }
+        else if ( CurInv.IsA('ToiletPaper') )
+        {
+            MyBuyable.bSellable    = false;
+            TPBuyable = MyBuyable;
+        }
         else
         {
             MyBuyable.bSellable    = !KFWeapon(CurInv).default.bKFNeverThrow;
@@ -380,18 +385,28 @@ function UpdateMyBuyables()
             FragBuyable.ItemPerkIndex = Perk.default.PerkIndex;
     }
 
-    if( MyBuyables.Length<8 )
-    {
+    if( MyBuyables.Length < 8 ) {
         MyBuyables.Length = 11;
         MyBuyables[7] = none;
-        MyBuyables[8] = KnifeBuyable;
+        if ( TPBuyable != none ) {
+            MyBuyables[8] = TPBuyable;
+        }
+        else {
+            MyBuyables[8] = KnifeBuyable;
+        }
         MyBuyables[9] = FragBuyable;
         MyBuyables[10] = MyBuyable; // ARMOR
     }
-    else
-    {
-        MyBuyables.insert(MyBuyables.Length, 3);
-        MyBuyables[MyBuyables.Length-3] = none;
+    else {
+        if ( TPBuyable != none ) {
+            MyBuyables.insert(MyBuyables.Length, 4);
+            MyBuyables[MyBuyables.Length-4] = none;
+            MyBuyables[MyBuyables.Length-3] = TPBuyable;
+        }
+        else {
+            MyBuyables.insert(MyBuyables.Length, 3);
+            MyBuyables[MyBuyables.Length-3] = none;
+        }
         MyBuyables[MyBuyables.Length-2] = FragBuyable;
         MyBuyables[MyBuyables.Length-1] = MyBuyable; // ARMOR
     }

@@ -20,6 +20,35 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 
 -------------------------------------------------------------------------------
 
+### v9.62.01
+#### Social Isolation Mod
+[Steam Webpage](https://steamcommunity.com/groups/ScrNBalance/discussions/2/4666237625653274273/)
+
+#### ScrN Waves
+- New game **60 - Social Isolation**
+- New game **61 - Triple Invasion** (Social Isolation + Doom3)
+- Fixed an issue when event boss could spawn in non-event games
+- Raised Hardcore Level for *Mystery Game*, *Welding Floor*, and *Ammo Hunt*
+
+#### Balance Changes
+- Lowered base price of **MP7M** to 350 and removed perk discount
+- Lowered low-health speed reduction -15% max (from -30%). Players with low health aren't *that* slow anymore.
+
+#### Achievements
+- Optimized achievement lookup speed.
+- Lowered requirement for *TeamWork: Grilled Shiver Brains* to 50 (down from 250)
+
+#### Code Changes
+- Refactored achievement progress handling. All related functions moved to `ScrnAchCtrl` class.
+  From now on, custom mutators should use `class'ScrnAchCtrl'.static.RegisterAchievements()` for custom achievement
+  registration.
+  Legacy functions left in `ScrnAchievements` class but marked deprecated. They will be removed in future.
+- Added `ScrnAchHandlerBase.GameEnded()`
+- Added `ScrnHumanPawn.bServerShopping` flag that is set during shopping. For example, this flag can be used to
+  distinguish weapon purchase from pickup.
+- Deprecated `ScrnPlayerInfo.CustomReplicationInfo`
+
+
 ### v9.62.00
 #### Features
 - Added a proper support for headshot multiplier below 1.

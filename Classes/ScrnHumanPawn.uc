@@ -75,6 +75,9 @@ var transient bool bQuickMeleeInProgress;
 var localized string BlameStrM99;
 var localized string BlameStrRPG;
 
+// indicates that the player is buying something at the current moment. Server-side only.
+var transient bool bServerShopping;
+
 replication
 {
     reliable if( bNetOwner && Role == ROLE_Authority )
@@ -945,6 +948,7 @@ function ServerBuyShield(class<ScrnVestPickup> VestClass)
         // @ "Amount to Buy = " $ AmountToBuy $ " * " $ Price1p $ " = $" $ Cost, 'ScrnBalance');
 
     if ( CanBuyNow() && AmountToBuy > 0 ) {
+        bServerShopping = true;
         if ( PlayerReplicationInfo.Score >= Cost ) {
             if ( SetVestClass(VestClass) && AddShieldStrength(AmountToBuy) )
                 PlayerReplicationInfo.Score -= Cost;
@@ -959,6 +963,7 @@ function ServerBuyShield(class<ScrnVestPickup> VestClass)
                 UsedStartCash(ceil(AmountToBuy * Price1p));
             }
         }
+        bServerShopping = false;
     }
     SetShieldWeight();
     SetTraderUpdate();
@@ -971,7 +976,6 @@ function ServerSellShield()
     SetTraderUpdate();
 }
 
-
 function ServerBuyKevlar()
 {
     if ( CurrentVestClass == NoVestClass ) {
@@ -979,7 +983,6 @@ function ServerBuyKevlar()
     }
     ServerBuyShield(CurrentVestClass);
 }
-
 
 function AddDefaultInventory()
 {
@@ -1009,6 +1012,13 @@ function AddDefaultInventory()
         AddShieldStrength(s);
     }
 }
+
+simulated function SetTraderUpdate()
+{
+    super.SetTraderUpdate();
+    bServerShopping = false;
+}
+
 // ===================================== AMMO =====================================
 /**
  * Calculates ammo price form given ammo class
@@ -1137,6 +1147,7 @@ function bool ServerBuyAmmo( Class<Ammunition> AClass, bool bOnlyClip )
         Price = FullRefillPrice;
     }
 
+    bServerShopping = true;
     if ( PlayerReplicationInfo.Score < Price ) {
         // Not enough CASH (so buy the amount you CAN afford).
         AmmoToAdd *= (PlayerReplicationInfo.Score/Price);
@@ -1153,6 +1164,7 @@ function bool ServerBuyAmmo( Class<Ammunition> AClass, bool bOnlyClip )
         UsedStartCash(Price);
         MyAmmo.AddAmmo(AmmoToAdd);
     }
+    bServerShopping = false;
     SetTraderUpdate();
     return true;
 }
@@ -1353,8 +1365,9 @@ function ServerBuyWeapon( Class<Weapon> WClass, float ItemWeight )
     Price = int(Price); // Truncuate price.
 
     if ( (Weight>0 && !CanCarry(Weight)) || PlayerReplicationInfo.Score<Price )
-        Return;
+        return;
 
+    bServerShopping = true;
     I = Spawn(WClass, self);
     if ( I != none )
     {
@@ -1373,8 +1386,10 @@ function ServerBuyWeapon( Class<Weapon> WClass, float ItemWeight )
         UsedStartCash(Price);
         ClientForceChangeWeapon(I);
     }
-    else ClientMessage("Error: Weapon failed to spawn.");
-
+    else {
+        ClientMessage("Error: Weapon failed to spawn.");
+    }
+    bServerShopping = false;
     SetTraderUpdate();
 }
 
@@ -1993,7 +2008,8 @@ simulated function TakeDamage( int Damage, Pawn InstigatedBy, Vector Hitlocation
     if ( KFDamType != none && KFHumanPawn(InstigatedBy) != none ) {
         // HDMG
         if ( InstigatorPRI != none && InstigatorPRI.ClientVeteranSkill != none )
-            Damage = InstigatorPRI.ClientVeteranSkill.Static.AddDamage(InstigatorPRI, none, KFHumanPawn(instigatedBy), Damage, DamageType);
+            Damage = InstigatorPRI.ClientVeteranSkill.Static.AddDamage(InstigatorPRI, none, KFHumanPawn(instigatedBy),
+                    Damage, DamageType);
         if ( LastExplosionTime == Level.TimeSeconds && LastExplosionDistance > 50 )
             Damage *= (1.0 - lerp( LastExplosionDistance / 200, 0.0, 1.00, true ));
 
@@ -2094,7 +2110,7 @@ simulated function TakeDamage( int Damage, Pawn InstigatedBy, Vector Hitlocation
                 && ScrnPlayerController(LastHealedBy.Controller) != none
                 && SRStatsBase(ScrnPlayerController(LastHealedBy.Controller).SteamStatsAndAchievements) != none )
         {
-            class'ScrnAchievements'.static.ProgressAchievementByID(SRStatsBase(ScrnPlayerController(LastHealedBy.Controller).SteamStatsAndAchievements).Rep, 'TouchOfSavior', 1);
+            class'ScrnAchCtrl'.static.ProgressAchievementByID(SRStatsBase(ScrnPlayerController(LastHealedBy.Controller).SteamStatsAndAchievements).Rep, 'TouchOfSavior', 1);
             HealthBeforeHealing = 0; //don't give this achievement anymore until next healing will be received
         }
         else if ( Health < HealthBeforeHealing )
@@ -2575,6 +2591,7 @@ event Bump(actor Other)
 defaultproperties
 {
      HealthRestoreRate=7.0
+     HealthSpeedModifier=0.15
      NoVestClass=Class'ScrnBalanceSrv.ScrnNoVestPickup'
      StandardVestClass=Class'ScrnBalanceSrv.ScrnCombatVestPickup'
      LightVestClass=Class'ScrnBalanceSrv.ScrnLightVestPickup'

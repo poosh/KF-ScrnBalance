@@ -1,9 +1,9 @@
 @echo off
 
 setlocal
-set KFDIR=d:\Games\kf
+set KFDIR=c:\Games\kf
 set STEAMDIR=c:\Steam\steamapps\common\KillingFloor
-set outputdir=D:\KFOut\ScrnBalanceSrv
+set outputdir=c:\Games\KFOut\ScrnBalanceSrv
 
 echo Removing previous release files...
 del /S /Q %outputdir%\*

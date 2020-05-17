@@ -2,15 +2,17 @@
 class ScrnPlayerInfo extends Info
     config(ScrnBalance);
 
-// variable below are initially set by ScrnGameRules
+// the variables below are initially set by ScrnGameRules
 var ScrnGameRules GameRules;
 var PlayerController PlayerOwner;
 var ScrnPlayerInfo NextPlayerInfo;
 var byte StartWave; // wave number, when player joined the game 0 - first wave
 // -----
 
-
-var LinkedReplicationInfo CustomReplicationInfo;    // for use by mod authors to link PRI.CustomReplicationInfo
+// using ReplicationInfo here doesn't make sense because ScrnPlayerInfo is server-only
+// Use CustomPlayerInfo
+var deprecated LinkedReplicationInfo CustomReplicationInfo;
+var protected ScrnCustomPlayerInfo CustomPlayerInfo;
 
 const IGNORE_STAT = 0x7FFFFFFF;
 
@@ -68,7 +70,7 @@ struct TWeapInfo {
 };
 var array<TWeapInfo> WeapInfos;
 
-var bool bDied;  // did player died during the way. Valid also during the next trader time.
+var bool bDied;  // did player died during the wave. Valid also during the next trader time.
 var byte Deaths; // how many times player died in the game (excluding suicides at trader time)
 var byte DeathsByMonster; // how many times player died in the game (excluding suicides at trader time)
 var Controller LastKilledBy; // enemy who killed player last time
@@ -101,7 +103,7 @@ var int LastWeapInfoIndex; // index in WeapInfos array of last updated record
 var int CashDonated, CashReceived, CashFound;
 var int CashDonatedPerWave, CashReceivedPerWave, CashFoundPerWave;
 
-//stuctures to store custom data form achievement handlers
+//stuctures to store custom data for achievement handlers
 struct TCustomData {
     var ScrnAchHandlerBase AchHandler;
     var name StatName;
@@ -289,14 +291,10 @@ function BonusStats(out TPerkStats InitialStats, float Mult)
     BackupStats(InitialStats);
 }
 
-
 final function bool ProgressAchievement(name AchID, int Inc)
 {
-    if ( SRStatsBase(PlayerOwner.SteamStatsAndAchievements) == none )
-        return false;
-
-    return class'ScrnBalanceSrv.ScrnAchievements'.static.ProgressAchievementByID(
-            SRStatsBase(PlayerOwner.SteamStatsAndAchievements).Rep, AchID, Inc);
+    return class'ScrnAchCtrl'.static.ProgressAchievementByID(
+            class'ScrnAchCtrl'.static.PlayerLink(PlayerOwner), AchID, Inc);
 }
 
 final function ScrnAchievements GetAchievementsByClass(class<ScrnAchievements> AchClass)
@@ -607,10 +605,18 @@ function WeaponReloaded(KFWeapon W)
 
 function KFWeapon GetCurrentWeapon()
 {
-    if ( PlayerOwner.Pawn == none || PlayerOwner.Pawn.Health <= 0 )
+    if ( PlayerOwner == none || PlayerOwner.Pawn == none || PlayerOwner.Pawn.Health <= 0 )
         return none;
 
     return KFWeapon(PlayerOwner.Pawn.Weapon);
+}
+
+function ScrnHumanPawn AlivePawn()
+{
+    if ( PlayerOwner == none || PlayerOwner.Pawn == none || PlayerOwner.Pawn.Health <= 0 )
+        return none;
+
+    return ScrnHumanPawn(PlayerOwner.Pawn);
 }
 
 
@@ -1056,6 +1062,26 @@ function float GetAccuracyGame()
     if ( HeadshotsPerGame+BodyShotsPerGame == 0 )
         return 0.f;
     return float(HeadshotsPerGame) / float(HeadshotsPerGame+BodyShotsPerGame);
+}
+
+function ScrnCustomPlayerInfo CustomInfo(class<ScrnCustomPlayerInfo> InfoClass, optional bool bCreate)
+{
+    local ScrnCustomPlayerInfo CPI;
+
+    for ( CPI = CustomPlayerInfo; CPI != none; CPI = CPI.Next ) {
+        if ( ClassIsChildOf(CPI.class, InfoClass) ) {
+            return CPI;
+        }
+    }
+
+    if ( bCreate ) {
+        CPI = spawn(InfoClass, self);
+        CPI.SPI = self;
+        CPI.Next = CustomPlayerInfo;
+        CustomPlayerInfo = CPI;
+    }
+
+    return CPI;
 }
 
 defaultproperties

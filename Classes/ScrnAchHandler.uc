@@ -1079,6 +1079,6 @@ defaultproperties
     bOnePlayerPerPerk=true
     bAllSamePerk=true
     InstantKillTime=0.70
-    bNoHeadshots=True
-    bAllCanDoHeadshots=True
+    bNoHeadshots=true
+    bAllCanDoHeadshots=true
 }

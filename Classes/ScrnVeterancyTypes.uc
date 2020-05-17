@@ -461,7 +461,7 @@ static function AddDefaultInventory(KFPlayerReplicationInfo KFPRI, Pawn P)
     for ( i=0; i<default.DefaultInventory.length; ++i ) {
         if ( level >= default.DefaultInventory[i].MinPerkLevel && level <= default.DefaultInventory[i].MaxPerkLevel
                 && (default.DefaultInventory[i].Achievement == ''
-                    || class'ScrnAchievements'.static.IsAchievementUnlocked(L, default.DefaultInventory[i].Achievement)) )
+                    || class'ScrnAchCtrl'.static.IsAchievementUnlocked(L, default.DefaultInventory[i].Achievement)) )
         {
             ExtraAmmo = max(0, default.DefaultInventory[i].AmmoPerLevel * (level - default.DefaultInventory[i].MinPerkLevel));
             if ( !class'ScrnBalance'.default.Mut.bSpawn0 )

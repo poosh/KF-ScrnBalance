@@ -12,7 +12,7 @@ var bool bForceHardcoreLevel;
 var localized string msgHardcore;
 var bool bUseAchievements;
 
-var bool bScrnDoom; // is serrver running ScrN version of Doom3 mutator?
+var bool bScrnDoom; // is server running ScrN version of Doom3 mutator?
 var localized string msgDoom3Monster, msgDoomPercent, msgDoom3Boss;
 var transient int WaveTotalKills, WaveDoom3Kills, GameDoom3Kills;
 var transient int WaveAmmoPickups;
@@ -392,6 +392,10 @@ function bool CheckEndGame(PlayerReplicationInfo Winner, string Reason)
         mut.BroadcastMessage("Game LOST in " $ Mut.FormatTime(Level.Game.GameReplicationInfo.ElapsedTime)
             $ " @ wave "$(Mut.KF.WaveNum+1)
             $", HL="$HardcoreLevel, true);
+    }
+
+    for ( i=0; i<AchHandlers.length; ++i ) {
+        AchHandlers[i].GameEnded();
     }
 
     return true;

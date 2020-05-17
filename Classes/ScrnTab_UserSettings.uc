@@ -149,7 +149,7 @@ function ShowPanel(bool bShow)
     b = ScrnPRI != none && ScrnPRI.IsTourneyMember();
     img_TourneyLogo.SetVisibility(b);
     lbl_TourneyMember.SetVisibility(b);
-    b_GetPrize.SetVisibility(b && !class'ScrnAchievements'.static.IsAchievementUnlocked(
+    b_GetPrize.SetVisibility(b && !class'ScrnAchCtrl'.static.IsAchievementUnlocked(
         Class'ScrnClientPerkRepLink'.Static.FindMe(PC), 'TSCT'));
 
     // v9.11: team locks are available in regular game too

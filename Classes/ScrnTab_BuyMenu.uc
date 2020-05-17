@@ -314,7 +314,8 @@ function DoFillAllAmmo()
 
             if ( !bForceBuy && PassNo == 0 ) {
                 if ( ClassIsChildOf(MyBuyable.ItemAmmoClass, class'FragAmmo')
-                        || ClassIsChildOf(MyBuyable.ItemAmmoClass, class'PipeBombAmmo') )
+                        || ClassIsChildOf(MyBuyable.ItemAmmoClass, class'PipeBombAmmo')
+                        || ClassIsChildOf(MyBuyable.ItemAmmoClass, class'ToiletPaperAmmo') )
                     continue; // don't buy expensive ammunition at first pass
             }
 

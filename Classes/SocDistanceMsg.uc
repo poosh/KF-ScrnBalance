@@ -1,9 +1,11 @@
-class ScrnBlamedMsg extends CriticalEventPlus
+class SocDistanceMsg extends CriticalEventPlus
     abstract;
 
+var localized string Title;
 var array<localized string>Messages;
 var texture Picture;
 var string PictureRef;
+
 
 static function RenderComplexMessage(
         Canvas C,
@@ -16,31 +18,34 @@ static function RenderComplexMessage(
         optional Object OptionalObject // must be ScrnAchievementInfo
         )
 {
-    local float TextWidth, TextHeight;
-    local float IconSize;
-    local float y, ty;
+    local float TextWidth, TextHeight, IconSize;
+    local float x, y, tx;
     local int i;
 
-    IconSize = C.ClipY * fmin(0.9, 0.25 + Switch*0.05);
     C.Style = ERenderStyle.STY_Alpha;
 
-    C.Font = class'ScrnBalanceSrv.ScrnHUD'.static.LoadSmallFontStatic(7);
-    C.StrLen(default.Messages[0], TextWidth, TextHeight);
-    y = max( (C.ClipY - IconSize ) / 2, 0 );
-    ty = max( y - TextHeight * default.Messages.Length, C.ClipY * 0.12 );
+    C.Font = class'ScrnHUD'.static.LoadSmallFontStatic(default.FontSize);
+    C.StrLen(default.Title, tx, TextHeight);
+    x = c.ClipX - 4;
+    y = C.ClipY * default.PosY;
+    IconSize = C.ClipX * 0.10;
 
+    C.SetPos(x - tx, y - TextHeight);
+    C.DrawTextClipped(default.Title);
+
+    C.SetPos(x - IconSize, y - TextHeight - IconSize);
+    C.DrawTile(default.Picture, IconSize, IconSize, 0, 0, 1024, 1024);
+
+
+    C.Font = class'ScrnHUD'.static.LoadSmallFontStatic(7);
+    C.StrLen(default.Messages[0], TextWidth, TextHeight);
     for ( i = 0; i < default.Messages.Length; ++i ) {
         C.StrLen(default.Messages[i], TextWidth, TextHeight);
-        C.SetPos(c.ClipX - TextWidth - 4, ty);
+        C.SetPos(x - TextWidth, y);
+        // C.SetPos(x - tx + (tx - TextWidth)/2, y);
         C.DrawTextClipped(default.Messages[i]);
-        ty += TextHeight;
+        y += TextHeight;
     }
-
-    C.SetPos(C.ClipX - IconSize, y);
-    C.DrawTile(default.Picture, IconSize, IconSize, 0, 0, 256, 256);
-
-    // C.SetPos(0, y);
-    // C.DrawTile(default.Picture, IconSize, IconSize, 0, 0, 256, 256);
 }
 
 static function ClientReceive(
@@ -59,13 +64,14 @@ static function ClientReceive(
 
 defaultproperties
 {
-     bComplexString=True
-     Lifetime=120
+     bIsConsoleMessage=false
+     bComplexString=true
+     Lifetime=2.0
      DrawColor=(B=64,G=64,R=255)
-     PosY=0.800000
-     FontSize=5
-     Messages(0)="You are blamed by the team!"
-     Messages(1)="As a punishment you have to"
-     Messages(2)="look at this for 2 minutes:"
-     PictureRef="ScrnTex.HUD.Crap256"
+     PosY=0.500000
+     FontSize=1
+     Title="KEEP DISTANCE"
+     Messages(0)="You are too close to other players!"
+     Messages(1)="Move away to prevent virus spreading."
+     PictureRef="ScrnTex.HUD.Virus"
 }

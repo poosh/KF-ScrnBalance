@@ -1121,7 +1121,7 @@ exec function LogAch()
 
 exec function AchReset(optional int password)
 {
-    if ( class'ScrnAchievements'.static.IsAchievementUnlocked(class'ScrnClientPerkRepLink'.static.FindMe(self), 'AchReset') ) {
+    if ( class'ScrnAchCtrl'.static.IsAchievementUnlocked(class'ScrnClientPerkRepLink'.static.FindMe(self), 'AchReset') ) {
         if ( AchResetPassword == 0 ) {
             AchResetPassword = 10000 + rand(90000);
             ConsoleMessage("You already have 'AchReset' achievement!", 0, 200, 100, 1);
@@ -1145,17 +1145,17 @@ function SrvAchReset()
     local int i;
 
     L = Class'ScrnClientPerkRepLink'.Static.FindMe(self);
-    class'ScrnAchievements'.static.RetrieveGroups(L, GroupNames, GroupCaptions);
+    class'ScrnAchCtrl'.static.RetrieveGroups(L, GroupNames, GroupCaptions);
     for ( i=0; i<GroupNames.length; ++i ) {
         if ( GroupNames[i] != 'MAP' )
-            class'ScrnAchievements'.static.ResetAchievements(L, GroupNames[i]);
+            class'ScrnAchCtrl'.static.ResetAchievements(L, GroupNames[i]);
     }
-    class'ScrnAchievements'.static.ProgressAchievementByID(L, 'AchReset', 1);
+    class'ScrnAchCtrl'.static.ProgressAchievementByID(L, 'AchReset', 1);
 }
 
 exec function ResetMyAchievements(name group)
 {
-    class'ScrnAchievements'.static.ResetAchievements(Class'ScrnClientPerkRepLink'.Static.FindMe(self), group);
+    class'ScrnAchCtrl'.static.ResetAchievements(Class'ScrnClientPerkRepLink'.Static.FindMe(self), group);
 }
 
 exec function ResetMapAch(string MapName)
@@ -2692,8 +2692,7 @@ function ServerFixQuickMelee()
 
 // exec function SetSID64(coerce string SteamID64)
 // {
-//     //if ( Level.NetMode == NM_Standalone )
-//     if ( Role == ROLE_Authority )
+//    if ( Mut.CheckAdmin(self) )
 //         class'ScrnCustomPRI'.static.FindMe(PlayerReplicationInfo).SetSteamID64(SteamID64);
 // }
 //
@@ -2704,26 +2703,26 @@ function ServerFixQuickMelee()
 //
 // exec function PerkLevel(int L)
 // {
-//     if ( Role == ROLE_Authority )
+//    if ( Mut.CheckAdmin(self) )
 //         KFPlayerReplicationInfo(PlayerReplicationInfo).ClientVeteranSkillLevel = L;
 // }
 //
 // exec function TestZedTime(optional float DesiredZedTimeDuration)
 // {
-//     if ( Role == ROLE_Authority )
+//     if ( Mut.CheckAdmin(self) )
 //     KFGameType(Level.Game).DramaticEvent(1.0, DesiredZedTimeDuration);
 // }
 //
 // exec function IncAch(name AchID)
 // {
-//     if ( Level.NetMode == NM_Standalone )
-//         class'ScrnAchievements'.static.ProgressAchievementByID(Class'ScrnClientPerkRepLink'.Static.FindMe(self), AchID, 1);
+//     if ( Mut.CheckAdmin(self) )
+//         class'ScrnAchCtrl'.static.ProgressAchievementByID(Class'ScrnClientPerkRepLink'.Static.FindMe(self), AchID, 1);
 // }
 //
 // exec function GiveAch(name AchID)
 // {
-//     if ( Level.NetMode == NM_Standalone )
-//         class'ScrnAchievements'.static.ProgressAchievementByID(Class'ScrnClientPerkRepLink'.Static.FindMe(self), AchID, 1000);
+//     if ( Mut.CheckAdmin(self) )
+//         class'ScrnAchCtrl'.static.ProgressAchievementByID(Class'ScrnClientPerkRepLink'.Static.FindMe(self), AchID, 1000);
 // }
 //
 // exec function BuyAll()
