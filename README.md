@@ -19,6 +19,10 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+### v9.62.07
+#### Social Isolation
+- The Virus cannot instantly kill a player with 100hp anymore
+
 ### v9.62.06
 #### Social Isolation
 - Fixed a bug where Asymptomatic players sometimes were considered healthy

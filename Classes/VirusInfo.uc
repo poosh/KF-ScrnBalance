@@ -181,8 +181,7 @@ state Sick extends Infected
                 if ( DamageCounter == default.DamageCounter ) {
                     HealthSample(P.Health);
                 }
-                d = min(90, 0.5 + DamageMod * Damage * (0.5+frand())
-                        * fmin(2.0, (0.9 + 0.1 * SPI.GameRules.PlayerCountInWave())));
+                d = DamageMod * Damage * (0.5+frand()) + 0.5;
                 // player has 50% resistance from self damage, hence we need to pass the double value to the the
                 // desired result.
                 P.TakeDamage(2*d, P, vect(0,0,0), vect(0,0,0), class'VirusDamage');
