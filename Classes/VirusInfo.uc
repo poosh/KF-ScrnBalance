@@ -70,7 +70,7 @@ auto state Healthy
 
     function Infect(float r)
     {
-         if (r < 0.2) {
+         if (r < 0.15) {
              GotoState('Asymptomatic');
          }
          else {
@@ -113,6 +113,7 @@ state Asymptomatic extends Infected
 {
     function BeginState()
     {
+        super.BeginState();
         Damage = 0;
         Mut.SocHandler.PlayerSick(self);
     }
@@ -180,7 +181,8 @@ state Sick extends Infected
                 if ( DamageCounter == default.DamageCounter ) {
                     HealthSample(P.Health);
                 }
-                d = DamageMod * Damage * (0.5+frand()) + 0.5;
+                d = min(90, 0.5 + DamageMod * Damage * (0.5+frand())
+                        * fmin(2.0, (0.9 + 0.1 * SPI.GameRules.PlayerCountInWave())));
                 // player has 50% resistance from self damage, hence we need to pass the double value to the the
                 // desired result.
                 P.TakeDamage(2*d, P, vect(0,0,0), vect(0,0,0), class'VirusDamage');

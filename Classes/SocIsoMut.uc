@@ -23,7 +23,6 @@ function PostBeginPlay()
 function Destroyed()
 {
     ReplInfo.Destroy();
-    
     super.Destroyed();
 }
 
@@ -49,6 +48,6 @@ defaultproperties
     VirusSpreadDist=250  // 5m
     IncubationTimeMin=30
     IncubationTimeMax=300
-    SickTimeMin=900
-    SickTimeMax=2700
+    SickTimeMin=1200
+    SickTimeMax=3600
 }

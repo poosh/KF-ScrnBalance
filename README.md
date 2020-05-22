@@ -19,6 +19,13 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+### v9.62.06
+#### Social Isolation
+- Fixed a bug where Asymptomatic players sometimes were considered healthy
+- The period of sickness raised to 20-60 minutes (up from 15-45)
+- Virus damage slightly scales according to player count
+
+
 ### v9.62.05
 #### Social Isolation
 - Minimum player count for *Covidiot Party* achievement lowered to 3 (down from 4)
@@ -38,7 +45,7 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 - `DLCLocks` moved to a separate config file: **ScrnLock.ini**
 - All default configs converted from UTF-16 to ANSI. Any unicode characters removed.
   Keep in mind that **KF1 engine does NOT support UTF-8**.
-  If you put any unicode character in the config, save it in *UTF-16 LE* encoding. 
+  If you put any unicode character in the config, save it in *UTF-16 LE* encoding.
   Saving config in UTF-8 makes it unreadable by the engine.
 
 #### Code Changes
