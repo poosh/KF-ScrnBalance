@@ -1,0 +1,33 @@
+@echo off
+
+set KFPACKAGE=
+call :GetKfPackage KFPACKAGE %~dpn1
+
+set KFDIR=C:\Games\kf
+set STEAMDIR=C:\Steam\steamapps\common\KillingFloor
+set RELEASEDIR=C:\Games\KFOut\%KFPACKAGE%
+set BUNDLEDIR=C:\Games\KFOut\ScrnBundlePart2
+set WEBDIR=C:\Users\user\Dropbox\KFWeb
+
+echo -------------------------------------------------------------------------
+echo KFPACKAGE=%KFPACKAGE%
+echo KFDIR=%KFDIR%
+echo STEAMDIR=%STEAMDIR%
+echo RELEASEDIR=%RELEASEDIR%
+echo BUNDLEDIR=%BUNDLEDIR%
+echo WEBDIR=%WEBDIR%
+echo -------------------------------------------------------------------------
+
+
+exit /b 0
+
+:GetKfPackage
+set _param2=%~dp2
+set _param2=%_param2:~0,-1%
+call :GetParentDirName %1 %_param2%
+exit /b 0
+
+:GetParentDirName
+echo ExtractParentDir %1 %2
+set %~1=%~n2
+exit /b 0

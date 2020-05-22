@@ -3,14 +3,16 @@ class ScrnAchCtrl extends Object
     abstract;
 
 struct SAchCache {
+    var ClientPerkRepLink Rep;
     var name ID;
     var ScrnAchievements.AchStrInfo Ach;
 };
 
 var private array< class<ScrnAchievements> > AchClassList; // add here custom achievement classes to load their data from SP custom progress
-var private SAchCache LastAch;
-var private SAchCache AchCache[16];
-var private int AchCacheIndex;
+
+// var private SAchCache LastAch;
+// var private SAchCache AchCache[16];
+// var private int AchCacheIndex;
 
 static final function ClientPerkRepLink PlayerLink(PlayerController PC)
 {
@@ -69,15 +71,15 @@ static final function bool ProgressAchievementByID(ClientPerkRepLink L, name ID,
     if ( !FindAchievement(L, ID, A, CacheIndex) )
         return false;
 
-    default.LastAch.ID = ID;
-    default.LastAch.Ach = A;
-    if ( CacheIndex == -1 && A.AchHandler.AchDefs[A.AchIndex].MaxProgress > 1 ) {
-        // cache achievements with multiple progress because those are accessed more often
-        default.AchCache[default.AchCacheIndex].ID = ID;
-        default.AchCache[default.AchCacheIndex].Ach = A;
-        if ( ++default.AchCacheIndex >= ArrayCount(default.AchCache) )
-            default.AchCacheIndex = 0;
-    }
+    // default.LastAch.ID = ID;
+    // default.LastAch.Ach = A;
+    // if ( CacheIndex == -1 && A.AchHandler.AchDefs[A.AchIndex].MaxProgress > 1 ) {
+    //     // cache achievements with multiple progress because those are accessed more often
+    //     default.AchCache[default.AchCacheIndex].ID = ID;
+    //     default.AchCache[default.AchCacheIndex].Ach = A;
+    //     if ( ++default.AchCacheIndex >= ArrayCount(default.AchCache) )
+    //         default.AchCacheIndex = 0;
+    // }
 
     return A.AchHandler.ProgressAchievement(A.AchIndex, Inc);
 }
@@ -138,20 +140,20 @@ static final function bool FindAchievement(ClientPerkRepLink L, name ID, out Scr
     if ( L == none )
         return false;
 
-    CacheIndex = -1;
+    // CacheIndex = -1;
 
-    if ( default.LastAch.ID == ID ) {
-        result = default.LastAch.Ach;
-        return true;
-    }
+    // if ( default.LastAch.ID == ID ) {
+    //     result = default.LastAch.Ach;
+    //     return true;
+    // }
 
-    for ( i = 0; i < ArrayCount(default.AchCache); ++i ) {
-        if ( default.AchCache[i].ID == ID ) {
-            CacheIndex = i;
-            result = default.AchCache[i].Ach;
-            return true;
-        }
-    }
+    // for ( i = 0; i < ArrayCount(default.AchCache); ++i ) {
+    //     if ( default.AchCache[i].ID == ID ) {
+    //         CacheIndex = i;
+    //         result = default.AchCache[i].Ach;
+    //         return true;
+    //     }
+    // }
     for( S = L.CustomLink; S != none; S = S.NextLink ) {
         A = ScrnAchievements(S);
         if( A != none ) {
@@ -306,17 +308,17 @@ static final function InitLink(ClientPerkRepLink L)
 // Do not call this directly!
 static final function Cleanup()
 {
-    local int i;
+    // local int i;
 
     default.AchClassList.Length = 2;
     default.AchClassList[0] = class'ScrnBalanceSrv.Ach';
     default.AchClassList[1] = class'ScrnBalanceSrv.AchMaps';
 
-    default.LastAch.Ach.AchHandler = none;
-    for ( i = 0; i < ArrayCount(default.AchCache); ++i ) {
-        default.AchCache[i].ID = '';
-        default.AchCache[i].Ach.AchHandler = none;
-    }
+    // default.LastAch.Ach.AchHandler = none;
+    // for ( i = 0; i < ArrayCount(default.AchCache); ++i ) {
+    //     default.AchCache[i].ID = '';
+    //     default.AchCache[i].Ach.AchHandler = none;
+    // }
 }
 
 defaultproperties

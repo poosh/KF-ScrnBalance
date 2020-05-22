@@ -18,23 +18,27 @@ function PostBeginPlay()
     FindGameRules();
 }
 
-function ScrnGameRules FindGameRules()
+function FindGameRules()
 {
     local GameRules G;
 
     if ( GameRules != none )
-        return GameRules;
+        return;
 
     for ( G=Level.Game.GameRulesModifiers; G!=None; G=G.NextGameRules ) {
         if ( ScrnGameRules(G) != none ) {
             GameRules = ScrnGameRules(G);
             GameRules.RegisterAchHandler(self);
-            return GameRules;
+            return;
         }
     }
     log(GetItemName(String(self)) $ ": unable to find ScrnGameRules. Trying again in 5 seconds.", 'ScrnBalance');
     SetTimer(5.0, false);
-    return none;
+}
+
+function ScrnGameRules GetGameRules()
+{
+    return GameRules;
 }
 
 function Timer()

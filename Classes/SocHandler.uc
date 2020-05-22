@@ -86,13 +86,19 @@ function GameWon(string MapName)
     local TeamInfo WinnerTeam;
     local ScrnPlayerInfo SPI;
     local VirusInfo Virus;
+    local int PlayerCount;
 
     WinnerTeam = TeamInfo(Level.Game.GameReplicationInfo.Winner);
+    PlayerCount = GameRules.PlayerCountInWave();
+
+    if ( PlayerCount <= 1 )
+        return;  // no achievements for soloers
+
     Ach2All('DoubleOutbreak', 1, none, WinnerTeam);
     if ( GameRules.GameDoom3Kills > 0 && Level.Game.GameDifficulty >= 7 ) {
         Ach2All('TripleInvasion', 1, none, WinnerTeam);
     }
-    if ( SpreadCounter == 0 && GameRules.PlayerCountInWave() >= 4 ) {
+    if ( SpreadCounter == 0 && PlayerCount >= 3 ) {
         Ach2All('TW_Isolation', 1);
     }
 
@@ -110,16 +116,29 @@ function GameEnded()
 {
     local ScrnPlayerInfo SPI;
     local VirusInfo Virus;
+    local String s;
 
     SetTimer(0, false);
 
     for ( SPI = GameRules.PlayerInfo; SPI != none; SPI = SPI.NextPlayerInfo ) {
         Virus = VirusInfo(SPI.CustomInfo(class'VirusInfo', false));
-        if ( Virus != none ) {
-            if ( Virus.IsInState('Asymptomatic') ) {
+        if ( Virus == none )
+            continue;
+        if ( Virus.IsInState('Asymptomatic') )
                 SPI.ProgressAchievement('Asymptomatic', 1);
+
+        // log
+        s = SPI.PlayerName @ Virus.GetStateName();
+        if ( Virus.bInfected || Virus.bCured ) {
+            s $= ". Infected at " $ Virus.InfectTime;
+            if ( Virus.InfectedBy != none ) {
+                s $= " by " $ Virus.InfectedBy.SPI.PlayerName;
             }
         }
+        if ( SPI.StartWave > 0 ) {
+            s $= ". Joined at wave " $ SPI.StartWave;
+        }
+        log(s, 'SocIso');
     }
 }
 
@@ -194,7 +213,7 @@ function PlayerSick(VirusInfo Virus)
     local bool bRevealCovidiots;
 
     P = Virus.SPI.AlivePawn();
-    if ( P != none ) {
+    if ( P != none && Virus.Damage > 0 ) {
         for ( Inv = P.Inventory; Inv != none && ++i < 1000; Inv = Inv.Inventory ) {
             if ( Inv.Class == class'ToiletPaperAmmo' ) {
                 if ( ToiletPaperAmmo(Inv).AmmoAmount >= 100 ) {
@@ -212,7 +231,7 @@ function PlayerSick(VirusInfo Virus)
         }
     }
 
-    if ( Healthy.length == 0 && GameRules.PlayerCountInWave() >= 4 ) {
+    if ( Healthy.length == 0 && GameRules.PlayerCountInWave() >= 3 ) {
         bRevealCovidiots = true;
         // do not show CovidiotParty achievement until all players had symptoms
         for ( i = 0; i < Infected.length; ++i ) {

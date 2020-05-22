@@ -105,11 +105,6 @@ static function string GetCustomLevelInfo( byte Level )
     return S;
 }
 
-static function bool OverridePerkIndex( class<KFWeaponPickup> Pickup )
-{
-    // Field Medic and Combat medic share the same iventory
-    return Pickup.default.CorrespondingPerkIndex == 0 || super.OverridePerkIndex(Pickup);
-}
 
 defaultproperties
 {
@@ -125,6 +120,7 @@ defaultproperties
     CustomLevelInfo="PERK BONUSES (LEVEL %L):|%x more damage with Medic Guns|%a extra Medic ammo|%v better Armor|Up to %z Zed-Time Extensions|%$ discount on Medic Guns/Armor/Katana"
 
     PerkIndex=9
+    RelatedPerkIndex=0  // medic
     OnHUDIcon=              Texture'ScrnTex.Perks.Perk_CombatMedic'
     OnHUDGoldIcon=          Texture'ScrnTex.Perks.Perk_CombatMedic_Gold'
     OnHUDIcons(0)=(PerkIcon=Texture'ScrnTex.Perks.Perk_CombatMedic_Gray',StarIcon=Texture'ScrnTex.Perks.Hud_Perk_Star_Gray',DrawColor=(B=255,G=255,R=255,A=255))

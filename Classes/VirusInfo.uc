@@ -17,6 +17,7 @@ var transient int InfectionCounter, InfectionCounterRapid;
 var transient int SpreadCounter;
 var transient bool bCovidiotSocial;
 var VirusInfo InfectedBy;
+var transient float InfectTime;
 
 
 function Infect(float r) { }
@@ -56,6 +57,7 @@ function HealthSample(int Health)
     }
 }
 
+
 auto state Healthy
 {
     function BeginState()
@@ -84,7 +86,10 @@ state Infected
 
     function BeginState()
     {
-        bInfected = true;
+        if ( !bInfected ) {
+            bInfected = true;
+            InfectTime = Level.TimeSeconds;
+        }
     }
 
     function EndState()
@@ -109,6 +114,7 @@ state Asymptomatic extends Infected
     function BeginState()
     {
         Damage = 0;
+        Mut.SocHandler.PlayerSick(self);
     }
 
     function NextState()
@@ -166,7 +172,9 @@ state Sick extends Infected
             return;
         }
 
-        P = SPI.PlayerOwner.Pawn;
+        if ( SPI.PlayerOwner != none )
+            P = SPI.PlayerOwner.Pawn;
+
         if ( DamageCounter > 0 ) {
             if ( P != none ) {
                 if ( DamageCounter == default.DamageCounter ) {

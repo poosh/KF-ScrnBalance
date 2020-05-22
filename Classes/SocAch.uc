@@ -16,5 +16,5 @@ defaultproperties
     AchDefs(5)=(id="CovidiotS",DisplayName="Covidiot, Social",Description="Spread the Virus to at least 3 players in a single game",Icon=Texture'ScrnAch_T.SocIso.Noob',MaxProgress=1,DataSize=1,bForceShow=True)
     AchDefs(6)=(id="CovidiotG",DisplayName="Covidiot, Greedy",Description="Buy 1000 rolls of toilet paper",Icon=Texture'ScrnAch_T.SocIso.TP_Pile',MaxProgress=1000,DataSize=10)
     AchDefs(7)=(id="CovidiotD",DisplayName="Covidiot, Dumb",Description="Get infected despite having 100 rolls of TP in your inventory",Icon=Texture'ScrnAch_T.SocIso.TP_Virus',MaxProgress=1,DataSize=1,bForceShow=True)
-    AchDefs(8)=(id="CovidiotParty",DisplayName="Covidiot Party",Description="The entire 4+player team got infected",Icon=Texture'ScrnAch_T.SocIso.CovidiotParty',MaxProgress=1,DataSize=1,bForceShow=True)
+    AchDefs(8)=(id="CovidiotParty",DisplayName="Covidiot Party",Description="All players in the team got infected (3+p)",Icon=Texture'ScrnAch_T.SocIso.CovidiotParty',MaxProgress=1,DataSize=1,bForceShow=True)
 }

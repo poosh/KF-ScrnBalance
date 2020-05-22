@@ -5,6 +5,8 @@ class ScrnVeterancyTypes extends SRVeterancyTypes
 
 #exec OBJ LOAD FILE=ScrnTex.utx
 
+var byte RelatedPerkIndex;
+
 var array<int> progressArray0;
 var array<int> progressArray1;
 
@@ -548,12 +550,16 @@ static function bool ShowEnemyHealthBars(KFPlayerReplicationInfo KFPRI, KFPlayer
 static function bool OverridePerkIndex( class<KFWeaponPickup> Pickup )
 {
     return Pickup.default.CorrespondingPerkIndex == default.PerkIndex
+            || Pickup.default.CorrespondingPerkIndex == default.RelatedPerkIndex
             || ClassIsInArray(default.PerkedWeapons, Pickup.default.InventoryType)
             || ClassIsInArray(default.PerkedPickups, Pickup);
 }
 
+
 defaultproperties
 {
+    PerkIndex=255
+    RelatedPerkIndex=255
     progressArray0(0)=5000
     progressArray0(1)=25000
     progressArray0(2)=100000

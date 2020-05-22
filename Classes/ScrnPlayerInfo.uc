@@ -119,11 +119,26 @@ var private int LastFoundCustomDataIndex;
 
 
 // Backup data for PlayerReplicationInfo
+var string PlayerName;
 var int SteamID32;
 var int PRI_Score, PRI_Kills, PRI_KillAssists, PRI_Deaths, PRI_StartTime;
 var byte PRI_BlameCounter;
 var class<KFVeterancyTypes> PRI_ClientVeteranSkill;
 var byte PRI_TeamIndex;
+
+
+function Destroyed()
+{
+    local ScrnCustomPlayerInfo CPI;
+
+    while ( CustomPlayerInfo != none ) {
+        CPI = CustomPlayerInfo;
+        CustomPlayerInfo = CustomPlayerInfo.Next;
+        CPI.Destroy();
+    }
+    
+    super.Destroyed();
+}
 
 function ClientPerkRepLink GetRep()
 {
@@ -1082,6 +1097,11 @@ function ScrnCustomPlayerInfo CustomInfo(class<ScrnCustomPlayerInfo> InfoClass, 
     }
 
     return CPI;
+}
+
+function bool HasCustomPlayerInfo()
+{
+    return CustomPlayerInfo != none;
 }
 
 defaultproperties

@@ -1674,8 +1674,8 @@ exec function SetName(coerce string S)
     if ( S == "#" )
         S = PlayerName;
 
-    if ( S == "" || (class'ScrnSrvReplInfo'.static.Instance().bForceSteamNames
-                    && Player.GUIController.SteamGetUserName() != Mut.StripColorTags(S)) )
+    if ( S == "" || (class'ScrnSrvReplInfo'.static.Instance().bForceSteamNames && Player.GUIController !=none
+            && Player.GUIController.SteamGetUserName() != Mut.StripColorTags(S)) )
     {
         S = Player.GUIController.SteamGetUserName();
         if ( S == "" )

@@ -3338,14 +3338,14 @@ defaultproperties
     PerkColors(5)=(R=255,G=128,B=0,A=255)
     PerkColors(6)=(R=160,G=0,B=0,A=255)
 
-    bCoolHud=True
+    bCoolHud=false
     CoolHudScale=2.0
     CoolHudAmmoOffsetX = 0.995
     CoolHudAmmoOffsetY = 0.95
     CoolHudAmmoScale=0.75
     CoolHealthFadeOutTime=10
     PlayerInfoScale=1.0
-    PlayerInfoVersionNumber=90
+    PlayerInfoVersionNumber=81
     ScrnDrawPlayerInfoBase=ScrnDrawPlayerInfoNew
     CoolBarBase=Texture'ScrnTex.HUD.BarBase'
     CoolBarOverlay=Texture'ScrnTex.HUD.BarOverlay'

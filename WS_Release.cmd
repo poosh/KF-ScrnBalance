@@ -1,52 +1,75 @@
 @echo off
 
 setlocal
-set KFDIR=d:\Games\kf
-set STEAMDIR=c:\Steam\steamapps\common\KillingFloor
-set outputdir=D:\KFOut\ScrnBalance
+
+set CURDIR=%~dp0
+call ..\ScrnMakeEnv.cmd %CURDIR%
 
 echo Removing previous release files...
-del /S /Q %outputdir%\*
+del /S /Q %RELEASEDIR%\*
 
+:: Sanity check
+if exist %RELEASEDIR%\System\%KFPACKAGE%.u (
+    echo Failed to cleanup the release directory
+    set /A ERR=100
+    goto :error
+)
 
-del %KFDIR%\System\ScrnBalance*.ucl
+del %KFDIR%\System\%KFPACKAGE%.ucl 2>nul
 
 echo Compiling project...
 call make.cmd
-if %ERRORLEVEL% NEQ 0 goto end
+set /A ERR=%ERRORLEVEL%
+if %ERR% NEQ 0 goto error
 
 echo Exporting .int file...
-%KFDIR%\System\ucc dumpint ScrnBalance.u
+%KFDIR%\System\ucc dumpint %KFPACKAGE%.u
 
 echo.
 echo Copying release files...
-mkdir %outputdir%\Animations
-mkdir %outputdir%\System
-mkdir %outputdir%\Textures
-mkdir %outputdir%\Sounds
+xcopy /F /I /Y *.ini %RELEASEDIR%
+xcopy /F /I /Y *.txt %RELEASEDIR%
+xcopy /F /I /Y *.md  %RELEASEDIR%
 
-copy /y %KFDIR%\system\ScrnBalance.* %outputdir%\System\
-copy /y %KFDIR%\system\ScrnSP.* %outputdir%\System\
-copy /y %KFDIR%\system\ScrnVotingHandlerV4.* %outputdir%\system\
-copy /y %STEAMDIR%\animations\ScrnAnims.ukx %outputdir%\Animations\
-copy /y %STEAMDIR%\sounds\ScrnSnd.uax %outputdir%\Sounds\
-copy /y %STEAMDIR%\textures\ScrnTex.utx %outputdir%\Textures\
-copy /y %STEAMDIR%\textures\ScrnAch_T.utx %outputdir%\Textures\
-copy /y %STEAMDIR%\Textures\TSC_T.utx %outputdir%\Textures\
-copy /y *.txt  %outputdir%
-copy /y readme.md  %outputdir%
-rem don't suggest to overwrite existing .ini file
-copy /y *.ini  %outputdir%
+mkdir %RELEASEDIR%\System 2>nul
+xcopy /F /I /Y %KFDIR%\System\%KFPACKAGE%.int %RELEASEDIR%\System\
+xcopy /F /I /Y %KFDIR%\System\%KFPACKAGE%.u %RELEASEDIR%\System\
+xcopy /F /I /Y %KFDIR%\System\%KFPACKAGE%.ucl %RELEASEDIR%\System\
+xcopy /F /I /Y %KFDIR%\System\ScrnSP.* %RELEASEDIR%\System\
+xcopy /F /I /Y %KFDIR%\System\ScrnVotingHandlerV4.* %RELEASEDIR%\System\
 
-rem For Workshop
-copy /y *.ini  ..\System\
-rem copy /y LICENSE  ..\Help\ScrnBalanceEULA.txt
+mkdir %RELEASEDIR%\Animations 2>nul
+xcopy /F /I /Y %STEAMDIR%\Animations\ScrnAnims.ukx %RELEASEDIR%\Animations\
+
+mkdir %RELEASEDIR%\Sounds 2>nul
+xcopy /F /I /Y %STEAMDIR%\Sounds\ScrnSnd.uax %RELEASEDIR%\Sounds\
+
+:: mkdir %RELEASEDIR%\StaticMeshes 2>nul
+:: xcopy /F /I /Y %STEAMDIR%\StaticMeshes\ScrnSnd.uax %RELEASEDIR%\StaticMeshes\
+
+mkdir %RELEASEDIR%\Textures 2>nul
+xcopy /F /I /Y %STEAMDIR%\Textures\ScrnTex.utx %RELEASEDIR%\Textures\
+xcopy /F /I /Y %STEAMDIR%\Textures\ScrnAch_T.utx %RELEASEDIR%\Textures\
+xcopy /F /I /Y %STEAMDIR%\Textures\TSC_T.utx %RELEASEDIR%\Textures\
+
+if not exist %RELEASEDIR%\System\%KFPACKAGE%.u (
+    echo Release failed
+    set /A ERR=101
+    goto :error
+)
+
+echo.
+echo Prepare Workshop-specific files...
+copy /y *.ini  %KFDIR%\System\
 
 
 echo Release is ready!
 
-endlocal
+goto :end
 
-pause
+:error
+color 0C
 
 :end
+endlocal & SET _EC=%ERR%
+exit /b %_EC%

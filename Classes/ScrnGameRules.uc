@@ -217,23 +217,25 @@ function WaveStarted()
             // in case when stats were created before ClientReplLink created
             if ( !SPI.GameStartStats.bSet )
                 SPI.BackupStats(SPI.GameStartStats);
-            SPI.WaveStarted(Mut.KF.WaveNum);
-            SPI.ProgressAchievement('Welcome', 1);
         }
     }
 
     AdjustZedSpawnRate();
+
+    for ( SPI=PlayerInfo; SPI!=none; SPI=SPI.NextPlayerInfo ) {
+        SPI.WaveStarted(Mut.KF.WaveNum);
+    }
 
     for ( i=0; i<AchHandlers.length; ++i ) {
         AchHandlers[i].WaveStarted(Mut.KF.WaveNum);
     }
 
     if ( Mut.bStoryMode )
-        log("Wave "$(Mut.KF.WaveNum+1)$" started", 'ScrnBalance');
+        log("Wave "$(Mut.KF.WaveNum+1)$" started at " $ Level.TimeSeconds, 'ScrnBalance');
     else if (bFinalWave)
-        log("Final wave started", 'ScrnBalance');
+        log("Final wave started at " $ Level.TimeSeconds, 'ScrnBalance');
     else
-        log("Wave "$(Mut.KF.WaveNum+1)$"/"$(Mut.KF.FinalWave)$" started", 'ScrnBalance');
+        log("Wave "$(Mut.KF.WaveNum+1)$"/"$(Mut.KF.FinalWave)$" started at " $ Level.TimeSeconds, 'ScrnBalance');
 
     DestroyBuzzsawBlade(); // prevent cheating
 }
@@ -1155,7 +1157,8 @@ function int PlayerCountInWave()
  * @param ExcludeSPI    player to exclude from achievement progress.
  */
 // if bOnlyAlive=true, then achievment will not be granted for dead players (bDied = true)
-function ProgressAchievementForAllPlayers(name AchID, int Inc, optional bool bOnlyAlive, optional ScrnPlayerInfo ExcludeSPI, optional TeamInfo Team)
+function ProgressAchievementForAllPlayers(name AchID, int Inc, optional bool bOnlyAlive,
+        optional ScrnPlayerInfo ExcludeSPI, optional TeamInfo Team)
 {
     local ScrnPlayerInfo SPI;
 
@@ -1173,7 +1176,9 @@ function ProgressAchievementForAllPlayers(name AchID, int Inc, optional bool bOn
 
 final private function BackupOrDestroySPI(ScrnPlayerInfo SPI)
 {
-    if ( SPI.SteamID32 > 0 && (SPI.PRI_Kills > 0 || SPI.PRI_Deaths > 0 || SPI.PRI_KillAssists > 0) ) {
+    if ( SPI.SteamID32 > 0 && (SPI.PRI_Kills > 0 || SPI.PRI_Deaths > 0 || SPI.PRI_KillAssists > 0
+            || SPI.HasCustomPlayerInfo() ) )
+    {
         if ( BackupPlayerInfo == none ) {
             SPI.NextPlayerInfo = none;
             BackupPlayerInfo = SPI;
@@ -1309,9 +1314,11 @@ final function ScrnPlayerInfo CreatePlayerInfo(PlayerController PlayerOwner, opt
     // initial data
     SPI.PlayerOwner = PlayerOwner;
     SPI.GameRules = self;
+    SPI.PlayerName = Mut.StripColorTags(PlayerOwner.PlayerReplicationInfo.PlayerName);
     SPI.SteamID32 = SteamID32;
     SPI.StartWave = Mut.KF.WaveNum;
     SPI.BackupStats(SPI.GameStartStats);
+    SPI.ProgressAchievement('Welcome', 1);
     return SPI;
 }
 

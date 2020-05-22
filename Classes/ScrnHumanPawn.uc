@@ -2222,7 +2222,7 @@ function  float AssessThreatTo(KFMonsterController  Monster, optional bool Check
 
 
     DistanceSquared = VSizeSquared(Monster.Pawn.Location - Location);
-    bSeeMe = DistanceSquared < 1562500 && Monster.LineOfSightTo(self); // check line of sight only withing 25 meters
+    bSeeMe = DistanceSquared < 1562500 && Monster.CanSee(self); // check line of sight only withing 25 meters
     // v7.52: if monster is on different floor (5+ meters), then give additional 20 meters of distance
     if ( abs(Monster.Pawn.Location.Z - Location.Z) > 250 && !bSeeMe )
         DistanceSquared += 1000000;

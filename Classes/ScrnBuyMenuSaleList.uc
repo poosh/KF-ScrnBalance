@@ -33,11 +33,20 @@ function Timer()
 event Opened(GUIComponent Sender)
 {
     local ScrnHUD myHUD;
+    local ScrnClientPerkRepLink CPRL;
+    local KFPlayerReplicationInfo KFPRI;
+    local class<ScrnVeterancyTypes> Perk;
+    local int i, MatchedCategory;
 
     super.Opened(Sender);
 
-    // load config variables
     myHUD = ScrnHUD(PlayerOwner().myHUD);
+    CPRL = Class'ScrnClientPerkRepLink'.Static.FindMe(PlayerOwner());
+    KFPRI = KFPlayerReplicationInfo(PlayerOwner().PlayerReplicationInfo);
+    if ( KFPRI != none )
+        Perk = class<ScrnVeterancyTypes>(KFPRI.ClientVeteranSkill);
+
+    // load config variables
     if ( myHUD != none ) {
         GroupColor = myHUD.TraderGroupColor;
         ActiveGroupColor = myHUD.TraderActiveGroupColor;
@@ -45,6 +54,25 @@ event Opened(GUIComponent Sender)
         PriceButtonColor = myHUD.TraderPriceButtonColor;
         PriceButtonDisabledColor = myHUD.TraderPriceButtonDisabledColor;
         PriceButtonSelectedColor = myHUD.TraderPriceButtonSelectedColor;
+    }
+
+    MatchedCategory = -2;
+    if( CPRL != none && Perk != none ) {
+        // select perked category by default
+        for ( i = 0; i < CPRL.ShopCategories.length; ++i ) {
+            if (CPRL.ShopCategories[i].PerkIndex == Perk.default.PerkIndex ) {
+                MatchedCategory = i;
+                break;
+            }
+            else if (CPRL.ShopCategories[i].PerkIndex == Perk.default.RelatedPerkIndex ) {
+                MatchedCategory = i;
+                // keep looking - maybe we'll find the category that matches PerrkIndex
+            }
+        }
+    }
+    if ( MatchedCategory >= -1 ) {
+        ActiveCategory = -2;  // force update
+        SetCategoryNum(MatchedCategory, true);
     }
 }
 

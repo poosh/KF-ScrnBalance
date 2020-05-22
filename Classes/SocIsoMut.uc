@@ -20,6 +20,13 @@ function PostBeginPlay()
     ReplInfo.VirusSpreadDist = VirusSpreadDist;
 }
 
+function Destroyed()
+{
+    ReplInfo.Destroy();
+    
+    super.Destroyed();
+}
+
 function ModifyPlayer(Pawn Other)
 {
     local ScrnHumanPawn P;
@@ -32,105 +39,6 @@ function ModifyPlayer(Pawn Other)
         P.CreateInventoryVeterancy(string(class'ToiletPaper'), 0);
     }
 }
-
-function Mutate(string MutateString, PlayerController Sender)
-{
-    local string Value;
-    local ScrnPlayerInfo SPI;
-    local VirusInfo Virus;
-    local float f;
-    local ScrnGameRules GameRules;
-
-    super.Mutate(MutateString, Sender);
-
-    Divide(MutateString, " ", MutateString, Value);
-    if ( caps(MutateString) != "VIRUS" )
-        return;
-
-    GameRules = SocHandler.FindGameRules();
-    if ( GameRules == none )
-        return;
-
-    MutateString = Value;
-    Divide(MutateString, " ", MutateString, Value);
-    MutateString = caps(MutateString);
-
-    SPI = GameRules.GetPlayerInfo(Sender);
-
-    if ( MutateString == "STAT" ) {
-        if (SPI == none) {
-            Sender.ClientMessage("No SPI");
-            return;
-        }
-        Virus = VirusInfo(SPI.CustomInfo(class'VirusInfo'));
-        if (Virus == none) {
-            Sender.ClientMessage("No Virus");
-            return;
-        }
-        if (Virus.bCured) {
-            Sender.ClientMessage("Cured");
-        }
-        else if (Virus.bInfected) {
-            if (Virus.Damage == 0) {
-                Sender.ClientMessage("Asymptomatic");
-            }
-            else {
-                Sender.ClientMessage("Infected with damage " $ Virus.Damage
-                        $ ". Current phase: " $ Virus.GetStateName()
-                        $ ". Next phase in " $ string(Virus.NextStateTime - Level.TimeSeconds));
-            }
-        }
-        else {
-            Sender.ClientMessage("Healthy");
-        }
-    }
-    else if ( left(MutateString, 4) == "SICK" ) {
-        if ( !GameRules.Mut.CheckAdmin(Sender) )
-            return;
-
-        f = float(Value);
-        if ( f == 0.0 )
-            f = frand();
-        SPI = GameRules.CreatePlayerInfo(Sender);
-        Virus = VirusInfo(SPI.CustomInfo(class'VirusInfo', true));
-        Virus.Mut = self;
-        Virus.Infect(f);
-        if ( MutateString == "SICK1" ) {
-            Virus.GotoState('SickPhase1');
-        }
-        else if ( MutateString == "SICK2" ) {
-            Virus.GotoState('SickPhase2');
-        }
-        else if ( MutateString == "SICK3" ) {
-            Virus.GotoState('SickPhase3');
-        }
-        else if ( MutateString == "SICK4" ) {
-            Virus.GotoState('SickPhase4');
-        }
-        else if ( MutateString == "SICK5" ) {
-            Virus.GotoState('SickPhase5');
-        }
-        Mutate("VIRUS STAT", Sender);
-    }
-    else if ( MutateString == "REVEAL" ) {
-        if ( !GameRules.Mut.CheckAdmin(Sender) )
-            return;
-
-        bRevealSymptoms = true;
-        Sender.ClientMessage("Symptoms revealed");
-    }
-    else if ( MutateString == "HEALTHY" ) {
-        if ( !GameRules.Mut.CheckAdmin(Sender) )
-            return;
-
-        SPI = GameRules.CreatePlayerInfo(Sender);
-        Virus = VirusInfo(SPI.CustomInfo(class'VirusInfo', true));
-        Virus.Mut = self;
-        Virus.GotoState('Healthy');
-        Mutate("VIRUS STAT", Sender);
-    }
-}
-
 
 defaultproperties
 {

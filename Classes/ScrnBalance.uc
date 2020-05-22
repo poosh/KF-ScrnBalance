@@ -12,7 +12,7 @@ class ScrnBalance extends Mutator
 #exec OBJ LOAD FILE=ScrnAch_T.utx
 
 
-const VERSION = 96201;
+const VERSION = 96205;
 
 var ScrnBalance Mut; // pointer to self to use in static functions, i.e class'ScrnBalance'.default.Mut
 
@@ -278,9 +278,8 @@ struct SDLCLock {
     // non-config stuff
     var transient class<Pickup> PickupClass;
 };
-var globalconfig array<SDLCLock> DLCLocks; // replicated via ScrnClientPerkRepLink
 var globalconfig bool bUseDLCLocks,bUseDLCLevelLocks;
-var protected transient int LockCount;
+var ScrnLock LockManager;
 var globalconfig bool bBuyPerkedWeaponsOnly, bPickPerkedWeaponsOnly;
 
 struct SNameValuePair {
@@ -2391,17 +2390,17 @@ function SetupRepLink(ClientPerkRepLink R)
 
     class'ScrnAchCtrl'.static.InitLink(ScrnRep);
 
-    if ( bUseDLCLocks && !bTSCGame && (ScrnGT == none || !ScrnGT.IsTourney()) ) {
-        ScrnRep.Locks.Length = LockCount;
-        for( i=0; i<DLCLocks.Length; ++i) {
-            if ( DLCLocks[i].PickupClass != none
-                    && (bUseDLCLevelLocks || DLCLocks[i].Type != LOCK_Level) )
+    if ( LockManager != none && LockManager.GetDLCDLCLockCount() > 0 ) {
+        ScrnRep.Locks.Length = LockManager.GetDLCDLCLockCount();
+        for( i = 0; i < LockManager.DLCLocks.Length; ++i) {
+            if ( LockManager.DLCLocks[i].PickupClass != none
+                    && (bUseDLCLevelLocks || LockManager.DLCLocks[i].Type != LOCK_Level) )
             {
-                ScrnRep.Locks[j].PickupClass = DLCLocks[i].PickupClass;
-                ScrnRep.Locks[j].Group       = DLCLocks[i].Group;
-                ScrnRep.Locks[j].Type        = DLCLocks[i].Type;
-                ScrnRep.Locks[j].ID          = DLCLocks[i].ID;
-                ScrnRep.Locks[j].MaxProgress = DLCLocks[i].Value;
+                ScrnRep.Locks[j].PickupClass = LockManager.DLCLocks[i].PickupClass;
+                ScrnRep.Locks[j].Group       = LockManager.DLCLocks[i].Group;
+                ScrnRep.Locks[j].Type        = LockManager.DLCLocks[i].Type;
+                ScrnRep.Locks[j].ID          = LockManager.DLCLocks[i].ID;
+                ScrnRep.Locks[j].MaxProgress = LockManager.DLCLocks[i].Value;
                 ++j;
             }
         }
@@ -2578,7 +2577,6 @@ function PostBeginPlay()
     local ScrnVotingHandlerMut VH;
     local ScrnAchHandler AchHandler;
     local int i;
-    local KFGameReplicationInfo KFGRI;
 
     KF = KFGameType(Level.Game);
     if (KF == none) {
@@ -2586,7 +2584,6 @@ function PostBeginPlay()
         Destroy();
         return;
     }
-    KFGRI = KFGameReplicationInfo(Level.Game.GameReplicationInfo);
 
     if ( bLogObjectsAtMapStart )
         LogObjects();
@@ -2664,8 +2661,6 @@ function PostBeginPlay()
             KF.GameDifficulty = Persistence.Difficulty;
             log("Game difficulty: " $ string(KF.GameDifficulty), 'ScrnBalance');
         }
-        KFGRI.GameDiff = KF.GameDifficulty;
-        KFGRI.BaseDifficulty = KF.GameDifficulty;
     }
 
     SetLevels();
@@ -2722,13 +2717,12 @@ function PostBeginPlay()
     }
 
     LoadCustomWeapons();
-    // proceed DLCLocks
-    LockCount = 0;
-    for ( i=0; i<DLCLocks.length; ++i ) {
-        if ( DLCLocks[i].Item != "" )
-            DLCLocks[i].PickupClass = class<Pickup>(DynamicLoadObject(DLCLocks[i].Item, Class'Class'));
-        if ( DLCLocks[i].PickupClass != none && (bUseDLCLevelLocks || DLCLocks[i].Type != LOCK_Level) )
-            ++LockCount;
+    if ( bUseDLCLocks && !bTSCGame && ScrnGT != none && !ScrnGT.IsTourney() ) {
+        LockManager = spawn(class'ScrnLock');
+        LockManager.LoadDLCLocks(bUseDLCLevelLocks);
+    }
+    else {
+        log("DLC Locks disabled", 'ScrnBalance');
     }
     InitSettings();
     LoadSpawnInventory();
@@ -3069,6 +3063,10 @@ function ServerTraveling(string URL, bool bItems)
         SrvInfo.Destroy();
         SrvInfo = none;
     }
+    if ( LockManager != none ) {
+        LockManager.Destroy();
+        LockManager = none;
+    }
 }
 
 simulated function Destroyed()
@@ -3226,6 +3224,7 @@ defaultproperties
     strSrvWarning2="If you are getting version mismatch erros, delete KillingFloorSystemScrnBalanceSrv.u file."
     strBetaOnly="Only avaliable during Beta testing (bBeta=True)"
 
+    bSpawn0=true
     bAltBurnMech=True
     bReplacePickups=True
     bReplacePickupsStory=True

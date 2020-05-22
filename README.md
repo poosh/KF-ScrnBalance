@@ -19,6 +19,34 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+### v9.62.05
+#### Social Isolation
+- Minimum player count for *Covidiot Party* achievement lowered to 3 (down from 4)
+- Fixed an issue where Covidiot achievements were not given if the last infected player was asymptomatic.
+
+#### UI/UX
+- *Cool HUD* is disabled by default. New players start with the classic HUD. Cool HUD is still available for selection
+  in *ScrN Features* or via console command: `ToggleHudStyle`
+- Perked weapon category gets automatically selected and opened on entering shop menu
+
+#### Balance
+- Fixed an issue at zed's enemy selection where the zed could see a player behind.
+- `bSpawn0` enabled by default (spawn weapons cost nothing, drop all purchased guns on death)
+
+#### Config
+- `bUseDLCLocks` disabled by default (all weapons available)
+- `DLCLocks` moved to a separate config file: **ScrnLock.ini**
+- All default configs converted from UTF-16 to ANSI. Any unicode characters removed.
+  Keep in mind that **KF1 engine does NOT support UTF-8**.
+  If you put any unicode character in the config, save it in *UTF-16 LE* encoding. 
+  Saving config in UTF-8 makes it unreadable by the engine.
+
+#### Code Changes
+- Removed broken achievement lookup cache
+- Added `ScrnVeterancyTypes.RelatedPerkIndex` to identify related perks (e.g., Field and Combat medics)
+- Fixed an incorrect player count value at `ScrnPlayerInfo.WaveStarted()`
+- Fixed a warning on accessing null `KFGRI` in `ScrnBalance.PostBeginPlay()`
+
 
 ### v9.62.01
 #### Social Isolation Mod
@@ -87,7 +115,7 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 - RPK47 weight raised to 9 (up from 8)
 - Added bullet penetration for RPK47, PKM, and M249
 
-
+-------------------------------------------------------------------------------
 
 ### v9.61.05
 - Changed requirement for getting Suicidal Map achievements. Now those can be obtained by surviving TurboGame,
