@@ -197,7 +197,7 @@ defaultproperties
     progressArray1(5)=3500000
     progressArray1(6)=5500000
 
-    SkillInfo="PERK SKILLS:|25% larger Assaut Rifle clip|100% faster reload with Tommy Guns|35% faster reload with all weapons|40% less recoil with all weapons|See cloaked enemies and health"
+    SkillInfo="PERK SKILLS:|25% larger Assaut Rifle clip|35% faster reload with all weapons|40% less recoil with all weapons|See cloaked enemies and health"
     CustomLevelInfo="PERK BONUSES (LEVEL %L):|%x more damage with Assaut Rifles|Up to %z Zed-Time Extensions|%$ discount on Assaut Rifles"
 
     NumRequirements=2
