@@ -1487,6 +1487,33 @@ function ServerLockWeapons(bool bLock)
     bWeaponsLocked = Mut.bAllowWeaponLock && bLock;
 }
 
+//handles changing weapon's inventorygroup
+exec function MoveWepToSlot(int Slot)
+{
+    local KFWeapon weap;
+    local String s; //for console printout
+
+    if (Pawn == none || Pawn.Weapon == none)
+        return;
+
+    weap = KFWeapon(Pawn.Weapon);
+    
+
+    if (weap== none )
+        return;
+    
+    if (Slot < 1 || Slot > 5)
+    {
+        ConsoleMessage("Only values 1 to 5 accepted", 0, 255, 1, 1);  
+        return;
+    }    
+    
+    weap.InventoryGroup = Slot;
+
+    s @= weap.ItemName;
+    s @= "moved to inventory slot "$string(Slot);
+    ConsoleMessage(s, 0, 255, 1, 1);  
+}
 
 exec function Ready()
 {
