@@ -1,3 +1,6 @@
+# Solo mode (may crash on other maps)
+KF-ScrnTestGrounds.rom?Game=ScrnBalanceSrv.ScrnGameType?Difficulty=7?GameLength=8
+
 # Test
 KF-ScrnTestGrounds.rom?Listen?Game=ScrnBalanceSrv.ScrnGameType?Difficulty=7?GameLength=8?VACSecured=true?MaxPlayers=6
 KF-NightAngkor-SE?Listen?Game=ScrnBalanceSrv.ScrnGameType?Difficulty=5?GameLength=8?VACSecured=true?MaxPlayers=6

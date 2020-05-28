@@ -75,6 +75,8 @@ var config array<MapAlias> MapAliases;
 
 var array< class<KFMonster> > CheckedMonsterClasses;
 
+var ScrnGameRulesMod Mods;
+
 var array<ScrnAchHandlerBase> AchHandlers;
 var transient ScrnPlayerInfo PlayerInfo;
 var private transient ScrnPlayerInfo BackupPlayerInfo;
@@ -152,13 +154,19 @@ event Destroyed()
     log("ScrnGameRules destroyed", 'ScrnBalance');
 }
 
-
 function AddGameRules(GameRules GR)
 {
     if ( GR!=Self ) //prevent adding same rules more than once
         Super.AddGameRules(GR);
 }
 
+function AddMod(ScrnGameRulesMod Mod)
+{
+    if ( Mods == None )
+        Mods = Mod;
+    else
+        Mods.AddMod(Mod);
+}
 
 // more players = faster zed spawn
 function AdjustZedSpawnRate()
@@ -231,11 +239,11 @@ function WaveStarted()
     }
 
     if ( Mut.bStoryMode )
-        log("Wave "$(Mut.KF.WaveNum+1)$" started at " $ Level.TimeSeconds, 'ScrnBalance');
+        log("Wave "$(Mut.KF.WaveNum+1)$" started at " $ Mut.GameTimeStr(), 'ScrnBalance');
     else if (bFinalWave)
-        log("Final wave started at " $ Level.TimeSeconds, 'ScrnBalance');
+        log("Final wave started at " $ Mut.GameTimeStr(), 'ScrnBalance');
     else
-        log("Wave "$(Mut.KF.WaveNum+1)$"/"$(Mut.KF.FinalWave)$" started at " $ Level.TimeSeconds, 'ScrnBalance');
+        log("Wave "$(Mut.KF.WaveNum+1)$"/"$(Mut.KF.FinalWave)$" started at " $ Mut.GameTimeStr(), 'ScrnBalance');
 
     DestroyBuzzsawBlade(); // prevent cheating
 }
@@ -360,7 +368,7 @@ function bool CheckEndGame(PlayerReplicationInfo Winner, string Reason)
     }
 
     if ( bWin ) {
-        mut.BroadcastMessage("Game WON in " $ Mut.FormatTime(Level.Game.GameReplicationInfo.ElapsedTime)
+        mut.BroadcastMessage("Game WON in " $ Mut.GameTimeStr()
             $". HL="$HardcoreLevel, true);
         // Map achievements
         MapName = Mut.KF.GetCurrentMapName(Level);
@@ -391,7 +399,7 @@ function bool CheckEndGame(PlayerReplicationInfo Winner, string Reason)
             mut.BroadcastMessage(Boss.MenuName $ "'s HP = " $ Boss.Health $" / " $ int(Boss.HealthMax)
                 $ " ("$100.0*Boss.Health/Boss.HealthMax$"%)");
 
-        mut.BroadcastMessage("Game LOST in " $ Mut.FormatTime(Level.Game.GameReplicationInfo.ElapsedTime)
+        mut.BroadcastMessage("Game LOST in " $ Mut.GameTimeStr()
             $ " @ wave "$(Mut.KF.WaveNum+1)
             $", HL="$HardcoreLevel, true);
     }
@@ -596,7 +604,6 @@ static function ResetGameSquads(KFGameType Game, byte EventNum)
         // TrimCollectionToDefault(Game.default.MonsterCollection, DefaultCollection);
 }
 
-
 function int NetDamage( int OriginalDamage, int Damage, pawn injured, pawn instigatedBy,
     vector HitLocation, out vector Momentum, class<DamageType> DamageType )
 {
@@ -620,23 +627,25 @@ function int NetDamage( int OriginalDamage, int Damage, pawn injured, pawn insti
 
     KFDamType = class<KFWeaponDamageType>(damageType);
     ZedVictim = KFMonster(injured);
-    bP2M = ZedVictim != none && KFDamType != none && instigatedBy != none && PlayerController(instigatedBy.Controller) != none;
     if ( instigatedBy != none )
         ScrnPC = ScrnPlayerController(instigatedBy.Controller);
+    bP2M = ZedVictim != none && KFDamType != none && instigatedBy != none && ScrnPC != none;
     bDamageAck = bShowDamages && ScrnPC != none && ScrnPC.bDamageAck;
 
-    // prevent zed from rotating while stunned
-    // Special case fo Husks -  201+ sniper damage stuns them
-    if ( ZedVictim != none && ZedVictim.Controller != none
-            && (Damage*1.5 >= ZedVictim.default.Health
-                || (Damage > 200 && KFDamType != none && KFDamType.default.bSniperWeapon && ZedVictim.IsA('ZombieHusk') && !ZedVictim.IsA('TeslaHusk'))) )
-    {
-        ZedVictim.Controller.Focus = none;
-        ZedVictim.Controller.FocalPoint = ZedVictim.Location + 512 * vector(ZedVictim.Rotation);
+    if ( ZedVictim != none ) {
+        idx = GetMonsterIndex(ZedVictim);
+        // prevent zed from rotating while stunned
+        // Special case fo Husks -  201+ sniper damage stuns them
+        if (ZedVictim.Controller != none && (Damage*1.5 >= ZedVictim.default.Health
+                || (Damage > 200 && KFDamType != none && KFDamType.default.bSniperWeapon
+                    && ZedVictim.IsA('ZombieHusk') && !ZedVictim.IsA('TeslaHusk'))) )
+        {
+            ZedVictim.Controller.Focus = none;
+            ZedVictim.Controller.FocalPoint = ZedVictim.Location + 512 * vector(ZedVictim.Rotation);
+        }
     }
 
     if ( bP2M ) {
-        idx = GetMonsterIndex(ZedVictim);
         MonsterInfos[idx].HitCount++;
         if ( MonsterInfos[idx].FirstHitTime == 0 )
             MonsterInfos[idx].FirstHitTime = Level.TimeSeconds;
@@ -644,14 +653,13 @@ function int NetDamage( int OriginalDamage, int Damage, pawn injured, pawn insti
         MonsterInfos[idx].bHeadshot = !MonsterInfos[idx].bWasDecapitated && KFDamType.default.bCheckForHeadShots
             && (ZedVictim.bDecapitated || int(ZedVictim.HeadHealth) < MonsterInfos[idx].HeadHealth);
 
-
         if ( MonsterInfos[idx].bHeadshot ) {
             MonsterInfos[idx].RowHeadshots++;
             MonsterInfos[idx].Headshots++;
 
             if ( KFDamType.default.bSniperWeapon && Damage > Mut.SharpProgMinDmg && !ZedVictim.bDecapitated
-                    && SRStatsBase(PlayerController(instigatedBy.Controller).SteamStatsAndAchievements) != none )
-                SRStatsBase(PlayerController(instigatedBy.Controller).SteamStatsAndAchievements).AddHeadshotKill(false);
+                    && SRStatsBase(ScrnPC.SteamStatsAndAchievements) != none )
+                SRStatsBase(ScrnPC.SteamStatsAndAchievements).AddHeadshotKill(false);
         }
         else if ( !ZedVictim.bDecapitated ) {
             MonsterInfos[idx].RowHeadshots = 0;
@@ -659,6 +667,13 @@ function int NetDamage( int OriginalDamage, int Damage, pawn injured, pawn insti
                 MonsterInfos[idx].Bodyshots++;
             else
                 MonsterInfos[idx].OtherHits++;
+        }
+
+        if ( Mods != none ) {
+            Damage = Mods.ModifyMonsterDamage(MonsterInfos[idx], ScrnPC, OriginalDamage, Damage,
+                    HitLocation, Momentum, KFDamType);
+            if ( Damage == 0 )
+                return Damage;
         }
 
         if ( (MonsterInfos[idx].bHeadshot || ZedVictim.bDecapitated)
@@ -697,20 +712,20 @@ function int NetDamage( int OriginalDamage, int Damage, pawn injured, pawn insti
             SPI.MadeDamage(Damage, ZedVictim, KFDamType, MonsterInfos[idx].bHeadshot, MonsterInfos[idx].bWasDecapitated);
     }
     else if ( KFHumanPawn(injured) != none ) {
-        // game bug: Siren doesn't set herself as instigator when dealing screaming damage - sneaky bicth
-        if ( DamageType == class'KFMod.SirenScreamDamage' ) {
-            SPI = GetPlayerInfo(PlayerController(injured.Controller));
-            if ( SPI != none )
-                SPI.TookDamage(Damage, none, DamageType);
-        }
-        else if ( KFMonster(instigatedBy) != none ) {
+        if ( KFMonster(instigatedBy) != none ) {
             // M2P damage
             idx = GetMonsterIndex(KFMonster(instigatedBy));
             MonsterInfos[idx].DamageCounter += Damage;
             // SPI.TookDamage() calls AchHandlers.PlayerDamaged()
             SPI = GetPlayerInfo(PlayerController(injured.Controller));
             if ( SPI != none )
-                SPI.TookDamage(Damage, KFMonster(instigatedBy), DamageType);
+                SPI.TookDamage(Damage, MonsterInfos[idx].Monster, DamageType);
+        }
+        else if ( DamageType == class'KFMod.SirenScreamDamage' ) {
+            // game bug: Siren doesn't set herself as the instigator when dealing screaming damage. Such a sneaky bicth!
+            SPI = GetPlayerInfo(PlayerController(injured.Controller));
+            if ( SPI != none )
+                SPI.TookDamage(Damage, none, DamageType);
         }
         else if ( ScrnPC != none ) {
             // P2P damage
@@ -726,8 +741,10 @@ function int NetDamage( int OriginalDamage, int Damage, pawn injured, pawn insti
         AchHandlers[i].NetDamage(Damage, injured, instigatedBy, HitLocation, Momentum, DamageType);
     }
 
-    if ( bP2M ) {
-        MonsterInfos[idx].LastHitTime = Level.TimeSeconds;
+    if ( ZedVictim != none ) {
+        if ( bP2M ) {
+            MonsterInfos[idx].LastHitTime = Level.TimeSeconds;
+        }
         MonsterInfos[idx].HeadHealth = ZedVictim.HeadHealth;
         MonsterInfos[idx].bWasDecapitated = ZedVictim.bDecapitated;
         MonsterInfos[idx].bWasBackstabbed = ZedVictim.bBackstabbed;
@@ -735,7 +752,6 @@ function int NetDamage( int OriginalDamage, int Damage, pawn injured, pawn insti
 
     return Damage;
 }
-
 
 function ScoreKill(Controller Killer, Controller Killed)
 {
@@ -754,7 +770,6 @@ function ScoreKill(Controller Killer, Controller Killed)
             Mut.KF.DramaticEvent(1.0); // always zed time on player death
     }
 }
-
 
 function bool PreventDeath(Pawn Killed, Controller Killer, class<DamageType> damageType, vector HitLocation)
 {
@@ -811,7 +826,6 @@ function bool PreventDeath(Pawn Killed, Controller Killer, class<DamageType> dam
     return false;
 }
 
-
 // reward assistants with TeamWork achievements
 function RewardTeamwork(ScrnPlayerInfo KillerInfo, int MonsterIndex, name AchievementName)
 {
@@ -841,7 +855,6 @@ function RewardTeamwork(ScrnPlayerInfo KillerInfo, int MonsterIndex, name Achiev
         MonsterInfos[MonsterIndex].KillAss2.ProgressAchievement(AchievementName, 1);
     }
 }
-
 
 function ClearMonsterInfo(int index)
 {
@@ -1442,42 +1455,6 @@ function bool HasInventoryClass( Pawn P, class<Inventory> IC )
             return true;
     return false;
 }
-
-/*
-// from time to time monster becomes frustrated with enemy and finds a new one
-function MonsterFrustration()
-{
-    local int i;
-    local KFMonsterController MC;
-    local ScrnHumanPawn ScrnPawn;
-
-    for ( i=0; i<MonsterInfos.length; ++i ) {
-        if ( MonsterInfos[i].Monster == none
-                || MonsterInfos[i].Monster.Health <= 0 || MonsterInfos[i].Monster.bDecapitated
-                || MonsterInfos[i].DamageCounter > 0
-                || Level.TimeSeconds - MonsterInfos[i].SpawnTime < 30.0
-                || Level.TimeSeconds - MonsterInfos[i].LastHitTime < 15.0 )
-            continue;
-
-        MC = KFMonsterController(MonsterInfos[i].Monster.Controller);
-        if ( MC == none )
-            continue;
-
-        ScrnPawn = ScrnHumanPawn(MC.Enemy);
-        if ( ScrnPawn == none )
-            continue;
-
-        if ( ScrnPawn.GroundSpeed > fmax(220, MonsterInfos[i].Monster.GroundSpeed) ) {
-            // make ScrnPawn.AssessThreatTo() return 0.1 (it will be called by FindNewEnemy())
-            ScrnPawn.LastThreatMonster = MC;
-            ScrnPawn.LastThreatTime = Level.TimeSeconds;
-            ScrnPawn.LastThreat = 0.1;
-            MC.FindNewEnemy();
-            // todo - the next FindNewEnemy() will probably reset this enemy again
-        }
-    }
-}
-*/
 
 
 defaultproperties

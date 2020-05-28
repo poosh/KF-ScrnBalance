@@ -20,10 +20,12 @@ function bool AddAmmo(int AmmoToAdd)
     }
     return true;
 }
+
+
 defaultproperties
 {
     AmmoPickupAmount=0
-    MaxAmmo=1000
+    MaxAmmo=200
     InitialAmount=1
     PickupClass=Class'ScrnBalanceSrv.ToiletPaperAmmoPickup'
     IconMaterial=Texture'KillingFloorHUD.Generic.HUD'

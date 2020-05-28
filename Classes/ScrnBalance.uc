@@ -12,7 +12,7 @@ class ScrnBalance extends Mutator
 #exec OBJ LOAD FILE=ScrnAch_T.utx
 
 
-const VERSION = 96207;
+const VERSION = 96300;
 
 var ScrnBalance Mut; // pointer to self to use in static functions, i.e class'ScrnBalance'.default.Mut
 
@@ -160,6 +160,7 @@ var globalconfig float SkippedTradeTimeMult; //how much of the skipped trader ti
 var transient int TradeTimeAddSeconds; //amount of seconds to add to the next trader time
 var globalconfig bool bAllowBlameVote, bAllowKickVote;
 var globalconfig int BlameVoteCoolDown;
+var transient int BlameCounter;
 var globalconfig bool bAllowPauseVote, bAllowLockPerkVote, bAllowBoringVote;
 var globalconfig byte MaxVoteKillMonsters;
 var globalconfig int  MaxVoteKillHP;
@@ -1698,6 +1699,10 @@ function SendAccuracy(PlayerController Sender)
 
 }
 
+function String GameTimeStr()
+{
+    return FormatTime(Level.Game.GameReplicationInfo.ElapsedTime);
+}
 
 static final function String FormatTime( int Seconds )
 {
@@ -2614,7 +2619,8 @@ function PostBeginPlay()
         CurrentEventNum = int(KF.GetSpecialEventType()); // autodetect event
 
     AddToPackageMap("ScrnAnims.ukx");
-    AddToPackageMap("ScrnSnd.uax"); // Promoted!!!!!!!!!! :)
+    AddToPackageMap("ScrnSM.usx");
+    AddToPackageMap("ScrnSnd.uax");
 
     if ( !bStoryMode ) {
         SetMaxZombiesOnce();
@@ -3113,18 +3119,36 @@ function DestroyExtraPipebombs()
 function BlamePlayer(ScrnPlayerController PC, string Reason, optional int BlameInc)
 {
     local ScrnCustomPRI ScrnPRI;
+    local ScrnHumanPawn ScrnPawn;
 
     if ( PC == none )
         return;
     ScrnPRI = class'ScrnCustomPRI'.static.FindMe(PC.PlayerReplicationInfo);
     if ( ScrnPRI == none )
         return;
+    ScrnPawn = ScrnHumanPawn(PC.Pawn);
+    BlameCounter++;
+
     if ( BlameInc == 0 )
         BlameInc = 1;
     ScrnPRI.BlameCounter += BlameInc;
+    if ( ScrnPRI.BlameCounter == 5 )
+        class'ScrnAchCtrl'.static.Ach2Player(PC, 'MaxBlame');
+
     PC.ReceiveLocalizedMessage(class'ScrnBlamedMsg', ScrnPRI.BlameCounter);
-    ReplaceText(Reason, "%p", PC.GetHumanReadableName());
-    BroadcastMessage(ColorString(Reason, 200, 200, 1), false);
+
+    if ( Reason != "" ) {
+        ReplaceText(Reason, "%p", Mut.ColoredPlayerName(PC.PlayerReplicationInfo));
+        BroadcastMessage(ColorString(Reason, 200, 200, 1), false);
+    }
+
+    if ( ScrnPawn != none && ScrnGT != none && !ScrnGT.IsTourney() && !bTSCGame
+            && Level.TimeSeconds - PC.LastBlamedTime > 60.0 ) {
+        ScrnPawn.Fart(ScrnPRI.BlameCounter);
+        ScrnPawn.Crap(10 * ScrnPRI.BlameCounter);
+        ScrnPawn.ForceThreatLevel(0.01 + frand(), 15.0);
+    }
+    PC.LastBlamedTime = Level.TimeSeconds;
 }
 
 final static function bool GetHighlyDecorated(int SteamID32,

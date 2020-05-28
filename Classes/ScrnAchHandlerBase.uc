@@ -1,7 +1,5 @@
-class ScrnAchHandlerBase extends Info
+class ScrnAchHandlerBase extends ScrnGameRulesExt
     abstract;
-
-var protected ScrnGameRules GameRules;
 
 const IGNORE_STAT = 0x7FFFFFFF;
 
@@ -13,37 +11,10 @@ const DF_STUPID    = 0x04; // damage shouldn't be done to this zed
 const DF_DECAP     = 0x08; // decapitaion shot
 const DF_HEADSHOT  = 0x10; // 100% sure that this damage was made by headshot
 
-function PostBeginPlay()
+
+function ApplyGameRules()
 {
-    FindGameRules();
-}
-
-function FindGameRules()
-{
-    local GameRules G;
-
-    if ( GameRules != none )
-        return;
-
-    for ( G=Level.Game.GameRulesModifiers; G!=None; G=G.NextGameRules ) {
-        if ( ScrnGameRules(G) != none ) {
-            GameRules = ScrnGameRules(G);
-            GameRules.RegisterAchHandler(self);
-            return;
-        }
-    }
-    log(GetItemName(String(self)) $ ": unable to find ScrnGameRules. Trying again in 5 seconds.", 'ScrnBalance');
-    SetTimer(5.0, false);
-}
-
-function ScrnGameRules GetGameRules()
-{
-    return GameRules;
-}
-
-function Timer()
-{
-    FindGameRules();
+    GameRules.RegisterAchHandler(self);
 }
 
 // -----------------------------------------------------------------------------------
@@ -79,7 +50,7 @@ static function bool IsRotatedAtLocation(Pawn Pawn, vector TargetLocation, optio
 }
 
 // returns number of not triggered pipeboms, which detonation range covers Pawn's location
-// and are in lone of sight of a given pawn
+// and are in line of sight of the given pawn
 static function int InPipeBombRange(Pawn Pawn, float PipeDetonationRange)
 {
     local PipeBombProjectile pipe;

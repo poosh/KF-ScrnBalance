@@ -17,7 +17,7 @@ var transient int InfectionCounter, InfectionCounterRapid;
 var transient int SpreadCounter;
 var transient bool bCovidiotSocial;
 var VirusInfo InfectedBy;
-var transient float InfectTime;
+var transient int InfectGameTime;
 
 
 function Infect(float r) { }
@@ -88,7 +88,7 @@ state Infected
     {
         if ( !bInfected ) {
             bInfected = true;
-            InfectTime = Level.TimeSeconds;
+            InfectGameTime = Level.Game.GameReplicationInfo.ElapsedTime;
         }
     }
 
@@ -165,7 +165,8 @@ state Sick extends Infected
     function Timer()
     {
         local float NextDamageTime;
-        local Pawn P;
+        local ScrnHumanPawn P;
+        local ToiletPaperAmmo TPAmmo;
         local int d;
 
         if ( Level.TimeSeconds > NextStateTime ) {
@@ -174,16 +175,25 @@ state Sick extends Infected
         }
 
         if ( SPI.PlayerOwner != none )
-            P = SPI.PlayerOwner.Pawn;
+            P = ScrnHumanPawn(SPI.PlayerOwner.Pawn);
 
         if ( DamageCounter > 0 ) {
             if ( P != none ) {
+                d = DamageMod * Damage * (0.5+frand()) + 0.5;
                 if ( DamageCounter == default.DamageCounter ) {
                     HealthSample(P.Health);
+
+                    TPAmmo = ToiletPaperAmmo(P.FindInventoryType(class'ToiletPaperAmmo'));
+                    if ( TPAmmo != none && TPAmmo.AmmoAmount >= 3 ) {
+                        // use 3 rolls of TP: consume 1 + two "recyclable"
+                        // this gives ~30% damage resistance from coughing
+                        TPAmmo.AmmoAmount--;
+                        P.Crap(2);
+                        d = 1;
+                    }
                 }
-                d = DamageMod * Damage * (0.5+frand()) + 0.5;
-                // player has 50% resistance from self damage, hence we need to pass the double value to the the
-                // desired result.
+                // player has 50% resistance from self damage,
+                // hence we need to pass the double value to get the // desired result.
                 P.TakeDamage(2*d, P, vect(0,0,0), vect(0,0,0), class'VirusDamage');
                 Mut.SocHandler.PlayerCoughed(self, d);
                 NextDamageTime = DamageDelay;

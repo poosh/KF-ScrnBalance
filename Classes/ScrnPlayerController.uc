@@ -72,6 +72,9 @@ struct SDualWieldable {
 var array<SDualWieldable> DualWieldables;
 var private transient bool bDualWieldablesLoaded;
 
+var transient float NextCrapTime;
+var transient float LastBlamedTime;
+
 
 // TSC
 var string ProfilePageClassString;
@@ -150,7 +153,8 @@ replication
         ServerAcknowledgeDamages, ServerShowPathTo,
         ServerDebugRepLink, ServerFixQuickMelee,
         ServerTourneyCheck, ServerKillMut, ServerKillRules,
-        ServerSwitchViewMode, ServerSetViewTarget;
+        ServerSwitchViewMode, ServerSetViewTarget,
+        ServerCrap;
 
     reliable if ( bNetOwner && (bNetDirty || bNetInitial) && Role < ROLE_Authority )
         bPrioritizePerkedWeapons, StartCash;
@@ -1488,31 +1492,28 @@ function ServerLockWeapons(bool bLock)
 }
 
 //handles changing weapon's inventorygroup
-exec function MoveWepToSlot(int Slot)
+exec function WeaponSlot(optional byte Slot)
 {
     local KFWeapon weap;
-    local String s; //for console printout
 
-    if (Pawn == none || Pawn.Weapon == none)
+    if ( Pawn == none )
         return;
-
     weap = KFWeapon(Pawn.Weapon);
-    
-
-    if (weap== none )
+    if ( weap == none )
         return;
-    
-    if (Slot < 1 || Slot > 5)
-    {
-        ConsoleMessage("Only values 1 to 5 accepted", 0, 255, 1, 1);  
-        return;
-    }    
-    
-    weap.InventoryGroup = Slot;
 
-    s @= weap.ItemName;
-    s @= "moved to inventory slot "$string(Slot);
-    ConsoleMessage(s, 0, 255, 1, 1);  
+    if ( Slot == 0 ) {
+        ClientMessage(weap.ItemName $ " is in slot " $ weap.InventoryGroup);
+    }
+    else {
+        weap.InventoryGroup = Slot;
+        ClientMessage(weap.ItemName $ " moved to slot " $ weap.InventoryGroup);
+    }
+}
+
+exec function GunSlot(optional byte Slot)
+{
+    WeaponSlot(Slot);
 }
 
 exec function Ready()
@@ -2712,6 +2713,25 @@ function ServerFixQuickMelee()
 {
     if ( Level.NetMode != NM_Client ) {
         FixQuickMelee();
+    }
+}
+
+exec function Crap(optional int Amount)
+{
+    if ( Level.TimeSeconds < NextCrapTime )
+        return;
+
+    NextCrapTime = Level.TimeSeconds + 0.5;
+    ServerCrap(Amount);
+}
+
+function ServerCrap(int Amount)
+{
+    local ScrnHumanPawn ScrnPawn;
+
+    ScrnPawn = ScrnHumanPawn(Pawn);
+    if ( ScrnPawn != none ) {
+        ScrnPawn.Crap(Amount);
     }
 }
 

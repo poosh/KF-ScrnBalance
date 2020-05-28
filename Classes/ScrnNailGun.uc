@@ -12,17 +12,17 @@ replication
 simulated function PostBeginPlay()
 {
     local SRStatsBase Stats;
-    
+
     super.PostBeginPlay();
-    
+
     // cache achievements here, so each projectile won't be supposed to search to them in the list
     if ( Role == ROLE_Authority && Instigator != none && ScrnPlayerController(Instigator.Controller) != none ) {
         Stats = SRStatsBase(ScrnPlayerController(Instigator.Controller).SteamStatsAndAchievements);
         if ( Stats != none ) {
-            ach_Nail100m = class'ScrnBalanceSrv.ScrnAchievements'.static.GetAchievementByID(Stats.Rep, 'NailPush100m', true);
-            ach_NailToWall = class'ScrnBalanceSrv.ScrnAchievements'.static.GetAchievementByID(Stats.Rep, 'Nail250Zeds', true);
-            ach_PushShiver = class'ScrnBalanceSrv.ScrnAchievements'.static.GetAchievementByID(Stats.Rep, 'NailPushShiver', true);
-            ach_ProNailer = class'ScrnBalanceSrv.ScrnAchievements'.static.GetAchievementByID(Stats.Rep, 'ProNailer', true);
+            ach_Nail100m = class'ScrnAchCtrl'.static.GetAchievementByID(Stats.Rep, 'NailPush100m', true);
+            ach_NailToWall = class'ScrnAchCtrl'.static.GetAchievementByID(Stats.Rep, 'Nail250Zeds', true);
+            ach_PushShiver = class'ScrnAchCtrl'.static.GetAchievementByID(Stats.Rep, 'NailPushShiver', true);
+            ach_ProNailer = class'ScrnAchCtrl'.static.GetAchievementByID(Stats.Rep, 'ProNailer', true);
         }
     }
 }
@@ -41,14 +41,14 @@ simulated function AltFire(float F)
 simulated function DoToggle ()
 {
     local PlayerController Player;
-    
+
     Player = Level.GetLocalPlayerController();
     if ( Player != none ) {
         FireMode[0].AmmoPerFire = FireMode[0].default.AmmoPerFire - FireMode[0].AmmoPerFire + 1;
         if ( FireMode[0].AmmoPerFire == 1 )
-            Player.ReceiveLocalizedMessage(class'ScrnBalanceSrv.ScrnFireModeSwitchMessage',4);
+            Player.ReceiveLocalizedMessage(class'ScrnFireModeSwitchMessage',4);
         else
-            Player.ReceiveLocalizedMessage(class'ScrnBalanceSrv.ScrnFireModeSwitchMessage',5);
+            Player.ReceiveLocalizedMessage(class'ScrnFireModeSwitchMessage',5);
 
         ServerChangeFireModeEx(FireMode[0].AmmoPerFire);
     }

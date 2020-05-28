@@ -36,6 +36,16 @@ static final function ClientPerkRepLink PawnLink(Pawn P)
     return PlayerLink(PlayerController(P.Controller));
 }
 
+static final function bool Ach2Player(PlayerController PC, name ID, optional int Inc)
+{
+    return ProgressAchievementByID(PlayerLink(PC), ID, Inc);
+}
+
+static final function bool Ach2Pawn(Pawn P, name ID, optional int Inc)
+{
+    return ProgressAchievementByID(PawnLink(P), ID, Inc);
+}
+
 // use this function to add custom achievements to the list
 static final function RegisterAchievements( class<ScrnAchievements> NewAchClass )
 {
@@ -60,7 +70,7 @@ static final function UnRegisterAchievements( class<ScrnAchievements> AchClass )
     }
 }
 
-static final function bool ProgressAchievementByID(ClientPerkRepLink L, name ID, int Inc)
+static final function bool ProgressAchievementByID(ClientPerkRepLink L, name ID, optional int Inc)
 {
     local ScrnAchievements.AchStrInfo A;
     local int CacheIndex;
@@ -70,6 +80,9 @@ static final function bool ProgressAchievementByID(ClientPerkRepLink L, name ID,
 
     if ( !FindAchievement(L, ID, A, CacheIndex) )
         return false;
+
+    if ( Inc == 0 )
+        Inc = 1;
 
     // default.LastAch.ID = ID;
     // default.LastAch.Ach = A;
@@ -156,7 +169,7 @@ static final function bool FindAchievement(ClientPerkRepLink L, name ID, out Scr
     // }
     for( S = L.CustomLink; S != none; S = S.NextLink ) {
         A = ScrnAchievements(S);
-        if( A != none ) {
+        if( A != none && ScrnMapAchievements(A) == none ) {
             for ( i = 0; i < A.AchDefs.length; ++i ) {
                 if ( A.AchDefs[i].ID == ID ) {
                     result.AchHandler = A;

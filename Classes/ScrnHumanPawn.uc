@@ -34,6 +34,10 @@ var bool bCheckHorzineArmorAch;
 var protected transient KFMonsterController LastThreatMonster;
 var protected transient float LastThreatTime, LastThreat;
 
+// allows forrcing threat level until the given time
+var transient float ForcedThreatLevel;
+var transient float ForcedThreatLevelTime;
+
 var localized string strNoSpawnCashToss;
 
 
@@ -77,6 +81,8 @@ var localized string BlameStrRPG;
 
 // indicates that the player is buying something at the current moment. Server-side only.
 var transient bool bServerShopping;
+var transient float NextBrownCrapTime;
+var Sound FartSound;
 
 replication
 {
@@ -631,20 +637,20 @@ function CheckPerkAchievements()
         return;
 
     if ( KFPRI.ClientVeteranSkillLevel >= 26 )
-        class'ScrnBalanceSrv.ScrnAchievements'.static.ProgressAchievementByID(StatRep, 'PerkOrange', 1);
+        class'ScrnAchCtrl'.static.ProgressAchievementByID(StatRep, 'PerkOrange', 1);
     else if ( KFPRI.ClientVeteranSkillLevel >= 21 )
-        class'ScrnBalanceSrv.ScrnAchievements'.static.ProgressAchievementByID(StatRep, 'PerkPurple', 1);
+        class'ScrnAchCtrl'.static.ProgressAchievementByID(StatRep, 'PerkPurple', 1);
     else if ( KFPRI.ClientVeteranSkillLevel >= 16 )
-        class'ScrnBalanceSrv.ScrnAchievements'.static.ProgressAchievementByID(StatRep, 'PerkBlue', 1);
+        class'ScrnAchCtrl'.static.ProgressAchievementByID(StatRep, 'PerkBlue', 1);
     else if ( KFPRI.ClientVeteranSkillLevel >= 11 )
-        class'ScrnBalanceSrv.ScrnAchievements'.static.ProgressAchievementByID(StatRep, 'PerkGreen', 1);
+        class'ScrnAchCtrl'.static.ProgressAchievementByID(StatRep, 'PerkGreen', 1);
 
     // Mr. Perky
     for ( i = 0; i < StatRep.CachePerks.length; ++i ) {
         if ( StatRep.CachePerks[i].CurrentLevel < 6 )
             return;
     }
-    class'ScrnBalanceSrv.ScrnAchievements'.static.ProgressAchievementByID(StatRep, 'MrPerky', 1);
+    class'ScrnAchCtrl'.static.ProgressAchievementByID(StatRep, 'MrPerky', 1);
 }
 
 simulated function VeterancyChanged()
@@ -884,11 +890,8 @@ function int ShieldAbsorb( int damage )
     }
     damage = dmg;
 
-    if ( bCheckHorzineArmorAch && OldShieldStrength > 100 && damage < Health && OriginalDamage > clamp(Health, 50, 80)
-                && PlayerController(Controller) != none
-                && SRStatsBase(PlayerController(Controller).SteamStatsAndAchievements) != none )
-            bCheckHorzineArmorAch = class'ScrnBalanceSrv.ScrnAchievements'.static.ProgressAchievementByID(
-                SRStatsBase(PlayerController(Controller).SteamStatsAndAchievements).Rep, 'HorzineArmor', 1);
+    if ( bCheckHorzineArmorAch && OldShieldStrength > 100 && damage < Health && OriginalDamage > clamp(Health, 50, 80) )
+        bCheckHorzineArmorAch = class'ScrnAchCtrl'.static.Ach2Pawn(self, 'HorzineArmor', 1);
 
     // just to be sure
     if ( ShieldStrength < 0 )
@@ -1040,7 +1043,7 @@ static function bool CalcAmmoCost(Pawn P, Class<Ammunition> AClass,
     local class<KFVeterancyTypes> Perk;
     local Inventory Inv;
     local int c;
-    local KFWeapon KW;
+    local KFWeapon KW, KW2;
     local class<KFWeaponPickup> KWPickupClass;
     local bool bSecondaryAmmo; // is this a secondary ammo?
 
@@ -1058,12 +1061,27 @@ static function bool CalcAmmoCost(Pawn P, Class<Ammunition> AClass,
         Perk = KFPRI.ClientVeteranSkill;
 
     for ( Inv = P.Inventory; Inv != none && ++c < 1000 && (MyAmmo == none || KW == none); Inv = Inv.Inventory ) {
-        if ( Inv.Class == AClass )
+        if ( Inv.Class == AClass ) {
             MyAmmo = Ammunition(Inv);
-        else if ( KW == None && KFWeapon(Inv) != None && (KFWeapon(Inv).AmmoClass[0] == AClass || KFWeapon(Inv).AmmoClass[1] == AClass) )
+        }
+        else if ( KW == none ) {
             KW = KFWeapon(Inv);
+            if ( KW != none ) {
+                if ( KW.AmmoClass[1] == AClass )
+                    KW2 = KW;  // found alternate ammo
+                if ( KW.AmmoClass[0] != AClass )
+                    KW = none; // not a primary ammo
+            }
+        }
+        else if ( KW2 == none ) {
+            KW2 = KFWeapon(Inv);
+            if ( KW2 != none && KW2.AmmoClass[1] != AClass )
+                KW2 = none;  // not a primary ammo
+        }
     }
 
+    if ( KW == none )
+        KW = KW2;
     if ( KW == none || MyAmmo == none )
         return false;
 
@@ -1669,7 +1687,7 @@ function CookGrenade()
         return;
 
     aFrag = ScrnFrag(FindPlayerGrenade());
-    if ( aFrag == none )
+    if ( aFrag == none || !aFrag.CanCook())
         return;
 
     if ( aFrag.HasAmmo() && !bThrowingNade
@@ -2210,6 +2228,9 @@ function  float AssessThreatTo(KFMonsterController  Monster, optional bool Check
     if ( Level.TimeSeconds - SpawnTime < 10 )
         return 0.01; // very minor chance to attack players who just spawned
 
+    if ( Level.TimeSeconds < ForcedThreatLevelTime )
+        return ForcedThreatLevel;
+
     // Gorefasts love Baron :D
     // https://www.youtube.com/watch?v=vytEYKpFAwk
     if ( bAmIBaron && ZombieGorefast(Monster.Pawn) != none && TSCGameReplicationInfo(Level.GRI) == none ) {
@@ -2273,6 +2294,12 @@ function  float AssessThreatTo(KFMonsterController  Monster, optional bool Check
     if ( KFStoryGameInfo(Level.Game) != none )
         LastThreat *= InventoryThreatModifier();
     return LastThreat;
+}
+
+function ForceThreatLevel(float ThreatLevel, float ThreatTime)
+{
+    ForcedThreatLevel = ThreatLevel;
+    ForcedThreatLevelTime = Level.TimeSeconds + ThreatTime;
 }
 
 // used in story game mode to attract zeds when holding some mission items
@@ -2386,12 +2413,54 @@ static function DropAllWeapons(Pawn P)
                 Weap.DropFrom(P.Location + 0.8 * P.CollisionRadius * X - 0.5 * P.CollisionRadius * Y);
                 NextInv = P.Inventory; // start from beginning again
             }
+            else if ( ToiletPaperAmmo(Inv) != none ) {
+                DropAllTPStatic(ToiletPaperAmmo(Inv));
+            }
         }
         if ( P.Weapon == None && P.Controller != None )
             P.Controller.SwitchToBestWeapon();
     }
 }
 
+static function DropAllTPStatic(ToiletPaperAmmo TPAmmo)
+{
+    local int c, load;
+    local ToiletPaperProj tp;
+
+    load = 10;
+    c = TPAmmo.AmmoAmount / load;
+    if ( c > 10 ) {
+        c = 10;
+        load = TPAmmo.AmmoAmount / c;
+    }
+
+    while ( --c >= 0 ) {
+        tp = TPAmmo.Instigator.spawn(class'ToiletPaperProj', TPAmmo.Instigator,, TPAmmo.Instigator.Location, RotRand());
+        if ( tp != none ) {
+            tp.Damage = 0;  // prevent destroying other TP rolls
+            if ( c == 0 ) {
+                tp.Load = TPAmmo.AmmoAmount;
+            }
+            else {
+                tp.Load = load;
+            }
+            TPAmmo.AmmoAmount -= tp.Load;
+            tp.Speed = 200 + 300*frand();
+            tp.MaxSpeed = 300 + 500*frand();
+            tp.Velocity = tp.Speed * Vector(tp.Rotation);
+            tp.Velocity.Z = 100 + 300*frand();
+        }
+    }
+}
+
+function DropAllTP()
+{
+    local ToiletPaperAmmo TPAmmo;
+
+    TPAmmo = ToiletPaperAmmo(FindInventoryType(class'ToiletPaperAmmo'));
+    if ( TPAmmo != none )
+        DropAllTPStatic(TPAmmo);
+}
 
 function FindGameRules()
 {
@@ -2588,6 +2657,74 @@ event Bump(actor Other)
     }
 }
 
+simulated function GetAss(out Vector AssLocation, out Rotator AssRotation)
+{
+    local Vector x,y,z;
+
+    GetAxes(Rotation, x, y, z);
+    AssRotation = Rotation;
+    AssLocation = GetBoneCoords(RootBone).origin;
+    AssLocation -= 20 * z;
+    if ( Controller != none && Controller.bDuck == 0 ) {
+        AssRotation.Pitch = -24576;
+    }
+    else {
+        AssRotation.Pitch = -32768;
+    }
+}
+
+exec function Fart(optional byte Scale)
+{
+    local ScrnFart MyFart;
+    local Rotator r;
+    local Vector loc;
+
+    GetAss(loc, r);
+    PlaySound(FartSound, SLOT_Talk, 2.0, false, 1000 + 500 * Scale);
+    MyFart = spawn(class'ScrnFart',,, loc, r);
+    if ( MyFart != none ) {
+        MyFart.SetScale(Scale);
+    }
+}
+
+function Crap(optional int Amount)
+{
+    local class<ToiletPaperProj> ProjClass;
+    local ToiletPaperProj TP;
+    local ToiletPaperAmmo TPAmmo;
+    local Rotator r;
+    local Vector loc;
+
+    if ( Amount <= 0 )
+        Amount = 1;
+
+    TPAmmo = ToiletPaperAmmo(FindInventoryType(class'ToiletPaperAmmo'));
+    if ( TPAmmo == none || !TPAmmo.UseAmmo(Amount, false) ) {
+        return;
+    }
+
+    if ( Level.TimeSeconds > NextBrownCrapTime ) {
+        ProjClass = class'ToiletPaperProj_Brown';
+        NextBrownCrapTime = Level.TimeSeconds + 60.0;
+    }
+    else {
+        ProjClass = class'ToiletPaperProj';
+    }
+    GetAss(loc, r);
+
+    TP = spawn(ProjClass, self, 'Crap', loc, r);
+    if ( TP == none ) {
+        ClientMessage("Failed to crap");
+        return;
+    }
+    TP.Load = Amount;
+    TP.Speed = 100;
+    TP.MaxSpeed = 200;
+    TP.bBounce = false;
+    TP.Velocity = TP.Speed * Vector(r);
+    TP.SetRotation(r);
+}
+
 defaultproperties
 {
      HealthRestoreRate=7.0
@@ -2605,4 +2742,5 @@ defaultproperties
      MaxFallSpeed=750
      BlameStrM99="%p blamed for using a Noobgun"
      BlameStrRPG="%p blamed for buying an RPG on Boss wave"
+     FartSound=SoundGroup'ScrnSnd.Fart'
 }

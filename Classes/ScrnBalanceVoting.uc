@@ -34,6 +34,7 @@ var localized string strSquadNotFound, strCantSpawnSquadNow, strSquadList;
 var localized string strNotInStoryMode, strNotInTSC;
 var localized string strCantEndWaveNow, strEndWavePenalty;
 var localized string strRCommands;
+var localized string strBlamed, strBlamedBaron;
 
 //variables for GamePaused state
 var int PauseTime;
@@ -492,7 +493,6 @@ function int GetVoteIndex(PlayerController Sender, string Key, out string Value,
 function ApplyVoteValue(int VoteIndex, string VoteValue)
 {
     local class<ScrnVeterancyTypes> Perk;
-    local ScrnCustomPRI ScrnPRI;
 
     switch ( VoteIndex ) {
         case VOTE_PERKLOCK: case VOTE_PERKUNLOCK:
@@ -530,71 +530,9 @@ function ApplyVoteValue(int VoteIndex, string VoteValue)
             Mut.KF.WaveCountDown = 6; // need to left at least 6 to execute kfgametype.timer() events
             break;
         case VOTE_BLAME:
-            if ( VotingHandler.VotedPlayer != none )
-                VoteValue = Mut.ColoredPlayerName(VotingHandler.VotedPlayer.PlayerReplicationInfo);
-            LastBlameVoteTime = Level.TimeSeconds;
-            if ( Reason == "" )
-                VotingHandler.BroadcastMessage(VoteValue $ " blamed");
-            else
-                VotingHandler.BroadcastMessage(VoteValue $ " blamed for " $Reason);
-
-            //achievement
-            if ( IsGoodReason(Reason) && VotingHandler.VoteInitiator != none
-                    && SRStatsBase(VotingHandler.VoteInitiator.SteamStatsAndAchievements) != none )
-            {
-                class'ScrnBalanceSrv.ScrnAchievements'.static.ProgressAchievementByID(
-                    SRStatsBase(VotingHandler.VoteInitiator.SteamStatsAndAchievements).Rep, 'Blame55p', 1);
-                if ( VotingHandler.VotedPlayer == VotingHandler.VoteInitiator )
-                    class'ScrnBalanceSrv.ScrnAchievements'.static.ProgressAchievementByID(
-                        SRStatsBase(VotingHandler.VoteInitiator.SteamStatsAndAchievements).Rep, 'BlameMe', 1);
-                else if ( ScrnPlayerController(VotingHandler.VotedPlayer) != none && ScrnPlayerController(VotingHandler.VotedPlayer).BeggingForMoney >= 3 )
-                {
-                    class'ScrnBalanceSrv.ScrnAchievements'.static.ProgressAchievementByID(
-                        SRStatsBase(VotingHandler.VoteInitiator.SteamStatsAndAchievements).Rep, 'SellCrap', 1);
-                    VotingHandler.VotedPlayer.ReceiveLocalizedMessage(class'ScrnBalanceSrv.ScrnFakedAchMsg', 1);
-                    ScrnPlayerController(VotingHandler.VotedPlayer).BeggingForMoney = 0;
-                }
-            }
-
-            if ( VotingHandler.VotedPlayer != none ) {
-                ScrnPRI = class'ScrnCustomPRI'.static.FindMe(VotingHandler.VotedPlayer.PlayerReplicationInfo);
-                if ( ScrnPRI != none ) {
-                    VotingHandler.VotedPlayer.ReceiveLocalizedMessage(class'ScrnBalanceSrv.ScrnBlamedMsg', ScrnPRI.BlameCounter++); // more blame = bigger shit
-
-                    //achievement
-                    if ( ScrnPRI.BlameCounter == 5
-                            && SRStatsBase(VotingHandler.VotedPlayer.SteamStatsAndAchievements) != none )
-                        class'ScrnBalanceSrv.ScrnAchievements'.static.ProgressAchievementByID(
-                            SRStatsBase(VotingHandler.VotedPlayer.SteamStatsAndAchievements).Rep, 'MaxBlame', 1);
-                }
-                else
-                    VotingHandler.VotedPlayer.ReceiveLocalizedMessage(class'ScrnBalanceSrv.ScrnBlamedMsg');
-            }
-
-            if ( VoteValue ~= "TEAM" || VoteValue ~= "ALL" ) {
-                BlameAll();
-                //achievement
-                if ( IsGoodReason(Reason) && VotingHandler.VoteInitiator != none
-                        && SRStatsBase(VotingHandler.VoteInitiator.SteamStatsAndAchievements) != none )
-                    class'ScrnBalanceSrv.ScrnAchievements'.static.ProgressAchievementByID(
-                        SRStatsBase(VotingHandler.VoteInitiator.SteamStatsAndAchievements).Rep, 'BlameTeam', 1);
-            }
-            else if ( VoteValue ~= "Baron" || (VotingHandler.VotedPlayer != none && VotingHandler.VotedPlayer.GetPlayerIDHash() == "76561198006289592") ) {
-                Mut.BroadcastFakedAchievement(0); // blame Baron :)
-                // blame the one who blamed baron
-                if ( VotingHandler.VoteInitiator != none && VotingHandler.VotedPlayer != VotingHandler.VoteInitiator ) {
-                    VotingHandler.VotedPlayer = VotingHandler.VoteInitiator;
-                    Reason = "Blaming Baron";
-                    ApplyVoteValue(VoteIndex, VoteValue);
-                }
-            }
-            else if ( VoteValue ~= "TWI" || VoteValue ~= "Tripwire" ) {
-                Mut.BroadcastFakedAchievement(3); // blame Tripwire :)
-            }
-            else
-                BlameMonster(VoteValue);
-
+            Blame(VoteValue);
             break;
+
         case VOTE_SPEC:
             if ( VotingHandler.VotedPlayer != none && !VotingHandler.VotedPlayer.PlayerReplicationInfo.bAdmin ) {
                 if ( Mut.ScrnGT != none )
@@ -602,6 +540,7 @@ function ApplyVoteValue(int VoteIndex, string VoteValue)
                 VotingHandler.VotedPlayer.BecomeSpectator();
             }
             break;
+
         case VOTE_KICK:
             if ( VotingHandler.VotedPlayer != none && !VotingHandler.VotedPlayer.PlayerReplicationInfo.bAdmin && NetConnection(VotingHandler.VotedPlayer.Player)!=None ) {
                 if ( Mut.ScrnGT != none )
@@ -622,6 +561,7 @@ function ApplyVoteValue(int VoteIndex, string VoteValue)
                     VotingHandler.VotedPlayer.Destroy();
             }
             break;
+
         case VOTE_BORING:
             Mut.KF.KFLRules.WaveSpawnPeriod *= 0.5;
             VotingHandler.BroadcastMessage(strZedSpawnsDoubled $ " ("$Mut.KF.KFLRules.WaveSpawnPeriod$")");
@@ -734,25 +674,72 @@ function class<KFMonster> Str2Monster(string MonsterName)
     return none;
 }
 
-function BlameAll()
+function Blame(string VoteValue)
 {
-    local Controller P;
-    local ScrnPlayerController Player;
-    local ScrnCustomPRI ScrnPRI;
+    local Controller C;
+    local ScrnPlayerController Blamer, BlamedPlayer;
+    local String str;
 
-    for ( P = Level.ControllerList; P != none; P = P.nextController ) {
-        Player = ScrnPlayerController(P);
-        if ( Player != none ) {
-            ScrnPRI = class'ScrnCustomPRI'.static.FindMe(Player.PlayerReplicationInfo);
-            if ( ScrnPRI != none ) {
-                Player.ReceiveLocalizedMessage(class'ScrnBalanceSrv.ScrnBlamedMsg', ScrnPRI.BlameCounter++); // more blame = bigger shit
-                if ( Player.PlayerReplicationInfo != none && Player.PlayerReplicationInfo.PlayerName ~= "Baron" )
-                    Mut.BroadcastFakedAchievement(0); // blame Baron :)
+    Blamer = ScrnPlayerController(VotingHandler.VoteInitiator);
+    BlamedPlayer = ScrnPlayerController(VotingHandler.VotedPlayer);
+
+    LastBlameVoteTime = Level.TimeSeconds;
+
+    str = strBlamed;
+    ReplaceText(str, "%r", Reason);
+    if ( BlamedPlayer == none ) {
+        ReplaceText(str, "%p", VoteValue);
+        VotingHandler.BroadcastMessage(str);
+    }
+
+    //achievement
+    if ( IsGoodReason(Reason) && Blamer != none ) {
+        class'ScrnAchCtrl'.static.Ach2Player(Blamer, 'Blame55p', 1);
+        if ( Blamer == BlamedPlayer ) {
+            class'ScrnAchCtrl'.static.Ach2Player(Blamer, 'BlameMe', 1);
+        }
+        else if ( BlamedPlayer != none && BlamedPlayer.BeggingForMoney >= 3 ) {
+            class'ScrnAchCtrl'.static.Ach2Player(Blamer, 'SellCrap', 1);
+            BlamedPlayer.ReceiveLocalizedMessage(class'ScrnFakedAchMsg', 1);
+            BlamedPlayer.BeggingForMoney = 0;
+        }
+    }
+
+    if ( BlamedPlayer != none ) {
+        Mut.BlamePlayer(BlamedPlayer, str);
+        if ( BlamedPlayer.GetPlayerIDHash() == "76561198006289592" ) {
+            Mut.BroadcastFakedAchievement(0); // blame Baron :)
+            if ( Blamer != BlamedPlayer ) {
+                // blame the one who blamed baron
+                Mut.BlamePlayer(Blamer, strBlamedBaron);
             }
         }
     }
+    else if ( VoteValue ~= "TEAM" || VoteValue ~= "ALL" ) {
+        for ( C = Level.ControllerList; C != none; C = C.nextController ) {
+            BlamedPlayer = ScrnPlayerController(C);
+            if ( BlamedPlayer != none ) {
+                Mut.BlamePlayer(BlamedPlayer, "");
+            }
+        }
+        //achievement
+        if ( IsGoodReason(Reason) )
+            class'ScrnAchCtrl'.static.Ach2Player(Blamer, 'BlameTeam', 1);
+    }
+    else if ( VoteValue ~= "Baron" ) {
+        Mut.BroadcastFakedAchievement(0);
+        if ( Blamer != none ) {
+            // blame the one who blamed baron
+            Mut.BlamePlayer(Blamer, strBlamedBaron);
+        }
+    }
+    else if ( VoteValue ~= "TWI" || VoteValue ~= "Tripwire" ) {
+        Mut.BroadcastFakedAchievement(3); // blame Tripwire :)
+    }
+    else {
+        BlameMonster(VoteValue);
+    }
 }
-
 
 // returns false if monster not found or can't be blamed
 function bool BlameMonster(String MonsterName)
@@ -927,6 +914,8 @@ defaultproperties
     strCantEndWaveNow="Can't end the wave now"
     strEndWavePenalty="Team charged for premature wave end with $"
     strRCommands="R_* commands can be executed only by Referee (Admin rights + Tourney Mode)"
+    strBlamed="%p blamed %r"
+    strBlamedBaron="%p blamed for blaming Baron"
 
     viResume="RESUME GAME"
     viEndTrade="END TRADER TIME"

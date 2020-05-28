@@ -19,6 +19,53 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+### v9.63
+#### Console Commands
+- `WeaponSlot X` / `GunSlot X` moves weapon to slot X, where X is in [1..9] (thanks to *Scuddles*)
+
+  Players can bind extra slots like this:
+```
+set input 6 SwitchWeapon 6
+set input NumPad6 WeaponSlot 6
+```
+  For example, select Boomstick and press NumPad6. Boomstick gets moved from default slot 4 to slot 6.
+  Now pressing 6 selects Boostick while leaving slot 4 exclusively for AA12.
+
+#### Ridiculous Stuff
+- When player is out of nades, he/she throws toilet paper
+- Player drops toilet paper on death
+- When blamed, the player farts and "craps out" some toilet paper
+- Zeds try to avoid farts for 15 seconds
+- Farting limited to once per minute to avoid cheating
+
+#### ScrN Weapon Pack
+- Removed the old RPG-7. Renamed the new RPG-7 from `ScrnRPG` to `RPG`.
+  Make sure to update *ScrnBalanceServ.ini* and *ServerPerks.ini* to ensure that there is `RPG` and `RPGPickup`
+  instead of ~ScrnRPG~ and ~ScrnRPGPickup~ respectively.
+- Fixed RPG scope. Now crosshair in the scope matches the iron sights.
+- Added Lidar sensor to **RPG**, calculating the distance of the target.
+  Currently, the distance is displayed only on the Texture scope.
+
+#### ScrN Zed Pack
+- Fixed an issue when **Shiver** could teleport if he did not see the player.
+- Added slight randomness in Shiver's teleport cooldown preventing 4-pack squad to teleport at the same time
+
+#### Heavy MachineGunner v5.03
+- Rebuilt to comply with the ScrN Balance v9.63
+
+#### Horzine Technician v4.03
+- Rebuilt to comply with the ScrN Balance v9.63
+
+#### Code Changes
+- Introduced `ScrnGameRulesMod` to allow customization of `ScrnGameRules`
+- Introduced `ScrnAchHandlerBase.ApplyGameRules()` to execute once the game rules are found and set
+- `ScrnAchCtrl.FindAchievement()` and therefore `ProgressAchievementByID()`, `GetAchievementByID()`, and
+  `IsAchievementUnlocked()` are no longer looking for *map* achievements.
+  This gives significant performance boost due to excluding 200+ map achievements from the lookup list.
+  Use `ScrnMapAchievements.UnlockMapAchievement()` to unlock map achievements.
+
+-------------------------------------------------------------------------------
+
 ### v9.62.07
 #### Social Isolation
 - The Virus cannot instantly kill a player with 100hp anymore

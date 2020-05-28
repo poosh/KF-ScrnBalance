@@ -1,7 +1,7 @@
 class ScrnNade extends Nade;
 
 var int ScrakeUnstunDamageThreshold;
-var bool bBlewInHands; 
+var bool bBlewInHands;
 
 simulated function HurtRadius( float DamageAmount, float DamageRadius, class<DamageType> DamageType, float Momentum, vector HitLocation )
 {
@@ -16,17 +16,12 @@ simulated function HurtRadius( float DamageAmount, float DamageRadius, class<Dam
     local array<Pawn> CheckedPawns;
     local int i;
     local bool bAlreadyChecked;
-    local SRStatsBase Stats;
-
 
     if ( bHurtEntry )
         return;
 
     bHurtEntry = true;
-    
-    if( Role == ROLE_Authority && Instigator != none && Instigator.PlayerReplicationInfo != none )
-        Stats = SRStatsBase(Instigator.PlayerReplicationInfo.SteamStatsAndAchievements);
-        
+
     foreach CollidingActors (class 'Actor', Victims, DamageRadius, HitLocation)
     {
         P = none;
@@ -80,10 +75,10 @@ simulated function HurtRadius( float DamageAmount, float DamageRadius, class<Dam
                 if ( damageScale <= 0)
                     continue;
 
-                // Scrake Nader ach    
-                if ( Role == ROLE_Authority && KFMonsterVictim != none && ZombieScrake(KFMonsterVictim) != none ) {
+                // Scrake Nader ach
+                if ( Role == ROLE_Authority && ZombieScrake(KFMonsterVictim) != none ) {
                     // need to check Scrake's stun before dealing damage, because he can unstun by himself from damage received
-                    ScrakeNader(damageScale * DamageAmount, ZombieScrake(KFMonsterVictim), Stats);
+                    ScrakeNader(damageScale * DamageAmount, ZombieScrake(KFMonsterVictim));
                 }
             }
             Victims.TakeDamage(damageScale * DamageAmount,Instigator,Victims.Location - 0.5 * (Victims.CollisionHeight + Victims.CollisionRadius) * dir
@@ -99,11 +94,11 @@ simulated function HurtRadius( float DamageAmount, float DamageRadius, class<Dam
             }
         }
     }
-    
+
     if( Role == ROLE_Authority )
     {
-        if ( bBlewInHands && NumKilled >= 5 && Stats != none ) 
-            class'ScrnBalanceSrv.ScrnAchievements'.static.ProgressAchievementByID(Stats.Rep, 'SuicideBomber', 1);  
+        if ( bBlewInHands && NumKilled >= 5 )
+            class'ScrnAchCtrl'.static.Ach2Pawn(Instigator, 'SuicideBomber', 1);
 
         if ( NumKilled >= 4 )
         {
@@ -119,12 +114,12 @@ simulated function HurtRadius( float DamageAmount, float DamageRadius, class<Dam
 }
 
 //grant achievement for nading stunned Scrakes
-function ScrakeNader(int DamageAmount, ZombieScrake Scrake, SRStatsBase Stats)
+function ScrakeNader(int DamageAmount, ZombieScrake Scrake)
 {
     local name  Sequence;
     local float Frame, Rate;
-    
-    if ( Scrake == none || Stats == none || DamageAmount < ScrakeUnstunDamageThreshold )
+
+    if ( Scrake == none || Instigator == none || DamageAmount < ScrakeUnstunDamageThreshold )
         return;
 
     Scrake.GetAnimParams(Scrake.ExpectingChannel, Sequence, Frame, Rate);
@@ -132,13 +127,12 @@ function ScrakeNader(int DamageAmount, ZombieScrake Scrake, SRStatsBase Stats)
         //break the stun
         Scrake.bShotAnim= false;
         Scrake.SetAnimAction(Scrake.WalkAnims[0]);
-        SawZombieController(Scrake.Controller).GoToState('ZombieHunt');        
-        //progress achievement
-        class'ScrnBalanceSrv.ScrnAchievements'.static.ProgressAchievementByID(Stats.Rep, 'ScrakeNader', 1);
+        SawZombieController(Scrake.Controller).GoToState('ZombieHunt');
+        class'ScrnAchCtrl'.static.Ach2Pawn(Instigator, 'ScrakeNader', 1);
         //mark Scrake as naded in game rules
-        if ( ScrnHumanPawn(Instigator) != none && ScrnPlayerController(Instigator.Controller) != none )
+        if ( ScrnPlayerController(Instigator.Controller) != none )
             ScrnPlayerController(Instigator.Controller).Mut.GameRules.ScrakeNaded(Scrake);
-            
+
     }
 }
 
@@ -179,7 +173,7 @@ simulated function Explode(vector HitLocation, vector HitNormal)
 defaultproperties
 {
      ScrakeUnstunDamageThreshold=50
-     
+
      ExplodeSounds(0)=SoundGroup'KF_GrenadeSnd.Nade_Explode_1'
      ExplodeSounds(1)=SoundGroup'KF_GrenadeSnd.Nade_Explode_2'
      ExplodeSounds(2)=SoundGroup'KF_GrenadeSnd.Nade_Explode_3'

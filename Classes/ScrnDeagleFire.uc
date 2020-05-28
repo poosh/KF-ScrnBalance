@@ -165,9 +165,8 @@ function DoTrace(Vector Start, Rotator Dir)
         }
     }
 
-    if ( Weapon.Role == Role_Authority && bCheck4Ach && KillCount >= 4 && Weapon.Instigator.PlayerReplicationInfo != none
-            && SRStatsBase(Weapon.Instigator.PlayerReplicationInfo.SteamStatsAndAchievements) != none ) {
-        class'ScrnBalanceSrv.ScrnAchievements'.static.ProgressAchievementByID(SRStatsBase(Weapon.Instigator.PlayerReplicationInfo.SteamStatsAndAchievements).Rep, 'HC4Kills', 1);
+    if ( Weapon.Role == Role_Authority && bCheck4Ach && KillCount >= 4 ) {
+        class'ScrnAchCtrl'.static.Ach2Pawn(Weapon.Instigator, 'HC4Kills', 1);
         bCheck4Ach = false;
     }
 

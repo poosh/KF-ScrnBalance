@@ -101,6 +101,9 @@ function GameWon(string MapName)
     if ( SpreadCounter == 0 && PlayerCount >= 3 ) {
         Ach2All('TW_Isolation', 1);
     }
+    if ( GameRules.Mut.BlameCounter == 0 && PlayerCount >= 6 ) {
+        Ach2All('NoShit', 1, none, WinnerTeam);
+    }
 
     for ( SPI = GameRules.PlayerInfo; SPI != none; SPI = SPI.NextPlayerInfo ) {
         Virus = VirusInfo(SPI.CustomInfo(class'VirusInfo', false));
@@ -110,6 +113,8 @@ function GameWon(string MapName)
             }
         }
     }
+
+    GotoState('Win');
 }
 
 function GameEnded()
@@ -127,18 +132,17 @@ function GameEnded()
         if ( Virus.IsInState('Asymptomatic') )
                 SPI.ProgressAchievement('Asymptomatic', 1);
 
-        // log
         s = SPI.PlayerName @ Virus.GetStateName();
         if ( Virus.bInfected || Virus.bCured ) {
-            s $= ". Infected at " $ Virus.InfectTime;
             if ( Virus.InfectedBy != none ) {
+                s $= ". Infected at " $ GameRules.Mut.FormatTime(Virus.InfectGameTime);
                 s $= " by " $ Virus.InfectedBy.SPI.PlayerName;
             }
         }
         if ( SPI.StartWave > 0 ) {
-            s $= ". Joined at wave " $ SPI.StartWave;
+            s $= ". Joined at wave " $ string(SPI.StartWave + 1);
         }
-        log(s, 'SocIso');
+        GameRules.Mut.BroadcastMessage(s, true);
     }
 }
 
@@ -267,6 +271,26 @@ function PlayerCoughed(VirusInfo SickVirus, int Damage)
             SickVirus.InfectionCounter += 50;
         }
     }
+}
+
+state Win
+{
+    function TPFirewarks()
+    {
+        local ScrnPlayerInfo SPI;
+        local ScrnHumanPawn ScrnPawn;
+
+        for ( SPI = GameRules.PlayerInfo; SPI != none; SPI = SPI.NextPlayerInfo ) {
+            ScrnPawn = SPI.AlivePawn();
+            if ( ScrnPawn != none ) {
+                ScrnPawn.DropAllTP();
+            }
+        }
+    }
+
+Begin:
+    sleep(5.0);
+    TPFirewarks();
 }
 
 

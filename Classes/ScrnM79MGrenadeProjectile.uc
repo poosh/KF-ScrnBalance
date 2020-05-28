@@ -246,13 +246,8 @@ function HealRadius(float HealAmount, float HealRadius, vector HealLocation)
 
 function SuccessfulHealAchievements()
 {
-    if ( HealedPlayers.Length >= 6 && Instigator != none && Instigator.PlayerReplicationInfo != none
-            && SRStatsBase(Instigator.PlayerReplicationInfo.SteamStatsAndAchievements) != none )
-    {
-        class'ScrnBalanceSrv.ScrnAchievements'.static.ProgressAchievementByID(
-                SRStatsBase(Instigator.PlayerReplicationInfo.SteamStatsAndAchievements).Rep,
-                'ExplosionLove', 1);
-    }
+    if ( HealedPlayers.Length >= 6 && Instigator != none )
+        class'ScrnAchCtrl'.static.Ach2Pawn(Instigator, 'ExplosionLove', 1);
 }
 
 function SuccessfulHealMessage()
@@ -433,7 +428,7 @@ defaultproperties
     RemoteRole=ROLE_SimulatedProxy
     bNetInitialRotation=true
     bNetNotify=true
-    bUpdateSimulatedPosition=false
+    bUpdateSimulatedPosition=true
     bSkipActorPropertyReplication=true
     bNetTemporary=false  // Need to be false, otherwise no replication will happen after the spawn
 

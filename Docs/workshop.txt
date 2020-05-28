@@ -1,6 +1,6 @@
 ﻿Total rebalance of the game. Adds new guns, Gunslinger perk and server-side achievements.
 Now it IS COMPATIBLE with Objective Mode! Select "Objective Mode [ScrN]" for a proper gameplay.
-Version 9.62.05.
+Version 9.63
 
 → [URL=http://steamcommunity.com/groups/ScrNBalance]OFFICIAL STEAM GROUP[/URL] ←
 → [URL=https://steamcommunity.com/groups/ScrNBalance/discussions/2/483368526570475472/]DOWNLOAD[/URL] ←

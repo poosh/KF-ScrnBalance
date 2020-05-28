@@ -44,7 +44,8 @@ xcopy /F /I /Y %STEAMDIR%\Animations\ScrnAnims.ukx %RELEASEDIR%\Animations\
 mkdir %RELEASEDIR%\Sounds 2>nul
 xcopy /F /I /Y %STEAMDIR%\Sounds\ScrnSnd.uax %RELEASEDIR%\Sounds\
 
-REM mkdir %RELEASEDIR%\StaticMeshes 2>nul
+mkdir %RELEASEDIR%\StaticMeshes 2>nul
+xcopy /F /I /Y %STEAMDIR%\StaticMeshes\ScrnSM.usx %RELEASEDIR%\StaticMeshes\
 
 mkdir %RELEASEDIR%\Textures 2>nul
 xcopy /F /I /Y %STEAMDIR%\Textures\ScrnTex.utx %RELEASEDIR%\Textures\
@@ -65,7 +66,7 @@ echo.
 echo Updating the bundle...
 xcopy /F /I /Y %RELEASEDIR%\Animations\*            %BUNDLEDIR%\Animations\
 xcopy /F /I /Y %RELEASEDIR%\Sounds\*                %BUNDLEDIR%\Sounds\
-REM xcopy /F /I /Y %RELEASEDIR%\StaticMeshes\*          %BUNDLEDIR%\StaticMeshes\
+xcopy /F /I /Y %RELEASEDIR%\StaticMeshes\*          %BUNDLEDIR%\StaticMeshes\
 xcopy /F /I /Y %RELEASEDIR%\System\*                %BUNDLEDIR%\System\
 xcopy /F /I /Y %RELEASEDIR%\Textures\*              %BUNDLEDIR%\Textures\
 xcopy /F /I /Y %RELEASEDIR%\KFMapVote.ini           %BUNDLEDIR%\System\

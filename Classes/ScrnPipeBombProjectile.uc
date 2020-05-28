@@ -261,11 +261,11 @@ simulated function HurtRadius( float DamageAmount, float DamageRadius, class<Dam
 
             // ScrN Achievements
             if ( bDamagedInstigator && NumKilledFP > 0 )
-                class'ScrnBalanceSrv.ScrnAchievements'.static.ProgressAchievementByID(Stats.Rep, 'MindBlowingSacrifice', NumKilledFP);
+                class'ScrnAchCtrl'.static.ProgressAchievementByID(Stats.Rep, 'MindBlowingSacrifice', NumKilledFP);
             if ( bKilledCrawler && NumKilled == 1 )
-                class'ScrnBalanceSrv.ScrnAchievements'.static.ProgressAchievementByID(Stats.Rep, 'Overkill3', 1);
+                class'ScrnAchCtrl'.static.ProgressAchievementByID(Stats.Rep, 'Overkill3', 1);
             if ( bDamagedInstigator && (Instigator == none || Instigator.Health <= 0) )
-                class'ScrnBalanceSrv.ScrnAchievements'.static.ProgressAchievementByID(Stats.Rep, 'MadeinChina', 1);
+                class'ScrnAchCtrl'.static.ProgressAchievementByID(Stats.Rep, 'MadeinChina', 1);
         }
 
         if( NumKilled >= 4 )

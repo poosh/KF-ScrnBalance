@@ -17,11 +17,11 @@ replication
 //executed on client-side only
 simulated function CookNade()
 {
-    if( !Instigator.IsLocallyControlled() ) 
+    if( !Instigator.IsLocallyControlled() )
         return;
-    
+
     HandleSleeveSwapping(); // use proper arms
-    
+
     ServerCookNade();
     if( Role < ROLE_Authority ) {
         CookExplodeTimer = Level.TimeSeconds + class'ScrnBalanceSrv.ScrnNade'.default.ExplodeTimer;
@@ -31,6 +31,11 @@ simulated function CookNade()
     KFPawn(Instigator).SecondaryItem = self; //it'll be replicated
     PlayAnim(TossAnim, 10, 0.0, 0);
     FreezeAnimAt(4.8, 0);
+}
+
+simulated function bool CanCook()
+{
+    return Ammo[0].AmmoAmount >= FireMode[0].AmmoPerFire;
 }
 
 //server
@@ -53,12 +58,11 @@ function Tick( float DeltaTime )
     }
 }
 
-
-simulated function ClientThrowCooked() 
+simulated function ClientThrowCooked()
 {
     if( !Instigator.IsLocallyControlled() )
         return;
-        
+
     bThrowingCooked = true;
     StartThrow();
     if( Role < ROLE_Authority )
@@ -70,11 +74,11 @@ simulated function StartThrow()
 {
     if (bCooking && !bThrowingCooked)
         return; //can't throw nade while cooking
-    
+
     HandleSleeveSwapping(); // use proper arms
-    
+
     super.StartThrow();
-} 
+}
 
 function ServerStartThrow()
 {
@@ -86,17 +90,35 @@ function ServerStartThrow()
 
 function ServerThrow()
 {
+    local int f;
+
     if ( HasAmmo() ) {
-        ConsumeAmmo(0, 1);
-        FireMode[0].DoFireEffect();
-        PlaySound(ThrowSound,SLOT_Interact,2.0);
+        f = PickFireMode();
+        ConsumeAmmo(f, 1);
+        FireMode[f].DoFireEffect();
+        if ( f == 0 ) {
+            PlaySound(ThrowSound, SLOT_Interact, 2.0);
+        }
+        else {
+            PlaySound(FireMode[f].FireSound, SLOT_Interact, 2.0);
+        }
     }
+}
+
+function int PickFireMode()
+{
+    if (Ammo[0].AmmoAmount == 0 && Ammo[1] != none && Ammo[1].AmmoAmount >= 1)
+        return 1;
+
+    return 0;
 }
 
 defaultproperties
 {
      Weight=0.000000
      FireModeClass(0)=Class'ScrnBalanceSrv.ScrnFragFire'
+     FireModeClass(1)=Class'ScrnBalanceSrv.ToiletPaperFire'
+     bHasSecondaryAmmo=false  // prevents buying TP ammo from frags
      PickupClass=Class'ScrnBalanceSrv.ScrnFragPickup'
      ItemName="Frag Grenade SE"
      bAlwaysRelevant=True

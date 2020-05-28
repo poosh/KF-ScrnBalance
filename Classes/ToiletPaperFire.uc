@@ -1,12 +1,20 @@
-class ToiletPaperFire extends KFFire;
+class ToiletPaperFire extends FragFire;
 
-simulated function bool AllowFire()
+function class<Projectile> GetDesiredProjectileClass()
 {
-    return false;
+    return ProjectileClass;
+}
+
+state LoadNext
+{
+    function BeginState()
+    {
+        // do not play weapon reload sound
+    }
 }
 
 defaultproperties
 {
     AmmoClass=Class'ScrnBalanceSrv.ToiletPaperAmmo'
-    DamageMax=0
+    ProjectileClass=Class'ScrnBalanceSrv.ToiletPaperProj'
 }
