@@ -2,24 +2,18 @@ class ScrnShotgunFire extends ShotgunFire;
 
 simulated function bool AllowFire()
 {
-                                                                             //changed to 1 -- PooSH
-    if( KFWeapon(Weapon).bIsReloading && KFWeapon(Weapon).MagAmmoRemaining < 1)
+    local KFPawn KFP;
+
+    KFP = KFPawn(Instigator);
+
+    if( KFWeap.bIsReloading || KFWeap.MagAmmoRemaining < AmmoPerFire)
         return false;
 
-    if(KFPawn(Instigator).SecondaryItem!=none)
-        return false;
-    if( KFPawn(Instigator).bThrowingNade )
+    if ( KFP.SecondaryItem != none || KFP.bThrowingNade )
         return false;
 
-    if( Level.TimeSeconds - LastClickTime>FireRate )
-    {
+    if ( Level.TimeSeconds - LastClickTime > FireRate )
         LastClickTime = Level.TimeSeconds;
-    }
-
-    if( KFWeaponShotgun(Weapon).MagAmmoRemaining<1 )
-    {
-            return false;
-    }
 
     return super(WeaponFire).AllowFire();
 }

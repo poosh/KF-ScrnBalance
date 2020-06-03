@@ -83,12 +83,6 @@ state Pickup
 
             if ( bPickedUp )
             {
-                // TODO: test if this KF hack is still needed in ScrN
-                // if( bResuppliedBoomstick && DBShotty != none )
-                // {
-                //     DBShotty.AmmoPickedUp();
-                // }
-
                 AnnouncePickup(Pawn(Other));
                 GotoState('Sleeping', 'Begin');
 

@@ -3,8 +3,9 @@ Warning: ZombieCrawler_HALLOWEEN KF-ZedDiscoThe2ndFloor.ZombieCrawler_HALLOWEEN 
 ? Fix bonus ammo replication bug
 ? ScrN Features crash
 
-Move DLCLocks from ScrnbalanceSrv.ini
-
-Brown Cloud: blaming players make them fart
-
 A Blank Page
+
+? Fix Boomstick reload
+
+Blame for achievements
+? Lower HL for blamed guns

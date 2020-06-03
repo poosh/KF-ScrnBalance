@@ -19,6 +19,51 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+### v9.63.02
+#### Weapons
+- Reworked *Boomstick* reload. No the reload has 3 phases: open barrels; insert shells; close barrels. Player can
+  skip the reload by switching to another gun, throwing nades or Quick Melee in the first and the last phase.
+  Reload cannot be skipped in the middle of inserting shells.
+  Skipping reload in the phase 1 leaves the weapon unloaded. Next time Boomstick is equipped, the reload gets restarted
+  from the beginning.
+- Fixed the **Shotgun point-blank penetration bug** that existed from both in ScrN Balance and Vanilla since the very
+  beginning. When shooting a zed at point-blank range, pellets did not penetrate the target.
+  **This is not the distant spawn bug** where pellets spawn behind the target (and that's why you have to crouch or
+  jump when shooting SC, for instance). The latter is still in the game. I can easily fix that but it will break all
+  known combos, so I leave it as is.
+- **Chainsaw** is now a cross-perk weapon (Berserker + Support Spec.)
+- Raised Chainsaw alt fire headshot multiplier to x1.3 (up from x1.2)
+- New achievement: *Evil Dead Combo* - Solo-kill 15 Scrakes with Chainsaw + Boomstick without taking damage.
+
+#### Heavy MachineGunner v5.10
+From now on, HMG is considered long-range Support.
+- Removed ~Heavy AK47~. *Heavy Tommy Gun* is now starting Tier 1 weapon for HMG.
+- Significantly raised bullet over-penetration for **RPK47**, **PKM**, and **M249**.
+- Added Semi-auto mode for M249 with even higher penetration.
+- Lowered M249 DPS and magazine size by ~20% to compensate increased penetration
+- Lowered total ammo for RPK47, PKM, and M249.
+- Increased M249 weight to 13 (up from 12)
+- Lowered **Pat Chaingun** total ammo to 1500 (down from 1800)
+- Raised **XMV850** damage from 39 to 45 (62 -> 72 @ L6)
+
+#### ScrN Weapon Pack
+- Fixed *Shotgun point-blank penetration bug* for **Saiga-12** and **SPAS-12**
+
+#### Weapon Blame
+Some weapons are considered overpowered, but nerfing them would make them useless. That's why you players can still buy
+such weapons, but they get automatically blamed for doing that.
+In addition to blame, *Hardcore Level* gets lowered, which, in turn, can prevent players to gain some achievements.
+Blaming is done only when buying weapon from The Trader. Picking up those weapons from the ground doesn't blame the
+player, neither lowers HL.
+
+The current blame weapon list (applied only on the Boss wave - you can safely buy then in early waves):
+- M99 (-1 HL)
+- RPG (-4 HL)
+- M41A a.k.a. Alien Rifle (-2 HL)
+
+#### Code Changes
+- Fixed an issue where spawned `ScrnGameRulesMod` didn't automatically add itself to the mod list.
+
 ### v9.63
 #### Console Commands
 - `WeaponSlot X` / `GunSlot X` moves weapon to slot X, where X is in [1..9] (thanks to *Scuddles*)

@@ -198,4 +198,6 @@ defaultproperties
     AchDefs(141)=(id="MacheteKillMidairCrawler",DisplayName="Machete Master",Description="Use Machete to melee-kill Crawler in midair without taking damage",Icon=Texture'ScrnAch_T.Master.MacheteCrawlerCut',MaxProgress=1,DataSize=1,Group="MASTER")
     AchDefs(142)=(id="MacheteStunSC",DisplayName="Machete Stuns!",Description="Stun Scrake with Machete",Icon=Texture'ScrnAch_T.Master.MacheteScrake',MaxProgress=1,DataSize=1,Group="MASTER",Group="Hidden")
     AchDefs(143)=(id="MacheteWalker",DisplayName="Machete Marathon",Description="Perform 'Machete-sprint': drop/pickup Machete 422 times while running in a single game",Icon=Texture'ScrnAch_T.Achievements.MacheteWalker',MaxProgress=1,DataSize=1,bForceShow=True,Group="Hidden")
+
+    AchDefs(144)=(id="EvilDeadCombo",DisplayName="Evil Dead Combo",Description="Solo-kill %c Scrakes with Chainsaw+Boomstick without taking damage",Icon=Texture'ScrnAch_T.Achievements.Ash',MaxProgress=15,DataSize=4,Group="MASTER")
 }

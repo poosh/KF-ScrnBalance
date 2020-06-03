@@ -7,22 +7,24 @@ var float LastClickTime;
 
 simulated function bool AllowFire()
 {
-    if(KFWeapon(Weapon).bIsReloading)
-        return false;
-    if(KFPawn(Instigator).SecondaryItem!=none)
-        return false;
-    if(KFPawn(Instigator).bThrowingNade)
+    local KFWeapon KFWeap;
+    local KFPawn KFP;
+
+    KFWeap = KFWeapon(Weapon);
+    KFP = KFPawn(Instigator);
+
+    if ( KFWeap.bIsReloading )
         return false;
 
-    if(KFWeapon(Weapon).MagAmmoRemaining < MaxChargeAmmo)
-    {
-        if( Level.TimeSeconds - LastClickTime>FireRate )
-        {
+    if ( KFP.SecondaryItem != none || KFP.bThrowingNade )
+        return false;
+
+    if ( KFWeap.MagAmmoRemaining < MaxChargeAmmo ) {
+        if( Level.TimeSeconds - LastClickTime > FireRate )
             LastClickTime = Level.TimeSeconds;
-        }
 
-        if( AIController(Instigator.Controller)!=None )
-            KFWeapon(Weapon).ReloadMeNow();
+        if( AIController(Instigator.Controller) != none )
+            KFWeap.ReloadMeNow();
         return false;
     }
 
@@ -33,7 +35,7 @@ function ModeDoFire()
 {
     if (!AllowFire())
         return;
-        
+
     super.ModeDoFire();
     Weapon.ConsumeAmmo(ThisModeNum, MaxChargeAmmo);
 }

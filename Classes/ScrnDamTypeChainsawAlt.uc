@@ -2,5 +2,5 @@ class ScrnDamTypeChainsawAlt extends DamTypeChainsaw;
 
 defaultproperties
 {
-     HeadShotDamageMult=1.20
+     HeadShotDamageMult=1.30
 }

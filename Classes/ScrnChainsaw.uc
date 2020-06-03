@@ -21,8 +21,8 @@ var ScrnFakedProjectile FakedGasCan; //adds a faked gas can during reload
 
 replication
 {
-	reliable if(Role == ROLE_Authority)
-		HideGasCan;
+    reliable if(Role == ROLE_Authority)
+        HideGasCan;
 }
 
 simulated function PostNetReceive()
@@ -233,7 +233,8 @@ simulated function WeaponTick(float dt)
                 TexPanner(Skins[1]).PanRate = 0; // stop saw cycling
             }
             else {
-                if ( Level.TimeSeconds - FireMode[0].NextFireTime > 1.0 && Level.TimeSeconds - FireMode[1].NextFireTime > 1.0 ) {
+                if ( Level.TimeSeconds - FireMode[0].NextFireTime > 1.0
+                        && Level.TimeSeconds - FireMode[1].NextFireTime > 1.0 ) {
                     //consume ammo on idle
                     IdleFuelConsumeTime -= dt;
                     if ( IdleFuelConsumeTime <= 0 ) {
@@ -331,7 +332,7 @@ simulated function PlayIdle()
 
 defaultproperties
 {
-     IdleFuelConsumeTime=5.000000
+     IdleFuelConsumeTime=10.0
      EngineStartSoundRef="KF_ChainsawSnd.Chainsaw_FalseStart4"
      EngineStopSoundRef="KF_ChainsawSnd.Chainsaw_Deselect1"
      ReloadSounds(0)=(SoundRef="KF_FlamethrowerSnd.FT_Reload1")

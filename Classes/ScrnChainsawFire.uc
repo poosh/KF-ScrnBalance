@@ -4,22 +4,24 @@ var float LastClickTime;
 
 simulated function bool AllowFire()
 {
-    if(KFWeapon(Weapon).bIsReloading)
-        return false;
-    if(KFPawn(Instigator).SecondaryItem!=none)
-        return false;
-    if(KFPawn(Instigator).bThrowingNade)
+    local KFWeapon KFWeap;
+    local KFPawn KFP;
+
+    KFWeap = KFWeapon(Weapon);
+    KFP = KFPawn(Instigator);
+
+    if ( KFWeap.bIsReloading )
         return false;
 
-    if(KFWeapon(Weapon).MagAmmoRemaining < 1)
-    {
-        if( Level.TimeSeconds - LastClickTime>FireRate )
-        {
+    if ( KFP.SecondaryItem != none || KFP.bThrowingNade )
+        return false;
+
+    if ( KFWeap.MagAmmoRemaining < 1 ) {
+        if( Level.TimeSeconds - LastClickTime > FireRate )
             LastClickTime = Level.TimeSeconds;
-        }
 
-        if( AIController(Instigator.Controller)!=None )
-            KFWeapon(Weapon).ReloadMeNow();
+        if( AIController(Instigator.Controller) != none )
+            KFWeap.ReloadMeNow();
         return false;
     }
 
@@ -39,7 +41,7 @@ function PlayDefaultAmbientSound()
     WA.SoundRadius = WA.default.SoundRadius;
     if ( KFWeapon(Weapon).MagAmmoRemaining > 0 )
         WA.AmbientSound = WA.default.AmbientSound;
-    else 
+    else
         WA.AmbientSound = none;
 }
 

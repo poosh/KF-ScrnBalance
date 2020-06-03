@@ -152,7 +152,7 @@ static function float GetReloadSpeedModifierStatic(KFPlayerReplicationInfo KFPRI
             || ClassIsInArray(default.PerkedWeapons, Other) //v3 - custom weapon support
         )
         result = 1.6; // Up to 60% faster reload with pistols
-    // Level 6 Cowboys reload dualies in the same time as singles
+
     if ( CheckCowboyMode(KFPRI, Other) )
         result *= 1.35; // 35% extra bonus for cowboys
 

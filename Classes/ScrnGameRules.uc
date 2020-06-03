@@ -9,7 +9,7 @@ var bool bShowDamages;
 var int HardcoreLevel;
 var float HardcoreLevelFloat;
 var bool bForceHardcoreLevel;
-var localized string msgHardcore;
+var localized string msgHardcore, msgHardcoreLowered, msgWeaponBlame;
 var bool bUseAchievements;
 
 var bool bScrnDoom; // is server running ScrN version of Doom3 mutator?
@@ -32,6 +32,14 @@ const DF_RAGED     = 0x02; // rage shot
 const DF_STUPID    = 0x04; // damage shouldn't be done to this zed
 const DF_DECAP     = 0x08; // decapitaion shot
 const DF_HEADSHOT  = 0x10; // 100% sure that this damage was made by headshot
+
+// buy flags
+const BUY_REJECT      = 0x00;
+const BUY_ALLOW       = 0x01;
+const BUY_SLIGHTLY_OP = 0x02;
+const BUY_OP          = 0x04;
+const BUY_MEGA_OP     = 0x06;  // (BUY_SLIGHTLY_OP | BUY_OP);
+const BUY_BLAME       = 0x10;
 
 struct MonsterInfo {
     var KFMonster Monster;
@@ -128,6 +136,7 @@ event Destroyed()
 {
     local ScrnPlayerInfo SPI;
     local int i;
+    local ScrnGameRulesMod Mod;
 
     log("ScrnGameRules destroyed", 'ScrnBalance');
     // clear all ScrnPlayerInfo objects
@@ -148,6 +157,12 @@ event Destroyed()
             AchHandlers[i].Destroy();
     }
     AchHandlers.length = 0;
+
+    while ( Mods != none ) {
+        Mod = Mods;
+        Mods = Mod.Next;
+        Mod.Destroy();
+    }
 
     super.Destroyed();
 
@@ -1084,14 +1099,17 @@ function RaiseHardcoreLevel(float inc, string reason)
     if ( HardcoreLevelFloat < HardcoreLevel )
         HardcoreLevelFloat = HardcoreLevel; // just to be sure
 
-    HardcoreLevelFloat += inc;
+    HardcoreLevelFloat = fclamp(HardcoreLevelFloat + inc, 0, 255);
     HardcoreLevel = int(HardcoreLevelFloat+0.01);
     // replicate to clients
     Mut.HardcoreLevel = clamp(HardcoreLevel,0,255);
     Mut.NetUpdateTime = Level.TimeSeconds - 1;
 
     if ( bBroadcastHL ) {
-        s = msgHardcore;
+        if ( inc >= 0 )
+            s = msgHardcore;
+        else
+            s = msgHardcoreLowered;
         ReplaceText(s, "%a", String(HardcoreLevel));
         ReplaceText(s, "%i", String(inc));
         ReplaceText(s, "%r", reason);
@@ -1443,6 +1461,67 @@ function bool OverridePickupQuery(Pawn Other, Pickup item, out byte bAllowPickup
     return result;
 }
 
+function bool CanBuyWeapon(ScrnHumanPawn P, class<KFWeaponPickup> WP)
+{
+    local ScrnPlayerController PC;
+    local ScrnClientPerkRepLink PerkLink;
+    local byte BuyRules;
+    local string s;
+
+    PC = ScrnPlayerController(P.Controller);
+    if ( PC == none )
+        return true;  // shouldn't happen, maybe a bot?
+
+    PerkLink = class'ScrnClientPerkRepLink'.static.FindMe(PC);
+    if ( PerkLink != none && !PerkLink.IsInShopInventory(WP) )
+        return false;
+
+    BuyRules = BUY_ALLOW;
+    if ( Mods == none || !Mods.OverrideWeaponBuy(PC, WP, BuyRules) ) {
+        DefaultOverrideWeaponBuy(PC, WP, BuyRules);
+    }
+
+    if ( (BuyRules & BUY_BLAME) != 0 ) {
+        s = msgWeaponBlame;
+        ReplaceText(s, "%w", WP.default.ItemName);
+        Mut.BlamePlayer(PC, s);
+    }
+
+    if ( (BuyRules & BUY_ALLOW) != 0 && (BuyRules & BUY_MEGA_OP) != 0 ) {
+        if ( (BuyRules & BUY_MEGA_OP) == BUY_MEGA_OP )
+            RaiseHardcoreLevel(-4, WP.default.ItemName);
+        else if ( (BuyRules & BUY_OP) != 0 )
+            RaiseHardcoreLevel(-2, WP.default.ItemName);
+        else
+            RaiseHardcoreLevel(-1, WP.default.ItemName);
+    }
+
+    return (BuyRules & BUY_ALLOW) != 0;
+}
+
+function DefaultOverrideWeaponBuy(ScrnPlayerController PC, class<KFWeaponPickup> WP, out byte BuyRules)
+{
+    local class<KFWeapon> WC;
+    local bool bBossWave;
+
+    bBossWave = Mut.ScrnGT != none && Mut.ScrnGT.bUseEndGameBoss && Mut.ScrnGT.WaveNum >= Mut.ScrnGT.FinalWave;
+    WC = class<KFWeapon>(WP.default.InventoryType);
+    if ( WC == none )
+        return;
+
+    if ( bBossWave ) {
+        if ( class<M99SniperRifle>(WC) != none ) {
+            BuyRules = BUY_ALLOW | BUY_BLAME | BUY_SLIGHTLY_OP;
+        }
+        else if ( WC.name == 'RPG' ) {
+            BuyRules = BUY_ALLOW | BUY_BLAME | BUY_MEGA_OP;
+        }
+        else if ( WC.name == 'M41AAssaultRifle' ) {
+            BuyRules = BUY_ALLOW | BUY_BLAME | BUY_OP;
+        }
+    }
+}
+
 function bool HasInventoryClass( Pawn P, class<Inventory> IC )
 {
     local Inventory I;
@@ -1456,10 +1535,11 @@ function bool HasInventoryClass( Pawn P, class<Inventory> IC )
     return false;
 }
 
-
 defaultproperties
 {
     msgHardcore="Hardcore level raised to %a (+%i for %r)"
+    msgHardcoreLowered="Hardcore level lowered down to %a (%i for %r)"
+    msgWeaponBlame="%p blamed for buying %w"
     msgDoom3Monster="Doom3 monsters"
     msgDoom3Boss="Doom Boss"
     msgDoomPercent="Doom3 monster count in wave = %p%"

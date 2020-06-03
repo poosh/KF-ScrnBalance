@@ -1,5 +1,4 @@
-﻿Total rebalance of the game. Adds new guns, Gunslinger perk and server-side achievements.
-Now it IS COMPATIBLE with Objective Mode! Select "Objective Mode [ScrN]" for a proper gameplay.
+Total rebalance of the game. Adds new guns, Gunslinger perk, and server-side achievements.
 Version 9.63
 
 → [URL=http://steamcommunity.com/groups/ScrNBalance]OFFICIAL STEAM GROUP[/URL] ←
@@ -10,10 +9,11 @@ Version 9.63
 
 Main features:
 [list]
+[*] Featuring [url=https://steamcommunity.com/groups/ScrNBalance/discussions/2/4666237625653274273/]Social Isolation Mod[/url]
 [*] New perks: [b]Gunslinger[/b] and [b]Combat Medic[/b];
 [*] More than 400 custom [b]achievements[/b] can be earned;
 [*] Earn achievements to unlock weapons.
-[*] New weapons: Golden M79 Incendiary, Napalm Thrower, MK23 with laser sights etc.;
+[*] New weapons: Golden M79 Incendiary, Napalm Thrower, MK23 with laser sights, etc.;
 [*] Medic Grenade Launchers: M79M Medic GL, M4-203M Medic Rifle;
 [*] Quick Melee Bash feature.
 [*] Tactical Reload for Commando and Combat Medic.
@@ -29,18 +29,15 @@ Main features:
 [*] Grenade "Cooking" (optional);
 [*] Show Damage (optional)
 [*] User-defined soundtrack.
-[*] Voting for ending trader time, zed spawn boost etc.
-[*] Configurable max zeds at once on the map. Now you can raise previously hardcoded value of 32 zeds and fight against 100-zed croud!
+[*] Voting for ending trader time, zed spawn boost, etc.
+[*] Configurable max zeds at once on the map. Now you can raise the previously hardcoded value of 32 zeds and fight against the 100-zed crowd!
 [/list]
 Most features are configurable (turn on only what you like).
 
 Detailed info on Group Page:
 [url=http://steamcommunity.com/groups/ScrNBalance/discussions/2/]ScrN Balance News Page[/url]
 
-[url=http://steamcommunity.com/sharedfiles/filedetails/?id=124250783]Guide how to use custom weapons with this mutator[/url]
+[url=http://steamcommunity.com/sharedfiles/filedetails/?id=124250783]Guide on how to use custom weapons with this mutator[/url]
 
 IMPORTANT NOTICE:
-[b][u]Make a backup of your ScrnBalance.ini and ServerPerks.ini files[/u][/b], if you make any changes to them. Otherwise they will be overwritten by the future releases.
-
-
-Copyright © 2012-2020 PU Developing IK, All Rights Reserved.
+[b][u]Make a backup of your ScrnBalance.ini and ServerPerks.ini files[/u][/b], if you make any changes to them. Otherwise, they will be overwritten by future releases.

@@ -54,17 +54,22 @@ static function float AddExtraAmmoFor(KFPlayerReplicationInfo KFPRI, Class<Ammun
 // Removed frag damage bonus (c) PooSH
 static function int AddDamage(KFPlayerReplicationInfo KFPRI, KFMonster Injured, KFPawn DamageTaker, int InDamage, class<DamageType> DmgType)
 {
-    if ( DmgType == default.DefaultDamageTypeNoBonus || class<KFWeaponDamageType>(DmgType) == none )
+    local class<KFWeaponDamageType> KFDamType;
+
+    KFDamType = class<KFWeaponDamageType>(DmgType);
+    if ( DmgType == default.DefaultDamageTypeNoBonus || KFDamType == none )
         return InDamage;
 
-    if ( DmgType == default.DefaultDamageType
-            || class<KFWeaponDamageType>(DmgType).default.bIsPowerWeapon
+    if ( KFDamType == default.DefaultDamageType
+            || KFDamType.default.bIsPowerWeapon
+            || KFDamType == class'ScrnDamTypeChainsawAlt'
             || ClassIsInArray(default.PerkedDamTypes, DmgType) //v3 - custom weapon support
         )
     {
         // 30% base bonus + 5% per level
         InDamage *= 1.30 + 0.05 * GetClientVeteranSkillLevel(KFPRI);
     }
+
     return InDamage;
 }
 
@@ -103,6 +108,7 @@ static function float GetCostScaling(KFPlayerReplicationInfo KFPRI, class<Pickup
 
     if ( ClassIsChildOf(Item, class'ShotgunPickup')
             || ClassIsChildOf(Item, class'BoomstickPickup')
+            || ClassIsChildOf(Item, class'ScrnChainsawPickup')
             || ClassIsChildOf(Item, class'AA12Pickup')
             || ClassIsChildOf(Item, class'KSGPickup')
             || ClassIsChildOf(Item, class'BenelliPickup')
@@ -130,6 +136,11 @@ static function string GetCustomLevelInfo( byte Level )
     return S;
 }
 
+static function bool OverridePerkIndex( class<KFWeaponPickup> Pickup )
+{
+    return Pickup == class'ScrnChainsawPickup' || super.OverridePerkIndex(Pickup);
+}
+
 defaultproperties
 {
     DefaultDamageType=Class'KFMod.DamTypeShotgun'
@@ -152,8 +163,8 @@ defaultproperties
     progressArray0(5)=3500000
     progressArray0(6)=5500000
 
-    SkillInfo="PERK SKILLS:|60% better Shotgun penetration|+10 blocks in carry weight|150% faster welding/unwelding|Welder can detect door healths from 30m"
-    CustomLevelInfo="PERK BONUSES (LEVEL %L):|%x more damage with Shotguns|%a extra ammo|+%g extra grenades|%$ discount on Shotguns"
+    SkillInfo="PERK SKILLS:|60% better Shotgun penetration|+10 blocks in carry weight|150% faster welding/unwelding|Welder see door status from 30m"
+    CustomLevelInfo="PERK BONUSES (LEVEL %L):|%x more damage with Shotguns/Chainsaw|%a extra ammo|+%g extra grenades|%$ discount on Shotguns"
 
     NumRequirements=1 // removed welding req. in v9.50
     PerkIndex=1

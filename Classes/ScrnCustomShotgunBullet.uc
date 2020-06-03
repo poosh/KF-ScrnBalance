@@ -2,12 +2,15 @@
  * Base class for all ScrN shotgun bulelts.
  * Adjusted MaxPenetrations to be really max penetration count (off-perk)
  * Added feature to make additional penetration  damage reduction when hitting specific zeds
+ * v9.63.01 - Fixed a huge bug where bullets didn't penetrate at point-blank
  *
  * @author PooSH, 2012
  */
 class ScrnCustomShotgunBullet extends ShotgunBullet
     abstract;
 
+var   float MinDamage;                  // minimum damage that bullet can do. If the damage drops below this threshold,
+                                        // the bullet gets destroyed.
 var() float BigZedPenDmgReduction;      // Additional penetration  damage reduction after hitting big zeds. 0.5 = 50% dmg. red.
 var() int   BigZedMinHealth;            // If zed's base Health >= this value, zed counts as Big
 var() float MediumZedPenDmgReduction;   // Additional penetration  damage reduction after hitting medium-size zeds. 0.5 = 50% dmg. red.
@@ -15,6 +18,7 @@ var() int   MediumZedMinHealth;         // If zed's base Health >= this value, z
 
 var     String         StaticMeshRef;
 var     String         AmbientSoundRef;
+
 
 
 static function PreloadAssets()
@@ -37,6 +41,12 @@ static function bool UnloadAssets()
     return true;
 }
 
+simulated function PostBeginPlay()
+{
+    Super.PostBeginPlay();
+
+    MinDamage = default.Damage * (default.PenDamageReduction ** MaxPenetrations) + 0.0001;
+}
 
 simulated function ProcessTouch (Actor Other, vector HitLocation)
 {
@@ -53,7 +63,7 @@ simulated function ProcessTouch (Actor Other, vector HitLocation)
 
     X = Vector(Rotation);
 
-     if( Instigator != none && ROBulletWhipAttachment(Other) != none ) {
+    if ( Instigator != none && ROBulletWhipAttachment(Other) != none ) {
         // we touched player's auxilary collision cylinder, not let's trace to the player himself
         // Other.Base = KFPawn
         if( Other.Base == none || Other.Base.bDeleteMe )
@@ -66,6 +76,7 @@ simulated function ProcessTouch (Actor Other, vector HitLocation)
 
         HitPawn = KFPawn(Other);
         if ( HitPawn != none ) {
+            Victim = HitPawn;
             HitPawn.ProcessLocationalDamage(Damage, Instigator, TempHitLocation, MomentumTransfer * Normal(Velocity), MyDamageType,HitPoints);
         }
     }
@@ -85,25 +96,26 @@ simulated function ProcessTouch (Actor Other, vector HitLocation)
 
     if ( Instigator != none )
         KFPRI = KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo);
-    if ( KFPRI != none && KFPRI.ClientVeteranSkill != none )
-           PenDamageReduction = KFPRI.ClientVeteranSkill.static.GetShotgunPenetrationDamageMulti(KFPRI,default.PenDamageReduction);
-    else
-           PenDamageReduction = default.PenDamageReduction;
-    // loose penetrational damage after hitting specific zeds -- PooSH
-    if ( KFM != none)
-        PenDamageReduction *= ZedPenDamageReduction(KFM);
-
-       Damage *= PenDamageReduction; // Keep going, but lose effectiveness each time.
-
-    // if we've struck through more than the max number of foes, destroy.
-    // MaxPenetrations now really means number of max penetration off-perk -- PooSH
-    if ( Damage / default.Damage < (default.PenDamageReduction ** MaxPenetrations) + 0.0001 )
-        Destroy();
-    else {
-        speed = VSize(Velocity);
-        if( Speed < (default.Speed * 0.25) )
-            Destroy();
+    if ( KFPRI != none && KFPRI.ClientVeteranSkill != none ) {
+        PenDamageReduction = KFPRI.ClientVeteranSkill.static.GetShotgunPenetrationDamageMulti(KFPRI,
+                default.PenDamageReduction);
     }
+    else {
+        PenDamageReduction = default.PenDamageReduction;
+    }
+
+    if ( Victim != none && Victim.Health <= 0 ) {
+        // dead bodies reduce damage less
+        PenDamageReduction += (1.0 - PenDamageReduction) * 0.5;
+    }
+    else if ( KFM != none ) {
+        // loose penetrational damage after hitting specific zeds -- PooSH
+        PenDamageReduction *= ZedPenDamageReduction(KFM);
+    }
+
+    Damage *= PenDamageReduction;
+    if ( Damage < MinDamage )
+        Destroy();
 }
 
 /**
@@ -135,4 +147,5 @@ defaultproperties
      MaxPenetrations=3
      PenDamageReduction=0.700000
      Damage=35.000000
+     MinDamage=10
 }

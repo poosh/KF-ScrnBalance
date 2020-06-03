@@ -1306,7 +1306,7 @@ function ServerBuyWeapon( Class<Weapon> WClass, float ItemWeight )
     local Inventory I;
     local int c;
     local KFWeapon KFW;
-    local Class<KFWeaponPickup> WP;
+    local class<KFWeaponPickup> WP;
     local ScrnBalance Mut;
 
     if( !CanBuyNow() || Class<KFWeapon>(WClass)==None || HasWeaponClass(WClass) )
@@ -1314,12 +1314,6 @@ function ServerBuyWeapon( Class<Weapon> WClass, float ItemWeight )
 
     WP = Class<KFWeaponPickup>(WClass.Default.PickupClass);
     if ( WP == none )
-        return;
-
-    // Validate if allowed to buy that weapon.
-    if( PerkLink==None )
-        PerkLink = FindStats();
-    if( PerkLink!=None && !PerkLink.CanBuyPickup(WP) )
         return;
 
     Mut = class'ScrnBalance'.default.Mut;
@@ -1385,6 +1379,9 @@ function ServerBuyWeapon( Class<Weapon> WClass, float ItemWeight )
     if ( (Weight>0 && !CanCarry(Weight)) || PlayerReplicationInfo.Score<Price )
         return;
 
+    if ( !Mut.GameRules.CanBuyWeapon(self, WP) )
+        return;
+
     bServerShopping = true;
     I = Spawn(WClass, self);
     if ( I != none )
@@ -1396,7 +1393,6 @@ function ServerBuyWeapon( Class<Weapon> WClass, float ItemWeight )
             KFW.UpdateMagCapacity(PlayerReplicationInfo);
             KFW.FillToInitialAmmo();
             KFW.SellValue = SellValue;
-            CheckBlame(KFW);
         }
 
         I.GiveTo(self);
@@ -1409,26 +1405,6 @@ function ServerBuyWeapon( Class<Weapon> WClass, float ItemWeight )
     }
     bServerShopping = false;
     SetTraderUpdate();
-}
-
-// blames the player for buying particular guns
-function CheckBlame(KFWeapon GunToBlameFor)
-{
-    local string BlameStr;
-    local ScrnBalance Mut;
-
-    Mut = class'ScrnBalance'.default.Mut;
-
-    if ( M99SniperRifle(GunToBlameFor) != none )
-        BlameStr = BlameStrM99;
-    else if ( Mut.ScrnGT != none && Mut.ScrnGT.bUseEndGameBoss && Mut.ScrnGT.WaveNum >= Mut.ScrnGT.FinalWave ) {
-        // buying guns for boss wave
-        if ( GunToBlameFor.IsA('RPG') )
-            BlameStr = BlameStrRPG;
-    }
-
-    if ( BlameStr != "" )
-        Mut.BlamePlayer(ScrnPlayerController(Controller), BlameStr);
 }
 
 // allows to adjust player's health
@@ -1679,12 +1655,15 @@ simulated function Frag FindPlayerGrenade()
 function CookGrenade()
 {
     local ScrnFrag aFrag;
+    local KFWeapon KFW;
 
     if (SecondaryItem != none)
         return;
 
-    if ( ScrnPerk == none || !ScrnPerk.static.CanCookNade(KFPRI, Weapon) )
+    KFW = KFWeapon(Weapon);
+    if ( ScrnPerk == none || KFW == none || !ScrnPerk.static.CanCookNade(KFPRI, Weapon) )
         return;
+
 
     aFrag = ScrnFrag(FindPlayerGrenade());
     if ( aFrag == none || !aFrag.CanCook())
@@ -1694,13 +1673,13 @@ function CookGrenade()
             && !aFrag.bCooking && !aFrag.bThrowingCooked
             && Level.TimeSeconds - aFrag.CookExplodeTimer > 0.1 )
     {
-        if ( KFWeapon(Weapon) == none || Weapon.GetFireMode(0).NextFireTime - Level.TimeSeconds > 0.1
-                || (KFWeapon(Weapon).bIsReloading && !KFWeapon(Weapon).InterruptReload()) )
+        if ( KFW.GetFireMode(0).NextFireTime - Level.TimeSeconds > 0.1
+                || (KFW.bIsReloading && !KFW.InterruptReload()) )
             return;
 
         aFrag.CookNade();
 
-        KFWeapon(Weapon).ClientGrenadeState = GN_TempDown;
+        KFW.ClientGrenadeState = GN_TempDown;
         Weapon.PutDown();
     }
 }
@@ -1722,14 +1701,12 @@ function ThrowGrenade()
         return;
 
     KFW = KFWeapon(Weapon);
-    if ( KFW == none || KFW.GetFireMode(0).NextFireTime - Level.TimeSeconds > 0.1
-            || (KFW.bIsReloading && !KFW.InterruptReload()) )
-        return;
-
-
-    if ( PlayerGrenade == none )
-        PlayerGrenade = FindPlayerGrenade();
+    PlayerGrenade = FindPlayerGrenade();
     if ( PlayerGrenade != none && PlayerGrenade.HasAmmo() ) {
+        if ( KFW == none || KFW.GetFireMode(0).NextFireTime - Level.TimeSeconds > 0.1
+                || (KFW.bIsReloading && !KFW.InterruptReload()) )
+            return;
+
         KFW.ClientGrenadeState = GN_TempDown;
         KFW.PutDown();
     }
@@ -1752,7 +1729,7 @@ function QuickMelee()
 
     if ( bThrowingNade
             || KFW.GetFireMode(0).NextFireTime - Level.TimeSeconds > 0.1
-            || KFW.GetFireMode(1).NextFireTime - Level.TimeSeconds > 0.1
+            // || KFW.GetFireMode(1).NextFireTime - Level.TimeSeconds > 0.1
             // || KFW.ClientState != WS_ReadyToFire
             || (KFW.bIsReloading && !KFW.InterruptReload()) )
     {

@@ -560,6 +560,23 @@ simulated function byte IsPickupUnlocked(class<Pickup> PC)
     return 2;
 }
 
+simulated function int FindShopInventoryIndex(class<Pickup> PC)
+{
+    local int i;
+
+    for( i = 0; i < ShopInventory.length; ++i ) {
+        if( ShopInventory[i].PC == PC )
+            return i;
+    }
+    return -1;
+}
+
+simulated function bool IsInShopInventory(class<Pickup> PC)
+{
+    return FindShopInventoryIndex(PC) != -1;
+}
+
+
 simulated function Tick( float DeltaTime )
 {
     Disable('Tick');
