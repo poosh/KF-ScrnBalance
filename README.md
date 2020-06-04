@@ -19,6 +19,9 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+### v9.63.04
+- Fixed Shotgun headshot detection bug at point-blank range
+
 ### v9.63.03
 - Fixed **Boomstick** network replication bug (some of many)
 - Lowered Boomstick total ammo count from 48 down to 42 (62 -> 54 @ L6)

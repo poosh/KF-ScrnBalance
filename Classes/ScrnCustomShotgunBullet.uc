@@ -19,6 +19,8 @@ var() int   MediumZedMinHealth;         // If zed's base Health >= this value, z
 var     String         StaticMeshRef;
 var     String         AmbientSoundRef;
 
+var transient bool bBegunPlay;
+
 
 
 static function PreloadAssets()
@@ -46,6 +48,8 @@ simulated function PostBeginPlay()
     Super.PostBeginPlay();
 
     MinDamage = default.Damage * (default.PenDamageReduction ** MaxPenetrations) + 0.0001;
+
+    bBegunPlay = true;
 }
 
 simulated function ProcessTouch (Actor Other, vector HitLocation)
@@ -60,6 +64,12 @@ simulated function ProcessTouch (Actor Other, vector HitLocation)
 
     if ( Other == none || Other == Instigator || Other.Base == Instigator || !Other.bBlockHitPointTraces  )
         return;
+
+    if ( !bBegunPlay ) {
+        // in case the bullet is spawned inside a body and triggered the touch event before the PostBeginPlay()
+        // We need the velocity vector for headshot calculation.
+        Velocity = Speed * Vector(Rotation);
+    }
 
     X = Vector(Rotation);
 
