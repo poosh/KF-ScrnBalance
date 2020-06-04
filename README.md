@@ -19,9 +19,19 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+### v9.63.03
+- Fixed **Boomstick** network replication bug (some of many)
+- Lowered Boomstick total ammo count from 48 down to 42 (62 -> 54 @ L6)
+- Ammo box gives 6 Boomstick shells (down from 10)
+
+## ScrN Voting Handler v4.06
+- Fixed a potential player crash issue
+- Fixed an alignment issue when vote value contains color tags
+
+
 ### v9.63.02
 #### Weapons
-- Reworked *Boomstick* reload. No the reload has 3 phases: open barrels; insert shells; close barrels. Player can
+- Reworked **Boomstick** reload. No the reload has 3 phases: open barrels; insert shells; close barrels. Player can
   skip the reload by switching to another gun, throwing nades or Quick Melee in the first and the last phase.
   Reload cannot be skipped in the middle of inserting shells.
   Skipping reload in the phase 1 leaves the weapon unloaded. Next time Boomstick is equipped, the reload gets restarted

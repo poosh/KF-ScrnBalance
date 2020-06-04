@@ -7,25 +7,7 @@ var transient bool bLastBulletInMag;
 
 simulated function bool AllowFire()
 {
-    local KFPawn KFP;
-
-    if( KFWeap.bIsReloading )
-        return false;
-
-    KFP = KFPawn(Instigator);
-    if ( KFP.SecondaryItem != none || KFP.bThrowingNade )
-        return false;
-
-    if ( KFWeap.MagAmmoRemaining < AmmoPerFire ) {
-        if ( KFWeap.MagAmmoRemaining == 0 &&  KFWeap.AmmoAmount(0) > KFWeap.MagAmmoRemaining )
-            KFWeap.ReloadMeNow();
-        return false;
-    }
-
-    if ( Level.TimeSeconds - LastClickTime > FireRate )
-        LastClickTime = Level.TimeSeconds;
-
-    return super(WeaponFire).AllowFire();
+    return !KFWeap.bIsReloading && Weapon.AmmoAmount(0) > 0;
 }
 
 event ModeDoFire()
@@ -36,8 +18,19 @@ event ModeDoFire()
     if (!AllowFire())
         return;
 
-    bLastBulletInMag = KFWeap.MagAmmoRemaining == 1;
-    bVeryLastShotAnim = KFWeap.AmmoAmount(0) <= AmmoPerFire;
+    // ModeDoFire has nativereplication. It sometimes triggers first on server, sometimes - on client.
+    // Sometimes, the server can execute ModeDoFire() and replicate MagAmmoRemaining to the client before
+    // the ModeDoFire() call on the client.
+    // Hence, the value of MagAmmoRemaining on the client side is unreliable at this moment.
+    // On the client side, We set bLastBulletInMag in ScrnBoomStick.Fire()
+    if ( Weapon.Role == ROLE_Authority ) {
+        bLastBulletInMag = KFWeap.MagAmmoRemaining == 1;
+    }
+    bVeryLastShotAnim = bLastBulletInMag && KFWeap.AmmoAmount(0) <= AmmoPerFire;
+
+    if( bLastBulletInMag && !bVeryLastShotAnim ) {
+        Weapon.GotoState('FireAndReload');
+    }
 
     KFPRI = KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo);
 
@@ -47,14 +40,8 @@ event ModeDoFire()
         Spread *= KFPRI.ClientVeteranSkill.Static.ModifyRecoilSpread(KFPRI, self, Rec);
 
     if( !bFiringDoesntAffectMovement ) {
-        if (FireRate > 0.25) {
-            Instigator.Velocity.x *= 0.1;
-            Instigator.Velocity.y *= 0.1;
-        }
-        else {
-            Instigator.Velocity.x *= 0.5;
-            Instigator.Velocity.y *= 0.5;
-        }
+        Instigator.Velocity.x *= 0.5;
+        Instigator.Velocity.y *= 0.5;
     }
 
     if (MaxHoldTime > 0.0)
@@ -86,26 +73,22 @@ event ModeDoFire()
 
     Weapon.IncrementFlashCount(ThisModeNum);
 
-    if( bLastBulletInMag && !bVeryLastShotAnim ) {
-        NextFireTime += FireLastRate;
-        NextFireTime = FMax(NextFireTime, Level.TimeSeconds);
-    }
-    else {
-        NextFireTime += FireRate;
-        NextFireTime = FMax(NextFireTime, Level.TimeSeconds);
-    }
+    // Setting correct NextFireTime prevents nading and quick melee
+    // if( bLastBulletInMag && !bVeryLastShotAnim ) {
+    //     NextFireTime = Level.TimeSeconds + FireLastRate;
+    // }
+    // else {
+    //     NextFireTime = Level.TimeSeconds + FireRate;
+    // }
+    NextFireTime = Level.TimeSeconds + FireRate;
 
     Load = AmmoPerFire;
     HoldTime = 0;
 
-    if (Instigator.PendingWeapon != Weapon && Instigator.PendingWeapon != None) {
+    if ( Instigator.PendingWeapon != None && Instigator.PendingWeapon != Weapon ) {
         bIsFiring = false;
         Weapon.PutDown();
     }
-    else if( bLastBulletInMag && !bVeryLastShotAnim ) {
-        Weapon.GotoState('FireAndReload');
-    }
-    // end code from WeaponFire
 
     // client
     if ( Instigator.IsLocallyControlled() ) {
@@ -156,9 +139,24 @@ function PlayFiring()
     FireCount++;
 }
 
+function FlashMuzzleFlash()
+{
+    if( bLastBulletInMag ) {
+        // left barrel
+        if (FlashEmitter != None)
+            FlashEmitter.Trigger(Weapon, Instigator);
+    }
+    else {
+        // right barrel
+        if (Flash2Emitter != None)
+            Flash2Emitter.Trigger(Weapon, Instigator);
+    }
+}
+
 
 defaultproperties
 {
      ProjectileClass=Class'ScrnBalanceSrv.ScrnBoomStickBullet'
+     AmmoClass=Class'ScrnBalanceSrv.ScrnBoomStickAmmo'
      AmmoPerFire=1
 }

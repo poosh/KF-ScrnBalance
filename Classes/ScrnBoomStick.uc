@@ -16,7 +16,7 @@ var transient float NextReloadPhase;
 replication
 {
     reliable if ( Role == ROLE_Authority )
-        ClientReloadSync;
+        ClientReloadSync, ClientFinishReloadingSync;
 }
 
 
@@ -62,56 +62,6 @@ simulated function AddNewAnim()
     LinkSkelAnim(MeshAnimation(DynamicLoadObject(OldAnimRef, class'MeshAnimation', true)));
 }
 
-//allow reload single shell
-simulated function bool AllowReload()
-{
-    return super(KFWeapon).AllowReload();
-}
-
-// ReloadMeNow is executed only on the server side.
-function ReloadMeNow()
-{
-    if ( !AllowReload() )
-        return;
-
-    if ( bHasAimingMode && bAimingRifle ) {
-        ZoomOut(false);
-    }
-
-    ClientReloadSync(MagAmmoRemaining);
-    Instigator.SetAnimAction(WeaponReloadAnim);
-
-    GotoState('ManualReload');
-}
-
-simulated function ClientReload() {}
-
-simulated function ClientReloadSync(byte SrvMagAmmoRemaining)
-{
-    if ( bHasAimingMode && bAimingRifle ) {
-        ZoomOut(false);
-    }
-
-    MagAmmoRemaining = SrvMagAmmoRemaining;
-    bSingleReload = MagAmmoRemaining == 1;
-
-    if ( bSingleReload ) {
-        PlayAnim(SingleReloadAnim, SingleReloadAnimRate, 0.0);
-    }
-    else {
-        PlayAnim(ReloadAnim, ReloadAnimRate, 0.0);
-        SetAnimFrame(ReloadPhaseTimes[0], 0 , 0); //skip fire animation and jump to reload
-    }
-
-    GotoState('ManualReload');
-}
-
-function ServerRequestAutoReload()
-{
-    ReloadMeNow();
-    NumClicks++;
-}
-
 // C&P from KFWeapon to cut out all reloading crap
 simulated function WeaponTick(float dt)
 {
@@ -140,12 +90,12 @@ simulated function WeaponTick(float dt)
 
 function GiveAmmo(int m, WeaponPickup WP, bool bJustSpawned)
 {
-    super(KFWeapon).GiveAmmo(m,WP,bJustSpawned);
+    super(KFWeapon).GiveAmmo(m, WP, bJustSpawned);
 }
 
 function GiveTo( pawn Other, optional Pickup Pickup )
 {
-    super(KFWeapon).GiveTo( Other, Pickup );
+    super(KFWeapon).GiveTo(Other, Pickup);
 }
 
 simulated function bool ConsumeAmmo( int Mode, float Load, optional bool bAmountNeededIsMax )
@@ -164,6 +114,112 @@ simulated function bool ConsumeAmmo( int Mode, float Load, optional bool bAmount
 }
 
 function AmmoPickedUp() { }
+
+simulated function Fire(float F)
+{
+    ScrnBoomStickSingleFire(FireMode[0]).bLastBulletInMag = (MagAmmoRemaining == 1);
+    if( MagAmmoRemaining < 1 && !bIsReloading && FireMode[0].NextFireTime <= Level.TimeSeconds ) {
+        ServerRequestAutoReload();
+        PlayOwnedSound(FireMode[0].NoAmmoSound,SLOT_None,2.0,,,,false);
+    }
+    super(Weapon).Fire(F);
+}
+
+simulated function AltFire(float F)
+{
+    ScrnBoomStickDualFire(FireMode[1]).bLastBulletInMag = (MagAmmoRemaining == 1);
+    if( MagAmmoRemaining < 1 && !bIsReloading && FireMode[0].NextFireTime <= Level.TimeSeconds ) {
+        ServerRequestAutoReload();
+        PlayOwnedSound(FireMode[0].NoAmmoSound,SLOT_None,2.0,,,,false);
+    }
+    super(Weapon).AltFire(F);
+}
+
+simulated event ClientStartFire(int Mode)
+{
+    // bypass vanilla Boomstick's bull crap. ScrN Boomstick can handle 1 bullet in dual fire.
+    super(KFWeapon).ClientStartFire(Mode);
+}
+
+simulated event ClientStopFire(int Mode)
+{
+    super(KFWeapon).ClientStopFire(Mode);
+}
+
+simulated function bool StartFire(int Mode)
+{
+    return super(KFWeapon).StartFire(Mode);
+}
+
+//allow reload single shell
+simulated function bool AllowReload()
+{
+    if ( bIsReloading || MagAmmoRemaining >= MagCapacity || AmmoAmount(0) <= MagAmmoRemaining )
+        return false;
+
+    if( AIController(Instigator.Controller) != none )
+        return true;
+
+    return true;
+    // return !FireMode[0].IsFiring() && !FireMode[1].IsFiring();
+}
+
+// ReloadMeNow is executed only on the server side.
+function ReloadMeNow()
+{
+    if ( !AllowReload() ) {
+        //dmsg("Reload Rejected");
+        return;
+    }
+    //dmsg("ReloadMeNow");
+
+    if ( bHasAimingMode && bAimingRifle ) {
+        ZoomOut(false);
+    }
+
+    ClientReloadSync(MagAmmoRemaining);
+    Instigator.SetAnimAction(WeaponReloadAnim);
+
+    GotoState('ManualReload');
+}
+
+simulated function ClientReload() {
+    warn("ScrnBoomstick.ClientReload() called!");
+}
+
+simulated function ClientReloadSync(byte SrvMagAmmoRemaining)
+{
+    if ( bHasAimingMode && bAimingRifle ) {
+        ZoomOut(false);
+    }
+
+    MagAmmoRemaining = SrvMagAmmoRemaining;
+    bSingleReload = MagAmmoRemaining == 1;
+
+    if ( bSingleReload ) {
+        PlayAnim(SingleReloadAnim, SingleReloadAnimRate, 0.0);
+    }
+    else {
+        PlayAnim(ReloadAnim, ReloadAnimRate, 0.0);
+        SetAnimFrame(ReloadPhaseTimes[0], 0 , 0); //skip fire animation and jump to reload
+    }
+
+    GotoState('ManualReload');
+}
+
+simulated function ClientFinishReloadingSync(byte SrvMagAmmoRemaining)
+{
+    //dmsg("ClientFinishReloading");
+    MagAmmoRemaining = SrvMagAmmoRemaining;
+    bIsReloading = false; // should be false already. Just in case.
+}
+
+function ServerRequestAutoReload()
+{
+    ReloadMeNow();
+    NumClicks++;
+}
+
 simulated function SetPendingReload() { }
 
 simulated function AnimEnd(int channel)
@@ -185,10 +241,12 @@ simulated function PlayIdle()
 // XXX: wtf a server function is simulated?
 function ServerInterruptReload()
 {
+    //dmsg("ServerInterruptReload");
+    GotoState('');
     bDoSingleReload = false;
     bIsReloading = false;
     bReloadEffectDone = false;
-    GotoState('');
+    ClientFinishReloadingSync(MagAmmoRemaining);  // make sure the client has the correct MagAmmoRemaining value
 }
 
 simulated function bool InterruptReload()
@@ -230,6 +288,18 @@ simulated state Reloading
     {
         return false;
     }
+
+    simulated function ClientFinishReloadingSync(byte SrvMagAmmoRemaining)
+    {
+        //dmsg("ClientFinishReloading");
+        GotoState('');
+        MagAmmoRemaining = SrvMagAmmoRemaining;
+        bIsReloading = false;
+        if ( ClientGrenadeState == GN_None )
+            PlayIdle();
+        if ( Instigator.PendingWeapon != none && Instigator.PendingWeapon != self )
+            Instigator.Controller.ClientSwitchToBestWeapon();
+    }
 }
 
 simulated state ReloadPhase1 extends Reloading
@@ -238,6 +308,7 @@ simulated state ReloadPhase1 extends Reloading
 
     simulated function BeginState()
     {
+        //dmsg("Reload Started");
         bIsReloading = true;
         bSingleReload = false;
         ReloadTimer = Level.TimeSeconds;
@@ -253,6 +324,7 @@ simulated state ReloadPhase1 extends Reloading
 
     simulated function bool InterruptReload()
     {
+        //dmsg("InterruptReload");
         // single reload phase one takes only half a second. Player can wait.
         // Otherwise, we would risk of getting out-of-sync with the server.
         if ( bSingleReload )
@@ -271,9 +343,6 @@ simulated state FireAndReload extends ReloadPhase1
     {
         super.BeginState();
         NextReloadPhase = ReloadTimer + ReloadPhaseTimes[0] + ReloadPhaseTimes[1];
-        if ( Role == ROLE_Authority ) {
-            ReloadRate -= 0.2; // finish faster on server to preveng glitches on the client
-        }
     }
 }
 
@@ -328,6 +397,7 @@ simulated state ReloadPhase2 extends Reloading
 
     simulated function bool InterruptReload()
     {
+        //dmsg("InterruptReload");
         return false;
     }
 }
@@ -349,29 +419,36 @@ simulated state ReloadPhase3 extends Reloading
 
     simulated function EndState()
     {
+        //dmsg("Reload Ended");
+
         bDoSingleReload = false;
         bIsReloading = false;
         bReloadEffectDone = false;
+        ClientFinishReloadingSync(MagAmmoRemaining);
     }
 
     simulated function WeaponTick(float dt)
     {
         global.WeaponTick(dt);
-        if ( Level.TimeSeconds > NextReloadPhase) {
-            ActuallyFinishReloading();
-            GotoState('');
+        if ( Role == ROLE_Authority ) {
+            if ( Level.TimeSeconds > NextReloadPhase) {
+                GotoState('');
+            }
         }
+        // else wait for ClientFinishReloadingSync()
     }
 
     simulated function bool InterruptReload()
     {
+        //dmsg("InterruptReload");
         ServerInterruptReload();
+        bIsReloading = false;
         GotoState('');
         return true;
     }
 }
 
-// simulated function dbg(optional string msg)
+// simulated function dmsg(optional string msg)
 // {
 //     local string s;
 //
@@ -386,6 +463,7 @@ simulated state ReloadPhase3 extends Reloading
 defaultproperties
 {
     MagCapacity=2
+    bHoldToReload=true  // doesn't mean what it says. Set to allow stuff like interrupt reload etc.
 
     // Instigator anim
     WeaponReloadAnim="Reload_HuntingShotgun"

@@ -28,7 +28,6 @@ state Pickup
         local bool bPickedUp;
         local int AmmoPickupAmount;
         local Boomstick DBShotty;
-        local bool bResuppliedBoomstick;
         local KFAmmunition ammo;
         local KFPlayerReplicationInfo KFPRI;
 
@@ -62,10 +61,6 @@ state Pickup
                             }
 
                             ammo.AmmoAmount = Min(ammo.MaxAmmo, ammo.AmmoAmount + AmmoPickupAmount);
-                            if( DBShotgunAmmo(CurInv) != none )
-                            {
-                                bResuppliedBoomstick = true;
-                            }
                             bPickedUp = true;
                         }
                     }
