@@ -2,8 +2,8 @@ class ScrnLAWBackblast extends Emitter;
 
 simulated function Trigger(Actor Other, Pawn EventInstigator)
 {
-	Emitters[0].SpawnParticle(30);
-	//Emitters[1].SpawnParticle(1);
+    Emitters[0].SpawnParticle(30);
+    //Emitters[1].SpawnParticle(1);
 }
 
 defaultproperties
@@ -39,7 +39,7 @@ defaultproperties
     End Object
     Emitters(0)=SpriteEmitter'ScrnLAWBackblastEmitter'
 
-	AutoDestroy=True
+    AutoDestroy=True
     bUnlit=false
     bDirectional=True
     bNoDelete=false

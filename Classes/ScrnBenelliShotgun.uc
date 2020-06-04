@@ -10,8 +10,8 @@ var()       float                       SpotProjectorPullback;      // Amount to
 var         bool                        bLaserActive;               // The laser site is active
 var         LaserBeamEffect             Beam;                       // Third person laser beam effect
 
-var()		class<InventoryAttachment>	LaserAttachmentClass;      // First person laser attachment class
-var 		Actor 						LaserAttachment;           // First person laser attachment
+var()        class<InventoryAttachment>    LaserAttachmentClass;      // First person laser attachment class
+var         Actor                         LaserAttachment;           // First person laser attachment
 
 var()    byte                                LaserType;       //current laser type
 var const class<ScrnLocalLaserDot>          LaserDotClass;
@@ -28,11 +28,11 @@ replication
 
 simulated function Destroyed()
 {
-	if (Spot != None)
-		Spot.Destroy();
+    if (Spot != None)
+        Spot.Destroy();
 
-	if (Beam != None)
-		Beam.Destroy();
+    if (Beam != None)
+        Beam.Destroy();
 
     if (LaserDot != None)
         LaserDot.Destroy();
@@ -185,12 +185,12 @@ simulated function bool InterruptReload()
 {
     //solo testing kek
     if ( Level.NetMode != NM_DedicatedServer )
-	{
+    {
         TargetViewOffset = Vect(0,0,0);
         ReloadTweenStartTime = Level.TimeSeconds;
         ReloadTweenEndTime = Level.TimeSeconds + ReloadTweenRate;
         ReloadViewOffsetInterp = ReloadViewOffset; //store values for interpolation
-	}
+    }
     return Super.InterruptReload();
 }
 

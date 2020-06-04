@@ -4,21 +4,21 @@ var     float       RaiseAnimRate; //multiplier for Raise anim rate
 //overwriting to disable tween to idle if zoomed out while firing
 simulated function ZoomOut(bool bAnimateTransition)
 {
-	super(BaseKFWeapon).ZoomOut(bAnimateTransition);
+    super(BaseKFWeapon).ZoomOut(bAnimateTransition);
 
-	bAimingRifle = False;
+    bAimingRifle = False;
 
-	if( KFHumanPawn(Instigator)!=None )
-		KFHumanPawn(Instigator).SetAiming(False);
+    if( KFHumanPawn(Instigator)!=None )
+        KFHumanPawn(Instigator).SetAiming(False);
 
-	if( Level.NetMode != NM_DedicatedServer && KFPlayerController(Instigator.Controller) != none )
-	{
-		if( AimOutSound != none )
-		{
+    if( Level.NetMode != NM_DedicatedServer && KFPlayerController(Instigator.Controller) != none )
+    {
+        if( AimOutSound != none )
+        {
             PlayOwnedSound(AimOutSound, SLOT_Misc,,,,, false);
         }
-		KFPlayerController(Instigator.Controller).TransitionFOV(KFPlayerController(Instigator.Controller).DefaultFOV,ZoomTime);
-	}
+        KFPlayerController(Instigator.Controller).TransitionFOV(KFPlayerController(Instigator.Controller).DefaultFOV,ZoomTime);
+    }
     if( Level.TimeSeconds > FireMode[0].NextFireTime )
     {
         TweenAnim(IdleAnim,FastZoomOutTime);
@@ -58,5 +58,5 @@ defaultproperties
      PickupClass=Class'ScrnBalanceSrv.ScrnLAWPickup'
      AttachmentClass=Class'ScrnBalanceSrv.ScrnLAWAttachment'
      ItemName="L.A.W. SE"
-	 bHoldToReload=false // to show correct ammo amount on classic hud
+     bHoldToReload=false // to show correct ammo amount on classic hud
 }

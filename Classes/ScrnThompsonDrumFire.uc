@@ -47,7 +47,7 @@ function ModeDoFire()
         if (KFWeap.MagAmmoRemaining <= 0 && !KFWeap.bIsReloading && ( Level.TimeSeconds - LastFireTime>FireRate )
                 && !ScrnThompsonDrum(KFWeap).bBoltClosed )
         {
-            LastFireTime = Level.TimeSeconds; 
+            LastFireTime = Level.TimeSeconds;
             DoCloseBolt(); //plays sound and sets bBoltClosed
         }
         else
@@ -73,7 +73,7 @@ state FireLoop
         {
             DoCloseBolt(); //plays sound and sets bBoltClosed
         }
-	    Super.ModeTick(dt);
+        Super.ModeTick(dt);
     }
 }
 
@@ -81,61 +81,61 @@ function PlayFiring()
 {
     local float RandPitch;
 
-	if ( Weapon.Mesh != None )
-	{
-		if ( FireCount > 0 )
-		{
-			if( KFWeap.bAimingRifle )
-			{
-                if ( Weapon.HasAnim(FireLoopAimedAnim) )
-    			{
-    				Weapon.PlayAnim(FireLoopAimedAnim, FireLoopAnimRate, 0.0);
-    			}
-    			else if( Weapon.HasAnim(FireAimedAnim) )
-    			{
-    				Weapon.PlayAnim(FireAimedAnim, FireAnimRate, TweenTime);
-    			}
-    			else
-    			{
-                    Weapon.PlayAnim(FireAnim, FireAnimRate, TweenTime);
-    			}
-			}
-			else
-			{
-                if ( Weapon.HasAnim(FireLoopAnim) )
-    			{
-    				Weapon.PlayAnim(FireLoopAnim, FireLoopAnimRate, 0.0);
-    			}
-    			else
-    			{
-    				Weapon.PlayAnim(FireAnim, FireAnimRate, TweenTime);
-    			}
-			}
-		}
-		else
-		{
+    if ( Weapon.Mesh != None )
+    {
+        if ( FireCount > 0 )
+        {
             if( KFWeap.bAimingRifle )
-			{
-                if( Weapon.HasAnim(FireAimedAnim) )
-    			{
+            {
+                if ( Weapon.HasAnim(FireLoopAimedAnim) )
+                {
+                    Weapon.PlayAnim(FireLoopAimedAnim, FireLoopAnimRate, 0.0);
+                }
+                else if( Weapon.HasAnim(FireAimedAnim) )
+                {
                     Weapon.PlayAnim(FireAimedAnim, FireAnimRate, TweenTime);
-    			}
-    			else
-    			{
+                }
+                else
+                {
                     Weapon.PlayAnim(FireAnim, FireAnimRate, TweenTime);
-    			}
-			}
-			else
-			{
+                }
+            }
+            else
+            {
+                if ( Weapon.HasAnim(FireLoopAnim) )
+                {
+                    Weapon.PlayAnim(FireLoopAnim, FireLoopAnimRate, 0.0);
+                }
+                else
+                {
+                    Weapon.PlayAnim(FireAnim, FireAnimRate, TweenTime);
+                }
+            }
+        }
+        else
+        {
+            if( KFWeap.bAimingRifle )
+            {
+                if( Weapon.HasAnim(FireAimedAnim) )
+                {
+                    Weapon.PlayAnim(FireAimedAnim, FireAnimRate, TweenTime);
+                }
+                else
+                {
+                    Weapon.PlayAnim(FireAnim, FireAnimRate, TweenTime);
+                }
+            }
+            else
+            {
                 Weapon.PlayAnim(FireAnim, FireAnimRate, TweenTime);
-			}
-		}
-	}
+            }
+        }
+    }
 
 
-	if( Weapon.Instigator != none && Weapon.Instigator.IsLocallyControlled() &&
-	   Weapon.Instigator.IsFirstPerson() && StereoFireSound != none )
-	{
+    if( Weapon.Instigator != none && Weapon.Instigator.IsLocallyControlled() &&
+       Weapon.Instigator.IsFirstPerson() && StereoFireSound != none )
+    {
         if( bRandomPitchFireSound )
         {
             RandPitch = FRand() * RandomPitchAdjustAmt;
@@ -174,25 +174,25 @@ function PlayFiring()
 // Overriden to change ambient sound pitch (700rpm to 800rpm)
 function PlayAmbientSound(Sound aSound)
 {
-	local WeaponAttachment WA;
+    local WeaponAttachment WA;
 
-	WA = WeaponAttachment(Weapon.ThirdPersonActor);
+    WA = WeaponAttachment(Weapon.ThirdPersonActor);
 
     if ( Weapon == none || (WA == none))
         return;
 
-	if(aSound == None)
-	{
-		WA.SoundVolume = WA.default.SoundVolume;
-		WA.SoundRadius = WA.default.SoundRadius;
+    if(aSound == None)
+    {
+        WA.SoundVolume = WA.default.SoundVolume;
+        WA.SoundRadius = WA.default.SoundRadius;
         WA.SoundPitch = WA.default.SoundPitch*AmbientSoundPitchMult;
-	}
-	else
-	{
-		WA.SoundVolume = AmbientFireVolume;
-		WA.SoundRadius = AmbientFireSoundRadius;
+    }
+    else
+    {
+        WA.SoundVolume = AmbientFireVolume;
+        WA.SoundRadius = AmbientFireSoundRadius;
         WA.SoundPitch = 64*AmbientSoundPitchMult;
-	}
+    }
 
     WA.AmbientSound = aSound;
 }

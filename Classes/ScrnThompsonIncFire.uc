@@ -55,7 +55,7 @@ state FireLoop
         {
             DoCloseBolt(); //plays sound and sets bBoltClosed
         }
-	    Super.ModeTick(dt);
+        Super.ModeTick(dt);
     }
 }
 
