@@ -1367,9 +1367,6 @@ simulated event Destroyed()
     if ( ScrnHumanPawn(Pawn) != none )
         ScrnHumanPawn(Pawn).HealthBeforeDeath = Pawn.Health;
 
-    if ( Level.NetMode != NM_DedicatedServer && Level.GetLocalPlayerController() == self )
-        RemoveVotingMsg(); // delete voting interactions
-
     if ( Role == ROLE_Authority ) {
         if ( Mut != none &&  PlayerReplicationInfo != none ) {
             if ( Mut.bLeaveCashOnDisconnect && PlayerReplicationInfo.Team != none
@@ -1435,15 +1432,6 @@ function bool AllowVoiceMessage(name MessageType)
             MaxVoiceMsgIn10s = default.MaxVoiceMsgIn10s;
     }
     return true;
-}
-
-exec function RemoveVotingMsg()
-{
-    local VHInteraction RemoveMe;
-
-    foreach AllObjects(class'VHInteraction', RemoveMe) {
-        RemoveMe.Master.RemoveInteraction(RemoveMe);
-    }
 }
 
 exec function DropAllWeapons()

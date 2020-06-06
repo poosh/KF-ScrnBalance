@@ -6,7 +6,7 @@ simulated function bool AllowFire()
 
     KFP = KFPawn(Instigator);
 
-    if( KFWeap.bIsReloading || KFWeap.MagAmmoRemaining < AmmoPerFire)
+    if( KFWeap.bIsReloading && KFWeap.MagAmmoRemaining < AmmoPerFire)
         return false;
 
     if ( KFP.SecondaryItem != none || KFP.bThrowingNade )
@@ -21,4 +21,5 @@ simulated function bool AllowFire()
 defaultproperties
 {
      ProjectileClass=Class'ScrnBalanceSrv.ScrnShotgunBullet'
+     AmmoPerFire=1
 }

@@ -19,9 +19,6 @@ var() int   MediumZedMinHealth;         // If zed's base Health >= this value, z
 var     String         StaticMeshRef;
 var     String         AmbientSoundRef;
 
-var transient bool bBegunPlay;
-
-
 
 static function PreloadAssets()
 {
@@ -48,8 +45,6 @@ simulated function PostBeginPlay()
     Super.PostBeginPlay();
 
     MinDamage = default.Damage * (default.PenDamageReduction ** MaxPenetrations) + 0.0001;
-
-    bBegunPlay = true;
 }
 
 simulated function ProcessTouch (Actor Other, vector HitLocation)
@@ -64,12 +59,6 @@ simulated function ProcessTouch (Actor Other, vector HitLocation)
 
     if ( Other == none || Other == Instigator || Other.Base == Instigator || !Other.bBlockHitPointTraces  )
         return;
-
-    if ( !bBegunPlay ) {
-        // in case the bullet is spawned inside a body and triggered the touch event before the PostBeginPlay()
-        // We need the velocity vector for headshot calculation.
-        Velocity = Speed * Vector(Rotation);
-    }
 
     X = Vector(Rotation);
 
@@ -87,7 +76,7 @@ simulated function ProcessTouch (Actor Other, vector HitLocation)
         HitPawn = KFPawn(Other);
         if ( HitPawn != none ) {
             Victim = HitPawn;
-            HitPawn.ProcessLocationalDamage(Damage, Instigator, TempHitLocation, MomentumTransfer * Normal(Velocity), MyDamageType,HitPoints);
+            HitPawn.ProcessLocationalDamage(Damage, Instigator, TempHitLocation, MomentumTransfer * X, MyDamageType,HitPoints);
         }
     }
     else {
@@ -99,9 +88,9 @@ simulated function ProcessTouch (Actor Other, vector HitLocation)
         KFM = KFMonster(Victim);
 
         if ( Victim != none && Victim.IsHeadShot(HitLocation, X, 1.0))
-            Victim.TakeDamage(Damage * HeadShotDamageMult, Instigator, HitLocation, MomentumTransfer * Normal(Velocity), MyDamageType);
+            Victim.TakeDamage(Damage * HeadShotDamageMult, Instigator, HitLocation, MomentumTransfer * X, MyDamageType);
         else
-            Other.TakeDamage(Damage, Instigator, HitLocation, MomentumTransfer * Normal(Velocity), MyDamageType);
+            Other.TakeDamage(Damage, Instigator, HitLocation, MomentumTransfer * X, MyDamageType);
     }
 
     if ( Instigator != none )

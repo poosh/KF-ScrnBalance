@@ -19,6 +19,10 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+### v9.63.05
+- Fixed reloading of the regular Shotgun
+- Added more ScrN key bindings to Settings/Controls
+
 ### v9.63.04
 - Fixed Shotgun headshot detection bug at point-blank range
 
