@@ -10,4 +10,5 @@ defaultproperties
     PickupClass=Class'ScrnBalanceSrv.ScrnFlameThrowerPickup'
     ItemName="FlameThrower SE"
     Weight=9
+    QuickPutDownTime=0.15
 }

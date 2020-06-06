@@ -2,6 +2,7 @@ class ScrnKnife extends Knife;
 
 var transient bool bRestoreAltFire;
 var transient float RestoreAltFireTime;
+
 simulated state QuickMelee
 {
     simulated function Timer()
@@ -92,6 +93,9 @@ defaultproperties
     ItemName="Knife SE"
     Description="Military Combat Knife"
     Priority=2
+
+    QuickPutDownTime=0.01  // 0.15
+    QuickBringUpTime=0.01  // 0.15
 
     // PutDownAnimRate=2.0
     // SelectAnimRate=2.0

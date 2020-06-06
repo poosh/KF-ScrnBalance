@@ -2642,8 +2642,10 @@ exec function TestQuickMelee()
     local KFWeapon W;
     local string s;
     local int c;
+    local ScrnHumanPawn ScrnPawn;
 
-    if ( Pawn == none )
+    ScrnPawn = ScrnHumanPawn(Pawn);
+    if ( ScrnPawn == none )
         return;
 
     for ( inv = Pawn.Inventory; inv != none && ++c < 1000 ; inv = inv.Inventory ) {
@@ -2658,8 +2660,10 @@ exec function TestQuickMelee()
             ClientMessage(s, 'log');
         }
     }
-    ClientMessage("SecondaryItem: " $ ScrnHumanPawn(Pawn).SecondaryItem, 'log');
-
+    ClientMessage("SecondaryItem: " $ ScrnPawn.SecondaryItem, 'log');
+    if ( ScrnPawn.SecondaryItem != none ) {
+        ClientMessage("SecondaryItem State: " $ ScrnPawn.SecondaryItem.GetStateName(), 'log');
+    }
 }
 
 exec function FixQuickMelee()
@@ -2683,8 +2687,8 @@ exec function FixQuickMelee()
         if ( W != none ) {
             if ( W != Pawn.Weapon ) {
                 W.ClientState = WS_Hidden;
-                W.ClientGrenadeState = GN_None;
             }
+            W.ClientGrenadeState = GN_None;
             W.SetTimer(0, false);
             W.GotoState('');
         }

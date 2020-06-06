@@ -75,6 +75,7 @@ var float MacheteResetTime;
 var transient KFMeleeGun QuickMeleeWeapon;
 var transient KFWeapon WeaponToFixClientState;
 var transient bool bQuickMeleeInProgress;
+var transient float QuickMeleeFinishTime;
 
 var localized string BlameStrM99;
 var localized string BlameStrRPG;
@@ -1566,9 +1567,16 @@ simulated function Tick(float DeltaTime)
         ClientHealthToGive = 0;
     }
 
+    if ( bQuickMeleeInProgress && Level.TimeSeconds > QuickMeleeFinishTime ) {
+        log('Fixing QuickMelee', 'ScrnBalance');
+        QuickMeleeFinished();
+    }
+
     if ( WeaponToFixClientState != none ) {
         // make sure that we don't hide current weapon (in case when QuickMelee didn't worked)
-        if ( WeaponToFixClientState != Weapon && WeaponToFixClientState.ClientState == WS_ReadyToFire ) {
+        if ( bQuickMeleeInProgress && WeaponToFixClientState != Weapon
+                && WeaponToFixClientState.ClientState == WS_ReadyToFire )
+        {
             WeaponToFixClientState.ClientState = WS_Hidden;
             WeaponToFixClientState.ClientGrenadeState = GN_None;
             WeaponToFixClientState.SetTimer(0, false);
@@ -1583,7 +1591,8 @@ simulated function Tick(float DeltaTime)
 
     if ( Role == ROLE_Authority ) {
         if ( MacheteBoost > 0 && Level.TimeSeconds > MacheteResetTime ) {
-            MacheteBoost = 0;
+            MacheteBoost = MacheteBoost >> 1;
+            MacheteResetTime = Level.TimeSeconds + 1.0;
             ModifyVelocity(0, Velocity);
         }
     }
@@ -1743,6 +1752,8 @@ function QuickMelee()
     else if ( SecondaryItem == none && QuickMeleeWeapon != none ) {
         bQuickMeleeInProgress = true;
         SecondaryItem = QuickMeleeWeapon;
+        // QuickMeleeFinishTime is a last resort to make sure we don't stuck in quick melee
+        QuickMeleeFinishTime = Level.TimeSeconds + QuickMeleeWeapon.GetFireMode(1).FireRate + 1.0;
         KFW.SetTimer(0, false);
         KFW.ClientGrenadeState = GN_TempDown;
         KFW.PutDown();
@@ -1751,8 +1762,15 @@ function QuickMelee()
 
 function QuickMeleeFinished()
 {
+    local KFWeapon KFW;
+
+    KFW = KFWeapon(Weapon);
+    if ( KFW != none ) {
+        KFW.ClientGrenadeState = GN_None;
+    }
     bQuickMeleeInProgress = false;
     SecondaryItem = none;
+    WeaponToFixClientState = none;
 }
 
 function WeaponDown()

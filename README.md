@@ -19,6 +19,13 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+### v9.63.06
+- Added a safety check to restore weapons in case player gets stuck in `QuickMelee`.
+  It should trigger automatically. If not, there is a console command: `FixQuickMelee`
+  Now using QuickMelee should be safe.
+- QuickMelee is now performed slightly faster
+- Machete-sprint speed boost now gets halved every second instead of instantly dropping down to 0, in case of cooldown.
+
 ### v9.63.05
 - Fixed reloading of the regular Shotgun
 - Added more ScrN key bindings to Settings/Controls
