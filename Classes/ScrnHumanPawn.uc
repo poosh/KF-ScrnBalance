@@ -330,7 +330,7 @@ function bool AddInventory( inventory NewItem )
                 AddToFlashlightArray(weap.class); // v6.22 - each weapon has own flashlight
             CheckQuickMeleeWeapon(KFMeleeGun(weap));
             if ( class'ScrnBalance'.default.Mut.SrvTourneyMode == 0 && Machete(weap) != none ) {
-                if ( MacheteBoost < 250 && VSizeSquared(Velocity) > 10000 ) {
+                if ( MacheteBoost < 150 && VSizeSquared(Velocity) > 10000 ) {
                     if ( MacheteBoost < 50 )
                         MacheteBoost += 3;
                     else if ( MacheteBoost < 100 )

@@ -1901,6 +1901,17 @@ function SetupPickups()
     SleepingAmmo.length = j;
 }
 
+function DestroyDroppedPickups()
+{
+    local Pickup Pickup;
+
+    foreach DynamicActors(class'Pickup', Pickup) {
+        if ( Pickup.bDropped ) {
+            Pickup.LifeSpan = 3.0;
+        }
+    }
+}
+
 function AmmoPickedUp(KFAmmoPickup PickedUp)
 {
     local int i;
@@ -2776,7 +2787,6 @@ State MatchInProgress
         local int i;
         local Controller C;
         local KFPlayerController KFPC;
-        local Pickup Pickup;
 
         bTradingDoorsOpen = False;
         for( i=0; i<ShopList.Length; i++ ) {
@@ -2785,12 +2795,7 @@ State MatchInProgress
         }
 
         SelectShop();
-
-        foreach DynamicActors(class'Pickup', Pickup) {
-            if ( Pickup.bDropped ) {
-                Pickup.Destroy();
-            }
-        }
+        DestroyDroppedPickups();
 
         // Tell all players to stop showing the path to the trader
         for ( C = Level.ControllerList; C != none; C = C.NextController ) {

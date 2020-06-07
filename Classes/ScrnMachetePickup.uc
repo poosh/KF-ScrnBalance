@@ -18,6 +18,6 @@ defaultproperties
      CorrespondingPerkIndex=7
 
      CollisionRadius=30
-     CollisionHeight=10
-     PrePivot=(Z=10)
+     CollisionHeight=20
+     PrePivot=(Z=20)
 }

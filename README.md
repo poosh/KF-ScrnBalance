@@ -19,6 +19,11 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+### v9.63.07
+- Machete Boost capped at 150 (down from 250)
+- Machete damage scales exponentially according to the boost and player's velocity.
+- At the beginning of the wave, weapons on the ground are not destroyed immediately, but in 3 seconds.
+
 ### v9.63.06
 - Added a safety check to restore weapons in case player gets stuck in `QuickMelee`.
   It should trigger automatically. If not, there is a console command: `FixQuickMelee`
