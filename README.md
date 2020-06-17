@@ -19,6 +19,16 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+### v9.63.08
+- Fixed an exploit that allowed throwing nades at insane rate
+- **Claymore** weight raised to 8 (up from 6)
+- **Chainsaw** weight lowered to 7 (down from 8)
+- **Scythe** primary attack made wider (the widest attack in the Berserker's arsenal);
+    secondary attack range made longer (the longest melee range).
+    Neither of the attacks can stun Scrakes.
+- **Scythe** price raised to 1750 (up from 1500)
+- Code cleanup: removed log messages from ScrN Features tab
+
 ### v9.63.07
 - Machete Boost capped at 150 (down from 250)
 - Machete damage scales exponentially according to the boost and player's velocity.

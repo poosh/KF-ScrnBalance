@@ -448,8 +448,11 @@ static function AddDefaultInventory(KFPlayerReplicationInfo KFPRI, Pawn P)
     local class<ScrnVestPickup> ScrnVest;
     local int ExtraAmmo;
     local float SellValue;
+    local ScrnBalance Mut;
 
-    if ( class'ScrnBalance'.default.Mut.bUseExpLevelForSpawnInventory )
+    Mut = class'ScrnBalance'.default.Mut;
+
+    if ( Mut.bUseExpLevelForSpawnInventory && !Mut.bTSCGame )
         level = KFPRI.ClientVeteranSkillLevel;
     else
         level = GetBonusLevel(KFPRI.ClientVeteranSkillLevel);
@@ -466,7 +469,7 @@ static function AddDefaultInventory(KFPlayerReplicationInfo KFPRI, Pawn P)
                     || class'ScrnAchCtrl'.static.IsAchievementUnlocked(L, default.DefaultInventory[i].Achievement)) )
         {
             ExtraAmmo = max(0, default.DefaultInventory[i].AmmoPerLevel * (level - default.DefaultInventory[i].MinPerkLevel));
-            if ( !class'ScrnBalance'.default.Mut.bSpawn0 )
+            if ( !Mut.bSpawn0 )
                 SellValue = default.DefaultInventory[i].SellValue;
             ScrnVest = class<ScrnVestPickup>(default.DefaultInventory[i].PickupClass);
             if ( ScrnVest != none || class<ShieldPickup>(default.DefaultInventory[i].PickupClass) != none ) {
@@ -529,9 +532,7 @@ static function float GetFireSpeedModStatic(KFPlayerReplicationInfo KFPRI, class
 // Set number times Zed Time can be extended
 static function int ZedTimeExtensions(KFPlayerReplicationInfo KFPRI)
 {
-    if ( class'ScrnBalance'.default.Mut.bBeta )
-        return 1;
-    return 0;
+    return 1;
 }
 
 // TSC features (Team Survival Competition)

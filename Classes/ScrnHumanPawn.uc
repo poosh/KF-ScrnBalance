@@ -1705,6 +1705,7 @@ function ThrowCookedGrenade()
 function ThrowGrenade()
 {
     local KFWeapon KFW;
+    local WeaponFire NadeFire;
 
     if ( bThrowingNade || SecondaryItem != none )
         return;
@@ -1712,12 +1713,16 @@ function ThrowGrenade()
     KFW = KFWeapon(Weapon);
     PlayerGrenade = FindPlayerGrenade();
     if ( PlayerGrenade != none && PlayerGrenade.HasAmmo() ) {
+        NadeFire = PlayerGrenade.GetFireMode(0);
         if ( KFW == none || KFW.GetFireMode(0).NextFireTime - Level.TimeSeconds > 0.1
-                || (KFW.bIsReloading && !KFW.InterruptReload()) )
+                || (KFW.bIsReloading && !KFW.InterruptReload())
+                || NadeFire.NextFireTime - Level.TimeSeconds > 0.1 )
             return;
 
         KFW.ClientGrenadeState = GN_TempDown;
         KFW.PutDown();
+        // put here because we need it on the client side
+        NadeFire.NextFireTime = Level.TimeSeconds + NadeFire.FireRate;
     }
 }
 

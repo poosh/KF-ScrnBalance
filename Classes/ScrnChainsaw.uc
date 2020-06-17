@@ -332,30 +332,31 @@ simulated function PlayIdle()
 
 defaultproperties
 {
-     IdleFuelConsumeTime=10.0
-     EngineStartSoundRef="KF_ChainsawSnd.Chainsaw_FalseStart4"
-     EngineStopSoundRef="KF_ChainsawSnd.Chainsaw_Deselect1"
-     ReloadSounds(0)=(SoundRef="KF_FlamethrowerSnd.FT_Reload1")
-     ReloadSounds(1)=(SoundRef="KF_FlamethrowerSnd.FT_Reload2")
-     ReloadSounds(2)=(SoundRef="KF_FlamethrowerSnd.FT_Reload3")
-     ReloadSounds(3)=(SoundRef="KF_FlamethrowerSnd.FT_Reload4")
-     ReloadSounds(4)=(SoundRef="KF_FlamethrowerSnd.FT_Reload5")
-     ReloadSounds(5)=(SoundRef="KF_FlamethrowerSnd.FT_Reload5b")
-     ReloadSounds(6)=(SoundRef="KF_FlamethrowerSnd.FT_Reload6")
-     ReloadSounds(7)=(SoundRef="KF_ChainsawSnd.Chainsaw_FalseStart1")
-     ReloadSounds(8)=(SoundRef="KF_ChainsawSnd.Chainsaw_FalseStart2")
-     MagCapacity=105
-     ReloadRate=2.666667
-     ReloadAnim="PutDown"
-     ReloadAnimRate=0.250000
-     WeaponReloadAnim="Reload_Flamethrower"
-     bAmmoHUDAsBar=True
-     FireModeClass(0)=Class'ScrnBalanceSrv.ScrnChainsawFire'
-     FireModeClass(1)=Class'ScrnBalanceSrv.ScrnChainsawAltFire'
-     bMeleeWeapon=False
-     bShowChargingBar=True
-     Description="This legendary chainsaw is used through the centuries to fight evil forces"
-     PickupClass=Class'ScrnBalanceSrv.ScrnChainsawPickup'
-     ItemName="Ash's Chainsaw"
-     AppID=0
+    Weight=7
+    IdleFuelConsumeTime=10.0
+    EngineStartSoundRef="KF_ChainsawSnd.Chainsaw_FalseStart4"
+    EngineStopSoundRef="KF_ChainsawSnd.Chainsaw_Deselect1"
+    ReloadSounds(0)=(SoundRef="KF_FlamethrowerSnd.FT_Reload1")
+    ReloadSounds(1)=(SoundRef="KF_FlamethrowerSnd.FT_Reload2")
+    ReloadSounds(2)=(SoundRef="KF_FlamethrowerSnd.FT_Reload3")
+    ReloadSounds(3)=(SoundRef="KF_FlamethrowerSnd.FT_Reload4")
+    ReloadSounds(4)=(SoundRef="KF_FlamethrowerSnd.FT_Reload5")
+    ReloadSounds(5)=(SoundRef="KF_FlamethrowerSnd.FT_Reload5b")
+    ReloadSounds(6)=(SoundRef="KF_FlamethrowerSnd.FT_Reload6")
+    ReloadSounds(7)=(SoundRef="KF_ChainsawSnd.Chainsaw_FalseStart1")
+    ReloadSounds(8)=(SoundRef="KF_ChainsawSnd.Chainsaw_FalseStart2")
+    MagCapacity=105
+    ReloadRate=2.666667
+    ReloadAnim="PutDown"
+    ReloadAnimRate=0.250000
+    WeaponReloadAnim="Reload_Flamethrower"
+    bAmmoHUDAsBar=True
+    FireModeClass(0)=Class'ScrnBalanceSrv.ScrnChainsawFire'
+    FireModeClass(1)=Class'ScrnBalanceSrv.ScrnChainsawAltFire'
+    bMeleeWeapon=False
+    bShowChargingBar=True
+    Description="This legendary chainsaw is used through the centuries to fight evil forces"
+    PickupClass=Class'ScrnBalanceSrv.ScrnChainsawPickup'
+    ItemName="Ash's Chainsaw"
+    AppID=0
 }

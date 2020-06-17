@@ -30,4 +30,5 @@ defaultproperties
 {
      ProjectileClass=Class'ScrnBalanceSrv.ScrnNade'
      FireSound=SoundGroup'KF_AxeSnd.Axe_Fire'
+     FireRate=0.3
 }

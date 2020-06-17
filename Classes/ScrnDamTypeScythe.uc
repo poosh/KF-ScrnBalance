@@ -1,7 +1,5 @@
 class ScrnDamTypeScythe extends DamTypeMelee;
 
-//damage type for primary attack only!
-
 defaultproperties
 {
      HeadShotDamageMult=1.100000

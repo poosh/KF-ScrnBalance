@@ -125,7 +125,6 @@ function ShowPanel(bool bShow)
     local ScrnCustomPRI ScrnPRI;
     local bool b;
 
-    log("ShowPanel("$bShow$")", class.name);
     Super.ShowPanel(bShow);
 
     if ( !bShow ) {
@@ -133,7 +132,6 @@ function ShowPanel(bool bShow)
         return;
     }
 
-    log("ShowPanel: Set button visibility", class.name);
     lbl_Version.Caption = class'ScrnBalance'.default.FriendlyName @ class'ScrnBalance'.static.GetVersionStr();
     lbl_CR.Caption = "Copyright (c) 2012-2020 PU Developing IK, Latvia. All Rights Reserved.";
     ServerStatus();
@@ -177,7 +175,6 @@ function ShowPanel(bool bShow)
     bFillPlayerList = true; // fill player list in 1s
 
     SetTimer(1, true);
-    log("ShowPanel: EOF", class.name);
 }
 
 
@@ -194,7 +191,6 @@ function RefreshInfo()
 {
     local ScrnPlayerController PC;
 
-    log("RefreshInfo", class.name);
     PC = ScrnPlayerController(PlayerOwner());
     if ( PC == none )
         return;
@@ -327,37 +323,29 @@ function FillPlayerList()
         return;
     bFillPlayerList = false;
 
-    log("FillPlayerList", class.name);
     // sort list by Red Players -> Blue Players -> Spectators
     for ( i = 0; i < GRI.PRIArray.Length; i++) {
-        log("FillPlayerList: Loading PRI: " $(i+1)$"/"$GRI.PRIArray.Length, class.name);
         KFPRI = KFPlayerReplicationInfo(GRI.PRIArray[i]);
         if ( KFPRI == none || KFPRI.PlayerID == 0 )
             continue;
-        log("FillPlayerList: PRI["$(i+1)$"] loaded", class.name);
         if ( KFPRI.bOnlySpectator || KFPRI.Team == none ) {
             PRIs[PRIs.length] = KFPRI; // add to the end
-            log("FillPlayerList: PRI["$(i+1)$"] added to spectators", class.name);
         }
         else if ( KFPRI.Team.TeamIndex == 0 ) {
             PRIs.insert(0,1);
             PRIs[0] = KFPRI; // add to the beginning
             BlueIndex++;
-            log("FillPlayerList: PRI["$(i+1)$"] added to red team", class.name);
         }
         else {
             PRIs.insert(BlueIndex,1);
             PRIs[BlueIndex] = KFPRI; // add to the beginning of blue team
-            log("FillPlayerList: PRI["$(i+1)$"] added to blue team", class.name);
         }
     }
 
-    log("FillPlayerList: Clearing Player List", class.name);
     SelectedPlayerName = cbx_Player.GetText();
     cbx_Player.bIgnoreChange = true;
     cbx_Player.ResetComponent();
     idx = -1;
-    log("FillPlayerList: FillingPlayer List", class.name);
     for ( i = 0; i < PRIs.Length; i++) {
         s = GetPlayerName(PRIs[i]);
         cbx_Player.AddItem(s);
@@ -366,9 +354,7 @@ function FillPlayerList()
     }
     cbx_Player.bIgnoreChange = false;
 
-    log("FillPlayerList: Selected index: " $ (idx+1)$"/"$PRIs.Length, class.name);
     cbx_Player.SilentSetIndex(idx);
-    log("FillPlayerList: EOF", class.name);
 }
 
 function LoadPlayerData(string PlayerName)
@@ -377,7 +363,6 @@ function LoadPlayerData(string PlayerName)
     local ScrnCustomPRI ScrnPRI;
     local string s;
 
-    log("LoadPlayerData: " $ PlayerName, class.name);
     PlayerLocalID = 0;
     PlayerSteamID64 = "";
     PRI = FindPRI(PlayerName);
@@ -399,9 +384,7 @@ function LoadPlayerData(string PlayerName)
         else
             lbl_PlayerID.TextColor = class'ScrnHUD'.default.TextColors[PRI.Team.TeamIndex];
     }
-    log("LoadPlayerData: EOF", class.name);
 }
-
 
 function InternalOnLoadINI(GUIComponent Sender, string s)
 {
@@ -534,8 +517,6 @@ function InternalOnLoadINI(GUIComponent Sender, string s)
             break;
     }
 }
-
-
 
 function InternalOnChange(GUIComponent Sender)
 {
@@ -731,8 +712,6 @@ function bool IsCookingSet()
     return BindAliases.length > 0;
 }
 
-
-
 function bool ButtonClicked(GUIComponent Sender)
 {
     local ScrnPlayerController PC;
@@ -845,7 +824,6 @@ function bool PlayerVoteButtonClicked(GUIComponent Sender)
     PlayerOwner().Mutate(cmd);
     return true;
 }
-
 
 function LaunchURLPage( string URL )
 {
