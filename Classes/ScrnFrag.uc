@@ -113,6 +113,18 @@ function int PickFireMode()
     return 0;
 }
 
+// Spawning Frag should not give TP ammo
+function GiveAmmo(int m, WeaponPickup WP, bool bJustSpawned)
+{
+    local bool bNoTP;
+
+    bNoTP = Ammo[m] == none;
+    super.GiveAmmo(m, WP, bJustSpawned);
+    if ( m == 1 && bNoTP && Ammo[1] != none ) {
+        Ammo[1].AmmoAmount = 0;
+    }
+}
+
 defaultproperties
 {
      Weight=0.000000

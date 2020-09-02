@@ -12,7 +12,7 @@ class ScrnBalance extends Mutator
 #exec OBJ LOAD FILE=ScrnAch_T.utx
 
 
-const VERSION = 96308;
+const VERSION = 96309;
 
 var ScrnBalance Mut; // pointer to self to use in static functions, i.e class'ScrnBalance'.default.Mut
 
@@ -160,6 +160,7 @@ var globalconfig float SkippedTradeTimeMult; //how much of the skipped trader ti
 var transient int TradeTimeAddSeconds; //amount of seconds to add to the next trader time
 var globalconfig bool bAllowBlameVote, bAllowKickVote;
 var globalconfig int BlameVoteCoolDown;
+var globalconfig bool bBlameFart;
 var transient int BlameCounter;
 var globalconfig bool bAllowPauseVote, bAllowLockPerkVote, bAllowBoringVote;
 var globalconfig byte MaxVoteKillMonsters;
@@ -974,10 +975,6 @@ function Mutator FindServerPerksMut()
         return ServerPerksMut;
 
     CheckMutators();
-    if ( ServerPerksMut == none ) {
-        log("ServerPerksMut not found!", 'ScrnBalance');
-    }
-
     return ServerPerksMut;
 }
 
@@ -2627,14 +2624,11 @@ function PostBeginPlay()
     }
 
     // CHECK & LOAD SERVERPERKS
-    GetRidOfMut('AliensKFServerPerksMut');
-    FindServerPerksMut();
-    if ( ServerPerksMut == none ) {
-        log("ServerPerksMut must be loaded before ScrN Balance! Loading it now...", 'ScrnBalance');
+    if ( FindServerPerksMut() == none ) {
+        log("ServerPerksMut is not loaded! Loading it now...", 'ScrnBalance');
         Level.Game.AddMutator(ServerPerksPkgName, false);
         //check again
-        FindServerPerksMut();
-        if ( ServerPerksMut == none )
+        if ( FindServerPerksMut() == none )
             log("Unable to spawn " $ ServerPerksPkgName, 'ScrnBalance');
     }
     bAllowAlwaysPerkChanges = ServerPerksMut.GetPropertyText("bAllowAlwaysPerkChanges") ~= "True";
@@ -3142,7 +3136,7 @@ function BlamePlayer(ScrnPlayerController PC, string Reason, optional int BlameI
         BroadcastMessage(ColorString(Reason, 200, 200, 1), false);
     }
 
-    if ( ScrnPawn != none && ScrnGT != none && !ScrnGT.IsTourney() && !bTSCGame
+    if ( bBlameFart && ScrnPawn != none && ScrnGT != none && !ScrnGT.IsTourney() && !bTSCGame
             && Level.TimeSeconds - PC.LastBlamedTime > 60.0 ) {
         ScrnPawn.Fart(ScrnPRI.BlameCounter);
         ScrnPawn.Crap(10 * ScrnPRI.BlameCounter);
@@ -3257,6 +3251,7 @@ defaultproperties
     bAllowVoting=True
     bAllowBlameVote=True
     BlameVoteCoolDown=60
+    bBlameFart=True
     bAllowKickVote=True
     bPauseTraderOnly=True
     bAllowPauseVote=True

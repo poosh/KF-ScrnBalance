@@ -24,68 +24,52 @@ state Pickup
     // When touched by an actor.
     function Touch(Actor Other)
     {
+        local Pawn P;
         local Inventory CurInv;
         local bool bPickedUp;
         local int AmmoPickupAmount;
-        local Boomstick DBShotty;
         local KFAmmunition ammo;
         local KFPlayerReplicationInfo KFPRI;
+        local class<KFVeterancyTypes> Perk;
 
-        if ( Pawn(Other) != none && Pawn(Other).bCanPickupInventory && Pawn(Other).Controller != none &&
-             FastTrace(Other.Location, Location) )
-        {
-            KFPRI = KFPlayerReplicationInfo(Pawn(Other).PlayerReplicationInfo);
+        P = Pawn(Other);
+        if ( P == none || P.Controller == none || !P.bCanPickupInventory || !FastTrace(P.Location, Location) )
+            return;
+        KFPRI = KFPlayerReplicationInfo(P.PlayerReplicationInfo);
+        if (KFPRI != none )
+            Perk = KFPRI.ClientVeteranSkill;
 
-            for ( CurInv = Other.Inventory; CurInv != none; CurInv = CurInv.Inventory )
-            {
-                if( Boomstick(CurInv) != none )
-                {
-                    DBShotty = Boomstick(CurInv);
-                }
-
-                ammo = KFAmmunition(CurInv);
-                if ( ammo != none && ammo.bAcceptsAmmoPickups )
-                {
-                    // changed from 1 to 0  -- PooSH
-                    if ( ammo.AmmoPickupAmount > 0 )
-                    {
-                        if ( ammo.AmmoAmount < ammo.MaxAmmo )
-                        {
-                            if ( KFPRI != none && KFPRI.ClientVeteranSkill != none )
-                            {
-                                AmmoPickupAmount = float(ammo.AmmoPickupAmount) * KFPRI.ClientVeteranSkill.static.GetAmmoPickupMod(KFPRI, ammo);
-                            }
-                            else
-                            {
-                                AmmoPickupAmount = ammo.AmmoPickupAmount;
-                            }
-
-                            ammo.AmmoAmount = Min(ammo.MaxAmmo, ammo.AmmoAmount + AmmoPickupAmount);
-                            bPickedUp = true;
+        for ( CurInv = Other.Inventory; CurInv != none; CurInv = CurInv.Inventory ) {
+            ammo = KFAmmunition(CurInv);
+            if ( ammo != none && ammo.bAcceptsAmmoPickups ) {
+                // changed from 1 to 0  -- PooSH
+                if ( ammo.AmmoPickupAmount > 0 ) {
+                    if ( ammo.AmmoAmount < ammo.MaxAmmo ) {
+                        if ( Perk != none ) {
+                            AmmoPickupAmount = float(ammo.AmmoPickupAmount)
+                                    * Perk.static.GetAmmoPickupMod(KFPRI, ammo);
                         }
-                    }
-                    else if ( ammo.AmmoAmount < ammo.MaxAmmo )
-                    {
+                        else {
+                            AmmoPickupAmount = ammo.AmmoPickupAmount;
+                        }
+                        ammo.AmmoAmount = Min(ammo.MaxAmmo, ammo.AmmoAmount + AmmoPickupAmount);
                         bPickedUp = true;
-
-                        if ( FRand() <= (1.0 / Level.Game.GameDifficulty) )
-                        {
-                            ammo.AmmoAmount++;
-                        }
                     }
                 }
-            }
-
-            if ( bPickedUp )
-            {
-                AnnouncePickup(Pawn(Other));
-                GotoState('Sleeping', 'Begin');
-
-                if ( KFGameType(Level.Game) != none )
-                {
-                    KFGameType(Level.Game).AmmoPickedUp(self);
+                else if ( ammo.AmmoAmount < ammo.MaxAmmo ) {
+                    bPickedUp = true;
+                    if ( FRand() <= (1.0 / Level.Game.GameDifficulty) )
+                        ammo.AmmoAmount++;
                 }
             }
+        }
+
+        if ( bPickedUp ) {
+            AnnouncePickup(Pawn(Other));
+            GotoState('Sleeping', 'Begin');
+
+            if ( KFGameType(Level.Game) != none )
+                KFGameType(Level.Game).AmmoPickedUp(self);
         }
     }
 }

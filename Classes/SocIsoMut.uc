@@ -11,6 +11,8 @@ var SocIsoReplicationInfo ReplInfo;
 
 function PostBeginPlay()
 {
+    class'ScrnBalance'.default.Mut.bBlameFart = true;
+
     class'ScrnAchCtrl'.static.RegisterAchievements(class'SocAch');
     SocHandler = Level.Game.Spawn(class'SocHandler');
     SocHandler.Mut = self;

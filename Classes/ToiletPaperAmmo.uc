@@ -24,6 +24,7 @@ function bool AddAmmo(int AmmoToAdd)
 
 defaultproperties
 {
+    bAcceptsAmmoPickups=false
     AmmoPickupAmount=0
     MaxAmmo=200
     InitialAmount=1

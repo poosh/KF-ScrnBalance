@@ -19,6 +19,11 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+### v9.63.09
+- Players do not spawn with TP in regular games anymore (excluding *Social Isolation*)
+- There is no TP in ammo boxes anymore
+- New config option `bBlameFart` allows to disable farts
+
 ### v9.63.08
 - Fixed an exploit that allowed throwing nades at insane rate
 - **Claymore** weight raised to 8 (up from 6)
