@@ -8,6 +8,7 @@ var bool bRevealSymptoms;
 
 var SocHandler SocHandler;
 var SocIsoReplicationInfo ReplInfo;
+var SocRules SocRules;
 
 function PostBeginPlay()
 {
@@ -20,11 +21,14 @@ function PostBeginPlay()
 
     ReplInfo = spawn(class'SocIsoReplicationInfo');
     ReplInfo.VirusSpreadDist = VirusSpreadDist;
+
+    SocRules = spawn(class'SocRules');
 }
 
 function Destroyed()
 {
     ReplInfo.Destroy();
+    // SocRules gets auto destroyed by ScrnGameRules
     super.Destroyed();
 }
 

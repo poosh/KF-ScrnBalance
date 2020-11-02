@@ -19,6 +19,24 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+### v9.63.10
+#### Weapon Balance
+- **Handcannon** magazine size reduced down to 7 bullets (+1 in case of a tactical reload)
+- **Sharpshooter** gains only 30% faster reload with single pistols, M14, and Musket (down from 60%).
+    Reload speed bonus reduce compensates a tactical reload buff.
+- LAR and custom sniper rifles (perked weapons) still have 60% faster reload bonus
+- Zeds, nailed to a wall with **Nailgun**, receive additional damage on tearing away.
+- Player weapon lock applies on spawn invetory too.
+- Fixed a bug that allowed a player with full Machete-boost do up to 8K damage (thanks *Joe*)
+
+#### Social Isolation
+The most used strategy in Social Isolation is "Covidiot Party," i.e., do not care about distance and rely on the medic to heal you (like in real life too ;)).
+Made a few changes to make being sick less "pleasant":
+- Coughing on already sick players make them coughing more
+- Coughing is the shop leads to -$99 penalty for disinfection needs
+- Players cannot pick up infected weapons or dosh, even if they are infected too
+
+
 ### v9.63.09
 - Players do not spawn with TP in regular games anymore (excluding *Social Isolation*)
 - There is no TP in ammo boxes anymore

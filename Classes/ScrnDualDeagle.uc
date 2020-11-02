@@ -627,7 +627,8 @@ function DropFrom(vector StartLocation)
 
 defaultproperties
 {
-    MagAmmoRemaining=16
+    MagCapacity=14
+    MagAmmoRemaining=14
     ClientMagAmmoRemaining=16
     ReloadShortRate = 2.9333 //no slides locked back
     ReloadHalfShortRate = 3.2333 //right slide locked back

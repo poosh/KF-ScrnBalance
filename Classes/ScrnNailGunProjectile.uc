@@ -148,7 +148,6 @@ simulated function NailDeadBodiesToWall()
 
 function ReleaseMonster()
 {
-
     if ( NailedMonster == none )
         return;
 
@@ -172,6 +171,8 @@ function ReleaseMonster()
         ach_Nail100m.AchHandler.ProgressAchievement(ach_Nail100m.AchIndex, 1);
     if ( NailedFlyDistance >= 62500.0 && ach_PushShiver.AchHandler != none && NailedMonster.IsA('ZombieShiver') )
         ach_PushShiver.AchHandler.ProgressAchievement(ach_PushShiver.AchIndex, 1);
+
+    NailedMonster.TakeDamage(2*Damage, Instigator, Location, MomentumTransfer * Normal(Velocity), MyDamageType);
 
     NailedMonster = none;
     NetUpdateTime = Level.TimeSeconds - 1;

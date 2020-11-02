@@ -19,8 +19,15 @@ var transient bool bCovidiotSocial;
 var VirusInfo InfectedBy;
 var transient int InfectGameTime;
 
+var transient byte CoughedInShopWave;
+var localized string strCoughedInShop;
+var int CoughedInShopPenalty;
 
 function Infect(float r) { }
+
+function bool HasSymptoms() {
+    return false;
+}
 
 function HealthSample(int Health)
 {
@@ -162,12 +169,17 @@ state Sick extends Infected
         Timer();
     }
 
+    function bool HasSymptoms() {
+        return true;
+    }
+
     function Timer()
     {
         local float NextDamageTime;
         local ScrnHumanPawn P;
         local ToiletPaperAmmo TPAmmo;
         local int d;
+        local string s;
 
         if ( Level.TimeSeconds > NextStateTime ) {
             NextState();
@@ -198,6 +210,16 @@ state Sick extends Infected
                 Mut.SocHandler.PlayerCoughed(self, d);
                 NextDamageTime = DamageDelay;
                 --DamageCounter;
+
+                if (ScrnPlayerController(SPI.PlayerOwner).bShopping) {
+                    if (CoughedInShopWave != SPI.GameRules.Mut.KF.WaveNum) {
+                        CoughedInShopWave = SPI.GameRules.Mut.KF.WaveNum;
+                        SPI.PlayerOwner.PlayerReplicationInfo.Score -= CoughedInShopPenalty; // allow go negative
+                        s = strCoughedInShop;
+                        ReplaceText(s, "%$", string(CoughedInShopPenalty));
+                        SPI.PlayerOwner.ClientMessage(class'ScrnBalance'.static.ColorString(s,192,128,1));
+                    }
+                }
             }
             else {
                 MinHealth = 0;
@@ -298,6 +320,10 @@ state Curing extends Infected
         NextStateTime += Level.TimeSeconds;
     }
 
+    function bool HasSymptoms() {
+        return true;
+    }
+
     function NextState()
     {
         GotoState('Cured');
@@ -320,4 +346,6 @@ defaultproperties
     DamageDelay=0.5
     DamageMod=1.0
     DamageRate=1.0
+    CoughedInShopPenalty=99
+    strCoughedInShop="Virus spread warning! You have neen charged $%$ to disinfect the shop area."
 }

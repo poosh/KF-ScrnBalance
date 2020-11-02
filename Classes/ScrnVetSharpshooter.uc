@@ -19,14 +19,12 @@ static function int AddDamage(KFPlayerReplicationInfo KFPRI, KFMonster Injured, 
 static function float GetHeadShotDamMulti(KFPlayerReplicationInfo KFPRI, KFPawn P, class<DamageType> DmgType)
 {
     local float ret;
-    local bool bNoExtraBonus;
 
     if ( DmgType == default.DefaultDamageTypeNoBonus ) {
         ret = 1.0;
     }
-    else if ( ClassIsChildOf(DmgType, class'DamTypeDualies') && KFPRI.Level.Game.GameDifficulty >= 7.0 ) {
-        ret = 1.40; // limit to 40% max HS damage bonus
-        bNoExtraBonus = true;
+    else if ( ClassIsChildOf(DmgType, class'DamTypeDualies') ) {
+        ret = 1.0;
     }
     else if ( DmgType == default.DefaultDamageType
             || class<KFWeaponDamageType>(DmgType).default.bSniperWeapon
@@ -39,9 +37,7 @@ static function float GetHeadShotDamMulti(KFPlayerReplicationInfo KFPRI, KFPawn 
         ret = 1.0; // Fix for oversight in Balance Round 6(which is the reason for the Round 6 second attempt patch)
     }
 
-    if ( !bNoExtraBonus ) {
-        ret *= 1.50;
-    }
+    ret *= 1.50;
 
     if ( class'ScrnBalance'.default.Mut.bHardcore )
         ret *= 2.0; // to compensate 50% damage reduction in ReduceDamage();
@@ -52,7 +48,6 @@ static function float GetHeadShotDamMulti(KFPlayerReplicationInfo KFPRI, KFPawn 
 
 static function float ModifyRecoilSpread(KFPlayerReplicationInfo KFPRI, WeaponFire Other, out float Recoil)
 {
-    // If Gunslinger perk persists, remove bonus from dual pistols.
     if ( Crossbow(Other.Weapon) != none || Winchester(Other.Weapon) != none
             || Single(Other.Weapon) != none || Deagle(Other.Weapon) != none
             || Magnum44Pistol(Other.Weapon) != none
@@ -66,14 +61,15 @@ static function float ModifyRecoilSpread(KFPlayerReplicationInfo KFPRI, WeaponFi
     }
     else
         Recoil = 1.0;
-    Return Recoil;
+    return Recoil;
 }
 
 // Modify fire speed
 static function float GetFireSpeedModStatic(KFPlayerReplicationInfo KFPRI, class<Weapon> Other)
 {
-    if ( ClassIsChildOf(Other, class'Winchester') || ClassIsChildOf(Other, class'SPSniperRifle')
-        || ClassIsInArray(default.SpecialWeapons, Other) )
+    if ( ClassIsChildOf(Other, class'Winchester')
+            || ClassIsChildOf(Other, class'SPSniperRifle')
+            || ClassIsInArray(default.SpecialWeapons, Other) )
     {
         return 1.6; // 60% faster fire rate with LAR and Special Weapons
     }
@@ -82,15 +78,21 @@ static function float GetFireSpeedModStatic(KFPlayerReplicationInfo KFPRI, class
 
 static function float GetReloadSpeedModifierStatic(KFPlayerReplicationInfo KFPRI, class<KFWeapon> Other)
 {
-    // If Gunslinger perk persists, remove bonus from dual pistols.
-    if ( ClassIsChildOf(Other, class'Winchester') || ClassIsChildOf(Other, class'M14EBRBattleRifle')
-            || ClassIsChildOf(Other, class'Single') || ClassIsChildOf(Other, class'Deagle')
-            || ClassIsChildOf(Other, class'Magnum44Pistol') || ClassIsChildOf(Other, class'MK23Pistol')
-            || ClassIsChildOf(Other, class'SPSniperRifle')
+    if ( ClassIsChildOf(Other, class'Winchester')
             || ClassIsInArray(default.PerkedWeapons, Other) //v3 - custom weapon support
         )
     {
-        return 1.6; // 60% faster reload with Pistols and Sniper Weapons
+        return 1.6;
+    }
+
+    if ( ClassIsChildOf(Other, class'Single')
+            || ClassIsChildOf(Other, class'Deagle')
+            || ClassIsChildOf(Other, class'Magnum44Pistol')
+            || ClassIsChildOf(Other, class'MK23Pistol')
+            || ClassIsChildOf(Other, class'M14EBRBattleRifle')
+            || ClassIsChildOf(Other, class'SPSniperRifle'))
+    {
+        return 1.3;
     }
 
     return 1.0;
@@ -173,7 +175,7 @@ defaultproperties
     progressArray0(5)=5500
     progressArray0(6)=8500
 
-    SkillInfo="PERK SKILLS:|50% headshot damage with any weapon|75% less recoil with Single Pistols/Sniper Rifles|60% faster reload with Single Pistols/Sniper Rifles"
+    SkillInfo="PERK SKILLS:|50% headshot damage with any weapon|75% less recoil with Single Pistols/Sniper Rifles|30% faster reload with Single Pistols/M14/Musket|60% faster reload with LAR/Sniper Rifles"
     CustomLevelInfo="PERK BONUSES (LEVEL %L):|+%x extra headshot damage with Pistols/Sniper Rifles|%$ discount on Pistols/Sniper Rifles|%d discount on Crossbow/M99 ammo"
 
     PerkIndex=2

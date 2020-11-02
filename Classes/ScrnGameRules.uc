@@ -1386,6 +1386,7 @@ function bool OverridePickupQuery(Pawn Other, Pickup item, out byte bAllowPickup
 {
     local bool result;
     local KFWeaponPickup WP;
+    local CashPickup Cash;
     local ScrnPlayerInfo SPI;
     local string str;
     local ScrnHumanPawn ScrnPawn;
@@ -1399,6 +1400,7 @@ function bool OverridePickupQuery(Pawn Other, Pickup item, out byte bAllowPickup
 
     Mut.ReplacePickup(item);    // replace pickup's inventory with ScrN version
     WP = KFWeaponPickup(item);
+    Cash = CashPickup(item);
     if ( Mut.bPickPerkedWeaponsOnly && WP != none && ScrnPawn != none
         && WP.CorrespondingPerkIndex != 7 //off-perk
         && WP.CorrespondingPerkIndex != ScrnPawn.ScrnPerk.default.PerkIndex
@@ -1418,7 +1420,7 @@ function bool OverridePickupQuery(Pawn Other, Pickup item, out byte bAllowPickup
             if ( WP.DroppedBy != Other.Controller
                     && WP.DroppedBy != none && WP.DroppedBy.PlayerReplicationInfo != none )
             {
-                if ( WP.SellValue > 0 && ScrnPlayerController(WP.DroppedBy) != none && ScrnPlayerController(WP.DroppedBy).bWeaponsLocked
+                if ( ScrnPlayerController(WP.DroppedBy) != none && ScrnPlayerController(WP.DroppedBy).bWeaponsLocked
                         && (Other.PlayerReplicationInfo == none || WP.DroppedBy.PlayerReplicationInfo.Team == Other.PlayerReplicationInfo.Team) )
                 {
                     // ScrN Players can lock weapons from picking up by teammates
@@ -1449,12 +1451,27 @@ function bool OverridePickupQuery(Pawn Other, Pickup item, out byte bAllowPickup
         if ( !result || bAllowPickup == 1 )    {
             SPI = GetPlayerInfo(PlayerController(Other.Controller));
             if ( SPI != none ) {
-                if ( WP != none )
-                    SPI.PickedWeapon(WP);
-                else if ( CashPickup(item) != none )
-                    SPI.PickedCash(CashPickup(item));
-                else
+                if ( WP != none ) {
+                    if ( Mods == none || !Mods.AllowWeaponPickup(SPI, WP) ) {
+                        result = true;
+                        bAllowPickup = 0;
+                    }
+                    else {
+                        SPI.PickedWeapon(WP);
+                    }
+                }
+                else if ( Cash != none ) {
+                    if ( Mods == none || !Mods.AllowCashPickup(SPI, Cash) ) {
+                        result = true;
+                        bAllowPickup = 0;
+                    }
+                    else {
+                        SPI.PickedCash(Cash);
+                    }
+                }
+                else {
                     SPI.PickedItem(item);
+                }
             }
         }
     }

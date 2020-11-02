@@ -285,9 +285,15 @@ simulated function ClientFinishReloading()
 exec function ReloadMeNow()
 {
     local float ReloadMulti;
+    local KFPlayerReplicationInfo KFPRI;
+    local KFPlayerController KFPC;
 
     if(!AllowReload())
         return;
+
+    KFPRI = KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo);
+    KFPC = KFPlayerController(Instigator.Controller);
+
     if ( bHasAimingMode && bAimingRifle )
     {
         FireMode[1].bIsFiring = False;
@@ -297,8 +303,8 @@ exec function ReloadMeNow()
             ServerZoomOut(false);
     }
 
-    if ( KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo) != none && KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo).ClientVeteranSkill != none )
-        ReloadMulti = KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo).ClientVeteranSkill.Static.GetReloadSpeedModifier(KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo), self);
+    if (KFPRI != none && KFPRI.ClientVeteranSkill != none )
+        ReloadMulti = KFPRI.ClientVeteranSkill.Static.GetReloadSpeedModifier(KFPRI, self);
     else
         ReloadMulti = 1.0;
 
@@ -316,11 +322,11 @@ exec function ReloadMeNow()
     }
     ClientReload();
     Instigator.SetAnimAction(WeaponReloadAnim);
-    if ( Level.Game.NumPlayers > 1 && KFGameType(Level.Game).bWaveInProgress && KFPlayerController(Instigator.Controller) != none &&
-        Level.TimeSeconds - KFPlayerController(Instigator.Controller).LastReloadMessageTime > KFPlayerController(Instigator.Controller).ReloadMessageDelay )
+    if ( Level.Game.NumPlayers > 1 && KFGameType(Level.Game).bWaveInProgress && KFPC != none
+        && Level.TimeSeconds - KFPC.LastReloadMessageTime > KFPC.ReloadMessageDelay )
     {
-        KFPlayerController(Instigator.Controller).Speech('AUTO', 2, "");
-        KFPlayerController(Instigator.Controller).LastReloadMessageTime = Level.TimeSeconds;
+        KFPC.Speech('AUTO', 2, "");
+        KFPC.LastReloadMessageTime = Level.TimeSeconds;
     }
 }
 
@@ -412,6 +418,7 @@ function GiveTo( pawn Other, optional Pickup Pickup )
 
 defaultproperties
 {
+     MagCapacity=7  // +1 in chamber in case of a tactical reload
      ReloadShortRate=1.66
      ReloadShortAnim="Reload"
      ReloadRate=2.2

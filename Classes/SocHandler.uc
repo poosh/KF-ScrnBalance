@@ -262,13 +262,26 @@ function PlayerCoughed(VirusInfo SickVirus, int Damage)
     for ( i = 0; i < Healthy.length; ++i ) {
         VictimVirus = Healthy[i];
         Victim = VictimVirus.SPI.AlivePawn();
-        if ( Victim != none && VSizeSquared(Victim.Location - Sick.Location) < VirusSpreadDistSq
+        if ( Victim != none
+                && VSizeSquared(Victim.Location - Sick.Location) < VirusSpreadDistSq
                 && SickVirus.SPI.PlayerOwner.CanSee(Victim) )
         {
             // significantly raise the chance of infection when coughing on other players
             VictimVirus.InfectionCounterRapid += 10;
             VictimVirus.InfectionCounter += 50;
             SickVirus.InfectionCounter += 50;
+        }
+    }
+
+    for ( i = 0; i < Infected.length; ++i ) {
+        VictimVirus = Infected[i];
+        Victim = VictimVirus.SPI.AlivePawn();
+        if ( Victim != none && Victim != Sick
+                && VSizeSquared(Victim.Location - Sick.Location) < VirusSpreadDistSq
+                && SickVirus.SPI.PlayerOwner.CanSee(Victim) )
+        {
+            // coughing on sick players makes them cough more often
+            VictimVirus.MinHealth *= 0.9;
         }
     }
 }

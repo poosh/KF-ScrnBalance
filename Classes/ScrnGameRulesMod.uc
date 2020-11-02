@@ -39,7 +39,6 @@ function int ModifyMonsterDamage(out ScrnGameRules.MonsterInfo MI, ScrnPlayerCon
  *          Add BUY_SLIGHTLY_OP, BUY_OP, or BUY_MEGA_OP if the weapon is considered overpowered. Leads to lowering HL.
  * @return  true  - the mod overrode the weapon purchase. Default rules will not be applied.
  *          false - the mod has no interest in controlling the given weapon. Proceed with the default rules.
- * @pre
  */
 function bool OverrideWeaponBuy(ScrnPlayerController PC, class<KFWeaponPickup> WP, out byte BuyRules)
 {
@@ -47,4 +46,36 @@ function bool OverrideWeaponBuy(ScrnPlayerController PC, class<KFWeaponPickup> W
         return true;
 
     return false;
+}
+
+/**
+ * Allows prohibiting a player from picking up a weapon
+ *
+ * @param SPI player info which wants to pick up a weapon
+ * @param WP weapon pickup to pick up
+ * @return  true  - the mod allows or does not care about (by default) the pickup
+ *          false - the mod prohibits the pick up
+ */
+function bool AllowWeaponPickup(ScrnPlayerInfo SPI, KFWeaponPickup WP)
+{
+    if ( Next != None && !Next.AllowWeaponPickup(SPI, WP) )
+        return false;
+
+    return true;
+}
+
+/**
+ * Allows prohibiting a player from picking up a cash
+ *
+ * @param SPI player info which wants to pick up a weapon
+ * @param WP weapon pickup class to pickup
+ * @return  true  - the mod allows or does not care about (by default) the pickup
+ *          false - the mod prohibits the pickup
+ */
+function bool AllowCashPickup(ScrnPlayerInfo SPI, CashPickup Cash)
+{
+    if ( Next != None && !Next.AllowCashPickup(SPI, Cash) )
+        return false;
+
+    return true;
 }

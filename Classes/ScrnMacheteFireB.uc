@@ -12,9 +12,9 @@ simulated event ModeDoFire()
     if ( ScrnPawn != none && ScrnPawn.MacheteBoost > 0 ) {
         SpeedSq = VSizeSquared(ScrnPawn.Velocity);
         MeleeDamage += ScrnPawn.MacheteBoost * 3;
-        if ( SpeedSq > 62500 ) {
-            // exponentially raise damage when speed > 250
-            MeleeDamage *= 1.0 + SpeedSq / 62500;
+        if ( SpeedSq > 90000 ) {
+            // exponentially raise damage when speed > 300
+            MeleeDamage *= SpeedSq / 90000;
         }
     }
     super.ModeDoFire();

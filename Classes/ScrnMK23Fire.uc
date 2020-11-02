@@ -169,6 +169,7 @@ function DoTrace(Vector Start, Rotator Dir)
 
 defaultproperties
 {
-     PenDmgReduction=0.500000
-     DamageType=Class'ScrnBalanceSrv.ScrnDamTypeMK23Pistol'
+    MaxPenetrations=0
+    PenDmgReduction=0.500000
+    DamageType=Class'ScrnBalanceSrv.ScrnDamTypeMK23Pistol'
 }

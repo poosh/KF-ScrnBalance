@@ -242,8 +242,6 @@ simulated function ModifyVelocity(float DeltaTime, vector OldVelocity)
 
         GroundSpeed += MacheteBoost;
     }
-
-
 }
 
 

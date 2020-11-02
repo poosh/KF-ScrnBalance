@@ -232,6 +232,7 @@ function DoFireEffect()
 
 defaultproperties
 {
+    MaxPenetrations=0
     PenDmgReduction=0.500000
     DamageType=Class'ScrnBalanceSrv.ScrnDamTypeDualMK23Pistol'
     FireAnim="FireLeft"
