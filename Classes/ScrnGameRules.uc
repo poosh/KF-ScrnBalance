@@ -1452,7 +1452,7 @@ function bool OverridePickupQuery(Pawn Other, Pickup item, out byte bAllowPickup
             SPI = GetPlayerInfo(PlayerController(Other.Controller));
             if ( SPI != none ) {
                 if ( WP != none ) {
-                    if ( Mods == none || !Mods.AllowWeaponPickup(SPI, WP) ) {
+                    if ( Mods != none && !Mods.AllowWeaponPickup(SPI, WP) ) {
                         result = true;
                         bAllowPickup = 0;
                     }
@@ -1461,7 +1461,7 @@ function bool OverridePickupQuery(Pawn Other, Pickup item, out byte bAllowPickup
                     }
                 }
                 else if ( Cash != none ) {
-                    if ( Mods == none || !Mods.AllowCashPickup(SPI, Cash) ) {
+                    if ( Mods != none && !Mods.AllowCashPickup(SPI, Cash) ) {
                         result = true;
                         bAllowPickup = 0;
                     }

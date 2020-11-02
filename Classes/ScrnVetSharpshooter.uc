@@ -24,7 +24,7 @@ static function float GetHeadShotDamMulti(KFPlayerReplicationInfo KFPRI, KFPawn 
         ret = 1.0;
     }
     else if ( ClassIsChildOf(DmgType, class'DamTypeDualies') ) {
-        ret = 1.0;
+        ret = 1.4 / 1.5;  // 40% damage max
     }
     else if ( DmgType == default.DefaultDamageType
             || class<KFWeaponDamageType>(DmgType).default.bSniperWeapon

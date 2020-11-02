@@ -19,6 +19,10 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+### v9.63.11
+- Fixed a crash on weapon pickup
+- Sharpshooter damage bonus with 9mm pistol restored to 40%
+
 ### v9.63.10
 #### Weapon Balance
 - **Handcannon** magazine size reduced down to 7 bullets (+1 in case of a tactical reload)
