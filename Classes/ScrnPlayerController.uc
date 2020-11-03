@@ -42,6 +42,7 @@ var transient array<ScrnAchievements.AchStrInfo>PendingAchievements; //earned ac
 //current achievement object and index to display on the HUD
 var transient ScrnAchievements CurrentAchHandler;
 var transient int CurrentAchIndex;
+var transient bool bWasAchUnlockedJustNow;
 var float AchievementDisplayCooldown; // time to wait between displaying achievements, if multiple achievements were earned
 
 var transient class<KFVeterancyTypes> InitialPerkClass;
@@ -526,8 +527,7 @@ simulated function PlayerTick( float DeltaTime )
 
     //log("Player Controller Tick", 'ScrnBalance');
     if ( Viewport(Player) != None ) {
-        AchievementDisplayCooldown -= DeltaTime;
-        if ( PendingAchievements.Length > 0 && AchievementDisplayCooldown <= 0 ) {
+        if ( PendingAchievements.Length > 0 && Level.TimeSeconds >  AchievementDisplayCooldown ) {
             CurrentAchHandler = PendingAchievements[0].AchHandler;
             CurrentAchIndex = PendingAchievements[0].AchIndex;
             PendingAchievements.remove(0, 1);
@@ -945,16 +945,13 @@ simulated function DisplayCurrentAchievement()
         return;
     //log("DisplayCurrentAchievement:" @CurrentAchievement.ID @ CurrentAchievement.CurrentProgress$"/"$ CurrentAchievement.MaxProgress ,'ScrnBalance');
     if ( CurrentAchHandler != none ) {
-        if ( CurrentAchHandler.AchDefs[CurrentAchIndex].bUnlockedJustNow ) {
-            //set cooldown only for earned achievements. Status updates can be immediately overrided
-            AchievementDisplayCooldown = default.AchievementDisplayCooldown;
+        bWasAchUnlockedJustNow = CurrentAchHandler.AchDefs[CurrentAchIndex].bUnlockedJustNow;
+        if ( bWasAchUnlockedJustNow ) {
             ClientPlaySound(Sound'KF_InterfaceSnd.Perks.PerkAchieved',true,2.f,SLOT_Talk);
             ClientPlaySound(Sound'KF_InterfaceSnd.Perks.PerkAchieved',true,2.f,SLOT_Interface);
         }
-        else {
-            AchievementDisplayCooldown = fmax(0, AchievementDisplayCooldown);
-        }
         CurrentAchHandler.AchDefs[CurrentAchIndex].bUnlockedJustNow = false;
+        AchievementDisplayCooldown = Level.TimeSeconds + default.AchievementDisplayCooldown;
         ReceiveLocalizedMessage(Class'ScrnAchievementEarnedMsg',CurrentAchIndex,self.PlayerReplicationInfo,,CurrentAchHandler);
     }
 }
@@ -967,9 +964,13 @@ simulated function DisplayAchievementStatus(ScrnAchievements AchHandler, int Ach
         return;
     if ( AchHandler.AchDefs[AchIndex].CurrentProgress > 0 ) {
         if ( AchHandler.AchDefs[AchIndex].bUnlockedJustNow )
-            ConsoleMessage(Class'ScrnAchievementEarnedMsg'.default.EarnedString $ ": " $ AchHandler.AchDefs[AchIndex].DisplayName, 0, 1, 200, 1);
+            ConsoleMessage(Class'ScrnAchievementEarnedMsg'.default.EarnedString $ ": "
+                    $ AchHandler.AchDefs[AchIndex].DisplayName, 0, 1, 200, 1);
 
-        if ( PendingAchievements.Length == 0 && AchievementDisplayCooldown <= 0 ) {
+        if ( PendingAchievements.Length == 0 && (Level.TimeSeconds > AchievementDisplayCooldown
+                || (!bWasAchUnlockedJustNow && (AchHandler.AchDefs[AchIndex].bUnlockedJustNow
+                    || AchHandler.AchDefs[AchIndex].MaxProgress < CurrentAchHandler.AchDefs[CurrentAchIndex].MaxProgress))) )
+        {
             // no need to use a queue for a single achievement
             CurrentAchHandler = AchHandler;
             CurrentAchIndex = AchIndex;

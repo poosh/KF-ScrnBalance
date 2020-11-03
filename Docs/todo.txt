@@ -5,7 +5,6 @@ Warning: ZombieCrawler_HALLOWEEN KF-ZedDiscoThe2ndFloor.ZombieCrawler_HALLOWEEN 
 
 A Blank Page
 
-? Fix Boomstick reload
-
-Blame for achievements
-? Lower HL for blamed guns
+? charge for coughing in the shop area
+? alt fire for nailgun
+? achievement display priority

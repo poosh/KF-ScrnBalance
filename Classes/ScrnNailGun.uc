@@ -3,12 +3,6 @@ class ScrnNailGun extends NailGun;
 var transient ScrnAchievements.AchStrInfo ach_Nail100m, ach_NailToWall, ach_PushShiver, ach_ProNailer; //related achievements
 
 
-replication
-{
-    reliable if(Role < ROLE_Authority)
-        ServerChangeFireModeEx;
-}
-
 simulated function PostBeginPlay()
 {
     local SRStatsBase Stats;
@@ -27,42 +21,9 @@ simulated function PostBeginPlay()
     }
 }
 
-
-// Use alt fire to switch fire modes
-simulated function AltFire(float F)
+simulated function bool CanZoomNow()
 {
-    if(ReadyToFire(0))
-    {
-        DoToggle();
-    }
-}
-
-// Toggle semi/auto fire
-simulated function DoToggle ()
-{
-    local PlayerController Player;
-
-    Player = Level.GetLocalPlayerController();
-    if ( Player != none ) {
-        FireMode[0].AmmoPerFire = FireMode[0].default.AmmoPerFire - FireMode[0].AmmoPerFire + 1;
-        if ( FireMode[0].AmmoPerFire == 1 )
-            Player.ReceiveLocalizedMessage(class'ScrnFireModeSwitchMessage',4);
-        else
-            Player.ReceiveLocalizedMessage(class'ScrnFireModeSwitchMessage',5);
-
-        ServerChangeFireModeEx(FireMode[0].AmmoPerFire);
-    }
-}
-
-// Set the new fire mode on the server
-function ServerChangeFireModeEx(byte NewAmmoPerFire)
-{
-    FireMode[0].AmmoPerFire = NewAmmoPerFire;
-}
-
-exec function SwitchModes()
-{
-    DoToggle();
+	return !FireMode[0].bIsFiring && !FireMode[1].bIsFiring;
 }
 
 simulated function bool ConsumeAmmo( int Mode, float Load, optional bool bAmountNeededIsMax )
@@ -114,10 +75,11 @@ simulated function bool ConsumeAmmo( int Mode, float Load, optional bool bAmount
 defaultproperties
 {
      MagCapacity=42
+     bReduceMagAmmoOnSecondaryFire=true
      Weight=6.000000
      bTorchEnabled=False
-     FireModeClass(0)=Class'ScrnBalanceSrv.ScrnNailGunFire'
-     FireModeClass(1)=Class'KFMod.NoFire'
+     FireModeClass(0)=Class'ScrnBalanceSrv.ScrnNailGunFireSingle'
+     FireModeClass(1)=Class'ScrnBalanceSrv.ScrnNailGunFireMulti'
      PickupClass=Class'ScrnBalanceSrv.ScrnNailGunPickup'
      ItemName="Nailgun SE"
 }

@@ -180,14 +180,16 @@ state Sick extends Infected
         local ToiletPaperAmmo TPAmmo;
         local int d;
         local string s;
+        local ShopVolume Shop;
+        local KFGameType KF;
 
         if ( Level.TimeSeconds > NextStateTime ) {
             NextState();
             return;
         }
 
-        if ( SPI.PlayerOwner != none )
-            P = ScrnHumanPawn(SPI.PlayerOwner.Pawn);
+        P = SPI.AlivePawn();
+        KF = SPI.GameRules.Mut.KF;
 
         if ( DamageCounter > 0 ) {
             if ( P != none ) {
@@ -211,13 +213,16 @@ state Sick extends Infected
                 NextDamageTime = DamageDelay;
                 --DamageCounter;
 
-                if (ScrnPlayerController(SPI.PlayerOwner).bShopping) {
-                    if (CoughedInShopWave != SPI.GameRules.Mut.KF.WaveNum) {
-                        CoughedInShopWave = SPI.GameRules.Mut.KF.WaveNum;
-                        SPI.PlayerOwner.PlayerReplicationInfo.Score -= CoughedInShopPenalty; // allow go negative
-                        s = strCoughedInShop;
-                        ReplaceText(s, "%$", string(CoughedInShopPenalty));
-                        SPI.PlayerOwner.ClientMessage(class'ScrnBalance'.static.ColorString(s,192,128,1));
+                if (KF.bTradingDoorsOpen && CoughedInShopWave != KF.WaveNum) {
+                    foreach P.TouchingActors(class'ShopVolume', Shop) {
+                        if (Shop.bCurrentlyOpen && !Shop.bAlwaysEnabled) {
+                            CoughedInShopWave = SPI.GameRules.Mut.KF.WaveNum;
+                            SPI.PlayerOwner.PlayerReplicationInfo.Score -= CoughedInShopPenalty; // allow go negative
+                            s = strCoughedInShop;
+                            ReplaceText(s, "%$", string(CoughedInShopPenalty));
+                            SPI.PlayerOwner.ClientMessage(class'ScrnBalance'.static.ColorString(s,192,128,1));
+                            break;
+                        }
                     }
                 }
             }
@@ -228,7 +233,7 @@ state Sick extends Infected
             }
         }
         else {
-            if ( P != none && P.Health > 0 ) {
+            if ( P != none ) {
                 DamageCounter = default.DamageCounter;
                 // healthy players take damage rarer
                 NextDamageTime = lerp(MinHealth/100.0, 5, 30, true);

@@ -281,7 +281,7 @@ function PlayerCoughed(VirusInfo SickVirus, int Damage)
                 && SickVirus.SPI.PlayerOwner.CanSee(Victim) )
         {
             // coughing on sick players makes them cough more often
-            VictimVirus.MinHealth *= 0.9;
+            VictimVirus.HealthSample(max(1, VictimVirus.MinHealth * 0.9));
         }
     }
 }

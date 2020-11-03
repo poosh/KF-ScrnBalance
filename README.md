@@ -19,6 +19,11 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+### v9.63.12
+- **Nailgun** primary fire shoots single nails while the secondary fire - 7-nail pack (thanks *Duckbuster*)
+- Changed achievement progress display priority: achievements with lower goal value have higher priority to be displayed
+- Social Isolation: fixed penalty for coughing in shop  
+
 ### v9.63.11
 - Fixed a crash on weapon pickup
 - Sharpshooter damage bonus with 9mm pistol restored to 40%

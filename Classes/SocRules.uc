@@ -7,6 +7,9 @@ function bool TestInfectedItem(ScrnPlayerInfo SPI, PlayerController OwnerPC) {
     local ScrnPlayerInfo OwnerSPI;
     local VirusInfo OwnerVirus;
 
+    if (SPI.PlayerOwner == OwnerPC)
+        return false;  // can pickup own items
+
     OwnerSPI = SPI.GameRules.GetPlayerInfo(OwnerPC);
     if ( OwnerSPI == none )
         return false;
