@@ -19,6 +19,11 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+### v9.63.15
+- **Support Spec.** gains 40% damage resistance while holding a **Chainsaw**
+- Revised game hints
+- Adjusted spawn inventory and some custom game waves. Make sure to update *ScrnBalanceSrv.ini* and *ScrnWaves.ini*.
+
 ### v9.63.12
 - **Nailgun** primary fire shoots single nails while the secondary fire - 7-nail pack (thanks *Duckbuster*)
 - Changed achievement progress display priority: achievements with lower goal value have higher priority to be displayed

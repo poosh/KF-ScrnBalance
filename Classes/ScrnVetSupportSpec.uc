@@ -73,6 +73,18 @@ static function int AddDamage(KFPlayerReplicationInfo KFPRI, KFMonster Injured, 
     return InDamage;
 }
 
+static function int ReduceDamage(KFPlayerReplicationInfo KFPRI, KFPawn Injured, Pawn Instigator, int InDamage, class<DamageType> DmgType)
+{
+    if ( InDamage == 0 )
+        return 0;
+
+    if ( ScrnChainsaw(Injured.Weapon) != none ) {
+        InDamage *= 0.60; // 40% reduced Damage while holding Chainsaw
+    }
+
+    return max(1, InDamage); // at least 1 damage must be done
+}
+
 
 // Modify fire speed
 static function float GetFireSpeedModStatic(KFPlayerReplicationInfo KFPRI, class<Weapon> Other)
@@ -163,7 +175,7 @@ defaultproperties
     progressArray0(5)=3500000
     progressArray0(6)=5500000
 
-    SkillInfo="PERK SKILLS:|60% better Shotgun penetration|+10 blocks in carry weight|150% faster welding/unwelding|Welder see door status from 30m"
+    SkillInfo="PERK SKILLS:|60% better Shotgun penetration|40% damage resistance while holding Chainsaw|+10 blocks in carry weight|150% faster welding/unwelding|Welder see door status from 30m"
     CustomLevelInfo="PERK BONUSES (LEVEL %L):|%x more damage with Shotguns/Chainsaw|%a extra ammo|+%g extra grenades|%$ discount on Shotguns"
 
     NumRequirements=1 // removed welding req. in v9.50
