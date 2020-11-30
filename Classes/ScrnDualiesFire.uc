@@ -96,4 +96,5 @@ function DoFireEffect()
 defaultproperties
 {
      DamageType=Class'ScrnBalanceSrv.ScrnDamTypeDualies'
+     bFiringDoesntAffectMovement=true
 }

@@ -988,7 +988,7 @@ function MonsterKilled(KFMonster Victim, ScrnPlayerInfo KillerInfo, class<KFWeap
                 KillerInfo.ProgressAchievement('BruteM14', 1);
             else if ( ClassIsChildOf(DamType, class'KFMod.DamTypeM99HeadShot') || ClassIsChildOf(DamType, class'KFMod.DamTypeCrossbowHeadShot') )
                 KillerInfo.ProgressAchievement('BruteXbow', 1);
-            else if ( ClassIsChildOf(DamType, class'KFMod.DamTypeSCARMK17AssaultRifle') )
+            else if ( ClassIsChildOf(DamType, class'KFMod.DamTypeSCARMK17AssaultRifle') || ClassIsChildOf(DamType, class'KFMod.DamTypeFNFALAssaultRifle') )
                 KillerInfo.ProgressAchievement('BruteSCAR', 1);
         }
     }

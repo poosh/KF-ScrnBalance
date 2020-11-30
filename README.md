@@ -19,6 +19,48 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+### v9.63.16
+#### Weapon Balance
+##### FN FAL
+- Restored vanilla fire rate, spread and recoil
+- Reduced base damage to 55 (down from 65)
+- Raised headshot multiplier to x1.75 (up from x1.30)
+- Loaded with armor-piercing rounds (7.62x51mm NATO AP).
+- Fleshpounds have lower damage resistance: 25% instead of standard 50%.
+- Increased ammo price: $18 -> $25 per magazine.
+- Removed single fire mode. Now there are two modes left: full auto and 2-bullet fixed-burst mode.
+- "Brutally SCAR'd" achievement can be unlocked with FN FAL too.
+
+##### Gunslinger
+- **Magnum .44** headshot multiplier raised to x1.30 (up from x1.20)
+- Shooting with 9mm pistol(-s) does not affect movement anymore
+
+#### Spawn Balance
+- Adjusted spawn inventory. Make sure to update *ScrnBalanceSrv.ini*.
+
+#### ScrN Waves
+- Fixed missing Ghosts in game "83. On The Clock". Make sure to update *ScrnWaves.ini*.
+
+#### ScrN Weapon Pack
+- Nerfed **AK12** reload speed from 3.0/2.0s to 3.6/2.5s (full/tactical)
+- **HK417** loaded with armor-piercing rounds (7.62x51mm NATO AP):
+    - Headshot multiplier raised to x1.75 (ip from x1.30)
+    - Lowered base damage to 80 (down from 85)
+    - Reduced Fleshpound damage resistance (50% -> 25%)
+    - Up to 4 over-penetrations
+- **HK417** magazines made slightly bigger: 15/18 -> 16/20 (base/lv6 Commando)
+- **SVD** total ammo increased to 90 (up from 80) due to its heavy weight
+  (weight of the inventory item = gun weight + ammo weight)
+- Explained the big weight difference between SVD (11kg) and SVDS (7kg) in the item description:
+  - SVD is loaded with special sniper rounds 7N1 while SVDS is loaded with regular 7.62x54mmR
+  - SVD has 50% more total ammo comparing to SVDS
+  - SVDS uses Horzine custom light-weight 5-round magazines
+  - The original reason was (and is) "because of the balance"
+- **VAL** cost lowered to $2500 (down from $3500) but significantly raised ammo cost
+- **VAL** total ammo count raised to 300 (up from 260)
+- Fixed "Flarry Men" achievement
+
+
 ### v9.63.15
 - **Support Spec.** gains 40% damage resistance while holding a **Chainsaw**
 - Revised game hints

@@ -26,4 +26,5 @@ function PlayFiring()
 defaultproperties
 {
      DamageType=Class'ScrnBalanceSrv.ScrnDamTypeSingle'
+     bFiringDoesntAffectMovement=true
 }

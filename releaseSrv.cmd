@@ -75,6 +75,19 @@ xcopy /F /I /Y %RELEASEDIR%\ScrnMapInfo.ini         %BUNDLEDIR%\System\
 xcopy /F /I /Y %RELEASEDIR%\ScrnVoting.ini          %BUNDLEDIR%\System\
 xcopy /F /I /Y %RELEASEDIR%\ScrnWaves.ini           %BUNDLEDIR%\System\
 
+echo.
+echo Compressing uz2...
+mkdir %RELEASEDIR%\uz2 2>nul
+call :MakeUz2 Animations\ScrnAnims.ukx
+call :MakeUz2 Sounds\ScrnSnd.uax
+call :MakeUz2 StaticMeshes\ScrnSM.usx
+call :MakeUz2 Textures\ScrnTex.utx
+call :MakeUz2 Textures\ScrnAch_T.utx
+call :MakeUz2 Textures\TSC_T.utx
+call :MakeUz2 System\%KFPACKAGE%.u
+echo %RELEASEDIR%\uz2:
+dir /B %RELEASEDIR%\uz2
+
 echo Release is ready!
 
 goto :end
@@ -85,3 +98,8 @@ color 0C
 :end
 endlocal & SET _EC=%ERR%
 exit /b %_EC%
+
+:MakeUz2
+%KFDIR%\System\ucc compress %RELEASEDIR%\%1 && move /y %RELEASEDIR%\%1.uz2 %RELEASEDIR%\uz2\ >nul
+set %~1=%~n2
+exit /b 0

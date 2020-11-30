@@ -4,16 +4,19 @@ var int BurstSize;
 var transient int BurstShotCount; //how many bullets were fired in the current burst?
 var transient float FireBurstEndTime; //this is just to be sure we don't stuck inside FireBurst state, if shit happens
 
+var float PenDmgReduction; //penetration damage reduction. 1.0 - no reduction, 25% reduction
+var byte  MaxPenetrations; //how many enemies can penetrate a single bullet
+
 // fixes double shot bug -- PooSH
 state FireLoop
 {
     function BeginState()
     {
         super.BeginState();
-        
+
         NextFireTime = Level.TimeSeconds - 0.000001; //fire now!
     }
-}  
+}
 
 state WaitingForFireButtonRelease
 {
@@ -30,7 +33,7 @@ state FireBurst
         NumShotsInBurst = 0;
         BurstShotCount = 0;
         NextFireTime = Level.TimeSeconds - 0.0001; //fire now!
-        FireBurstEndTime = Level.TimeSeconds + ( FireRate * BurstSize ) + 0.1; // if shit happens - get us out of this state when this time hits 
+        FireBurstEndTime = Level.TimeSeconds + ( FireRate * BurstSize ) + 0.1; // if shit happens - get us out of this state when this time hits
     }
 
     function EndState()
@@ -46,7 +49,7 @@ state FireBurst
     function ModeTick(float dt)
     {
         Super.ModeTick(dt);
-        
+
         if ( !bIsFiring ||  !AllowFire() )  // stopped firing, magazine empty
             GotoState('');
         else if ( Level.TimeSeconds > FireBurstEndTime )
@@ -82,7 +85,7 @@ state FireBurst
         // make spread bonus for first 2 shots -- PooSH
         if( NumShotsInBurst < 2 || (bAccuracyBonusForSemiAuto && bWaitForRelease) )
         {
-            AccuracyMod *= 0.85;
+            AccuracyMod *= 0.5;
         }
 
 
@@ -103,7 +106,7 @@ state FireBurst
 
         return NewSpread;
     }
-    
+
     //copy-pasted from KFFire
     function ModeDoFire()
     {
@@ -115,7 +118,7 @@ state FireBurst
 
         if( Instigator==None || Instigator.Controller==none )
             return;
-            
+
         KFPRI = KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo);
 
         Spread = GetSpread();
@@ -158,35 +161,37 @@ state FireBurst
             }
             //reduce recoil for first 2 bullets
             if (NumShotsInBurst <= 1) {
-                maxVerticalRecoilAngle = default.maxVerticalRecoilAngle *  0.1; 
-                maxHorizontalRecoilAngle = default.maxHorizontalRecoilAngle *  0.1; 
+                maxVerticalRecoilAngle = default.maxVerticalRecoilAngle *  0.1;
+                maxHorizontalRecoilAngle = default.maxHorizontalRecoilAngle *  0.1;
             }
             HandleRecoil(Rec);
             //restore defaults
-            maxVerticalRecoilAngle = default.maxVerticalRecoilAngle; 
-            maxHorizontalRecoilAngle = default.maxHorizontalRecoilAngle; 
+            maxVerticalRecoilAngle = default.maxVerticalRecoilAngle;
+            maxHorizontalRecoilAngle = default.maxHorizontalRecoilAngle;
         }
-        
+
         if ( ++BurstShotCount >= BurstSize ) {
             GotoState('WaitingForFireButtonRelease');
             return;
-        }        
+        }
     }
 }
 
-
-//add 1 penetration
 function DoTrace(Vector Start, Rotator Dir)
 {
     local Vector X,Y,Z, End, HitLocation, HitNormal, ArcEnd;
     local Actor Other;
-    local byte HitCount,HCounter;
+    local byte HitCount, PenCounter, KillCount;
     local float HitDamage;
     local array<int>    HitPoints;
     local KFPawn HitPawn;
     local array<Actor>    IgnoreActors;
-    local Actor DamageActor;
+    local Pawn DamagePawn;
     local int i;
+
+    local KFMonster Monster;
+    local bool bWasDecapitated;
+    //local int OldHealth;
 
     MaxRange();
 
@@ -204,9 +209,12 @@ function DoTrace(Vector Start, Rotator Dir)
     X = Vector(Dir);
     End = Start + TraceRange * X;
     HitDamage = DamageMax;
-    While( (HitCount++)<2 ) // 1 penetration
+
+    // HitCount isn't a number of max penetration. It is just to be sure we won't stuck in infinite loop
+    While( ++HitCount < 127 )
     {
-        DamageActor = none;
+        DamagePawn = none;
+        Monster = none;
 
         Other = Instigator.HitPointTrace(HitLocation, HitNormal, End, HitPoints, Start,, 1);
         if( Other==None )
@@ -227,7 +235,8 @@ function DoTrace(Vector Start, Rotator Dir)
             IgnoreActors[IgnoreActors.Length] = Other.Owner;
             Other.SetCollision(false);
             Other.Owner.SetCollision(false);
-            DamageActor = Pawn(Other.Owner);
+            DamagePawn = Pawn(Other.Owner);
+            Monster = KFMonster(Other.Owner);
         }
 
         if ( !Other.bWorldGeometry && Other!=Level )
@@ -251,31 +260,39 @@ function DoTrace(Vector Start, Rotator Dir)
                 IgnoreActors[IgnoreActors.Length] = HitPawn.AuxCollisionCylinder;
                 Other.SetCollision(false);
                 HitPawn.AuxCollisionCylinder.SetCollision(false);
-                DamageActor = Other;
+                DamagePawn = HitPawn;
             }
             else
             {
+                if( DamagePawn == none )
+                    DamagePawn = Pawn(Other);
+
                 if( KFMonster(Other)!=None )
                 {
                     IgnoreActors[IgnoreActors.Length] = Other;
                     Other.SetCollision(false);
-                    DamageActor = Other;
+                    Monster = KFMonster(Other);
+                    //OldHealth = KFMonster(Other).Health;
                 }
-                else if( DamageActor == none )
-                {
-                    DamageActor = Other;
-                }
+                bWasDecapitated = Monster != none && Monster.bDecapitated;
                 Other.TakeDamage(int(HitDamage), Instigator, HitLocation, Momentum*X, DamageType);
+                if ( DamagePawn != none && (DamagePawn.Health <= 0 || (Monster != none
+                        && !bWasDecapitated && Monster.bDecapitated)) )
+                {
+                    KillCount++;
+                }
+
+                // debug info
+                // if ( KFMonster(Other) != none )
+                    // log(String(class) $ ": Damage("$PenCounter$") = "
+                        // $ int(HitDamage) $"/"$ (OldHealth-KFMonster(Other).Health)
+                        // @ KFMonster(Other).MenuName , 'ScrnBalance');
             }
-            if( (HCounter++)>=3 || Pawn(DamageActor)==None )
+            if( ++PenCounter > MaxPenetrations || DamagePawn==None )
             {
                 Break;
             }
-            //Big zeds (Blot, Husk, SC, FP) significantly reduce further penetration damage
-            if (KFMonster(Other) != none && KFMonster(Other).default.Health >= 500)
-                HitDamage*=0.25;
-            else
-                HitDamage*=0.75;
+            HitDamage *= PenDmgReduction;
             Start = HitLocation;
         }
         else if ( HitScanBlockingVolume(Other)==None )
@@ -300,12 +317,11 @@ function DoTrace(Vector Start, Rotator Dir)
 defaultproperties
 {
      BurstSize=2
-     maxVerticalRecoilAngle=500
-     maxHorizontalRecoilAngle=250
      DamageType=Class'ScrnBalanceSrv.ScrnDamTypeFNFALAssaultRifle'
-     FireAnimRate=0.571333
-     FireLoopAnimRate=0.571333
-     FireRate=0.150000
      AmmoClass=Class'ScrnBalanceSrv.ScrnFNFALAmmo'
      Spread=0.007500
+     DamageMin=55  // unused
+     DamageMax=55
+     PenDmgReduction=0.75
+     MaxPenetrations=2
 }

@@ -1,7 +1,7 @@
 class ScrnFNFAL_ACOG_AssaultRifle extends FNFAL_ACOG_AssaultRifle
     config(user);
 
-    
+
 var int FireModeEx; // 0 - F/A, 1 - S/A, 2 - 2 bullet fire
 var int FireModeExCount;
 
@@ -25,9 +25,8 @@ simulated function DoToggle ()
     local PlayerController Player;
 
     Player = Level.GetLocalPlayerController();
-    if ( Player!=None )
-    {
-        FireModeEx++;
+    if ( Player!=None ) {
+        FireModeEx = 2 - FireModeEx; // toggle between 0 and 2
         if (FireModeEx >= FireModeExCount) FireModeEx = 0;
         FireMode[0].bWaitForRelease = FireModeEx == 1;
         Player.ReceiveLocalizedMessage(class'ScrnBalanceSrv.ScrnFireModeSwitchMessage',FireModeEx);
@@ -46,7 +45,7 @@ function ServerChangeFireModeEx(int NewFireModeEx)
 simulated function bool StartFire(int Mode)
 {
     if ( FireModeEx <= 1 ) return super.StartFire(Mode);
-    
+
     if (FireMode[Mode].IsInState('WaitingForFireButtonRelease'))
         return false;
 
@@ -54,14 +53,11 @@ simulated function bool StartFire(int Mode)
        return false;
 
     if( AmmoAmount(0) <= 0 )
-    {
         return false;
-    }
 
     AnimStopLooping();
 
-    if( !FireMode[Mode].IsInState('FireBurst') && (AmmoAmount(0) > 0) )
-    {   
+    if( !FireMode[Mode].IsInState('FireBurst') && (AmmoAmount(0) > 0) ) {
         ScrnFNFALFire(FireMode[Mode]).BurstSize = FireModeEx;
         FireMode[Mode].GotoState('FireBurst');
         return true;
@@ -81,23 +77,28 @@ simulated function StopFire(int Mode)
 exec function ReloadMeNow()
 {
     local float ReloadMulti;
-    
+    local KFPlayerReplicationInfo KFPRI;
+    local KFPlayerController KFPC;
+
     if(!AllowReload())
         return;
-    if ( bHasAimingMode && bAimingRifle )
-    {
+
+    KFPRI = KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo);
+    KFPC = KFPlayerController(Instigator.Controller);
+
+    if ( bHasAimingMode && bAimingRifle ) {
         FireMode[1].bIsFiring = False;
 
         ZoomOut(false);
         if( Role < ROLE_Authority)
             ServerZoomOut(false);
     }
-    
-    if ( KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo) != none && KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo).ClientVeteranSkill != none )
-        ReloadMulti = KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo).ClientVeteranSkill.Static.GetReloadSpeedModifier(KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo), self);
+
+    if (KFPRI != none && KFPRI.ClientVeteranSkill != none )
+        ReloadMulti = KFPRI.ClientVeteranSkill.static.GetReloadSpeedModifier(KFPRI, self);
     else
         ReloadMulti = 1.0;
-        
+
     bIsReloading = true;
     ReloadTimer = Level.TimeSeconds;
     bShortReload = MagAmmoRemaining > 0;
@@ -105,18 +106,18 @@ exec function ReloadMeNow()
         ReloadRate = Default.ReloadShortRate / ReloadMulti;
     else
         ReloadRate = Default.ReloadRate / ReloadMulti;
-        
-    if( bHoldToReload )
-    {
+
+    if( bHoldToReload ) {
         NumLoadedThisReload = 0;
     }
+
     ClientReload();
     Instigator.SetAnimAction(WeaponReloadAnim);
-    if ( Level.Game.NumPlayers > 1 && KFGameType(Level.Game).bWaveInProgress && KFPlayerController(Instigator.Controller) != none &&
-        Level.TimeSeconds - KFPlayerController(Instigator.Controller).LastReloadMessageTime > KFPlayerController(Instigator.Controller).ReloadMessageDelay )
+    if ( KFPC != none && Level.Game.NumPlayers > 1 && KFGameType(Level.Game).bWaveInProgress
+            && Level.TimeSeconds - KFPC.LastReloadMessageTime > KFPC.ReloadMessageDelay )
     {
-        KFPlayerController(Instigator.Controller).Speech('AUTO', 2, "");
-        KFPlayerController(Instigator.Controller).LastReloadMessageTime = Level.TimeSeconds;
+        KFPC.Speech('AUTO', 2, "");
+        KFPC.LastReloadMessageTime = Level.TimeSeconds;
     }
 }
 
@@ -124,13 +125,13 @@ exec function ReloadMeNow()
 simulated function ClientFinishReloading()
 {
     Super.ClientFinishReloading();
-    ResetBulletPosition(); //undo offset 
+    ResetBulletPosition(); //undo offset
 }
 
-//ClientReloadEffects is called by WeaponTick halfway through reload, perfect for a tactical reload 
+//ClientReloadEffects is called by WeaponTick halfway through reload, perfect for a tactical reload
 simulated function ClientReloadEffects()
 {
-    ResetBulletPosition(); //undo offset 
+    ResetBulletPosition(); //undo offset
 }
 
 simulated function ResetBulletPosition()
@@ -144,7 +145,7 @@ simulated function MoveMagBullet()
 }
 
 simulated function WeaponTick(float dt)
-{   
+{
     if (Level.NetMode != NM_DedicatedServer)
     {
         if ( bBulletMoveQueued && bIsReloading && MagAmmoRemaining > 1 && (Level.TimeSeconds - ReloadTimer) > ReloadRate*0.12 )
@@ -167,12 +168,12 @@ simulated function ClientReload()
         if( Role < ROLE_Authority)
             ServerZoomOut(false);
     }
-    
+
     if ( KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo) != none && KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo).ClientVeteranSkill != none )
         ReloadMulti = KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo).ClientVeteranSkill.Static.GetReloadSpeedModifier(KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo), self);
     else
         ReloadMulti = 1.0;
-        
+
     bIsReloading = true;
     if (MagAmmoRemaining <= 0)
     {
@@ -189,27 +190,19 @@ simulated function ClientReload()
 function AddReloadedAmmo()
 {
     local int a;
-    
+    local PlayerController PC;
+
     UpdateMagCapacity(Instigator.PlayerReplicationInfo);
 
     a = MagCapacity;
     if ( bShortReload )
         a++; // 1 bullet already bolted
-    
-    if ( AmmoAmount(0) >= a )
-        MagAmmoRemaining = a;
-    else
-        MagAmmoRemaining = AmmoAmount(0);
+    MagAmmoRemaining = min(a,  AmmoAmount(0));
 
-    // this seems redudant -- PooSH
-    // if( !bHoldToReload )
-    // {
-        // ClientForceKFAmmoUpdate(MagAmmoRemaining,AmmoAmount(0));
-    // }
-
-    if ( PlayerController(Instigator.Controller) != none && KFSteamStatsAndAchievements(PlayerController(Instigator.Controller).SteamStatsAndAchievements) != none )
+    PC = PlayerController(Instigator.Controller);
+    if ( PC != none && PC.SteamStatsAndAchievements != none )
     {
-        KFSteamStatsAndAchievements(PlayerController(Instigator.Controller).SteamStatsAndAchievements).OnWeaponReloaded();
+        KFSteamStatsAndAchievements(PC.SteamStatsAndAchievements).OnWeaponReloaded();
     }
 }
 
@@ -221,7 +214,7 @@ defaultproperties
     FireModeExCount=3
     Weight=7.000000
     FireModeClass(0)=Class'ScrnBalanceSrv.ScrnFNFALFire'
-    Description="Classic NATO battle rifle. Can penetrate small targets and has a fixed-burst mode."
+    Description="Classic NATO battle rifle. Loaded with 7.62x51mm NATO Armor-Piercing rounds. Has 2-bullet fixed-burst mode."
     PickupClass=Class'ScrnBalanceSrv.ScrnFNFAL_ACOG_Pickup'
     ItemName="FNFAL SE"
     BulletMoveOffset=(X=0,Y=0,Z=0.03) //for tactical reload
