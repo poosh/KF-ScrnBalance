@@ -180,12 +180,12 @@ simulated function ProcessTouch(Actor Other, Vector HitLocation)
             if ( !class'ScrnBalance'.default.Mut.bHardcore && HitPawn.GetTeamNum() == Instigator.GetTeamNum() )
                 return;
             CheckCharge();
-            HitPawn.ProcessLocationalDamage(Damage, Instigator, TempHitLocation, MomentumTransfer * Normal(Velocity), MyDamageType,HitPoints);
+            HitPawn.ProcessLocationalDamage(Damage, Instigator, TempHitLocation, MomentumTransfer *X, MyDamageType,HitPoints);
         }
     }
     else {
         CheckCharge();
-        Other.TakeDamage(ImpactDamage, Instigator, HitLocation, MomentumTransfer * Normal(Velocity), ImpactDamageType);
+        Other.TakeDamage(ImpactDamage, Instigator, HitLocation, MomentumTransfer * X, ImpactDamageType);
     }
 
     if( !bDud ) {

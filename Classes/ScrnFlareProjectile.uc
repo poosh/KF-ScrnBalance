@@ -60,7 +60,7 @@ simulated function ProcessTouch(Actor Other, Vector HitLocation)
                         && HitPawn.PlayerReplicationInfo.Team.TeamIndex == Instigator.PlayerReplicationInfo.Team.TeamIndex )
                     return;
 
-                HitPawn.ProcessLocationalDamage(ImpactDamage, Instigator, TempHitLocation, MomentumTransfer * Normal(Velocity), ImpactDamageType,HitPoints);
+                HitPawn.ProcessLocationalDamage(ImpactDamage, Instigator, TempHitLocation, MomentumTransfer * X, ImpactDamageType,HitPoints);
                 HitPawn.ProcessLocationalDamage(Damage, Instigator, TempHitLocation, vect(0,0,0), MyDamageType, HitPoints);
             }
         }
@@ -73,14 +73,14 @@ simulated function ProcessTouch(Actor Other, Vector HitLocation)
                 Damage *= HeadShotDamageMult;
             }
 
-            Other.TakeDamage( ImpactDamage, Instigator, HitLocation, MomentumTransfer * Normal(Velocity), ImpactDamageType );
+            Other.TakeDamage( ImpactDamage, Instigator, HitLocation, MomentumTransfer * X, ImpactDamageType );
 
             if ( KFMonster(Other) != none && class'ScrnBalance'.default.Mut.BurnMech != none ) {
                 class'ScrnBalance'.default.Mut.BurnMech.MakeBurnDamage(
-                        KFMonster(Other), Damage, Instigator, HitLocation, MomentumTransfer * Normal(Velocity), MyDamageType );
+                        KFMonster(Other), Damage, Instigator, HitLocation, MomentumTransfer * X, MyDamageType );
             }
             else {
-                Other.TakeDamage(Damage, Instigator, HitLocation, MomentumTransfer * Normal(Velocity), MyDamageType);
+                Other.TakeDamage(Damage, Instigator, HitLocation, MomentumTransfer * X, MyDamageType);
             }
         }
     }
@@ -99,7 +99,7 @@ defaultproperties
     FlameTrailEmitterClass=Class'ScrnBalanceSrv.ScrnFlareRevolverTrail'
     ImpactDamageType=Class'ScrnBalanceSrv.ScrnDamTypeFlareProjectileImpact'
     MyDamageType=Class'ScrnBalanceSrv.ScrnDamTypeFlare'
-    
+
     //reducing brightness of dynamic light by 70%
     LightBrightness=170 //255
     LightSaturation=64
@@ -107,5 +107,5 @@ defaultproperties
 
     AmbientGlow=170 //254
     AmbientVolumeScale=2.5
-    
+
 }

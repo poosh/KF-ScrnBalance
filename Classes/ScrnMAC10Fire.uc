@@ -65,7 +65,7 @@ function ModeDoFire()
         if (KFWeap.MagAmmoRemaining <= 0 && !KFWeap.bIsReloading && ( Level.TimeSeconds - LastFireTime>FireRate )
                 && !ScrnMAC10MP(KFWeap).bBoltClosed )
         {
-            LastFireTime = Level.TimeSeconds; 
+            LastFireTime = Level.TimeSeconds;
             DoCloseBolt(); //plays sound and sets bBoltClosed
         }
         else
@@ -171,4 +171,6 @@ defaultproperties
     BoltCloseSoundRef="KF_FNFALSnd.FNFAL_Bolt_Forward"
     FireAnim=Fire_Iron //fix annoying hipfire messing up aiming after firing
     FireEndAnim=Fire_Iron_End //fix annoying hipfire messing up aiming after firing
+    RecoilRate=0.03
+    RecoilVelocityScale=0
 }

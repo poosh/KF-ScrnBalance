@@ -6,98 +6,91 @@ var() int   BigZedMinHealth;            // If zed's base Health >= this value, z
 var() float MediumZedPenDmgReduction;   // Additional penetration  damage reduction after hitting medium-size zeds. 0.5 = 50% dmg. red.
 var() int   MediumZedMinHealth;         // If zed's base Health >= this value, zed counts as Medium-size
 
+var   float MinDamage;                  // minimum damage that bullet can do. If the damage drops below this threshold,
+                                        // the bullet gets destroyed.
+
+
+simulated function PostBeginPlay()
+{
+    Super.PostBeginPlay();
+
+    MinDamage = default.Damage * (default.PenDamageReduction ** MaxPenetrations) + 0.0001;
+}
+
 simulated function ProcessTouch (Actor Other, vector HitLocation)
 {
     local vector X;
     local Vector TempHitLocation, HitNormal;
     local array<int>    HitPoints;
-    local KFPawn HitPawn;
     local KFPlayerReplicationInfo KFPRI;
-    local KFMonster KFMonsterVictim;
+    local KFPawn HitPawn;
+    local Pawn Victim;
+    local KFMonster KFM;
     local int HSDamage; //damage, including headshot mult
 
     if ( Other == none || Other == Instigator || Other.Base == Instigator || !Other.bBlockHitPointTraces  )
         return;
 
-    KFPRI = KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo);
     X = Vector(Rotation);
 
-    if( ROBulletWhipAttachment(Other) != none )
-    {
-        if(!Other.Base.bDeleteMe)
-        {
-            Other = Instigator.HitPointTrace(TempHitLocation, HitNormal, HitLocation + (200 * X), HitPoints, HitLocation,, 1);
+    if ( Instigator != none && ROBulletWhipAttachment(Other) != none ) {
+        // we touched player's auxilary collision cylinder, not let's trace to the player himself
+        // Other.Base = KFPawn
+        if( Other.Base == none || Other.Base.bDeleteMe )
+            return;
 
-            if( Other == none || HitPoints.Length == 0 )
-                return;
+        Other = Instigator.HitPointTrace(TempHitLocation, HitNormal, HitLocation + (200 * X), HitPoints, HitLocation,, 1);
 
-            HitPawn = KFPawn(Other);
+        if( Other == none || HitPoints.Length == 0 || Other.bDeleteMe )
+            return; // bullet didn't hit a pawn
 
-            if (Role == ROLE_Authority)
-            {
-                if ( HitPawn != none )
-                {
-                     // Hit detection debugging
-                    /*log("Bullet hit "$HitPawn.PlayerReplicationInfo.PlayerName);
-                    HitPawn.HitStart = HitLocation;
-                    HitPawn.HitEnd = HitLocation + (65535 * X);*/
-
-                    if( !HitPawn.bDeleteMe )
-                        HitPawn.ProcessLocationalDamage(Damage, Instigator, TempHitLocation, MomentumTransfer * Normal(Velocity), MyDamageType,HitPoints);
-
-
-                    // Hit detection debugging
-                    //if( Level.NetMode == NM_Standalone)
-                    //    HitPawn.DrawBoneLocation();
-                }
-            }
+        HitPawn = KFPawn(Other);
+        if ( HitPawn != none ) {
+            Victim = HitPawn;
+            HitPawn.ProcessLocationalDamage(Damage, Instigator, TempHitLocation, MomentumTransfer * X, MyDamageType,HitPoints);
         }
     }
-    else
-    {
+    else {
         if ( ExtendedZCollision(Other) != none)
-            Other = Other.Owner; // ExtendedZCollision is attached to and owned by a KFMonster
-        KFMonsterVictim = KFMonster(Other);
+            Victim = Pawn(Other.Owner); // ExtendedZCollision is attached to KFMonster
+        else if ( Pawn(Other) != none )
+            Victim = Pawn(Other);
+
+        KFM = KFMonster(Victim);
 
         HSDamage = Damage;
-        if (Pawn(Other) != none && Pawn(Other).IsHeadShot(HitLocation, X, 1.0))
+        if (Victim != none && !(HeadShotDamageMult ~= 1.0) && Victim.IsHeadShot(HitLocation, X, 1.0))
             HSDamage *= HeadShotDamageMult;
 
-        if ( KFMonsterVictim != none && KFMonsterVictim.Health > 0 && class'ScrnBalance'.default.Mut.BurnMech != none)
+        if ( KFM != none && KFM.Health > 0 && class'ScrnBalance'.default.Mut.BurnMech != none)
             class'ScrnBalance'.default.Mut.BurnMech.MakeBurnDamage(
-                KFMonsterVictim, HSDamage, Instigator, HitLocation, MomentumTransfer * Normal(Velocity), MyDamageType);
+                KFM, HSDamage, Instigator, HitLocation, MomentumTransfer * X, MyDamageType);
         else
-           Other.TakeDamage(HSDamage, Instigator, HitLocation, MomentumTransfer * Normal(Velocity), MyDamageType);
-
+            Other.TakeDamage(HSDamage, Instigator, HitLocation, MomentumTransfer * X, MyDamageType);
     }
 
-    if ( KFPRI != none && KFPRI.ClientVeteranSkill != none )
-    {
-           PenDamageReduction = KFPRI.ClientVeteranSkill.static.GetShotgunPenetrationDamageMulti(KFPRI,default.PenDamageReduction);
+    if ( Instigator != none )
+        KFPRI = KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo);
+    if ( KFPRI != none && KFPRI.ClientVeteranSkill != none ) {
+        PenDamageReduction = KFPRI.ClientVeteranSkill.static.GetShotgunPenetrationDamageMulti(KFPRI,
+                default.PenDamageReduction);
     }
-    else
-    {
-           PenDamageReduction = default.PenDamageReduction;
-       }
-    // loose penetrational damage after hitting specific zeds -- PooSH
-    if (KFMonsterVictim != none)
-        PenDamageReduction *= ZedPenDamageReduction(KFMonsterVictim);
+    else {
+        PenDamageReduction = default.PenDamageReduction;
+    }
 
-       Damage *= PenDamageReduction; // Keep going, but lose effectiveness each time.
+    if ( Victim != none && Victim.Health <= 0 ) {
+        // dead bodies reduce damage less
+        PenDamageReduction += (1.0 - PenDamageReduction) * 0.5;
+    }
+    else if ( KFM != none ) {
+        // loose penetrational damage after hitting specific zeds -- PooSH
+        PenDamageReduction *= ZedPenDamageReduction(KFM);
+    }
 
-    // if we've struck through more than the max number of foes, destroy.
-    // MaxPenetrations now really means number of max penetration off-perk -- PooSH
-    if ( Damage / default.Damage < (default.PenDamageReduction ** MaxPenetrations) + 0.0001 )
-    {
+    Damage *= PenDamageReduction;
+    if ( Damage < MinDamage )
         Destroy();
-    }
-
-    speed = VSize(Velocity);
-
-    if( Speed < (default.Speed * 0.25) )
-    {
-        Destroy();
-    }
 }
 
 /**
@@ -122,6 +115,7 @@ simulated function float ZedPenDamageReduction(KFMonster Monster)
 
 defaultproperties
 {
+     BigZedPenDmgReduction=0.0
      BigZedMinHealth=1000
      MediumZedPenDmgReduction=0.750000
      MediumZedMinHealth=500

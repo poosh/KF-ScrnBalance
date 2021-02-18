@@ -19,6 +19,33 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+### v9.63.20
+#### Weapon Balance
+- Fixed **Point-Blank Headshot Detection** bug for all grenades, rockets, flares, Husk Gun and Trenchgun
+- Fixed aiming of Husk Gun and Flare Revolver. Now the projectiles should fly where the iron sights point at
+- **Trenchgun** weight lowered to 6 (down from 8)
+- Lowered **MAC10** recoil
+- `SkippedTradeTimeMult` default value lowered down to 0.75 (down from 1.00)
+  meaning that only 75% of the skipped trader time gets transferred to the next wave
+- `bDoubleDoT` deprecated because it was causing unnecessary flinching and messed up hitboxes even more than usual.
+  **Smart DoT** is introduced instead. Under normal conditions, Smart DoT deals burn damage once per second.
+  However, if the burn victim is about to die, Smart DoT kills it ASAP instead of waiting for the next second.
+  For example, a Crawler with 60hp left is set on fire, burn DPS = 50. Standard DoT mechanics would kill the Crawler
+  in two seconds: leaving it with 10hp in the first second, then overkilling it in the second.
+  The Deprecated Double DoT would kill the Crawler in 1.5s.
+  Smart DoT kills it in 1.2s: 60hp / 50hp/s = 1.2s.
+- Continuous hits with incendiary bullets crispify zeds faster
+- It is harder to re-crispify zed (apply panic to already crispy zed)
+- Continuous hits with low-damage fire weapons can keep the high-damage DoT.
+
+#### Social Isolation
+- Removed restriction for infected persons to share dosh. Infected weapons still cannot be picked up by others.
+- The penalty for coughing inside a shop gets charged only if there are other players in the shop that are potentially
+  healthy (have no visual symptoms). That should motivate the infected players to do shopping separately from the
+  healthy ones.
+- Coughing penalty reduced down to $50. In addition, the coughing player gets thrown out of the shop.
+
+
 ### v9.63.16
 #### Weapon Balance
 ##### FN FAL

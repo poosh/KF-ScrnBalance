@@ -59,6 +59,8 @@ simulated function Explode(vector HitLocation, vector HitNormal)
 
 simulated function ProcessTouch(Actor Other, Vector HitLocation)
 {
+    local Vector X;
+
     // Don't let it hit this player, or blow up on another player
     if ( Other == none || Other == Instigator || Other.Base == Instigator || !Other.bBlockHitPointTraces )
         return;
@@ -76,6 +78,8 @@ simulated function ProcessTouch(Actor Other, Vector HitLocation)
         return;
     }
 
+    X = Vector(Rotation);
+
     // Use the instigator's location if it exists. This fixes issues with
     // the original location of the projectile being really far away from
     // the real Origloc due to it taking a couple of milliseconds to
@@ -92,7 +96,7 @@ simulated function ProcessTouch(Actor Other, Vector HitLocation)
         {
             AmbientSound=none;
             PlaySound(Sound'ProjectileSounds.PTRD_deflect04',,2.0);
-            Other.TakeDamage( ImpactDamage, Instigator, HitLocation, Normal(Velocity), ImpactDamageType );
+            Other.TakeDamage( ImpactDamage, Instigator, HitLocation, X, ImpactDamageType );
         }
 
         bDud = true;
@@ -235,7 +239,7 @@ simulated function HurtRadius( float DamageAmount, float DamageRadius, class<Dam
             KFMonsterVictim = KFMonster(Victims.Owner);
         else
             KFMonsterVictim = KFMonster(Victims);
-            
+
         if( KFMonsterVictim != none && KFMonsterVictim.Health <= 0 ) {
             KFMonsterVictim = none;
         }

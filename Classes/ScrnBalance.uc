@@ -12,7 +12,7 @@ class ScrnBalance extends Mutator
 #exec OBJ LOAD FILE=ScrnAch_T.utx
 
 
-const VERSION = 96316;
+const VERSION = 96320;
 
 var ScrnBalance Mut; // pointer to self to use in static functions, i.e class'ScrnBalance'.default.Mut
 
@@ -27,7 +27,8 @@ var localized string strBetaOnly;
 // SRVFLAGS
 var transient int SrvFlags; // used for network replication of the values below
 var globalconfig bool bSpawn0, bNoStartCashToss, bMedicRewardFromTeam;
-var globalconfig bool bAltBurnMech, bDoubleDoT;
+var globalconfig bool bAltBurnMech;
+var deprecated bool bDoubleDoT;
 var globalconfig bool bReplaceNades, bShieldWeight, bHardcore, bBeta;
 var globalconfig bool bShowDamages, bManualReload, bForceManualReload, bAllowWeaponLock;
 var globalconfig bool bNoPerkChanges, bPerkChangeBoss, bPerkChangeDead, b10Stars;
@@ -2690,14 +2691,6 @@ function PostBeginPlay()
 
     if (bAltBurnMech) {
         BurnMech = spawn(class'ScrnBalanceSrv.ScrnBurnMech');
-        default.BurnMech = BurnMech;
-        if ( bDoubleDoT ) {
-            BurnMech.BurnPeriod = 0.5;
-            BurnMech.BurnDuration = 16;
-            BurnMech.BurnInCount = 4;
-            if ( AchHandler != none )
-                AchHandler.iDoT_Damage = 150;
-        }
     }
 
     if ( bAllowVoting ) {
@@ -3341,7 +3334,7 @@ defaultproperties
     bTradingDoorsOpen=True
     WeldingRequirementScaling=1.000000
     StalkerRequirementScaling=1.000000
-    SkippedTradeTimeMult=1.0
+    SkippedTradeTimeMult=0.75
     ServerPerksPkgName="ScrnSP.ServerPerksMutSE"
     bReplaceHUD=True
     bReplaceScoreBoard=True

@@ -19,7 +19,6 @@ var transient bool bCovidiotSocial;
 var VirusInfo InfectedBy;
 var transient int InfectGameTime;
 
-var transient byte CoughedInShopWave;
 var localized string strCoughedInShop;
 var int CoughedInShopPenalty;
 
@@ -64,6 +63,39 @@ function HealthSample(int Health)
     }
 }
 
+function bool AnyHealthyInShop(ShopVolume Shop)
+{
+    local int i;
+    local ScrnHumanPawn Other, MyPawn;
+    local ScrnPlayerInfo OtherSPI;
+    local VirusInfo OtherVirus;
+
+    MyPawn = SPI.AlivePawn();
+    for ( i = 0; i < Shop.Touching.length; ++i ) {
+        Other = ScrnHumanPawn(Shop.Touching[i]);
+        if (Other == none || Other == MyPawn)
+            continue;
+
+        OtherSPI = SPI.GameRules.GetPlayerInfo(PlayerController(Other.Controller));
+        if ( OtherSPI == none )
+            continue;
+
+        OtherVirus = VirusInfo(OtherSPI.CustomInfo(class'VirusInfo'));
+        if (OtherVirus != none && !OtherVirus.HasSymptoms())
+            return true;
+    }
+    return false;
+}
+
+static function bool ShopBoot(ShopVolume Shop, ScrnHumanPawn Bootee)
+{
+    if( !Shop.bTelsInit )
+        Shop.InitTeleports();
+    if( !Shop.bHasTeles )
+        return false;
+    Bootee.PlayTeleportEffect(false, true);
+    return Shop.TelList[rand(Shop.TelList.length)].Accept(Bootee, Shop);
+}
 
 auto state Healthy
 {
@@ -213,14 +245,14 @@ state Sick extends Infected
                 NextDamageTime = DamageDelay;
                 --DamageCounter;
 
-                if (KF.bTradingDoorsOpen && CoughedInShopWave != KF.WaveNum) {
+                if (KF.bTradingDoorsOpen && CoughedInShopPenalty > 0) {
                     foreach P.TouchingActors(class'ShopVolume', Shop) {
-                        if (Shop.bCurrentlyOpen && !Shop.bAlwaysEnabled) {
-                            CoughedInShopWave = SPI.GameRules.Mut.KF.WaveNum;
+                        if (Shop.bCurrentlyOpen && !Shop.bAlwaysEnabled && AnyHealthyInShop(Shop)) {
                             SPI.PlayerOwner.PlayerReplicationInfo.Score -= CoughedInShopPenalty; // allow go negative
                             s = strCoughedInShop;
                             ReplaceText(s, "%$", string(CoughedInShopPenalty));
                             SPI.PlayerOwner.ClientMessage(class'ScrnBalance'.static.ColorString(s,192,128,1));
+                            ShopBoot(Shop, P);
                             break;
                         }
                     }
@@ -351,6 +383,6 @@ defaultproperties
     DamageDelay=0.5
     DamageMod=1.0
     DamageRate=1.0
-    CoughedInShopPenalty=99
+    CoughedInShopPenalty=50
     strCoughedInShop="Virus spread warning! You have neen charged $%$ to disinfect the shop area."
 }

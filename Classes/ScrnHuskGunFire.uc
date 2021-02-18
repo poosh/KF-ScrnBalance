@@ -190,6 +190,7 @@ defaultproperties
     StrongProjectileClass=Class'ScrnBalanceSrv.ScrnHuskGunProjectile_Strong'
     AmmoClass=Class'ScrnBalanceSrv.ScrnHuskGunAmmo'
     ProjectileClass=Class'ScrnBalanceSrv.ScrnHuskGunProjectile'
+    ProjSpawnOffset=(X=0,Y=0,Z=0)
 
     SpreadStyle=SS_None
     Spread=0
