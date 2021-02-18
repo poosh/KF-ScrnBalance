@@ -4,7 +4,7 @@
 
 ScrN Total Game Balance mutator for Killing Floor 1.
 
-*Copyright (c) 2012-2020 PU Developing IK, All Rights Reserved.*
+*Copyright (c) 2012-2021 PU Developing IK, Latvia, All Rights Reserved.*
 
 -------------------------------------------------------------------------------
 
