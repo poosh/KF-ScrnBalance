@@ -9,22 +9,22 @@ function bool InternalOnPreDraw(Canvas C)
         b_ViewMap.EnableMe();
     else
         b_ViewMap.DisableMe();
-        
+
     return super.InternalOnPreDraw(C);
 }
 
 // overrided to position buttons by TabOrder
-function PositionButtons (Canvas C)
+function PositionButtons(Canvas C)
 {
     local int i, j;
     local GUIButton b;
     local array<GUIButton> buttons;
-    local float x;
+    local float x, s, m;
 
     // sort buttons by tab order
-    for ( i = 0; i < Controls.Length; i++ ) {
+    for ( i = 0; i < Controls.Length; ++i ) {
         b = GUIButton(Controls[i]);
-        if ( b != None)    {
+        if ( b != none && b != b_Cancel && b.bVisible ) {
             for ( j=0; j<buttons.length; ++j ) {
                 if ( buttons[j].TabOrder >= b.TabOrder )
                     break;
@@ -33,15 +33,17 @@ function PositionButtons (Canvas C)
             buttons[j] = b;
         }
     }
-    
-    // position buttons
-    for ( j=0; j<buttons.length; ++j ) {
+
+    s = GetSpacer();
+    m = GetMargin() / 2;
+    x = ActualLeft() + ActualWidth() - m;
+    // position the Disconnect button on the left, others on the right
+    b_Cancel.WinLeft = b.RelativeLeft(m, true);
+    for ( j = buttons.length - 1; j >= 0; --j ) {
         b = buttons[j];
-        if ( x == 0 )
-            x = ButtonLeft;
-        else x += GetSpacer();
-        b.WinLeft = b.RelativeLeft( x, True );
-        x += b.ActualWidth();    
+        x -= b.ActualWidth();
+        b.WinLeft = b.RelativeLeft(x, true);
+        x -= s;
     }
 }
 
@@ -54,7 +56,7 @@ function bool OnFooterClick(GUIComponent Sender)
     else if ( Sender == b_ViewMap ) {
         if( KF_StoryGRI(PlayerOwner().Level.GRI) == none ) {
             LobbyMenu(PageOwner).bAllowClose = true;
-            PlayerOwner().ClientCloseMenu(true, false);    
+            PlayerOwner().ClientCloseMenu(true, false);
             LobbyMenu(PageOwner).bAllowClose = false;
         }
     }
@@ -68,7 +70,24 @@ function bool OnFooterClick(GUIComponent Sender)
 defaultproperties
 {
     UnreadyString="Unready"
-    
+
+    Begin Object Class=GUIButton Name=Cancel
+        Caption="Disconnect"
+        Hint="Disconnect From This Server"
+        WinTop=0.966146
+        WinLeft=0.009000
+        WinWidth=0.120000
+        WinHeight=0.033203
+        RenderWeight=2.000000
+        TabOrder=0
+        bBoundToParent=True
+        ToolTip=None
+
+        OnClick=LobbyFooter.OnFooterClick
+        OnKeyEvent=Cancel.InternalOnKeyEvent
+    End Object
+    b_Cancel=GUIButton'ScrnBalanceSrv.ScrnLobbyFooter.Cancel'
+
     Begin Object Class=GUIButton Name=ViewMap
         Caption="View Map"
         Hint="Spectate the map while waiting for players to get ready"
@@ -84,5 +103,5 @@ defaultproperties
         OnClick=LobbyFooter.OnFooterClick
         OnKeyEvent=Cancel.InternalOnKeyEvent
     End Object
-    b_ViewMap=GUIButton'ScrnBalanceSrv.ScrnLobbyFooter.ViewMap'    
+    b_ViewMap=GUIButton'ScrnBalanceSrv.ScrnLobbyFooter.ViewMap'
 }

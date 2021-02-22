@@ -23,11 +23,11 @@ defaultproperties
 
      Begin Object Class=GUILabel Name=TimeOutCounter
          Caption="Game will auto-commence in: "
-         TextAlign=TXTA_Left
+         TextAlign=TXTA_Center
          TextColor=(B=158,G=176,R=175)
          WinTop=0.96
-         WinLeft=0.005
-         WinWidth=0.995
+         WinLeft=0.0
+         WinWidth=1.0
          WinHeight=0.033203
          TabOrder=6
      End Object

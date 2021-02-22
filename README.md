@@ -19,6 +19,15 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+### v9.63.21
+- Shop: Selecting the armor item on the left side automatically opens the armor category on the right side.
+  That allows easy upgrading/downgrading the armor type (Jacket/Combar/Horzine).
+  Armor category is a weapon category that contains at least two armor items.
+  See `WeaponCategories` in *ServerPerks.ini*
+- Shop: Fixed a minor issue where damage type and headshot checkboxes were displayed for armor items.
+- Lobby: the Disconnect button moved to the left side of the screen.
+
+
 ### v9.63.20
 #### Weapon Balance
 - Fixed **Point-Blank Headshot Detection** bug for all grenades, rockets, flares, Husk Gun and Trenchgun

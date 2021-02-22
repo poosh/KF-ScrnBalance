@@ -20,6 +20,7 @@ var    localized string    strTeam;
 var    localized string    strNotTeamMember;
 
 var    localized string    WaitingForMorePlayers;
+var    localized string    strPlayerIsSpectator;
 var    localized string    TeamNames[2];
 
 var    localized string    strHDmg;
@@ -44,7 +45,7 @@ event Timer()
     PRI = PlayerOwner().PlayerReplicationInfo;
     if ( PRI != none ) {
         if ( PRI.bOnlySpectator ) {
-            label_TimeOutCounter.Caption = "You are a spectator.";
+            label_TimeOutCounter.Caption = strPlayerIsSpectator;
             Return;
         }
     }
@@ -523,6 +524,7 @@ defaultproperties
     DifficultyString="Difficulty:"
     strTeam="Team:"
     strNotTeamMember="Select team..."
+    strPlayerIsSpectator="You are a spectator."
     MaxPlayersOnList=11
 
     Begin Object Class=TSCLobbyFooter Name=BuyFooter

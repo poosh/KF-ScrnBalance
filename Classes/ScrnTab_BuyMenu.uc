@@ -112,9 +112,11 @@ function SetInfoText()
 
 function DoBuyKevlar()
 {
-    if ( KFPawn(PlayerOwner().Pawn) != none && PlayerOwner().Pawn.ShieldStrength < PlayerOwner().Pawn.GetShieldStrengthMax() )
-    {
-        KFPawn(PlayerOwner().Pawn).ServerBuyKevlar();
+    local KFPawn KFP;
+
+    KFP = KFPawn(PlayerOwner().Pawn);
+    if ( KFP != none && KFP.ShieldStrength < KFP.GetShieldStrengthMax() ) {
+        KFP.ServerBuyKevlar();
         MakeSomeBuyNoise(class'Vest');
     }
 }
@@ -148,11 +150,11 @@ function SaleChange(GUIComponent Sender)
     if( TheBuyable==None ) // Selected category.
     {
         GUIBuyMenu(OwnerPage()).WeightBar.NewBoxes = 0;
-        if( SaleSelect.List.Index>=0 && SaleSelect.List.CanBuys[SaleSelect.List.Index]>1 )
-        {
+        // if( SaleSelect.List.Index>=0 && SaleSelect.List.CanBuys[SaleSelect.List.Index]>1 )
+        // {
             // DO NOT automatically open category - in cases user navigates buy arrow keys
             //SRBuyMenuSaleList(SaleSelect.List).SetCategoryNum(SaleSelect.List.CanBuys[SaleSelect.List.Index]-3);
-        }
+        // }
     }
     else GUIBuyMenu(OwnerPage()).WeightBar.NewBoxes = TheBuyable.ItemWeight;
     OnAnychange();
@@ -167,7 +169,9 @@ function OnAnychange()
     }
     // ItemAmmoCurrent of items for sale stores DLCLocked value
     // DLCLocked = 5 for ScrN locks
-    if ( TheBuyable != none && TheBuyable.bSaleList && ForceInfoPageNum != 0 && (ForceInfoPageNum == 1 || TheBuyable.ItemAmmoCurrent == 5) )  {
+    if ( TheBuyable != none && TheBuyable.bSaleList && ForceInfoPageNum != 0
+            && (ForceInfoPageNum == 1 || TheBuyable.ItemAmmoCurrent == 5) )
+    {
         ItemRequirements.List.Display(TheBuyable);
         ItemRequirements.SetVisibility(true);
         ItemInfo.SetVisibility(false);
@@ -180,6 +184,10 @@ function OnAnychange()
         ItemInfo.SetVisibility(true);
         SelectedItemLabel.Caption = default.SelectedItemLabel.Caption;
         InfoPageNum = 0;
+
+        if (TheBuyable != none && TheBuyable.bIsVest && !TheBuyable.bSaleList) {
+            ScrnBuyMenuSaleList(SaleSelect.List).SelectVestCategory();
+        }
     }
     SetInfoText();
     UpdatePanel();
@@ -192,7 +200,6 @@ function ResetInfo()
 }
 
 // calculates inventory item count and total ammo count.
-// returns tru if output variable were set
 function MyInventoryStats(out int ItemCount, out int TotalAmmoAmount)
 {
     local Inventory Inv;

@@ -184,86 +184,78 @@ function LoadStats(GUIBuyable NewBuyable, byte FireMode, optional bool bSetTopVa
         BaseDmg = ProjClass.default.Damage;
         DamType = ProjClass.default.MyDamageType;
         KFDamType = class<KFWeaponDamageType>(DamType);
-        DamType = ProjClass.default.MyDamageType;
 
-        if (bHSDamage)
-        {
+        if (bHSDamage) {
             //current implementation works with projectiles extended from base classes
             //unknown projectiles may be handled with if(int(ProjClass.GetPropertyText("HeadShotDamageMult"))>0)
 
             //first, set HSMult to 0 so if projectile headshot mult isn't detected there won't be a stupid value displayed
             HSMult = 0;
 
-            //a ton of things extend shotgunbullet so handle it first and set it again later
-
-            //handle shotgun projectiles
-            if ( class<ShotgunBullet>(ProjClass) != none )
-                HSMult = KFDamType.default.HeadShotDamageMult;; //usually 1.1x
-
-            //The Shotguns actually do 1.65x because of two multipliers, handle them seperately like this
-            // prevent other non-shotgun shotgunbullets from getting 1.65x (Mainly Horzine Tech Cryo dart weapons)
-            if ( class<ScrnCustomShotgunBullet>(ProjClass) != none )
-                HSMult = class<ScrnCustomShotgunBullet>(ProjClass).default.HeadShotDamageMult * KFDamType.default.HeadShotDamageMult; //1.1 * 1.5 = 1.65
-
-            //quick hack to stop flamethrower from displaying 1.1x headshot damage
-            if ( class<FlameTendril>(ProjClass) != none )
-                HSMult = 0;
-
-            //handle Trenchgun projectiles
-            if ( class<TrenchgunBullet>(ProjClass) != none )
-                HSMult = class<TrenchgunBullet>(ProjClass).default.HeadShotDamageMult * KFDamType.default.HeadShotDamageMult;
-
-            //handle buzzsaw bow and derived projectiles
-            if ( class<CrossBuzzsawBlade>(ProjClass) != none )
-                HSMult = class<CrossBuzzsawBlade>(ProjClass).default.HeadShotDamageMult;
-
-            //handle m99 and derived projectiles
-            if ( class<M99Bullet>(ProjClass) != none )
-                HSMult = class<M99Bullet>(ProjClass).default.HeadShotDamageMult;
-
-            //handle CrossbowArrow and derived projectiles
-            if ( class<CrossbowArrow>(ProjClass) != none )
+            if ( class<CrossbowArrow>(ProjClass) != none ) {
                 HSMult = class<CrossbowArrow>(ProjClass).default.HeadShotDamageMult;
-
-            //handle M79 projectiles (HS multiplier is in impact damage type)
-            if ( class<M79GrenadeProjectile>(ProjClass) != none )
-            {
-                BaseDmg = class<M79GrenadeProjectile>(ProjClass).default.ImpactDamage;
-                DamType = class<M79GrenadeProjectile>(ProjClass).default.ImpactDamageType;
-                HSMult = Class<KFWeaponDamageType>(DamType).default.HeadShotDamageMult;
             }
-
-            //handle SP grenade projectiles (HS multiplier is in impact damage type)
-            if ( class<SPGrenadeProjectile>(ProjClass) != none )
-            {
-                BaseDmg = class<SPGrenadeProjectile>(ProjClass).default.ImpactDamage;
-                DamType = class<SPGrenadeProjectile>(ProjClass).default.ImpactDamageType;
-                HSMult = Class<KFWeaponDamageType>(DamType).default.HeadShotDamageMult;
+            else if ( class<M99Bullet>(ProjClass) != none ) {
+                HSMult = class<M99Bullet>(ProjClass).default.HeadShotDamageMult;
             }
-
-            //handle LAW projectiles, but ignore classes that don't use it's impact damage (ZED Guns)
-            if ( class<LAWProj>(ProjClass) != none && class<ZEDGunProjectile>(ProjClass) == none && class<ZEDMKIIPrimaryProjectile>(ProjClass) == none
-            && class<ZEDMKIISecondaryProjectile>(ProjClass) == none )
-            {
-                BaseDmg = class<LAWProj>(ProjClass).default.ImpactDamage;
-                DamType = class<LAWProj>(ProjClass).default.ImpactDamageType;
-                HSMult = Class<KFWeaponDamageType>(DamType).default.HeadShotDamageMult;
+            else if ( class<ROBallisticProjectile>(ProjClass) != none ) {
+                if ( class<M79GrenadeProjectile>(ProjClass) != none ) {
+                    BaseDmg = class<M79GrenadeProjectile>(ProjClass).default.ImpactDamage;
+                    DamType = class<M79GrenadeProjectile>(ProjClass).default.ImpactDamageType;
+                    HSMult = Class<KFWeaponDamageType>(DamType).default.HeadShotDamageMult;
+                }
+                else if ( class<SPGrenadeProjectile>(ProjClass) != none ) {
+                    BaseDmg = class<SPGrenadeProjectile>(ProjClass).default.ImpactDamage;
+                    DamType = class<SPGrenadeProjectile>(ProjClass).default.ImpactDamageType;
+                    HSMult = Class<KFWeaponDamageType>(DamType).default.HeadShotDamageMult;
+                }
+                else if ( class<LAWProj>(ProjClass) != none
+                        && class<ZEDGunProjectile>(ProjClass) == none
+                        && class<ZEDMKIIPrimaryProjectile>(ProjClass) == none
+                        && class<ZEDMKIISecondaryProjectile>(ProjClass) == none )
+                {
+                    if ( class<ZEDGunProjectile>(ProjClass) != none
+                            || class<ZEDMKIIPrimaryProjectile>(ProjClass) != none
+                            || class<ZEDMKIISecondaryProjectile>(ProjClass) != none)
+                    {
+                        //handle the ZED gun projectiles (Uses HS Damage in Damtype)
+                        BaseDmg = class<LAWProj>(ProjClass).default.Damage;
+                        DamType = class<LAWProj>(ProjClass).default.MyDamageType;
+                        HSMult = Class<KFWeaponDamageType>(DamType).default.HeadShotDamageMult;
+                    }
+                    else {
+                        //handle LAW projectiles, but ignore classes that don't use it's impact damage (ZED Guns)
+                        BaseDmg = class<LAWProj>(ProjClass).default.ImpactDamage;
+                        DamType = class<LAWProj>(ProjClass).default.ImpactDamageType;
+                        HSMult = Class<KFWeaponDamageType>(DamType).default.HeadShotDamageMult;
+                    }
+                }
+                else if ( class<CrossBuzzsawBlade>(ProjClass) != none ) {
+                    HSMult = class<CrossBuzzsawBlade>(ProjClass).default.HeadShotDamageMult;
+                }
             }
-
-            //handle the ZED gun projectiles (Uses HS Damage in Damtype)
-            else if ( class<ZEDGunProjectile>(ProjClass) != none || class<ZEDMKIIPrimaryProjectile>(ProjClass) != none
-            || class<ZEDMKIISecondaryProjectile>(ProjClass) != none )
-            {
-                BaseDmg = class<LAWProj>(ProjClass).default.Damage;
-                DamType = class<LAWProj>(ProjClass).default.MyDamageType;
-                HSMult = Class<KFWeaponDamageType>(DamType).default.HeadShotDamageMult;
+            else if ( class<ShotgunBullet>(ProjClass) != none ) {
+                if ( class<ScrnCustomShotgunBullet>(ProjClass) != none ) {
+                    //The Shotguns actually do 1.65x because of two multipliers, handle them seperately like this
+                    // prevent other non-shotgun shotgunbullets from getting 1.65x (Mainly Horzine Tech Cryo dart weapons)
+                    HSMult = class<ScrnCustomShotgunBullet>(ProjClass).default.HeadShotDamageMult * KFDamType.default.HeadShotDamageMult; //1.1 * 1.5 = 1.65
+                }
+                else if ( class<FlameTendril>(ProjClass) != none ) {
+                    //quick hack to stop flamethrower from displaying 1.1x headshot damage
+                    HSMult = 0;
+                }
+                else {
+                    HSMult = KFDamType.default.HeadShotDamageMult; //usually 1.1x
+                }
+            }
+            else if ( class<TrenchgunBullet>(ProjClass) != none ) {
+                HSMult = class<TrenchgunBullet>(ProjClass).default.HeadShotDamageMult * KFDamType.default.HeadShotDamageMult;
             }
 
             //now recast DamType as a KFDamType and check if projclass's MyDamageType does not check for headshots (fix cryo thrower)
             KFDamType = class<KFWeaponDamageType>(DamType);
             if (KFDamType.default.bCheckForHeadShots == false)
                 HSMult = 0;
-
         }
 
         Mult = WF.default.AmmoPerFire * ProjFireClass.default.ProjPerFire;
@@ -504,23 +496,38 @@ function Display(GUIBuyable NewBuyable)
         bFavorited = (NewBuyable.ItemPickupClass!=None && Class'SRClientSettings'.Static.IsFavorite( NewBuyable.ItemPickupClass ));
         RefreshFavoriteButton();
         OldPickupClass = NewBuyable.ItemPickupClass;
-        ch_FireMode0.SetVisibility(true);
-        ch_FireMode1.SetVisibility(true);
 
+        if (NewBuyable.bIsVest) {
+            ch_FireMode0.SetVisibility(false);
+            ch_FireMode1.SetVisibility(false);
+            ch_HSDmgCheck.SetVisibility(false);
 
-        LoadStats(NewBuyable, byte(ch_FireMode1.IsChecked()), false, bHSDamage);
+            barDamage.SetVisibility(false);
+            barDPS.SetVisibility(false);
+            barDPM.SetVisibility(false);
+            barRange.SetVisibility(false);
+            barMag.SetVisibility(false);
+            barAmmo.SetVisibility(false);
+        }
+        else {
+            ch_FireMode0.SetVisibility(true);
+            ch_FireMode1.SetVisibility(true);
+            ch_HSDmgCheck.SetVisibility(true);
 
-        barDamage.SetVisibility(barDamage.Value > 0);
+            LoadStats(NewBuyable, byte(ch_FireMode1.IsChecked()), false, bHSDamage);
+            barDamage.SetVisibility(barDamage.Value > 0);
+            barDPS.SetVisibility(barDPS.Value > 0);
+            barDPM.SetVisibility(barDPM.Value > 0);
+            barRange.SetVisibility(barRange.Value > 0);
+            barMag.SetVisibility(barMag.Value > 0);
+            barAmmo.SetVisibility(barAmmo.Value > 0);
+        }
+
         lblDamage.SetVisibility(barDamage.bVisible);
-        barDPS.SetVisibility(barDPS.Value > 0);
         lblDPS.SetVisibility(barDPS.bVisible);
-        barDPM.SetVisibility(barDPM.Value > 0);
         lblDPM.SetVisibility(barDPM.bVisible);
-        barRange.SetVisibility(barRange.Value > 0);
         lblRange.SetVisibility(barRange.bVisible);
-        barMag.SetVisibility(barMag.Value > 0);
         lblMag.SetVisibility(barMag.bVisible);
-        barAmmo.SetVisibility(barAmmo.Value > 0);
         lblAmmo.SetVisibility(barAmmo.bVisible);
     }
     else {

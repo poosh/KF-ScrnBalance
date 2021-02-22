@@ -24,6 +24,8 @@ var texture FavoritesIcon;
 
 var array<localized string> LockStrings;
 
+var int VestCategory;  // the item group that contains most armor items
+
 // all update checks now are perfomed in ScrnTab_BuyMenu
 function Timer()
 {
@@ -148,14 +150,14 @@ function UpdateForSaleBuyables()
             Num = CurrentShop.SaleItems.Length;
         else
             Num = CPRL.ShopInventory.Length;
-        for ( z=0; z<Num; z++ ) {
+
+        for ( z = 0; z < Num; ++z ) {
             //reset variables
             DualCoef = 1;
             bHasDual = false;
 
             // Use Story Mode shop, if defined, otherwise use classic level rules
-            if( CurrentShop!=None )
-            {
+            if( CurrentShop!=None ) {
                 // Allow story mode volume limit weapon availability.
                 ForSalePickup = class<KFWeaponPickup>(CurrentShop.SaleItems[z]);
                 if( ForSalePickup==None )
@@ -166,8 +168,7 @@ function UpdateForSaleBuyables()
                 if( j<0 )
                     continue;
             }
-            else
-            {
+            else {
                 ForSalePickup = class<KFWeaponPickup>(CPRL.ShopInventory[z].PC);
                 j = z;
             }
@@ -195,7 +196,7 @@ function UpdateForSaleBuyables()
                 if ( k < ForSaleBuyables.length )
                     continue; // ForSalePickup is already inside ForSaleBuyables
             }
-            else if( ActiveCategory!=CPRL.ShopInventory[j].CatNum )
+            else if( ActiveCategory != CPRL.ShopInventory[j].CatNum )
                 continue;
 
             ForSaleWeapon = class<KFWeapon>(ForSalePickup.default.InventoryType);
@@ -262,6 +263,7 @@ function UpdateForSaleBuyables()
             ForSaleBuyable.ItemPickupClass      = ForSalePickup;
             ForSaleBuyable.ItemWeaponClass      = ForSaleWeapon;
             ForSaleBuyable.ItemWeight           = ForSalePickup.default.Weight;
+            ForSaleBuyable.bIsVest              = bVest;
             if ( bVest ) {
                 ForSaleBuyable.ItemImage        = class<ScrnVestPickup>(ForSalePickup).default.TraderInfoTexture;
                 ScrnPawn.CalcVestCost(class<ScrnVestPickup>(ForSalePickup), Cost, AmountToBuy, Price1p);
@@ -340,8 +342,12 @@ function UpdateList()
 {
     local int i,j;
     local ClientPerkRepLink CPRL;
+    local KFPlayerReplicationInfo KFPRI;
+    local ScrnHumanPawn ScrnPawn;
 
     CPRL = Class'ScrnClientPerkRepLink'.Static.FindMe(PlayerOwner());
+    KFPRI = KFPlayerReplicationInfo(PlayerOwner().PlayerReplicationInfo);
+    ScrnPawn = ScrnHumanPawn(PlayerOwner().Pawn);
 
     // Update the ItemCount and select the first item
     ItemCount = CPRL.ShopCategories.Length + ForSaleBuyables.Length + 1;
@@ -393,17 +399,17 @@ function UpdateList()
     }
 
     // Update the players inventory list
-    for ( i=0; i<ForSaleBuyables.Length; i++ )
-    {
+    for ( i = 0; i < ForSaleBuyables.Length; ++i ) {
         PrimaryStrings[j] = ForSaleBuyables[i].ItemName;
         SecondaryStrings[j] = class'ScrnUnicode'.default.Dosh @ int(ForSaleBuyables[i].ItemCost);
 
-        if( ForSaleBuyables[i].ItemPerkIndex<CPRL.ShopPerkIcons.Length )
+        if( ForSaleBuyables[i].ItemPerkIndex < CPRL.ShopPerkIcons.Length )
             ListPerkIcons[j] = CPRL.ShopPerkIcons[ForSaleBuyables[i].ItemPerkIndex];
         else
             ListPerkIcons[j] = None;
 
         if( ForSaleBuyables[i].ItemAmmoCurrent > 0 ) {
+            // DLCLocked
             CanBuys[j] = 0;
 
             if ( ForSaleBuyables[i].ItemAmmoCurrent == 3 )
@@ -411,13 +417,12 @@ function UpdateList()
             else
                 SecondaryStrings[j] = LockStrings[min(ForSaleBuyables[i].ItemAmmoCurrent,LockStrings.Length-1)];
         }
-        else if ( ForSaleBuyables[i].ItemCost > PlayerOwner().PlayerReplicationInfo.Score ||
-             ForSaleBuyables[i].ItemWeight + KFHumanPawn(PlayerOwner().Pawn).CurrentWeight > KFHumanPawn(PlayerOwner().Pawn).MaxCarryWeight )
+        else if ( ForSaleBuyables[i].ItemCost > KFPRI.Score
+                || ForSaleBuyables[i].ItemWeight + ScrnPawn.CurrentWeight > ScrnPawn.MaxCarryWeight )
         {
             CanBuys[j] = 0;
         }
-        else
-        {
+        else {
             CanBuys[j] = 1;
         }
         ++j;
@@ -436,13 +441,11 @@ function UpdateList()
         }
     }
 
-    if ( bNotify )
-     {
+    if ( bNotify ) {
         CheckLinkedObjects(Self);
     }
 
-    if ( MyScrollBar != none )
-    {
+    if ( MyScrollBar != none ) {
         MyScrollBar.AlignThumb();
     }
 
@@ -812,6 +815,45 @@ function bool InternalOnClick(GUIComponent Sender)
             OnDblClick(Self); // buy item
     }
     return true;
+}
+
+function int FindVestCategory() {
+    local int result;
+    local array<int> ArmorCounts;
+    local ScrnClientPerkRepLink CPRL;
+    local class<KFWeaponPickup> ForSalePickup;
+    local int i, maxCount;
+
+    CPRL = Class'ScrnClientPerkRepLink'.Static.FindMe(PlayerOwner());
+    for ( i = 0; i < CPRL.ShopInventory.Length; ++i ) {
+        ForSalePickup = class<KFWeaponPickup>(CPRL.ShopInventory[i].PC);
+        if ( ForSalePickup != none && ClassIsChildOf(ForSalePickup, class'ScrnBalanceSrv.ScrnVestPickup') ) {
+            ArmorCounts.length = max(ArmorCounts.length, CPRL.ShopInventory[i].CatNum + 1);
+            ArmorCounts[CPRL.ShopInventory[i].CatNum]++;
+        }
+    }
+
+    // a category needs to have at least 2 armor items to be considered armor cat.
+    // cat 0 is the favorites - skip it
+    result = -1;
+    maxCount = 1;
+    for ( i = 1; i < ArmorCounts.length; ++i ) {
+        if ( ArmorCounts[i] > maxCount ) {
+            result = i;
+            maxCount = ArmorCounts[i];
+        }
+    }
+    return result;
+}
+
+function SelectVestCategory() {
+    if ( VestCategory == 0 ) {
+        VestCategory = FindVestCategory();
+    }
+
+    if ( VestCategory > 0 && VestCategory != ActiveCategory ) {
+        SetCategoryNum(VestCategory, true);
+    }
 }
 
 defaultproperties
