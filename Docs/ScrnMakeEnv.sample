@@ -4,10 +4,11 @@ set KFPACKAGE=
 call :GetKfPackage KFPACKAGE %~dpn1
 
 set KFDIR=C:\Games\kf
+set STEAMEXE=c:\Steam\steam.exe
 set STEAMDIR=C:\Steam\steamapps\common\KillingFloor
 set RELEASEDIR=C:\Games\KFOut\%KFPACKAGE%
 set BUNDLEDIR=C:\Games\KFOut\ScrnBundlePart2
-set WEBDIR=C:\Users\user\Dropbox\KFWeb
+set WEBDIR=C:\Users\%USERNAME%\Dropbox\KFWeb
 
 echo -------------------------------------------------------------------------
 echo KFPACKAGE=%KFPACKAGE%
