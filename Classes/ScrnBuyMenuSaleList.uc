@@ -271,7 +271,7 @@ function UpdateForSaleBuyables()
                 ForSaleBuyable.ItemWeight -= ScrnPawn.GetCurrentVestClass().default.Weight;
             }
             else {
-                ForSaleBuyable.ItemCost         = int( float(ForSalePickup.default.Cost)
+                ForSaleBuyable.ItemCost         = ceil( float(ForSalePickup.default.Cost)
                                                         * Perk.static.GetCostScaling(KFPRI, ForSalePickup)
                                                         * DualCoef );
                 if ( ForSaleWeapon != none ) {
@@ -846,14 +846,16 @@ function int FindVestCategory() {
     return result;
 }
 
-function SelectVestCategory() {
+function bool SelectVestCategory() {
     if ( VestCategory == 0 ) {
         VestCategory = FindVestCategory();
     }
 
     if ( VestCategory > 0 && VestCategory != ActiveCategory ) {
         SetCategoryNum(VestCategory, true);
+        return true;
     }
+    return false;
 }
 
 defaultproperties

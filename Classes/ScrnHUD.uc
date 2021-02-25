@@ -15,6 +15,10 @@ var transient float             WeaponChargePct; //0..1
 var transient int               WeaponMaxCharge;
 var transient float             MaxAmmoSecondary; // including perk bonus
 var transient int               CurMagAmmo;
+var transient bool              bHasLeftGun;
+var transient int               CurLeftGunAmmo; // for dual wield: ammo in the left gun. CurMagAmmo displays total ammo in both guns
+var transient bool              bLeftGunLowAmmo;
+var transient bool              bRightGunLowAmmo;
 
 var() texture                   texCowboy;
 var() config float              CowboyTileWidth;
@@ -1039,6 +1043,7 @@ simulated function DrawCoolHud(Canvas C)
         C.DrawColor = CoolHudAmmoColor;
         C.DrawColor.A = KFHUDAlpha;
 
+        // total ammo
         if ( WeaponMaxCharge > 0 )
             s = string(int(CurAmmoPrimary));
         else if ( OwnerWeapon.MagCapacity > 1 )
@@ -1052,18 +1057,39 @@ simulated function DrawCoolHud(Canvas C)
         TempX -= XL;
         TempY -= YL*0.5;
 
+        // magazine ammo
         if ( WeaponMaxCharge > 0 )
             s = string(int(WeaponChargePct*WeaponMaxCharge));
         else if ( OwnerWeapon.MagCapacity > 1 )
-            s = string(CurMagAmmo);
+            s = string(CurMagAmmo - CurLeftGunAmmo);
         else
             s = string(int(CurAmmoPrimary));
         C.Font = LoadWaitingFont(0);// 0 - big, 1 - smaller
         C.TextSize(s, XL, YL);
         C.SetPos(TempX - XL, TempY - YL);
-        if ( bLowAmmo || WeaponMaxCharge > 0 )
+        if ( bHasLeftGun ) {
+            if ( bRightGunLowAmmo ) {
+                SetLowAmmoColor(C.DrawColor, CurMagAmmo - CurLeftGunAmmo);
+            }
+        }
+        else if ( bLowAmmo || WeaponMaxCharge > 0 ) {
             C.DrawColor = BulletsInClipDigits.Tints[0];
+        }
         C.DrawText(s);
+
+        if (bHasLeftGun) {
+            s = string(CurLeftGunAmmo);
+            C.TextSize(s, XL, YL);
+            C.SetPos(C.ClipX - TempX, TempY - YL);
+            if ( bLeftGunLowAmmo ) {
+                SetLowAmmoColor(C.DrawColor, CurLeftGunAmmo);
+            }
+            else {
+                C.DrawColor = CoolHudAmmoColor;
+                C.DrawColor.A = KFHUDAlpha;
+            }
+            C.DrawText(s);
+        }
         // restore
         C.FontScaleX = 1.0;
         C.FontScaleY = 1.0;
@@ -1100,6 +1126,19 @@ simulated function DrawWeaponName(Canvas C)
         C.SetPos((C.ClipX * 0.97) - XL, C.ClipY * 0.915);
 
     C.DrawText(CurWeaponName);
+}
+
+simulated function SetLowAmmoColor(out Color C, int ammo)
+{
+    C.R = 192;
+    if ( ammo == 0 ) {
+        C.G = 0;
+    }
+    else {
+        C.G = 160;
+    }
+    C.B = 0;
+    C.A = PulseAlpha;
 }
 
 simulated function UpdateHud()
@@ -1140,18 +1179,7 @@ simulated function UpdateHud()
             BulletsInClipDigits.Value = CurMagAmmo;
 
         if ( bLowAmmo ) {
-            if ( BulletsInClipDigits.Value == 0 ) {
-                BulletsInClipDigits.Tints[0].R = 192;
-                BulletsInClipDigits.Tints[0].G = 0;
-                BulletsInClipDigits.Tints[0].B = 0;
-            }
-            else {
-                BulletsInClipDigits.Tints[0].R = 192;
-                BulletsInClipDigits.Tints[0].G = 160;
-                BulletsInClipDigits.Tints[0].B = 0;
-            }
-            BulletsInClipDigits.Tints[0].A = PulseAlpha;
-
+            SetLowAmmoColor(BulletsInClipDigits.Tints[0], BulletsInClipDigits.Value);
             BulletsInClipDigits.Tints[1] = BulletsInClipDigits.Tints[0];
         }
 
@@ -1230,8 +1258,27 @@ simulated function UpdateHud()
     Super(HudBase).UpdateHud();
 }
 
+simulated function CalculateLeftGunAmmo()
+{
+    if ( ScrnDualDeagle(OwnerWeapon) != none ) {
+        bHasLeftGun = true;
+        CurLeftGunAmmo = ScrnDualDeagle(OwnerWeapon).LeftGunAmmoRemaining;
+    }
+    else if ( ScrnDualMK23Pistol(OwnerWeapon) != none ) {
+        // exact class check to avoid ScrnDualMK23Laser
+        bHasLeftGun = true;
+        CurLeftGunAmmo = ScrnDualMK23Pistol(OwnerWeapon).LeftGunAmmoRemaining;
+    }
+    else if ( ScrnDual44Magnum(OwnerWeapon) != none ) {
+        bHasLeftGun = true;
+        CurLeftGunAmmo = ScrnDual44Magnum(OwnerWeapon).LeftGunAmmoRemaining;
+    }
+}
+
 simulated function CalculateAmmo()
 {
+    local int i;
+
     MaxAmmoPrimary = 1;
     CurAmmoPrimary = 0;
     MaxAmmoSecondary = 0;
@@ -1241,6 +1288,10 @@ simulated function CalculateAmmo()
     WeaponChargePct = 0;
     WeaponMaxCharge = 0;
     CurMagAmmo = 0;
+    bHasLeftGun = false;
+    CurLeftGunAmmo = 0;
+    bLeftGunLowAmmo = false;
+    bRightGunLowAmmo = false;
 
     if ( PawnOwner == None  )
         return;
@@ -1266,8 +1317,20 @@ simulated function CalculateAmmo()
             WeaponChargePct = ScrnHuskGun(OwnerWeapon).ChargeAmount;
             WeaponMaxCharge = ScrnHuskGunFire(OwnerWeapon.GetFireMode(0)).MaxChargeAmmo;
         }
-        else
-            bLowAmmo = OwnerWeapon.MagCapacity > MinMagCapacity && CurMagAmmo <= max(OwnerWeapon.MagCapacity*LowAmmoPercent, 2);
+        else {
+            if ( Dualies(OwnerWeapon) != none ) {
+                CalculateLeftGunAmmo();
+            }
+
+            if ( OwnerWeapon.MagCapacity > MinMagCapacity ) {
+                i = max(OwnerWeapon.MagCapacity*LowAmmoPercent, 2);
+                if (bHasLeftGun) {
+                    bLeftGunLowAmmo = CurLeftGunAmmo <= i;
+                    bRightGunLowAmmo = (CurMagAmmo-CurLeftGunAmmo) <= i;
+                }
+                bLowAmmo = CurMagAmmo <= i;
+            }
+        }
     }
     else if ( ScrnPawnOwner != none && PlayerOwner.Pawn != ScrnPawnOwner && ScrnPawnOwner.SpecWeapon != none ) {
         CurMagAmmo = ScrnPawnOwner.SpecMagAmmo;

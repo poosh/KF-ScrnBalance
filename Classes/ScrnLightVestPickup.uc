@@ -9,5 +9,5 @@ defaultproperties
      Description="Grants minor damage protection."
      ItemName="Armored Jacket"
      ItemShortName="Armored Jacket"
-     PickupMessage="You gots an Armored Jacket"
+     PickupMessage="You got an Armored Jacket"
 }

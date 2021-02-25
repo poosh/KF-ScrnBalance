@@ -178,4 +178,5 @@ defaultproperties
      MaxPenetrations=4
      bCheck4Ach=True
      DamageType=Class'ScrnBalanceSrv.ScrnDamTypeDeagle'
+     AmmoClass=Class'ScrnBalanceSrv.ScrnDeagleAmmo'
 }

@@ -263,7 +263,6 @@ function UnPossessed()
     ScrnPerk = none;
 }
 
-
 simulated function ClientSetInventoryGroup( class<Inventory> NewInventoryClass, byte NewInventoryGroup )
 {
     local Inventory Inv;
@@ -288,39 +287,19 @@ simulated function ClientSetInventoryGroup( class<Inventory> NewInventoryClass, 
     // super.HandlePickup()
 // }
 
-
-
-
 function bool AddInventory( inventory NewItem )
 {
     local KFWeapon weap;
-    local bool GroupChanged;
-    // local KFAmmunition ammo;
+    // local bool GroupChanged;
 
     weap = KFWeapon(NewItem);
     if( weap != none ) {
-        //log("AddInventory:" @ weap, 'ScrnBalance');
-        if ( Dualies(weap) != none ) {
-            if ( (DualDeagle(weap) != none || Dual44Magnum(weap) != none || DualMK23Pistol(weap) != none)
-                  && weap.InventoryGroup != 4 ) { //skip special weapons like Laser-44
-                // Move dual pistols to slot 3 for Gunslinger perk, so he can easier to cycle them
-                if ( KFPRI != none && ClassIsChildOf(KFPRI.ClientVeteranSkill, class'ScrnBalanceSrv.ScrnVetGunslinger') )
-                    weap.InventoryGroup = 3;
-                else
-                    weap.InventoryGroup = 2; //leave dual pistols in slot 2 for other perks
-                GroupChanged = true;
-            }
-        }
-        else if ( weap.class == class'Single' ) {
-            weap.bKFNeverThrow = false;
-        }
-
         weap.bIsTier3Weapon = true; // hack to set weap.Tier3WeaponGiver for all weapons
     }
 
     //replicate changes on the client side
-    if ( GroupChanged )
-        ClientSetInventoryGroup(NewItem.class, NewItem.InventoryGroup);
+    // if ( GroupChanged )
+    //     ClientSetInventoryGroup(NewItem.class, NewItem.InventoryGroup);
 
     if ( super.AddInventory(NewItem) ) {
         if ( weap != none ) {
@@ -546,7 +525,7 @@ function UpdateSpecInfo()
 simulated function ApplyWeaponStats(Weapon NewWeapon)
 {
     local KFWeapon Weap;
-    //local KFShotgunFire SgFire;
+    local ScrnPlayerController ScrnPC;
 
     BaseMeleeIncrease = default.BaseMeleeIncrease;
     InventorySpeedModifier = 0;
@@ -554,7 +533,8 @@ simulated function ApplyWeaponStats(Weapon NewWeapon)
     Weap = KFWeapon(NewWeapon);
 
     // check cowboy mode
-    if ( Role == ROLE_Authority || IsLocallyControlled() ) {
+    ScrnPC = ScrnPlayerController(Controller);
+    if ( ScrnPC != none ) {
         bCowboyMode = ScrnPerk != none && Weap != none && ScrnPerk.static.CheckCowboyMode(KFPRI, Weap.class);
 
         if ( Weap != none ) {
@@ -566,14 +546,15 @@ simulated function ApplyWeaponStats(Weapon NewWeapon)
         }
 
         if ( Role == ROLE_Authority ) {
-            if ( ScrnPlayerController(Controller) != none )
-                ScrnPlayerController(Controller).bCowboyForWave = bCowboyMode && ScrnPlayerController(Controller).bCowboyForWave;
+            ScrnPC.bHadArmor = ScrnPC.bHadArmor && int(ShieldStrength) > 25;
+            ScrnPC.bCowboyForWave = ScrnPC.bCowboyForWave && bCowboyMode;
             UpdateSpecInfo();
         }
     }
 
     SetAmmoStatus();
     if ( KFPRI != none && Weap != none ) {
+        Weap.UpdateMagCapacity(KFPRI);
         Weap.bIsTier3Weapon = Weap.default.bIsTier3Weapon; // restore default value from the hack in AddInventory()
 
         if ( Weap.bSpeedMeUp ) {
@@ -719,6 +700,29 @@ function DestroyMyPipebombs(optional int CountToLeave)
     }
 }
 
+function bool CheckOutOfAmmo(optional bool bSpeech)
+{
+    local Inventory Inv;
+    local int c;
+    local KFWeapon KFWeap;
+
+    for ( Inv = Instigator.Inventory; Inv != none && ++c < 1000; Inv = Inv.Inventory ) {
+        KFWeap = KFWeapon(Inv);
+
+        if ( Inv.InventoryGroup > 0 && KFWeap != none && !KFWeap.bMeleeWeapon && KFWeap.bConsumesPhysicalAmmo
+                && KFWeap.HasAmmo() )
+        {
+            return false;
+        }
+    }
+
+    if (bSpeech) {
+        PlayerController(Controller).Speech('AUTO', 3, "");
+    }
+    return true;
+}
+
+
 
 // ===================================== SHIELD =====================================
 simulated function class<ScrnVestPickup> GetVestClass()
@@ -779,14 +783,11 @@ simulated function ClientSetVestClass(class<ScrnVestPickup> NewVestClass)
     }
 }
 
-
-
 simulated function SetShieldWeight()
 {
     if ( int(ShieldStrength) <= 0 )
             SetVestClass(NoVestClass);
 }
-
 
 function float GetShieldStrengthMax()
 {
@@ -811,6 +812,8 @@ function int CanUseShield(int ShieldAmount)
 
 function bool AddShieldStrength(int AmountToAdd)
 {
+    local int OldShieldStrength;
+
     if ( AmountToAdd == 0 )
         return false;
 
@@ -824,17 +827,19 @@ function bool AddShieldStrength(int AmountToAdd)
     if ( AmountToAdd > 0 && ShieldStrength >= ShieldStrengthMax )
         return false;
 
+    OldShieldStrength = ShieldStrength;
     ShieldStrength = clamp(ShieldStrength + AmountToAdd, 0, ShieldStrengthMax);
     SetShieldWeight();
-    if ( ShieldStrength >= 26 ) {
-        bCowboyMode = false;
-        if ( ScrnPlayerController(Controller) != none )
-            ScrnPlayerController(Controller).bHadArmor = true;
+    if ( int(ShieldStrength) > 25 ) {
+        // re-check Cowboy Mode
+        if ( OldShieldStrength <= 25 ) {
+            ApplyWeaponStats(Weapon);
+            ClientSetVestClass(CurrentVestClass);
+        }
     }
 
     return true;
 }
-
 
 function int ShieldAbsorb( int damage )
 {
@@ -899,16 +904,15 @@ function int ShieldAbsorb( int damage )
         damage = 0;
 
     SetShieldWeight(); //recalculate shield's weight
-    //test cowboy mode on loosing armor
-    // v7.28 - don't do it because this function isn't executed on client side
-    // if ( !bCowboyMode && ShieldStrength < 26 && OldShieldStrength >= 26
-            // && ScrnPerk != none )
-        // bCowboyMode = ScrnPerk.static.CheckCowboyMode(KFPlayerReplicationInfo(PlayerReplicationInfo), Weapon.class);
+
+    // re-check Cowboy Mode
+    if ( ShieldStrength < 26 && OldShieldStrength >= 26 ) {
+        ApplyWeaponStats(Weapon);
+        ClientSetVestClass(CurrentVestClass);
+    }
 
     return damage;
 }
-
-
 
 simulated function CalcVestCost(class<ScrnVestPickup> VestClass, out int Cost, out int AmountToBuy, out float Price1p)
 {
@@ -917,8 +921,8 @@ simulated function CalcVestCost(class<ScrnVestPickup> VestClass, out int Cost, o
 
     AmountToBuy = VestClass.default.ShieldCapacity;
     Price1p = float(VestClass.default.Cost) / VestClass.default.ShieldCapacity;
-    if ( KFPlayerReplicationInfo(PlayerReplicationInfo).ClientVeteranSkill != none)
-        Price1p *= KFPlayerReplicationInfo(PlayerReplicationInfo).ClientVeteranSkill.static.GetCostScaling(KFPlayerReplicationInfo(PlayerReplicationInfo), VestClass);
+    if ( KFPRI.ClientVeteranSkill != none)
+        Price1p *= KFPRI.ClientVeteranSkill.static.GetCostScaling(KFPRI, VestClass);
     Cost = ceil(AmountToBuy * Price1p);
 
     // No Refunds, if vest classes differs
@@ -932,6 +936,12 @@ simulated function CalcVestCost(class<ScrnVestPickup> VestClass, out int Cost, o
             Cost -= ShieldStrength * Price1p;
             AmountToBuy -= ShieldStrength;
         }
+    }
+    else if ( ShieldStrength >= AmountToBuy ) {
+        // free downgrade
+        Cost = 0;
+        AmountToBuy = 0;
+        Price1p = 0;  // indicates downgrade
     }
 }
 
@@ -949,7 +959,7 @@ function ServerBuyShield(class<ScrnVestPickup> VestClass)
         // @ "Vest to Buy = " $ GetItemName(String(VestClass))
         // @ "Amount to Buy = " $ AmountToBuy $ " * " $ Price1p $ " = $" $ Cost, 'ScrnBalance');
 
-    if ( CanBuyNow() && AmountToBuy > 0 ) {
+    if ( CanBuyNow() && (AmountToBuy > 0 || Price1p == 0) ) {
         bServerShopping = true;
         if ( PlayerReplicationInfo.Score >= Cost ) {
             if ( SetVestClass(VestClass) && AddShieldStrength(AmountToBuy) )
@@ -1187,6 +1197,34 @@ function bool ServerBuyAmmo( Class<Ammunition> AClass, bool bOnlyClip )
 }
 
 // ===================================== WEAPONS =====================================
+
+static function ForceAmmoAmount(KFWeapon W, int AmmoAmount, optional int mode)
+{
+    local float MaxAmmo, CurAmmo;
+    local Ammunition Ammo;
+
+    if ( W == none || !W.bNoAmmoInstances )
+        return;
+
+    W.UpdateMagCapacity(W.Instigator.PlayerReplicationInfo);
+    if (mode == 0) {
+        W.GetAmmoCount(MaxAmmo, CurAmmo);
+    }
+    else {
+        W.GetSecondaryAmmoCount(MaxAmmo, CurAmmo);
+    }
+
+    AmmoAmount = min(AmmoAmount, MaxAmmo);
+    if (CurAmmo == AmmoAmount)
+        return;
+
+    Ammo = Ammunition(W.Instigator.FindInventoryType(W.GetAmmoClass(mode)));
+    if ( Ammo != none ) {
+        Ammo.AmmoAmount = AmmoAmount;
+        Ammo.NetUpdateTime = Ammo.Level.TimeSeconds - 1;
+    }
+}
+
 //fixed an exploit when player buy perked dualies with discount,
 //then change the perk and sell 2-nd pistol as an off-perk weapon for a full price
 // (c) PooSH, 2012
@@ -1196,7 +1234,7 @@ function ServerSellWeapon( Class<Weapon> WClass )
     local int c;
     local KFWeapon W, SinglePistol;
     local float SellValue;
-    local int AmmoCount;
+    local int AmmoAmount;
 
     if ( !CanBuyNow() || Class<KFWeapon>(WClass) == none || Class<KFWeaponPickup>(WClass.Default.PickupClass)==none
         || Class<KFWeapon>(WClass).Default.bKFNeverThrow )
@@ -1213,53 +1251,77 @@ function ServerSellWeapon( Class<Weapon> WClass )
         return; //no instances of specified class found in inventory
 
     W = KFWeapon(I);
+
     //Changed from "!= -1" to ">= 0" to reject negative value possibility (c) PooSH
     if ( W != none && W.SellValue >= 0 ) {
         SellValue = W.SellValue;
     }
     else {
-        SellValue = (class<KFWeaponPickup>(WClass.default.PickupClass).default.Cost * 0.75);
-
-        if ( KFPlayerReplicationInfo(PlayerReplicationInfo).ClientVeteranSkill != none )
-            SellValue *= KFPlayerReplicationInfo(PlayerReplicationInfo).ClientVeteranSkill.static.GetCostScaling(KFPlayerReplicationInfo(PlayerReplicationInfo), WClass.Default.PickupClass);
+        SellValue = class<KFWeaponPickup>(WClass.default.PickupClass).default.Cost * 0.75;
+        if ( KFPRI != none && KFPRI.ClientVeteranSkill != none )
+            SellValue *= KFPRI.ClientVeteranSkill.static.GetCostScaling(KFPRI, WClass.Default.PickupClass);
     }
 
     if ( W != none ) {
+        AmmoAmount = W.AmmoAmount(0);
         if ( PipeBombExplosive(W) != none ) {
             //give 75% of all pipes, not 2 (even if there is only 1 left)
             // calc price per ammo and multiply by ammo count
             SellValue /= W.default.FireModeClass[0].default.AmmoClass.default.InitialAmount;
             SellValue *= W.AmmoAmount(0);
-
         }
-        else if ( W.class==Class'Dualies' ) {
-            SinglePistol = Spawn(class'Single', self);
-            SellValue *= 2; //cuz we can't sell 9mm
+        else if ( Dualies(W) != none ) {
+            if( W.DemoReplacement != none ) {
+                // ScrN dualies
+                if ( ScrnDualDeagle(W) != none ) {
+                    SinglePistol = ScrnDualDeagle(W).DetachSingle();
+                }
+                else if ( ScrnDualMK23Pistol(W) != none ) {
+                    SinglePistol = ScrnDualMK23Pistol(W).DetachSingle();
+                }
+                else if ( ScrnDual44Magnum(W) != none ) {
+                    SinglePistol = ScrnDual44Magnum(W).DetachSingle();
+                }
+
+
+                if ( SinglePistol != none) {
+                    // Single Pistol already exists in the inventory
+                    SellValue -= SinglePistol.SellValue;
+                    //restore ammo count to it previous value
+                    ForceAmmoAmount(SinglePistol, AmmoAmount);
+                    SinglePistol = none;  // no further processing needed
+                }
+                else {
+                    SinglePistol = KFWeapon(Spawn(W.DemoReplacement, self));
+                }
+            }
+            else if ( W.class.outer.name == 'KFMod' ) {
+                //legacy guns
+                if ( W.class==Class'Dualies' ) {
+                    SinglePistol = Spawn(class'Single', self);
+                    SellValue *= 2; //cuz we can't sell 9mm
+                }
+                else if ( W.class==Class'DualDeagle' )
+                    SinglePistol = Spawn(class'Deagle', self);
+                else if ( W.class==Class'Dual44Magnum' )
+                    SinglePistol = Spawn(class'Magnum44Pistol', self);
+                else if ( W.class==Class'DualMK23Pistol' )
+                    SinglePistol = Spawn(class'MK23Pistol', self);
+                else if ( W.class==Class'DualFlareRevolver' )
+                    SinglePistol = Spawn(class'FlareRevolver', self);
+            }
         }
-        else if ( W.class==Class'DualDeagle' )
-            SinglePistol = Spawn(class'Deagle', self);
-        else if ( W.class==Class'Dual44Magnum' )
-            SinglePistol = Spawn(class'Magnum44Pistol', self);
-        else if ( W.class==Class'DualMK23Pistol' )
-            SinglePistol = Spawn(class'MK23Pistol', self);
-        else if ( W.class==Class'DualFlareRevolver' )
-            SinglePistol = Spawn(class'FlareRevolver', self);
-        else if( Weapon(I).DemoReplacement!=None )
-            SinglePistol = KFWeapon(Spawn(W.DemoReplacement, self));
 
-        if( SinglePistol!=None )
-        {
-            AmmoCount = W.AmmoAmount(0);
-
+        if( SinglePistol != none ) {
             SellValue /= 2;
             //fixed an exploit when player buys perked dualies with discount,
             //then changes the perk and sells 2-nd pistol as an off-perk weapon for a full SellValue
             // (c) PooSH, 2012
-            SinglePistol.SellValue = SellValue;
+            SinglePistol.SellValue = ceil(SellValue);
 
             SinglePistol.GiveTo(self);
             //restore ammo count to it previous value
-            SinglePistol.ConsumeAmmo(0, SinglePistol.AmmoAmount(0) - min(AmmoCount, SinglePistol.MaxAmmo(0)));
+            ForceAmmoAmount(SinglePistol, AmmoAmount);
         }
     }
 
@@ -1268,7 +1330,7 @@ function ServerSellWeapon( Class<Weapon> WClass )
         ClientCurrentWeaponSold();
     }
 
-    PlayerReplicationInfo.Score += int(SellValue);
+    PlayerReplicationInfo.Score += ceil(SellValue);
 
     I.Destroy();
 
@@ -1319,7 +1381,7 @@ function ServerBuyWeapon( Class<Weapon> WClass, float ItemWeight )
 
     Price = WP.Default.Cost;
     if ( ScrnPerk != none ) {
-        Price *= ScrnPerk.static.GetCostScaling(KFPRI, WP);
+        Price = ceil(Price * ScrnPerk.static.GetCostScaling(KFPRI, WP));
         if  (Mut.bBuyPerkedWeaponsOnly
                 && WP.default.CorrespondingPerkIndex != 7
                 && WP.default.CorrespondingPerkIndex != ScrnPerk.default.PerkIndex
@@ -2391,14 +2453,17 @@ static function DropAllWeapons(Pawn P)
 {
     local Inventory Inv, NextInv;
     local KFWeapon Weap;
-    local int c;
+    local int i, c;
     local rotator r;
     local Vector X,Y,Z, TossVel;
 
-    if ( P != none && (P.DrivenVehicle == None || P.DrivenVehicle.bAllowWeaponToss) )
-    {
-        r = P.Rotation;
-        r.pitch = 0;
+    if ( P == none || (P.DrivenVehicle != None && !P.DrivenVehicle.bAllowWeaponToss) )
+        return;
+
+    r = P.Rotation;
+    r.pitch = 0;
+    // two passes because dropping a weapon may add another one (e.g. dual pistols / single pistol)
+    for ( i = 0; i < 2; ++i ) {
         for ( Inv = P.Inventory; Inv != none && ++c < 1000; Inv = NextInv ) {
             NextInv = Inv.Inventory;
             Weap = KFWeapon(Inv);
@@ -2415,9 +2480,9 @@ static function DropAllWeapons(Pawn P)
                 DropAllTPStatic(ToiletPaperAmmo(Inv));
             }
         }
-        if ( P.Weapon == None && P.Controller != None )
-            P.Controller.SwitchToBestWeapon();
     }
+    if ( P.Weapon == None && P.Controller != None )
+        P.Controller.SwitchToBestWeapon();
 }
 
 static function DropAllTPStatic(ToiletPaperAmmo TPAmmo)

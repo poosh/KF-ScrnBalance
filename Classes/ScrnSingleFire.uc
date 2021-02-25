@@ -27,4 +27,5 @@ defaultproperties
 {
      DamageType=Class'ScrnBalanceSrv.ScrnDamTypeSingle'
      bFiringDoesntAffectMovement=true
+     RecoilVelocityScale=0
 }

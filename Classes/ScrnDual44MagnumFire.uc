@@ -1,7 +1,57 @@
 class ScrnDual44MagnumFire extends Dual44MagnumFire;
 
+var ScrnDual44Magnum ScrnWeap; // avoid typecasting
+
 var float PenDmgReduction; //penetration damage reduction. 1.0 - no reduction, 25% reduction
 var byte  MaxPenetrations; //how many enemies can penetrate a single bullet
+
+var protected bool bFireLeft;
+
+function PostBeginPlay()
+{
+    super.PostBeginPlay();
+    ScrnWeap = ScrnDual44Magnum(Weapon);
+}
+
+function SetPistolFireOrder(bool bNextFireLeft)
+{
+    bFireLeft = bNextFireLeft;
+
+    if (bFireLeft)
+    {
+        ScrnWeap.altFlashBoneName = ScrnWeap.default.FlashBoneName;
+        ScrnWeap.FlashBoneName = ScrnWeap.default.altFlashBoneName;
+        FireAnim2 = default.FireAnim;
+        FireAimedAnim2 = default.FireAimedAnim;
+        FireAnim = default.FireAnim2;
+        FireAimedAnim = default.FireAimedAnim2;
+    }
+    else
+    {
+        ScrnWeap.altFlashBoneName = ScrnWeap.default.altFlashBoneName;
+        ScrnWeap.FlashBoneName = ScrnWeap.default.FlashBoneName;
+        FireAnim2 = default.FireAnim2;
+        FireAimedAnim2 = default.FireAimedAnim2;
+        FireAnim = default.FireAnim;
+        FireAimedAnim = default.FireAimedAnim;
+    }
+}
+
+function bool GetPistolFireOrder()
+{
+    return bFireLeft;
+}
+
+event ModeDoFire()
+{
+    if ( !AllowFire() )
+        return;
+
+    super(KFFire).ModeDoFire();
+
+    InitEffects();
+    SetPistolFireOrder(!bFireLeft);
+}
 
 function DoTrace(Vector Start, Rotator Dir)
 {
@@ -14,7 +64,7 @@ function DoTrace(Vector Start, Rotator Dir)
     local array<Actor>    IgnoreActors;
     local Pawn DamagePawn;
     local int i;
-    
+
     local KFMonster Monster;
     local bool bWasDecapitated;
     //local int OldHealth;
@@ -35,9 +85,9 @@ function DoTrace(Vector Start, Rotator Dir)
     X = Vector(Dir);
     End = Start + TraceRange * X;
     HitDamage = DamageMax;
-    
+
     // HitCount isn't a number of max penetration. It is just to be sure we won't stuck in infinite loop
-    While( ++HitCount < 127 ) 
+    While( ++HitCount < 127 )
     {
         DamagePawn = none;
         Monster = none;
@@ -102,15 +152,15 @@ function DoTrace(Vector Start, Rotator Dir)
                 }
                 bWasDecapitated = Monster != none && Monster.bDecapitated;
                 Other.TakeDamage(int(HitDamage), Instigator, HitLocation, Momentum*X, DamageType);
-                if ( DamagePawn != none && (DamagePawn.Health <= 0 || (Monster != none 
-                        && !bWasDecapitated && Monster.bDecapitated)) ) 
+                if ( DamagePawn != none && (DamagePawn.Health <= 0 || (Monster != none
+                        && !bWasDecapitated && Monster.bDecapitated)) )
                 {
                     KillCount++;
                 }
 
                 // debug info
                 // if ( KFMonster(Other) != none )
-                    // log(String(class) $ ": Damage("$PenCounter$") = " 
+                    // log(String(class) $ ": Damage("$PenCounter$") = "
                         // $ int(HitDamage) $"/"$ (OldHealth-KFMonster(Other).Health)
                         // @ KFMonster(Other).MenuName , 'ScrnBalance');
             }
@@ -148,9 +198,9 @@ simulated function float GetSpread()
     AccuracyMod = 1.0;
 
     // Spread bonus while using laser sights
-    if ( ScrnDual44MagnumLaser(Weapon) != none && ScrnDual44MagnumLaser(Weapon).bLaserActive) 
+    if ( ScrnDual44MagnumLaser(Weapon) != none && ScrnDual44MagnumLaser(Weapon).bLaserActive)
         AccuracyMod = 0.5;
-    
+
     return AccuracyMod * super.GetSpread();
 }
 */
@@ -168,5 +218,5 @@ defaultproperties
      MaxPenetrations=4
      DamageType=Class'ScrnBalanceSrv.ScrnDamTypeDual44Magnum'
      DamageMax=90
-     AmmoClass=Class'ScrnBalanceSrv.ScrnDual44MagnumAmmo'
+     AmmoClass=Class'ScrnBalanceSrv.ScrnMagnum44Ammo'
 }

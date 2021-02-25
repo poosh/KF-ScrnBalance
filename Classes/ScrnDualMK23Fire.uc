@@ -80,7 +80,7 @@ function PlayFiring()
         ScrnWeap.bTweenRightSlide = true;
 
     }
-    else if ( MagAmmoRemainingAfterShot == 1 ) {
+    else if ( MagAmmoRemainingAfterShot == ScrnWeap.RightGunAmmoRemaining() ) {
         ScrnWeap.LockLeftSlideBack();
         ScrnWeap.bTweenRightSlide = true;
     }
@@ -239,4 +239,5 @@ defaultproperties
     FireAimedAnim2=FireRight_Iron
     FireAimedAnim=FireLeft_Iron
     FireAnim2="FireRight"
+    AmmoClass=Class'ScrnBalanceSrv.ScrnMK23Ammo'
 }

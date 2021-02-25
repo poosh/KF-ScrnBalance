@@ -19,6 +19,37 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+### v9.64
+#### Gunslinger
+- Dual HC, .44, and MK23: Alt fire switches between single and dual pistols
+- Cool HUD displays ammo counters separately for left and right guns.
+- Dual HC, .44, and MK23 moved to slot 3 by default (previously, only GS had it in slot 3)
+- Removed extra reload speed bonus for Cowboy Mode due to tactical reloads.
+- The Standard reload speed bonus for revolvers increased to 100% (up from 60%) to compensate for the lack of tactical reload.
+- Added 60% fire rate bonus for Colt Python (ScrN Weapon Pack)
+- Dual-9mm: fixed recoil
+- Dual-MK23: Fixed a bug that gave +2 ammo for
+- Dual-44: if one of the revolvers is full, then reload only the other one
+- Fixed bug in toggling Cowboy Mode on picking up or losing armor.
+- Buying a second pistol adds initial ammo too
+- Lowered initial ammo for pistols to 5 magazines
+- Gunslinger ammo bonus is now an extra magazine (1/12 or ~8.33%) per level (down from 10%).
+- Fixed a bug when Dual Laser Pistols prevented picking up a first aid kit
+
+#### Money Balance
+- Weapon prices are rounded up after applying the perk discount. It turns fancy prices, such as $299, into more straightforward $300
+- Lowered .44 ammo price to $10 (down from $11).
+- Downgrading armor is for free if the player's current armor >= max armor of the downgraded class.
+  For example, you can downgrade Combat Armor to Jacket armor for free if your current armor >= 25.
+  If armor < 25, then a full purchase ($100) must be made.
+
+#### Shop
+- Trying to sell the armor actually causes buying an Armored Jacket (25 armor). Now you can easily downgrade to or
+  buy an Armored Jacket buy "selling" armor - double click or press BACKSPACE on the selected armor in your inventory.
+- Pressing ENTER key on a player inventory item fills full ammo (for a weapon) or repairs the armor.
+- Pressing F7 fills armor.
+- Fixed a bug when selling weapons with BACKSPACE did not work if the mouse cursor was outside of the inventory list
+
 ### v9.63.21
 - Shop: Selecting the armor item on the left side automatically opens the armor category on the right side.
   That allows easy upgrading/downgrading the armor type (Jacket/Combar/Horzine).

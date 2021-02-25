@@ -6,6 +6,8 @@ class ScrnBuyMenuInvList extends SRKFBuyMenuInvList;
 var localized string UpgradeArmorCaption;
 var localized string NoWeightCaption;
 
+delegate OnSellClick(GUIBuyable Buyable);
+
 // all update checks now are perfomed in ScrnTab_BuyMenu
 function Timer()
 {
@@ -130,6 +132,7 @@ function UpdateMyBuyables()
     local GUIBuyable MyBuyable, KnifeBuyable, FragBuyable, TPBuyable;
     local Inventory CurInv;
     local float CurAmmo, MaxAmmo;
+    local KFWeapon KFWeap;
     local class<KFWeaponPickup> MyPickup,MyPrimaryPickup;
     local class<ScrnVeterancyTypes> Perk;
     local ClientPerkRepLink KFLR;
@@ -144,7 +147,7 @@ function UpdateMyBuyables()
     // vars below are used in vest price calculation
     local float Price1p;
     local int Cost, AmountToBuy;
-    local class<ScrnVestPickup> VestClass;
+    local class<ScrnVestPickup> VestClass, DesiredVestClass;
 
     KFPRI = KFPlayerReplicationInfo(PlayerOwner().PlayerReplicationInfo);
     KFLR = Class'ScrnClientPerkRepLink'.Static.FindMe(PlayerOwner());
@@ -176,9 +179,14 @@ function UpdateMyBuyables()
         ScrnPawnClass = class'ScrnBalanceSrv.ScrnHumanPawn';
 
     // Fill the Buyables
-    for ( CurInv = PlayerOwner().Pawn.Inventory; CurInv != none; CurInv = CurInv.Inventory )
-    {
-        if ( KFWeapon(CurInv)==None || CurInv.IsA('Welder') || CurInv.IsA('Syringe') )
+    for ( CurInv = PlayerOwner().Pawn.Inventory; CurInv != none; CurInv = CurInv.Inventory ) {
+        KFWeap = KFWeapon(CurInv);
+        if ( KFWeap==None || CurInv.IsA('Welder') || CurInv.IsA('Syringe') )
+            continue;
+
+        if ( (ScrnDeagle(CurInv) != none && ScrnDeagle(CurInv).DualGuns != none)
+                || (ScrnMK23Pistol(CurInv) != none && ScrnMK23Pistol(CurInv).DualGuns != none)
+                || (ScrnMagnum44Pistol(CurInv) != none && ScrnMagnum44Pistol(CurInv).DualGuns != none) )
             continue;
 
         // weapons can be derived from another even if they aren't of the same type, e.g. Shotgun -> LAW
@@ -187,28 +195,32 @@ function UpdateMyBuyables()
         // (c) PooSH, 2012
         MyPickup = class<KFWeaponPickup>(CurInv.default.PickupClass);
 
-
-        if ( MyPickup.IsA('DualDeaglePickup') || MyPickup.IsA('Dual44MagnumPickup')
-                || MyPickup.IsA('DualMK23Pistol') || MyPickup.IsA('DualFlareRevolver')
-                || KFWeapon(CurInv).DemoReplacement!=None ) {
-            DualCoef = 0.5;
+        DualCoef = 1;
+        if ( Dualies(CurInv) != none ) {
+            if ( KFWeap.DemoReplacement != None  // all ScrN Dual weapons
+                    || MyPickup.IsA('DualDeaglePickup') || MyPickup.IsA('Dual44MagnumPickup')
+                    || MyPickup.IsA('DualMK23Pistol') || MyPickup.IsA('DualFlareRevolver') ) {
+                DualCoef = 0.5;
+            }
         }
-        else DualCoef = 1;
 
-        if ( KFWeapon(CurInv).bHasSecondaryAmmo )
+        if ( KFWeap.bHasSecondaryAmmo )
             MyPrimaryPickup = MyPickup.default.PrimaryWeaponPickup;
         else
             MyPrimaryPickup = MyPickup;
 
         MyBuyable = AllocateEntry(KFLR);
-        KFWeapon(CurInv).GetAmmoCount(MaxAmmo, CurAmmo);
+
+        MaxAmmo = 0;
+        CurAmmo = 0;
+        KFWeap.GetAmmoCount(MaxAmmo, CurAmmo);
 
         MyBuyable.ItemName       = MyPickup.default.ItemShortName;
-        MyBuyable.ItemDescription= KFWeapon(CurInv).default.Description;
+        MyBuyable.ItemDescription= KFWeap.default.Description;
         MyBuyable.ItemCategorie  = "Melee"; // More dummy.
-        MyBuyable.ItemImage      = KFWeapon(CurInv).default.TraderInfoTexture;
-        MyBuyable.ItemWeaponClass= KFWeapon(CurInv).class;
-        MyBuyable.ItemAmmoClass  = KFWeapon(CurInv).default.FireModeClass[0].default.AmmoClass;
+        MyBuyable.ItemImage      = KFWeap.default.TraderInfoTexture;
+        MyBuyable.ItemWeaponClass= KFWeap.class;
+        MyBuyable.ItemAmmoClass  = KFWeap.default.FireModeClass[0].default.AmmoClass;
         MyBuyable.ItemPickupClass= MyPrimaryPickup;
         MyBuyable.ItemCost       =  ceil(MyPickup.default.Cost * Perk.static.GetCostScaling(KFPRI, MyPickup) * DualCoef);
 
@@ -220,18 +232,18 @@ function UpdateMyBuyables()
         }
         else {
             //this never shouldn't happen
-            MyBuyable.ItemAmmoCost        =  ceil(MyPrimaryPickup.default.AmmoCost * Perk.static.GetAmmoCostScaling(KFPRI, MyPrimaryPickup) * Perk.static.GetMagCapacityMod(KFPRI, KFWeapon(CurInv)));
-            MyBuyable.ItemFillAmmoCost    =  ceil((int(((MaxAmmo - CurAmmo) * float(MyPrimaryPickup.default.AmmoCost)) / float(KFWeapon(CurInv).default.MagCapacity))) * Perk.static.GetAmmoCostScaling(KFPRI, MyPrimaryPickup));
+            MyBuyable.ItemAmmoCost        =  ceil(MyPrimaryPickup.default.AmmoCost * Perk.static.GetAmmoCostScaling(KFPRI, MyPrimaryPickup) * Perk.static.GetMagCapacityMod(KFPRI, KFWeap));
+            MyBuyable.ItemFillAmmoCost    =  ceil((int(((MaxAmmo - CurAmmo) * float(MyPrimaryPickup.default.AmmoCost)) / float(KFWeap.default.MagCapacity))) * Perk.static.GetAmmoCostScaling(KFPRI, MyPrimaryPickup));
         }
         MyBuyable.ItemAmmoCurrent= CurAmmo;
         MyBuyable.ItemAmmoMax    = MaxAmmo;
 
-        MyBuyable.ItemWeight     = KFWeapon(CurInv).Weight;
+        MyBuyable.ItemWeight     = KFWeap.Weight;
         MyBuyable.ItemPower      = MyPickup.default.PowerValue;
         MyBuyable.ItemRange      = MyPickup.default.RangeValue;
         MyBuyable.ItemSpeed      = MyPickup.default.SpeedValue;
         // Hack - setting negative ammo cost blocks weapon from refilling ammo in trader
-        MyBuyable.bMelee         = KFWeapon(CurInv).bMeleeWeapon || MyBuyable.ItemAmmoClass==None || MyPickup.default.AmmoCost < 0;
+        MyBuyable.bMelee         = KFWeap.bMeleeWeapon || MyBuyable.ItemAmmoClass==None || MyPickup.default.AmmoCost < 0;
         MyBuyable.bSaleList      = false;
         if ( Perk.static.OverridePerkIndex(MyPickup) )
             MyBuyable.ItemPerkIndex  = Perk.default.PerkIndex;
@@ -239,8 +251,8 @@ function UpdateMyBuyables()
             MyBuyable.ItemPerkIndex  = MyPickup.default.CorrespondingPerkIndex;
 
         // Changed from "!= -1" to ">= 0" to prevent possible issues in a future
-        if ( KFWeapon(CurInv) != none && KFWeapon(CurInv).SellValue >= 0 )
-            MyBuyable.ItemSellValue = KFWeapon(CurInv).SellValue;
+        if ( KFWeap.SellValue >= 0 )
+            MyBuyable.ItemSellValue = KFWeap.SellValue;
         else
             MyBuyable.ItemSellValue = MyBuyable.ItemCost * 0.75;
 
@@ -271,7 +283,7 @@ function UpdateMyBuyables()
         }
         else
         {
-            MyBuyable.bSellable    = !KFWeapon(CurInv).default.bKFNeverThrow;
+            MyBuyable.bSellable    = !KFWeap.default.bKFNeverThrow;
             MyBuyables.Insert(0,1);
             MyBuyables[0] = MyBuyable;
         }
@@ -279,21 +291,21 @@ function UpdateMyBuyables()
 
 
         // =============================== SECONDARY AMMO ===============================
-        if ( !KFWeapon(CurInv).bHasSecondaryAmmo )
+        if ( !KFWeap.bHasSecondaryAmmo )
             continue;
 
         // Add secondary ammo.
 
         MyBuyable = AllocateEntry(KFLR);
 
-        KFWeapon(CurInv).GetSecondaryAmmoCount(MaxAmmo, CurAmmo);
+        KFWeap.GetSecondaryAmmoCount(MaxAmmo, CurAmmo);
 
         MyBuyable.ItemName        = MyPickup.default.SecondaryAmmoShortName;
-        MyBuyable.ItemDescription = KFWeapon(CurInv).default.Description;
+        MyBuyable.ItemDescription = KFWeap.default.Description;
         MyBuyable.ItemCategorie   = "Melee";
-        MyBuyable.ItemImage       = KFWeapon(CurInv).default.TraderInfoTexture;
-        MyBuyable.ItemWeaponClass = KFWeapon(CurInv).class;
-        MyBuyable.ItemAmmoClass   = KFWeapon(CurInv).default.FireModeClass[1].default.AmmoClass;
+        MyBuyable.ItemImage       = KFWeap.default.TraderInfoTexture;
+        MyBuyable.ItemWeaponClass = KFWeap.class;
+        MyBuyable.ItemAmmoClass   = KFWeap.default.FireModeClass[1].default.AmmoClass;
         MyBuyable.ItemPickupClass = MyPickup;
         MyBuyable.ItemCost        =  ceil(MyPickup.default.Cost * Perk.static.GetCostScaling(KFPRI, MyPickup) * DualCoef);
 
@@ -311,17 +323,17 @@ function UpdateMyBuyables()
         MyBuyable.ItemAmmoCurrent = CurAmmo;
         MyBuyable.ItemAmmoMax     = MaxAmmo;
 
-        MyBuyable.ItemWeight      = KFWeapon(CurInv).Weight;
+        MyBuyable.ItemWeight      = KFWeap.Weight;
         MyBuyable.ItemPower       = MyPickup.default.PowerValue;
         MyBuyable.ItemRange       = MyPickup.default.RangeValue;
         MyBuyable.ItemSpeed       = MyPickup.default.SpeedValue;
         MyBuyable.bMelee          = (KFMeleeGun(CurInv) != none);
         MyBuyable.bSaleList       = false;
         MyBuyable.ItemPerkIndex   = MyPickup.default.CorrespondingPerkIndex;
-        MyBuyable.bSellable       = !KFWeapon(CurInv).default.bKFNeverThrow;
+        MyBuyable.bSellable       = !KFWeap.default.bKFNeverThrow;
 
-        if ( KFWeapon(CurInv) != none && KFWeapon(CurInv).SellValue >= 0 )
-            MyBuyable.ItemSellValue = KFWeapon(CurInv).SellValue;
+        if ( KFWeap.SellValue >= 0 )
+            MyBuyable.ItemSellValue = KFWeap.SellValue;
         else
             MyBuyable.ItemSellValue = MyBuyable.ItemCost * 0.75;
 
@@ -342,8 +354,9 @@ function UpdateMyBuyables()
     MyBuyable.ItemCategorie         = "";
     MyBuyable.ItemAmmoCurrent       = PlayerOwner().Pawn.ShieldStrength;
     if ( ScrnPawn != none ) {
-        VestClass = ScrnPawn.GetVestClass();
-        ScrnPawn.CalcVestCost(VestClass, Cost, AmountToBuy, Price1p);
+        VestClass = ScrnPawn.GetCurrentVestClass();
+        DesiredVestClass = ScrnPawn.GetVestClass();
+        ScrnPawn.CalcVestCost(DesiredVestClass, Cost, AmountToBuy, Price1p);
 
         MyBuyable.ItemName          = VestClass.default.ItemShortName;
         MyBuyable.ItemDescription   = VestClass.default.Description;
@@ -351,8 +364,8 @@ function UpdateMyBuyables()
         MyBuyable.ItemImage         = VestClass.default.TraderInfoTexture;
         MyBuyable.ItemPerkIndex     = VestClass.default.CorrespondingPerkIndex;
 
-        MyBuyable.ItemAmmoMax       = VestClass.default.ShieldCapacity;
-        MyBuyable.ItemCost          = VestClass.default.ShieldCapacity * Price1p;
+        MyBuyable.ItemAmmoMax       = DesiredVestClass.default.ShieldCapacity;
+        MyBuyable.ItemCost          = DesiredVestClass.default.ShieldCapacity * Price1p;
         MyBuyable.ItemAmmoCost      = Price1p;
         MyBuyable.ItemFillAmmoCost  = Cost;
     }
@@ -374,7 +387,7 @@ function UpdateMyBuyables()
     MyBuyable.bIsVest         = true;
     MyBuyable.bMelee          = false;
     MyBuyable.bSaleList       = false;
-    MyBuyable.bSellable       = false;
+    MyBuyable.bSellable       = ScrnPawn != none;
 
     // set nade icon corresponding to its type
     if ( FragBuyable != none ) {
@@ -415,15 +428,20 @@ function UpdateMyBuyables()
     UpdateList();
 }
 
+function GUIBuyable GetSelectedBuyable()
+{
+    if ( Index >= 0 && Index < MyBuyables.Length )
+        return MyBuyables[Index];
+
+    return none;
+}
+
 function BuyClips(byte ClipAmount)
 {
     local GUIBuyable Buyable;
     local class<Ammunition> MyAmmo;
 
-    if ( Index < 0 || Index >= MyBuyables.Length )
-        return;
-
-    Buyable = MyBuyables[Index];
+    Buyable = GetSelectedBuyable();
     if ( Buyable == none || Buyable.bIsVest || Buyable.bMelee)
         return;
 
@@ -445,6 +463,21 @@ function BuyClips(byte ClipAmount)
     }
 }
 
+function OnEnterKey()
+{
+    local GUIBuyable Buyable;
+
+    Buyable = GetSelectedBuyable();
+    if ( Buyable == none || Buyable.bMelee )
+        return;
+
+    if ( Buyable.bIsVest ) {
+        OnBuyVestClick();
+    }
+    else {
+        OnFillAmmoClick(Buyable);
+    }
+}
 
 function bool InternalOnClick(GUIComponent Sender)
 {
@@ -501,9 +534,13 @@ function bool InternalOnKeyEvent(out byte Key, out byte State, float delta)
 
         switch (Key) {
             case 0x08: // IK_Backspace
-                OnDblClick(Self); // sell item
+                OnSellClick(GetSelectedBuyable()); // sell item
                 return true;
-                break;
+
+            case 13: // enter
+                OnEnterKey();
+                return true;
+
         }
     }
     return super.InternalOnKeyEvent(Key, State, delta);

@@ -1,4 +1,9 @@
 class ScrnDeagle extends Deagle;
+
+var transient ScrnDualDeagle DualGuns;
+
+var transient bool bBotControlled;
+
 //deagle has an additional fix for the hammer
 //and also extra slide movement
 //and extra slide locked back travel
@@ -39,6 +44,14 @@ var rotator PistolHammerRotation; //for deagle's stupid hammer
 
 var bool bFiringLastRound;
 
+
+replication
+{
+    reliable if ( Role == ROLE_Authority )
+        ClientReplicateAmmo;
+}
+
+
 simulated function PostNetReceive()
 {
     super.PostNetReceive();
@@ -57,22 +70,57 @@ simulated function Fire(float F)
     super.Fire(f);
 }
 
+simulated function AltFire(float F)
+{
+    DoToggle();
+}
+
+exec function SwitchModes()
+{
+    DoToggle();
+}
+
+simulated function DoToggle()
+{
+    if ( DualGuns == none )
+        return;
+
+    Instigator.PendingWeapon = DualGuns;
+    PutDown();
+}
+
 simulated function BringUp(optional Weapon PrevWeapon)
 {
+    if ( Role == ROLE_Authority && DualGuns != none ) {
+        DualGuns.SyncSingleFromDual();
+        ReplicateAmmo();
+    }
+
     Super.BringUp(PrevWeapon);
-    RotateHammerBack(); //always do this now
-    if (MagAmmoRemaining == 0)
-        LockSlideBack();
+
+    if ( Instigator.IsLocallyControlled() ) {
+        RotateHammerBack(); //always do this now
+        SetSlidePositions();
+    }
 }
 
 simulated function bool PutDown()
 {
-    if ( Instigator.PendingWeapon.class == class'ScrnBalanceSrv.ScrnDualDeagle' )
-    {
-        bIsReloading = false;
+    if ( super(KFWeapon).PutDown() ) {
+        if ( DualGuns != none ) {
+            DualGuns.SyncDualFromSingle();
+        }
+        return true;
     }
+    return false;
+}
 
-    return super(KFWeapon).PutDown();
+simulated function SetSlidePositions()
+{
+    if (MagAmmoRemaining == 0)
+        LockSlideBack();
+    else
+        ResetSlidePosition();
 }
 
 simulated function ResetSlidePosition()
@@ -94,7 +142,6 @@ simulated function RotateHammerBack()
 {
     SetBoneRotation( 'Hammer', -1*PistolHammerRotation, , 100); //set hammer rotation for empty reload
 }
-
 
 //used for tactical reload
 simulated function InterpolateSlide(float time)
@@ -221,9 +268,19 @@ simulated function ReleaseEnhancedSlide()
     }
 }
 
+
+simulated function StartTweeningSlide()
+{
+    bTweeningSlide = true; //start slide tweening
+    TweenEndTime = Level.TimeSeconds + 0.2;
+}
+
 simulated function WeaponTick(float dt)
 {
-    if (Level.NetMode != NM_DedicatedServer)
+    if ( Instigator == None )
+        return;
+
+    if ( Level.NetMode != NM_DedicatedServer && Instigator.IsLocallyControlled() )
     {
         if (bTweeningSlide )
         {
@@ -242,7 +299,50 @@ simulated function WeaponTick(float dt)
             ReleaseEnhancedSlide();
         }
     }
-    Super.WeaponTick(dt);
+
+    // C&P from KFWepon to cut the crap out of it
+    // WARNING! The code is stripped to remove unsued features, such as:
+    // Flashlight, bHoldToReload, bReloadEffectDone, etc.
+    // Do not uses this code as a general reference
+    if( bHasAimingMode ) {
+        if( bForceLeaveIronsights ) {
+            if( bAimingRifle ) {
+                ZoomOut(true);
+                if( Role < ROLE_Authority)
+                    ServerZoomOut(false);
+            }
+            bForceLeaveIronsights = false;
+        }
+        if( ForceZoomOutTime > 0 ) {
+            if( bAimingRifle ) {
+                if( Level.TimeSeconds - ForceZoomOutTime > 0 ) {
+                    ForceZoomOutTime = 0;
+                    ZoomOut(true);
+                    if( Role < ROLE_Authority)
+                        ServerZoomOut(false);
+                }
+            }
+            else {
+                ForceZoomOutTime = 0;
+            }
+        }
+    }
+
+     if ( Role < ROLE_Authority )
+        return;
+
+    if ( bIsReloading ) {
+        if ( Level.TimeSeconds > ReloadTimer ) {
+            ActuallyFinishReloading();
+        }
+    }
+    else if ( bBotControlled && MagAmmoRemaining < MagCapacity) {
+        if ( MagAmmoRemaining == 0
+                || (Level.TimeSeconds - Instigator.Controller.LastSeenTime) > min(MagAmmoRemaining, 5) )
+        {
+            ReloadMeNow();
+        }
+    }
 }
 
 //allowing +1 reload with full mag
@@ -250,33 +350,25 @@ simulated function bool AllowReload()
 {
     UpdateMagCapacity(Instigator.PlayerReplicationInfo);
 
-    if(KFInvasionBot(Instigator.Controller) != none && !bIsReloading &&
-        MagAmmoRemaining <= MagCapacity && AmmoAmount(0) > MagAmmoRemaining)
-        return true;
+    if( bBotControlled ) {
+        return !bIsReloading && MagAmmoRemaining <= MagCapacity && AmmoAmount(0) > MagAmmoRemaining;
+    }
 
-    if(KFFriendlyAI(Instigator.Controller) != none && !bIsReloading &&
-        MagAmmoRemaining <= MagCapacity && AmmoAmount(0) > MagAmmoRemaining)
-        return true;
-
-
-    if(FireMode[0].IsFiring() || FireMode[1].IsFiring() ||
-           bIsReloading || MagAmmoRemaining > MagCapacity ||
-           ClientState == WS_BringUp ||
-           AmmoAmount(0) <= MagAmmoRemaining ||
-                   (FireMode[0].NextFireTime - Level.TimeSeconds) > 0.1 )
-        return false;
-    return true;
+    return !( FireMode[0].IsFiring() || FireMode[1].IsFiring() || bIsReloading || ClientState == WS_BringUp
+            || MagAmmoRemaining >= MagCapacity + 1 || AmmoAmount(0) <= MagAmmoRemaining
+            || (FireMode[0].NextFireTime - Level.TimeSeconds) > 0.1 );
 }
 
 simulated function ClientFinishReloading()
 {
+    bIsReloading = false;
     PlayIdle();
+
     RotateHammerBack();
     if(bShortReload)
         StartTweeningSlide(); //start tweening slide back
     else
         ResetSlidePosition(); //since deagle has additional slide correction
-    bIsReloading = false;
 
     if(Instigator.PendingWeapon != none && Instigator.PendingWeapon != self)
         Instigator.Controller.ClientSwitchToBestWeapon();
@@ -309,12 +401,12 @@ exec function ReloadMeNow()
         ReloadMulti = 1.0;
 
     bIsReloading = true;
-    ReloadTimer = Level.TimeSeconds;
     bShortReload = MagAmmoRemaining > 0;
     if ( bShortReload )
         ReloadRate = Default.ReloadShortRate / ReloadMulti;
     else
         ReloadRate = Default.ReloadRate / ReloadMulti;
+    ReloadTimer = Level.TimeSeconds + ReloadRate;
 
     if( bHoldToReload )
     {
@@ -366,14 +458,19 @@ simulated function ClientReload()
     }
 }
 
-simulated function StartTweeningSlide()
+function ActuallyFinishReloading()
 {
-    bTweeningSlide = true; //start slide tweening
-    TweenEndTime = Level.TimeSeconds + 0.2;
+   bDoSingleReload=false;
+   // no need to replicate ClientFinishReloading, it gets called on the client side by ClientReplicateAmmo
+   // ClientFinishReloading();
+   bIsReloading = false;
+   // bReloadEffectDone = false;
+   AddReloadedAmmo();
 }
 
 function AddReloadedAmmo()
 {
+    local PlayerController PC;
     local int a;
 
     UpdateMagCapacity(Instigator.PlayerReplicationInfo);
@@ -386,16 +483,52 @@ function AddReloadedAmmo()
         MagAmmoRemaining = a;
     else
         MagAmmoRemaining = AmmoAmount(0);
+    ReplicateAmmo();
 
-    // this seems redudant -- PooSH
-    // if( !bHoldToReload )
-    // {
-        // ClientForceKFAmmoUpdate(MagAmmoRemaining,AmmoAmount(0));
-    // }
+    PC = PlayerController(Instigator.Controller);
+    if ( PC != none && KFSteamStatsAndAchievements(PC.SteamStatsAndAchievements) != none ) {
+        KFSteamStatsAndAchievements(PC.SteamStatsAndAchievements).OnWeaponReloaded();
+    }
+}
 
-    if ( PlayerController(Instigator.Controller) != none && KFSteamStatsAndAchievements(PlayerController(Instigator.Controller).SteamStatsAndAchievements) != none )
-    {
-        KFSteamStatsAndAchievements(PlayerController(Instigator.Controller).SteamStatsAndAchievements).OnWeaponReloaded();
+function ReplicateAmmo()
+{
+    local int a;
+
+    a = AmmoAmount(0);
+    ClientReplicateAmmo((AmmoAmount(0) << 8) | (MagAmmoRemaining & 0xFF));
+}
+
+simulated protected function ClientReplicateAmmo(int SrvAmmo)
+{
+    MagAmmoRemaining = SrvAmmo & 0xFF;
+    ClientForceAmmoUpdate(0, (SrvAmmo >> 8));
+
+    if ( bIsReloading ) {
+        ClientFinishReloading();
+    }
+    else {
+        SetSlidePositions();
+    }
+}
+
+simulated function DetachFromPawn(Pawn P)
+{
+    // Triggers on the server side on weapon put down. PutDown() is client-side only.
+    if ( DualGuns != none ) {
+        DualGuns.SyncDualFromSingle();
+    }
+    super.DetachFromPawn(P);
+}
+
+function DropFrom(vector StartLocation)
+{
+    if ( DualGuns != none ) {
+        DualGuns.Velocity = Velocity;
+        DualGuns.DropFrom(StartLocation);
+    }
+    else {
+        super.DropFrom(StartLocation);
     }
 }
 
@@ -404,6 +537,8 @@ function GiveTo( pawn Other, optional Pickup Pickup )
     local KFPlayerReplicationInfo KFPRI;
     local KFWeaponPickup WeapPickup;
 
+    // remember it once to stop calling the function on every tick
+    bBotControlled = !Other.IsHumanControlled();
     KFPRI = KFPlayerReplicationInfo(Other.PlayerReplicationInfo);
     WeapPickup = KFWeaponPickup(Pickup);
 
@@ -415,6 +550,7 @@ function GiveTo( pawn Other, optional Pickup Pickup )
 
     Super.GiveTo(Other,Pickup);
 }
+
 
 defaultproperties
 {

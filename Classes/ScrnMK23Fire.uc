@@ -172,4 +172,5 @@ defaultproperties
     MaxPenetrations=0
     PenDmgReduction=0.500000
     DamageType=Class'ScrnBalanceSrv.ScrnDamTypeMK23Pistol'
+    AmmoClass=Class'ScrnBalanceSrv.ScrnMK23Ammo'
 }

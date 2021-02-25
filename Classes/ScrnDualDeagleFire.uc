@@ -78,7 +78,7 @@ function PlayFiring()
         ScrnWeap.LockLeftSlideBack();
         ScrnWeap.LockRightSlideBack();
     }
-    else if ( MagAmmoRemainingAfterShot == 1 ) {
+    else if ( MagAmmoRemainingAfterShot == ScrnWeap.LeftGunAmmoRemaining ) {
         ScrnWeap.LockRightSlideBack();
         ScrnWeap.bTweenLeftSlide = true;
     }
@@ -241,4 +241,5 @@ defaultproperties
      MaxPenetrations=4
      bCheck4Ach=True
      DamageType=Class'ScrnBalanceSrv.ScrnDamTypeDualDeagle'
+     AmmoClass=Class'ScrnBalanceSrv.ScrnDeagleAmmo'
 }

@@ -4,4 +4,8 @@ class ScrnNoVestPickup extends ScrnVestPickup
 
 defaultproperties
 {
+    Description="You have no armor. Either you have balls of steel or a brain of turd."
+    ItemName="No Armor"
+    ItemShortName="No Armor"
+    PickupMessage="You lost the armor"
 }

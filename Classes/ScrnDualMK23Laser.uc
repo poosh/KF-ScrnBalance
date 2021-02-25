@@ -1,5 +1,5 @@
 /**
- * Dual-Magnum 44 with attached laser sights 
+ * Dual-Magnum 44 with attached laser sights
  *
  * @author PooSH, 2012
  */
@@ -8,7 +8,7 @@ class ScrnDualMK23Laser extends ScrnDualMK23Pistol
     dependson(ScrnLocalLaserDot)
     config(user);
 
-   
+
 var const   class<ScrnLocalLaserDot>    LaserDotClass;
 var         ScrnLocalLaserDot           RightDot, LeftDot;             // The first person laser site dot
 
@@ -28,11 +28,16 @@ replication
 }
 
 
+simulated function PostBeginPlay()
+{
+    super.PostBeginPlay();
+    bFindSingleGun = false;
+}
 
 simulated function Destroyed()
 {
     if (RightDot != None)
-        RightDot.Destroy();    
+        RightDot.Destroy();
     if (LeftDot != None)
         LeftDot.Destroy();
 
@@ -50,7 +55,7 @@ simulated function AltFire(float F)
     ToggleLaser();
 }
 
-//bring Laser to current state, which is indicating by LaserType 
+//bring Laser to current state, which is indicating by LaserType
 simulated function ApplyLaserState()
 {
     if( Role < ROLE_Authority  )
@@ -60,28 +65,28 @@ simulated function ApplyLaserState()
         ScrnLaserDualWeaponAttachment(ThirdPersonActor).SetLaserType(LaserType);
     if ( altThirdPersonActor != none )
         ScrnLaserDualWeaponAttachment(altThirdPersonActor).SetLaserType(LaserType);
-        
+
     if ( !Instigator.IsLocallyControlled() )
         return;
-        
+
     if( LaserType > 0 ) {
         if (RightDot == None)
             RightDot = Spawn(LaserDotClass, self);
         if (LeftDot == None)
             LeftDot = Spawn(LaserDotClass, self);
-        RightDot.SetLaserType(LaserType);  
+        RightDot.SetLaserType(LaserType);
         LeftDot.SetLaserType(LaserType);
         // adjust 1-st person laser color
         ConstantColor'ScrnTex.Laser.LaserColor'.Color = LeftDot.GetLaserColor();
         if ( RightLaserAttachment == none ) {
             //MK23s Tip bone is rotated to the side, so change it
-            SetBoneRotation('Tip_Right', rot(0, 16384, 0));        
+            SetBoneRotation('Tip_Right', rot(0, 16384, 0));
             RightLaserAttachment = Spawn(LaserAttachmentClass,self,,,);
             AttachToBone(RightLaserAttachment,'Tip_Right');
         }
         if ( LeftLaserAttachment == none ) {
             //MK23s Tip bone is rotated to the side, so change it
-            SetBoneRotation('Tip_Left', rot(0, 16384, 0));        
+            SetBoneRotation('Tip_Left', rot(0, 16384, 0));
             LeftLaserAttachment = Spawn(LaserAttachmentClass,self,,,);
             AttachToBone(LeftLaserAttachment,'Tip_Left');
         }
@@ -89,13 +94,13 @@ simulated function ApplyLaserState()
         LeftLaserAttachment.bHidden = false;
     }
     else {
-        if ( RightLaserAttachment != none ) 
+        if ( RightLaserAttachment != none )
             RightLaserAttachment.bHidden = true;
-        if ( LeftLaserAttachment != none ) 
+        if ( LeftLaserAttachment != none )
             LeftLaserAttachment.bHidden = true;
-        if (RightDot != None) 
+        if (RightDot != None)
             RightDot.Destroy();
-        if (LeftDot != None) 
+        if (LeftDot != None)
             LeftDot.Destroy();
     }
 }
@@ -103,12 +108,12 @@ simulated function ApplyLaserState()
 // Toggle laser on or off
 simulated function ToggleLaser()
 {
-    if( !Instigator.IsLocallyControlled() ) 
+    if( !Instigator.IsLocallyControlled() )
         return;
 
-    if ( LaserType == 0 ) 
+    if ( LaserType == 0 )
         LaserType = 2; // green
-    else 
+    else
         LaserType = 0;
 
     ApplyLaserState();
@@ -140,7 +145,7 @@ simulated function TurnOffLaser()
     if( Role < ROLE_Authority  )
         ServerSetLaserType(0);
 
-    //don't change Laser type here, because we need to restore it state 
+    //don't change Laser type here, because we need to restore it state
     //when next time weapon will be brought up
     if ( RightLaserAttachment != none )
         RightLaserAttachment.bHidden = true;
@@ -159,8 +164,8 @@ simulated function TurnOffLaser()
 function ServerSetLaserType(byte NewLaserType)
 {
     LaserType = NewLaserType;
-    ScrnLaserDualWeaponAttachment(ThirdPersonActor).SetLaserType(LaserType);   
-    ScrnLaserDualWeaponAttachment(altThirdPersonActor).SetLaserType(LaserType);   
+    ScrnLaserDualWeaponAttachment(ThirdPersonActor).SetLaserType(LaserType);
+    ScrnLaserDualWeaponAttachment(altThirdPersonActor).SetLaserType(LaserType);
 }
 
 
@@ -190,19 +195,19 @@ simulated function RenderOverlays( Canvas Canvas )
         if (FireMode[i] != None)
             FireMode[i].DrawMuzzleFlash(Canvas);
     }
-    
+
     KFM = KFFire(FireMode[0]);
 
     SetLocation( Instigator.Location + Instigator.CalcDrawOffset(self) );
     SetRotation( Instigator.GetViewRotation() + ZoomRotInterp);
 
-    
+
     // Handle drawing the laser dot
     if ( RightDot != None )
     {
         //move RightDot during fire animation too  -- PooSH
         if( bIsReloading || (Level.TimeSeconds < KFM.LastFireTime + FireSpotRenrerTime
-            && ((!bAimingRifle && KFM.FireAnim == 'FireLeft') 
+            && ((!bAimingRifle && KFM.FireAnim == 'FireLeft')
                  || (bAimingRifle && KFM.FireAimedAnim == 'FireLeft_Iron'))) )
         {
             C = GetBoneCoords('Tip_Right');
@@ -210,7 +215,7 @@ simulated function RenderOverlays( Canvas Canvas )
             Y = C.YAxis;
             Z = C.ZAxis;
         }
-        else 
+        else
             GetViewAxes(X, Y, Z);
 
         StartTrace = Instigator.Location + Instigator.EyePosition();
@@ -250,12 +255,12 @@ simulated function RenderOverlays( Canvas Canvas )
             RightDot.SetDrawScale(RightDot.default.DrawScale);
         }
     }
-    
+
     if ( LeftDot != None )
     {
         //move LeftDot during fire animation too  -- PooSH
         if( bIsReloading || (Level.TimeSeconds < KFM.LastFireTime + FireSpotRenrerTime
-            && ((!bAimingRifle && KFM.FireAnim == 'FireRight') 
+            && ((!bAimingRifle && KFM.FireAnim == 'FireRight')
                  || (bAimingRifle && KFM.FireAimedAnim == 'FireRight_Iron'))) )
         {
             C = GetBoneCoords('Tip_Left');
@@ -263,7 +268,7 @@ simulated function RenderOverlays( Canvas Canvas )
             Y = C.YAxis;
             Z = C.ZAxis;
         }
-        else 
+        else
             GetViewAxes(X, Y, Z);
 
         StartTrace = Instigator.Location + Instigator.EyePosition();
@@ -302,7 +307,7 @@ simulated function RenderOverlays( Canvas Canvas )
             LeftDot.SetRotation(Rotator(-HitNormal));
             LeftDot.SetDrawScale(LeftDot.default.DrawScale);
         }
-    }    
+    }
 
     //PreDrawFPWeapon();    // Laurent -- Hook to override things before render (like rotation if using a staticmesh)
 
@@ -349,7 +354,8 @@ simulated function SetZoomBlendColor(Canvas c)
 
 function bool HandlePickupQuery( pickup Item )
 {
-    if ( ClassIsChildOf(Item.InventoryType, Class'MK23Pistol') || ClassIsChildOf(Item.InventoryType, Class'DualMK23Pistol') )
+    if ( ClassIsChildOf(Item.InventoryType, Class'MK23Pistol')
+            || ClassIsChildOf(Item.InventoryType, Class'DualMK23Pistol') )
     {
         if( LastHasGunMsgTime < Level.TimeSeconds && PlayerController(Instigator.Controller) != none )
         {
@@ -357,10 +363,10 @@ function bool HandlePickupQuery( pickup Item )
             PlayerController(Instigator.Controller).ReceiveLocalizedMessage(Class'KFMainMessages', 1);
         }
 
-        return True;
+        return true;
     }
 
-    return Super.HandlePickupQuery(Item);
+    return Super(KFWeapon).HandlePickupQuery(Item);
 }
 
 function DropFrom(vector StartLocation)
@@ -368,13 +374,16 @@ function DropFrom(vector StartLocation)
     //just drop this weapon, don't split it on single guns
     super(KFWeapon).DropFrom(StartLocation);
 }
-    
+
 function GiveTo( pawn Other, optional Pickup Pickup )
 {
     local Inventory Inv;
     local KFWeapon W;
     local int AmmoToAdd;
     local int count;
+
+    // remember it once to stop calling the function on every tick
+    bBotControlled = !Other.IsHumanControlled();
 
     // when picking up laser pistols, destroy all normlal mk23 (single or duals)
     // found in inventory, saving their ammo first
@@ -392,13 +401,18 @@ function GiveTo( pawn Other, optional Pickup Pickup )
             Inv = Inv.Inventory;
         }
     }
-    
+
     if ( WeaponPickup(Pickup) != none ) {
         WeaponPickup(Pickup).AmmoAmount[0] += AmmoToAdd;
         AmmoToAdd = 0;
     }
 
     Super(KFWeapon).GiveTo(Other, Pickup);
+
+    if ( Ammo[0] != none ) {
+        // double guns = double initial ammo
+        AmmoToAdd += Ammo[0].InitialAmount;
+    }
 
     if ( AmmoToAdd > 0 ) {
         AddAmmo(AmmoToAdd, 0);

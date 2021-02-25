@@ -40,7 +40,7 @@ static function float AddExtraAmmoFor(KFPlayerReplicationInfo KFPRI, Class<Ammun
             || ClassIsChildOf(AmmoType, class'WinchesterAmmo')
             || ClassIsInArray(default.PerkedAmmo, AmmoType)  //v3 - custom weapon support
         )
-        return 1.0 + (0.10 * GetClientVeteranSkillLevel(KFPRI)); //up to 60% ammo bonus
+        return 1.0001 + (GetClientVeteranSkillLevel(KFPRI) / 12.0); // a magazine per level. Usually pistols have 12 magazines in total
 
     return 1.0;
 }
@@ -101,31 +101,29 @@ static function float ModifyRecoilSpread(KFPlayerReplicationInfo KFPRI, WeaponFi
 // v5.05 - Allow Cowboy Mode along with using laser sights
 static function bool CheckCowboyMode(KFPlayerReplicationInfo KFPRI, class<Weapon> WeapClass)
 {
-    local Pawn p;
-
-    // doesn't work on client side, unless pawn is locally controlled
-    if ( Controller(KFPRI.Owner) != none ) {
-        p = Controller(KFPRI.Owner).Pawn;
-    }
-
-    // assume that player is not so stupid to trade Cowboy Mode for an armor
-    // Calling FindPawn() is too slow for such minor case
-    if ( p != none && p.ShieldStrength >= 26 )
-        return false;
+    local Controller C;
 
     if ( WeapClass == none )
         return false;
 
-    // if custom weapon has "*" bonus switch
-    if ( ClassIsInArray(default.SpecialWeapons, WeapClass ) )
-        return true;
+    C = Controller(KFPRI.Owner);  // server-side
+    if ( C == none ) {
+        C = KFPRI.Level.GetLocalPlayerController();  // client-side
+    }
+    if ( C == none || C.Pawn == none || int(C.Pawn.ShieldStrength) > 25 ) {
+        return false;
+    }
 
-    return ClassIsChildOf(WeapClass, class'Dualies');
+    // if custom weapon has "*" bonus switch
+    return ClassIsChildOf(WeapClass, class'Dualies') || ClassIsInArray(default.SpecialWeapons, WeapClass );
 }
 
 // Modify fire speed
 static function float GetFireSpeedModStatic(KFPlayerReplicationInfo KFPRI, class<Weapon> Other)
 {
+    if ( ClassIsChildOf(Other, class'Winchester') ||  Other.name == 'Colt' )
+        return 1.6;
+
     //increase fire only with full-automatic pistols
     if ( CheckCowboyMode(KFPRI, Other) && (Other.class == class'Dualies' || ClassIsChildOf(Other, class'ScrnDualies')
             || !Other.default.FireModeClass[0].default.bWaitForRelease) )
@@ -133,30 +131,28 @@ static function float GetFireSpeedModStatic(KFPlayerReplicationInfo KFPRI, class
         return 1.6;
     }
 
-    if ( ClassIsChildOf(Other, class'Winchester') )
-        return 1.6;
-
     return 1.0;
 }
 
+// v9.64: Removed Cowboy reload speed bonus for dualies with tactical realod
 static function float GetReloadSpeedModifierStatic(KFPlayerReplicationInfo KFPRI, class<KFWeapon> Other)
 {
-    local float result;
-
-    result = 1.0;
-    if ( ClassIsChildOf(Other, class'Dualies') // all dual pistols classes extend this
+    if ( ClassIsChildOf(Other, class'Magnum44Pistol') || ClassIsChildOf(Other, class'Dual44Magnum')
+            || ClassIsChildOf(Other, class'FlareRevolver') || ClassIsChildOf(Other, class'DualFlareRevolver')
+            || Other.name == 'Colt' )
+    {
+        return 2.0;
+    }
+    else if ( ClassIsChildOf(Other, class'Dualies') // all dual pistols classes extend this
             || ClassIsChildOf(Other, class'Single') || ClassIsChildOf(Other, class'Deagle')
-            || ClassIsChildOf(Other, class'MK23Pistol') || ClassIsChildOf(Other, class'Magnum44Pistol')
-            || ClassIsChildOf(Other, class'FlareRevolver')
+            || ClassIsChildOf(Other, class'MK23Pistol')
             || ClassIsChildOf(Other, class'Winchester')
-            || ClassIsInArray(default.PerkedWeapons, Other) //v3 - custom weapon support
-        )
-        result = 1.6; // Up to 60% faster reload with pistols
+            || ClassIsInArray(default.PerkedWeapons, Other) ) //v3 - custom weapon support
+    {
+        return 1.6; // Up to 60% faster reload with pistols
+    }
 
-    if ( CheckCowboyMode(KFPRI, Other) )
-        result *= 1.35; // 35% extra bonus for cowboys
-
-    return result;
+    return 1.0;
 }
 
 static function float GetWeaponMovementSpeedBonus(KFPlayerReplicationInfo KFPRI, Weapon Weap)
@@ -200,7 +196,7 @@ static function string GetCustomLevelInfo( byte Level )
     S = Default.CustomLevelInfo;
     ReplaceText(S,"%L",string(Level));
     ReplaceText(S,"%x",GetPercentStr(0.30 + 0.05*Level));
-    ReplaceText(S,"%a",GetPercentStr(0.10*Level));
+    ReplaceText(S,"%a",string(Level));
     ReplaceText(S,"%$",GetPercentStr(fmin(0.90, 0.30 + 0.05*Level)));
     return S;
 }
@@ -227,8 +223,8 @@ defaultproperties
     progressArray1(5)=3500000
     progressArray1(6)=5500000
 
-    SkillInfo="PERK SKILLS:|60% faster reload with Pistols|50% less recoil with Pistols||COWBOY MODE:|35% extra reload speed|20% increase in movement speed|9mm Machine-Pistols"
-    CustomLevelInfo="PERK BONUSES (LEVEL %L):|%x more damage with Pistols|%a extra Pistol ammo|%$ discount on Pistols"
+    SkillInfo="PERK SKILLS:|100% faster reload with Revolvers|60% faster reload with Pistols|50% less recoil with Pistols||COWBOY MODE:|20% increase in movement speed|9mm Machine-Pistols"
+    CustomLevelInfo="PERK BONUSES (LEVEL %L):|%x more damage with Pistols|%$ discount on Pistols|%a extra Pistol magazines"
 
     NumRequirements=1 // removed damage req. in v5.30 Beta 18
     PerkIndex=8
