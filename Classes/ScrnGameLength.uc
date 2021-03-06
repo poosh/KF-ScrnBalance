@@ -14,6 +14,7 @@ var config array<string> Waves;
 var config array<string> Zeds;
 var config bool bLogStats;
 var config bool Doom3DisableSuperMonsters;
+var config int TraderSpeedBoost;
 
 struct SHL {
     var byte Difficulty;
@@ -87,6 +88,11 @@ function LoadGame(ScrnGameType MyGame)
         }
     }
 
+    if (TraderSpeedBoost != 0) {
+        Game.ScrnBalanceMut.bTraderSpeedBoost = TraderSpeedBoost > 0;
+        Game.ScrnBalanceMut.SetReplicationData();
+    }
+
     ZedInfos.length = Zeds.length;
     for ( i = 0; i < Zeds.length; ++i ) {
         zi = new(none, Zeds[i]) class'ScrnZedInfo';
@@ -147,6 +153,7 @@ function LoadGame(ScrnGameType MyGame)
     else {
         Wave = CreateWave(Waves[0]);
     }
+    Wave.bRespawnDeadPlayers = true;  // always allow player start on wave 1
 }
 
 function AddVoting()
@@ -481,7 +488,7 @@ function SetWaveInfo()
     switch (Wave.EndRule) {
         case RULE_GrabAmmo:
             if ( Game.DesiredAmmoBoxCount < WaveCounter ) {
-                Game.ScrnBalanceMut.AdjustAmmoBoxCount(min(WaveCounter, Game.AmmoPickups.length * 0.8));
+                Game.ScrnBalanceMut.AdjustAmmoBoxCount(max(WaveCounter, Game.AmmoPickups.length * 0.8));
             }
             break;
     }

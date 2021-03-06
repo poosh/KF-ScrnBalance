@@ -13,7 +13,7 @@ defaultproperties
         WinWidth=0.120000
         WinHeight=0.033203
         RenderWeight=2.000000
-        TabOrder=4
+        TabOrder=5
         bBoundToParent=True
         ToolTip=None
         OnClick=TSCLobbyFooter.OnFooterClick

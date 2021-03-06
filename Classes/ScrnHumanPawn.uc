@@ -844,7 +844,6 @@ function bool AddShieldStrength(int AmountToAdd)
 function int ShieldAbsorb( int damage )
 {
     local int AbsorbedValue, OldShieldStrength, OriginalDamage;
-    local float dmg;
 
     if ( ShieldStrength == 0 || damage <= 0 )
         return damage;
@@ -859,40 +858,35 @@ function int ShieldAbsorb( int damage )
     // Shield <= 25% = 33% protection
     // (c) PooSH
 
-    dmg = damage;
-    if ( KFPRI != none && KFPRI.ClientVeteranSkill != none ) {
-        if ( KFHumanPawn(LastDamagedBy) != none )
-            dmg = fmax(1.0, dmg * fmax(0.6, KFPRI.ClientVeteranSkill.static.GetBodyArmorDamageModifier(KFPRI))); // cap 40% better armor against Human Damage
-        else
-            dmg = fmax(1.0, dmg * KFPRI.ClientVeteranSkill.static.GetBodyArmorDamageModifier(KFPRI)); // do at least 1 damage point after perk bonus
+    if ( ScrnPerk != none ) {
+        damage = max(1, ScrnPerk.static.ShieldReduceDamage(KFPRI, self, LastDamagedBy, damage, LastHitDamType));
     }
 
-    if ( dmg < 3 ) {
-        // special case for tiny damages
+    if ( damage <= 2 ) {
+        // a special case for tiny damages
         AbsorbedValue = rand(2);
         ShieldStrength -= AbsorbedValue;
-        dmg -= AbsorbedValue;
+        damage -= AbsorbedValue;
     }
     else {
         if ( ShieldStrength > 50 ) {
-            AbsorbedValue = min(0.67 * dmg, ShieldStrength - 50);
+            AbsorbedValue = min(0.67 * damage, ShieldStrength - 50);
             ShieldStrength -= AbsorbedValue;
-            dmg -= AbsorbedValue;
+            damage -= AbsorbedValue;
         }
         // don't put "else" here - after lowering the shield this can be executed too
         if ( ShieldStrength > 25 && ShieldStrength <= 50 ) {
-            AbsorbedValue = min(0.50 * dmg, ShieldStrength - 25);
+            AbsorbedValue = min(0.50 * damage, ShieldStrength - 25);
             ShieldStrength -= AbsorbedValue;
-            dmg -= AbsorbedValue;
+            damage -= AbsorbedValue;
         }
         // don't put "else" here - after lowering the shield this can be executed too
         if ( ShieldStrength > 0 && ShieldStrength <= 25 ) {
-            AbsorbedValue = clamp(0.33 * dmg, 1, ShieldStrength);
+            AbsorbedValue = clamp(0.33 * damage, 1, ShieldStrength);
             ShieldStrength -= AbsorbedValue;
-            dmg -= AbsorbedValue;
+            damage -= AbsorbedValue;
         }
     }
-    damage = dmg;
 
     if ( bCheckHorzineArmorAch && OldShieldStrength > 100 && damage < Health && OriginalDamage > clamp(Health, 50, 80) )
         bCheckHorzineArmorAch = class'ScrnAchCtrl'.static.Ach2Pawn(self, 'HorzineArmor', 1);
@@ -2806,4 +2800,9 @@ defaultproperties
      BlameStrM99="%p blamed for using a Noobgun"
      BlameStrRPG="%p blamed for buying an RPG on Boss wave"
      FartSound=SoundGroup'ScrnSnd.Fart'
+     RequiredEquipment(0)="ScrnBalanceSrv.ScrnKnife"
+     RequiredEquipment(1)="ScrnBalanceSrv.ScrnSingle"
+     RequiredEquipment(2)="ScrnBalanceSrv.ScrnFrag"
+     RequiredEquipment(3)="ScrnBalanceSrv.ScrnSyringe"
+     RequiredEquipment(4)="KFMod.Welder"
 }

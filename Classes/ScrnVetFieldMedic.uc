@@ -124,6 +124,28 @@ static function float GetCostScaling(KFPlayerReplicationInfo KFPRI, class<Pickup
 }
 
 // Reduce damage when wearing Armor
+static function int ShieldReduceDamage(KFPlayerReplicationInfo KFPRI, ScrnHumanPawn Injured, Pawn Instigator,
+        int InDamage, class<DamageType> DmgType)
+{
+    local int AbsorbedDamage;
+
+    if ( KFHumanPawn(Instigator) != none ) {
+        // armor reduces up to 30% human damage
+        AbsorbedDamage = InDamage * 0.30;
+    }
+    else {
+        // armor reduces up to 60% damage
+        AbsorbedDamage = InDamage * fmin(0.60, 0.30 + 0.05 * GetClientVeteranSkillLevel(KFPRI));
+    }
+
+    // Armor may reduce damage up to twice of its remaining shield strength.
+    // This prevents cases like medic with 1% armor reducing FP attack by 70hp
+    AbsorbedDamage = min(AbsorbedDamage, Injured.ShieldStrength * 2);
+
+    return InDamage - AbsorbedDamage;
+}
+
+// unused
 static function float GetBodyArmorDamageModifier(KFPlayerReplicationInfo KFPRI)
 {
     return fmax(0.40, 0.70 - 0.05 * GetClientVeteranSkillLevel(KFPRI)); // up to 60% improvement of Body Armor

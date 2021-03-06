@@ -22,6 +22,7 @@ var(Message) localized string strBaseEstablished[2];
 var(Message) localized string strBaseLost[2];
 var(Message) localized string strTeamWiped[2];
 var(Message) localized string strBaseStunned[2];
+var(Message) localized string strBaseWakingUp[2];
 var(Message) localized string strBaseWakeUp[2];
 
 var(Message) localized string strTeamNames[2];
@@ -39,14 +40,16 @@ static function string GetString(
         case   1:   return default.strBaseEstablished[0];
         case   2:   return default.strBaseLost[0];
         case   3:   return default.strBaseStunned[0];
-        case   4:   return default.strBaseWakeUp[0];
+        case   4:   return default.strBaseWakingUp[0];
+        case   5:   return default.strBaseWakeUp[0];
         case  10:   return default.strTeamWiped[0];
 
         // blue team
         case 101:   return default.strBaseEstablished[1];
         case 102:   return default.strBaseLost[1];
         case 103:   return default.strBaseStunned[1];
-        case 104:   return default.strBaseWakeUp[1];
+        case 104:   return default.strBaseWakingUp[1];
+        case 105:   return default.strBaseWakeUp[1];
         case 110:   return default.strTeamWiped[1];
 
         case 200:    return default.strWaveEnding @ class'TSCGame'.default.WaveEndingCountDown @ default.strSeconds;
@@ -140,6 +143,8 @@ defaultproperties
     strTeamWiped(1)="Steampunk Squad WIPED!"
     strBaseStunned(0)="British Guardian stunned"
     strBaseStunned(1)="Steampunk Guardian stunned"
+    strBaseWakingUp(0)="British Guardian is waking up"
+    strBaseWakingUp(1)="Steampunk Guardian is waking up"
     strBaseWakeUp(0)="British Guardian woke up"
     strBaseWakeUp(1)="Steampunk Guardian woke up"
 

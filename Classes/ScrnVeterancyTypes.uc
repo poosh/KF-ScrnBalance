@@ -452,7 +452,7 @@ static function AddDefaultInventory(KFPlayerReplicationInfo KFPRI, Pawn P)
 
     Mut = class'ScrnBalance'.default.Mut;
 
-    if ( Mut.bUseExpLevelForSpawnInventory && !Mut.bTSCGame )
+    if ( Mut.bUseExpLevelForSpawnInventory && !Mut.SpawnBalanceRequired() )
         level = KFPRI.ClientVeteranSkillLevel;
     else
         level = GetBonusLevel(KFPRI.ClientVeteranSkillLevel);
@@ -539,6 +539,20 @@ static function int ZedTimeExtensions(KFPlayerReplicationInfo KFPRI)
 static function bool ShowEnemyHealthBars(KFPlayerReplicationInfo KFPRI, KFPlayerReplicationInfo EnemyPRI)
 {
     return false;
+}
+
+/** Allows armor to reduce incoming damage.
+ * @param KFPRI Injured's PRI
+ * @param Injured pawn that takes damage
+ * @param Instigator pawn that deals damage
+ * @param InDamage incoming damage value
+ * @param DmgType incoming damage type
+ * @return Output damage
+ */
+static function int ShieldReduceDamage(KFPlayerReplicationInfo KFPRI, ScrnHumanPawn Injured, Pawn Instigator,
+        int InDamage, class<DamageType> DmgType)
+{
+    return InDamage * GetBodyArmorDamageModifier(KFPRI);
 }
 
 /** Allows overriding item's corresponding perk index with perk's index.

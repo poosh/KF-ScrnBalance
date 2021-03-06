@@ -1338,7 +1338,7 @@ function SetupRepLink(ClientPerkRepLink R)
         for ( i=R.ShopInventory.length-1; i>=0; --i ) {
             PC = R.ShopInventory[i].PC;
             if ( PC == none || PC == class'ScrnHorzineVestPickup' || PC == class'ZEDMKIIPickup'
-                    || (PC.outer.name != 'KFMod' && PC.outer.name != 'ScrnBalanceSrv') )
+                    || PC.outer.name != class.outer.name )
                 R.ShopInventory.remove(i, 1);
         }
         // allow only ScrN Perks
@@ -1542,16 +1542,25 @@ function RestartPlayer( Controller aPlayer )
     local PlayerController CI;
 
     CI = PlayerController(aPlayer);
-    if ( CI != none && CI.PlayerReplicationInfo != none && ScrnBalanceMut.bTeamsLocked && !IsInvited(CI) ) {
-        CI.ReceiveLocalizedMessage(class'ScrnGameMessages', 243);
-        if ( !CI.PlayerReplicationInfo.bOnlySpectator && !BecomeSpectator(CI) )
-        {
-            // Max spectators reached. Leave player as dead body.
-            CI.PlayerReplicationInfo.bOutOfLives = True;
+    if ( CI != none && CI.PlayerReplicationInfo != none ) {
+
+        if ( ScrnBalanceMut.bTeamsLocked && !IsInvited(CI) ) {
+            CI.ReceiveLocalizedMessage(class'ScrnGameMessages', 243);
+            if ( !CI.PlayerReplicationInfo.bOnlySpectator && !BecomeSpectator(CI) ) {
+                // Max spectators reached. Leave player as dead body.
+                CI.PlayerReplicationInfo.bOutOfLives = true;
+                CI.PlayerReplicationInfo.NumLives = 1;
+                CI.GoToState('Spectating');
+            }
+            return;
+        }
+
+        if ( ScrnGameLength != none && !ScrnGameLength.Wave.bRespawnDeadPlayers ) {
+            CI.PlayerReplicationInfo.bOutOfLives = true;
             CI.PlayerReplicationInfo.NumLives = 1;
             CI.GoToState('Spectating');
+            return;
         }
-        return;
     }
 
     super.RestartPlayer(aPlayer);
@@ -1915,27 +1924,44 @@ function DestroyDroppedPickups()
 function AmmoPickedUp(KFAmmoPickup PickedUp)
 {
     local int i;
+    local KFAmmoPickup AmmoBox;
 
     ScrnBalanceMut.GameRules.WaveAmmoPickups++;
 
     // CurrentAmmoBoxCount is set in ScrnAmmoPickup
     // DesiredAmmoBoxCount is set in ScrnBalance
-    if ( CurrentAmmoBoxCount < DesiredAmmoBoxCount ) {
-        if ( SleepingAmmo.length == 0 ) {
-            for ( i = 0; i < AmmoPickups.length; ++i ) {
-                if ( AmmoPickups[i] != PickedUp && AmmoPickups[i].bSleeping )
-                    SleepingAmmo[SleepingAmmo.length] = AmmoPickups[i];
-            }
+    // At this moment, PickedUp is already in the Sleeping state, and CurrentAmmoBoxCount does not include it
+    if ( CurrentAmmoBoxCount >= DesiredAmmoBoxCount )
+        return;  // already enough ammo on the map
+
+    while ( SleepingAmmo.length > 0 ) {
+        i = rand(SleepingAmmo.Length);
+        AmmoBox = SleepingAmmo[i];
+        SleepingAmmo.remove(i, 1);
+
+        if ( !AmmoBox.bSleeping ) {
+            AmmoBox.GotoState('Sleeping', 'DelayedSpawn');
+            return;
+        }
+    }
+
+    if ( SleepingAmmo.length == 0 ) {
+        for ( i = 0; i < AmmoPickups.length; ++i ) {
+            AmmoBox = AmmoPickups[i];
+            if ( AmmoBox != PickedUp && AmmoBox.bSleeping )
+                SleepingAmmo[SleepingAmmo.length] = AmmoBox;
         }
 
         if ( SleepingAmmo.length > 0 ) {
             i = rand(SleepingAmmo.Length);
             SleepingAmmo[i].GotoState('Sleeping', 'DelayedSpawn');
             SleepingAmmo.remove(i, 1);
+            return;
         }
-        else
-            PickedUp.GotoState('Sleeping', 'DelayedSpawn');
     }
+
+    // nothing else to respawn - respawn the same pickup again
+    PickedUp.GotoState('Sleeping', 'DelayedSpawn');
 }
 
 function StartWaveBoss()

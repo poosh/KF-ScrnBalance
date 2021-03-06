@@ -52,6 +52,16 @@ static function int ReduceDamage(KFPlayerReplicationInfo KFPRI, KFPawn Injured, 
     return InDamage;    // no protection from Bloat Bile
 }
 
+// Reduce damage when wearing Armor
+static function int ShieldReduceDamage(KFPlayerReplicationInfo KFPRI, ScrnHumanPawn Injured, Pawn Instigator,
+        int InDamage, class<DamageType> DmgType)
+{
+    if ( KFHumanPawn(Instigator) != none )
+        return InDamage;  // no resistance to human damage
+
+    return super.ShieldReduceDamage(KFPRI, Injured, Instigator, InDamage, DmgType);
+}
+
 static function int AddDamage(KFPlayerReplicationInfo KFPRI, KFMonster Injured, KFPawn DamageTaker, int InDamage, class<DamageType> DmgType)
 {
     if ( DmgType == default.DefaultDamageTypeNoBonus )
@@ -103,6 +113,12 @@ static function string GetCustomLevelInfo( byte Level )
     ReplaceText(S,"%z",string(clamp(Level,1,6)));
     ReplaceText(S,"%$",GetPercentStr(fmin(0.90, 0.30 + 0.05*Level)));
     return S;
+}
+
+// Combat Medic cannot see other player health bars
+static function bool ShowEnemyHealthBars(KFPlayerReplicationInfo KFPRI, KFPlayerReplicationInfo EnemyPRI)
+{
+    return false;
 }
 
 

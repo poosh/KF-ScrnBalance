@@ -6,5 +6,4 @@ defaultproperties
 
     LightSaturation=127
     LightHue=170
-    LightBrightness=150
 }

@@ -107,7 +107,7 @@ defaultproperties
     AchDefs(63)=(id="KillHuskHuskGun",DisplayName="Burning Irony",Description="Kill %c Husks with Husk Cannon",Icon=Texture'KillingFloor2HUD.Achievements.Achievement_57',MaxProgress=30,DataSize=5,Group="EXP")
     AchDefs(64)=(id="HFC",DisplayName="Horzine Fried Crawler",Description="Recipe: Burn %c Crawlers at temp. below 80C until they die.",Icon=Texture'ScrnAch_T.Achievements.HFC',MaxProgress=999,DataSize=10,Group="EXP")
     AchDefs(65)=(id="CarveRoast",DisplayName="Let Me Carve a Roast",Description="Kill %c crispified zeds with melee weapons.",Icon=Texture'ScrnAch_T.Achievements.CarveRoast',MaxProgress=30,DataSize=6)
-    AchDefs(66)=(id="DotOfDoom",DisplayName="Dot of Doom",Description="Get 25 headshots in a row with the M14EBR.",Icon=Texture'KillingFloor2HUD.Achievements.Achievement_60',MaxProgress=1,bForceShow=True,DataSize=1,Group="MASTER")
+    AchDefs(66)=(id="DotOfDoom",DisplayName="Dot of Doom",Description="Get 25 headshots in a row with the M14EBR.",Icon=Texture'KillingFloor2HUD.Achievements.Achievement_59',MaxProgress=1,bForceShow=True,DataSize=1,Group="MASTER")
     AchDefs(67)=(id="Money10k",DisplayName="I Need DOSH!",Description="Start a wave having 10,000 pounds of cash",Icon=Texture'KillingFloorHUD.Achievements.Achievement_37',MaxProgress=1,DataSize=1)
 
     // new achievements
@@ -117,7 +117,7 @@ defaultproperties
     AchDefs(70)=(id="Plus25Clots",DisplayName="+25 Clot kills",Description="Kill 25 clots having less than 4 seconds between subsequent kills.",Icon=Texture'ScrnAch_T.Master.Plus25Clots',MaxProgress=1,DataSize=1,Group="MASTER")
     AchDefs(71)=(id="GetOffMyLawn",DisplayName="I said get off my Lawn!",Description="Kill %c Fleshpounds with the Boomstick or Combat Shotgun.",Icon=Texture'ScrnAch_T.Master.GetOffMyLawn',MaxProgress=15,DataSize=4,Group="EXP")
     AchDefs(72)=(id="Accuracy",DisplayName="Accuracy",Description="Finish %c waves with 75% headshot accuracy. At least 30 decapitations required per wave.",Icon=Texture'ScrnAch_T.Master.Accuracy',MaxProgress=10,DataSize=4,Group="MASTER")
-    AchDefs(73)=(id="SteampunkSniper",DisplayName="Steampunk Sniper",Description="Score 10 headshots in a row with Musket. Do it %c times.",Icon=Texture'KillingFloor2HUD.Achievements.Achievement_224',MaxProgress=4,DataSize=3,Group="MASTER")
+    AchDefs(73)=(id="SteampunkSniper",DisplayName="Steampunk Sniper",Description="Score 10 headshots in a row with Musket. Do it %c times.",Icon=Texture'KillingFloor2HUD.Achievements.Achievement_223',MaxProgress=4,DataSize=3,Group="MASTER")
     AchDefs(74)=(id="MeleeGod",DisplayName="Melee God",Description="Kill %c Scrakes with only head-hits from melee weapons. Buzzsaw Bow excluding.",Icon=Texture'ScrnAch_T.Master.Gauntlet',MaxProgress=30,DataSize=5,Group="MASTER")
 
     AchDefs(75)=(id="HuskGunSC",DisplayName="Weird but usefull",Description="Kill %c Scrakes with the Husk Gun.",Icon=Texture'ScrnAch_T.Exp.HuskGunSC',MaxProgress=30,DataSize=5,Group="EXP")

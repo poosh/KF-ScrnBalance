@@ -12,7 +12,7 @@ class ScrnBalance extends Mutator
 #exec OBJ LOAD FILE=ScrnAch_T.utx
 
 
-const VERSION = 96400;
+const VERSION = 96401;
 
 var ScrnBalance Mut; // pointer to self to use in static functions, i.e class'ScrnBalance'.default.Mut
 
@@ -2123,6 +2123,11 @@ function LoadCustomWeapons()
     }
 }
 
+function bool SpawnBalanceRequired()
+{
+    return ScrnGT != none && (bTSCGame || ScrnGT.IsTourney());
+}
+
 function LoadSpawnInventory()
 {
     local int i, j, index, k;
@@ -2132,9 +2137,9 @@ function LoadSpawnInventory()
     local class<ScrnVeterancyTypes> ScrnPerk;
     local class<Pickup> Pickup;
     local bool bAllPerks;
-    local bool bTourney;
+    local bool bSpawnBalance;
 
-    bTourney = ScrnGT != none && ScrnGT.IsTourney();
+    bSpawnBalance = SpawnBalanceRequired();
 
     // clear old inventory left from previous map
     for ( j=0; j<Perks.length; ++j )
@@ -2202,7 +2207,7 @@ function LoadSpawnInventory()
                 }
             }
         }
-        if ( bTourney && AchStr != "" )
+        if ( bSpawnBalance && AchStr != "" )
             continue; // do not allow achievement-specific inventory in tournaments
 
         Pickup = class<Pickup>(DynamicLoadObject(PickupStr, Class'Class'));
@@ -2601,6 +2606,9 @@ function PostBeginPlay()
     KF.bUseZEDThreatAssessment = true; // always use ScrnHumanPawn.AssessThreatTo()
     bStoryMode = KFStoryGameInfo(KF) != none;
     bTSCGame = TSCGame(KF) != none && !TSCGame(KF).bSingleTeamGame;
+    if ( bTSCGame ) {
+        bScrnWaves = true;
+    }
     ScrnGT = ScrnGameType(KF);
     if ( ScrnGT != none ) {
         ScrnGT.ScrnBalanceMut = self;
@@ -2710,7 +2718,7 @@ function PostBeginPlay()
     }
 
     LoadCustomWeapons();
-    if ( bUseDLCLocks && !bTSCGame && ScrnGT != none && !ScrnGT.IsTourney() ) {
+    if ( bUseDLCLocks && !SpawnBalanceRequired() ) {
         LockManager = spawn(class'ScrnLock');
         LockManager.LoadDLCLocks(bUseDLCLevelLocks);
     }
@@ -2988,6 +2996,11 @@ function bool ReplacePickup( Pickup item )
 function int FindPickupReplacementIndex( Pickup item )
 {
     local int i;
+
+    // pickupReplaceArray contains only KFMod items, so no need to cycle the entire array too look for items
+    // that cannot be there, such as ScrN or custom weapons
+    if ( item.class.outer.name != 'KFMod' )
+        return -1;
 
     for ( i=0; i<pickupReplaceArray.length; ++i ) {
         if ( pickupReplaceArray[i].oldClass == item.class )

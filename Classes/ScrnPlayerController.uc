@@ -1771,6 +1771,24 @@ exec function AltFire( optional float F )
     if( bDemoOwner || (Pawn == None) )
         return;
 
+    super.AltFire(F);
+}
+
+exec function ToggleDuck()
+{
+    if( bDuck == 0 ) {
+        Crouch();
+    }
+    else {
+        UnCrouch();
+    }
+}
+
+exec function Crouch()
+{
+    if( Pawn == none )
+        return;
+
     if ( !bTSCAdvancedKeyBindings && PlayerReplicationInfo.HasFlag != none
             && GameObject(PlayerReplicationInfo.HasFlag) != none
             && TSCGameReplicationInfo(Level.GRI) != none )
@@ -1779,11 +1797,10 @@ exec function AltFire( optional float F )
             bTSCAdvancedKeyBindings = ConsoleCommand("BINDINGTOKEY SetupBase") != "";
         if ( !bTSCAdvancedKeyBindings ) {
             SetupBase();
-            return;
         }
     }
 
-    super.AltFire(F);
+    super.Crouch();
 }
 
 exec function ThrowWeapon()
@@ -2304,10 +2321,8 @@ function ServerViewSelf()
     local vector Loc;
     local rotator R;
 
-    if ( !PlayerReplicationInfo.bOnlySpectator && ScrnGameType(Level.Game) != none
-            && ScrnGameType(Level.Game).IsTourney() )
-    {
-        // free roaming is prohibited in tourney mode
+    if ( !PlayerReplicationInfo.bOnlySpectator && (Mut.bTSCGame || Mut.SrvTourneyMode != 0) ) {
+        // free roaming is prohibited in TSC or/and Tourney Mode
         ServerViewNextPlayer();
         return;
     }
@@ -2435,7 +2450,10 @@ function ServerSetViewTarget(Actor NewViewTarget)
 {
     local bool bWasSpec;
 
-    if ( !IsInState('Spectating') || (!PlayerReplicationInfo.bOnlySpectator && Mut.SrvTourneyMode > 0) )
+    if ( !IsInState('Spectating') )
+        return;
+
+    if ( !PlayerReplicationInfo.bOnlySpectator && (Mut.bTSCGame || Mut.SrvTourneyMode != 0) )
         return;
 
     bWasSpec = !bBehindView && ViewTarget != Pawn && ViewTarget != self;
@@ -2456,7 +2474,7 @@ function ViewTargetChanged()
 
     //log("ViewTargetChanged("$OldViewTarget$")", 'ScrnBalance');
 
-    if ( Role < ROLE_Authority || (!PlayerReplicationInfo.bOnlySpectator && Mut.SrvTourneyMode > 0) )
+    if ( Role < ROLE_Authority || (!PlayerReplicationInfo.bOnlySpectator && (Mut.bTSCGame || Mut.SrvTourneyMode > 0)) )
         return;
 
     ScrnVT = ScrnHumanPawn(OldViewTarget);
@@ -2506,8 +2524,8 @@ state Spectating
    // Return to spectator's own camera.
     exec function AltFire( optional float F )
     {
-        // free roaming is prohibited in tourney mode
-        if ( !PlayerReplicationInfo.bOnlySpectator && Mut.SrvTourneyMode != 0 )
+        // free roaming is prohibited in TSC or/and Tourney Mode
+        if ( !PlayerReplicationInfo.bOnlySpectator && (Mut.bTSCGame || Mut.SrvTourneyMode != 0) )
             Fire(F);
         else
             super.AltFire(F);

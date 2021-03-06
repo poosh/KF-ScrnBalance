@@ -116,7 +116,6 @@ event InitGame( string Options, out string Error )
     local ScrnVotingHandlerMut VH;
     local Mutator M;
 
-    ScrnBalanceMut.bScrnWaves = true;
     super.InitGame(Options, Error);
 
     // check loaded mutators
@@ -144,11 +143,13 @@ event InitGame( string Options, out string Error )
     else
         log("Voting (mvote) disabled.", 'TSC');
 
-    bUseEndGameBoss = false;
-    FinalWave = max(GetIntOption(Options, "NWaves", FinalWave), 1);
+    if ( !bSingleTeamGame ) {
+        bUseEndGameBoss = false;
+        FinalWave = max(GetIntOption(Options, "NWaves", FinalWave), 1);
+        OvertimeWaves = max(GetIntOption(Options, "OTWaves", OvertimeWaves), 0);
+        SudDeathWaves = max(GetIntOption(Options, "SDWaves", SudDeathWaves), 0);
+    }
     OriginalFinalWave = FinalWave;
-    OvertimeWaves = max(GetIntOption(Options, "OTWaves", OvertimeWaves), 0);
-    SudDeathWaves = max(GetIntOption(Options, "SDWaves", SudDeathWaves), 0);
 
     // force FriendlyFireScale to 10%
     FriendlyFireScale = HDmgScale;
@@ -641,8 +642,9 @@ function WipeTeam(TeamInfo Team, optional class<DamageType> DamageType)
 
 function bool CheckEndGame(PlayerReplicationInfo Winner, string Reason)
 {
-    local Controller P;
-    local PlayerController Player;
+    local Controller C;
+    local PlayerController PC;
+    local KFPlayerController KFPC;
     local bool bSetAchievement;
     local string MapName;
     local String EndSong;
@@ -659,7 +661,8 @@ function bool CheckEndGame(PlayerReplicationInfo Winner, string Reason)
         else
             return false;
         TSCGRI.EndGameType = 2;
-        ScrnBalanceMut.BroadcastMessage(TeamInfo(TSCGRI.Winner).GetHumanReadableName() $ " team won the game on wave " $ string(WaveNum+1), true);
+        ScrnBalanceMut.BroadcastMessage(TeamInfo(TSCGRI.Winner).GetHumanReadableName() $ " team won the game on wave "
+                $ string(WaveNum+1), true);
     }
     else {
         if ( WaveNum >= OriginalFinalWave + OvertimeWaves + SudDeathWaves ) {
@@ -690,24 +693,28 @@ function bool CheckEndGame(PlayerReplicationInfo Winner, string Reason)
     // if we reached here, game must be ended
     EndTime = Level.TimeSeconds + EndTimeDelay;
 
-    for ( P = Level.ControllerList; P != none; P = P.nextController )
-    {
-        Player = PlayerController(P);
-        if ( Player != none ) {
-            Player.ClientSetBehindView(true);
-            Player.ClientGameEnded();
+    for ( C = Level.ControllerList; C != none; C = C.nextController ) {
+        PC = PlayerController(C);
+        if ( PC != none ) {
+            PC.ClientSetBehindView(true);
+            PC.ClientGameEnded();
 
-            if ( bSetAchievement && Player.PlayerReplicationInfo != none && KFSteamStatsAndAchievements(Player.SteamStatsAndAchievements) != none
-                    && (Player.PlayerReplicationInfo.Team == GameReplicationInfo.Winner || GameReplicationInfo.Winner == none) )
+            if ( bSetAchievement && PC.PlayerReplicationInfo != none
+                    && KFSteamStatsAndAchievements(PC.SteamStatsAndAchievements) != none
+                    && (PC.PlayerReplicationInfo.Team == GameReplicationInfo.Winner
+                        || GameReplicationInfo.Winner == none) )
             {
-                KFSteamStatsAndAchievements(Player.SteamStatsAndAchievements).WonGame(MapName, GameDifficulty, KFGameLength == GL_Long);
+                KFSteamStatsAndAchievements(PC.SteamStatsAndAchievements).WonGame(MapName, GameDifficulty,
+                        KFGameLength == GL_Long);
             }
 
-            if (KFPlayerController(Player)!= none)
-                KFPlayerController(Player).NetPlayMusic(EndSong, 0.5, 0);
+            KFPC = KFPlayerController(PC);
+            if ( KFPC != none) {
+                KFPC.NetPlayMusic(EndSong, 0.5, 0);
+            }
         }
 
-        P.GameHasEnded();
+        C.GameHasEnded();
     }
 
     if ( CurrentGameProfile != none )
@@ -758,11 +765,10 @@ function TSCBaseGuardian SpawnBaseGuardian(byte TeamIndex)
 // balances the team referenced by SmallTeamIndex
 // BalanceMult shows the relatice amount of bonus that must be given to small team
 // Usually BalanceMult=BigTeam.Size / SmallTeam.Size
-// callint BalanceTeam(2, 1.0) removes any previously given bonuses
+// calling BalanceTeams(2, 1.0) removes any previously given bonuses
 function BalanceTeams(byte SmallTeamIndex, float BalanceMult)
 {
     local Controller C;
-    local Inventory Inv;
     local Syringe S;
     local ScrnHumanPawn ScrnPawn;
     local bool bInSmallTeam;
@@ -779,17 +785,22 @@ function BalanceTeams(byte SmallTeamIndex, float BalanceMult)
 
         bInSmallTeam = C.PlayerReplicationInfo.Team != none
                         && C.PlayerReplicationInfo.Team.TeamIndex == SmallTeamIndex;
-        ScrnPawn.HealthBonus = 0;
-        if ( bInSmallTeam )
-            ScrnPawn.HealthBonus *= BalanceMult; // increases max health
-        ScrnPawn.GiveHealth(0, 100); // updates max health
-        for ( Inv = ScrnPawn.Inventory; Inv != none; Inv = Inv.Inventory ) {
-            S = Syringe(Inv);
-            if ( S != none ) {
-                S.HealBoostAmount = S.default.HealBoostAmount;
-                // give more healing points to smaller team
-                if ( bInSmallTeam )
-                    S.HealBoostAmount *= BalanceMult;
+        if ( bInSmallTeam ) {
+            // increases max health
+            ScrnPawn.HealthBonus = ScrnPawn.default.HealthMax * BalanceMult;
+            ScrnPawn.GiveHealth(ScrnPawn.HealthBonus, 100); // give bonus health and update max
+        }
+        else {
+            ScrnPawn.HealthBonus = 0;
+            ScrnPawn.GiveHealth(0, 100); // update max health
+        }
+
+        S = Syringe(ScrnPawn.FindInventoryType(class'Syringe'));
+        if ( S != none ) {
+            S.HealBoostAmount = S.default.HealBoostAmount;
+            if ( bInSmallTeam ) {
+                // syringe healths faster the smaller team
+                S.HealBoostAmount *= BalanceMult;
             }
         }
     }
@@ -826,6 +837,8 @@ function SetupWave()
     i = rand(2);
     TeamBases[i].ScoreOrHome();
     TeamBases[1-i].ScoreOrHome();
+    TeamBases[0].InvulTime = Level.TimeSeconds + TeamBases[0].default.InvulTime;
+    TeamBases[1].InvulTime = TeamBases[0].InvulTime;
 
     WavePlayerCount = AlivePlayerCount;
     BigTeamSize = max(AliveTeamPlayerCount[0], AliveTeamPlayerCount[1]);
@@ -1199,35 +1212,37 @@ defaultproperties
     GameName="Team Survival Competition"
     Description="Two Teams, One Floor. Killing Floor. There are two teams competing in surviving specimen invasion on the same map and at the same time. Both teams can cooperate, fight against each other, or just stay each in their own corner of the map - the choice is up to you..."
 
-    KFHints[0]="Each team has own Trader. Team can not get the same Trader two times in a row."
-    KFHints[1]="When the Trader opens her doors, she drops the Base Guardian nearby. Take it to your base!"
-    KFHints[2]="Pick up the Base Guardian next to the Trader, bring it where you want your Base to be and press SETUPBASE(ALTFIRE) button."
+    KFHints[0]="Each team has its own Trader. A team can not get the same Trader two times in a row."
+    KFHints[1]="When the Trader opens her doors, she drops the Base Guardian nearby. Take it to your Base!"
+    KFHints[2]="Pick up the Base Guardian next to the Trader, bring it where you want your Base to be, and press the SETUPBASE or CROUCH button."
     KFHints[3]="The Base can be established only once per wave. Once set up, it can not be moved."
     KFHints[4]="If nobody stays at a Base, then the Guardian gets frustrated and disappears. No Guardian = No Base."
     KFHints[5]="Base Guardian has two cool features: it protects you from the Friendly Fire and damages enemy squad members."
     KFHints[6]="Base Guardian hurts enemy players within the range of the Base no matter of the Friendly Fire setting."
-    KFHints[7]="Base can be established during the Trader Time only. So hurry up!"
-    KFHints[8]="Other squad cannot stay at your Base."
-    KFHints[9]="You can play without a Base too, but who is going to protect you from the Friendly Fire then?"
-    KFHints[10]="Setting up a Base in a strategical map point is a key to success."
-    KFHints[11]="You cannot set up own Base at the Enemy Base. However, the Bases may intersect."
-    KFHints[12]="While carrying Base Guardian, you can pass it to other player by pressing the same key as throwing a weapon."
-    KFHints[13]="Best camping spots in the standard KF game are not necessarily the best spots in TSC."
-    KFHints[14]="The team gets wiped if ANY its member dies during the SUDDEN DEATH wave."
-    KFHints[15]="Wiping the enemy squad doesn't grant you a win. You still have to survive till the end of the wave."
-    KFHints[16]="TSC isn't Versus or Team Deathmatch game. You don't have to fight the enemy team. Leave that job to ZEDs."
-    KFHints[17]="You can wait until ZEDs wipe out the enemy squad or help them. Help who? ZEDs or the other squad? The choice is up to you..."
-    KFHints[18]="There are 4 Human Damage rules in TSC: OFF, No Friendly Fire, Normal and PvP. Type MVOTE TEAM HDMG for the info."
-    KFHints[19]="When Human Damage is OFF, you can not damage the other squad's members. Your Guardian can though."
-    KFHints[20]="Human Damage is OFF during the first wave, Trader Time and when there are less than 10 zeds left in a wave."
-    KFHints[21]="Human Damage is ON during waves (except the first one). Staying at own Base protects you from it."
-    KFHints[22]="You can switch team during the Trader Time. Type SWITCHTEAM in the console or bind it to key."
-    KFHints[23]="Switching the team during the game kills you first. Then restarts you as an other squad's member."
-    KFHints[24]="You cannot switch a team during a wave."
-    KFHints[25]="Medics, and only medics, can see the health and armor of enemy players."
-    KFHints[26]="TSC, same as KF, is not about winning or losing. It is all about surviving."
-    KFHints[27]="TSC doesn't force you to play against the other squad. You can cooperate and survive together. But nobody said that the other squad thinks the same..."
-    KFHints[28]="During the Trader Time, if the other squad has 2+ players less than yours, you can switch to it on-the-fly (without dying)."
+    KFHints[7]="Base Guardian can be stunned with nades or 700+ cumulative damage."
+    KFHints[8]="Base Guardian is invulnerable while waking up or for the first 10 seconds of a wave."
+    KFHints[9]="The Base can be established during the Trader Time only. So hurry up!"
+    KFHints[10]="The other squad cannot stay at your Base."
+    KFHints[11]="You can play without a Base too, but who will protect you from the Friendly Fire then?"
+    KFHints[12]="Setting up a Base in a strategic map point is the key to success."
+    KFHints[13]="You cannot set up your own Base at the Enemy Base. However, the Bases may intersect."
+    KFHints[14]="While carrying Base Guardian, you can pass it to another player by pressing the same key as throwing a weapon."
+    KFHints[15]="Best camping spots in the standard KF game are not necessarily the best spots in TSC."
+    KFHints[16]="The team gets wiped if ANY its member dies during the SUDDEN DEATH wave."
+    KFHints[17]="Wiping the enemy squad doesn't grant you a win. You still have to survive till the end of the wave."
+    KFHints[18]="TSC isn't Versus or Team Deathmatch game. You don't have to fight the enemy team. Leave that job to ZEDs."
+    KFHints[19]="You can wait until ZEDs wipe out the enemy squad or help them. Help who? ZEDs or the other squad? The choice is up to you..."
+    KFHints[20]="There are 4 Human Damage rules in TSC: OFF, No Friendly Fire, Normal, and PvP. Type MVOTE TEAM HDMG for the info."
+    KFHints[21]="When Human Damage is OFF, you can not damage the other squad's members. The Base Guardian can, though."
+    KFHints[22]="Human Damage is OFF during the first wave, Trader Time, and when there are less than 10 zeds left in a wave."
+    KFHints[23]="Human Damage is ON during waves (except the first one). Staying at your own Base protects you from it."
+    KFHints[24]="You can switch team during the Trader Time. Type SWITCHTEAM in the console or bind it to a key."
+    KFHints[25]="Switching the team during the game kills you first. Then restarts you as another squad member."
+    KFHints[26]="You cannot switch a team during a wave."
+    KFHints[27]="Medics, and only medics, can see the health and armor of enemy players."
+    KFHints[28]="TSC, same as KF, is not about winning or losing. It is all about surviving."
+    KFHints[29]="TSC doesn't force you to play against the other squad. You can cooperate and survive together. But nobody said that the other team thinks the same..."
+    KFHints[30]="During the Trader Time, if the other squad has 2+ players less than yours, you can switch to it on-the-fly (without dying)."
 
     DefaultEnemyRosterClass="ScrnBalanceSrv.TSCTeam"
     RedTeamHumanName="British"

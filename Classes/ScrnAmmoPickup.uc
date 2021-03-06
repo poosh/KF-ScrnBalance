@@ -2,7 +2,17 @@ class ScrnAmmoPickup extends KFAmmoPickup;
 
 function float GetRespawnTime()
 {
-    return RespawnTime / clamp(Level.Game.NumPlayers, 1, 6);
+    local ScrnGameType ScrnGT;
+    local float MinRespawnTime;
+
+    MinRespawnTime = RespawnTime;
+    ScrnGT = ScrnGameType(Level.Game);
+    if ( ScrnGT != none && ScrnGT.AmmoPickups.length <= ScrnGT.DesiredAmmoBoxCount ) {
+        // not anough ammo on the map - boost the spawn rate
+        MinRespawnTime *= 0.7 * float(ScrnGT.AmmoPickups.length) /  ScrnGT.DesiredAmmoBoxCount;
+        MinRespawnTime = fmax(MinRespawnTime, 5.0);
+    }
+    return fmin(MinRespawnTime, RespawnTime / clamp(Level.Game.NumPlayers, 1, 6));
 }
 
 state Pickup

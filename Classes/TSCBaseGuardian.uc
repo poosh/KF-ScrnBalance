@@ -17,17 +17,28 @@ var transient Pawn BaseSetter;
 var class<DamageType> WipeOnBaseLost;
 
 var int StunThreshold;
-var int StunDuration;
+var int StunDuration, WakeUpDuration;
 var float StunFadeoutRate;
 var transient float StunDamage;
+var float InvulTime;
 
 var ShopVolume MyShop;
 var transient ScrnPlayerController LastHolder;
 
+var enum EClientState {
+    CS_Home,
+    CS_Dropped,
+    CS_Held,
+    CS_SettingUp,
+    CS_Guarding,
+    CS_Stunned,
+    CS_WakingUp
+} ClientState;
+
 replication
 {
-    reliable if (bNetDirty && Role == ROLE_Authority)
-        Team;
+    reliable if ((bNetInitial || bNetDirty) && Role == ROLE_Authority)
+        Team, ClientState;
 }
 
 simulated function PostBeginPlay()
@@ -46,6 +57,7 @@ simulated function PostNetReceive()
             SetRelativeLocation(GameObjOffset);
             SetRelativeRotation(GameObjRot);
         }
+        ApplyClientState();
     }
 }
 
@@ -267,19 +279,60 @@ function GiveToClosestPlayer(vector Loc)
     }
 }
 
+function SetClientState(EClientState NewState)
+{
+    if ( ClientState != NewState ) {
+        ClientState = NewState;
+        NetUpdateTime = Level.TimeSeconds - 1;
+        ApplyClientState();
+    }
+}
+
+simulated function ApplyClientState()
+{
+    LightRadius = default.LightRadius;
+    LightBrightness = default.LightBrightness;
+    switch (ClientState) {
+        case CS_Home:
+            LightType = LT_None;
+            break;
+
+        case CS_Dropped:
+        case CS_Held:
+            LightType = LT_Pulse;
+            LightRadius *= 0.5;
+            break;
+
+        case CS_SettingUp:
+        case CS_WakingUp:
+            LightType = LT_Pulse;
+            LightBrightness = 220;
+            break;
+
+        case CS_Guarding:
+            LightType = LT_Steady;
+            break;
+
+        case CS_Stunned:
+            LightType = LT_Flicker;
+            LightRadius *= 0.3;
+            break;
+    }
+}
+
 auto state Home
 {
     ignores BaseSetupFailed;
 
     function BeginState()
     {
+        SetClientState(CS_Home);
         // log("State --> Home", class.name);
         Disable('Touch');
         SetCollision(false, false);
         bCollideWorld=false;
         bHome = true;
         bHidden = true;
-        LightType = LT_None;
         BaseSetter = none;
         LastHolder = none;
     }
@@ -299,11 +352,11 @@ state Dropped
 {
     function BeginState()
     {
+        SetClientState(CS_Dropped);
         // log("State --> Dropped", class.name);
         SetCollision(true, false);
         bCollideWorld=True;
         bHidden = false;
-        LightType = LT_Pulse;
         Enable('Touch');
 
         super.BeginState();
@@ -319,6 +372,7 @@ state Held
 {
     function BeginState()
     {
+        SetClientState(CS_Held);
         // log("State --> Held", class.name);
         super.BeginState();
         Holder.bAlwaysRelevant = true;
@@ -355,6 +409,7 @@ state SettingUp
 
     function BeginState()
     {
+        SetClientState(CS_SettingUp);
         // log("State --> SettingUp", class.name);
         bActive = true;
         Disable('Touch');
@@ -363,8 +418,6 @@ state SettingUp
         bCollideWorld=true;
         Velocity = PhysicsVolume.Gravity;
         SetPhysics(PHYS_Falling);
-
-        LightType = LT_Pulse;
 
         SetTimer(10, false); // just in case
 
@@ -426,6 +479,7 @@ state Guarding
         local ScrnPlayerController ScrnC;
         local rotator r;
 
+        SetClientState(CS_Guarding);
         // log("State --> Guarding", class.name);
         bActive = true;
         Disable('Touch');
@@ -437,8 +491,6 @@ state Guarding
         r.Roll = 0;
         SetRotation(r);
         SetPhysics(PHYS_Rotating);
-
-        LightType = LT_Steady;
 
         StunDamage = 0;
         SameTeamCounter = default.SameTeamCounter;
@@ -478,6 +530,9 @@ state Guarding
     {
         local ScrnPlayerController PC;
 
+        if ( Level.TimeSeconds < InvulTime )
+            return;
+
         if ( damageType == class'DamTypeFrag' )
             Damage *= 5;
         if ( InstigatedBy != none )
@@ -486,21 +541,8 @@ state Guarding
             PC.ClientPlayerDamaged(Damage, Hitlocation, 10);
         }
         StunDamage += Damage;
-    }
-
-    function Tick(float DeltaTime)
-    {
-        super.Tick(DeltaTime);
-
-        if ( StunDamage > 0 ) {
-            if ( StunDamage >= StunThreshold ) {
-                GotoState('Stunned');
-            }
-            else {
-                StunDamage -= StunFadeoutRate * DeltaTime;
-                if ( StunDamage < 0 )
-                    StunDamage = 0;
-            }
+        if ( StunDamage >= StunThreshold ) {
+            GotoState('Stunned');
         }
     }
 
@@ -509,6 +551,12 @@ state Guarding
         local Controller C;
         local ScrnPlayerController SC;
         local bool bNobodyAtBase, bNobodyAlive;
+
+        if ( StunDamage > 0 ) {
+            StunDamage -= StunFadeoutRate;
+            if ( StunDamage < 0 )
+                StunDamage = 0;
+        }
 
         bNobodyAtBase = true;
         bNobodyAlive = true;
@@ -563,12 +611,13 @@ state Guarding
 
 state Stunned
 {
-    ignores Score, ScoreOrHome, Touch, UsedBy, TakeDamage;
+    ignores Score, Touch, UsedBy, TakeDamage;
 
     function BeginState()
     {
         local rotator r;
 
+        SetClientState(CS_Stunned);
         // log("State --> Stunned", class.name);
         r = Rotation;
         r.Pitch = -16384;
@@ -576,8 +625,6 @@ state Stunned
         SetRotation(r);
         SetPhysics(PHYS_None);
 
-        LightType = LT_Flicker;
-        LightRadius = default.LightRadius * 0.3;
         SetTimer(StunDuration, false);
         NetUpdateTime = Level.TimeSeconds - 1; // replicate immediately
         BroadcastLocalizedMessage(class'TSCMessages', 3+Team.TeamIndex*100);
@@ -587,6 +634,11 @@ state Stunned
     {
         // log("State <-- Stunned", class.name);
         LightRadius = default.LightRadius;
+    }
+
+    function ScoreOrHome()
+    {
+        GotoState('WakingUp');
     }
 
     function Timer()
@@ -603,6 +655,8 @@ state WakingUp
     {
         local rotator r;
 
+        SetClientState(CS_WakingUp);
+
         // log("State --> WakingUp", class.name);
         r = Rotation;
         r.Pitch = 0;
@@ -611,8 +665,7 @@ state WakingUp
         SetPhysics(PHYS_Rotating);
 
         bActive = true;
-        LightType = LT_Pulse;
-        SetTimer(5, false);
+        SetTimer(WakeUpDuration, false);
         NetUpdateTime = Level.TimeSeconds - 1; // replicate immediately
         BroadcastLocalizedMessage(class'TSCMessages', 4+Team.TeamIndex*100);
     }
@@ -625,6 +678,7 @@ state WakingUp
 
     function Timer()
     {
+        BroadcastLocalizedMessage(class'TSCMessages', 5+Team.TeamIndex*100);
         GotoState('Guarding');
     }
 }
@@ -640,16 +694,19 @@ defaultproperties
     GameObjRot=(Pitch=-16384,Yaw=0,Roll=0)
     Damage=5
     StunThreshold=700
-    StunDuration=25
+    StunDuration=30
+    WakeUpDuration=10
+    InvulTime=10  // cannot be damaged for the first 10s of a wave
     StunFadeoutRate=50
     SameTeamCounter=10
     bCanBeDamaged=False
+    ClientState=CS_Home
 
-    LightType=LT_Steady
+    LightType=LT_None
     LightEffect=LE_QuadraticNonIncidence
-    LightRadius=25
+    LightRadius=50
     LightSaturation=128
-    LightBrightness=150 // 220
+    LightBrightness=180 // 220
     LightPeriod=30
     bStatic=False
     bHidden=True

@@ -19,6 +19,39 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+### v9.64.01
+- Ready and View Map buttons switch places so the ready button is at the same position as in the vanilla game.
+- Fixed a bug that could prevent ammo boxes from respawning
+- Changed how Medic's "better" armor behaves. Previously, medic armor blindly reduced all incoming damage by 60%
+  (vanilla - by 75%).
+  For instance, HoE FP may deal 120 damage. Medic with just 1% armor reduced the incoming damage to 120 - 60% = 48.
+  **Now, medic armor reduces damage by up to double amount of its armor points**.
+  So having 1% armor removes only 2hp damage; 10% - up to 20hp;
+  to fully reduce FP 120hp attack by 60% (72hp), medic needs at least 36AP.
+- `KFVeterancyTypes.GetBodyArmorDamageModifier()` deprecated.
+  `ScrnVeterancyTypes.ShieldReduceDamage()` used instead.
+#### TSC
+- The default key for the base setup moved from AltFire to `Duck` / `Crouch`. Players still can set the dedicated
+  key for base setup, e.g.: `set input B SetupBase`, `set input X DropFlag`
+- Fixed an issue when switching from TSC to FTG kept the `NWaves` option (wave count) from the previous game
+- Disabled free roam camera for dead players
+- Stunned Base Guardians wake up on a wave start.
+- Stun time: 30s, wakeup duration: 10s.
+- The Base Guardian cannot be damaged/stunned while waking up or during the first 10s of a wave.
+- Increased the light radius of Base Guardians to cover almost the entire base while guarding.
+- Combat Medic does not get armor protection bonus from human damage.
+- Lowered Field Medic armor protection bonus from human damage to 30% (down from 40%).
+- Combat Medic cannot see enemy health bars. Only Field Medic can see those.
+- Fixed health balance of uneven teams. Both teams should have the same total amount of health points.
+  For instance, When playing 4v5, members of the 4p team will have 125hp (4x125 = 5x100)
+
+#### ScrN Waves
+- New game mode: **42. TSC Tourney**
+- Game mode **51. FTG: On The Clock** replaced with the new version (by *nmmblez*)
+- Added `TraderSpeedBoost` to `ScrnGameLength` config (*ScrnWaves.ini*) to allow per-game trader speed boost control.
+- Fixed an issue when sometimes dead players might respawn despite `bRespawnDeadPlayers=false` for the current wave.
+- Fixed an issue where `RULE_GrabAmmo` did not spawn enough ammo boxes on the map with a low ammo box count.
+
 ### v9.64
 #### Gunslinger
 - Dual HC, .44, and MK23: Alt fire switches between single and dual pistols
