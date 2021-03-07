@@ -55,7 +55,8 @@ var array<SSquad> SpecialSquads;
 var array<int> PendingSquads;
 var array<int> PendingSpecialSquads;
 
-var ScrnWaveInfo Wave;
+var ScrnWaveInfo Wave, NextWave;
+var protected int NextWaveNum;
 var transient int ZedsBeforeSpecial;
 var transient bool bLoadedSpecial;
 var transient float PlayerCountOverrideForHealth;
@@ -154,6 +155,8 @@ function LoadGame(ScrnGameType MyGame)
         Wave = CreateWave(Waves[0]);
     }
     Wave.bRespawnDeadPlayers = true;  // always allow player start on wave 1
+    NextWave = Wave;  // prevent loading the same object again during LoadWave(0) call
+    NextWaveNum = 0;
 }
 
 function AddVoting()
@@ -349,10 +352,9 @@ function PrintAliases(PlayerController Sender)
     if ( msg != "" ) {
         Sender.ClientMessage(msg);
     }
-
 }
 
-function bool LoadWave(int WaveNum)
+protected function bool LoadNextWave()
 {
     local int i;
     local SSquad squad;
@@ -368,16 +370,11 @@ function bool LoadWave(int WaveNum)
     if ( bLogStats && Wave != none )
         LogStats();
 
-    if ( WaveNum >= Waves.length ) {
-        warn("ScrnGameLength: Illegal wave number: " $ WaveNum);
-        if (Wave == none ) {
-            log("Using fallback wave info", class.name);
-            Wave = new(none, "Wave1") class'ScrnWaveInfo';
-        }
+    if ( NextWave == none ) {
         return false;
     }
-
-    Wave = CreateWave(Waves[WaveNum]);
+    Wave = NextWave;
+    NextWave = none;
 
     for ( i = 0; i < ActiveZeds.length; ++i ) {
         ActiveZeds[i].WaveSpawns = 0;
@@ -423,6 +420,34 @@ function bool LoadWave(int WaveNum)
 
     DoorControl(Wave.DoorControl);
 
+    return true;
+}
+
+function bool LoadWave(int WaveNum)
+{
+    if ( NextWave == none || WaveNum != NextWaveNum ) {
+        NextWaveNum = WaveNum;
+        if ( NextWaveNum < Waves.length ) {
+            NextWave = CreateWave(Waves[NextWaveNum]);
+        }
+        else {
+            warn("ScrnGameLength: Illegal wave number: " $ WaveNum);
+            if ( Wave == none )
+                NextWave = CreateWave("Wave1");  // fallback wave
+            else
+                NextWave = Wave;  // use the previous wave
+        }
+    }
+
+    if ( !LoadNextWave() ) {
+        log("Failed to load wave " $ WaveNum, class.name);
+        return false;
+    }
+
+    NextWaveNum = WaveNum + 1;
+    if ( NextWaveNum < Waves.length ) {
+        NextWave = CreateWave(Waves[NextWaveNum]);
+    }
     return true;
 }
 

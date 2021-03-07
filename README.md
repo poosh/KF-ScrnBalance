@@ -19,6 +19,18 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+### v9.64.03
+- Player can **interrupt reloading by throwing the weapon on the ground**
+- if `bPrioritizePerkedWeapons=true` in *User.ini*, perked weapons receive a higher rating when making a decision to
+  auto-switch to the newly obtained weapon or not.
+- Player may set `bNeverSwitchOnPickup=true` in *User.ini* to completely prevent weapon auto-switching.
+- `bNeverSwitchOnPickup=true` breaks machete-sprinting with the default drop weapon key. However, there is a workaround:
+  `set input SPACE GetWeapon ScrnMachete | OnRelease ThrowWeapon`
+- Slightly increased the movement speed of **Stinky Clot**. Moreover, speed now scales by the game difficulty.
+- Fixed Stinky Clot's head hitbox.
+- Fixed yet another navigation bug that could cause Stinky Clot to get stuck.
+- Stinky Clot does not move to the trader during the boss wave or if the trader will be closed for the next wave.
+
 ### v9.64.01
 - Ready and View Map buttons switch places so the ready button is at the same position as in the vanilla game.
 - Fixed a bug that could prevent ammo boxes from respawning

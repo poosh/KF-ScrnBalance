@@ -406,4 +406,5 @@ defaultproperties
      Description="Match grade 45 caliber pistol. Good balance between power, ammo count and rate of fire. Damage is near to Magnum's, but has no bullet penetration."
      PickupClass=Class'ScrnBalanceSrv.ScrnMK23Pickup'
      ItemName="MK23 SE"
+     Priority=80
 }

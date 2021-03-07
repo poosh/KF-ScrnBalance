@@ -426,4 +426,5 @@ defaultproperties
      ItemName="Laser Dual 44 Magnums"
      FireSpotRenrerTime=1.0
      MagAmmoRemaining=12
+     Priority=150
 }

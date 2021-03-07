@@ -38,7 +38,6 @@ simulated state QuickMelee
         }
     }
 
-
     simulated function BringUp(optional Weapon PrevWeapon)
     {
         local int Mode;
@@ -78,13 +77,17 @@ simulated state QuickMelee
     }
 }
 
+simulated function float RateSelf()
+{
+    return 1000;  // for machete-sprinting
+}
+
 defaultproperties
 {
      FireModeClass(0)=Class'ScrnBalanceSrv.ScrnMacheteFire'
      FireModeClass(1)=Class'ScrnBalanceSrv.ScrnMacheteFireB'
      PickupClass=Class'ScrnBalanceSrv.ScrnMachetePickup'
      ItemName="Machete SE"
-     Priority=250
 
      QuickPutDownTime=0.01  // 0.15
      QuickBringUpTime=0.01  // 0.15

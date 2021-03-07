@@ -144,7 +144,11 @@ simulated function DrawTSCHUDTextElements(Canvas C)
                 aHint = hintSetupBase;
                 s = PlayerOwner.ConsoleCommand("BINDINGTOKEY SetupBase");
                 if ( s == "" )
-                    s = PlayerOwner.ConsoleCommand("BINDINGTOKEY AltFire");
+                    s = PlayerOwner.ConsoleCommand("BINDINGTOKEY Duck");
+                if ( s == "" )
+                    s = PlayerOwner.ConsoleCommand("BINDINGTOKEY ToggleDuck");
+                if ( s == "" )
+                    s = PlayerOwner.ConsoleCommand("BINDINGTOKEY Crouch");
                 ReplaceText(aHint, "%KEY%", s);
             }
             else if ( TSCGRI.TimeToNextWave < 30 )

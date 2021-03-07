@@ -673,4 +673,5 @@ defaultproperties
     PickupClass=Class'ScrnBalanceSrv.ScrnDualMK23Pickup'
     ItemName="Dual MK23 SE"
     ShortReloadFrameSkip=75
+    Priority=120
 }

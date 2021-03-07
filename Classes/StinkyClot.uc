@@ -2,10 +2,13 @@ class StinkyClot extends ZombieClot;
 
 var() name CompleteAnim;
 var() name GrabBone;
+var() float OutOfBaseSpeed;
+var() float MaxBoostSpeed;
 
 var float NextStuckTestTime;
 var transient vector OldLocation;
 var transient int StuckCounter;
+var transient float TargetClosestDist;
 
 // Teleporting
 const TELEPORT_NONE     = 0;
@@ -17,6 +20,7 @@ var transient float AlphaFader;
 var string TeleportSoundRef;
 var sound TeleportSound;
 var transient Actor LastMoveTarget[2];
+
 
 replication
 {
@@ -58,6 +62,37 @@ simulated event PostNetReceive()
     SetSkin();
 }
 
+function CheckStuck()
+{
+    local float dist;
+
+    if ( Controller.MoveTarget == LastMoveTarget[0] ) {
+        dist = VSizeSquared(Location - Controller.MoveTarget.Location);
+        if ( dist - TargetClosestDist < -2500 ) {
+            // we are getting closer to our target. Delay the teleportation
+            StuckCounter = max(0, StuckCounter - 10);
+            TargetClosestDist = dist;
+            return;
+        }
+    }
+
+    OldLocation.Z = Location.Z; // ignore Z difference, because zed may be constantly jumping
+    if ( VSizeSquared(Location - OldLocation) < 10000 ) {
+        StuckCounter += 3;  // 10 seconds to move away from the current location
+    }
+    else {
+        OldLocation = Location;
+        StuckCounter += 1; // 30s to reach the target
+    }
+
+    if ( StuckCounter >= 30 ) {
+        // if can't reach the target - simply teleport to it
+        TeleportLocation = Controller.MoveTarget.Location;
+        TeleportLocation.Z += CollisionHeight + 5;
+        StartTeleport();
+    }
+}
+
 simulated function Tick(float dt)
 {
     super.Tick(dt);
@@ -70,25 +105,12 @@ simulated function Tick(float dt)
             LastMoveTarget[0] = Controller.MoveTarget;
             OldLocation = Location;
             StuckCounter = 0;
+            TargetClosestDist = VSizeSquared(Location - Controller.MoveTarget.Location);
             NextStuckTestTime = Level.TimeSeconds + 1;
         }
         else if ( Level.TimeSeconds > NextStuckTestTime ) {
             NextStuckTestTime = Level.TimeSeconds + 1;
-            OldLocation.Z = Location.Z; // ignore Z difference, because zed may be constantly jumping
-            if ( VSizeSquared(Location - OldLocation) < 10000 ) {
-                StuckCounter += 3;  // 10 seconds to move away from the current location
-            }
-            else {
-                OldLocation = Location;
-                StuckCounter += 1; // 30s to reach the target
-            }
-
-            if ( StuckCounter >= 30 ) {
-                // if can't reach the target - simply teleport to it
-                TeleportLocation = Controller.MoveTarget.Location;
-                TeleportLocation.Z += CollisionHeight;
-                StartTeleport();
-            }
+            CheckStuck();
         }
     }
 
@@ -249,12 +271,19 @@ defaultproperties
     GrabBone="CHR_RArmPalm"
 
     bAlwaysRelevant=true
-    bUseExtendedCollision=false
+    bUseExtendedCollision=true
+    ColOffset=(X=5,Z=25)
+    ColRadius=12
+    ColHeight=3
+    HeadRadius=4
+    OnlineHeadshotOffset=(X=9,Z=20)
     DrawScale=0.5
     CollisionRadius=13
     CollisionHeight=22
     bBlockActors=false
-    GroundSpeed=55
+    GroundSpeed=42
+    OutOfBaseSpeed=31.5
+    MaxBoostSpeed=150
     Health=1000
     HealthMax=1000
     HeadHealth=1000

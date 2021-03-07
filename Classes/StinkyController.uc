@@ -11,6 +11,8 @@ var transient KFAmmoPickup CurrentAmmoCandidate;
 
 var transient Actor LastAlternatePathTarget;
 var transient NavigationPoint LastAlternatePathPoint;
+var transient Actor OldMoveTarget;
+var int MoveAttempts;
 
 var localized string BlameStr;
 
@@ -117,7 +119,7 @@ function TakeActor(Actor A)
 
 function int CalcSpeed()
 {
-    return Pawn.default.GroundSpeed;
+    return StinkyClot.OriginalGroundSpeed;
 }
 
 function bool CanSpeedAdjust()
@@ -167,8 +169,19 @@ state Moving extends Scripting
         if ( Focus == None )
             Focus = Target;
         MoveTarget = Target;
+
         if ( !ActorReachable(MoveTarget) ) {
             MoveTarget = FindPathToward(MoveTarget,false);
+
+            if ( MoveTarget == OldMoveTarget && --MoveAttempts <= 0) {
+                log("Stuck while navigating to " $ GetItemName(string(MoveTarget)) $ " / " $ GetItemName(string(Target)), class.name);
+                if ( MoveTarget.IsA('NavigationPoint') ) {
+                    // make sure we don't use this navigation point anymore
+                    FtgGame.InvalidatePathTarget(MoveTarget);
+                }
+                LastAlternatePathPoint = none;
+                MoveTarget = none;
+            }
             if ( MoveTarget == None ) {
                 // if we can't reach the target, then move to closest NavigationPoint
                 MoveTarget = FindAlternatePath(Target);
@@ -179,6 +192,11 @@ state Moving extends Scripting
             }
             if ( Focus == Target )
                 Focus = MoveTarget;
+        }
+
+        if ( OldMoveTarget != MoveTarget ) {
+            OldMoveTarget = MoveTarget;
+            MoveAttempts = default.MoveAttempts;
         }
         // Level.GetLocalPlayerController().ClientMessage("Moving to " $ GetItemName(string(MoveTarget)) $ " / " $ GetItemName(string(Target)), 'log');
     }
@@ -209,7 +227,7 @@ KeepMoving:
                 // Level.GetLocalPlayerController().ClientMessage("Teleporting to next target " $ MoveTarget, 'log');
             }
             StinkyClot.TeleportLocation = MoveTarget.Location;
-            StinkyClot.TeleportLocation.Z += StinkyClot.CollisionHeight;
+            StinkyClot.TeleportLocation.Z += StinkyClot.CollisionHeight + 5;
             StinkyClot.StartTeleport();
             sleep(1.0);
             WaitForLanding();
@@ -236,9 +254,9 @@ state MoveToGuardian extends Moving
     function int CalcSpeed()
     {
         if ( FtgGame.bWaveBossInProgress )
-            return 150;
+            return StinkyClot.MaxBoostSpeed;
 
-        return min( Pawn.GroundSpeed + 3, 150 ) ; // each call move faster and faster
+        return min( Pawn.GroundSpeed + 3, StinkyClot.MaxBoostSpeed ) ; // each call move faster and faster
     }
 }
 
@@ -299,20 +317,20 @@ state MoveToShop extends Moving
         local TSCBaseGuardian gnome;
 
         gnome = FtgGame.TeamBases[TeamIndex];
-        if ( FtgGame.TotalMaxMonsters <=0 ) {
+        if ( FtgGame.TotalMaxMonsters <= 0 ) {
             if ( FtgGame.NumMonsters < 10 )
-                return 150;
+                return StinkyClot.MaxBoostSpeed;
             else if ( gnome.SameTeamCounter + 5 < gnome.default.SameTeamCounter)
-                return 35; // slowdown when nobody at the base to give team a chance to reach the base
+                return StinkyClot.OutOfBaseSpeed; // slowdown when nobody at the base to give team a chance to reach the base
             else
-                return 100;
+                return 2.0 * StinkyClot.OriginalGroundSpeed;
         }
         else if ( gnome.SameTeamCounter + 5 < gnome.default.SameTeamCounter)
-            return 35; // slowdown when nobody at the base to give team a chance to reach the base
+            return StinkyClot.OutOfBaseSpeed; // slowdown when nobody at the base to give team a chance to reach the base
         else if ( FtgGame.TotalMaxMonsters < 50 )
-            return Lerp( FtgGame.TotalMaxMonsters/50.0 , 100, 35 );
+            return StinkyClot.OriginalGroundSpeed * (2.0 - FtgGame.TotalMaxMonsters/50.0);
         else
-            return 35;
+            return StinkyClot.OriginalGroundSpeed;
     }
 
     function CompleteAction()
@@ -368,6 +386,7 @@ state MoveToAmmo extends Moving
 
 defaultproperties
 {
+    MoveAttempts=5
     TeamIndex=1
     BlameStr="%p blamed for placing base in a glitch spot!"
 }

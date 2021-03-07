@@ -567,4 +567,5 @@ defaultproperties
      DefaultSlideMoveMult = 1.4
      DefaultSlideReturnStartMult=0.84848 //for timing slide release with empty reload
      DefaultSlideReturnEndMult=0.87878 //for timing slide release with empty reload
+     Priority=100
 }

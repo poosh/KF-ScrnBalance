@@ -1816,6 +1816,20 @@ exec function ThrowWeapon()
     ServerThrowWeapon();
 }
 
+simulated function float RateWeapon(Weapon w)
+{
+    local ScrnHumanPawn ScrnPawn;
+
+    if ( bPrioritizePerkedWeapons ) {
+        ScrnPawn = ScrnHumanPawn(Pawn);
+        if ( ScrnPawn != none && ScrnPawn.IsPerkedWeapon(KFWeapon(W)) ) {
+            return 256.f + w.Default.Priority;
+        }
+    }
+
+    return w.Default.Priority;
+}
+
 // character selection
 simulated function bool IsTeamCharacter(string CharacterName)
 {

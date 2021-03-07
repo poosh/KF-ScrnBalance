@@ -936,4 +936,5 @@ defaultproperties
     DefaultLeftSlideReturnStartMult=0.93333 //98
     DefaultLeftSlideReturnEndMult=0.95238 //100
     DefaultSlideMoveMult = 1.4
+    Priority=130
 }

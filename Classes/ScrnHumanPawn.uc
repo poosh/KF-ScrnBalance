@@ -371,16 +371,28 @@ function SetBestQuickMeleeWeapon()
     }
 }
 
+simulated function bool IsPerkedWeaponPickup(class<KFWeaponPickup> KFWP)
+{
+    return ScrnPerk != none && KFWP != none && (KFWP.default.CorrespondingPerkIndex == ScrnPerk.default.PerkIndex
+            || ScrnPerk.static.OverridePerkIndex(KFWP));
+}
+
+simulated function bool IsPerkedWeapon(KFWeapon KFWeap)
+{
+    return KFWeap != none && IsPerkedWeaponPickup(class<KFWeaponPickup>(KFWeap.PickupClass));
+}
+
 // The player wants to switch to weapon group number F.
 // Merged code from Pawn and KFHumanPawn + added ability to switch perked weapon first and empty guns last
 simulated function SwitchWeapon(byte F)
 {
     local Inventory Inv;
     local Weapon W;
+    local KFWeapon KFWeap;
     local bool bPerkedFirst;
     local array<Weapon> SortedGroupInv; // perked -> non-perked -> empy
     local int NonPerkedIndex, EmptyIndex, i;
-    local class<KFWeaponPickup> WP;
+    local ScrnPlayerController ScrnPC;
 
     if ( (Level.Pauser!=None) || (Inventory == None) )
         return;
@@ -389,22 +401,20 @@ simulated function SwitchWeapon(byte F)
     if ( bQuickMeleeInProgress )
         return;
 
-    bPerkedFirst = ScrnPerk != none && ScrnPlayerController(Controller) != none && ScrnPlayerController(Controller).bPrioritizePerkedWeapons;
+    ScrnPC = ScrnPlayerController(Controller);
+
+    bPerkedFirst = ScrnPerk != none && ScrnPC != none && ScrnPC.bPrioritizePerkedWeapons;
 
     // sort group inventory
     for ( Inv = Inventory; Inv != none && ++i < 1000; Inv = Inv.Inventory ) {
         W = Weapon(Inv);
         if ( W != none && W.InventoryGroup == F && AllowHoldWeapon(W) ) {
-            WP = class<KFWeaponPickup>(W.PickupClass);
-            if ( !W.HasAmmo() && (KFWeapon(W) == none || (KFWeapon(W).bConsumesPhysicalAmmo && !KFWeapon(W).bMeleeWeapon)) ) {
+            KFWeap = KFWeapon(W);
+            if ( !W.HasAmmo() && (KFWeap == none || (KFWeap.bConsumesPhysicalAmmo && !KFWeap.bMeleeWeapon)) ) {
                 // weapon has no ammo
                 SortedGroupInv[SortedGroupInv.length] = W;
             }
-            else if ( bPerkedFirst && (PipeBombExplosive(W) != none || Knife(W) != none
-                    || WP == none
-                    || (WP.default.CorrespondingPerkIndex != ScrnPerk.default.PerkIndex
-                        && !ScrnPerk.static.OverridePerkIndex(WP))) )
-            {
+            else if ( bPerkedFirst && (PipeBombExplosive(W) != none || Knife(W) != none || !IsPerkedWeapon(KFWeap)) ) {
                 // non-perked weapon, has ammo
                 SortedGroupInv.insert(EmptyIndex, 1);
                 SortedGroupInv[EmptyIndex] = W;
@@ -412,7 +422,7 @@ simulated function SwitchWeapon(byte F)
             }
             else {
                 // perked weapon, has ammo
-                if ( Boomstick(W) != none && ScrnPlayerController(Controller) != none && ScrnPlayerController(Controller).bPrioritizeBoomstick ) {
+                if ( Boomstick(W) != none && ScrnPC != none && ScrnPC.bPrioritizeBoomstick ) {
                     SortedGroupInv.insert(0, 1);
                     SortedGroupInv[0] = W;
                 }
@@ -2193,6 +2203,31 @@ simulated function TakeDamage( int Damage, Pawn InstigatedBy, Vector Hitlocation
         Weapon.TakeDamage(Damage, InstigatedBy, Hitlocation, Momentum, damageType, HitIndex);
 }
 
+simulated function bool CanThrowWeapon()
+{
+    local KFWeapon KFWeap;
+    local bool bWasReloading;
+
+    if ( Weapon == none || !Level.Game.bAllowWeaponThrowing )
+        return false;
+
+    KFWeap = KFWeapon(Weapon);
+    if ( KFWeap != none ) {
+        bWasReloading = KFWeap.bIsReloading;
+        // reloading does not prevent weapon from throwing
+        KFWeap.bIsReloading = false;
+    }
+
+    if ( Weapon.CanThrow() ) {
+        return true;
+    }
+
+    if ( KFWeap != none ) {
+        // restore the original value
+        KFWeap.bIsReloading = bWasReloading;
+    }
+    return false;
+}
 
 // store bonus ammo in pawn's class
 function TossWeapon(Vector TossVel)

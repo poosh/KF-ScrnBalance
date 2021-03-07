@@ -432,4 +432,5 @@ defaultproperties
      AttachmentClass=Class'ScrnBalanceSrv.ScrnDualMK23LaserAttachment'
      ItemName="Laser Dual MK23"
      FireSpotRenrerTime=0.9
+     Priority=160
 }

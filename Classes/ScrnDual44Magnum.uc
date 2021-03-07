@@ -571,4 +571,5 @@ defaultproperties
     PickupClass=Class'ScrnBalanceSrv.ScrnDual44MagnumPickup'
     ItemName="Dual 44 Magnums SE"
     Weight=4.000000
+    Priority=110
 }

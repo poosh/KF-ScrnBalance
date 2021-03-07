@@ -151,14 +151,26 @@ function StinkyControllerReady(StinkyController SC)
     SC.ActionNum = 0;
     SC.MoveTargets[i++] = TeamBases[SC.TeamIndex];
     if ( AmmoPickups.length >= 5 ) {
-        for ( t=0; t < 2; ++t ) {
+        if ( bWaveBossInProgress || (ScrnGameLength != none && ScrnGameLength.NextWave != none
+                && !ScrnGameLength.NextWave.bOpenTrader) )
+        {
+            // if there is no trader on the next wave, don't hurry to the closed shop - go for more ammo
+            t = AmmoPickups.length - 2;
+        }
+        else {
+            t = 3;
+        }
+        while ( t > 0 ) {
+            --t;
             // moving directly to ammo box is kinda bugged. So we are moving to closest path node instead
             N = SC.FindClosestPathNode(AmmoPickups[rand(AmmoPickups.length)]);
             if ( N != none )
                 SC.MoveTargets[i++] = N;
         }
     }
-    SC.MoveTargets[i++] = TeamShops[1-SC.TeamIndex].TelList[1-SC.TeamIndex];
+    else {
+        SC.MoveTargets[i++] = TeamShops[1-SC.TeamIndex].TelList[1-SC.TeamIndex];
+    }
     SC.MoveTargets[i++] = TeamShops[SC.TeamIndex].TelList[SC.TeamIndex]; // move to own shop
     SC.MoveTargets.length = i;
     if ( bWaveBossInProgress ) {
