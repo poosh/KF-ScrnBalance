@@ -5,6 +5,5 @@ Warning: ZombieCrawler_HALLOWEEN KF-ZedDiscoThe2ndFloor.ZombieCrawler_HALLOWEEN 
 
 A Blank Page
 
-? charge for coughing in the shop area
-? alt fire for nailgun
-? achievement display priority
+fix missing laser dot on big zed heads due to lack of ExtendedZCollision on the client side
+Flare and HUsk Gun HDMG

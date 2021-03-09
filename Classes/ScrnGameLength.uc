@@ -21,6 +21,8 @@ struct SHL {
     var int HL;
 };
 var config array<SHL> HardcoreLevel;
+var config int LaterWavePct;
+var config float LaterWaveSpawnCooldown;
 
 var class<KFMonster> FallbackZed;
 var array<ScrnZedInfo> ZedInfos;
@@ -150,13 +152,20 @@ function LoadGame(ScrnGameType MyGame)
     if ( Waves.length == 0 ) {
         warn("ScrnGameLength: NO WAVES DEFINED!");
         Wave = new(none, "Wave1") class'ScrnWaveInfo';
+        Game.bUseEndGameBoss = false;
     }
     else {
+        Wave = CreateWave(Waves[Waves.length-1]);
+        Game.bUseEndGameBoss = Wave.EndRule == RULE_KillBoss;
         Wave = CreateWave(Waves[0]);
     }
     Wave.bRespawnDeadPlayers = true;  // always allow player start on wave 1
     NextWave = Wave;  // prevent loading the same object again during LoadWave(0) call
     NextWaveNum = 0;
+    Game.FinalWave = Waves.length;
+    if ( Game.bUseEndGameBoss ) {
+        Game.FinalWave--;  // the boss wave is after the final wave, e.g., wave 11/10
+    }
 }
 
 function AddVoting()
@@ -688,15 +697,30 @@ function float GetWaveEndTime()
 function AdjustNextSpawnTime(out float NextSpawnTime)
 {
     NextSpawnTime /= Wave.SpawnRateMod;
-    if ( bLoadedSpecial )
-        NextSpawnTime *= 2.0; // give players slight break after spawning a special squad
+    if( Game.WavePct >= LaterWavePct && Game.NumMonsters >= 16 ) {
+        // longer cooldown on later waves if there are already many zeds spawned
+        NextSpawnTime *= LaterWaveSpawnCooldown;
+    }
+
+    if ( bLoadedSpecial ) {
+        NextSpawnTime *= 1.0 + Wave.SpecialSquadCooldown;
+    }
+    else if ( Wave.bRandomSquads ) {
+        NextSpawnTime *= 1.0 + Game.WaveSinMod();
+    }
+    else {
+        NextSpawnTime *= 2.0;
+    }
 }
 
 function LoadNextSpawnSquad(out array < class<KFMonster> > NextSpawnSquad)
 {
     if ( ZedsBeforeSpecial <= 0 && SpecialSquads.length > 0 ) {
         LoadNextSpawnSquadInternal(NextSpawnSquad, SpecialSquads, PendingSpecialSquads, Wave.bRandomSquads);
-        ZedsBeforeSpecial = Wave.ZedsPerSpecialSquad * (0.85 + 0.3*frand());
+        ZedsBeforeSpecial = Wave.ZedsPerSpecialSquad;
+        if ( Wave.bRandomSquads ) {
+            ZedsBeforeSpecial *= 0.85 + 0.3*frand();
+        }
         bLoadedSpecial = true;
     }
     else {
@@ -735,8 +759,8 @@ protected function LoadNextSpawnSquadInternal(out array < class<KFMonster> > Nex
     r = Pending[i];
     Pending.remove(i, 1);
 
-    if ( Game.WavePlayerCount >= AllSquads[r].MinPlayers
-        && (Game.WavePlayerCount <= AllSquads[r].MaxPlayers || AllSquads[r].MaxPlayers == 0) )
+    if ( PlayerCount >= AllSquads[r].MinPlayers
+            && (PlayerCount <= AllSquads[r].MaxPlayers || AllSquads[r].MaxPlayers == 0) )
     {
         for ( i = 0; i < AllSquads[r].Members.length; ++i ) {
             for ( j = 0; j < AllSquads[r].Members[i].Count; ++j ) {
@@ -1032,4 +1056,6 @@ defaultproperties
     FallbackZed=class'KFChar.ZombieClot_STANDARD'
     BountyScale=1.0
     bLogStats=true
+    LaterWavePct=70
+    LaterWaveSpawnCooldown=1.5
 }

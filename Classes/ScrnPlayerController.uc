@@ -1359,6 +1359,10 @@ function Possess(Pawn aPawn)
         SetShowPathToTrader(true);
 
     bHadPawn = bHadPawn || Pawn != none;
+
+    if ( KFHumanPawn(Pawn) != none ) {
+        KFHumanPawn(Pawn).KFPC = self;
+    }
 }
 
 simulated event Destroyed()
@@ -1960,6 +1964,7 @@ final function ServerTourneyCheck()
     local Mutator M;
     local GameRules G;
     local string s;
+    local int TourneyMode;
 
     ClientMessage(string(Level.Game.class));
 
@@ -1967,10 +1972,26 @@ final function ServerTourneyCheck()
     if ( GT == none )
         ClientMessage("Current game type doesn't support Tourney Mode");
     else {
-        if ( GT.IsTourney() )
-            ClientMessage("Tourney Mode: " $ GT.GetTourneyMode());
-        else
+        if ( GT.IsTourney() ) {
+            TourneyMode = GT.GetTourneyMode();
+            s = "";
+            if ( (TourneyMode & GT.TOURNEY_VANILLA) != 0 )
+                s @= "VANILLA";
+            if ( (TourneyMode & GT.TOURNEY_SWP) != 0 )
+                s @= "SWP";
+            if ( (TourneyMode & GT.TOURNEY_ALL_WEAPONS) != 0 )
+                s @= "ALL_WEAPONS";
+            if ( (TourneyMode & GT.TOURNEY_ALL_PERKS) != 0 )
+                s @= "ALL_PERKS";
+            if ( (TourneyMode & GT.TOURNEY_HMG) != 0 )
+                s @= "HMG";
+            if ( s != "" )
+                s = " (" $ s $ " )";
+            ClientMessage("Tourney Mode: " $ GT.GetTourneyMode() $ s);
+        }
+        else {
             ClientMessage("Tourney Mode DISABLED");
+        }
     }
     s = "Mutators:";
     for ( M = Level.Game.BaseMutator; M != None; M = M.NextMutator )
@@ -2335,8 +2356,7 @@ function ServerViewSelf()
     local vector Loc;
     local rotator R;
 
-    if ( !PlayerReplicationInfo.bOnlySpectator && (Mut.bTSCGame || Mut.SrvTourneyMode != 0) ) {
-        // free roaming is prohibited in TSC or/and Tourney Mode
+    if ( !AllowFreeCamera() ) {
         ServerViewNextPlayer();
         return;
     }
@@ -2467,7 +2487,7 @@ function ServerSetViewTarget(Actor NewViewTarget)
     if ( !IsInState('Spectating') )
         return;
 
-    if ( !PlayerReplicationInfo.bOnlySpectator && (Mut.bTSCGame || Mut.SrvTourneyMode != 0) )
+    if ( !AllowFreeCamera() )
         return;
 
     bWasSpec = !bBehindView && ViewTarget != Pawn && ViewTarget != self;
@@ -2488,7 +2508,7 @@ function ViewTargetChanged()
 
     //log("ViewTargetChanged("$OldViewTarget$")", 'ScrnBalance');
 
-    if ( Role < ROLE_Authority || (!PlayerReplicationInfo.bOnlySpectator && (Mut.bTSCGame || Mut.SrvTourneyMode > 0)) )
+    if ( Role < ROLE_Authority || !AllowFreeCamera() )
         return;
 
     ScrnVT = ScrnHumanPawn(OldViewTarget);
@@ -2532,17 +2552,39 @@ exec function FreeCamera( bool B )
     // super.FreeCamera(B);
 }
 
+function bool AllowFreeCamera()
+{
+    return PlayerReplicationInfo.bOnlySpectator || !Level.GRI.bMatchHasBegun
+            || (!Mut.bTSCGame && Mut.SrvTourneyMode == 0);
+}
+
 
 state Spectating
 {
+    function BeginState()
+    {
+        super.BeginState();
+
+        if ( !bFrozen && !AllowFreeCamera() ) {
+            ServerViewNextPlayer();
+        }
+    }
+
+    function Timer()
+    {
+        bFrozen = false;
+        if ( !AllowFreeCamera() ) {
+            ServerViewNextPlayer();
+        }
+    }
+
    // Return to spectator's own camera.
     exec function AltFire( optional float F )
     {
-        // free roaming is prohibited in TSC or/and Tourney Mode
-        if ( !PlayerReplicationInfo.bOnlySpectator && (Mut.bTSCGame || Mut.SrvTourneyMode != 0) )
-            Fire(F);
-        else
+        if ( AllowFreeCamera() )
             super.AltFire(F);
+        else
+            Fire(F);
     }
 
     exec function SwitchWeapon(byte T)

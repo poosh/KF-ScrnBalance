@@ -19,6 +19,42 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+### v9.64.05
+- Reworked zed spawn rate calculation by throwing out all the Tripwire's code into a trashcan.
+  Now, the zed spawn rate increases consistently by the *alive* player count.
+- Deprecated config options: `Post6ZedSpawnInc`, `Post6AmmoSpawnInc`, `Post6ZedsPerPlayer`, `bAlterWaveSize`,
+  `bSpawnRateFix` (*ScrnBalanceSrv.ini*)
+- `MVOTE BORING` made consistent across maps. Previously, the boring vote was scaled by the map-specific
+  `WaveSpawnPeriod` value. Now, boring vote has 3 stages no matter of the map:  DOUBLE/QUAD/INSANE spawns.
+- Boring vote raises the *Hardcore Level*. HL increase value depends of the game's HL and remaining zed count.
+  There must be at least 100 zeds left in the wave for the boring vote to increase HL.
+  HL bonus is granted at the end of the wave. A player death resets the boring value and HL bonus.
+- Yet another attempt to fix the negative team dosh bug
+- Made sure that a player with 100hp and 25 armor always survives one FP rage hit.
+  Previously, it was RNG because FP dealt 114..128 damage on HoE. Now, FP deals 114..124 damage.
+- Last survivor's self-healing gives +50hp (same as in the Solo mode)
+- Modified spawn inventory (make sure to update *ScrnBalanceSrv.ini*)
+- Removed "Boomstick before AA12" checkbox from ScrN Features. Use gun slots instead.
+- Added "No Weapon Autoswitch" checkbox to ScrN Features
+#### TSC
+- Fixed uneven teams balance health bonus (previously, it gave extra +100hp to the smaller team)
+- Zed Squad definition in *ScrnWaves.ini* now uses the biggest team size for min/max player restriction
+  instead of total player count in the game. Previously, `SpecialSquads=8: 4*FP` could spawn quad FP in 4v4 TSC game.
+- Fixed an issue where Commando spawned without weapons
+- Fixed inconsistent PvP damage scale. Now PvP damage always deals 10% of the damage, including damage bonuses.
+  Headshot multiplier for all weapons is x2, except shotguns (x1) and sniper rifles (original, x2 at least)
+- Fixed an exploit where a dead player could free roam after reconnect
+- Player death charges the team for constant $100 instead of random nonsense.
+- Killing a teammate transfers up to $200 from the killer to the victim
+- Introduced **Tourney Mode** flags (see the default *KFMapVote.ini* for details)
+- Known Issue: Damaging a Field Medic displays full damage because armor absorption takes place later in the code
+- Known Issue: Flares do not damage other players
+#### ScrN Waves
+- Added new settings: `LaterWavePct`, `LaterWaveSpawnCooldown`, `SpecialSquadCooldown`.
+  Check the default *ScrnWaves.ini* for details.
+- Added a special squad "Jasons+Scrakes+Huks" for Wave 9 and 10
+
+
 ### v9.64.03
 - Player can **interrupt reloading by throwing the weapon on the ground**
 - if `bPrioritizePerkedWeapons=true` in *User.ini*, perked weapons receive a higher rating when making a decision to

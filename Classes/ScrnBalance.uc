@@ -1,7 +1,8 @@
 /*****************************************************************************
  * ScrN Total Game Balance
- * @author [ScrN]PooSH, contact via steam: http://steamcommunity.com/id/scrn-poosh/
- * Copyright (c) 2012-2020 PU Developing IK, All Rights Reserved.
+ * @author [ScrN]PooSH, contact via Steam: http://steamcommunity.com/id/scrn-poosh/
+ *                      or Discord: https://discord.gg/Y3W5crSXA5
+ * Copyright (c) 2012-2021 PU Developing IK, All Rights Reserved.
  *****************************************************************************/
 
 class ScrnBalance extends Mutator
@@ -12,7 +13,7 @@ class ScrnBalance extends Mutator
 #exec OBJ LOAD FILE=ScrnAch_T.utx
 
 
-const VERSION = 96403;
+const VERSION = 96405;
 
 var ScrnBalance Mut; // pointer to self to use in static functions, i.e class'ScrnBalance'.default.Mut
 
@@ -181,9 +182,10 @@ var globalconfig array<string> AutoLoadMutators;
 
 var globalconfig bool bReplaceHUD, bReplaceScoreBoard;
 
-var globalconfig float Post6ZedSpawnInc, Post6AmmoSpawnInc;
-var globalconfig float Post6ZedsPerPlayer;
-var globalconfig bool bAlterWaveSize;
+var deprecated float Post6ZedSpawnInc;
+var deprecated float Post6AmmoSpawnInc;
+var deprecated float Post6ZedsPerPlayer;
+var deprecated bool bAlterWaveSize;
 var globalconfig int MaxWaveSize;
 
 var globalconfig int MaxZombiesOnce;
@@ -242,7 +244,7 @@ var globalconfig string ColoredServerName;
 
 var float OriginalWaveSpawnPeriod;
 var globalconfig float MinZedSpawnPeriod;
-var globalconfig bool bSpawnRateFix;
+var deprecated bool bSpawnRateFix;
 var globalconfig bool bServerInfoVeterancy;
 
 var transient array<KFUseTrigger> DoorKeys;
@@ -811,7 +813,7 @@ function SetupPickups(optional bool bReduceAmount, optional bool bBoostAmount)
     }
 
     if ( KF.NumPlayers > 6 ) {
-        A *= 1.0 + float(KF.NumPlayers - 6)*Post6AmmoSpawnInc;
+        A *= 1.0 + float(KF.NumPlayers - 6)*0.2;
     }
 
     if ( KF.WeaponPickups.Length > 0 ) {
@@ -2130,14 +2132,15 @@ function bool SpawnBalanceRequired()
 
 function LoadSpawnInventory()
 {
-    local int i, j, index, k;
+    local int i, j, index, k, skipped;
     local byte X;
-    local string S, PickupStr, LevelStr, AmmoStr, SellStr, AchStr;
+    local string S, PickupStr, LevelStr, AmmoStr, SellStr;
     local int PerkIndex;
     local class<ScrnVeterancyTypes> ScrnPerk;
     local class<Pickup> Pickup;
     local bool bAllPerks;
     local bool bSpawnBalance;
+    local name Ach;
 
     bSpawnBalance = SpawnBalanceRequired();
 
@@ -2151,8 +2154,9 @@ function LoadSpawnInventory()
         LevelStr = "";
         AmmoStr = "";
         SellStr = "";
-        AchStr = "";
+        Ach = '';
         X = 0;
+        ++skipped;
 
         S = SpawnInventory[i];
         j = InStr(S,":");
@@ -2164,7 +2168,10 @@ function LoadSpawnInventory()
         S = Left(S, j);
         j = InStr(S,"-"); // "PerkIndex-X"
         if ( j > 0 ) {
-            X = int(Mid(S, j+1));
+            if ( !bSpawnBalance ) {
+                // exclusion indexes are used only for achievement-related inventory
+                X = int(Mid(S, j+1));
+            }
             S = Left(S, j);
         }
 
@@ -2202,13 +2209,23 @@ function LoadSpawnInventory()
                 // Achievement
                 j = InStr(SellStr,":");
                 if ( j >= 0 ) {
-                    AchStr = Mid(SellStr, j+1);
+                    Ach = StringToName(Mid(SellStr, j+1));
                     SellStr = Left(SellStr, j);
                 }
             }
         }
-        if ( bSpawnBalance && AchStr != "" )
-            continue; // do not allow achievement-specific inventory in tournaments
+
+        if ( bSpawnBalance ) {
+            if ( Ach == 'TSC' ) {
+                Ach = '';
+            }
+            else if ( Ach != '' ) {
+                continue; // do not allow achievement-specific inventory in tournaments
+            }
+        }
+        else if ( Ach == 'TSC' ) {
+            continue;  // TSC and/or tournament item
+        }
 
         Pickup = class<Pickup>(DynamicLoadObject(PickupStr, Class'Class'));
         if( Pickup == none ) {
@@ -2218,6 +2235,13 @@ function LoadSpawnInventory()
 
         index = ScrnPerk.default.DefaultInventory.length;
         ScrnPerk.default.DefaultInventory.insert(index, 1);
+        --skipped;
+        if ( X > skipped ) {
+            X -= skipped;
+        }
+        else {
+            X = 0;
+        }
         ScrnPerk.default.DefaultInventory[index].PickupClass = Pickup;
         // LevelStr in format <MinLevel>[-<MaxLevel>]
         j = InStr(LevelStr,"-");
@@ -2244,8 +2268,9 @@ function LoadSpawnInventory()
         // SellValue
         if ( SellStr != "" )
             ScrnPerk.default.DefaultInventory[index].SellValue = int(SellStr);
-        if ( AchStr != "" )
-            ScrnPerk.default.DefaultInventory[index].Achievement = StringToName(AchStr);
+        ScrnPerk.default.DefaultInventory[index].Achievement = Ach;
+
+
         ScrnPerk.default.DefaultInventory[index].X = X;
 
         if ( bAllPerks ) {
@@ -2265,6 +2290,8 @@ function LoadSpawnInventory()
                 }
             }
         }
+
+        skipped = 0;
     }
 }
 
@@ -2272,6 +2299,8 @@ function LoadSpawnInventory()
 // That's why need to use the following hack
 final function name StringToName(string str)
 {
+    if ( str == "" )
+        return '';
     SetPropertyText("NameOfString", str);
     return NameOfString;
 }
@@ -3422,18 +3451,13 @@ defaultproperties
     ColorTags(28)=(T="^S$",R=65,G=105,B=225)
     ColorTags(29)=(T="^N$",R=80,G=40,B=20)
 
-    Post6ZedSpawnInc=0.25
-    Post6AmmoSpawnInc=0.20
     AmmoBoxMesh=StaticMesh'kf_generic_sm.pickups.Metal_Ammo_Box'
     AmmoBoxDrawScale=1.000000
     AmmoBoxDrawScale3D=(X=1.000000,Y=1.000000,Z=1.000000)
-    bAlterWaveSize=true
-    Post6ZedsPerPlayer=0.40
-    MaxWaveSize=800
+    MaxWaveSize=500
     MaxZombiesOnce=48
     GameStartCountDown=12
     SharpProgMinDmg=1000
-    bSpawnRateFix=True
     MinZedSpawnPeriod=2.0
     bScrnWaves=True
     bServerInfoVeterancy=True

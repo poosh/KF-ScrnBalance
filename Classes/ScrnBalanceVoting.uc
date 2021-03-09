@@ -29,7 +29,6 @@ var localized string strCantEndTrade;
 var localized string strTooLate;
 var localized string strGamePaused, strSecondsLeft, strGameUnPaused, strPauseTraderOnly;
 var localized string viResume, viEndTrade, viDifficulty;
-var localized string strZedSpawnsDoubled;
 var localized string strSquadNotFound, strCantSpawnSquadNow, strSquadList;
 var localized string strNotInStoryMode, strNotInTSC;
 var localized string strCantEndWaveNow, strEndWavePenalty;
@@ -287,15 +286,14 @@ function int GetVoteIndex(PlayerController Sender, string Key, out string Value,
         result = VOTE_INVITE;
     }
     else if ( Key == "BORING" ) {
-        if ( Mut.bStoryMode ) {
-            Sender.ClientMessage(strNotInStoryMode);
+        if ( !Mut.CheckScrnGT(Sender) )
             return VOTE_LOCAL;
-        }
-        else if ( !Mut.bAllowBoringVote && !Sender.PlayerReplicationInfo.bAdmin ) {
+
+        if ( !Mut.bAllowBoringVote && !Sender.PlayerReplicationInfo.bAdmin ) {
             Sender.ClientMessage(strOptionDisabled);
             return VOTE_LOCAL;
         }
-        else if ( Mut.KF.bTradingDoorsOpen || Mut.KF.KFLRules.WaveSpawnPeriod < 0.5 ) {
+        else if ( Mut.KF.bTradingDoorsOpen || Mut.ScrnGT.BoringStageMaxed() ) {
             Sender.ClientMessage(strNotAvaliableATM);
             return VOTE_LOCAL;
         }
@@ -563,8 +561,9 @@ function ApplyVoteValue(int VoteIndex, string VoteValue)
             break;
 
         case VOTE_BORING:
-            Mut.KF.KFLRules.WaveSpawnPeriod *= 0.5;
-            VotingHandler.BroadcastMessage(strZedSpawnsDoubled $ " ("$Mut.KF.KFLRules.WaveSpawnPeriod$")");
+            if ( Mut.ScrnGT.IncBoringStage() ) {
+                VotingHandler.BroadcastMessage(Mut.ScrnGT.GetBoringString(Mut.ScrnGT.GetBoringStage()));
+            }
             break;
 
         case VOTE_SPAWN:
@@ -905,7 +904,6 @@ defaultproperties
     strSecondsLeft="seconds left"
     strGameUnpaused="Game resumed"
     strPauseTraderOnly="Game can be paused only during trader time!"
-    strZedSpawnsDoubled="ZED spawn rate doubled!"
     strSquadNotFound="Monster squad with a given name not found"
     strCantSpawnSquadNow="Can not spawn monsters at this moment"
     strSquadList="Avaliable Squads:"

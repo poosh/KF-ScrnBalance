@@ -19,6 +19,12 @@ var EZedSpawnLocation ZedSpawnLoc;
 var ScrnGameLength ScrnGameLength;
 var private string CmdLine;
 var private int TourneyMode;
+const TOURNEY_ENABLED           = 0x0001;  // Enable tourney. Allways must be set if any of the below flags is set.
+const TOURNEY_VANILLA           = 0x0002;  // allow vanilla game weapons in tourney
+const TOURNEY_SWP               = 0x0004;  // allow ScrnWeaponPack
+const TOURNEY_ALL_WEAPONS       = 0x0008;  // no weapon filter in tourney
+const TOURNEY_ALL_PERKS         = 0x0010;  // no perk filter in tourney
+const TOURNEY_HMG               = 0x0020;  // allow Heavy MachineGunner perk
 
 var array<KFAmmoPickup> SleepingAmmo;
 var transient int CurrentAmmoBoxCount, DesiredAmmoBoxCount;
@@ -34,6 +40,16 @@ var transient int AlivePlayerCount, AliveTeamPlayerCount[2];
 var array<KFMonster> Bosses;
 var transient bool bBossSpawned;
 var int MaxSpawnAttempts, MaxSpecialSpawnAttempts; // maximum spawn attempts before deleting the squad
+var float SpawnRatePlayerMod;  // per-player zed spawn rate increase
+var int WavePct;  // Current wave's percentage to the final wave.
+
+struct SBoringStage {
+    var float SpawnPeriod;
+    var float MinSpawnTime;
+};
+var array<SBoringStage> BoringStages;
+var protected byte BoringStage;
+var array<localized string> BoringStrings;
 
 // list of actors that AI can't find path towards
 var transient array<Actor> InvalidPathTargets;
@@ -63,6 +79,13 @@ event InitGame( string Options, out string Error )
 
     TourneyMode = GetIntOption(Options, "Tourney", TourneyMode);
     PreStartTourney(TourneyMode);
+    if ( TourneyMode != 0 ) {
+        if ( (TourneyMode & TOURNEY_ENABLED) == 0 ) {
+            warn("TOURNEY_ENABLED flag is not set. Setting it now.");
+            TourneyMode = TourneyMode | TOURNEY_ENABLED;
+        }
+        log("*** TOURNEY MODE ("$TourneyMode$")***", class.name);
+    }
 
     ConfigMaxPlayers = default.MaxPlayers;
     super.InitGame(Options, Error);
@@ -74,9 +97,6 @@ event InitGame( string Options, out string Error )
         if (ScrnGameLength == none ) // mutators might already load this
             ScrnGameLength = new(none, string(KFGameLength)) class'ScrnGameLength';
         ScrnGameLength.LoadGame(self);
-        FinalWave = ScrnGameLength.Waves.length;
-        if (bUseEndGameBoss)
-            FinalWave--;
     }
     else {
         if ( KFGameLength < 0 || KFGameLength > 3) {
@@ -85,6 +105,8 @@ event InitGame( string Options, out string Error )
         }
         log("MonsterCollection = " $ MonsterCollection, class.name);
     }
+
+    WavePct = 100 / FinalWave;
 
     for ( g = GameRulesModifiers; g != none; g = g.NextGameRules ) {
         if ( g.IsA('KillsRules') ) {
@@ -100,7 +122,7 @@ event InitGame( string Options, out string Error )
     }
 
     ScrnBalanceMut.CheckMutators();
-    if ( TourneyMode > 0 )
+    if ( TourneyMode != 0 )
         StartTourney();
 }
 
@@ -433,61 +455,61 @@ function DramaticEvent(float BaseZedTimePossibility, optional float DesiredZedTi
     }
 }
 
-function ScoreKill(Controller Killer, Controller Other)
+function ScoreKill(Controller Killer, Controller Victim)
 {
-    local PlayerReplicationInfo OtherPRI;
+    local PlayerReplicationInfo VictimPRI;
     local float KillScore;
     local Controller C;
 
-    OtherPRI = Other.PlayerReplicationInfo;
-    if ( OtherPRI != None ) {
-        if ( OtherPRI.bOnlySpectator )
+    VictimPRI = Victim.PlayerReplicationInfo;
+    if ( VictimPRI != None ) {
+        if ( VictimPRI.bOnlySpectator )
             return;  // player became a spectator
 
-        OtherPRI.NumLives++;
-        OtherPRI.Score -= (OtherPRI.Score * (GameDifficulty * 0.05));   // you Lose 35% of your current cash on Hell on Earth, 15% on normal.
-        if (OtherPRI.Score < 0 )
-            OtherPRI.Score = 0;
+        VictimPRI.NumLives++;
+        VictimPRI.Score -= (VictimPRI.Score * (GameDifficulty * 0.05));
+        if (VictimPRI.Score < 0 )
+            VictimPRI.Score = 0;
+        VictimPRI.NetUpdateTime = Level.TimeSeconds - 1;
 
-        if ( OtherPRI.Team != none ) {
-            OtherPRI.Team.Score -= OtherPRI.Team.Score / WavePlayerCount * (GameDifficulty * 0.05);
-            if (OtherPRI.Team.Score < 0 )
-                OtherPRI.Team.Score = 0;
-            OtherPRI.Team.NetUpdateTime = Level.TimeSeconds - 1;
+        if ( VictimPRI.Team != none ) {
+            VictimPRI.Team.Score -= 100;
+            if (VictimPRI.Team.Score < 0 )
+                VictimPRI.Team.Score = 0;
+            VictimPRI.Team.NetUpdateTime = Level.TimeSeconds - 1;
         }
 
-        OtherPRI.bOutOfLives = true;
+        VictimPRI.bOutOfLives = true;
         if( Killer!=None && Killer.PlayerReplicationInfo!=None && Killer.bIsPlayer )
-            BroadcastLocalizedMessage(class'KFInvasionMessage',1,OtherPRI,Killer.PlayerReplicationInfo);
+            BroadcastLocalizedMessage(class'KFInvasionMessage',1,VictimPRI,Killer.PlayerReplicationInfo);
         else if( Killer==None || Monster(Killer.Pawn)==None )
-            BroadcastLocalizedMessage(class'KFInvasionMessage',1,OtherPRI);
+            BroadcastLocalizedMessage(class'KFInvasionMessage',1,VictimPRI);
         else
-            BroadcastLocalizedMessage(class'KFInvasionMessage',1,OtherPRI,,Killer.Pawn.Class);
+            BroadcastLocalizedMessage(class'KFInvasionMessage',1,VictimPRI,,Killer.Pawn.Class);
+
         CheckScore(None);
     }
 
     if ( GameRulesModifiers != None )
-        GameRulesModifiers.ScoreKill(Killer, Other);
+        GameRulesModifiers.ScoreKill(Killer, Victim);
 
-    if ( !Killer.bIsPlayer || Killer.PlayerReplicationInfo == none )
+    if ( Killer == None || !Killer.bIsPlayer || Killer.PlayerReplicationInfo == none )
         return;
 
-    if ( Killer == Other || Killer == None )  {
-        // suicide
-        if ( Other.PlayerReplicationInfo != None ) {
-            Other.PlayerReplicationInfo.Score -= 1;
-            Other.PlayerReplicationInfo.NetUpdateTime = Level.TimeSeconds - 1;
-            ScoreEvent(Other.PlayerReplicationInfo,-1,"self_frag");
-        }
+    if ( Killer == Victim ) {
+        ScoreEvent(VictimPRI, -1, "self_frag");
         return;
     }
-    if ( Other.bIsPlayer ) {
+
+    if ( Victim.bIsPlayer ) {
         // p2p kills
-        if ( Killer.PlayerReplicationInfo.Team == Other.PlayerReplicationInfo.Team ) {
-            Killer.PlayerReplicationInfo.Score -= 100;
-            Killer.PlayerReplicationInfo.Team.Score -= 100;
-            Killer.PlayerReplicationInfo.NetUpdateTime = Level.TimeSeconds - 1;
-            Killer.PlayerReplicationInfo.Team.NetUpdateTime = Level.TimeSeconds - 1;
+        if ( Killer.PlayerReplicationInfo.Team == VictimPRI.Team ) {
+            if ( VictimPRI != none ) {
+                KillScore = min(200, Killer.PlayerReplicationInfo.Score);
+                Killer.PlayerReplicationInfo.Score -= KillScore;
+                VictimPRI.Score += KillScore;
+                Killer.PlayerReplicationInfo.NetUpdateTime = Level.TimeSeconds - 1;
+            }
             ScoreEvent(Killer.PlayerReplicationInfo, -1, "team_frag");
         }
         else {
@@ -506,8 +528,8 @@ function ScoreKill(Controller Killer, Controller Other)
     }
 
     // v9.52: allow customization of ScoringValue for each zed in addition to zed type
-    if ( Monster(Other.Pawn) != none ) {
-        KillScore = Monster(Other.Pawn).ScoringValue;
+    if ( Monster(Victim.Pawn) != none ) {
+        KillScore = Monster(Victim.Pawn).ScoringValue;
     }
     else if ( LastKilledMonsterClass != none ) {
         KillScore = LastKilledMonsterClass.Default.ScoringValue;
@@ -522,7 +544,7 @@ function ScoreKill(Controller Killer, Controller Other)
     KillScore = Max(1,int(KillScore));
     Killer.PlayerReplicationInfo.Kills++;
 
-    ScoreKillAssists(KillScore, Other, Killer);
+    ScoreKillAssists(KillScore, Victim, Killer);
 
     Killer.PlayerReplicationInfo.Team.Score += KillScore;
     Killer.PlayerReplicationInfo.NetUpdateTime = Level.TimeSeconds - 1;
@@ -533,14 +555,14 @@ function ScoreKill(Controller Killer, Controller Other)
         Killer.PlayerReplicationInfo.Score = 0;
 
     if ( bKillMessages ) {
-        if( Class'HUDKillingFloor'.Default.MessageHealthLimit<=Other.Pawn.Default.Health ||
-        Class'HUDKillingFloor'.Default.MessageMassLimit<=Other.Pawn.Default.Mass )
+        if( Class'HUDKillingFloor'.Default.MessageHealthLimit<=Victim.Pawn.Default.Health ||
+        Class'HUDKillingFloor'.Default.MessageMassLimit<=Victim.Pawn.Default.Mass )
         {
             for( C=Level.ControllerList; C!=None; C=C.nextController )
             {
                 if( C.bIsPlayer && xPlayer(C)!=None )
                 {
-                    xPlayer(C).ReceiveLocalizedMessage(Class'KillsMessage',1,Killer.PlayerReplicationInfo,,Other.Pawn.Class);
+                    xPlayer(C).ReceiveLocalizedMessage(Class'KillsMessage',1,Killer.PlayerReplicationInfo,,Victim.Pawn.Class);
                 }
             }
         }
@@ -548,7 +570,7 @@ function ScoreKill(Controller Killer, Controller Other)
         {
             if( xPlayer(Killer)!=None )
             {
-                xPlayer(Killer).ReceiveLocalizedMessage(Class'KillsMessage',,,,Other.Pawn.Class);
+                xPlayer(Killer).ReceiveLocalizedMessage(Class'KillsMessage',,,,Victim.Pawn.Class);
             }
         }
     }
@@ -580,16 +602,17 @@ function ScoreKillAssists(float Score, Controller Victim, Controller Killer)
                 && MyVictim.KillAssistants[i].PC.PlayerReplicationInfo != none)
         {
             KillScore = ScoreMultiplier * MyVictim.KillAssistants[i].Damage;
+            if ( KillScore < 0.5 )
+                continue;
+
+            KillScore = round(KillScore);
             MyVictim.KillAssistants[i].PC.PlayerReplicationInfo.Score += KillScore;
 
             KFPRI = KFPlayerReplicationInfo(MyVictim.KillAssistants[i].PC.PlayerReplicationInfo) ;
-            if(KFPRI != none)
-            {
-                if(MyVictim.KillAssistants[i].PC != Killer)
-                {
+            if ( KFPRI != none ) {
+                if ( MyVictim.KillAssistants[i].PC != Killer ) {
                     KFPRI.KillAssists ++ ;
                 }
-
                 KFPRI.ThreeSecondScore += KillScore;
             }
         }
@@ -612,8 +635,18 @@ function bool RewardSurvivingPlayers()
         }
     }
 
+
     for ( t = 0; t < 2; ++t ) {
-        if ( SurvivedPlayers[t] > 0 ) {
+        // bug: Team 0 scored $-1.#J. 6 survivors, earned $0 each.
+        if ( Teams[t].Score < 0 || Teams[t].Score > 1000000000 ) {
+            log("!!! BUGGED TEAM SCORE: " $ Teams[t].Score, 'ScrnBalance');
+            Teams[t].Score = 0;
+        }
+        else if ( !(Teams[t].Score < 0 || Teams[t].Score >= 0) ) {
+            log("!!! BUGGED TEAM SCORE (NAN): " $ Teams[t].Score, 'ScrnBalance');
+            Teams[t].Score = 0;
+        }
+        else if ( SurvivedPlayers[t] > 0 ) {
             moneyPerPlayer[t] = Teams[t].Score / SurvivedPlayers[t];
             Teams[t].NetUpdateTime = Level.TimeSeconds - 1;
             log("Team " $ t $ " scored $" $  Teams[t].Score $ ". " $ SurvivedPlayers[t]
@@ -1145,6 +1178,53 @@ function AddBossBuddySquad()
     FinalSquadNum++;
 }
 
+// returns a value in interval [0.0 - 2.0] based on the current game progress
+function float WaveSinMod()
+{
+    return 2.0 * (1.0 - abs(sin(WaveTimeElapsed  * SineWaveFreq)));
+}
+
+function bool SetBoringStage(byte stage)
+{
+    if ( stage < BoringStages.length ) {
+        BoringStage = stage;
+        ScrnBalanceMut.GameRules.OnBoringStageSet(BoringStage);
+        return true;
+    }
+    else if ( BoringStages.length == 0 ) {
+        warn("Broken boring stages");
+        BoringStages.insert(0, 1);
+        BoringStages[0].MinSpawnTime = 1.5;
+        BoringStages[0].SpawnPeriod = 3.0;
+        BoringStage = 0;
+    }
+    return false;
+}
+
+function bool IncBoringStage()
+{
+    return SetBoringStage(BoringStage + 1);
+}
+
+function byte GetBoringStage()
+{
+    return BoringStage;
+}
+
+function bool BoringStageMaxed()
+{
+    return BoringStage + 1 >= BoringStages.length;
+}
+
+function string GetBoringString(byte index)
+{
+    if ( index < BoringStrings.length ) {
+        return BoringStrings[index];
+    }
+    // shouldn't happen
+    return "ZED spawn rate x" $ (index+1);
+}
+
 // reserved for TSC
 function bool ShouldKillOnTeamChange(Pawn TeamChanger)
 {
@@ -1245,7 +1325,7 @@ function GetServerDetails( out ServerResponseLine ServerState )
     AddServerDetail( ServerState, "Starting cash", StartingCash );
 
     // ScrnGameType
-    if ( TourneyMode > 0 )
+    if ( TourneyMode != 0 )
         AddServerDetail( ServerState, "ScrN Tourney Mode", TourneyMode );
 
     if ( ScrnGameLength != none ) {
@@ -1265,7 +1345,6 @@ protected function StartTourney()
     local bool bNoStartCash;
 
     log("Starting TOURNEY MODE " $ TourneyMode, 'ScrnBalance');
-    bNoStartCash = (TourneyMode&4) > 0;
 
     if ( GameDifficulty < 4 ) {
         // hard difficulty at least
@@ -1281,11 +1360,7 @@ protected function StartTourney()
     ScrnBalanceMut.bForceManualReload = false;
     ScrnBalanceMut.bDynamicLevelCap = false;
 
-    ScrnBalanceMut.bAlterWaveSize = true;
     ScrnBalanceMut.MaxWaveSize = 500;
-    ScrnBalanceMut.Post6ZedsPerPlayer = 0.4;
-    ScrnBalanceMut.Post6ZedSpawnInc=0.25;
-    ScrnBalanceMut.Post6AmmoSpawnInc=0.20;
 
     ScrnBalanceMut.bUseExpLevelForSpawnInventory = false;
     ScrnBalanceMut.bSpawn0 = true;
@@ -1314,7 +1389,7 @@ protected function StartTourney()
 
 function final bool IsTourney()
 {
-    return TourneyMode > 0;
+    return TourneyMode != 0;
 }
 
 function final int GetTourneyMode()
@@ -1332,21 +1407,58 @@ function SetupRepLink(ClientPerkRepLink R)
 {
     local int i;
     local class<Pickup> PC;
+    local bool bVanilla, bSWP, bHMG;
+    local bool bAllow;
+    local name PackageName;
 
     if ( R == none )
         return; // wtf?
 
-    if ( TourneyMode > 0 ) {
-        // allow only stock or SE weapons in tourney mode
-        for ( i=R.ShopInventory.length-1; i>=0; --i ) {
+    if ( TourneyMode == 0 )
+        return;
+
+    bVanilla = (TourneyMode & TOURNEY_VANILLA) != 0;
+    bSWP = (TourneyMode & TOURNEY_SWP) != 0;
+    bHMG = (TourneyMode & TOURNEY_HMG) != 0;
+
+    if ( (TourneyMode & TOURNEY_ALL_WEAPONS) == 0 ) {
+        // trader inventory filter for tourney mode
+        for ( i= R.ShopInventory.length-1; i >= 0; --i ) {
             PC = R.ShopInventory[i].PC;
-            if ( PC == none || PC == class'ScrnHorzineVestPickup' || PC == class'ZEDMKIIPickup'
-                    || PC.outer.name != class.outer.name )
+            if ( PC == none ) {
+                // shouldn't happen
                 R.ShopInventory.remove(i, 1);
+                continue;
+            }
+
+            PackageName = PC.outer.name;
+            if ( PackageName == 'ScrnBalanceSrv' ) {
+                // ZED guns are prohibited in Tourney.
+                // While Horzine Armor is inside the core ScrN package, we consider it a part of SWP
+                bAllow = PC != class'ScrnZEDMKIIPickup' && (bSWP || PC != class'ScrnHorzineVestPickup');
+            }
+            else if ( PackageName == 'KFMod' ) {
+                bAllow = bVanilla && PC != class'ZEDGunPickup' && PC != class'ZEDMKIIPickup';
+            }
+            else if ( PackageName == 'ScrnWeaponPack' ) {
+                bAllow = bSWP;
+            }
+            else {
+                bAllow = false;
+            }
+
+            if ( !bAllow ) {
+                R.ShopInventory.remove(i, 1);
+            }
         }
-        // allow only ScrN Perks
-        for ( i=R.CachePerks.length-1; i>=0; --i ) {
-            if ( R.CachePerks[i].PerkClass.outer.name != 'ScrnBalanceSrv' )
+    }
+
+    if ( (TourneyMode & TOURNEY_ALL_PERKS) == 0 ) {
+        // perk filter for tourney mode
+        for ( i = R.CachePerks.length-1; i >= 0; --i ) {
+            PackageName = R.CachePerks[i].PerkClass.outer.name;
+            bAllow = PackageName == 'ScrnBalanceSrv' || (bHMG && PackageName == 'ScrnHMG');
+            if ( !bAllow )
                 R.CachePerks.remove(i, 1);
         }
     }
@@ -1766,7 +1878,7 @@ function int ScaleMonsterCount(int SoloNormalCounter)
             NumPlayersMod=4.5;
             break;
         default:
-            NumPlayersMod = 4.5 + (UsedNumPlayers-6)*ScrnBalanceMut.Post6ZedsPerPlayer; // 7+ player game
+            NumPlayersMod = 4.5 + (UsedNumPlayers-6)*0.4; // 7+ player game
     }
     return Clamp(SoloNormalCounter * DifficultyMod * NumPlayersMod, 1, ScrnBalanceMut.MaxWaveSize);
 }
@@ -2601,7 +2713,7 @@ State MatchInProgress
     {
         global.Tick(DeltaTime);
 
-        if ( ScrnBalanceMut.bSpawnRateFix && bWaveInProgress && !bWaveBossInProgress
+        if ( bWaveInProgress && !bWaveBossInProgress
                 && !bDisableZedSpawning && TotalMaxMonsters > 0
                 && Level.TimeSeconds > NextMonsterTime
                 && NumMonsters+NextSpawnSquad.Length <= MaxMonsters )
@@ -2617,42 +2729,25 @@ State MatchInProgress
     function float CalcNextSquadSpawnTime()
     {
         local float NextSpawnTime;
-        local float SineMod;
 
-        SineMod = 1.0 - Abs(sin(WaveTimeElapsed * SineWaveFreq));
-
-        NextSpawnTime = KFLRules.WaveSpawnPeriod;
-
-        if( (WaveNum + 1) * 100 / FinalWave < 70 ) {
-            // Make the zeds come faster in the earlier waves
-            if( NumPlayers == 4 )
-                NextSpawnTime *= 0.85;
-            else if( NumPlayers == 5 )
-                NextSpawnTime *= 0.65;
-            else if( NumPlayers >= 6 )
-                NextSpawnTime *= 0.40;
-        }
-        else {
-            // Give a slightly bigger breather in the later waves
-            if( NumPlayers <= 3 )
-                NextSpawnTime *= 1.1;
-            else if( NumPlayers == 4 )
-                NextSpawnTime *= 1.0;
-            else if( NumPlayers == 5 )
-                NextSpawnTime *= 0.85;
-            else if( NumPlayers >= 6 )
-                NextSpawnTime *= 0.60;
-        }
-
-        if ( GameDifficulty < 4 && NumMonsters > 15 ) {
+        NextSpawnTime = fclamp(KFLRules.WaveSpawnPeriod, 0.2, BoringStages[BoringStage].SpawnPeriod);
+        NextSpawnTime /= 1.0 + (AlivePlayerCount - 1) * SpawnRatePlayerMod;
+        if ( GameDifficulty < 4 && NumMonsters >= 16 ) {
             // slower spawns on Normal difficulty if there are already many zeds spawned
             NextSpawnTime *= 2.0;
         }
 
-        if ( ScrnGameLength != none )
+        if ( ScrnGameLength != none ) {
             ScrnGameLength.AdjustNextSpawnTime(NextSpawnTime);
-
-        NextSpawnTime += SineMod * (NextSpawnTime * 2.0);
+        }
+        else {
+            if( NumMonsters >= 16 && WavePct >= 70 ) {
+                // longer cooldown on later waves if there are already many zeds spawned
+                NextSpawnTime *= 1.5;
+            }
+            // classic sine mod
+            NextSpawnTime *= 1.0 + WaveSinMod();
+        }
 
         return fmax(NextSpawnTime, GetMinSpawnDelay());
     }
@@ -2661,11 +2756,9 @@ State MatchInProgress
     {
         local float result;
 
-        result = KFLRules.WaveSpawnPeriod / ScrnBalanceMut.OriginalWaveSpawnPeriod; // adjusted by MVOTE BORING
+        result = BoringStages[BoringStage].MinSpawnTime;
         if ( ScrnGameLength != none )
             result /= ScrnGameLength.Wave.SpawnRateMod;
-        if ( ScrnBalanceMut.bSpawnRateFix )
-            result *= 1.5;
         return result;
     }
 
@@ -2686,6 +2779,7 @@ State MatchInProgress
 
         Bosses.length = 0;
         WaveNum++;
+        WavePct = 100 * (WaveNum + 1) / FinalWave;
 
         if ( WaveNum > FinalWave ) {
             EndGame(None, "TimeLimit");
@@ -2872,6 +2966,15 @@ defaultproperties
 
     MaxSpawnAttempts=3
     MaxSpecialSpawnAttempts=10
+    SpawnRatePlayerMod=0.25
+    BoringStages[0]=(SpawnPeriod=3.0,MinSpawnTime=1.5)  // SpawnPeriod may be further limited by KFLevelRules
+    BoringStages[1]=(SpawnPeriod=1.0,MinSpawnTime=1.0)
+    BoringStages[2]=(SpawnPeriod=0.5,MinSpawnTime=0.5)
+    BoringStages[3]=(SpawnPeriod=0.25,MinSpawnTime=0.25)
+    BoringStrings[0]="Normal ZED spawn rate"
+    BoringStrings[1]="DOUBLE ZED spawn rate"
+    BoringStrings[2]="QUAD ZED spawn rate"
+    BoringStrings[3]="INSANE ZED spawn rate"
 
     // copied from last two LongWaves
     NormalWaves(5)=(WaveMask=75393519,WaveMaxMonsters=40,WaveDuration=255,WaveDifficulty=0.300000)

@@ -424,15 +424,27 @@ static function int ReduceDamage(KFPlayerReplicationInfo KFPRI, KFPawn Injured, 
 }
 
 // checks if inventory already exists and exclusion index
+static protected function bool ShouldExcludeDefaultInventory(int i, KFPlayerReplicationInfo KFPRI, Pawn P)
+{
+    if ( i < 0 || i >= default.DefaultInventory.length
+            || default.DefaultInventory[i].PickupClass.default.InventoryType == none )
+        return false;  // DefaultInventory item does not exist, therefore, it cannot exist in the inventory
+    if ( P.FindInventoryType(default.DefaultInventory[i].PickupClass.default.InventoryType) != none )
+        return true; // already exist
+    if ( default.DefaultInventory[i].X > 0 )
+        return ShouldExcludeDefaultInventory(i - default.DefaultInventory[i].X, KFPRI, P); // check exclusion index
+    return false;
+}
+
 static protected function bool ShouldAddDefaultInventory(int i, KFPlayerReplicationInfo KFPRI, Pawn P)
 {
     if ( i < 0 || i >= default.DefaultInventory.length
             || default.DefaultInventory[i].PickupClass.default.InventoryType == none )
-        return false;
+        return false;  // DefaultInventory item does not exist, therefore, it cannot exist in the inventory
     if ( P.FindInventoryType(default.DefaultInventory[i].PickupClass.default.InventoryType) != none )
         return false; // already exist
     if ( default.DefaultInventory[i].X > 0 )
-        return ShouldAddDefaultInventory(i - default.DefaultInventory[i].X, KFPRI, P); // check exclusion index
+        return !ShouldExcludeDefaultInventory(i - default.DefaultInventory[i].X, KFPRI, P); // check exclusion index
     return true;
 }
 
@@ -464,7 +476,9 @@ static function AddDefaultInventory(KFPlayerReplicationInfo KFPRI, Pawn P)
     L = Class'ScrnClientPerkRepLink'.Static.FindMe(PlayerController(KFP.Controller));
 
     for ( i=0; i<default.DefaultInventory.length; ++i ) {
-        if ( level >= default.DefaultInventory[i].MinPerkLevel && level <= default.DefaultInventory[i].MaxPerkLevel
+        if ( default.DefaultInventory[i].PickupClass != none
+                && level >= default.DefaultInventory[i].MinPerkLevel
+                && level <= default.DefaultInventory[i].MaxPerkLevel
                 && (default.DefaultInventory[i].Achievement == ''
                     || class'ScrnAchCtrl'.static.IsAchievementUnlocked(L, default.DefaultInventory[i].Achievement)) )
         {
