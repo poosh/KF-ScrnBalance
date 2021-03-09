@@ -5,6 +5,28 @@ var         float             ReloadShortRate;
 
 var transient bool  bShortReload;
 
+// copy-pasted to add (MagCapacity+1)
+simulated function bool AllowReload()
+{
+    UpdateMagCapacity(Instigator.PlayerReplicationInfo);
+
+    if ( KFInvasionBot(Instigator.Controller) != none && !bIsReloading &&
+        MagAmmoRemaining < MagCapacity && AmmoAmount(0) > MagAmmoRemaining )
+        return true;
+
+    if ( KFFriendlyAI(Instigator.Controller) != none && !bIsReloading &&
+        MagAmmoRemaining < MagCapacity && AmmoAmount(0) > MagAmmoRemaining )
+        return true;
+
+
+    if( FireMode[0].IsFiring() || FireMode[1].IsFiring() ||
+           bIsReloading || MagAmmoRemaining > MagCapacity ||
+           ClientState == WS_BringUp ||
+           AmmoAmount(0) <= MagAmmoRemaining ||
+                   (FireMode[0].NextFireTime - Level.TimeSeconds) > 0.1 )
+        return false;
+    return true;
+}
 
 exec function ReloadMeNow()
 {
