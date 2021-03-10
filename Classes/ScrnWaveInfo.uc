@@ -37,6 +37,7 @@ var config EWaveEndRule EndRule;
 var config int Counter, MaxCounter;
 var config float PerPlayerMult;
 var config float SpawnRateMod;
+var config float SpecialSquadCooldown;
 var config byte MaxZombiesOnce;
 var config float BountyScale;
 var config float XP_Bonus, XP_BonusAlive;
@@ -61,6 +62,7 @@ defaultproperties
     SpecialSquadHealthMod=1.0
     ZedsPerSpecialSquad=50
     SpawnRateMod=1.0
+    SpecialSquadCooldown=3.0;
     Squads(0)="4*CL"
     bRandomSquads=true
     bRandomSpecialSquads=true

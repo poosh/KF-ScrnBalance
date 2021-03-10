@@ -11,6 +11,7 @@ var float HardcoreLevelFloat;
 var bool bForceHardcoreLevel;
 var localized string msgHardcore, msgHardcoreLowered, msgWeaponBlame;
 var bool bUseAchievements;
+var array<int> BoringMonsters;  // TotalMaxMonsters when the corresponding boring stage set
 
 var bool bScrnDoom; // is server running ScrN version of Doom3 mutator?
 var localized string msgDoom3Monster, msgDoomPercent, msgDoom3Boss;
@@ -183,22 +184,17 @@ function AddMod(ScrnGameRulesMod Mod)
         Mods.AddMod(Mod);
 }
 
-// more players = faster zed spawn
 function AdjustZedSpawnRate()
 {
-    local int PlayerCount;
-
-    if ( Mut.bStoryMode )
-        return;
-
-    Mut.KF.KFLRules.WaveSpawnPeriod = Mut.OriginalWaveSpawnPeriod;
-
-    // TSC adjusts spawn period itself
-    if ( !Mut.bTSCGame ) {
-        PlayerCount = AlivePlayerCount();
-        if ( PlayerCount > 6 )
-            Mut.KF.KFLRules.WaveSpawnPeriod /= 1.0 + Mut.Post6ZedSpawnInc * (PlayerCount - 6);
+    if ( Mut.ScrnGT != none ) {
+        Mut.ScrnGT.SetBoringStage(0);
     }
+}
+
+function OnBoringStageSet(byte BoringStage)
+{
+    BoringMonsters.length = BoringStage + 1;
+    BoringMonsters[BoringStage] = Mut.KF.TotalMaxMonsters;
 }
 
 function DestroyBuzzsawBlade()
@@ -293,10 +289,23 @@ function WaveEnded()
     local Controller P;
     local PlayerController PC;
     local float Accuracy;
+    local float BoringHL;
 
     // KF.WaveNum already set to a next wave, when WaveEnded() has been called
     // E.g. KF.WaveNum == 1 means that first wave has been ended (wave with index 0)
     WaveNum = KF.WaveNum-1;
+
+    // give HL for boring votes
+    for ( i = 1; i < BoringMonsters.length; ++i ) {
+        //    ^ there is no typo. Zero index = no boring
+        if ( BoringMonsters[i] < 100 )
+            break;
+
+        BoringHL += HardcoreLevelFloat * BoringMonsters[i] / 500.0 / Mut.KF.FinalWave;
+    }
+    if ( BoringHL > 0.09 ) {
+        RaiseHardcoreLevel(BoringHL, Mut.ScrnGT.GetBoringString(i-1));
+    }
 
     for ( SPI=PlayerInfo; SPI!=none; SPI=SPI.NextPlayerInfo ) {
         SPI.WaveEnded(WaveNum);

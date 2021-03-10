@@ -33,6 +33,7 @@ var TSCTeam TSCTeams[2];
 var class<TSCBaseGuardian> BaseGuardianClasses[2];
 var ShopVolume TeamShops[2];
 var class<WillowWhisp> BaseWhisp;
+var byte WaveMinuteTimer;
 
 var bool bPendingShuffle; // shuffle teams at the end of the wave
 var protected bool bTeamChanging; // indicates that game changes team members, e.g. doing shuffle
@@ -787,12 +788,10 @@ function BalanceTeams(byte SmallTeamIndex, float BalanceMult)
                         && C.PlayerReplicationInfo.Team.TeamIndex == SmallTeamIndex;
         if ( bInSmallTeam ) {
             // increases max health
-            ScrnPawn.HealthBonus = ScrnPawn.default.HealthMax * BalanceMult;
-            ScrnPawn.GiveHealth(ScrnPawn.HealthBonus, 100); // give bonus health and update max
+            ScrnPawn.SetHealthBonus(ScrnPawn.default.HealthMax * (BalanceMult - 1.0));
         }
         else {
-            ScrnPawn.HealthBonus = 0;
-            ScrnPawn.GiveHealth(0, 100); // update max health
+            ScrnPawn.SetHealthBonus(0);
         }
 
         S = Syringe(ScrnPawn.FindInventoryType(class'Syringe'));
@@ -800,7 +799,7 @@ function BalanceTeams(byte SmallTeamIndex, float BalanceMult)
             S.HealBoostAmount = S.default.HealBoostAmount;
             if ( bInSmallTeam ) {
                 // syringe healths faster the smaller team
-                S.HealBoostAmount *= BalanceMult;
+                S.HealBoostAmount *= (BalanceMult - 1.0);
             }
         }
     }
@@ -904,6 +903,7 @@ function SetupWave()
     SpecialListCounter = 0;
     BuildNextSquad();
 
+    WaveMinuteTimer = 0;
     TSCTeams[0].WaveKills = TSCTeams[0].ZedKills;
     TSCTeams[1].WaveKills = TSCTeams[1].ZedKills;
     TSCTeams[0].PrevMinKills = TSCTeams[0].ZedKills;
@@ -938,7 +938,7 @@ function bool AddSquad()
                 // Check teams only when they are equal in number.
                 // If teams are uneven, then just pick up random player as squad's target
                 bCheckSquadTeam = BigTeamSize == SmallTeamSize;
-               ZedSpawnLoc = ZSLOC_RANDOM; // make zeds spawn more random on the map
+                ZedSpawnLoc = ZSLOC_RANDOM; // make zeds spawn more random on the map
             }
         }
     }
@@ -1046,7 +1046,8 @@ State MatchInProgress
                 }
             }
         }
-        if ( (int(WaveTimeElapsed)%60) == 0 ) {
+        if ( ++WaveMinuteTimer >= 60 ) {
+                WaveMinuteTimer = 0;
                 TSCTeams[0].PrevMinKills = TSCTeams[0].LastMinKills;
                 TSCTeams[0].LastMinKills = TSCTeams[0].ZedKills;
                 TSCTeams[1].PrevMinKills = TSCTeams[1].LastMinKills;
@@ -1193,16 +1194,6 @@ State MatchInProgress
             }
         }
     }
-
-    // function float GetMinSpawnDelay()
-    // {
-        // local float result;
-
-        // result = super.GetMinSpawnDelay();
-        // if ( !bTeamWiped )
-            // result *= 0.5; // up to twice faster spawns
-        // return result;
-    // }
 } //MatchInProgress
 
 

@@ -19,7 +19,8 @@ var automated GUISectionBackground    bg_Weapons;
 var automated moCheckBox              ch_ManualReload;
 var automated moCheckBox              ch_CookNade;
 var automated moCheckBox              ch_PrioritizePerkedWeapons;
-var automated moCheckBox              ch_PrioritizeBoomstick;
+// var automated moCheckBox              ch_PrioritizeBoomstick;
+var automated moCheckBox              ch_NeverSwitchOnPickup;
 
 var automated GUIButton               b_GunSkin;
 var automated GUIButton               b_WeaponLock;
@@ -133,7 +134,7 @@ function ShowPanel(bool bShow)
     }
 
     lbl_Version.Caption = class'ScrnBalance'.default.FriendlyName @ class'ScrnBalance'.static.GetVersionStr();
-    lbl_CR.Caption = "Copyright (c) 2012-2020 PU Developing IK, Latvia. All Rights Reserved.";
+    lbl_CR.Caption = "Copyright (c) 2012-2021 PU Developing IK, Latvia. All Rights Reserved.";
     ServerStatus();
 
     PC = ScrnPlayerController(PlayerOwner());
@@ -425,8 +426,12 @@ function InternalOnLoadINI(GUIComponent Sender, string s)
             ch_PrioritizePerkedWeapons.Checked(PC.bPrioritizePerkedWeapons);
             break;
 
-        case ch_PrioritizeBoomstick:
-            ch_PrioritizeBoomstick.Checked(PC.bPrioritizeBoomstick);
+        // case ch_PrioritizeBoomstick:
+        //     ch_PrioritizeBoomstick.Checked(PC.bPrioritizeBoomstick);
+        //     break;
+
+        case ch_NeverSwitchOnPickup:
+            ch_NeverSwitchOnPickup.Checked(PC.bNeverSwitchOnPickup);
             break;
 
 
@@ -542,8 +547,13 @@ function InternalOnChange(GUIComponent Sender)
                 PC.SaveConfig();
             break;
 
-        case ch_PrioritizeBoomstick:
-                PC.bPrioritizeBoomstick =  ch_PrioritizeBoomstick.IsChecked();
+        // case ch_PrioritizeBoomstick:
+        //         PC.bPrioritizeBoomstick =  ch_PrioritizeBoomstick.IsChecked();
+        //         PC.SaveConfig();
+        //     break;
+
+        case ch_NeverSwitchOnPickup:
+                PC.bNeverSwitchOnPickup = ch_NeverSwitchOnPickup.IsChecked();
                 PC.SaveConfig();
             break;
 
@@ -1023,9 +1033,27 @@ defaultproperties
     End Object
     ch_PrioritizePerkedWeapons=moCheckBox'ScrnBalanceSrv.ScrnTab_UserSettings.PrioritizePerkedWeapons'
 
-    Begin Object Class=moCheckBox Name=PrioritizeBoomstick
-        Caption="Boomstick before AA12"
-        Hint="If checked, when pressing '4' Boomstick (Hunting Shotgun) will be switched before AA12"
+    // Begin Object Class=moCheckBox Name=PrioritizeBoomstick
+    //     Caption="Boomstick before AA12"
+    //     Hint="If checked, when pressing '4' Boomstick (Hunting Shotgun) will be switched before AA12"
+    //     bFlipped=False
+    //     CaptionWidth=0.955000
+    //     WinTop=0.38
+    //     WinLeft=0.015
+    //     WinWidth=0.288
+    //     TabOrder=13
+    //     RenderWeight=0.5
+    //     ComponentClassName="ScrnBalanceSrv.ScrnGUICheckBoxButton"
+    //     OnCreateComponent=PrioritizeBoomstick.InternalOnCreateComponent
+    //     IniOption="@Internal"
+    //     OnChange=ScrnTab_UserSettings.InternalOnChange
+    //     OnLoadINI=ScrnTab_UserSettings.InternalOnLoadINI
+    // End Object
+    // ch_PrioritizeBoomstick=moCheckBox'ScrnBalanceSrv.ScrnTab_UserSettings.PrioritizeBoomstick'
+
+    Begin Object Class=moCheckBox Name=NeverSwitchOnPickup
+        Caption="No Weapon Autoswitch"
+        Hint="If checked, the player does not automatically switch to newly obtained weapons (either bought or picked up)"
         bFlipped=False
         CaptionWidth=0.955000
         WinTop=0.38
@@ -1034,13 +1062,12 @@ defaultproperties
         TabOrder=13
         RenderWeight=0.5
         ComponentClassName="ScrnBalanceSrv.ScrnGUICheckBoxButton"
-        OnCreateComponent=PrioritizeBoomstick.InternalOnCreateComponent
+        OnCreateComponent=NeverSwitchOnPickup.InternalOnCreateComponent
         IniOption="@Internal"
         OnChange=ScrnTab_UserSettings.InternalOnChange
         OnLoadINI=ScrnTab_UserSettings.InternalOnLoadINI
     End Object
-    ch_PrioritizeBoomstick=moCheckBox'ScrnBalanceSrv.ScrnTab_UserSettings.PrioritizeBoomstick'
-
+    ch_NeverSwitchOnPickup=moCheckBox'ScrnBalanceSrv.ScrnTab_UserSettings.NeverSwitchOnPickup'
 
     Begin Object Class=GUIButton Name=GunSkinButton
         Caption="Gun Skin"

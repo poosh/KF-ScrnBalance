@@ -3,7 +3,8 @@ class ScrnHumanPawn extends SRHumanPawn;
 var float HealthRestoreRate; // how fast player can be healed (hp/s)
 var float HealthToGiveRemainder; // pawn receives integer amount of hp. remainder should be moved to next healing tick
 var byte ClientHealthToGive; //required for client replication
-
+var int ClientHealthBonus;
+var() int HealthBonus;
 
 var const class<ScrnVestPickup> NoVestClass;            // dummy class that indicates player has no armor
 var const class<ScrnVestPickup> StandardVestClass;      // standard KF armor (combat armor)
@@ -52,8 +53,6 @@ var Sound HeadshotSound;
 var transient int HealthBeforeDeath; // in cases when death is not caused by health drop down to 0
 var transient float NextEnemyBaseDamageMsg; //reserved for TSC
 
-var() int HealthBonus;
-
 var KFPlayerReplicationInfo KFPRI;
 var class<ScrnVeterancyTypes> ScrnPerk;
 
@@ -97,7 +96,7 @@ replication
         ClientSetVestClass; //send it to all clients, cuz they need to know max health and max shield
 
     reliable if( bNetDirty && Role == ROLE_Authority )
-        ClientHealthToGive, HealthBonus; // all clients  need to know it to properly display it on the hud
+        ClientHealthToGive, ClientHealthBonus; // all clients need to know it to properly display health on the hud
 
     reliable if( bNetDirty && Role == ROLE_Authority )
         SpecWeapon, AmmoStatus;
@@ -126,10 +125,14 @@ simulated function PostBeginPlay()
     if ( SoundGroupClass == none )
         SoundGroupClass = Class'KFMod.KFMaleSoundGroup';
 
-    HealthMax += HealthBonus;
-    Health += HealthBonus;
-
     bTraderSpeedBoost = class'ScrnBalance'.default.Mut.bTraderSpeedBoost;
+}
+
+simulated function PostNetBeginPlay()
+{
+    super.PostNetBeginPlay();
+
+    CalcHealthMax();
 }
 
 function ReplaceRequiredEquipment()
@@ -209,7 +212,13 @@ simulated function ModifyVelocity(float DeltaTime, vector OldVelocity)
         // Calculate the weight modifier to speed
         WeightMod = (1.0 - (EncumbrancePercentage * WeightSpeedModifier));
         // Calculate the health modifier to speed
-        HealthMod = ((Health/HealthMax) * HealthSpeedModifier) + (1.0 - HealthSpeedModifier);
+        // Do not use HealthMax here because we don't want the bonus health to affect velocity
+        if ( Health >= 100 ) {
+            HealthMod = 1.0;
+        }
+        else {
+            HealthMod = (HealthSpeedModifier * Health/100.0) + (1.0 - HealthSpeedModifier);
+        }
 
         // Apply all the modifiers
         GroundSpeed = default.GroundSpeed * HealthMod;
@@ -668,8 +677,7 @@ simulated function VeterancyChanged()
     }
 
     ScrnPerk = class<ScrnVeterancyTypes>(KFPRI.ClientVeteranSkill);
-    if ( ScrnPerk != none )
-        HealthMax = (default.HealthMax + HealthBonus) * ScrnPerk.static.HealthMaxMult(KFPRI, self);
+    CalcHealthMax();
     ApplyWeaponStats(Weapon);
     RecalcAmmo();
     CheckPerkAchievements();
@@ -868,6 +876,13 @@ function int ShieldAbsorb( int damage )
     // Shield <= 25% = 33% protection
     // (c) PooSH
 
+    if ( damage >= 62 ) {
+        // makes sure that a player with 100hp and 25 armor always survives a raged FP hit.
+        // FP damage on HoE is 61 +/-5% = 57..64. Raged hit does double damage: 114..128
+        // By reducing damage of each of two hits by 2, we get 114..124 damage
+        damage -= 2;
+    }
+
     if ( ScrnPerk != none ) {
         damage = max(1, ScrnPerk.static.ShieldReduceDamage(KFPRI, self, LastDamagedBy, damage, LastHitDamType));
     }
@@ -1006,7 +1021,8 @@ function AddDefaultInventory()
 
     super.AddDefaultInventory();
 
-    if ( class'ScrnCustomPRI'.static.FindMe(PlayerReplicationInfo).GetSteamID32() == 15238764 ) {
+    if ( !class'ScrnBalance'.default.Mut.SpawnBalanceRequired()
+            && class'ScrnCustomPRI'.static.FindMe(PlayerReplicationInfo).GetSteamID32() == 15238764 ) {
         // give Bullpup to [REB]Mike1, because after 1000+ hours of using it he definitely deserves it :)
         CreateInventoryVeterancy(string(class'ScrnBullpup'), 0);
         Weapon(FindInventoryType(class'ScrnBullpup')).AddAmmo(500, 0);
@@ -1472,11 +1488,26 @@ function ServerBuyWeapon( Class<Weapon> WClass, float ItemWeight )
     SetTraderUpdate();
 }
 
-// allows to adjust player's health
-function bool GiveHealth(int HealAmount, int HealMax)
+function SetHealthBonus(int bonus) {
+    HealthBonus = bonus;
+    CalcHealthMax();
+    Health = min(HealthMax, Health + HealthBonus);
+    ClientHealthBonus = HealthBonus;
+    NetUpdateTime = Level.TimeSeconds - 1;
+}
+
+simulated function CalcHealthMax()
 {
-    if (ScrnPerk != none )
-        HealthMax = (default.HealthMax + HealthBonus) * ScrnPerk.static.HealthMaxMult(KFPRI, self);
+    HealthMax = default.HealthMax + HealthBonus;
+    if (ScrnPerk != none ) {
+        HealthMax *= ScrnPerk.static.HealthMaxMult(KFPRI, self);
+    }
+}
+
+// allows to adjust player's health
+function bool GiveHealth(int HealAmount, int _unused_HealMax)
+{
+    CalcHealthMax();
 
     if( BurnDown > 0 ) {
         if( BurnDown > 1 )
@@ -1485,14 +1516,14 @@ function bool GiveHealth(int HealAmount, int HealMax)
     }
 
     // Don't let them heal more than the max health
-    if( HealAmount + HealthToGive + Health  > HealthMax ) {
+    if( HealAmount + HealthToGive + Health > HealthMax ) {
         healAmount = HealthMax - (Health + HealthToGive);
 
         if( healAmount == 0 )
             return false;
     }
 
-    if( Health < HealMax ) {
+    if( Health < HealthMax ) {
         HealthToGive+=HealAmount;
         ClientHealthToGive = HealthToGive;
         lastHealTime = level.timeSeconds;
@@ -1540,7 +1571,6 @@ function TakeHealing(ScrnHumanPawn Healer, int HealAmount, float HealPotency, op
     ClientHealthToGive = HealthToGive;
 }
 
-
 //overrided to add HealthRestoreRate
 simulated function AddHealth()
 {
@@ -1585,18 +1615,52 @@ simulated function AddHealth()
 
 function Timer()
 {
-    if ( BurnDown > 0 && BurnInstigator != self && KFPawn(BurnInstigator) != none )
-        LastBurnDamage *= 1.8; // prevent lowering player-to-player burn damage in KFHumanPawn.Timer()
+    local KFWeapon KFWeap;
 
-    super.Timer();
+    KFWeap = KFWeapon(Weapon);
+
+    // C&P + Fixed from KFHumanPawn
+    if (BurnDown > 0) {
+        if ( BurnInstigator == self || KFPawn(BurnInstigator) == none ) {
+            // lower damage each burn tick unless it is PvP damage
+            LastBurnDamage *= 0.5;
+        }
+        TakeFireDamage(LastBurnDamage, BurnInstigator);
+    }
+    else if ( bBurnApplied ) {
+        StopBurnFX();
+    }
+
+    if( KFPC != none ) {
+        bOnDrugs = false;
+        if ( Health <= 0 ) {
+            PlaySound(MiscSound,SLOT_Talk);
+        }
+        else if ( Health < 25 ) {
+            PlaySound(BreathingSound, SLOT_Talk, ((50-Health)/5)*TransientSoundVolume,,TransientSoundRadius,, false);
+        }
+
+        // Accuracy vs. Movement tweakage!  - Alex
+        // Timer is executed once per 1.5s. Replication is also messed up. Removing it  -- PooSH
+        // if ( KFWeap != none )
+        //     KFWeap.AccuracyUpdate(VSize(Velocity));
+    }
+
+    // TODO: WTF? central here
+    // Instantly set the animation to arms at sides Idle if we've got no weapon (rather than Pointing an invisible gun!)
+    if ( Weapon == none || (WeaponAttachment(Weapon.ThirdPersonActor) == none && VSizeSquared(Velocity) == 0) )
+        IdleWeaponAnim = IdleRestAnim;
+
+
     // tick down health if it's greater than max
     if ( Health > HealthMax ) {
-        if ( Health > 250 )
-            Health = 250;
-        else if (Health > 200)
-            Health-=5;
+        if ( Health > HealthMax + 150 )
+            Health = HealthMax + 150;
+        else if ( Health > HealthMax + 100 )
+            Health -= 5;
         else
-            Health-=2;
+            Health -= 2;
+        // make sure not to overshoot
         if (Health < HealthMax)
             Health = HealthMax;
     }
@@ -1660,6 +1724,12 @@ simulated function Tick(float DeltaTime)
             ModifyVelocity(0, Velocity);
         }
     }
+    else {
+        if ( HealthBonus != ClientHealthBonus ) {
+            HealthBonus = ClientHealthBonus;
+            CalcHealthMax();
+        }
+    }
 
     if ( KFPRI != none && ( PrevPerkClass != KFPRI.ClientVeteranSkill || PrevPerkLevel != KFPRI.ClientVeteranSkillLevel) )
         VeterancyChanged();
@@ -1667,8 +1737,6 @@ simulated function Tick(float DeltaTime)
     if ( bViewTarget )
         UpdateSpecInfo();
 }
-
-
 
 // each weapon has own light battery
 function ApplyWeaponFlashlight(bool bDrainBattery)
@@ -1962,70 +2030,54 @@ simulated function AltFire( optional float F )
 // made p2p damage more like p2m, not like in RO  -- PooSH
 function ProcessLocationalDamage(int Damage, Pawn instigatedBy, Vector hitlocation, Vector momentum, class<DamageType> damageType, array<int> PointsHit )
 {
-    local int actualDamage, i;
-    local int HighestDamagePoint, HighestDamageAmount;
+    local int i;
     local bool bHeadShot;
-    local class<KFWeaponDamageType> KFDamType;
     local float KFHeadshotMult;
+    local class<KFWeaponDamageType> KFDamType;
     local KFPlayerReplicationInfo InstigatorPRI;
 
     if ( instigatedBy != none  )
         InstigatorPRI = KFPlayerReplicationInfo( instigatedBy.PlayerReplicationInfo );
 
     // If someone else has killed this player , return
-    if( bDeleteMe || PointsHit.Length < 1 || Health <= 0 )
+    if( bDeleteMe || PointsHit.Length < 1 || Health <= 0 || Damage <= 0 )
         return;
 
     // Don't process locational damage if we're not going to damage a friendly anyway
-    if( TeamGame(Level.Game)!=None && TeamGame(Level.Game).FriendlyFireScale==0 && instigatedBy!=None && instigatedBy!=Self
-            && instigatedBy.GetTeamNum()==GetTeamNum() )
-        Return;
+    if( instigatedBy != none && instigatedBy != self
+            && TeamGame(Level.Game) != none && TeamGame(Level.Game).FriendlyFireScale ~= 0
+            && instigatedBy.GetTeamNum() == GetTeamNum() )
+        return;
 
-    KFHeadshotMult = 1.0;
+    // ignore all the hitpoint crap from RO that does not make much sense in KF.
+    // Simply determine is this a headshot or not
     KFDamType = class<KFWeaponDamageType>(damageType);
-
-    // do only highest damage
-    for(i=0; i<PointsHit.Length; i++)  {
-        actualDamage = Damage;
-
-        // use KFWeaponDamageType.HeadShotDamageMult instead of Hitpoints.DamageMultiplier
-        // -- PooSH
-        if ( Hitpoints[PointsHit[i]].HitPointType == PHP_Head ) {
-            bHeadShot = KFDamType != none && KFDamType.default.bCheckForHeadShots;
-
-            if ( bHeadShot ) {
-                if ( KFDamType.default.bIsPowerWeapon )
-                    KFHeadshotMult = 1.0;
-                else
-                    KFHeadshotMult = 2.0;
-                KFHeadshotMult = fmax(KFHeadshotMult, KFDamType.default.HeadShotDamageMult);
-                if ( !KFDamType.default.bIsMeleeDamage && InstigatorPRI != none && InstigatorPRI.ClientVeteranSkill != none )
-                    KFHeadshotMult *= fmin(2.0, InstigatorPRI.ClientVeteranSkill.Static.GetHeadShotDamMulti(InstigatorPRI, KFPawn(instigatedBy), DamageType));
+    if ( KFDamType != none && KFDamType.default.bCheckForHeadShots && InstigatorPRI != none ) {
+        for( i = 0; i < PointsHit.Length; ++i) {
+            if ( Hitpoints[PointsHit[i]].HitPointType == PHP_Head ) {
+                bHeadShot = true;
+                break;
             }
-
-            actualDamage *= KFHeadshotMult;
         }
-        else
-            actualDamage *= Hitpoints[PointsHit[i]].DamageMultiplier;
 
-        //actualDamage = Level.Game.ReduceDamage(actualDamage, self, instigatedBy, HitLocation, Momentum, DamageType);
-
-        if( actualDamage > HighestDamageAmount )
-        {
-            HighestDamageAmount = actualDamage;
-            HighestDamagePoint = PointsHit[i];
-            if ( bHeadShot )
-                break; // headshot does max damage - no need to look for more
-        }
-    }
-
-    if( HighestDamageAmount > 0 ) {
-        if( bHeadShot ) {
-            // Play a sound when someone gets a headshot - KFTODO: Replace this with a better bullet hitting a helmet sound
+        if ( bHeadShot ) {
+            if ( KFDamType.default.bIsPowerWeapon ) {
+                KFHeadshotMult = 1.0;
+            }
+            else {
+                KFHeadshotMult = 2.0;
+            }
+            KFHeadshotMult = fmax(KFHeadshotMult, KFDamType.default.HeadShotDamageMult);
+            if ( !KFDamType.default.bIsMeleeDamage && InstigatorPRI.ClientVeteranSkill != none ) {
+                KFHeadshotMult *= fmin(2.0, InstigatorPRI.ClientVeteranSkill.Static.GetHeadShotDamMulti(
+                        InstigatorPRI, KFPawn(instigatedBy), DamageType));
+            }
+            Damage *= KFHeadshotMult;
             PlaySound(HeadshotSound, SLOT_None,2.0,true,500);
         }
-        TakeDamage(HighestDamageAmount, instigatedBy, hitlocation, momentum, damageType, HighestDamagePoint);
     }
+
+    TakeDamage(Damage, instigatedBy, hitlocation, momentum, damageType);
 }
 
 // this is used by explosive projectiles to scale damage
@@ -2060,8 +2112,7 @@ simulated function TakeDamage( int Damage, Pawn InstigatedBy, Vector Hitlocation
     KFDamType = class<KFWeaponDamageType>(damageType);
     if ( InstigatedBy == none ) {
         // Player received non-zombie KF damage from unknown source.
-        // Let's assume that it is friendly damage, e.g. from just disconnected/crashed/cheating teammate
-        // and ignore it.
+        // Let's assume that it is friendly damage, e.g. from just disconnected/crashed/cheating teammate and ignore it.
         if ( KFDamType != none && class<DamTypeZombieAttack>(KFDamType) == none )
             return;
     }
@@ -2118,22 +2169,18 @@ simulated function TakeDamage( int Damage, Pawn InstigatedBy, Vector Hitlocation
         if(NextBileTime< Level.TimeSeconds )
             NextBileTime = Level.TimeSeconds+BileFrequency;
 
-        if ( Level.Game != none && Level.Game.GameDifficulty >= 4.0 && KFPlayerController(Controller) != none &&
-             !KFPlayerController(Controller).bVomittedOn)
-        {
-            KFPlayerController(Controller).bVomittedOn = true;
-            KFPlayerController(Controller).VomittedOnTime = Level.TimeSeconds;
+        if ( Level.Game != none && Level.Game.GameDifficulty >= 4.0 && KFPC != none && !KFPC.bVomittedOn ) {
+            KFPC.bVomittedOn = true;
+            KFPC.VomittedOnTime = Level.TimeSeconds;
 
             if ( Controller.TimerRate == 0.0 )
                 Controller.SetTimer(10.0, false);
         }
     }
     else if ( class<SirenScreamDamage>(DamageType) != none ) {
-        if ( Level.Game != none && Level.Game.GameDifficulty >= 4.0 && KFPlayerController(Controller) != none &&
-             !KFPlayerController(Controller).bScreamedAt)
-        {
-            KFPlayerController(Controller).bScreamedAt = true;
-            KFPlayerController(Controller).ScreamTime = Level.TimeSeconds;
+        if ( Level.Game != none && Level.Game.GameDifficulty >= 4.0 && KFPC != none && !KFPC.bScreamedAt) {
+            KFPC.bScreamedAt = true;
+            KFPC.ScreamTime = Level.TimeSeconds;
 
             if ( Controller.TimerRate == 0.0 )
                 Controller.SetTimer(10.0, false);
@@ -2144,18 +2191,14 @@ simulated function TakeDamage( int Damage, Pawn InstigatedBy, Vector Hitlocation
     if ( Health <= 50 )
         SetOverlayMaterial(InjuredOverlay,0, true);
 
-
     // SERVER-SIDE ONLY
     if ( Role < ROLE_Authority )
         return;
 
-    // pawn didn't took any damage, probably due to resistance or disabled friendly fire
-    // do not lower HealthToGive in such cases
-    if ( Health >= OldHealth )
-        return;
-
-    HealthToGive -= 5;
-    ClientHealthToGive = HealthToGive;
+    if ( HealthToGive > 0 ) {
+        HealthToGive = max(HealthToGive - 5, 0);
+        ClientHealthToGive = HealthToGive;
+    }
 
     if ( KFDamType != none ) {
         if ( KFDamType.default.bDealBurningDamage ) {
@@ -2175,24 +2218,22 @@ simulated function TakeDamage( int Damage, Pawn InstigatedBy, Vector Hitlocation
         }
     }
 
-    // added null check for Instigator  -- PooSH
-    if ( Level.Game.NumPlayers > 1 && Instigator != none && PlayerController(Instigator.Controller) != none
-        && Health < 25 && Level.TimeSeconds - LastDyingMessageTime > DyingMessageDelay )
+    if ( Health > 0 && Health < 50 && Level.Game.NumPlayers > 1 && KFPC != none
+            && Level.TimeSeconds - LastDyingMessageTime > DyingMessageDelay )
     {
-        // Tell everyone we're dying
-        PlayerController(Instigator.Controller).Speech('AUTO', 6, "");
-
+        if ( Health <= 25 || frand() < 0.5 ) {
+            KFPC.Speech('SUPPORT', 0, "");  // MEDIC!
+        }
+        else {
+            KFPC.Speech('AUTO', 6, "");  // I'm dying!
+        }
         LastDyingMessageTime = Level.TimeSeconds;
     }
 
     // ScrN stuff
     if ( Health > 0 && HealthBeforeHealing > 0 && (level.TimeSeconds - LastHealTime) < 1.0 ) {
-        if (  (HealthBeforeHealing - Damage) <= 0
-                && LastHealedBy != none && LastHealedBy != self
-                && ScrnPlayerController(LastHealedBy.Controller) != none
-                && SRStatsBase(ScrnPlayerController(LastHealedBy.Controller).SteamStatsAndAchievements) != none )
-        {
-            class'ScrnAchCtrl'.static.ProgressAchievementByID(SRStatsBase(ScrnPlayerController(LastHealedBy.Controller).SteamStatsAndAchievements).Rep, 'TouchOfSavior', 1);
+        if ( (HealthBeforeHealing - Damage) <= 0 && LastHealedBy != none && LastHealedBy != self ) {
+            class'ScrnAchCtrl'.static.Ach2Pawn(LastHealedBy, 'TouchOfSavior', 1);
             HealthBeforeHealing = 0; //don't give this achievement anymore until next healing will be received
         }
         else if ( Health < HealthBeforeHealing )

@@ -201,7 +201,7 @@ function StinkyControllerCompeledAction(StinkyController SC, int CompletedAction
             gnome.Holder = SC.StinkyClot;
             gnome.bHeld = true;
             ZedSpawnLoc = ZSLOC_RANDOM;
-            ScrnBalanceMut.GameRules.AdjustZedSpawnRate(); // reset boring votes
+            SetBoringStage(0);
         }
         SC.GotoState('MoveToShop', 'Begin');
     }
