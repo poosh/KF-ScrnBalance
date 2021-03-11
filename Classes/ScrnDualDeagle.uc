@@ -708,7 +708,7 @@ simulated function bool AllowReload()
 {
     UpdateMagCapacity(Instigator.PlayerReplicationInfo);
 
-    if( bBotControlled ) {
+    if( !Other.IsHumanControlled() ) {
         return !bIsReloading && MagAmmoRemaining <= MagCapacity && AmmoAmount(0) > MagAmmoRemaining;
     }
 

@@ -5,6 +5,19 @@ var         float             ReloadShortRate;
 
 var transient bool  bShortReload;
 
+// copy-pasted to add (MagCapacity+1)
+simulated function bool AllowReload()
+{
+    UpdateMagCapacity(Instigator.PlayerReplicationInfo);
+
+    if( !Other.IsHumanControlled() ) {
+        return !bIsReloading && MagAmmoRemaining <= MagCapacity && AmmoAmount(0) > MagAmmoRemaining;
+    }
+
+    return !( FireMode[0].IsFiring() || FireMode[1].IsFiring() || bIsReloading || ClientState == WS_BringUp
+            || MagAmmoRemaining >= MagCapacity + 1 || AmmoAmount(0) <= MagAmmoRemaining
+            || (FireMode[0].NextFireTime - Level.TimeSeconds) > 0.1 );
+}
 
 exec function ReloadMeNow()
 {

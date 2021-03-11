@@ -66,6 +66,14 @@ state FireLoop
 
         NextFireTime = Level.TimeSeconds - 0.000001; //fire now!
     }
+    function ModeTick(float dt)
+    {
+        if( KFWeap.MagAmmoRemaining < 1 )
+        {
+            DoCloseBolt(); //plays sound and sets bBoltClosed
+        }
+        Super.ModeTick(dt);
+    }
 }
 
 
