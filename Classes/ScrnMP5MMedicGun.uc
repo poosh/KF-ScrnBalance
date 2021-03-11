@@ -73,22 +73,13 @@ simulated function bool AllowReload()
 {
     UpdateMagCapacity(Instigator.PlayerReplicationInfo);
 
-    if ( KFInvasionBot(Instigator.Controller) != none && !bIsReloading &&
-        MagAmmoRemaining < MagCapacity && AmmoAmount(0) > MagAmmoRemaining )
-        return true;
+    if( !Other.IsHumanControlled() ) {
+        return !bIsReloading && MagAmmoRemaining <= MagCapacity && AmmoAmount(0) > MagAmmoRemaining;
+    }
 
-    if ( KFFriendlyAI(Instigator.Controller) != none && !bIsReloading &&
-        MagAmmoRemaining < MagCapacity && AmmoAmount(0) > MagAmmoRemaining )
-        return true;
-
-
-    if( FireMode[0].IsFiring() || FireMode[1].IsFiring() ||
-           bIsReloading || MagAmmoRemaining > MagCapacity ||
-           ClientState == WS_BringUp ||
-           AmmoAmount(0) <= MagAmmoRemaining ||
-                   (FireMode[0].NextFireTime - Level.TimeSeconds) > 0.1 )
-        return false;
-    return true;
+    return !( FireMode[0].IsFiring() || FireMode[1].IsFiring() || bIsReloading || ClientState == WS_BringUp
+            || MagAmmoRemaining >= MagCapacity + 1 || AmmoAmount(0) <= MagAmmoRemaining
+            || (FireMode[0].NextFireTime - Level.TimeSeconds) > 0.1 );
 }
 
 exec function ReloadMeNow()
