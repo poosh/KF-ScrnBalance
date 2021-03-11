@@ -16,7 +16,7 @@ static function PreloadAssets(Inventory Inv, optional bool bSkipRefCount)
 
     if (default.NewAnimRef == "")
         return;
-        
+
     default.NewAnim = MeshAnimation(DynamicLoadObject(default.NewAnimRef, class'MeshAnimation', true));
 
     spawned = ScrnMP5MMedicGun(Inv);
@@ -73,7 +73,7 @@ simulated function bool AllowReload()
 {
     UpdateMagCapacity(Instigator.PlayerReplicationInfo);
 
-    if( !Other.IsHumanControlled() ) {
+    if( !Instigator.IsHumanControlled() ) {
         return !bIsReloading && MagAmmoRemaining <= MagCapacity && AmmoAmount(0) > MagAmmoRemaining;
     }
 
@@ -217,7 +217,7 @@ defaultproperties
     ReloadAnim="Reload"
     ReloadRate=2.90
     ReloadAnimRate=1.3
-    Magcapacity=30
+    Magcapacity=32
     HealAmmoCharge=0
     Weight=4.000000
     FireModeClass(0)=Class'ScrnBalanceSrv.ScrnMP5MFire'

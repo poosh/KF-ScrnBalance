@@ -64,13 +64,13 @@ simulated function bool AllowReload()
 {
     UpdateMagCapacity(Instigator.PlayerReplicationInfo);
 
-    if( !Other.IsHumanControlled() ) {
+    if( !Instigator.IsHumanControlled() ) {
         return !bIsReloading && MagAmmoRemaining < MagCapacity && AmmoAmount(0) > MagAmmoRemaining;
     }
 
     return !( FireMode[0].IsFiring() || FireMode[1].IsFiring() || bIsReloading || ClientState == WS_BringUp
         || MagAmmoRemaining >= MagCapacity || AmmoAmount(0) <= MagAmmoRemaining
-        ||(FireMode[0].NextFireTime - Level.TimeSeconds) > 0.1 )
+        || (FireMode[0].NextFireTime - Level.TimeSeconds) > 0.1 );
 }
 
 exec function ReloadMeNow()

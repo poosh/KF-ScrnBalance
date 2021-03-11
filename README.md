@@ -19,6 +19,12 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+### v9.64.06
+- Enabled **Tactical Reload** with full mag but empty chamber for all closed-bolt weapons, including
+  **ScrN Weapon Pack** (by *Duckbuster*)
+- Fixed player scream for medic on low health (it was in the vanilla code but never worked due to bugs)
+- Code optimization
+
 ### v9.64.05
 - Reworked zed spawn rate calculation by throwing out all the Tripwire's code into a trashcan.
   Now, the zed spawn rate increases consistently by the *alive* player count.

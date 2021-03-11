@@ -1,5 +1,26 @@
 class ScrnHumanPawn extends SRHumanPawn;
 
+/**
+ * When controlled by a player, the Controller's class MUST be ScrnPlayerController or a descendant.
+ * Using other playercontrollers (e.g. KFPlayerController) causes undefined behavior.
+ * Controllers exist only on the server, with exception of the local PlayerController - the one that player controls on
+ * the client side. Hence, (ScrnPC != none) check tells that:
+ * 1. This pawn is either locally controlled or the code is executing on the server.
+ * 2. And the pawn is controlled by a player (not bot).
+ * On the client side, PlayerController's pawn has bNetOwner && ROLE_AutonomousProxy. Autonomous proxy allows executing
+ * non-simulated functions. Other player pawns have ROLE_SimulatedProxy and unable to execute non-simulated functions.
+ * Function calls (e.g. ClientSetVestClass()) can be replicated only to/from net owner.
+ * Having "simulated" functions inside controller classes does not make any sense since controllers are not replitated.
+ * But the local player controllers has ROLE_AutonomousProxy and can execute non-simulated functions.
+ *
+ * Theoretically, bots can control ScrnHumanPawn instances too. Actually, properly implemented bots should use the same
+ * pawns as players. The problem in KF1 code is that the single-responsibility principle is totally messed up, and there
+ * where many controller functions implemented inside pawns or even weapons. For instance, KFWeapon, when controlled by
+ * a bot, decides when it needs to reload itself, rather than the bot's controller. Maybe one day I will write proper
+ * bot AI.
+ */
+var ScrnPlayerController ScrnPC;
+
 var float HealthRestoreRate; // how fast player can be healed (hp/s)
 var float HealthToGiveRemainder; // pawn receives integer amount of hp. remainder should be moved to next healing tick
 var byte ClientHealthToGive; //required for client replication
@@ -119,8 +140,10 @@ simulated function PostBeginPlay()
 {
     super.PostBeginPlay();
 
-    FindGameRules();
-    ReplaceRequiredEquipment();
+    if ( Role == ROLE_Authority ) {
+        FindGameRules();
+        ReplaceRequiredEquipment();
+    }
 
     if ( SoundGroupClass == none )
         SoundGroupClass = Class'KFMod.KFMaleSoundGroup';
@@ -133,6 +156,20 @@ simulated function PostNetBeginPlay()
     super.PostNetBeginPlay();
 
     CalcHealthMax();
+}
+
+// WARNING! Returns false if called on the client side for non-owned pawn
+simulated function bool IsHumanControlled()
+{
+    return ScrnPC != none;
+}
+
+simulated function bool IsLocallyControlled()
+{
+    if ( ScrnPC != none )
+        return Viewport(ScrnPC.Player) != none;
+    else
+        return Controller != none;  // in case of a bot (AIController)
 }
 
 function ReplaceRequiredEquipment()
@@ -258,16 +295,18 @@ function PossessedBy(Controller C)
 {
     Super.PossessedBy(C);
 
+    ScrnPC = ScrnPlayerController(Controller);
     KFPRI = KFPlayerReplicationInfo(PlayerReplicationInfo);
     ScrnPerk = class<ScrnVeterancyTypes>(KFPRI.ClientVeteranSkill);
-    if ( PlayerController(C) != none )
-        bAmIBaron = PlayerController(C).GetPlayerIDHash() == "76561198006289592";
+    if ( ScrnPC != none )
+        bAmIBaron = ScrnPC.GetPlayerIDHash() == "76561198006289592";
 }
 
 function UnPossessed()
 {
     super.UnPossessed();
 
+    ScrnPC = none;
     KFPRI = none;
     ScrnPerk = none;
 }
@@ -401,7 +440,6 @@ simulated function SwitchWeapon(byte F)
     local bool bPerkedFirst;
     local array<Weapon> SortedGroupInv; // perked -> non-perked -> empy
     local int NonPerkedIndex, EmptyIndex, i;
-    local ScrnPlayerController ScrnPC;
 
     if ( (Level.Pauser!=None) || (Inventory == None) )
         return;
@@ -409,8 +447,6 @@ simulated function SwitchWeapon(byte F)
         return;
     if ( bQuickMeleeInProgress )
         return;
-
-    ScrnPC = ScrnPlayerController(Controller);
 
     bPerkedFirst = ScrnPerk != none && ScrnPC != none && ScrnPC.bPrioritizePerkedWeapons;
 
@@ -480,22 +516,20 @@ simulated function ChangedWeapon()
         ApplyWeaponStats(Weapon);
     }
 
-    if ( IsLocallyControlled() && ScrnPlayerController(Controller) != none )
-        ScrnPlayerController(Controller).LoadGunSkinFromConfig();
+    if ( ScrnPC != none && IsLocallyControlled() )
+        ScrnPC.LoadGunSkinFromConfig();
 }
 
 function ServerChangedWeapon(Weapon OldWeapon, Weapon NewWeapon)
 {
-    local ScrnPlayerController PC;
     local int i;
 
-    PC = ScrnPlayerController(Controller);
-    if ( NewWeapon != none && PC != none) {
+    if ( NewWeapon != none && ScrnPC != none) {
         // set skinned attachment class
-        for ( i=0; i<PC.WeaponSettings.length; ++i ) {
-            if ( NewWeapon.class == PC.WeaponSettings[i].Weapon ) {
-                if ( PC.WeaponSettings[i].SkinnedWeapon != none )
-                    NewWeapon.AttachmentClass = PC.WeaponSettings[i].SkinnedWeapon.default.AttachmentClass;
+        for ( i=0; i<ScrnPC.WeaponSettings.length; ++i ) {
+            if ( NewWeapon.class == ScrnPC.WeaponSettings[i].Weapon ) {
+                if ( ScrnPC.WeaponSettings[i].SkinnedWeapon != none )
+                    NewWeapon.AttachmentClass = ScrnPC.WeaponSettings[i].SkinnedWeapon.default.AttachmentClass;
                 break;
             }
         }
@@ -544,7 +578,6 @@ function UpdateSpecInfo()
 simulated function ApplyWeaponStats(Weapon NewWeapon)
 {
     local KFWeapon Weap;
-    local ScrnPlayerController ScrnPC;
 
     BaseMeleeIncrease = default.BaseMeleeIncrease;
     InventorySpeedModifier = 0;
@@ -552,7 +585,6 @@ simulated function ApplyWeaponStats(Weapon NewWeapon)
     Weap = KFWeapon(NewWeapon);
 
     // check cowboy mode
-    ScrnPC = ScrnPlayerController(Controller);
     if ( ScrnPC != none ) {
         bCowboyMode = ScrnPerk != none && Weap != none && ScrnPerk.static.CheckCowboyMode(KFPRI, Weap.class);
 
@@ -607,28 +639,26 @@ simulated function ApplyWeaponStats(Weapon NewWeapon)
 
 function CheckPerkAchievements()
 {
-    local ScrnPlayerController ScrnPlayer;
     local ClientPerkRepLink StatRep;
     local int i;
 
     if ( Role < ROLE_Authority )
         return; // ROLE_AutonomousProxy can execute non-simulated functions too
 
-    ScrnPlayer = ScrnPlayerController(Controller);
-    if ( KFPRI == none || KFPRI.ClientVeteranSkill == none || ScrnPlayer == none )
+    if ( KFPRI == none || KFPRI.ClientVeteranSkill == none || ScrnPC == none )
         return;
 
-    if ( KFPRI.ClientVeteranSkill != ScrnPlayer.InitialPerkClass ) {
-        if ( KFGameType(Level.Game).WaveNum == 0 && ScrnPlayer.InitialPerkClass == none ) {
-            ScrnPlayer.InitialPerkClass = KFPRI.ClientVeteranSkill;
-            ScrnPlayer.bChangedPerkDuringGame = false;
+    if ( KFPRI.ClientVeteranSkill != ScrnPC.InitialPerkClass ) {
+        if ( KFGameType(Level.Game).WaveNum == 0 && ScrnPC.InitialPerkClass == none ) {
+            ScrnPC.InitialPerkClass = KFPRI.ClientVeteranSkill;
+            ScrnPC.bChangedPerkDuringGame = false;
         }
         else {
-            ScrnPlayer.bChangedPerkDuringGame = true;
+            ScrnPC.bChangedPerkDuringGame = true;
         }
     }
 
-    StatRep = SRStatsBase(ScrnPlayer.SteamStatsAndAchievements).Rep;
+    StatRep = SRStatsBase(ScrnPC.SteamStatsAndAchievements).Rep;
     if ( StatRep == none )
         return;
 
@@ -1163,8 +1193,8 @@ static function bool CalcAmmoCost(Pawn P, Class<Ammunition> AClass,
 
 function UsedStartCash(int UseAmount)
 {
-    if ( UseAmount != 0 && ScrnPlayerController(Controller) != none )
-        ScrnPlayerController(Controller).StartCash = Max(ScrnPlayerController(Controller).StartCash - UseAmount, 0);
+    if ( UseAmount != 0 && ScrnPC != none )
+        ScrnPC.StartCash = Max(ScrnPC.StartCash - UseAmount, 0);
 }
 
 function bool ServerBuyAmmo( Class<Ammunition> AClass, bool bOnlyClip )
@@ -1631,7 +1661,7 @@ function Timer()
         StopBurnFX();
     }
 
-    if( KFPC != none ) {
+    if( ScrnPC != none ) {
         bOnDrugs = false;
         if ( Health <= 0 ) {
             PlaySound(MiscSound,SLOT_Talk);
@@ -1966,20 +1996,18 @@ simulated function ThrowGrenadeFinished()
 simulated function Fire( optional float F )
 {
     local KFWeapon W;
-    local ScrnPlayerController PC;
 
     if ( Weapon == none )
         return;
 
-    PC = ScrnPlayerController(Controller);
     W = KFWeapon(Weapon);
-    if ( PC != none && PC.bManualReload && W != none && !W.bMeleeWeapon && W.bConsumesPhysicalAmmo
+    if ( ScrnPC != none && ScrnPC.bManualReload && W != none && !W.bMeleeWeapon && W.bConsumesPhysicalAmmo
             && !W.bIsReloading && !W.bHoldToReload
             && W.MagCapacity > 1 && W.MagAmmoRemaining < W.GetFireMode(0).AmmoPerFire ) {
         if ( W.AmmoAmount(0) == 0 )
-            PC.ReceiveLocalizedMessage(class'ScrnBalanceSrv.ScrnPlayerWarningMessage',1);
+            ScrnPC.ReceiveLocalizedMessage(class'ScrnBalanceSrv.ScrnPlayerWarningMessage',1);
         else
-            PC.ReceiveLocalizedMessage(class'ScrnBalanceSrv.ScrnPlayerWarningMessage',0);
+            ScrnPC.ReceiveLocalizedMessage(class'ScrnBalanceSrv.ScrnPlayerWarningMessage',0);
         W.PlayOwnedSound(W.GetFireMode(0).NoAmmoSound, SLOT_None,2.0,,,,false); //play weapon's no ammo sound
         W.GetFireMode(0).ModeDoFire(); //force weapon's mode do fire
         return;
@@ -1994,22 +2022,18 @@ simulated function Fire( optional float F )
 simulated function AltFire( optional float F )
 {
     local KFWeapon W;
-    local ScrnPlayerController PC;
 
     if ( Weapon == none )
         return;
-
-
-    PC = ScrnPlayerController(Controller);
     W = KFWeapon(Weapon);
-    if ( PC != none && PC.bManualReload && W != none && !W.bMeleeWeapon && W.bConsumesPhysicalAmmo
+    if ( ScrnPC != none && ScrnPC.bManualReload && W != none && !W.bMeleeWeapon && W.bConsumesPhysicalAmmo
             && W.bReduceMagAmmoOnSecondaryFire && KFMedicGun(W) == none
             && !W.bIsReloading && !W.bHoldToReload
             && W.MagCapacity > 2 && W.MagAmmoRemaining < W.GetFireMode(1).AmmoPerFire ) {
         if ( W.AmmoAmount(0) == 0 )
-            PC.ReceiveLocalizedMessage(class'ScrnBalanceSrv.ScrnPlayerWarningMessage',1);
+            ScrnPC.ReceiveLocalizedMessage(class'ScrnBalanceSrv.ScrnPlayerWarningMessage',1);
         else
-            PC.ReceiveLocalizedMessage(class'ScrnBalanceSrv.ScrnPlayerWarningMessage',0);
+            ScrnPC.ReceiveLocalizedMessage(class'ScrnBalanceSrv.ScrnPlayerWarningMessage',0);
         W.PlayOwnedSound(W.GetFireMode(0).NoAmmoSound, SLOT_None,2.0,,,,false);
         return;
     }
@@ -2169,18 +2193,18 @@ simulated function TakeDamage( int Damage, Pawn InstigatedBy, Vector Hitlocation
         if(NextBileTime< Level.TimeSeconds )
             NextBileTime = Level.TimeSeconds+BileFrequency;
 
-        if ( Level.Game != none && Level.Game.GameDifficulty >= 4.0 && KFPC != none && !KFPC.bVomittedOn ) {
-            KFPC.bVomittedOn = true;
-            KFPC.VomittedOnTime = Level.TimeSeconds;
+        if ( Level.Game != none && Level.Game.GameDifficulty >= 4.0 && ScrnPC != none && !ScrnPC.bVomittedOn ) {
+            ScrnPC.bVomittedOn = true;
+            ScrnPC.VomittedOnTime = Level.TimeSeconds;
 
             if ( Controller.TimerRate == 0.0 )
                 Controller.SetTimer(10.0, false);
         }
     }
     else if ( class<SirenScreamDamage>(DamageType) != none ) {
-        if ( Level.Game != none && Level.Game.GameDifficulty >= 4.0 && KFPC != none && !KFPC.bScreamedAt) {
-            KFPC.bScreamedAt = true;
-            KFPC.ScreamTime = Level.TimeSeconds;
+        if ( Level.Game != none && Level.Game.GameDifficulty >= 4.0 && ScrnPC != none && !ScrnPC.bScreamedAt) {
+            ScrnPC.bScreamedAt = true;
+            ScrnPC.ScreamTime = Level.TimeSeconds;
 
             if ( Controller.TimerRate == 0.0 )
                 Controller.SetTimer(10.0, false);
@@ -2218,14 +2242,14 @@ simulated function TakeDamage( int Damage, Pawn InstigatedBy, Vector Hitlocation
         }
     }
 
-    if ( Health > 0 && Health < 50 && Level.Game.NumPlayers > 1 && KFPC != none
+    if ( Health > 0 && Health < 50 && Level.Game.NumPlayers > 1 && ScrnPC != none
             && Level.TimeSeconds - LastDyingMessageTime > DyingMessageDelay )
     {
         if ( Health <= 25 || frand() < 0.5 ) {
-            KFPC.Speech('SUPPORT', 0, "");  // MEDIC!
+            ScrnPC.Speech('SUPPORT', 0, "");  // MEDIC!
         }
         else {
-            KFPC.Speech('AUTO', 6, "");  // I'm dying!
+            ScrnPC.Speech('AUTO', 6, "");  // I'm dying!
         }
         LastDyingMessageTime = Level.TimeSeconds;
     }
@@ -2624,8 +2648,8 @@ exec function TossCash( int Amount )
     if ( PlayerReplicationInfo.Score <= 0 )
         return;
 
-    if ( ScrnPlayerController(Controller) != none )
-        StartCash = ScrnPlayerController(Controller).StartCash;
+    if ( ScrnPC != none )
+        StartCash = ScrnPC.StartCash;
     if ( Amount <= 0 )
         Amount = 50;
     if ( Amount > PlayerReplicationInfo.Score )
@@ -2633,12 +2657,12 @@ exec function TossCash( int Amount )
 
     // don't use bNoStartCashToss in story mode
     if ( class'ScrnBalance'.default.Mut.bNoStartCashToss && KF_StoryGRI(Level.GRI) == none ) {
-        if ( PlayerReplicationInfo.Score <= ScrnPlayerController(Controller).StartCash ) {
+        if ( PlayerReplicationInfo.Score <= ScrnPC.StartCash ) {
             PlayerController(Controller).ClientMessage(strNoSpawnCashToss);
             CashTossTimer = Level.TimeSeconds+1.0;
             return;
         }
-        Amount = Min(Amount, PlayerReplicationInfo.Score - ScrnPlayerController(Controller).StartCash);
+        Amount = Min(Amount, PlayerReplicationInfo.Score - ScrnPC.StartCash);
     }
 
     // copied from KFPawn to override dosh class
@@ -2676,7 +2700,7 @@ exec function TossCash( int Amount )
 
 simulated function DoHitCamEffects(vector HitDirection, float JarrScale, float BlurDuration, float JarDurationScale )
 {
-    if( KFPC!=none && Viewport(KFPC.Player)!=None )
+    if( ScrnPC!=none && Viewport(ScrnPC.Player)!=None )
         Super(KFHumanPawn_Story).DoHitCamEffects(HitDirection,JarrScale, BlurDuration, JarDurationScale);
 }
 
@@ -2694,7 +2718,7 @@ simulated function PlayDying(class<DamageType> DamageType, vector HitLoc)
 
 simulated function Died(Controller Killer, class<DamageType> damageType, vector HitLocation)
 {
-    if ( ScrnPlayerController(Controller) != none && !ScrnPlayerController(Controller).bDestroying ) {
+    if ( ScrnPC != none && !ScrnPC.bDestroying ) {
         HealthBeforeDeath = Health;
     }
     super.Died(Killer, damageType, HitLocation);
@@ -2710,18 +2734,16 @@ function PlayerChangedTeam()
 
 simulated function Setup(xUtil.PlayerRecord rec, optional bool bLoadNow)
 {
-    local ScrnPlayerController PC;
     local string CN;
 
-    PC = ScrnPlayerController(Controller);
-    if ( PC != none && IsLocallyControlled() ) {
+    if ( ScrnPC != none && IsLocallyControlled() ) {
         // check this only on player side, because it stores
         // RedCharacter & BlueCharacter in the config
         CN = rec.DefaultName;
-        if ( !PC.ValidateCharacter(CN) ) {
+        if ( !ScrnPC.ValidateCharacter(CN) ) {
             // character invalid, change it valid one, which was set up in ValidateCharacter()
             rec = class'xUtil'.static.FindPlayerRecord(CN);
-            PC.ChangeCharacter(CN);
+            ScrnPC.ChangeCharacter(CN);
         }
     }
 
@@ -2755,7 +2777,7 @@ function bool CanBuyNow()
 
     foreach TouchingActors(Class'ShopVolume',Shop) {
         if ( Shop == MyShop || (Shop.bAlwaysEnabled && Shop != EnemyShop) ) {
-            ScrnPlayerController(Controller).bShoppedThisWave = true;
+            ScrnPC.bShoppedThisWave = true;
             return True;
         }
         bAtEnemyShop = bAtEnemyShop || Shop == EnemyShop;

@@ -366,6 +366,19 @@ simulated function ClientReload()
     }
 }
 
+simulated function bool AllowReload()
+{
+    UpdateMagCapacity(Instigator.PlayerReplicationInfo);
+
+    if( !Instigator.IsHumanControlled() ) {
+        return !bIsReloading && MagAmmoRemaining <= MagCapacity && AmmoAmount(0) > MagAmmoRemaining;
+    }
+
+    return !( FireMode[0].IsFiring() || FireMode[1].IsFiring() || bIsReloading || ClientState == WS_BringUp
+            || MagAmmoRemaining >= MagCapacity + 2 || AmmoAmount(0) <= MagAmmoRemaining
+            || (FireMode[0].NextFireTime - Level.TimeSeconds) > 0.1 );
+}
+
 exec function ReloadMeNow()
 {
     local float ReloadMulti;

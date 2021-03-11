@@ -1652,35 +1652,47 @@ function NavigationPoint FindPlayerStart( Controller Player, optional byte InTea
     return super.FindPlayerStart(Player, TeamIndex, incomingName);
 }
 
-function RestartPlayer( Controller aPlayer )
+function bool IsPlayerRestartAllowed(PlayerController PC)
 {
-    local PlayerController CI;
+    if ( PC == none )
+        return true;  // allow bot restart whenever needed
 
-    CI = PlayerController(aPlayer);
-    if ( CI != none && CI.PlayerReplicationInfo != none ) {
+    if ( bWaveInProgress )
+        return false;
 
-        if ( ScrnBalanceMut.bTeamsLocked && !IsInvited(CI) ) {
-            CI.ReceiveLocalizedMessage(class'ScrnGameMessages', 243);
-            if ( !CI.PlayerReplicationInfo.bOnlySpectator && !BecomeSpectator(CI) ) {
-                // Max spectators reached. Leave player as dead body.
-                CI.PlayerReplicationInfo.bOutOfLives = true;
-                CI.PlayerReplicationInfo.NumLives = 1;
-                CI.GoToState('Spectating');
-            }
-            return;
-        }
+    if ( ScrnGameLength != none && !ScrnGameLength.Wave.bRespawnDeadPlayers )
+        return false;
 
-        if ( ScrnGameLength != none && !ScrnGameLength.Wave.bRespawnDeadPlayers ) {
-            CI.PlayerReplicationInfo.bOutOfLives = true;
-            CI.PlayerReplicationInfo.NumLives = 1;
-            CI.GoToState('Spectating');
-            return;
-        }
+    if ( ScrnBalanceMut.bTeamsLocked && !IsInvited(PC) ) {
+        PC.ReceiveLocalizedMessage(class'ScrnGameMessages', 243);
+        return false;
     }
 
-    super.RestartPlayer(aPlayer);
+    return true;
+}
+
+function RestartPlayer( Controller aPlayer )
+{
+    local PlayerController PC;
+
+    if ( aPlayer.PlayerReplicationInfo.bOutOfLives || aPlayer.Pawn != None )
+        return;
+
+    PC = PlayerController(aPlayer);
+    if ( PC != none && !IsPlayerRestartAllowed(PC) ) {
+        PC.PlayerReplicationInfo.bOutOfLives = true;
+        PC.PlayerReplicationInfo.NumLives = 1;
+        PC.GoToState('Spectating');
+        return;
+    }
+
+    super(Invasion).RestartPlayer(aPlayer);
 
     if ( aPlayer.Pawn != none ) {
+        if ( KFHumanPawn(aPlayer.Pawn) != none ) {
+            KFHumanPawn(aPlayer.Pawn).VeterancyChanged();
+        }
+
         if ( bTradingDoorsOpen && aPlayer.bIsPlayer ) {
             aPlayer.Pawn.bBlockActors = !bAntiBlocker;
         }
@@ -1689,11 +1701,11 @@ function RestartPlayer( Controller aPlayer )
             // triggers PlayerStart.Event despite is is spawn elsewhere, e.g. at trader
             TriggerEvent(PlayerStartEvent, aPlayer.Pawn.Anchor, aPlayer.Pawn);
         }
-    }
 
-    if ( CI != none && CI.Pawn != none ) {
-        if ( FriendlyFireScale > 0 )
-            ScrnBalanceMut.SendFriendlyFireWarning(CI);
+        if ( PC != none ) {
+            if ( FriendlyFireScale > 0 )
+                ScrnBalanceMut.SendFriendlyFireWarning(PC);
+        }
     }
 }
 

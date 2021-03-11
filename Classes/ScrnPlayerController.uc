@@ -1,21 +1,8 @@
-/* CODE BREAKING WARNING in v5.16 Beta 12
-Removed AchInfo objects. Used AchDef.CurrentProgress instead
-
-Changed variables and functions:
-+ AchStrInfo
-! PendingAchievements
-- CurrentAchievement
-+ CurrentAchHandler, CurrentAchIndex;
-! DisplayAchievementStatus(), DisplayCurrentAchievement(), PlayerTick()
-
-ScrnAchievementEarnedMsg - requires ScrnAchievement object to be passed as optional object, switch now indicates ach index
-
-*/
-
-
 class ScrnPlayerController extends KFPCServ;
 
-
+// ScrnPlayerController may possess only ScrnHumanPawn (or descendants).
+// Possessing non-ScrnHumanPawn cause undefined behavior
+var ScrnHumanPawn ScrnPawn;
 var ScrnBalance Mut;
 var transient bool bHadPawn;
 
@@ -211,8 +198,8 @@ simulated function LoadMutSettings()
             bManualReload = Mut.bManualReload;
         if ( Mut.bHardCore )
             bOtherPlayerLasersBlue = false;
-        if ( ScrnHumanPawn(Pawn) != none )
-            ScrnHumanPawn(Pawn).bTraderSpeedBoost = Mut.bTraderSpeedBoost;
+        if ( ScrnPawn != none )
+            ScrnPawn.bTraderSpeedBoost = Mut.bTraderSpeedBoost;
     }
     else {
         //this shouldn't happen
@@ -366,41 +353,6 @@ simulated function ClientWeaponSpawned(class<Weapon> WClass, Inventory Inv)
     }
 }
 
-
-
-
-
-/*
-function AcknowledgePossession(Pawn P)
-{
-    // make sure old pawn controller is right
-    if ( Pawn != AcknowledgedPawn ) {
-        if( ScrnHumanPawn(AcknowledgedPawn) != none )
-            ScrnHumanPawn(AcknowledgedPawn).ScrnPlayer = none;
-    }
-    if( ScrnHumanPawn(P) != none )  {
-        ScrnHumanPawn(P).ScrnPlayer = self;
-    }
-
-    super.AcknowledgePossession(P);
-}
-
-function ServerAcknowledgePossession(Pawn P, float NewHand, bool bNewAutoTaunt)
-{
-    // make sure old pawn controller is right
-    if ( Pawn != AcknowledgedPawn ) {
-        if( ScrnHumanPawn(AcknowledgedPawn) != none )
-            ScrnHumanPawn(AcknowledgedPawn).ScrnPlayer = none;
-    }
-    if( ScrnHumanPawn(P) != none )  {
-        ScrnHumanPawn(P).ScrnPlayer = self;
-    }
-
-    super.ServerAcknowledgePossession(P, NewHand, bNewAutoTaunt);
-}
-
-*/
-
 function PawnDied(Pawn P)
 {
     ServerDropFlag();
@@ -419,20 +371,20 @@ function ShowBuyMenu(string wlTag,float maxweight)
 
 exec function CookGrenade()
 {
-    if ( ScrnHumanPawn(Pawn) != none )
-        ScrnHumanPawn(Pawn).CookGrenade();
+    if ( ScrnPawn != none )
+        ScrnPawn.CookGrenade();
 }
 
 exec function ThrowCookedGrenade()
 {
-    if ( ScrnHumanPawn(Pawn) != none )
-        ScrnHumanPawn(Pawn).ThrowCookedGrenade();
+    if ( ScrnPawn != none )
+        ScrnPawn.ThrowCookedGrenade();
 }
 
 exec function QuickMelee()
 {
-    if ( ScrnHumanPawn(Pawn) != none )
-        ScrnHumanPawn(Pawn).QuickMelee();
+    if ( ScrnPawn != none )
+        ScrnPawn.QuickMelee();
 }
 
 /**
@@ -448,7 +400,7 @@ function DamageMade(int Damage, vector HitLocation, byte DamTypeNum)
 
     ClientPlayerDamaged(Damage, HitLocation, DamTypeNum);
 
-    if ( Role == ROLE_Authority && ScrnHumanPawn(Pawn) != none && ScrnHumanPawn(Pawn).bViewTarget ) {
+    if ( Role == ROLE_Authority && ScrnPawn != none && ScrnPawn.bViewTarget ) {
         // show damage popups on spectating players
         for ( i=0; i<Level.GRI.PRIArray.length; ++i ) {
             if ( Level.GRI.PRIArray[i] != none && Level.GRI.PRIArray[i].bOnlySpectator ) {
@@ -1091,8 +1043,8 @@ function ResetWaveStats()
     bHadArmor = bHadArmor || (KFPRI != none    && KFPRI.ClientVeteranSkill != none
         && KFPRI.ClientVeteranSkill.static.ReduceDamage(KFPRI, KFPawn(Pawn), none, 100, none) < 100);
 
-    if ( ScrnHumanPawn(Pawn) != none )
-        ScrnHumanPawn(Pawn).ApplyWeaponStats(Pawn.Weapon);
+    if ( ScrnPawn != none )
+        ScrnPawn.ApplyWeaponStats(Pawn.Weapon);
 }
 
 exec function LogAch()
@@ -1248,8 +1200,8 @@ function ServerSpeech( name Type, int Index, string Callsign )
 
 exec function AmIMedic()
 {
-    if ( ScrnHumanPawn(Pawn) != none )
-        ConsoleMessage(String(ScrnHumanPawn(Pawn).IsMedic()));
+    if ( ScrnPawn != none )
+        ConsoleMessage(String(ScrnPawn.IsMedic()));
 }
 
 // overrided to call vote for pause in unable to pause directly
@@ -1307,6 +1259,31 @@ function BecomeActivePlayer()
     }
 }
 
+/*
+ * Executes everry time when Pawn property is changes.
+ * May also execute when Pawn is reset to the same value (i.e. value does not change)
+ */
+function OnPawnChanged()
+{
+    if ( ScrnPawn != none && ScrnPawn != Pawn ) {
+        // unlink the old pawn
+        ScrnPawn.ScrnPC = none;
+    }
+    ScrnPawn = ScrnHumanPawn(Pawn);
+    if ( ScrnPawn == none && Pawn != none ) {
+        if ( Vehicle(Pawn) != none ) {
+            ScrnPawn = ScrnHumanPawn(Vehicle(Pawn).Driver);
+        }
+        if ( ScrnPawn == none ) {
+            warn("ScrnPlayerController possessed a non-ScrnHumanPawn: " $ Pawn);
+        }
+    }
+    if ( ScrnPawn != none ) {
+        ScrnPawn.ScrnPC = self;
+        ScrnPawn.KFPC = self;
+    }
+}
+
 function Possess(Pawn aPawn)
 {
     local Rotator R, R2Door;
@@ -1353,24 +1330,45 @@ function Possess(Pawn aPawn)
     }
 
     super.Possess(aPawn);
+    OnPawnChanged();
 
     // show path to trader if respawned during the trader time
     if ( Role == ROLE_Authority && Pawn != none && Mut != none && Mut.KF.bTradingDoorsOpen )
         SetShowPathToTrader(true);
 
     bHadPawn = bHadPawn || Pawn != none;
+}
 
-    if ( KFHumanPawn(Pawn) != none ) {
-        KFHumanPawn(Pawn).KFPC = self;
-    }
+function UnPossess()
+{
+    super.UnPossess();
+    OnPawnChanged();
+}
+
+function AcknowledgePossession(Pawn P)
+{
+    super.AcknowledgePossession(P);
+    OnPawnChanged();
+}
+
+function PendingStasis()
+{
+    super.PendingStasis();
+    OnPawnChanged();
+}
+
+function GivePawn(Pawn NewPawn)
+{
+    super.GivePawn(NewPawn);
+    OnPawnChanged();
 }
 
 simulated event Destroyed()
 {
     bDestroying = true;
 
-    if ( ScrnHumanPawn(Pawn) != none )
-        ScrnHumanPawn(Pawn).HealthBeforeDeath = Pawn.Health;
+    if ( ScrnPawn != none )
+        ScrnPawn.HealthBeforeDeath = Pawn.Health;
 
     if ( Role == ROLE_Authority ) {
         if ( Mut != none &&  PlayerReplicationInfo != none ) {
@@ -1822,10 +1820,7 @@ exec function ThrowWeapon()
 
 simulated function float RateWeapon(Weapon w)
 {
-    local ScrnHumanPawn ScrnPawn;
-
     if ( bPrioritizePerkedWeapons ) {
-        ScrnPawn = ScrnHumanPawn(Pawn);
         if ( ScrnPawn != none && ScrnPawn.IsPerkedWeapon(KFWeapon(W)) ) {
             return 256.f + w.Default.Priority;
         }
@@ -2276,21 +2271,21 @@ exec function ReloadMeNow()
 
 exec function GetWeapon(class<Weapon> NewWeaponClass )
 {
-    if ( ScrnHumanPawn(Pawn) != none && ScrnHumanPawn(Pawn).bQuickMeleeInProgress )
+    if ( ScrnPawn != none && ScrnPawn.bQuickMeleeInProgress )
         return;
     super.GetWeapon(NewWeaponClass);
 }
 
 exec function NextWeapon()
 {
-    if ( ScrnHumanPawn(Pawn) != none && ScrnHumanPawn(Pawn).bQuickMeleeInProgress )
+    if ( ScrnPawn != none && ScrnPawn.bQuickMeleeInProgress )
         return;
     super.NextWeapon();
 }
 
 exec function PrevWeapon()
 {
-    if ( ScrnHumanPawn(Pawn) != none && ScrnHumanPawn(Pawn).bQuickMeleeInProgress )
+    if ( ScrnPawn != none && ScrnPawn.bQuickMeleeInProgress )
         return;
     super.PrevWeapon();
 }
@@ -2299,13 +2294,49 @@ exec function PrevWeapon()
 
 state Dead
 {
+    function BeginState()
+    {
+        super.BeginState();
+        OnPawnChanged();
+    }
+
     // fix of null-reference
     function Timer()
     {
-        if ( KFStoryGameInfo(Level.Game) != none )
-            super.Timer();
-        else
-            super(KFPlayerController).Timer(); // bypass KFPlayerController_Story
+        local KFGameType KF;
+        local ScrnGameType ScrnGT;
+        local bool bRestartMe;
+
+        KF = KFGameType(Level.Game);
+        ScrnGT = ScrnGameType(Level.Game);
+
+        if ( KF != none && Level.Game.GameReplicationInfo.bMatchHasBegun ) {
+            if ( ScrnGT != none ) {
+                bRestartMe = !bSpawnedThisWave && ScrnGT.IsPlayerRestartAllowed(self);
+            }
+            else if ( KFStoryGameInfo(Level.Game) != none ) {
+                bRestartMe = KFStoryGameInfo(Level.Game).IsTraderTime();
+            }
+            else {
+                bRestartMe = !bSpawnedThisWave && !KF.bWaveInProgress;
+            }
+        }
+
+        if ( bRestartMe ) {
+            PlayerReplicationInfo.Score = Max(KF.MinRespawnCash, int(PlayerReplicationInfo.Score));
+            SetViewTarget(self);
+            ClientSetBehindView(false);
+            bBehindView = False;
+            ClientSetViewTarget(Pawn);
+            PlayerReplicationInfo.bOutOfLives = false;
+            if ( Pawn != none ) {
+                // wtf?
+                Pawn = none;
+                OnPawnChanged();
+            }
+            ServerReStartPlayer();
+        }
+        super(xPlayer).Timer();
     }
 }
 
@@ -2717,9 +2748,7 @@ exec function TestQuickMelee()
     local KFWeapon W;
     local string s;
     local int c;
-    local ScrnHumanPawn ScrnPawn;
 
-    ScrnPawn = ScrnHumanPawn(Pawn);
     if ( ScrnPawn == none )
         return;
 
@@ -2794,9 +2823,6 @@ exec function Crap(optional int Amount)
 
 function ServerCrap(int Amount)
 {
-    local ScrnHumanPawn ScrnPawn;
-
-    ScrnPawn = ScrnHumanPawn(Pawn);
     if ( ScrnPawn != none ) {
         ScrnPawn.Crap(Amount);
     }
@@ -2843,13 +2869,11 @@ function ServerCrap(int Amount)
 // {
 //     local int i;
 //     local ScrnClientPerkRepLink L;
-//     local ScrnHumanPawn ScrnPawn;
 //
 //     if ( Role != ROLE_Authority )
 //         return;
 //
 //     PlayerReplicationInfo.Score = 1000000;
-//     ScrnPawn = ScrnHumanPawn(Pawn);
 //     L = class'ScrnClientPerkRepLink'.static.FindMe(self);
 //     for ( i=0; i<L.ShopInventory.length; ++i ) {
 //         ScrnPawn.DropAllWeapons(ScrnPawn);
