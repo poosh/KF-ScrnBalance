@@ -735,6 +735,15 @@ function int NetDamage( int OriginalDamage, int Damage, pawn injured, pawn insti
         if ( SPI != none )
             SPI.MadeDamage(Damage, ZedVictim, KFDamType, MonsterInfos[idx].bHeadshot, MonsterInfos[idx].bWasDecapitated);
     }
+    else if ( ZedVictim != none ) {
+        if ( KFMonster(instigatedBy) != none ) {
+            // Monster2Monster damage
+            if ( !Mut.bStoryMode && KFMonsterController(ZedVictim.Controller) != none ) {
+                // allow monsters fighting each other
+                KFMonsterController(ZedVictim.Controller).bUseThreatAssessment = false;
+            }
+        }
+    }
     else if ( KFHumanPawn(injured) != none ) {
         if ( KFMonster(instigatedBy) != none ) {
             // M2P damage
@@ -800,11 +809,15 @@ function bool PreventDeath(Pawn Killed, Controller Killer, class<DamageType> dam
     local ScrnPlayerInfo SPI;
     local int idx;
     local class<KFWeaponDamageType> KFDamType;
+    local ScrnHumanPawn ScrnKillerPawn;
 
     if ( (NextGameRules != None) && NextGameRules.PreventDeath(Killed,Killer, damageType,HitLocation) )
         return true;
 
     KFDamType = class<KFWeaponDamageType>(DamageType);
+    if ( Killer != none ) {
+        ScrnKillerPawn = ScrnHumanPawn(Killer.Pawn);
+    }
 
     ++WaveTotalKills;
     if ( Killed.IsA('DoomMonster') ) {
@@ -812,8 +825,9 @@ function bool PreventDeath(Pawn Killed, Controller Killer, class<DamageType> dam
         ++GameDoom3Kills;
     }
 
-    if ( Killer != none && KFDamType != none && ScrnHumanPawn(Killer.Pawn) != none && ClassIsChildOf(KFDamType, class'DamTypeMachete') ) {
-        ScrnHumanPawn(Killer.Pawn).MacheteResetTime = Level.TimeSeconds + 5.0;
+    if (ScrnKillerPawn != none && ClassIsChildOf(KFDamType, class'DamTypeMachete') ) {
+        ScrnKillerPawn.MacheteResetTime = Level.TimeSeconds + 3.0;
+        ScrnKillerPawn.bMacheteDamageBoost = true;
     }
 
     if ( KFMonster(Killed) != none ) {

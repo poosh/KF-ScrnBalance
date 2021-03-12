@@ -19,8 +19,18 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+### v9.64.07
+- Zeds can fight each other again (was broken since v6)
+- `bTraderSpeedBoost` disabled in Story Mode
+- Machete-sprinting disabled in Tourney Mode, TSC, or Story Mode.
+- Max Machete-boost capped at 120 (down from 150). Now, Machete-sprinting follows 20+20+20 principle: first 20 steps
+  with high boost (+3), then 20 average (+2), and small boost at the end (+1).
+- Machete damage boost is applied only on the first hit after the pickup or a kill.
+- Added `?Tourney=0` options to all non-tourney games modes in *KFMapVote.ini*
+  It seems that unspecified options carried values from the previous maps.
+
 ### v9.64.06
-- Enabled **Tactical Reload** with full mag but empty chamber for all closed-bolt weapons, including
+- Enabled **Tactical Reload** with full mag but initially empty chamber for all closed-bolt weapons, including
   **ScrN Weapon Pack** (by *Duckbuster*)
 - Fixed player scream for medic on low health (it was in the vanilla code but never worked due to bugs)
 - Code optimization

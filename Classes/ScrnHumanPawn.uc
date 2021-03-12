@@ -91,6 +91,9 @@ var bool bTraderSpeedBoost;
 var float TraderSpeedBoost;
 var byte MacheteBoost; // that's one of the most retarded things I've done
 var float MacheteResetTime;
+var bool bMacheteDamageBoost;
+var float CarriedInventorySpeed;        // allows items in the inventory to modify the movement speed
+var bool bForceCarriedInventorySpeed;  // if true, force speed to CarriedInventorySpeed. Otherwise CarriedInventorySpeed is a multiplier.
 
 var transient KFMeleeGun QuickMeleeWeapon;
 var transient KFWeapon WeaponToFixClientState;
@@ -107,11 +110,8 @@ var Sound FartSound;
 
 replication
 {
-    reliable if( bNetOwner && Role == ROLE_Authority )
-        ClientSetInventoryGroup;
-
-    reliable if( bNetOwner && Role == ROLE_Authority )
-        QuickMeleeWeapon, MacheteBoost;
+    reliable if( bNetOwner && bNetDirty && Role == ROLE_Authority )
+        QuickMeleeWeapon, MacheteBoost, CarriedInventorySpeed, bForceCarriedInventorySpeed;
 
     reliable if( Role == ROLE_Authority )
         ClientSetVestClass; //send it to all clients, cuz they need to know max health and max shield
@@ -232,62 +232,66 @@ function RecalcWeight()
 // Changed MaxCarryWeight to default.MaxCarryWeight, so support with 15/24 weight will move with same speed as other perk 15/15
 // Support with 24/24 weight now will move slower
 // Other code strings are just copy-pasted
-simulated function ModifyVelocity(float DeltaTime, vector OldVelocity)
+function ModifyVelocity(float DeltaTime, vector OldVelocity)
 {
     local float WeightMod, HealthMod, MovementMod;
     local float EncumbrancePercentage;
-    local Inventory Inv;
-    local KF_StoryInventoryItem StoryInv;
-    local int c;
+    local KFGameReplicationInfo KFGRI;
 
-    super(KFPawn).ModifyVelocity(DeltaTime, OldVelocity);
+    if ( Controller == none )
+        return;
 
-    if ( Controller != none )
-    {
-        // Calculate encumbrance, but cap it to the maxcarryweight so when we use dev weapon cheats we don't move mega slow
-        EncumbrancePercentage = (FMin(CurrentWeight, MaxCarryWeight) / default.MaxCarryWeight); //changed MaxCarryWeight to default.MaxCarryWeight
-        // Calculate the weight modifier to speed
-        WeightMod = (1.0 - (EncumbrancePercentage * WeightSpeedModifier));
-        // Calculate the health modifier to speed
-        // Do not use HealthMax here because we don't want the bonus health to affect velocity
-        if ( Health >= 100 ) {
-            HealthMod = 1.0;
+    KFGRI = KFGameReplicationInfo(Level.GRI);
+
+    if( Role == ROLE_Authority ) {
+        if ( bMovementDisabled && Level.TimeSeconds > StopDisabledTime ) {
+            bMovementDisabled = false;
         }
-        else {
-            HealthMod = (HealthSpeedModifier * Health/100.0) + (1.0 - HealthSpeedModifier);
-        }
-
-        // Apply all the modifiers
-        GroundSpeed = default.GroundSpeed * HealthMod;
-        GroundSpeed *= WeightMod;
-        GroundSpeed += InventorySpeedModifier;
-
-        if ( KFPRI != none && KFPRI.ClientVeteranSkill != none )
-            MovementMod = KFPRI.ClientVeteranSkill.static.GetMovementSpeedModifier(KFPRI, KFGameReplicationInfo(Level.GRI));
-        else
-            MovementMod = 1.0;
-        GroundSpeed *= MovementMod;
-        AccelRate = default.AccelRate * MovementMod;
-
-
-        /* Give the pawn's inventory items a chance to modify his movement speed */
-        for( Inv=Inventory; Inv!=None && ++c < 1000; Inv=Inv.Inventory )
-        {
-            GroundSpeed *= Inv.GetMovementModifierFor(self);
-
-            StoryInv = KF_StoryInventoryItem(Inv);
-            if(StoryInv != none && StoryInv.bUseForcedGroundSpeed)
-            {
-                GroundSpeed = StoryInv.ForcedGroundSpeed;
-                return;
-            }
-        }
-
-        if ( bTraderSpeedBoost && !KFGameReplicationInfo(Level.GRI).bWaveInProgress )
-            GroundSpeed *= TraderSpeedBoost;
-
-        GroundSpeed += MacheteBoost;
     }
+    if ( bMovementDisabled ) {
+        if ( Physics == PHYS_Walking ) {
+            Velocity.X = 0;
+            Velocity.Y = 0;
+            Velocity.Z = 0;
+        }
+        else if ( Velocity.Z > 0 && KFGRI.BaseDifficulty >= 5 ) {
+            Velocity.Z = 0;
+        }
+    }
+
+    if ( bForceCarriedInventorySpeed ) {
+        GroundSpeed = CarriedInventorySpeed;
+        return;
+    }
+
+    // Calculate encumbrance, but cap it to the maxcarryweight so when we use dev weapon cheats we don't move mega slow
+    EncumbrancePercentage = (FMin(CurrentWeight, MaxCarryWeight) / default.MaxCarryWeight); //changed MaxCarryWeight to default.MaxCarryWeight
+    // Calculate the weight modifier to speed
+    WeightMod = (1.0 - (EncumbrancePercentage * WeightSpeedModifier));
+    // Calculate the health modifier to speed
+    // Do not use HealthMax here because we don't want the bonus health to affect velocity
+    if ( Health >= 100 ) {
+        HealthMod = 1.0;
+    }
+    else {
+        HealthMod = (HealthSpeedModifier * Health/100.0) + (1.0 - HealthSpeedModifier);
+    }
+
+    // Apply all the modifiers
+    GroundSpeed = default.GroundSpeed * HealthMod;
+    GroundSpeed *= WeightMod;
+    GroundSpeed += InventorySpeedModifier;
+
+    MovementMod = CarriedInventorySpeed;
+    if ( KFPRI != none && KFPRI.ClientVeteranSkill != none )
+        MovementMod *= KFPRI.ClientVeteranSkill.static.GetMovementSpeedModifier(KFPRI, KFGRI);
+    GroundSpeed *= MovementMod;
+    AccelRate = default.AccelRate * MovementMod;
+
+    if ( bTraderSpeedBoost && !KFGRI.bWaveInProgress )
+        GroundSpeed *= TraderSpeedBoost;
+
+    GroundSpeed += MacheteBoost;
 }
 
 
@@ -311,61 +315,62 @@ function UnPossessed()
     ScrnPerk = none;
 }
 
-simulated function ClientSetInventoryGroup( class<Inventory> NewInventoryClass, byte NewInventoryGroup )
+function CalcCarriedInventorySpeed()
 {
     local Inventory Inv;
+    local KF_StoryInventoryItem StoryInv;
     local int c;
+    local float SpeedMod;
 
-    if ( Role < ROLE_Authority ) {
-        //need to change default value to, because it is using in some static functions
-        NewInventoryClass.default.InventoryGroup = NewInventoryGroup;
-        //search the client inventory for the specified class and change its group
-        for ( Inv=Inventory; Inv!=None && ++c < 1000 ; Inv=Inv.Inventory ) {
-            if ( Inv.class == NewInventoryClass ) {
-                Inv.InventoryGroup = NewInventoryGroup;
-                return;
-            }
+    SpeedMod = 1.0;
+    for( Inv=Inventory; Inv!=None && ++c < 1000; Inv=Inv.Inventory ) {
+        StoryInv = KF_StoryInventoryItem(Inv);
+        if ( StoryInv != none && StoryInv.bUseForcedGroundSpeed ) {
+            CarriedInventorySpeed = StoryInv.ForcedGroundSpeed;
+            bForceCarriedInventorySpeed = true;
+            return;
         }
+        SpeedMod *= Inv.GetMovementModifierFor(self);
     }
+    // if reached here, then no story inventory forces our speed
+    CarriedInventorySpeed = SpeedMod;
+    bForceCarriedInventorySpeed = false;
 }
-
-// handle pickup
-// function HandlePickup(Pickup pick)
-// {
-    // super.HandlePickup()
-// }
 
 function bool AddInventory( inventory NewItem )
 {
     local KFWeapon weap;
-    // local bool GroupChanged;
+    local ScrnBalance mut;
 
     weap = KFWeapon(NewItem);
     if( weap != none ) {
         weap.bIsTier3Weapon = true; // hack to set weap.Tier3WeaponGiver for all weapons
     }
 
-    //replicate changes on the client side
-    // if ( GroupChanged )
-    //     ClientSetInventoryGroup(NewItem.class, NewItem.InventoryGroup);
-
     if ( super.AddInventory(NewItem) ) {
         if ( weap != none ) {
-            if ( weap.bTorchEnabled )
+            if ( weap.bTorchEnabled ) {
                 AddToFlashlightArray(weap.class); // v6.22 - each weapon has own flashlight
-            CheckQuickMeleeWeapon(KFMeleeGun(weap));
-            if ( class'ScrnBalance'.default.Mut.SrvTourneyMode == 0 && Machete(weap) != none ) {
-                if ( MacheteBoost < 150 && VSizeSquared(Velocity) > 10000 ) {
-                    if ( MacheteBoost < 50 )
-                        MacheteBoost += 3;
-                    else if ( MacheteBoost < 100 )
-                        MacheteBoost += 2;
-                    else
-                        MacheteBoost++;
+            }
+
+            if ( CheckQuickMeleeWeapon(KFMeleeGun(weap)) && ScrnMachete(weap) != none ) {
+                // Machete-sprinting. Available only in casual survival game modes (not TSC, Tourney, or Story)
+                mut = class'ScrnBalance'.default.Mut;
+                if ( mut.SrvTourneyMode == 0 && !mut.bTSCGame && !mut.bStoryMode ) {
+                    if ( MacheteBoost < 120 && VSizeSquared(Velocity) > 10000 ) {
+                        if ( MacheteBoost < 60 )
+                            MacheteBoost += 3;
+                        else if ( MacheteBoost < 100 )
+                            MacheteBoost += 2;
+                        else
+                            MacheteBoost++;
+                    }
+                    MacheteResetTime = Level.TimeSeconds + 3.0;
+                    bMacheteDamageBoost = true;
                 }
-                MacheteResetTime = Level.TimeSeconds + 5.0;
             }
         }
+        CalcCarriedInventorySpeed();
         return true;
     }
     return false;
@@ -381,6 +386,7 @@ function DeleteInventory( inventory Item )
         if ( QuickMeleeWeapon != none )
             PendingWeapon = QuickMeleeWeapon;
     }
+    CalcCarriedInventorySpeed();
 }
 
 // todo: add support for modded guns
@@ -401,9 +407,8 @@ function bool CheckQuickMeleeWeapon(KFMeleeGun W)
             class<KFMeleeFire>(W.FireModeClass[1]).default.MeleeDamage )
     {
         QuickMeleeWeapon = W;
-        return true;
     }
-    return false;
+    return true;
 }
 
 function SetBestQuickMeleeWeapon()
@@ -621,20 +626,6 @@ simulated function ApplyWeaponStats(Weapon NewWeapon)
         // ScrN Armor can slow down players (or even boost) -- PooSH
         InventorySpeedModifier -= default.GroundSpeed * CurrentVestClass.default.SpeedModifier;
     }
-
-
-    //fix spawn offsets for projectile fire modes
-    //exclude healing nades, cuz they detonate on instigator too
-    // if ( Weap != none && ScrnM79M(Weap) == none && ScrnM4203MMedicGun(Weap) == none) {
-        // SgFire = KFShotgunFire(NewWeapon.GetFireMode(0));
-        // if ( SgFire != none && SgFire.ProjSpawnOffset.X > 15 ) {
-            // SgFire.ProjSpawnOffset.X = 15;
-        // }
-        // SgFire = KFShotgunFire(NewWeapon.GetFireMode(1));
-        // if ( SgFire != none && SgFire.ProjSpawnOffset.X > 15 ) {
-            // SgFire.ProjSpawnOffset.X = 15;
-        // }
-    // }
 }
 
 function CheckPerkAchievements()
@@ -1645,10 +1636,6 @@ simulated function AddHealth()
 
 function Timer()
 {
-    local KFWeapon KFWeap;
-
-    KFWeap = KFWeapon(Weapon);
-
     // C&P + Fixed from KFHumanPawn
     if (BurnDown > 0) {
         if ( BurnInstigator == self || KFPawn(BurnInstigator) == none ) {
@@ -1678,7 +1665,7 @@ function Timer()
 
     // TODO: WTF? central here
     // Instantly set the animation to arms at sides Idle if we've got no weapon (rather than Pointing an invisible gun!)
-    if ( Weapon == none || (WeaponAttachment(Weapon.ThirdPersonActor) == none && VSizeSquared(Velocity) == 0) )
+    if ( Weapon == none || (Weapon.ThirdPersonActor == none && VSizeSquared(Velocity) == 0) )
         IdleWeaponAnim = IdleRestAnim;
 
 
@@ -1750,7 +1737,7 @@ simulated function Tick(float DeltaTime)
     if ( Role == ROLE_Authority ) {
         if ( MacheteBoost > 0 && Level.TimeSeconds > MacheteResetTime ) {
             MacheteBoost = MacheteBoost >> 1;
-            MacheteResetTime = Level.TimeSeconds + 1.0;
+            MacheteResetTime = Level.TimeSeconds + 2.0;
             ModifyVelocity(0, Velocity);
         }
     }
@@ -2193,22 +2180,14 @@ simulated function TakeDamage( int Damage, Pawn InstigatedBy, Vector Hitlocation
         if(NextBileTime< Level.TimeSeconds )
             NextBileTime = Level.TimeSeconds+BileFrequency;
 
-        if ( Level.Game != none && Level.Game.GameDifficulty >= 4.0 && ScrnPC != none && !ScrnPC.bVomittedOn ) {
-            ScrnPC.bVomittedOn = true;
-            ScrnPC.VomittedOnTime = Level.TimeSeconds;
-
-            if ( Controller.TimerRate == 0.0 )
-                Controller.SetTimer(10.0, false);
-        }
-    }
-    else if ( class<SirenScreamDamage>(DamageType) != none ) {
-        if ( Level.Game != none && Level.Game.GameDifficulty >= 4.0 && ScrnPC != none && !ScrnPC.bScreamedAt) {
-            ScrnPC.bScreamedAt = true;
-            ScrnPC.ScreamTime = Level.TimeSeconds;
-
-            if ( Controller.TimerRate == 0.0 )
-                Controller.SetTimer(10.0, false);
-        }
+        // ScrnPC.bVomittedOn is for vanilla achievement only. No need it in ScrN
+        // if ( Level.Game != none && Level.Game.GameDifficulty >= 4.0 && ScrnPC != none && !ScrnPC.bVomittedOn ) {
+        //     ScrnPC.bVomittedOn = true;
+        //     ScrnPC.VomittedOnTime = Level.TimeSeconds;
+        //
+        //     if ( Controller.TimerRate == 0.0 )
+        //         Controller.SetTimer(10.0, false);
+        // }
     }
 
     //Bloody Overlays
@@ -2893,6 +2872,7 @@ defaultproperties
      strNoSpawnCashToss="Can not drop starting cash"
      HeadshotSound=sound'ProjectileSounds.impact_metal09'
      TraderSpeedBoost=1.5
+     CarriedInventorySpeed=1.0
      PrevPerkLevel=-1
      MaxFallSpeed=750
      BlameStrM99="%p blamed for using a Noobgun"

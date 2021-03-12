@@ -13,7 +13,7 @@ class ScrnBalance extends Mutator
 #exec OBJ LOAD FILE=ScrnAch_T.utx
 
 
-const VERSION = 96406;
+const VERSION = 96407;
 
 var ScrnBalance Mut; // pointer to self to use in static functions, i.e class'ScrnBalance'.default.Mut
 
@@ -2657,7 +2657,10 @@ function PostBeginPlay()
     AddToPackageMap("ScrnSM.usx");
     AddToPackageMap("ScrnSnd.uax");
 
-    if ( !bStoryMode ) {
+    if ( bStoryMode ) {
+        bTraderSpeedBoost = false;
+    }
+    else {
         SetMaxZombiesOnce();
     }
 
