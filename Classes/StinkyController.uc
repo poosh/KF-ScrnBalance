@@ -88,7 +88,7 @@ function Actor FindAlternatePath(Actor anActor)
         N = FindClosestPathNode(anActor);
         log("Unreachable actor " $ anActor $ " @ (" $ anActor.Location $ ") -> rerouting to " $ N, class.name);
         if ( TheGuardian(anActor) != none ) {
-            FtgGame.ScrnBalanceMut.BlamePlayer(ScrnPlayerController(TheGuardian(anActor).FirstTouch), BlameStr);
+            FtgGame.ScrnBalanceMut.BlamePlayer(TheGuardian(anActor).GetBaseSetter(), BlameStr);
         }
     }
     if ( N != none ) {

@@ -77,16 +77,6 @@ event InitGame( string Options, out string Error )
 
     KFGameLength = GetIntOption(Options, "GameLength", KFGameLength);
 
-    TourneyMode = GetIntOption(Options, "Tourney", TourneyMode);
-    PreStartTourney(TourneyMode);
-    if ( TourneyMode != 0 ) {
-        if ( (TourneyMode & TOURNEY_ENABLED) == 0 ) {
-            warn("TOURNEY_ENABLED flag is not set. Setting it now.");
-            TourneyMode = TourneyMode | TOURNEY_ENABLED;
-        }
-        log("*** TOURNEY MODE ("$TourneyMode$")***", class.name);
-    }
-
     ConfigMaxPlayers = default.MaxPlayers;
     super.InitGame(Options, Error);
     MaxPlayers = Clamp(GetIntOption( Options, "MaxPlayers", ConfigMaxPlayers ),0,32);
@@ -122,6 +112,22 @@ event InitGame( string Options, out string Error )
     }
 
     ScrnBalanceMut.CheckMutators();
+
+    if ( ScrnBalanceMut.Persistence.bNoTourney ) {
+        log("Tourney Mode disabled", class.name);
+        TourneyMode = 0;
+    }
+    else {
+        TourneyMode = GetIntOption(Options, "Tourney", TourneyMode);
+    }
+    PreStartTourney(TourneyMode);
+    if ( TourneyMode != 0 ) {
+        if ( (TourneyMode & TOURNEY_ENABLED) == 0 ) {
+            warn("TOURNEY_ENABLED flag is not set. Setting it now.");
+            TourneyMode = TourneyMode | TOURNEY_ENABLED;
+        }
+        log("*** TOURNEY MODE ("$TourneyMode$")***", class.name);
+    }
     if ( TourneyMode != 0 )
         StartTourney();
 }
@@ -1333,7 +1339,6 @@ function GetServerDetails( out ServerResponseLine ServerState )
     }
 }
 
-// Called before spawning mutators.
 // This is the only place where TourneyMode can be changed by descendants.
 protected function PreStartTourney(out int TourneyMode)
 {
@@ -1652,10 +1657,21 @@ function NavigationPoint FindPlayerStart( Controller Player, optional byte InTea
     return super.FindPlayerStart(Player, TeamIndex, incomingName);
 }
 
-function bool IsPlayerRestartAllowed(PlayerController PC)
+function bool PlayerCanRestart(PlayerController PC)
 {
-    if ( PC == none )
-        return true;  // allow bot restart whenever needed
+    if ( ScrnBalanceMut.bTeamsLocked && !IsInvited(PC) ) {
+        PC.ReceiveLocalizedMessage(class'ScrnGameMessages', 243);
+        if ( !PC.PlayerReplicationInfo.bOnlySpectator ) {
+            PC.BecomeSpectator();
+        }
+        if ( !PC.PlayerReplicationInfo.bOnlySpectator ) {
+            // Max spectator count reached. Leave player in the team but rejecft respawning
+            PC.PlayerReplicationInfo.bOutOfLives = true;
+            PC.PlayerReplicationInfo.NumLives = 1;
+            PC.GoToState('Spectating');
+        }
+        return false;
+    }
 
     if ( bWaveInProgress )
         return false;
@@ -1663,23 +1679,22 @@ function bool IsPlayerRestartAllowed(PlayerController PC)
     if ( ScrnGameLength != none && !ScrnGameLength.Wave.bRespawnDeadPlayers )
         return false;
 
-    if ( ScrnBalanceMut.bTeamsLocked && !IsInvited(PC) ) {
-        PC.ReceiveLocalizedMessage(class'ScrnGameMessages', 243);
-        return false;
-    }
-
-    return true;
+    // NumLives actually is NumDeaths this wave
+    return !PC.PlayerReplicationInfo.bOutOfLives && PC.PlayerReplicationInfo.NumLives == 0;
 }
 
 function RestartPlayer( Controller aPlayer )
 {
     local PlayerController PC;
 
-    if ( aPlayer.PlayerReplicationInfo.bOutOfLives || aPlayer.Pawn != None )
-        return;
-
     PC = PlayerController(aPlayer);
-    if ( PC != none && !IsPlayerRestartAllowed(PC) ) {
+    if ( PC == none ) {
+        // bots
+        if ( aPlayer.PlayerReplicationInfo.bOutOfLives || aPlayer.PlayerReplicationInfo.NumLives > 0
+                || aPlayer.Pawn != None )
+            return;
+    }
+    else if ( !PlayerCanRestart(PC) ) {
         PC.PlayerReplicationInfo.bOutOfLives = true;
         PC.PlayerReplicationInfo.NumLives = 1;
         PC.GoToState('Spectating');
@@ -2992,44 +3007,38 @@ defaultproperties
     NormalWaves(5)=(WaveMask=75393519,WaveMaxMonsters=40,WaveDuration=255,WaveDifficulty=0.300000)
     NormalWaves(6)=(WaveMask=90171865,WaveMaxMonsters=45,WaveDuration=255,WaveDifficulty=0.300000)
 
-    KFHints[0]="ScrN Balance: You can interrupt reloading by dropping the weapon on the ground."
-    KFHints[1]="ScrN Balance: You can reload a single shell into Boomstick."
-    KFHints[2]="ScrN Balance: Medics have regular frag nades. Do not blow yourself up!"
-    KFHints[3]="ScrN Balance: Combat Shotgun is made much better. Give it a try."
-    KFHints[4]="ScrN Balance: Shotguns, except Combat and Boomstick, penetrate fat bodies worse than small enemies."
-    KFHints[5]="ScrN Balance: M99 cannot stun Scrake with a body-shot. Crossbow has no fire speed bonus as in the original game before v1035."
-    KFHints[6]="ScrN Balance: M14EBR has different laser sights. Choose the color you like!"
-    KFHints[7]="ScrN Balance: Hand grenades can be 'cooked'. Enable/disable that on 'Scrn Features' page in the Main Menu."
-    KFHints[8]="ScrN Balance: Husk Gun's secondary fire acts as Napalm Thrower. You should definitely try it out!"
-    KFHints[9]="ScrN Balance: Gunslinger has bonuses both for single and dual pistols. But real Cowboys use only dualies."
-    KFHints[10]="ScrN Balance: Gunslinger becomes a Cowboy while using dual pistols without wearing an armor but jacket. Cowboy moves, shoots, and reloads his pistols much faster. From the other side, he dies faster too.."
-    KFHints[11]="ScrN Balance: Berserker, while holding non-melee weapons, moves slower than other perks."
-    KFHints[12]="ScrN Balance: Chainsaw's secondary fire can stun Scrakes the same way as an Axe."
-    KFHints[13]="ScrN Balance: Chainsaw consumes fuel. Raised power makes it a beast... until you need to refill"
-    KFHints[14]="ScrN Balance: Support Spec. may use Chainsaw. Remember Evil Dead? Try the Chainsaw+Boomstick loadout."
-    KFHints[15]="ScrN Balance: Medic, while holding a syringe, runs same fast as while holding a knife."
-    KFHints[16]="ScrN Balance: Medics can heal much faster than other perks. If you aren't a Medic, don't screw up the healing process with your lame injection."
-    KFHints[17]="ScrN Balance: FN-FAL has bullet penetration and 2-bullet fixed burst mode."
-    KFHints[18]="ScrN Balance: MK23 has no bullet penetration but double size of magazine, comparing to Magnum .44"
-    KFHints[19]="ScrN Balance: Your experience and perk bonus levels may be different. If they are, you see two perk icons on the HUD."
-    KFHints[20]="ScrN Balance: If you see two perk icons on the HUD, the left one shows your experience level, the right - actual level of perk bonuses that you gain."
-    KFHints[21]="ScrN Balance: Flares deal the incremental burn Damage over Time (iDoT). The more you shoot the more damage zeds take from burning."
-    KFHints[22]="ScrN Balance: Medic nades are for healing only. Zeds are not taking damage neither fear them."
-    KFHints[23]="ScrN Balance: If you have just joined the game and got blamed - maybe it is just a welcome gift. Don't worry - shit happens."
-    KFHints[24]="ScrN Balance: Nailgun can nail enemies to walls... nail them alive! Crucify your ZED!"
-    KFHints[25]="ScrN Console Command: TOGGLEPLAYERINFO - hides health bars while keeping the rest of the HUD."
+    KFHints[ 0]="ScrN: You can interrupt reloading by dropping the weapon on the ground"
+    KFHints[ 1]="ScrN: Many weapons have Tactical Reload. Reload a non-empty more quickly."
+    KFHints[ 2]="ScrN: You can reload a single shell into Boomstick"
+    KFHints[ 3]="ScrN: Combat Shotgun is made much better. Give it a try"
+    KFHints[ 4]="ScrN: Shotguns, except Combat and Boomstick, penetrate fat bodies worse than small enemies"
+    KFHints[ 5]="ScrN: M99 cannot stun Scrake with a body-shot. Crossbow has no fire speed bonus as in the original game before v1035"
+    KFHints[ 6]="ScrN: M14EBR has different laser sights."
+    KFHints[ 7]="ScrN: Hand grenades can be 'cooked'. Enable/disable that on 'Scrn Features' page in the Main Menu."
+    KFHints[ 8]="ScrN: Gunslinger has bonuses both for single and dual pistols. But real Cowboys use only dualies."
+    KFHints[ 9]="ScrN: Gunslinger becomes a Cowboy while using dual pistols without wearing heavy armor. Cowboy moves and shoots much faster. On the other hand, he dies faster too."
+    KFHints[10]="ScrN: Berserker, while holding non-melee weapons, moves slower than other perks."
+    KFHints[11]="ScrN: Chainsaw makes more damage but consumes fuel. Also, the alternate attack stuns Scrakes."
+    KFHints[12]="ScrN: Support Spec. may use Chainsaw. Remember Evil Dead? Try the Chainsaw+Boomstick loadout."
+    KFHints[13]="ScrN: Medics have regular frag nades. Do not blow yourself up!"
+    KFHints[14]="ScrN: Medic, while holding a syringe, runs same fast as while holding a knife."
+    KFHints[15]="ScrN: Medics can heal much faster than other perks. If you aren't a Medic, don't screw up the healing process with your lame injection."
+    KFHints[16]="ScrN: Medic gets XP for shooting zeds with Medic Guns. But do not forget to heal your teammates!"
+    KFHints[17]="ScrN: Medic nades are for healing only. Zeds are not taking damage neither fear them."
+    KFHints[18]="ScrN: Combat Medic is more 'combat' than 'medic'"
+    KFHints[19]="ScrN: FN-FAL has armor-piercing bullets and 2-round fixed burst mode."
+    KFHints[20]="ScrN: MK23 has no bullet penetration but double size of magazine, comparing to .44 Magnum"
+    KFHints[21]="ScrN: Your experience and perk bonus levels may be different. If they are, you see two perk icons on the HUD."
+    KFHints[22]="ScrN: If you see two perk icons on the HUD, the left one shows your experience level, the right - actual level of perk bonuses that you gain."
+    KFHints[23]="ScrN: Husk Gun's secondary fire acts as Napalm Thrower."
+    KFHints[24]="ScrN: Flares deal the incremental burn Damage over Time (iDoT). The more you shoot the more damage zeds take from burning."
+    KFHints[25]="ScrN: Nailgun can nail enemies to walls... nail them alive! Crucify your ZED!"
     KFHints[26]="ScrN Console Command: MVOTE - access to ScrN Voting. Type MVOTE HELP for more info."
-    KFHints[27]="ScrN Console Command: DROPALLWEAPONS - drops all your weapons to the ground. What else did you expected?"
-    KFHints[28]="ScrN Console Command: TOGGLEWEAPONLOCK - lock/unlocks your weapons on the ground."
-    KFHints[29]="ScrN Console Commands: ToggleHudStyle, CoolHudSize, CoolHudAmmoSize, CoolHudAmmoX/Y - customize the HUD as you like."
-    KFHints[30]="ScrN Balance: Medic gets XP for shooting zeds with Medic Guns. But do not forget to heal your teammates!"
-    KFHints[31]="ScrN Balance: Combat Medic is more 'combat' than 'medic'"
-    KFHints[32]="Social Isolation: The Virus gets spread by a close contact. Keep distance!"
-    KFHints[33]="Social Isolation: Infected players should keep a distance from other infected as well. Increased Virus concentration in the air leads to severe symptoms."
-    KFHints[34]="Social Isolation: Epidemic safety rules prohibit picking up items of infected players, even if you are already infected."
-    KFHints[35]="Social Isolation: The Trader keeps her shop clean. Players get charged for coughing in the shop area - to cover the disinfection costs."
-    KFHints[36]="Social Isolation: Rumors say that Toilet Paper can protect you from the Virus. At least you will die with a clean butt."
-    KFHints[37]="Social Isolation: 'I can feel it coming in the air tonight, oh Lord!' Yes, it is the Virus in the air. And it is gonna kill you!"
-    KFHints[38]="Social Isolation: The shop is a high-risk area for spreading the Virus. Keep distance and wait in line for shopping."
-
+    KFHints[27]="Social Isolation: The Virus gets spread by a close contact. Keep distance!"
+    KFHints[28]="Social Isolation: Infected players should keep a distance from other infected as well. Increased Virus concentration in the air leads to severe symptoms."
+    KFHints[29]="Social Isolation: Epidemic safety rules prohibit picking up items of infected players, even if you are already infected."
+    KFHints[30]="Social Isolation: The Trader keeps her shop clean. Players get charged for coughing in the shop area - to cover the disinfection costs."
+    KFHints[31]="Social Isolation: Rumors say that Toilet Paper can protect you from the Virus. At least you will die with a clean butt."
+    KFHints[32]="Social Isolation: 'I can feel it coming in the air tonight, oh Lord!' Yes, it is the Virus in the air. And it is gonna kill you!"
+    KFHints[33]="Social Isolation: The shop is a high-risk area for spreading the Virus. Keep distance and wait in line for shopping."
 }

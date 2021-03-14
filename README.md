@@ -19,6 +19,19 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+### v9.64.09
+- FTG: Fixed an issue where a wrong player got blamed for putting the base in a glitch spot (thanks *Joe*)
+- If the team is locked (`MVOTE LOCKTEAM`), newcomers are put into spectators rather than appearing as dead teammates.
+- Fixed an issue where Tourney Mode stayed active after loading a game config without the `?Tourney` option.
+- Game config's `?Difficulty` option has higher precedence than `MVOTE DIFF`. In other words, players cannot change
+  difficulty for game configs that have hardcoded difficulty option in *KFMapVote.ini*
+- Fixed ScrN game hints (thanks *P-Jay*).
+- By the looks of it, any config (.ini) or localization (.int) line cannot exceed 4096 characters.
+- 4k limitation also applies on `GameConfig` lines in *KFMapVote.ini*. All GameConfig lines *together*
+  cannot exceed 4k characters.
+- Game modes "52. FTG: Fight The Patriarchs" and "83. On The Clock" removed from the standard rotation to reduce
+  GameConfig size and meet the 4k limitation.
+
 ### v9.64.07
 - Zeds can fight each other again (was broken since v6)
 - `bTraderSpeedBoost` disabled in Story Mode

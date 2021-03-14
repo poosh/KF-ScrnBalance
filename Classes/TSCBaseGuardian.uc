@@ -144,14 +144,16 @@ function bool ValidHolder(Actor Other)
     return true;
 }
 
-function PlayerController GetBaseSetter()
+function ScrnPlayerController GetBaseSetter()
 {
-    local PlayerController PC;
+    local ScrnPlayerController PC;
 
     if ( Holder != none )
-        PC = PlayerController(Holder.Controller);
+        PC = ScrnPlayerController(Holder.Controller);
     if ( PC == none && BaseSetter != none )
-        PC = PlayerController(BaseSetter.Controller);
+        PC = ScrnPlayerController(BaseSetter.Controller);
+    if ( PC == none )
+        PC = LastHolder;
     return PC;
 }
 

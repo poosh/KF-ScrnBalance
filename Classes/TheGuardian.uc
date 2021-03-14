@@ -24,14 +24,7 @@ function BaseSetupFailed()
     local TscGame game;
 
     game = TscGame(Level.Game);
-
-    if ( LastHolder != none ) {
-        game.ScrnBalanceMut.BlamePlayer(LastHolder, strBlame);
-    }
-    else if ( ScrnPlayerController(GetBaseSetter()) != none ) {
-        game.ScrnBalanceMut.BlamePlayer(ScrnPlayerController(GetBaseSetter()), strBlame);
-    }
-
+    game.ScrnBalanceMut.BlamePlayer(GetBaseSetter(), strBlame);
     if ( TSCGRI.bWaveInProgress ) {
         game.BootShopPlayers();
     }

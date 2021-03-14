@@ -2312,7 +2312,7 @@ state Dead
 
         if ( KF != none && Level.Game.GameReplicationInfo.bMatchHasBegun ) {
             if ( ScrnGT != none ) {
-                bRestartMe = !bSpawnedThisWave && ScrnGT.IsPlayerRestartAllowed(self);
+                bRestartMe = ScrnGT.PlayerCanRestart(self);
             }
             else if ( KFStoryGameInfo(Level.Game) != none ) {
                 bRestartMe = KFStoryGameInfo(Level.Game).IsTraderTime();

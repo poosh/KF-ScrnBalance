@@ -1,0 +1,13 @@
+Tourney Mode is set by "?Tourney=X", where X is is a bit mask:
+BIT HEX     DEC    FEATURE      DESCRIPTION
+=== ======  ====== ============ ====================================================================================
+  1 0x0001       1 ENABLED      Enable tourney. Allways must be set if any of the below flags is set.
+  2 0x0002       2 VANILLA      Allow vanilla game weapons (KFMod.*) in the tourney
+  3 0x0004       4 SWP          Allow ScrnWeaponPack and Horzine Armor
+  4 0x0008       8 ALL_WEAPONS  Allow all weapons
+  5 0x0010      16 ALL_PERKS    Allow all perks
+  6 0x0020      32 HMG          Allow Heavy MachineGunner perk
+====================================================================================================================
+Horzine Technician perk is prohibited in tourneys due to potential exploits of frozen or zapped zeds.
+Sum values of the desired FEATURES. The result is your "X" value.
+For example, to run the tourney with (ENABLED + VANILLA + SWP + HMG) flags, use "?Tourney=39" (1+2+4+32)

@@ -13,7 +13,7 @@ class ScrnBalance extends Mutator
 #exec OBJ LOAD FILE=ScrnAch_T.utx
 
 
-const VERSION = 96407;
+const VERSION = 96409;
 
 var ScrnBalance Mut; // pointer to self to use in static functions, i.e class'ScrnBalance'.default.Mut
 
@@ -334,7 +334,7 @@ var globalconfig bool bScrnWaves;
 var globalconfig bool bNoTeamSkins;
 // SrvTourneyMode should be used for informative purposes only.
 // All real checks must be done server-side only to prevent cheating.
-var transient byte SrvTourneyMode;
+var transient int SrvTourneyMode;
 // END OF TSC STUFF
 
 replication
@@ -2647,7 +2647,6 @@ function PostBeginPlay()
     }
     MapInfo = Spawn(Class'ScrnBalanceSrv.ScrnMapInfo');
 
-
     if ( bForceEvent )
         ForceEvent();
     else
@@ -2674,7 +2673,6 @@ function PostBeginPlay()
     }
     bAllowAlwaysPerkChanges = ServerPerksMut.GetPropertyText("bAllowAlwaysPerkChanges") ~= "True";
     bNoPerkChanges = bNoPerkChanges && !bAllowAlwaysPerkChanges;
-
 
     if ( !ClassIsChildOf(KF.PlayerControllerClass, class'ScrnBalanceSrv.ScrnPlayerController') ) {
         KF.PlayerControllerClass = class'ScrnBalanceSrv.ScrnPlayerController';
@@ -3062,8 +3060,24 @@ static function DestroyLinkedInfo( LinkedReplicationInfo EntryLink )
 function ServerTraveling(string URL, bool bItems)
 {
     local int j;
+    local string MapName, Options;
 
-    log("ServerTraveling", 'ScrnBalance');
+    log("******************** SERVER TRAVEL ********************", 'ScrnBalance');
+    Divide(URL, "?", MapName, Options);
+    Options = "?" $ Options;  // Options must start with "?", option parsing routines won't work
+    log("New Map: " $ MapName, 'ScrnBalance');
+    log("Options: " $ Options, 'ScrnBalance');
+
+    Persistence.bNoTourney = !KF.HasOption(Options, "Tourney");
+    if ( Persistence.bNoTourney && SrvTourneyMode != 0 ) {
+        log("URL does not contain Tourney. Disabling Tourney Mode.", 'ScrnBalance');
+    }
+    if ( Persistence.Difficulty > 0 && KF.HasOption(Options, "Difficulty") ) {
+        log("URL contains Difficulty. Disabling MVOTE DIFF.", 'ScrnBalance');
+        Persistence.Difficulty = 0;
+    }
+    Persistence.SaveConfig();
+
     if ( bLogObjectsAtMapEnd )
         LogObjects();
 
