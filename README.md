@@ -19,6 +19,31 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+### v9.65
+- Perk progress calculation now takes into account possible 32-bit integer overflow. A signed 32-bit integer may store
+  numbers up to ~2147M. Some players have reached such an insane XP level, which caused perk progress to appear negative
+  due to overflow. Now this case is properly handled, and perk progress is capped at ~2147M. However, reaching
+  ~4294M will cause the unsigned int32 overflow, and the perk level gets reset back to 0.
+  *nmmblez*, time to think about lowering XP bonus levels ;)
+- Added a hardcoded limitation for MaxPerksLevel <= 70. Higher levels could raise requirements beyond int32 capacity.
+- Adjusted level requirement numbers for all perks. Previously, getting from Lv4 to Lv6 was much harder than from Lv6
+  to Lv10. It does not make sense since perk level rebalance in v9.50, when Lv5 and Lv6 stopped getting way higher
+  bonuses comparing to lower levels. Now, getting the next level is always harder than the previous one; Lv6 is easier
+  to reach, but lv7-11 - harder. Lv12-30 have more or less the same requirements as before; lv31+ are harder to gain.
+  Lv70 has 2140M damage requirement; it is the absolute maximum to achieve, which still fits into int32.
+- Perks that require lower thresholds (such as Sharpshooter or Gunslinger) are capped at Lv70 too, for consistency
+  with other perks.
+- Removed Stalker kill requirement for Commando. Now, all ScrN perks have one requirement.
+- Stalker/Shiver kills give bonus XP to Commando: one Stalker kill = 1K damage bonus.
+- Welding gives bonus XP to Support Spec.: 100 welding points = 1K damage bonus.
+- Sniper damage that is high enough to stun a Scrake (>=667) gives bonus XP to Sharphooter.
+  Previously, such as option could be enabled via `SharpProgMinDmg` config value. Now it is hardcoded to 667.
+- Deprecated config options: `Post6RequirementScaling`, `WeldingRequirementScaling`, `StalkerRequirementScaling`,
+  `SharpProgMinDmg` (*ScrnBalanceSrv.ini*)
+- Purged all deprecated variable declarations from ScrnBalance.
+- FTG: fixed an issue where Stinky Clot could continuously blame a player if getting stuck.
+- FTG: added a workaround to get Stinky Clot out of a 3-waypoint loop path (infinitely going A=>B=>C=>A)
+
 ### v9.64.09
 - FTG: Fixed an issue where a wrong player got blamed for putting the base in a glitch spot (thanks *Joe*)
 - If the team is locked (`MVOTE LOCKTEAM`), newcomers are put into spectators rather than appearing as dead teammates.

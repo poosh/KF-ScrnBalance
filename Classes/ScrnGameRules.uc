@@ -17,7 +17,6 @@ var bool bScrnDoom; // is server running ScrN version of Doom3 mutator?
 var localized string msgDoom3Monster, msgDoomPercent, msgDoom3Boss;
 var transient int WaveTotalKills, WaveDoom3Kills, GameDoom3Kills;
 var transient int WaveAmmoPickups;
-var deprecated transient int DoomHardcorePointsGained; // left for backwards compatibility
 
 var transient bool bHasCustomZeds;
 
@@ -374,7 +373,6 @@ function bool CheckEndGame(PlayerReplicationInfo Winner, string Reason)
     local int i;
 
     if ( Level.Game.bGameEnded ) {
-        log("Calling CheckEndGame() for already ended game!", 'ScrnBalance');
         return true;
     }
     else if ( Level.Game.bWaitingToStartMatch ) {
@@ -681,7 +679,8 @@ function int NetDamage( int OriginalDamage, int Damage, pawn injured, pawn insti
             MonsterInfos[idx].RowHeadshots++;
             MonsterInfos[idx].Headshots++;
 
-            if ( KFDamType.default.bSniperWeapon && Damage > Mut.SharpProgMinDmg && !ZedVictim.bDecapitated
+            // add Sharpshooter perk progress for every damage that is capable of stunning Scrakes
+            if ( KFDamType.default.bSniperWeapon && Damage >= 667 && !ZedVictim.bDecapitated
                     && SRStatsBase(ScrnPC.SteamStatsAndAchievements) != none )
                 SRStatsBase(ScrnPC.SteamStatsAndAchievements).AddHeadshotKill(false);
         }

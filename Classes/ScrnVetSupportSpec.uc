@@ -3,10 +3,7 @@ class ScrnVetSupportSpec extends ScrnVeterancyTypes
 
 static function int GetStatValueInt(ClientPerkRepLink StatOther, byte ReqNum)
 {
-    if (ReqNum == 1)
-        return StatOther.RWeldingPointsStat;
-    // 0 and default
-    return StatOther.RShotgunDamageStat;
+    return StatOther.RShotgunDamageStat + 10 * StatOther.RWeldingPointsStat;
 }
 
 static function int AddCarryMaxWeight(KFPlayerReplicationInfo KFPRI)
@@ -159,22 +156,6 @@ defaultproperties
     DefaultDamageTypeNoBonus=Class'ScrnBalanceSrv.ScrnDamTypeDefaultSupportBase'
     SamePerkAch="OP_Support"
 
-    progressArray1(0)=1000
-    progressArray1(1)=2000
-    progressArray1(2)=7000
-    progressArray1(3)=33500
-    progressArray1(4)=120000
-    progressArray1(5)=250000
-    progressArray1(6)=370000
-
-    progressArray0(0)=10000
-    progressArray0(1)=25000
-    progressArray0(2)=100000
-    progressArray0(3)=500000
-    progressArray0(4)=1500000
-    progressArray0(5)=3500000
-    progressArray0(6)=5500000
-
     SkillInfo="PERK SKILLS:|60% better Shotgun penetration|40% damage resistance while holding Chainsaw|+10 blocks in carry weight|150% faster welding/unwelding|Welder see door status from 30m"
     CustomLevelInfo="PERK BONUSES (LEVEL %L):|%x more damage with Shotguns/Chainsaw|%a extra ammo|+%g extra grenades|%$ discount on Shotguns"
 
@@ -191,5 +172,4 @@ defaultproperties
     OnHUDIcons(6)=(PerkIcon=Texture'ScrnTex.Perks.Perk_Support_Blood',StarIcon=Texture'ScrnTex.Perks.Hud_Perk_Star_Blood',DrawColor=(B=255,G=255,R=255,A=255))
     VeterancyName="Support Specialist"
     Requirements(0)="Deal %x damage with shotguns"
-    Requirements(1)="Weld %x door hitpoints"
 }

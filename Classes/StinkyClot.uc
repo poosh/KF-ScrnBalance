@@ -1,4 +1,4 @@
-class StinkyClot extends ZombieClot;
+class StinkyClot extends StinkyClotZed;
 
 var() name CompleteAnim;
 var() name GrabBone;
@@ -19,7 +19,7 @@ var transient vector TeleportLocation;
 var transient float AlphaFader;
 var string TeleportSoundRef;
 var sound TeleportSound;
-var transient Actor LastMoveTarget[2];
+var transient Actor MoveHistory[3];
 
 
 replication
@@ -62,11 +62,44 @@ simulated event PostNetReceive()
     SetSkin();
 }
 
+function ClearMoveHistory()
+{
+    local int i;
+
+    for ( i = 0; i < ArrayCount(MoveHistory); ++i ) {
+        MoveHistory[i] = none;
+    }
+}
+
+function OnMoveTarget(Actor MoveTarget)
+{
+    local int i;
+
+    for ( i = 0; i < ArrayCount(MoveHistory); ++i ) {
+        if ( MoveHistory[i] == MoveTarget )
+            return;  // not a new target
+    }
+
+    for ( i = ArrayCount(MoveHistory) - 1; i > 0; --i ) {
+        MoveHistory[i] = MoveHistory[i-1];
+    }
+    MoveHistory[0] = MoveTarget;
+
+    OldLocation = Location;
+    StuckCounter = 0;
+    TargetClosestDist = VSizeSquared(Location - MoveTarget.Location);
+    NextStuckTestTime = Level.TimeSeconds + 1;
+}
+
 function CheckStuck()
 {
     local float dist;
 
-    if ( Controller.MoveTarget == LastMoveTarget[0] ) {
+    if ( Controller == none || Controller.MoveTarget == none || Controller.MoveTarget == self
+            || !Controller.IsInState('Moving') )
+        return;  // cannot stuck if not moving
+
+    if ( Controller.MoveTarget == MoveHistory[0] ) {
         dist = VSizeSquared(Location - Controller.MoveTarget.Location);
         if ( dist - TargetClosestDist < -2500 ) {
             // we are getting closer to our target. Delay the teleportation
@@ -87,9 +120,7 @@ function CheckStuck()
 
     if ( StuckCounter >= 30 ) {
         // if can't reach the target - simply teleport to it
-        TeleportLocation = Controller.MoveTarget.Location;
-        TeleportLocation.Z += CollisionHeight + 5;
-        StartTeleport();
+        TeleportToNextPath();
     }
 }
 
@@ -97,36 +128,17 @@ simulated function Tick(float dt)
 {
     super.Tick(dt);
 
-    if ( Controller != none && Controller.MoveTarget != none && Controller.MoveTarget != self
-            && Controller.IsInState('Moving') )
-    {
-        if ( LastMoveTarget[0] != Controller.MoveTarget && LastMoveTarget[1] != Controller.MoveTarget ) {
-            LastMoveTarget[1] = LastMoveTarget[0];
-            LastMoveTarget[0] = Controller.MoveTarget;
-            OldLocation = Location;
-            StuckCounter = 0;
-            TargetClosestDist = VSizeSquared(Location - Controller.MoveTarget.Location);
-            NextStuckTestTime = Level.TimeSeconds + 1;
-        }
-        else if ( Level.TimeSeconds > NextStuckTestTime ) {
-            NextStuckTestTime = Level.TimeSeconds + 1;
-            CheckStuck();
-        }
-    }
-
     if ( TeleportPhase != TELEPORT_NONE ) {
         switch ( TeleportPhase ) {
             case TELEPORT_FADEOUT:
-                AlphaFader = FMax(AlphaFader - dt * 512, 0);
-
-                if (Level.NetMode != NM_Client && AlphaFader == 0) {
+                AlphaFader -= dt * 512;
+                if (Level.NetMode != NM_Client && AlphaFader <= 0) {
                     DoTeleport();
                 }
                 break;
             case TELEPORT_FADEIN:
-                AlphaFader = FMin(AlphaFader + dt * 256, 255);
-
-                if (Level.NetMode != NM_Client && AlphaFader == 255) {
+                AlphaFader += dt * 256;
+                if (Level.NetMode != NM_Client && AlphaFader >= 255) {
                     TeleportPhase = TELEPORT_NONE;
                     if (Level.NetMode != NM_DedicatedServer)
                         SetSkin();
@@ -135,8 +147,12 @@ simulated function Tick(float dt)
         }
 
         if (Level.NetMode != NM_DedicatedServer && ColorModifier(Skins[0]) != none) {
-            ColorModifier(Skins[0]).Color.A = AlphaFader;
+            ColorModifier(Skins[0]).Color.A = clamp(AlphaFader, 0, 255);
         }
+    }
+    else if ( Role == ROLE_Authority && Level.TimeSeconds > NextStuckTestTime ) {
+        NextStuckTestTime = Level.TimeSeconds + 1;
+        CheckStuck();
     }
 }
 
@@ -149,9 +165,34 @@ simulated function SetSkin()
     }
     else {
         Skins[0] = ColorModifier'ScrnTex.Zeds.StinkyColor';
-        ColorModifier(Skins[0]).Color.A = AlphaFader;
+        ColorModifier(Skins[0]).Color.A = clamp(AlphaFader, 0, 255);
         ColorModifier(Skins[0]).AlphaBlend = TeleportPhase != TELEPORT_NONE;
     }
+}
+
+function TeleportToNextPath()
+{
+    local Actor TeleportDest;
+
+    if ( Controller.NextRoutePath != none ) {
+        TeleportDest = Controller.NextRoutePath.End;
+    }
+    if ( TeleportDest == none ) {
+        TeleportDest = MoveHistory[0];
+    }
+    TeleportLocation = TeleportDest.Location;
+    TeleportLocation.Z += CollisionHeight + 5;
+
+    log("Teleporting to " $ TeleportDest $ " @ ("$TeleportLocation$")", class.name);
+    log("Path history:  " $ MoveHistory[2] $ " => "  $ MoveHistory[1] $ " => " $ MoveHistory[0], class.name);
+    log("Current route: " $ Controller.CurrentPath.Start $ " => " $ Controller.CurrentPath.End, class.name);
+    log("Next route:    " $ Controller.NextRoutePath.Start $ " => " $ Controller.NextRoutePath.End, class.name);
+
+    ClearMoveHistory();
+    StuckCounter = 0;
+    NextStuckTestTime = Level.TimeSeconds + 5;
+
+    StartTeleport();
 }
 
 function StartTeleport()
@@ -161,8 +202,6 @@ function StartTeleport()
     if ( Level.NetMode != NM_DedicatedServer ) {
         SetSkin();
     }
-    StuckCounter = 0;
-    NextStuckTestTime = Level.TimeSeconds + 5;
 }
 
 function DoTeleport()
@@ -174,9 +213,10 @@ function DoTeleport()
     }
     Velocity = vect(0,0,0);
     Acceleration = vect(0,0,0);
-    if (SetLocation(TeleportLocation))
-    {
+    if (SetLocation(TeleportLocation)) {
         PlaySound(TeleportSound, SLOT_Interact, 4.0);
+        SetMovementPhysics();
+        Controller.MoveTarget = none;
         Controller.StopWaiting();
     }
 }
@@ -265,21 +305,8 @@ defaultproperties
 {
     MenuName="Stinky Clot"
     EventClasses(0)="ScrnBalanceSrv.StinkyClot"
-
     ControllerClass=Class'ScrnBalanceSrv.StinkyController'
-    CompleteAnim="ClotPunt"
-    GrabBone="CHR_RArmPalm"
-
     bAlwaysRelevant=true
-    bUseExtendedCollision=true
-    ColOffset=(X=5,Z=25)
-    ColRadius=12
-    ColHeight=3
-    HeadRadius=4
-    OnlineHeadshotOffset=(X=9,Z=20)
-    DrawScale=0.5
-    CollisionRadius=13
-    CollisionHeight=22
     bBlockActors=false
     GroundSpeed=42
     OutOfBaseSpeed=31.5
@@ -287,23 +314,10 @@ defaultproperties
     Health=1000
     HealthMax=1000
     HeadHealth=1000
-    JumpZ=480
+    MotionDetectorThreat=0
+    ScoringValue=100
 
-    MoanVoice=SoundGroup'KF_EnemiesFinalSnd.clot.Clot_Talk'
-    MeleeAttackHitSound=SoundGroup'KF_EnemiesFinalSnd.clot.Clot_HitPlayer'
-    JumpSound=SoundGroup'KF_EnemiesFinalSnd.clot.Clot_Jump'
-    DetachedArmClass=Class'KFChar.SeveredArmClot'
-    DetachedLegClass=Class'KFChar.SeveredLegClot'
-    DetachedHeadClass=Class'KFChar.SeveredHeadClot'
-    HitSound(0)=SoundGroup'KF_EnemiesFinalSnd.clot.Clot_Pain'
-    DeathSound(0)=SoundGroup'KF_EnemiesFinalSnd.clot.Clot_Death'
-    ChallengeSound(0)=SoundGroup'KF_EnemiesFinalSnd.clot.Clot_Challenge'
-    ChallengeSound(1)=SoundGroup'KF_EnemiesFinalSnd.clot.Clot_Challenge'
-    ChallengeSound(2)=SoundGroup'KF_EnemiesFinalSnd.clot.Clot_Challenge'
-    ChallengeSound(3)=SoundGroup'KF_EnemiesFinalSnd.clot.Clot_Challenge'
-    AmbientSound=Sound'KF_BaseClot.Clot_Idle1Loop'
-    Mesh=SkeletalMesh'KF_Freaks_Trip.CLOT_Freak'
-    Skins(0)=Combiner'KF_Specimens_Trip_T.clot_cmb'
-
+    CompleteAnim="ClotPunt"
+    GrabBone="CHR_RArmPalm"
     TeleportSoundRef="ScrnZedPack_S.Shiver.ShiverWarpGroup";
 }

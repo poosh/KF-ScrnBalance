@@ -643,7 +643,7 @@ function WipeTeam(TeamInfo Team, optional class<DamageType> DamageType)
 
 function bool CheckEndGame(PlayerReplicationInfo Winner, string Reason)
 {
-    local Controller C;
+    local Controller C, N;
     local PlayerController PC;
     local KFPlayerController KFPC;
     local bool bSetAchievement;
@@ -694,7 +694,8 @@ function bool CheckEndGame(PlayerReplicationInfo Winner, string Reason)
     // if we reached here, game must be ended
     EndTime = Level.TimeSeconds + EndTimeDelay;
 
-    for ( C = Level.ControllerList; C != none; C = C.nextController ) {
+    for ( C = Level.ControllerList; C != none; C = N ) {
+        N = C.nextController;  // save it noe in case C gets destroyed
         PC = PlayerController(C);
         if ( PC != none ) {
             PC.ClientSetBehindView(true);
@@ -714,7 +715,6 @@ function bool CheckEndGame(PlayerReplicationInfo Winner, string Reason)
                 KFPC.NetPlayMusic(EndSong, 0.5, 0);
             }
         }
-
         C.GameHasEnded();
     }
 

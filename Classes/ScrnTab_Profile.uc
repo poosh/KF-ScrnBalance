@@ -111,4 +111,12 @@ function SaveSettings()
 defaultproperties
 {
     strNotATeamChar="Selected character is not avaliable for your team!"
+
+    Begin Object class=ScrnPerkProgressListBox Name=PerkProgressList
+        WinWidth=0.319980
+        WinHeight=0.292235
+        WinLeft=0.670121
+        WinTop=0.439668
+    End Object
+    lb_PerkProgress=ScrnPerkProgressListBox'ScrnBalanceSrv.ScrnTab_Profile.PerkProgressList'
 }

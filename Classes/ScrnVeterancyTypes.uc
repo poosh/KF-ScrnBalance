@@ -127,37 +127,87 @@ final static function LogArray(out array <class> AArray)
     }
 }
 
-
 //overload this to return perk specific stat values
 static function int GetStatValueInt(ClientPerkRepLink StatOther, byte ReqNum)
 {
-  return 0;
+    return 0;
 }
 
-static function array<int> GetProgressArray(byte ReqNum, optional out int DoubleScalingBase)
+// ProgressArray actually is not out, we use the keyword to pass array by reference instead of copying
+static function int GetPerkProgressFromArray(ClientPerkRepLink StatOther, out int FinalInt, byte CurLevel, byte ReqNum,
+        out array<int> ProgressArray)
 {
-    switch (ReqNum) {
-        case 1:
-            DoubleScalingBase = default.progressArray1[3];
-            return default.progressArray1;
+    local int result;
+
+    if ( CurLevel < ProgressArray.Length ) {
+        FinalInt = ProgressArray[curLevel];
     }
-    DoubleScalingBase = default.progressArray0[3];
-    return default.progressArray0;
+    else if ( CurLevel > 70 ) {
+        // this should not happen
+        FinalInt = 0x7FFFFFFF; // max signed int32
+    }
+    else {
+        // legacy calculation. Not used anymore.
+        FinalInt = ProgressArray[ProgressArray.Length-1] + GetDoubleScaling(CurLevel, ProgressArray[3]);
+    }
+
+    result = GetStatValueInt(StatOther, ReqNum);
+    if ( result < 0 ) {
+        result = 0x7FFFFFFF;
+    }
+    return min(result, FinalInt);
 }
 
-
-static function int GetPerkProgressInt( ClientPerkRepLink StatOther, out int FinalInt, byte CurLevel, byte ReqNum )
+static function int GetPerkProgressInt(ClientPerkRepLink StatOther, out int FinalInt, byte CurLevel, byte ReqNum)
 {
-    local array<int> ProgressArray;
-    local int DoubleScalingBase;
+    if ( ReqNum == 1 && default.progressArray1.length > 3 ) {
+        return GetPerkProgressFromArray(StatOther, FinalInt, CurLevel, ReqNum, default.progressArray1);
+    }
+    return GetPerkProgressFromArray(StatOther, FinalInt, CurLevel, ReqNum, default.progressArray0);
+}
 
-    ProgressArray = GetProgressArray(ReqNum, DoubleScalingBase);
-    if ( CurLevel < ProgressArray.Length )
-        FinalInt= ProgressArray[curLevel];
-    else
-        FinalInt = ProgressArray[ProgressArray.Length-1]+GetDoubleScaling(CurLevel,DoubleScalingBase)*GetPost6RequirementScaling();
+// Return 0-1 % of how much of the progress is done to gain this individual task (for menu GUI).
+static function float GetPerkProgress( ClientPerkRepLink StatOther, byte CurLevel, byte ReqNum,
+        out int Numerator, out int Denominator )
+{
+    local byte Minimum;
+    local int Reduced,Cur,Fin;
+    local bool bScale;
 
-    return Min(GetStatValueInt(StatOther, ReqNum),FinalInt);
+    bScale = !(StatOther.RequirementScaling ~= 1.0);
+
+    if( CurLevel == StatOther.MaximumLevel ) {
+        Denominator = 1;
+        Numerator = 1;
+        return 1.f;
+    }
+
+    if( StatOther.bMinimalRequirements ) {
+        Minimum = 0;
+        CurLevel = Max(CurLevel - StatOther.MinimumLevel, 0);
+    }
+    else {
+        Minimum = StatOther.MinimumLevel;
+    }
+    Numerator = GetPerkProgressInt(StatOther, Denominator, CurLevel, ReqNum);
+    if( bScale )
+        Denominator*=StatOther.RequirementScaling;
+    if( CurLevel > Minimum ) {
+        GetPerkProgressInt(StatOther, Reduced, CurLevel-1, ReqNum);
+        if( bScale )
+            Reduced*=StatOther.RequirementScaling;
+        Cur = Max(Numerator - Reduced,0);
+        Fin = Max(Denominator - Reduced,0);
+    }
+    else {
+        Cur = Numerator;
+        Fin = Denominator;
+    }
+
+    log("GetPerkProgress CurLevel="$CurLevel $ " Numerator="$Numerator $ " Denominator="$Denominator);
+    if( Fin<=0 ) // Avoid division by zero.
+        return 1.f;
+    return FMin(float(Cur)/float(Fin),1.f);
 }
 
 static function AddCustomStats( ClientPerkRepLink Other )
@@ -165,12 +215,6 @@ static function AddCustomStats( ClientPerkRepLink Other )
     // v8: achievement init moved to ScrnBalance.SetupRepLink()
     //class'ScrnBalanceSrv.ScrnAchievements'.static.InitAchievements(Other);
 }
-
-final static function float GetPost6RequirementScaling()
-{
-    return class'ScrnBalance'.default.Mut.Post6RequirementScaling;
-}
-
 
 final static function byte GetBonusLevel(int level)
 {
@@ -589,11 +633,76 @@ defaultproperties
 {
     PerkIndex=255
     RelatedPerkIndex=255
-    progressArray0(0)=5000
-    progressArray0(1)=25000
-    progressArray0(2)=100000
-    progressArray0(3)=500000
-    progressArray0(4)=1500000
-    progressArray0(5)=3500000
-    progressArray0(6)=5500000
+    progressArray0( 0)=5000
+    progressArray0( 1)=25000
+    progressArray0( 2)=100000
+    progressArray0( 3)=500000
+    progressArray0( 4)=1000000
+    progressArray0( 5)=2000000
+    progressArray0( 6)=3500000
+    progressArray0( 7)=5500000
+    progressArray0( 8)=8000000
+    progressArray0( 9)=11000000
+    progressArray0(10)=14500000
+    progressArray0(11)=18500000
+    progressArray0(12)=23000000
+    progressArray0(13)=28000000
+    progressArray0(14)=33500000
+    progressArray0(15)=39500000
+    progressArray0(16)=46000000
+    progressArray0(17)=53000000
+    progressArray0(18)=60500000
+    progressArray0(19)=68500000
+    progressArray0(20)=77000000
+    progressArray0(21)=96000000
+    progressArray0(22)=116000000
+    progressArray0(23)=136000000
+    progressArray0(24)=156000000
+    progressArray0(25)=177000000
+    progressArray0(26)=199000000
+    progressArray0(27)=221000000
+    progressArray0(28)=243000000
+    progressArray0(29)=266000000
+    progressArray0(30)=290000000
+    progressArray0(31)=319000000
+    progressArray0(32)=348000000
+    progressArray0(33)=378000000
+    progressArray0(34)=409000000
+    progressArray0(35)=440000000
+    progressArray0(36)=471000000
+    progressArray0(37)=503000000
+    progressArray0(38)=536000000
+    progressArray0(39)=569000000
+    progressArray0(40)=602000000
+    progressArray0(41)=641000000
+    progressArray0(42)=681000000
+    progressArray0(43)=721000000
+    progressArray0(44)=761000000
+    progressArray0(45)=802000000
+    progressArray0(46)=844000000
+    progressArray0(47)=886000000
+    progressArray0(48)=928000000
+    progressArray0(49)=971000000
+    progressArray0(50)=1015000000
+    progressArray0(51)=1064000000
+    progressArray0(52)=1113000000
+    progressArray0(53)=1163000000
+    progressArray0(54)=1214000000
+    progressArray0(55)=1265000000
+    progressArray0(56)=1316000000
+    progressArray0(57)=1368000000
+    progressArray0(58)=1421000000
+    progressArray0(59)=1474000000
+    progressArray0(60)=1527000000
+    progressArray0(61)=1586000000
+    progressArray0(62)=1646000000
+    progressArray0(63)=1706000000
+    progressArray0(64)=1766000000
+    progressArray0(65)=1827000000
+    progressArray0(66)=1889000000
+    progressArray0(67)=1951000000
+    progressArray0(68)=2013000000
+    progressArray0(69)=2076000000
+    progressArray0(70)=2140000000
+    // max signed int32 value is 2 147 483 647 (0x7FFFFFFF). Progress array cannot exceed that.
 }

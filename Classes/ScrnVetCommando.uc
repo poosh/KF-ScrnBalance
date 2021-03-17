@@ -4,12 +4,8 @@ class ScrnVetCommando extends ScrnVeterancyTypes
 
 static function int GetStatValueInt(ClientPerkRepLink StatOther, byte ReqNum)
 {
-  if (ReqNum == 1)
-    return StatOther.RBullpupDamageStat;
-  // 0 and default
-  return StatOther.RStalkerKillsStat;
+    return StatOther.RBullpupDamageStat + 1000 * StatOther.RStalkerKillsStat;
 }
-
 
 // Display enemy health bars
 static function SpecialHUDInfo(KFPlayerReplicationInfo KFPRI, Canvas C)
@@ -181,26 +177,10 @@ defaultproperties
     DefaultDamageTypeNoBonus=Class'ScrnBalanceSrv.ScrnDamTypeCommandoBase'
     SamePerkAch="OP_Commando"
 
-    progressArray0(0)=10
-    progressArray0(1)=30
-    progressArray0(2)=100
-    progressArray0(3)=325
-    progressArray0(4)=1200
-    progressArray0(5)=2400
-    progressArray0(6)=3600
-
-    progressArray1(0)=10000
-    progressArray1(1)=25000
-    progressArray1(2)=100000
-    progressArray1(3)=500000
-    progressArray1(4)=1500000
-    progressArray1(5)=3500000
-    progressArray1(6)=5500000
-
     SkillInfo="PERK SKILLS:|25% larger Assaut Rifle clip|35% faster reload with all weapons|40% less recoil with all weapons|See cloaked enemies and health"
     CustomLevelInfo="PERK BONUSES (LEVEL %L):|%x more damage with Assaut Rifles|Up to %z Zed-Time Extensions|%$ discount on Assaut Rifles"
 
-    NumRequirements=2
+    NumRequirements=1  // v9.65: Stalker kills add XP to Commando damage perk progress
     PerkIndex=3
     OnHUDIcon=Texture'KillingFloorHUD.Perks.Perk_Commando'
     OnHUDGoldIcon=Texture'KillingFloor2HUD.Perk_Icons.Perk_Commando_Gold'
@@ -213,6 +193,5 @@ defaultproperties
     OnHUDIcons(6)=(PerkIcon=Texture'ScrnTex.Perks.Perk_Commando_Blood',StarIcon=Texture'ScrnTex.Perks.Hud_Perk_Star_Blood',DrawColor=(B=255,G=255,R=255,A=255))
 
     VeterancyName="Commando"
-    Requirements(0)="Kill %x Stalkers/Shivers with Assault Rifles"
-    Requirements(1)="Deal %x damage with Assault Rifles"
+    Requirements(0)="Deal %x damage with Assault Rifles"
 }

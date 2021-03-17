@@ -11,7 +11,6 @@ var byte StartWave; // wave number, when player joined the game 0 - first wave
 
 // using ReplicationInfo here doesn't make sense because ScrnPlayerInfo is server-only
 // Use CustomPlayerInfo
-var deprecated LinkedReplicationInfo CustomReplicationInfo;
 var protected ScrnCustomPlayerInfo CustomPlayerInfo;
 
 const IGNORE_STAT = 0x7FFFFFFF;
@@ -136,7 +135,7 @@ function Destroyed()
         CustomPlayerInfo = CustomPlayerInfo.Next;
         CPI.Destroy();
     }
-    
+
     super.Destroyed();
 }
 

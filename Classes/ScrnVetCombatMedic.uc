@@ -124,14 +124,6 @@ static function bool ShowEnemyHealthBars(KFPlayerReplicationInfo KFPRI, KFPlayer
 
 defaultproperties
 {
-    progressArray0(0)=5000
-    progressArray0(1)=25000
-    progressArray0(2)=100000
-    progressArray0(3)=500000
-    progressArray0(4)=1500000
-    progressArray0(5)=3500000
-    progressArray0(6)=5500000
-
     SkillInfo="PERK SKILLS:|20% faster movement speed|100% larger Medic Gun clip|75% faster attacks with Machete/Katana|Moves faster in Zed Time"
     CustomLevelInfo="PERK BONUSES (LEVEL %L):|%x more damage with Medic Guns|%a extra Medic ammo|%v better Armor|Up to %z Zed-Time Extensions|%$ discount on Medic Guns/Armor/Katana"
 
@@ -151,4 +143,75 @@ defaultproperties
 
     VeterancyName="Combat Medic"
     Requirements(0)="Deal %x damage with the Medic Guns"
+    progressArray0( 0)=5000
+    progressArray0( 1)=25000
+    progressArray0( 2)=100000
+    progressArray0( 3)=500000
+    progressArray0( 4)=1000000
+    progressArray0( 5)=2000000
+    progressArray0( 6)=3500000
+    progressArray0( 7)=5500000
+    progressArray0( 8)=8000000
+    progressArray0( 9)=11000000
+    progressArray0(10)=14500000
+    progressArray0(11)=18500000
+    progressArray0(12)=23000000
+    progressArray0(13)=28000000
+    progressArray0(14)=33500000
+    progressArray0(15)=39500000
+    progressArray0(16)=46000000
+    progressArray0(17)=53000000
+    progressArray0(18)=60500000
+    progressArray0(19)=68500000
+    progressArray0(20)=77000000
+    progressArray0(21)=96000000
+    progressArray0(22)=116000000
+    progressArray0(23)=136000000
+    progressArray0(24)=156000000
+    progressArray0(25)=177000000
+    progressArray0(26)=199000000
+    progressArray0(27)=221000000
+    progressArray0(28)=243000000
+    progressArray0(29)=266000000
+    progressArray0(30)=290000000
+    progressArray0(31)=319000000
+    progressArray0(32)=348000000
+    progressArray0(33)=378000000
+    progressArray0(34)=409000000
+    progressArray0(35)=440000000
+    progressArray0(36)=471000000
+    progressArray0(37)=503000000
+    progressArray0(38)=536000000
+    progressArray0(39)=569000000
+    progressArray0(40)=602000000
+    progressArray0(41)=641000000
+    progressArray0(42)=681000000
+    progressArray0(43)=721000000
+    progressArray0(44)=761000000
+    progressArray0(45)=802000000
+    progressArray0(46)=844000000
+    progressArray0(47)=886000000
+    progressArray0(48)=928000000
+    progressArray0(49)=971000000
+    progressArray0(50)=1015000000
+    progressArray0(51)=1064000000
+    progressArray0(52)=1113000000
+    progressArray0(53)=1163000000
+    progressArray0(54)=1214000000
+    progressArray0(55)=1265000000
+    progressArray0(56)=1316000000
+    progressArray0(57)=1368000000
+    progressArray0(58)=1421000000
+    progressArray0(59)=1474000000
+    progressArray0(60)=1527000000
+    progressArray0(61)=1586000000
+    progressArray0(62)=1646000000
+    progressArray0(63)=1706000000
+    progressArray0(64)=1766000000
+    progressArray0(65)=1827000000
+    progressArray0(66)=1889000000
+    progressArray0(67)=1951000000
+    progressArray0(68)=2013000000
+    progressArray0(69)=2076000000
+    progressArray0(70)=2140000000
 }

@@ -56,7 +56,7 @@ function NavigationPoint FindClosestPathNode(Actor anActor)
         return none;
 
     for (N = Level.NavigationPointList; N != none; N = N.nextNavigationPoint) {
-        if ( !N.IsA('PathNode') )
+        if ( !N.IsA('PathNode') || N == anActor )
             continue; // ignore teleporters, jumpads etc.
         NDistSquared = VSizeSquared(anActor.Location - N.Location);
         if ( NDistSquared < 250000 ) {
@@ -86,7 +86,8 @@ function Actor FindAlternatePath(Actor anActor)
         N = LastAlternatePathPoint;
     else {
         N = FindClosestPathNode(anActor);
-        log("Unreachable actor " $ anActor $ " @ (" $ anActor.Location $ ") -> rerouting to " $ N, class.name);
+        log("Unreachable actor " $ GetItemName(string(anActor)) $ " @ (" $ anActor.Location $ ") -> rerouting to "
+                $ N, class.name);
         if ( TheGuardian(anActor) != none ) {
             FtgGame.ScrnBalanceMut.BlamePlayer(TheGuardian(anActor).GetBaseSetter(), BlameStr);
         }
@@ -174,7 +175,8 @@ state Moving extends Scripting
             MoveTarget = FindPathToward(MoveTarget,false);
 
             if ( MoveTarget == OldMoveTarget && --MoveAttempts <= 0) {
-                log("Stuck while navigating to " $ GetItemName(string(MoveTarget)) $ " / " $ GetItemName(string(Target)), class.name);
+                log("Stuck @ (" $ Pawn.Location $ ") while navigating to " $ GetItemName(string(MoveTarget))
+                        $ " / " $ GetItemName(string(Target)), class.name);
                 if ( MoveTarget.IsA('NavigationPoint') ) {
                     // make sure we don't use this navigation point anymore
                     FtgGame.InvalidatePathTarget(MoveTarget);
@@ -195,6 +197,7 @@ state Moving extends Scripting
         }
 
         if ( OldMoveTarget != MoveTarget ) {
+            StinkyClot.OnMoveTarget(MoveTarget);
             OldMoveTarget = MoveTarget;
             MoveAttempts = default.MoveAttempts;
         }
@@ -210,6 +213,11 @@ Begin:
     Pawn.SetMovementPhysics();
     WaitForLanding();
 KeepMoving:
+    if ( StinkyClot.TeleportPhase != StinkyClot.TELEPORT_NONE ) {
+        // wait for teleportation to finish
+        sleep(1.0);
+        Goto('Begin');
+    }
     SetMoveTarget();
     DoAdditionalActions();
     Pawn.GroundSpeed = CalcSpeed();
@@ -218,23 +226,7 @@ KeepMoving:
     StinkyClot.HiddenGroundSpeed = Pawn.GroundSpeed;
     // MayShootTarget();
     if ( MoveTarget != None && MoveTarget != Pawn ) {
-        if ( StinkyClot.StuckCounter >= 25 &&
-                (MoveTarget == StinkyClot.LastMoveTarget[0] || MoveTarget == StinkyClot.LastMoveTarget[1]) )
-        {
-            // force teleport
-            if ( NextRoutePath != none && NextRoutePath.End != none ) {
-                MoveTarget = NextRoutePath.End; // jump one path node forward
-                // Level.GetLocalPlayerController().ClientMessage("Teleporting to next target " $ MoveTarget, 'log');
-            }
-            StinkyClot.TeleportLocation = MoveTarget.Location;
-            StinkyClot.TeleportLocation.Z += StinkyClot.CollisionHeight + 5;
-            StinkyClot.StartTeleport();
-            sleep(1.0);
-            WaitForLanding();
-        }
-        else {
-            MoveToward(MoveTarget, Focus,,,Pawn.bIsWalking);
-        }
+        MoveToward(MoveTarget, Focus,,,Pawn.bIsWalking);
 
         if ( !Pawn.ReachedDestination(GetMoveTarget()) ) {
             Goto('KeepMoving');
@@ -242,8 +234,8 @@ KeepMoving:
 
         // make sure the Stinky Clot won't teleport at this phase
         MoveTarget = none;
-        StinkyClot.LastMoveTarget[0] = none;
-        StinkyClot.LastMoveTarget[1] = none;
+        OldMoveTarget = none;
+        StinkyClot.ClearMoveHistory();
     }
     sleep( PlayCompleteAnimation() );
     CompleteAction();
@@ -256,7 +248,7 @@ state MoveToGuardian extends Moving
         if ( FtgGame.bWaveBossInProgress )
             return StinkyClot.MaxBoostSpeed;
 
-        return min( Pawn.GroundSpeed + 3, StinkyClot.MaxBoostSpeed ) ; // each call move faster and faster
+        return min( Pawn.GroundSpeed + 2, StinkyClot.MaxBoostSpeed ) ; // each call move faster and faster
     }
 }
 

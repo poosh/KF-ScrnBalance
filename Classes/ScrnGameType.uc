@@ -215,7 +215,7 @@ function InvalidatePathTarget(Actor PathTarget, optional bool bForceAdd)
     if ( PathTarget == none )
         return;
 
-    if ( bForceAdd || !IsPathTargetValid(PathTarget) ) {
+    if ( bForceAdd || IsPathTargetValid(PathTarget) ) {
         log("Invalid Path Target: " $ PathTarget, class.name);
         InvalidPathTargets[InvalidPathTargets.length] = PathTarget;
     }

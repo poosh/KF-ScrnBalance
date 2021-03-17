@@ -13,7 +13,7 @@ class ScrnBalance extends Mutator
 #exec OBJ LOAD FILE=ScrnAch_T.utx
 
 
-const VERSION = 96409;
+const VERSION = 96500;
 
 var ScrnBalance Mut; // pointer to self to use in static functions, i.e class'ScrnBalance'.default.Mut
 
@@ -29,16 +29,12 @@ var localized string strBetaOnly;
 var transient int SrvFlags; // used for network replication of the values below
 var globalconfig bool bSpawn0, bNoStartCashToss, bMedicRewardFromTeam;
 var globalconfig bool bAltBurnMech;
-var deprecated bool bDoubleDoT;
 var globalconfig bool bReplaceNades, bShieldWeight, bHardcore, bBeta;
 var globalconfig bool bShowDamages, bManualReload, bForceManualReload, bAllowWeaponLock;
 var globalconfig bool bNoPerkChanges, bPerkChangeBoss, bPerkChangeDead, b10Stars;
 VAR globalconfig bool bTraderSpeedBoost;
 // END OF SRVFLAGS
 var transient byte HardcoreLevel; // set from ScrnGameRules. Used for replication purposes only.
-
-var deprecated byte ReqBalanceMode;
-var transient byte SrvReqBalanceMode;
 
 var globalconfig int ForcedMaxPlayers;
 
@@ -47,8 +43,6 @@ var globalconfig int
     , BonusLevelHardMin, BonusLevelHardMax
     , BonusLevelSuiMin, BonusLevelSuiMax
     , BonusLevelHoeMin, BonusLevelHoeMax;
-var globalconfig float Post6RequirementScaling, WeldingRequirementScaling, StalkerRequirementScaling;
-
 
 var transient int MinLevel, MaxLevel;
 // Changing default value of variable disables its replication, cuz engine thinks it wasn't changed
@@ -182,20 +176,13 @@ var globalconfig array<string> AutoLoadMutators;
 
 var globalconfig bool bReplaceHUD, bReplaceScoreBoard;
 
-var deprecated float Post6ZedSpawnInc;
-var deprecated float Post6AmmoSpawnInc;
-var deprecated float Post6ZedsPerPlayer;
-var deprecated bool bAlterWaveSize;
 var globalconfig int MaxWaveSize;
-
 var globalconfig int MaxZombiesOnce;
 
 var globalconfig float EndGameStatBonus;
 var globalconfig float FirstStatBonusMult;
 var globalconfig bool  bStatBonusUsesHL;
 var globalconfig int  StatBonusMinHL;
-
-var globalconfig int SharpProgMinDmg; // if headshot damage dealth with Sharpshooter's weapon exceeds this, then SS gets +1 to perk progression
 
 var globalconfig bool bBroadcastPickups; // broadcast weapon pickups
 var globalconfig String BroadcastPickupText; // broadcast weapon pickups
@@ -244,7 +231,6 @@ var globalconfig string ColoredServerName;
 
 var float OriginalWaveSpawnPeriod;
 var globalconfig float MinZedSpawnPeriod;
-var deprecated bool bSpawnRateFix;
 var globalconfig bool bServerInfoVeterancy;
 
 var transient array<KFUseTrigger> DoorKeys;
@@ -344,12 +330,11 @@ replication
 
         // flags to replicate config variables
     reliable if ( bNetInitial && Role == ROLE_Authority )
-        SrvFlags, SrvAchievementFlags, SrvReqBalanceMode;
+        SrvFlags, SrvAchievementFlags;
 
     // non-config vars and configs vars which seem to replicate fine
     reliable if ( bNetInitial && Role == ROLE_Authority )
-        CustomWeaponLink, SrvTourneyMode, bTSCGame,
-        Post6RequirementScaling, WeldingRequirementScaling, StalkerRequirementScaling;
+        CustomWeaponLink, SrvTourneyMode, bTSCGame;
 
 }
 
@@ -411,22 +396,6 @@ simulated function InitSettings()
 {
     ApplySpawnBalance();
     ApplyWeaponFix();
-
-    class'ScrnVetSupportSpec'.default.progressArray1[0]=1000.0 * WeldingRequirementScaling;
-    class'ScrnVetSupportSpec'.default.progressArray1[1]=2000.0 * WeldingRequirementScaling;
-    class'ScrnVetSupportSpec'.default.progressArray1[2]=7000.0 * WeldingRequirementScaling;
-    class'ScrnVetSupportSpec'.default.progressArray1[3]=33500.0 * WeldingRequirementScaling;
-    class'ScrnVetSupportSpec'.default.progressArray1[4]=120000.0 * WeldingRequirementScaling;
-    class'ScrnVetSupportSpec'.default.progressArray1[5]=250000.0 * WeldingRequirementScaling;
-    class'ScrnVetSupportSpec'.default.progressArray1[6]=370000.0 * WeldingRequirementScaling;
-
-    class'ScrnVetCommando'.default.progressArray0[0]=10.0 * StalkerRequirementScaling;
-    class'ScrnVetCommando'.default.progressArray0[1]=30.0 * StalkerRequirementScaling;
-    class'ScrnVetCommando'.default.progressArray0[2]=100.0 * StalkerRequirementScaling;
-    class'ScrnVetCommando'.default.progressArray0[3]=325.0 * StalkerRequirementScaling;
-    class'ScrnVetCommando'.default.progressArray0[4]=1200.0 * StalkerRequirementScaling;
-    class'ScrnVetCommando'.default.progressArray0[5]=2400.0 * StalkerRequirementScaling;
-    class'ScrnVetCommando'.default.progressArray0[6]=3600.0 * StalkerRequirementScaling;
 
     if (bShieldWeight) {
         bReplaceNades = true;
@@ -1744,7 +1713,6 @@ static function FillPlayInfo(PlayInfo PlayInfo)
     PlayInfo.AddSetting(default.BonusCapGroup,"BonusLevelSuiMax","5.Suicidal Max Bonus Level",1,0, "Text", "4;0:70",,,True);
     PlayInfo.AddSetting(default.BonusCapGroup,"BonusLevelHoeMin","7.HoE Min Bonus Level",1,0, "Text", "4;0:70",,,True);
     PlayInfo.AddSetting(default.BonusCapGroup,"BonusLevelHoeMax","7.HoE Max Bonus Level",1,0, "Text", "4;0:70",,,True);
-    PlayInfo.AddSetting(default.BonusCapGroup,"Post6RequirementScaling","Level 7+ Scaling",1,0, "Text", "6;0.01:4.00",,,True);
     PlayInfo.AddSetting(default.BonusCapGroup,"MaxZombiesOnce","Max Specimens At Once",1,0, "Text", "4;8:254",,,True);
 
     PlayInfo.AddSetting(default.BonusCapGroup,"bSpawn0","Zero Cost of Initial Inventory",1,0, "Check");
@@ -1781,7 +1749,6 @@ static function string GetDescriptionText(string PropName)
         case "BonusLevelHoeMin":            return "Minimum perk level, which bonuses can be applied on HoE difficulty. Perk levels below will be granted with minimal bonus anyway.";
         case "BonusLevelHoeMax":            return "Maximum perk level, which bonuses can be applied on HoE difficulty. Perk levels above this won't have any extra bonuses.";
         case "BonusLevelHoeMax":            return "Maximum perk level, which bonuses can be applied on HoE difficulty. Perk levels above this won't have any extra bonuses.";
-        case "Post6RequirementScaling":     return "Additional requirement scaling after reaching level 6";
         case "MaxZombiesOnce":              return "Maximum specimens at once on playtime, note that high values will LAG when theres a lot of them.";
 
         case "bHardcore":                   return "For those who still think game is too easy...";
@@ -2407,8 +2374,9 @@ function SetupRepLink(ClientPerkRepLink R)
     ScrnRep.StatObject.Rep = ScrnRep;
 
     ScrnRep.ServerWebSite = R.ServerWebSite;
-    ScrnRep.MinimumLevel = R.MinimumLevel;
-    ScrnRep.MaximumLevel = R.MaximumLevel;
+    // cannot go past level 70 to avoid int32 overflow
+    ScrnRep.MaximumLevel = min(R.MaximumLevel, 70);
+    ScrnRep.MinimumLevel = min(R.MinimumLevel, ScrnRep.MaximumLevel);
     ScrnRep.RequirementScaling = R.RequirementScaling;
     ScrnRep.CachePerks = R.CachePerks;
     // remove non-scrn perks
@@ -3322,7 +3290,6 @@ defaultproperties
     BonusLevelSuiMax=6
     BonusLevelHoeMin=6
     BonusLevelHoeMax=6
-    Post6RequirementScaling=1.000000
     pickupReplaceArray(0)=(oldClass=Class'KFMod.MP7MPickup',NewClass=Class'ScrnBalanceSrv.ScrnMP7MPickup')
     pickupReplaceArray(1)=(oldClass=Class'KFMod.MP5MPickup',NewClass=Class'ScrnBalanceSrv.ScrnMP5MPickup')
     pickupReplaceArray(2)=(oldClass=Class'KFMod.KrissMPickup',NewClass=Class'ScrnBalanceSrv.ScrnKrissMPickup')
@@ -3391,8 +3358,6 @@ defaultproperties
     AchievementFlags=255
     bSaveStatsOnAchievementEarned=True
     bTradingDoorsOpen=True
-    WeldingRequirementScaling=1.000000
-    StalkerRequirementScaling=1.000000
     SkippedTradeTimeMult=0.75
     ServerPerksPkgName="ScrnSP.ServerPerksMutSE"
     bReplaceHUD=True
@@ -3474,7 +3439,6 @@ defaultproperties
     MaxWaveSize=500
     MaxZombiesOnce=48
     GameStartCountDown=12
-    SharpProgMinDmg=1000
     MinZedSpawnPeriod=2.0
     bScrnWaves=True
     bServerInfoVeterancy=True

@@ -175,7 +175,9 @@ function StinkyControllerReady(StinkyController SC)
     SC.MoveTargets.length = i;
     if ( bWaveBossInProgress ) {
         SC.Pawn.SetCollision(true, true); // Stinky Clot allways can be killed during the boss wave
-        StinkyClot(StinkyControllers[t].Pawn).SetSkin();
+        if ( Level.NetMode != NM_DedicatedServer ) {
+            SC.StinkyClot.SetSkin();
+        }
     }
     StinkyControllers[SC.TeamIndex] = SC;
     SC.GotoState('MoveToGuardian', 'Begin');
