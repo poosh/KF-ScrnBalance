@@ -6,7 +6,7 @@ class ScrnDamTypeM4203M extends ScrnDamTypeMedic
 // AwardKill() twice: for the decapitator and for the killer
 static function AwardKill(KFSteamStatsAndAchievements KFStatsAndAchievements, KFPlayerController Killer, KFMonster Killed )
 {
-    if( Killed.IsA('ZombieShiver') || Killed.IsA('ZombieStalker') )
+    if( Killed.IsA('Shiver') || Killed.IsA('ZombieStalker') )
         KFStatsAndAchievements.AddStalkerKill();
 }    
 

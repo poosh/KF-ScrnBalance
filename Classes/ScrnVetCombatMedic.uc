@@ -67,7 +67,7 @@ static function int AddDamage(KFPlayerReplicationInfo KFPRI, KFMonster Injured, 
     if ( DmgType == default.DefaultDamageTypeNoBonus )
         return InDamage;
 
-    if (   ClassIsChildOf(DmgType, default.DefaultDamageType)
+    if ( ClassIsChildOf(DmgType, default.DefaultDamageType)
             || ClassIsInArray(default.PerkedDamTypes, DmgType) )
     {
         // 30% base bonus + 5% per level

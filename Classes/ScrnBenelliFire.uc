@@ -77,5 +77,5 @@ defaultproperties
      ProjectileClass=Class'ScrnBalanceSrv.ScrnBenelliBullet'
      AmmoClass=Class'ScrnBalanceSrv.ScrnBenelliAmmo'
      AimedSpread=750
-     Spread=1075.000000
+     Spread=750
 }

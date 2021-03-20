@@ -55,7 +55,7 @@ function PlayerDied(ScrnPlayerInfo DeadPlayerInfo, Controller Killer, class<Dama
     if ( DeadPlayerInfo.Deaths >= GameRules.Mut.KF.FinalWave * 0.8 )
         Ach2All('Kenny', 1);
 
-    if ( Killer != none && Killer.Pawn != none && Killer.Pawn.IsA('ZombieJason') )
+    if ( Killer != none && Killer.Pawn != none && Killer.Pawn.IsA('Jason') )
         PlayersKilledByJason++;
 
     if ( DeadPlayerInfo.PlayerOwner.PlayerReplicationInfo.Score >= 1000
@@ -498,7 +498,7 @@ function MonsterDamaged(int Damage, KFMonster Victim, ScrnPlayerInfo InstigatorI
             }
         }
     }
-    else if ( Victim.IsA('ZombieShiver') ) {
+    else if ( Victim.IsA('Shiver') ) {
         // TeamWork: TeamWork: Grilled Shiver Brains
         // KillAss1 must be set Shiver on fire
         // KillAss2 must decapitate Shiver with commando weapon
@@ -521,7 +521,7 @@ function MonsterDamaged(int Damage, KFMonster Victim, ScrnPlayerInfo InstigatorI
         }
     }
     else if ( ZombieStalker(Victim) != none ) {
-        if ( Victim.IsA('ZombieGhost') ) {
+        if ( Victim.IsA('Ghost') ) {
             if ( bIsHeadshot && Victim.bDecapitated && !bWasDecapitated ) {
                 if ( VSizeSquared(Victim.Location - InstigatorInfo.PlayerOwner.Pawn.Location) > 1000000 )
                     InstigatorInfo.ProgressAchievement('GhostSmell', 1);
@@ -580,7 +580,7 @@ function MonsterDamaged(int Damage, KFMonster Victim, ScrnPlayerInfo InstigatorI
             }
         }
     }
-    else if ( ZombieScrake(Victim) != none || Victim.IsA('ZombieJason') ) {
+    else if ( ZombieScrake(Victim) != none ) {
         if ( !Victim.bDecapitated && Damage < Victim.Health && !GameRules.MonsterInfos[index].TW_Ach_Failed ) {
             if ( ClassIsChildOf(GameRules.MonsterInfos[index].DamType1, class'KFMod.DamTypeLAW') ) {
                 if ( (ClassIsChildOf(DamType, class'ScrnDamTypeHeavyBase')
@@ -829,7 +829,7 @@ function MonsterKilled(KFMonster Victim, ScrnPlayerInfo KillerInfo, class<KFWeap
                 KillerInfo.ProgressAchievement('Overkill2', 1);
         }
     }
-    else if ( Victim.IsA('ZombieShiver') ) {
+    else if ( Victim.IsA('Shiver') ) {
         // Firebug (KillAss1) ignites Shiver and makes him unable to teleport
         // Then Commando (KillAss2) - decapitates
         // KillerInfo doesn't get teamwork achievement (the one who killed decapitated body)
@@ -883,8 +883,8 @@ function MonsterKilled(KFMonster Victim, ScrnPlayerInfo KillerInfo, class<KFWeap
             KillerInfo.ProgressAchievement('NikolaTesla', 1);
         }
     }
-    else if ( ZombieScrake(Victim) != none || Victim.IsA('ZombieJason') ) {
-        if ( Victim.IsA('ZombieJason') && ClassIsChildOf(DamType, class'DamTypeMachete') )
+    else if ( ZombieScrake(Victim) != none ) {
+        if ( Victim.IsA('Jason') && ClassIsChildOf(DamType, class'DamTypeMachete') )
             KillerInfo.ProgressAchievement('ComeatMe', 1);
         //scrake unnader
         if ( !Victim.bDamagedAPlayer && GameRules.MonsterInfos[index].DamType2 == class'KFMod.DamTypeFrag'
@@ -979,7 +979,7 @@ function MonsterKilled(KFMonster Victim, ScrnPlayerInfo KillerInfo, class<KFWeap
                 KillerInfo.ProgressAchievement('GetOffMyLawn', 1);
         }
     }
-    else if ( Victim.IsA('ZombieBrute') ) {
+    else if ( Victim.IsA('Brute') ) {
         if ( DamType.default.bIsExplosive )
             KillerInfo.ProgressAchievement('BruteExplosive', 1);
 

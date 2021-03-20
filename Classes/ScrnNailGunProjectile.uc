@@ -169,7 +169,7 @@ function ReleaseMonster()
     //PlayerController(Instigator.Controller).ClientMessage("NailedFlyDistance = " $ sqrt(NailedFlyDistance) $ " ("$ sqrt(NailedFlyDistance) / 50.0 $"m)");
     if ( NailedFlyDistance >= 25000000.0 && ach_Nail100m.AchHandler != none )
         ach_Nail100m.AchHandler.ProgressAchievement(ach_Nail100m.AchIndex, 1);
-    if ( NailedFlyDistance >= 62500.0 && ach_PushShiver.AchHandler != none && NailedMonster.IsA('ZombieShiver') )
+    if ( NailedFlyDistance >= 62500.0 && ach_PushShiver.AchHandler != none && NailedMonster.IsA('Shiver') )
         ach_PushShiver.AchHandler.ProgressAchievement(ach_PushShiver.AchIndex, 1);
 
     NailedMonster.TakeDamage(2*Damage, Instigator, Location, MomentumTransfer * Normal(Velocity), MyDamageType);

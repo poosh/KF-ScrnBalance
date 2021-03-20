@@ -19,6 +19,47 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+### v9.66
+- Fixed a bug that could cause too high recoil during the Zed Time
+- 3rd person view disabled in TSC and Tourney Mode. In addition, a new config option `bAllowBehindView`
+  added to *ScrnBalanceSrv.ini*.
+- Reduced M99 penetration damage reduction to 5% (down from 20%)
+- Increased Combat Shotgun reload rate to 0.6s per shell (from 0.75s)
+- Removed Combat Shotgun spread penalty for not aiming down the sights - it has laser sights after all.
+
+#### ScrnZedPack v2
+- Added and reworked all vanilla zeds to ScrnZedPack
+- Renamed most zed classes inside ScrnZedPack (check *ScrnWaves.ini*)
+- Enhanced head detection
+- Fixed projection of laser sights on big zed heads
+###### Bloat
+- Doubled head health (25 -> 50 base)
+- Head health increases by 20% per extra player. 6p HoE Bloat now has 175hp
+  Not too much, but cannot be decapitated with just two off-perk 9mm shots
+- Bloat cannot puke while decapitated
+- Decapitating a Bloat immediately stops him from vomiting
+###### Siren
+- Removed the scream canceling exploit
+- Siren cannot scream when decapitated
+- Decapitating Siren during screaming eliminates any further damage.
+- Fixed vortex pull effect (it has been bugged in vanilla since the very beginning didn't work in the most cases).
+- Reduced scream damage by 25% to compensate for fixed vortex pull.
+- Siren scream shatters frozen zeds nearby, turning their bodies into deadly ice shards
+###### Scrake
+- Saw loop damage now scales per difficulty. In vanilla it did not change, that why SC did so little damage on HoE.
+- Base saw loop damage reduced by 20% to compensate fixed difficulty scaling. HoE saw damage is higher by ~40% now.
+
+#### Horzine Technician v5
+- Removed Cryo Sirens because regulad Sirens from ScrnZedPack can shatter frozen zeds now
+- Sirens can scream just to shatter zeds in front, even when not seeing players (e.g., standing around a corner next to
+  frozen zeds)
+- Optimized performance of Freeze Mechanics
+- Increased mag capacity bonus for ZED Guns and Cryo Thrower to 50% at level 6 (up from 35%)
+- Increased Cryo Thrower total ammo to 960 (up from 840)
+- Reduced ZED Gun MKII weight to 5 (down from 6), so it can be carried along with Cryo Mass Driver and Horzine Armor
+- Fixed point-blank headshot detection for ice darts (the same bug as for shotguns)
+
+
 ### v9.65
 - Perk progress calculation now takes into account possible 32-bit integer overflow. A signed 32-bit integer may store
   numbers up to ~2147M. Some players have reached such an insane XP level, which caused perk progress to appear negative

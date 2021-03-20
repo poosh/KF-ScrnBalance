@@ -556,7 +556,7 @@ function int ReduceDamage(int Damage, pawn injured, pawn instigatedBy, vector Hi
         if ( FFDisabled(instigatedBy, injured) )
             return 0;
 
-        // same team friendly fire damage will be reduced in KFGameType
+        // same team friendly fire damage will be reduced in ScrnGameType
         if ( instigatedBy.GetTeamNum()!=injured.GetTeamNum() )
             Damage = max(1, round( Damage * FriendlyFireScale ) );
     }

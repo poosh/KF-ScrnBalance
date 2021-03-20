@@ -125,6 +125,17 @@ function LoadGame(ScrnGameType MyGame)
         // store zed info for config save after voting
         ZedInfos[i] = zi;
     }
+    if ( ActiveZeds.length == 0 ) {
+        log("No active zeds! Loading fallback zeds", class.name);
+        for ( j = 0; j < class'ScrnZedInfo'.default.Zeds.length; ++j ) {
+            zedc = class<KFMonster>(DynamicLoadObject(class'ScrnZedInfo'.default.Zeds[j].ZedClass, class'Class'));
+            if ( zedc == none ) {
+                log("Unable to load a fallback zed class '" $ class'ScrnZedInfo'.default.Zeds[j].ZedClass, class.name);
+                continue;
+            }
+            AddActiveZed(class'ScrnZedInfo'.default.Zeds[j].Alias, zedc, 0.f);
+        }
+    }
     RecalculateSpawnChances();
 
     for ( i = 0; i < ActiveZeds.length; ++i ) {

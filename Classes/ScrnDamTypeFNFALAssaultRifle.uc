@@ -6,7 +6,7 @@ class ScrnDamTypeFNFALAssaultRifle extends DamTypeFNFALAssaultRifle
 // AwardKill() twice: for the decapitator and for the killer
 static function AwardKill(KFSteamStatsAndAchievements KFStatsAndAchievements, KFPlayerController Killer, KFMonster Killed )
 {
-    if( Killed.IsA('ZombieShiver') )
+    if( Killed.IsA('Shiver') )
         KFStatsAndAchievements.AddStalkerKill();
     else
         super.AwardKill(KFStatsAndAchievements, Killer, Killed);

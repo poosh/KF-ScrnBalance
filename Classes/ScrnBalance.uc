@@ -13,7 +13,7 @@ class ScrnBalance extends Mutator
 #exec OBJ LOAD FILE=ScrnAch_T.utx
 
 
-const VERSION = 96500;
+const VERSION = 96602;
 
 var ScrnBalance Mut; // pointer to self to use in static functions, i.e class'ScrnBalance'.default.Mut
 
@@ -32,11 +32,12 @@ var globalconfig bool bAltBurnMech;
 var globalconfig bool bReplaceNades, bShieldWeight, bHardcore, bBeta;
 var globalconfig bool bShowDamages, bManualReload, bForceManualReload, bAllowWeaponLock;
 var globalconfig bool bNoPerkChanges, bPerkChangeBoss, bPerkChangeDead, b10Stars;
-VAR globalconfig bool bTraderSpeedBoost;
+var globalconfig bool bTraderSpeedBoost;
 // END OF SRVFLAGS
 var transient byte HardcoreLevel; // set from ScrnGameRules. Used for replication purposes only.
 
 var globalconfig int ForcedMaxPlayers;
+var globalconfig bool bAllowBehindView;
 
 var globalconfig int
     BonusLevelNormalMax
@@ -92,15 +93,6 @@ var protected  byte GameStartCountDown;
 var globalconfig array<string> PerkedWeapons, CustomPerks;
 //var StringReplicationInfo ClientPerkedWeaponsSRI, ClientPerksSRI;
 var array< class<ScrnVeterancyTypes> > Perks;
-
-/*
- // removed because array replication doesn't wort in unreal engine 2
- struct CustomPerkedClass {
-    var int PerkIndex;
-    var class BonusClass;
-};
-var array<CustomPerkedClass> CustomPerkedClassArray;
-*/
 
 var ScrnBurnMech BurnMech; // Alternate Burning Mechanism
 
@@ -2325,13 +2317,7 @@ function bool CheckReplacement(Actor Other, out byte bSuperRelevant)
             ScrnPlayerController(Other).Mut = self;
     }
     else if ( KFMonster(Other) != none ) {
-        // harder zapping
-        if ( ZombieFleshPound(Other) != none )
-            KFMonster(Other).ZapThreshold = 3.75;
-        else if ( KFMonster(Other).default.Health >= 1000 )
-            KFMonster(Other).ZapThreshold = 1.75;
-
-        GameRules.RegisterMonster(KFMonster(Other));
+        SetupMonster(KFMonster(Other));
     }
     else if ( SRStatsBase(Other) != none ) {
         SetupRepLink(SRStatsBase(Other).Rep);
@@ -2355,6 +2341,18 @@ function bool CheckReplacement(Actor Other, out byte bSuperRelevant)
     }
 
     return true;
+}
+
+function SetupMonster(KFMonster M)
+{
+    if ( M.default.Health >= 1000 ) {
+        // harder zapping
+        if ( ZombieFleshPound(M) != none )
+            M.ZapThreshold = 3.75;
+        else
+            M.ZapThreshold = 1.75;
+    }
+    GameRules.RegisterMonster(M);
 }
 
 function SetupRepLink(ClientPerkRepLink R)
@@ -3283,6 +3281,7 @@ defaultproperties
     VoteKillPenaltyMult=5.0
     MinVoteDifficulty=2
     bTraderSpeedBoost=True
+    bAllowBehindView=True
 
     BonusLevelNormalMax=4
     BonusLevelHardMax=5

@@ -429,8 +429,6 @@ simulated function ClientFlareDamage(KFMonster Victim, byte DamageX4, byte BurnT
 {
     local ScrnFlareCloud cloud;
 
-
-
     if ( Level.NetMode == NM_DedicatedServer )
         return;
     if ( Victim == none )
@@ -444,6 +442,31 @@ simulated function ClientFlareDamage(KFMonster Victim, byte DamageX4, byte BurnT
 function ServerAcknowledgeDamages(bool bWantDamage)
 {
     bDamageAck = bWantDamage;
+}
+
+// Set a new recoil amount
+// LastRecoilTime changed from timestamp (that does not work properly during the Zed Time) to countdown
+simulated function SetRecoil(rotator NewRecoilRotation, float NewRecoilSpeed)
+{
+    if ( LastRecoilTime <= 0 ) {
+        // new recoil rate
+        RecoilRotator = NewRecoilRotation / NewRecoilSpeed;
+    }
+    else {
+        // add to the current recoil rate
+        RecoilRotator = ((RecoilRotator * RecoilSpeed) + NewRecoilRotation) / NewRecoilSpeed;
+    }
+    LastRecoilTime = NewRecoilSpeed;
+    RecoilSpeed = NewRecoilSpeed;
+}
+
+simulated function rotator RecoilHandler(rotator NewRotation, float DeltaTime)
+{
+    if( LastRecoilTime > 0 ) {
+        NewRotation += RecoilRotator * fmin(deltatime, LastRecoilTime);
+        LastRecoilTime -= DeltaTime;
+    }
+    return NewRotation;
 }
 
 simulated function ClientMonsterBlamed(class<KFMonster> BlamedMonsterClass)
@@ -2568,7 +2591,7 @@ function ClientSetBehindView(bool B)
         if ( ScrnHUD(MyHUD) != none )
             ScrnHUD(MyHUD).DebugCrosshair(!bBehindView);
     }
-    else if ( B == false ) {
+    else if ( !bBehindView ) {
         bFreeCamera = false;
     }
 }
@@ -2576,11 +2599,23 @@ function ClientSetBehindView(bool B)
 exec function FreeCamera( bool B )
 {
     ClientMessage("FreeCamera is blocked due to exploits. Use ToggleBehindView instead");
-    // free roaming is prohibited in tourney mode
-    // if ( B && !PlayerReplicationInfo.bOnlySpectator && Mut.SrvTourneyMode != 0 )
-        // return;
+}
 
-    // super.FreeCamera(B);
+// BehindView() executes on the server-side only. Should be called ServerBehindView()
+exec function BehindView( Bool B )
+{
+    if ( B && Pawn != None && !IsSpectating() && (!Mut.bAllowBehindView || Mut.bTSCGame) ) {
+        return;
+    }
+    super.BehindView(B);
+}
+
+function ServerToggleBehindView()
+{
+    if ( !bBehindView && Pawn != None && !IsSpectating() && (!Mut.bAllowBehindView || Mut.bTSCGame) ) {
+        return;
+    }
+    super.ServerToggleBehindView();
 }
 
 function bool AllowFreeCamera()
@@ -2850,7 +2885,7 @@ function ServerCrap(int Amount)
 // exec function TestZedTime(optional float DesiredZedTimeDuration)
 // {
 //     if ( Mut.CheckAdmin(self) )
-//     KFGameType(Level.Game).DramaticEvent(1.0, DesiredZedTimeDuration);
+//         KFGameType(Level.Game).DramaticEvent(1.0, DesiredZedTimeDuration);
 // }
 //
 // exec function IncAch(name AchID)

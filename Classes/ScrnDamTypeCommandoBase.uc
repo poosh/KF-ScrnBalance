@@ -3,7 +3,7 @@ class ScrnDamTypeCommandoBase extends KFProjectileWeaponDamageType
 
 static function AwardKill(KFSteamStatsAndAchievements KFStatsAndAchievements, KFPlayerController Killer, KFMonster Killed )
 {
-    if( Killed.IsA('ZombieStalker') || Killed.IsA('ZombieShiver') )
+    if( Killed.IsA('ZombieStalker') || Killed.IsA('Shiver') )
         KFStatsAndAchievements.AddStalkerKill();
 }
 

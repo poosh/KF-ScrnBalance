@@ -273,100 +273,72 @@ event Tick(float DeltaTime)
     }
 }
 
-function int ReduceDamage(int Damage, pawn injured, pawn instigatedBy, vector HitLocation, out vector Momentum, class<DamageType> DamageType)
+function int ReduceDamage(int Damage, pawn injured, pawn instigatedBy, vector HitLocation, out vector Momentum,
+        class<DamageType> DamageType)
 {
-    local KFPlayerController PC;
-
-    if ( KFPawn(Injured) != none )
-    {
-        if ( KFPlayerReplicationInfo(Injured.PlayerReplicationInfo) != none && KFPlayerReplicationInfo(Injured.PlayerReplicationInfo).ClientVeteranSkill != none )
-        {
-            Damage = KFPlayerReplicationInfo(Injured.PlayerReplicationInfo).ClientVeteranSkill.Static.ReduceDamage(KFPlayerReplicationInfo(Injured.PlayerReplicationInfo), KFPawn(Injured), instigatedBy, Damage, DamageType);
-        }
-    }
-
-    if ( instigatedBy == None || DamageType == class'DamTypeVomit' || DamageType == class'DamTypeWelder' || DamageType == class'SirenScreamDamage' )
-    {
-        return Super(xTeamGame).ReduceDamage( Damage,injured,instigatedBy,HitLocation,Momentum,DamageType );
-    }
-
-    if ( Monster(Injured) != None )
-    {
-        if ( instigatedBy != None )
-        {
-            PC = KFPlayerController(instigatedBy.Controller);
-            if ( Class<KFWeaponDamageType>(damageType) != none && PC != none )
-            {
-                Class<KFWeaponDamageType>(damageType).Static.AwardDamage(KFSteamStatsAndAchievements(PC.SteamStatsAndAchievements), Clamp(Damage, 1, Injured.Health));
-            }
-        }
-
-        return super(UnrealMPGameInfo).ReduceDamage( Damage, injured, InstigatedBy, HitLocation, Momentum, DamageType );
-    }
-
-    if ( KFFriendlyAI(InstigatedBy.Controller) != None && KFHumanPawn(Injured) != none  )
-        Damage *= 0.25;
-    else if ( injured == instigatedBy )
-        Damage = Damage * 0.5;
-
-
-    if ( InvasionBot(injured.Controller) != None )
-    {
-        if ( !InvasionBot(injured.controller).bDamagedMessage && (injured.Health - Damage < 50) )
-        {
-            InvasionBot(injured.controller).bDamagedMessage = true;
-            if ( FRand() < 0.5 )
-                injured.Controller.SendMessage(None, 'OTHER', 4, 12, 'TEAM');
-            else injured.Controller.SendMessage(None, 'OTHER', 13, 12, 'TEAM');
-        }
-        if ( GameDifficulty <= 3 )
-        {
-            if ( injured.IsPlayerPawn() && (injured == instigatedby) && (Level.NetMode == NM_Standalone) )
-                Damage *= 0.5;
-
-            //skill level modification
-            if ( MonsterController(InstigatedBy.Controller) != None )
-                Damage = Damage;
-        }
-    }
+    local KFPlayerController InstigatorPC;
+    local KFPlayerReplicationInfo InjuredKFPRI;
 
     if( injured.InGodMode() )
         return 0;
-    if( instigatedBy!=injured && MonsterController(InstigatedBy.Controller)==None && (instigatedBy.Controller==None || instigatedBy.GetTeamNum()==injured.GetTeamNum()) )
-    {
-        if ( class<WeaponDamageType>(DamageType) != None || class<VehicleDamageType>(DamageType) != None )
-            Momentum *= TeammateBoost;
-        if ( Bot(injured.Controller) != None )
-            Bot(Injured.Controller).YellAt(instigatedBy);
 
-        if ( FriendlyFireScale==0.0 || (Vehicle(injured) != None && Vehicle(injured).bNoFriendlyFire) )
-        {
-            if ( GameRulesModifiers != None )
-                return GameRulesModifiers.NetDamage( Damage, 0,injured,instigatedBy,HitLocation,Momentum,DamageType );
-            else return 0;
+    if ( instigatedBy != none )
+        InstigatorPC = KFPlayerController(instigatedBy.Controller);
+
+    if ( Monster(Injured) != None ) {
+        if ( InstigatorPC != none && Class<KFWeaponDamageType>(damageType) != none ) {
+            Class<KFWeaponDamageType>(damageType).Static.AwardDamage(
+                    KFSteamStatsAndAchievements(InstigatorPC.SteamStatsAndAchievements), Clamp(Damage, 1, Injured.Health));
         }
-        Damage = round( Damage * FriendlyFireScale );
+        return super(GameInfo).ReduceDamage( Damage, injured, InstigatedBy, HitLocation, Momentum, DamageType );
     }
 
-    // Start code from DeathMatch.uc - Had to override this here because it was reducing
-    // bite damage (which is 1) down to zero when the skill settings were low
+    if ( KFPawn(Injured) != none ) {
+        InjuredKFPRI = KFPlayerReplicationInfo(Injured.PlayerReplicationInfo);
+        if ( InjuredKFPRI != none && InjuredKFPRI.ClientVeteranSkill != none )
+            Damage = InjuredKFPRI.ClientVeteranSkill.Static.ReduceDamage(InjuredKFPRI, KFPawn(Injured), instigatedBy,
+                    Damage, DamageType);
+    }
 
-    if ( (instigatedBy != None) && (InstigatedBy != Injured) && (Level.TimeSeconds - injured.SpawnTime < SpawnProtectionTime)
-        && (class<WeaponDamageType>(DamageType) != None || class<VehicleDamageType>(DamageType) != None) )
-        return 0;
-
-    Damage = super(UnrealMPGameInfo).ReduceDamage( Damage, injured, InstigatedBy, HitLocation, Momentum, DamageType );
-
-    if ( instigatedBy == None)
-        return Damage;
-
-    if ( GameDifficulty <= 3 )
-    {
-        if ( injured.IsPlayerPawn() && (injured == instigatedby) && (Level.NetMode == NM_Standalone) )
+    if ( injured == instigatedBy ) {
+        // self damage
+        if ( GameDifficulty <= 3 )
+            Damage *= 0.25;
+        else
             Damage *= 0.5;
     }
-    return (Damage * instigatedBy.DamageScaling);
-    // End code from DeathMatch.uc
+    else if ( instigatedBy != none ) {
+        if ( Level.TimeSeconds - injured.SpawnTime < SpawnProtectionTime
+                && (class<WeaponDamageType>(DamageType) != None || class<VehicleDamageType>(DamageType) != None) )
+            return 0;
+
+        damage *= instigatedBy.DamageScaling;
+
+        if ( InstigatorPC == none && InjuredKFPRI != none && KFFriendlyAI(InstigatedBy.Controller) != None )
+            Damage *= 0.25;
+
+        if ( MonsterController(InstigatedBy.Controller) == None
+                && (instigatedBy.Controller==None || instigatedBy.GetTeamNum()==injured.GetTeamNum()) )
+        {
+            // Friendly fire
+            if ( class<WeaponDamageType>(DamageType) != None || class<VehicleDamageType>(DamageType) != None )
+                Momentum *= TeammateBoost;
+            if ( Bot(injured.Controller) != None )
+                Bot(Injured.Controller).YellAt(instigatedBy);
+
+            if ( FriendlyFireScale==0.0 || (Vehicle(injured) != None && Vehicle(injured).bNoFriendlyFire) ) {
+                if ( GameRulesModifiers != None )
+                    return GameRulesModifiers.NetDamage( Damage, 0,injured,instigatedBy,HitLocation,Momentum,DamageType );
+                else
+                    return 0;
+            }
+            Damage = round( Damage * FriendlyFireScale );
+        }
+    }
+
+    Damage = super(GameInfo).ReduceDamage(Damage, injured, InstigatedBy, HitLocation, Momentum, DamageType);
+
+    return Damage;
 }
 
 // removed checks for steam achievements
@@ -1364,6 +1336,7 @@ protected function StartTourney()
     ScrnBalanceMut.bNoRequiredEquipment = false;
     ScrnBalanceMut.bForceManualReload = false;
     ScrnBalanceMut.bDynamicLevelCap = false;
+    ScrnBalanceMut.bAllowBehindView = false;
 
     ScrnBalanceMut.MaxWaveSize = 500;
 
@@ -2276,7 +2249,10 @@ function OverrideMonsterHealth(KFMonster M)
             * (1.0 + (UsedNumPlayers-1.0) * M.PlayerCountHealthScale );
         M.Health = M.HealthMax;
     }
-    if ( M.PlayerNumHeadHealthScale > 0 ) {
+    if ( M.IsA('DoomMonster') ) {
+        M.HeadHealth = M.Health;
+    }
+    else if ( M.PlayerNumHeadHealthScale > 0 ) {
         M.HeadHealth = M.default.HeadHealth * M.DifficultyHealthModifer()
             * (1.0 + (UsedNumPlayers-1.0) * M.PlayerNumHeadHealthScale );
     }

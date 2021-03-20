@@ -735,9 +735,10 @@ function int NetDamage( int OriginalDamage, int Damage, pawn injured, pawn insti
             SPI.MadeDamage(Damage, ZedVictim, KFDamType, MonsterInfos[idx].bHeadshot, MonsterInfos[idx].bWasDecapitated);
     }
     else if ( ZedVictim != none ) {
-        if ( KFMonster(instigatedBy) != none ) {
+        if ( Damage > 1 && KFMonster(instigatedBy) != none ) {
             // Monster2Monster damage
-            if ( !Mut.bStoryMode && KFMonsterController(ZedVictim.Controller) != none ) {
+            if ( !Mut.bStoryMode && DamageType != class'SirenScreamDamage'
+                    && KFMonsterController(ZedVictim.Controller) != none ) {
                 // allow monsters fighting each other
                 KFMonsterController(ZedVictim.Controller).bUseThreatAssessment = false;
             }
@@ -753,8 +754,9 @@ function int NetDamage( int OriginalDamage, int Damage, pawn injured, pawn insti
             if ( SPI != none )
                 SPI.TookDamage(Damage, MonsterInfos[idx].Monster, DamageType);
         }
-        else if ( DamageType == class'KFMod.SirenScreamDamage' ) {
+        else if ( DamageType == class'SirenScreamDamage' ) {
             // game bug: Siren doesn't set herself as the instigator when dealing screaming damage. Such a sneaky bicth!
+            // Fixed in ScrnZedPack
             SPI = GetPlayerInfo(PlayerController(injured.Controller));
             if ( SPI != none )
                 SPI.TookDamage(Damage, none, DamageType);
@@ -1631,13 +1633,13 @@ defaultproperties
     HL_Hardcore=2
 
     HardcoreBosses(00)=(MonsterClass="HardPat",HL=2)
-    HardcoreBosses(01)=(MonsterClass="HardPat_CIRCUS",HL=2)
-    HardcoreBosses(02)=(MonsterClass="HardPat_GRITTIER",HL=2)
-    HardcoreBosses(03)=(MonsterClass="HardPat_HALLOWEEN",HL=2)
-    HardcoreBosses(04)=(MonsterClass="HardPat_XMAS",HL=2)
+    HardcoreBosses(01)=(MonsterClass="HardPatC",HL=2)
+    HardcoreBosses(02)=(MonsterClass="HardPatG",HL=2)
+    HardcoreBosses(03)=(MonsterClass="HardPatH",HL=2)
+    HardcoreBosses(04)=(MonsterClass="HardPatX",HL=2)
     HardcoreBosses(05)=(MonsterClass="ZombieSuperBoss",HL=2)
     HardcoreBosses(06)=(MonsterClass="Sabaoth",HL=2)
-    HardcoreBosses(07)=(MonsterClass="Vagary",HL=1)
+    HardcoreBosses(07)=(MonsterClass="Vagary",HL=2)
     HardcoreBosses(08)=(MonsterClass="Maledict",HL=2)
     HardcoreBosses(09)=(MonsterClass="HunterInvul",HL=2)
     HardcoreBosses(10)=(MonsterClass="HunterBerserk",HL=2)
@@ -1645,37 +1647,36 @@ defaultproperties
     HardcoreBosses(12)=(MonsterClass="Guardian",HL=2)
     HardcoreBosses(13)=(MonsterClass="Cyberdemon",HL=2)
 
-    HardcoreZeds(00)=(MonsterClass="ZombieGhost",HL=0.5)
-    HardcoreZeds(01)=(MonsterClass="ZombieShiver",HL=1.0)
-    HardcoreZeds(02)=(MonsterClass="ZombieJason",HL=1.5)
+    HardcoreZeds(00)=(MonsterClass="Ghost",HL=0.5)
+    HardcoreZeds(01)=(MonsterClass="Shiver",HL=1.0)
+    HardcoreZeds(02)=(MonsterClass="Jason",HL=1.5)
     HardcoreZeds(03)=(MonsterClass="TeslaHusk",HL=1.5)
-    HardcoreZeds(04)=(MonsterClass="ZombieJason",HL=1.5)
-    HardcoreZeds(05)=(MonsterClass="ZombieBrute",HL=2.0)
-    HardcoreZeds(06)=(MonsterClass="FemaleFP",HL=2.5)
-    HardcoreZeds(07)=(MonsterClass="FemaleFP_MKII",HL=2.5)
-    HardcoreZeds(08)=(MonsterClass="ZombieSuperStalker",HL=0.3)
-    HardcoreZeds(09)=(MonsterClass="ZombieSuperGorefast",HL=0.3)
-    HardcoreZeds(10)=(MonsterClass="ZombieGorefast_GRITTIER",HL=0.3)
-    HardcoreZeds(11)=(MonsterClass="ZombieSuperCrawler",HL=0.3)
-    HardcoreZeds(12)=(MonsterClass="ZombieSuperBloat",HL=0.3)
-    HardcoreZeds(13)=(MonsterClass="ZombieBloat_GRITTIER",HL=0.3)
-    HardcoreZeds(14)=(MonsterClass="ZombieSuperSiren",HL=1.0)
-    HardcoreZeds(15)=(MonsterClass="ZombieSuperFP",HL=1.0)
-    HardcoreZeds(16)=(MonsterClass="ZombieSuperHusk",HL=1.4)
-    HardcoreZeds(17)=(MonsterClass="ZombieHusk_GRITTIER",HL=1.4)
-    HardcoreZeds(18)=(MonsterClass="ZombieSuperScrake",HL=1.4)
-    HardcoreZeds(19)=(MonsterClass="Imp",HL=1)
-    HardcoreZeds(20)=(MonsterClass="Pinky",HL=1)
-    HardcoreZeds(21)=(MonsterClass="Archvile",HL=1)
-    HardcoreZeds(22)=(MonsterClass="HellKnight",HL=1)
-    HardcoreZeds(23)=(MonsterClass="Sabaoth",HL=1)
-    HardcoreZeds(24)=(MonsterClass="Vagary",HL=1)
-    HardcoreZeds(25)=(MonsterClass="Maledict",HL=1)
-    HardcoreZeds(26)=(MonsterClass="HunterInvul",HL=1)
-    HardcoreZeds(27)=(MonsterClass="HunterBerserk",HL=1)
-    HardcoreZeds(28)=(MonsterClass="HunterHellTime",HL=1)
-    HardcoreZeds(29)=(MonsterClass="Guardian",HL=1)
-    HardcoreZeds(30)=(MonsterClass="Cyberdemon",HL=1)
+    HardcoreZeds(04)=(MonsterClass="Brute",HL=2.0)
+    HardcoreZeds(05)=(MonsterClass="FemaleFP",HL=2.5)
+    HardcoreZeds(06)=(MonsterClass="FemaleFP_MKII",HL=2.5)
+    HardcoreZeds(07)=(MonsterClass="ZombieSuperStalker",HL=0.3)
+    HardcoreZeds(08)=(MonsterClass="ZombieSuperGorefast",HL=0.3)
+    HardcoreZeds(09)=(MonsterClass="GorefastG",HL=0.3)
+    HardcoreZeds(10)=(MonsterClass="ZombieSuperCrawler",HL=0.3)
+    HardcoreZeds(11)=(MonsterClass="ZombieSuperBloat",HL=0.3)
+    HardcoreZeds(12)=(MonsterClass="BloatG",HL=0.3)
+    HardcoreZeds(13)=(MonsterClass="ZombieSuperSiren",HL=1.0)
+    HardcoreZeds(14)=(MonsterClass="ZombieSuperFP",HL=1.0)
+    HardcoreZeds(15)=(MonsterClass="ZombieSuperHusk",HL=1.4)
+    HardcoreZeds(16)=(MonsterClass="HuskG",HL=1.4)
+    HardcoreZeds(17)=(MonsterClass="ZombieSuperScrake",HL=1.4)
+    HardcoreZeds(18)=(MonsterClass="Imp",HL=1)
+    HardcoreZeds(19)=(MonsterClass="Pinky",HL=1)
+    HardcoreZeds(20)=(MonsterClass="Archvile",HL=1)
+    HardcoreZeds(21)=(MonsterClass="HellKnight",HL=1)
+    HardcoreZeds(22)=(MonsterClass="Sabaoth",HL=1)
+    HardcoreZeds(23)=(MonsterClass="Vagary",HL=1)
+    HardcoreZeds(24)=(MonsterClass="Maledict",HL=1)
+    HardcoreZeds(25)=(MonsterClass="HunterInvul",HL=1)
+    HardcoreZeds(26)=(MonsterClass="HunterBerserk",HL=1)
+    HardcoreZeds(27)=(MonsterClass="HunterHellTime",HL=1)
+    HardcoreZeds(28)=(MonsterClass="Guardian",HL=1)
+    HardcoreZeds(29)=(MonsterClass="Cyberdemon",HL=1)
 
     HardcoreGames(0)=(GameClass="ScrnStoryGameInfo",HL=3)
     HardcoreGames(1)=(GameClass="TSCGame",HL=6)

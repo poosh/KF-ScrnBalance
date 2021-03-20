@@ -50,7 +50,7 @@ static function int AddDamage(KFPlayerReplicationInfo KFPRI, KFMonster Injured, 
     if ( DmgType == default.DefaultDamageTypeNoBonus )
         return InDamage;
 
-    if (  DmgType == default.DefaultDamageType
+    if (  ClassIsChildOf(DmgType, default.DefaultDamageType)
             || ClassIsChildOf(DmgType, class'KFMod.DamTypeDeagle')
             || ClassIsChildOf(DmgType, class'KFMod.DamTypeMagnum44Pistol ')
             || ClassIsChildOf(DmgType, class'KFMod.DamTypeMK23Pistol')

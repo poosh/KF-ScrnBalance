@@ -93,6 +93,6 @@ defaultproperties
     Damage=800.000000
     DamageRadius=0
     MinDamage=30
-    HitDamageReduction=0.80
+    HitDamageReduction=0.95
     HitVelocityReduction=0.85
 }
