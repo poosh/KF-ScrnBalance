@@ -8,6 +8,7 @@ var ScrnGameReplicationInfo ScrnGRI;
 // Those values are for configurations only. Set ScrnGRI.FakedPlayers to make in-game effect
 var globalconfig protected byte FakedPlayers, FakedAlivePlayers;
 var config bool bAntiBlocker;
+var config byte LogZedSpawn;
 
 enum EZedSpawnLocation {
     ZSLOC_VANILLA,    // Same as in Vanilla KF
@@ -67,7 +68,10 @@ enum EDropKind {
 var bool bZedTimeEnabled;  // set it to false to completely disable the Zed Time in the game
 var transient byte PlayerSpawnTraderTeleportIndex;
 var name PlayerStartEvent;
+var int SuicideTime;
 
+
+// InitGame() gets called before PreBeginPlay()! Therefore, GameReplicationInfo does not exist yet.
 event InitGame( string Options, out string Error )
 {
     local int ConfigMaxPlayers;
@@ -113,13 +117,7 @@ event InitGame( string Options, out string Error )
 
     ScrnBalanceMut.CheckMutators();
 
-    if ( ScrnBalanceMut.Persistence.bNoTourney ) {
-        log("Tourney Mode disabled", class.name);
-        TourneyMode = 0;
-    }
-    else {
-        TourneyMode = GetIntOption(Options, "Tourney", TourneyMode);
-    }
+    TourneyMode = GetIntOption(Options, "Tourney", TourneyMode);
     PreStartTourney(TourneyMode);
     if ( TourneyMode != 0 ) {
         if ( (TourneyMode & TOURNEY_ENABLED) == 0 ) {
@@ -145,8 +143,10 @@ function InitGameReplicationInfo()
 
     if ( ScrnGameLength != none ) {
         ScrnGRI.GameTitle = ScrnGameLength.GameTitle;
+        ScrnGRI.GameAuthor = ScrnGameLength.Author;
         ScrnGRI.FakedPlayers = FakedPlayers;
         ScrnGRI.FakedAlivePlayers = FakedAlivePlayers;
+        ScrnGRI.SuicideTime = SuicideTime;
     }
 }
 
@@ -1005,9 +1005,8 @@ function ZombieVolume FindSpawningVolumeForSquad(out array< class<KFMonster> > S
 {
     local ZombieVolume BestZ, CurZ;
     local float BestScore,tScore;
-    local int i,j;
+    local int i, j, total, CanSpawn;
     local Controller C;
-    local bool bCanSpawn, bCanSpawnAll, bCanSpawnAny;
 
     // First pass, pick a random player.
     C = FindSquadTarget();
@@ -1015,25 +1014,31 @@ function ZombieVolume FindSpawningVolumeForSquad(out array< class<KFMonster> > S
         return None; // This shouldn't happen. Just to be sure...
 
     // Second pass, figure out best spawning point.
-    for( i=0; i<ZedSpawnList.Length; i++ ) {
+    // Usually, ZombieVolume can fit 4-8 zeds. If volume can spawn 6 zeds, it is already good enough,
+    // so do not lower its rating to favor a huge volume 200m away
+    total = min(Squad.Length, 6);
+
+    for( i = 0; i < ZedSpawnList.Length; i++ ) {
         CurZ = ZedSpawnList[i];
         if ( CurZ.bObjectiveModeOnly || !CurZ.bVolumeIsEnabled )
             continue;
 
-        bCanSpawnAll = true;
-        bCanSpawnAny = false;
-        for ( j=0; j<Squad.length; ++j ) {
-            bCanSpawn = CanSpawnInVolume(Squad[j], CurZ);
-            bCanSpawnAll = bCanSpawnAll && bCanSpawn;
-            bCanSpawnAny = bCanSpawnAny || bCanSpawn;
+        CanSpawn = 0;
+        for ( j = 0; j < total; ++j ) {
+            if ( CanSpawnInVolume(Squad[j], CurZ) ) {
+                ++CanSpawn;
+            }
         }
-        if ( !bCanSpawnAny )
+        if ( CanSpawn == 0 )
             continue;
 
         tScore = RateZombieVolume(CurZ, C, bIgnoreFailedSpawnTime, bBossSpawning);
 
-        if (!bCanSpawnAll)
-            tScore *= 0.1;
+        if ( CanSpawn < total && Squad.Length <= 8 ) {
+            // lower rating to favor volumes that can spawn more zeds.
+            // However, if squads is bigger that 8 zeds, it supposed to be split.
+            tScore *= CanSpawn / total;
+        }
 
         if( tScore > BestScore || (BestZ == None && tScore > 0) ) {
             BestScore = tScore;
@@ -1081,7 +1086,7 @@ function bool AddSquad()
         if ( LastZVol == none && ScrnGameLength.bLoadedSpecial ) {
             // do not give up on special squads that easy
             LastZVol = FindSpawningVolume(true);
-            if ( LastZVol == none ) {
+            if ( LastZVol == none && LogZedSpawn >= 2) {
                  log("Couldn't find a place for Special Squad "$ZedSquadToString(NextSpawnSquad), class.name);
             }
         }
@@ -1090,7 +1095,7 @@ function bool AddSquad()
         }
     }
 
-    if ( LastZVol == None ) {
+    if ( LastZVol == None && LogZedSpawn >= 1 ) {
         log("Unable to find a spawn volume for " $ ZedSquadToString(NextSpawnSquad), class.name);
         NextSpawnSquad.length = 0;
         return false;
@@ -1108,7 +1113,9 @@ function bool AddSquad()
         TryToSpawnInAnotherVolume();
     }
     else {
-        log("Unable to spawn squad " $ NextSpawnSquad[0], class.name);
+        if ( LogZedSpawn >= 2 ) {
+            log("Unable to spawn squad " $ ZedSquadToString(NextSpawnSquad), class.name);
+        }
         NextSpawnSquad.length = 0;
     }
     return false;
@@ -1209,8 +1216,48 @@ function bool ShouldKillOnTeamChange(Pawn TeamChanger)
     return true;
 }
 
-// implemented only in MatchInProgress state
-function SelectShop() { }
+function SelectShop()
+{
+    local array<ShopVolume> TempShopList;
+    local int i;
+    local int SelectedShop;
+    local bool bFound;
+
+    if ( ShopList.length == 0 )
+        return;
+
+    if ( ScrnGameLength != none && !ScrnGameLength.bRandomTrader ) {
+        bFound = ScrnGRI.CurrentShop == none;
+        SelectedShop = -1;
+        for ( i = 0; i < ShopList.length; ++i ) {
+            if ( bFound ) {
+                if ( !ShopList[i].bAlwaysClosed ) {
+                    SelectedShop = i;  // next available
+                    break;
+                }
+            }
+            else if ( ShopList[i] == ScrnGRI.CurrentShop ) {
+                bFound = true;
+            }
+            else if ( SelectedShop == -1 && !ShopList[i].bAlwaysClosed ) {
+                SelectedShop = i;  // first available
+            }
+        }
+        ScrnGRI.CurrentShop = ShopList[SelectedShop];
+    }
+    else {
+        for ( i = 0; i < ShopList.length; ++i ) {
+            if ( ShopList[i].bAlwaysClosed || ShopList[i] == ScrnGRI.CurrentShop )
+                continue;
+
+            TempShopList[TempShopList.Length] = ShopList[i];
+        }
+
+        if ( TempShopList.length == 0 )
+            return;
+        ScrnGRI.CurrentShop = TempShopList[rand(TempShopList.length)];
+    }
+}
 
 function bool IsShopTeleporter(ShopVolume Shop, Teleporter Tel)
 {
@@ -1314,6 +1361,9 @@ function GetServerDetails( out ServerResponseLine ServerState )
 // This is the only place where TourneyMode can be changed by descendants.
 protected function PreStartTourney(out int TourneyMode)
 {
+    if ( ScrnGameLength != none && ScrnGameLength.bForceTourney ) {
+        TourneyMode = ScrnGameLength.TourneyFlags;
+    }
 }
 
 // called at the end of InitGame(), when mutators have been spawned already
@@ -1614,7 +1664,12 @@ function NavigationPoint FindPlayerStart( Controller Player, optional byte InTea
         TeamIndex = Player.PlayerReplicationInfo.Team.TeamIndex;
 
     if ( ScrnGameLength != none && ScrnGameLength.Wave.bStartAtTrader ) {
-        shop = TeamShop(TeamIndex);
+        if ( ScrnGameLength.Wave.bOpenTrader ) {
+            shop = TeamShop(TeamIndex);
+        }
+        else {
+            shop = ShopList[rand(ShopList.length)];
+        }
         if ( shop != none ) {
             if ( !shop.bTelsInit ) {
                 shop.InitTeleports();
@@ -1690,6 +1745,10 @@ function RestartPlayer( Controller aPlayer )
             TriggerEvent(PlayerStartEvent, aPlayer.Pawn.Anchor, aPlayer.Pawn);
         }
 
+        if ( HasSuicideTimer() ) {
+            class'ScrnSuicideBomb'.static.MakeSuicideBomber(aPlayer.Pawn);
+        }
+
         if ( PC != none ) {
             if ( FriendlyFireScale > 0 )
                 ScrnBalanceMut.SendFriendlyFireWarning(PC);
@@ -1733,6 +1792,40 @@ function bool AllowBecomeActivePlayer(PlayerController CI)
     }
     GiveStartingCash(CI);
     return true;
+}
+
+function AddSuicideTime(int dt, bool bReset)
+{
+    local bool bHadTimer;
+    local Controller C;
+
+    bHadTimer = HasSuicideTimer();
+    if ( bReset ) {
+        SuicideTime = ElapsedTime + dt;
+    }
+    else {
+        SuicideTime += dt;
+    }
+    ScrnGRI.SuicideTime = SuicideTime;
+
+    if ( bHadTimer == HasSuicideTimer() )
+        return;  // ho changes in state
+
+    if ( bHadTimer ) {
+        class'ScrnSuicideBomb'.static.DisintegrateAll(Level);
+    }
+    else {
+        for( C = Level.ControllerList; C!=None; C = C.NextController ) {
+            if ( C.PlayerReplicationInfo != none && C.Pawn != none && C.Pawn.Health > 0 ) {
+                class'ScrnSuicideBomb'.static.MakeSuicideBomber(C.Pawn);
+            }
+        }
+    }
+}
+
+function bool HasSuicideTimer()
+{
+    return SuicideTime > 0;
 }
 
 function GiveStartingCash(PlayerController PC)
@@ -2205,14 +2298,16 @@ function int SpawnSquad(ZombieVolume ZVol, out array< class<KFMonster> > Squad, 
             ++numspawned;
             Squad.remove(i--, 1);
 
-            if ( bLogSpawned )
+            if ( bLogSpawned || LogZedSpawn >= 7 )
                 log("Zed spawned: "$M.class, class.name);
         }
     }
 
-    if ( Squad.Length > 0 ) {
+    if ( LogZedSpawn >= 3 && Squad.Length > 0 ) {
         log("Spawned " $ numspawned $ " of " $ string(numspawned + Squad.Length) $ " in " $ ZVol.name, class.name);
-        log("Remaining: " $ ZedSquadToString(Squad), class.name);
+        if ( LogZedSpawn >= 7 || (LogZedSpawn >= 4 && Squad.Length <= 8) ) {
+            log("Remaining: " $ ZedSquadToString(Squad), class.name);
+        }
     }
 
     if( numspawned>0 ) {
@@ -2524,6 +2619,11 @@ State MatchInProgress
         return global.BootShopPlayers();
     }
 
+    function SelectShop()
+    {
+        global.SelectShop();
+    }
+
     function BattleTimer()
     {
         WaveTimeElapsed += 1.0;
@@ -2676,6 +2776,9 @@ State MatchInProgress
             EndGame(None,"TimeLimit");
             Return;
         }
+        if ( SuicideTime > 0 && ElapsedTime > SuicideTime ) {
+            class'ScrnSuicideBomb'.static.ExplodeAll(Level);
+        }
 
         AdjustBotCount();
         if( bUpdateViewTargs )
@@ -2784,7 +2887,7 @@ State MatchInProgress
         WaveNum++;
         WavePct = 100 * (WaveNum + 1) / FinalWave;
 
-        if ( WaveNum > FinalWave ) {
+        if ( WaveNum > FinalWave || (!bUseEndGameBoss && WaveNum >= FinalWave) ) {
             EndGame(None, "TimeLimit");
             return;
         }
@@ -2967,6 +3070,7 @@ defaultproperties
     bZedTimeEnabled=true
     bAntiBlocker=true
 
+    LogZedSpawn=2  // log errors and warnings by default
     MaxSpawnAttempts=3
     MaxSpecialSpawnAttempts=10
     SpawnRatePlayerMod=0.25

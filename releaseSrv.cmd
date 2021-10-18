@@ -73,7 +73,9 @@ xcopy /F /I /Y %RELEASEDIR%\KFMapVote.ini           %BUNDLEDIR%\System\
 xcopy /F /I /Y %RELEASEDIR%\ScrnLock.ini            %BUNDLEDIR%\System\
 xcopy /F /I /Y %RELEASEDIR%\ScrnMapInfo.ini         %BUNDLEDIR%\System\
 xcopy /F /I /Y %RELEASEDIR%\ScrnVoting.ini          %BUNDLEDIR%\System\
+xcopy /F /I /Y %RELEASEDIR%\ScrnGames.ini           %BUNDLEDIR%\System\
 xcopy /F /I /Y %RELEASEDIR%\ScrnWaves.ini           %BUNDLEDIR%\System\
+xcopy /F /I /Y %RELEASEDIR%\ScrnZeds.ini            %BUNDLEDIR%\System\
 
 echo.
 echo Compressing uz2...

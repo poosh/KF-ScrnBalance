@@ -41,6 +41,9 @@ var config float SpecialSquadCooldown;
 var config byte MaxZombiesOnce;
 var config float BountyScale;
 var config float XP_Bonus, XP_BonusAlive;
+var config int SuicideTime;
+var config bool bSuicideTimeReset;
+
 
 var config bool bRandomSpawnLoc;
 var config float SpecialSquadHealthMod;

@@ -146,9 +146,21 @@ event InitGame( string Options, out string Error )
 
     if ( !bSingleTeamGame ) {
         bUseEndGameBoss = false;
-        FinalWave = max(GetIntOption(Options, "NWaves", FinalWave), 1);
-        OvertimeWaves = max(GetIntOption(Options, "OTWaves", OvertimeWaves), 0);
-        SudDeathWaves = max(GetIntOption(Options, "SDWaves", SudDeathWaves), 0);
+        if ( ScrnGameLength != none ) {
+            OvertimeWaves = ScrnGameLength.OTWaves;
+            SudDeathWaves = ScrnGameLength.SDWaves;
+            if ( ScrnGameLength.NWaves > 0 ) {
+                FinalWave = ScrnGameLength.NWaves;
+            }
+            else {
+                FinalWave = max(1, ScrnGameLength.Waves.length - OvertimeWaves - SudDeathWaves);
+            }
+        }
+        else {
+            FinalWave = max(GetIntOption(Options, "NWaves", FinalWave), 1);
+            OvertimeWaves = max(GetIntOption(Options, "OTWaves", OvertimeWaves), 0);
+            SudDeathWaves = max(GetIntOption(Options, "SDWaves", SudDeathWaves), 0);
+        }
     }
     OriginalFinalWave = FinalWave;
 

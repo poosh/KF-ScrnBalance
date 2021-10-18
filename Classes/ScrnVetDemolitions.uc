@@ -16,6 +16,9 @@ static function float AddExtraAmmoFor(KFPlayerReplicationInfo KFPRI, Class<Ammun
         return 1.0 + (0.20 * float(GetClientVeteranSkillLevel(KFPRI))); // +1 nade per level
     }
     else if ( ClassIsChildOf(AmmoType, class'PipeBombAmmo') ) {
+        if ( class'ScrnBalance'.default.Mut.bHardcore ) {
+            return 1.0 + (0.25 * float(GetClientVeteranSkillLevel(KFPRI)));  // +1 pipe per two levels on Hardcore
+        }
         return 1.0 + (0.5 * float(GetClientVeteranSkillLevel(KFPRI)));  // +1 pipe per level
     }
     else if ( ClassIsChildOf(AmmoType, class'ScrnLAWAmmo')
@@ -49,7 +52,7 @@ static function int AddDamage(KFPlayerReplicationInfo KFPRI, KFMonster Injured, 
     if ( class<KFWeaponDamageType>(DmgType).default.bIsExplosive || class<DamTypeRocketImpact>(DmgType) != none )
     {
         // 30% base bonus + 5% per level
-        InDamage *= 1.30 + 0.05 * GetClientVeteranSkillLevel(KFPRI);
+        InDamage *= 1.3001 + 0.05 * GetClientVeteranSkillLevel(KFPRI);
     }
     return InDamage;
 }
@@ -61,7 +64,15 @@ static function int ReduceDamage(KFPlayerReplicationInfo KFPRI, KFPawn Injured, 
 
     if ( (class<KFWeaponDamageType>(DmgType) != none && class<KFWeaponDamageType>(DmgType).default.bIsExplosive)
             || class<DamTypeRocketImpact>(DmgType) != none )
+    {
+        if ( class'ScrnBalance'.default.Mut.bHardcore )
+            return InDamage *= 0.50; // 50% damage resistance to explosives
         InDamage *= 0.20; // 80% damage resistance to explosives
+    }
+    else if ( class'ScrnBalance'.default.Mut.bHardcore && Instigator != none
+            && (Instigator.IsA('ZombieFleshpound') || Instigator.IsA('FemaleFP')) ) {
+        return InDamage * 1.5; // 50% more damage from FP in hardcore mode
+    }
 
     return max(1, InDamage); // at least 1 damage must be done
 }
@@ -152,5 +163,7 @@ defaultproperties
     OnHUDIcons(5)=(PerkIcon=Texture'ScrnTex.Perks.Perk_Demolition_Orange',StarIcon=Texture'ScrnTex.Perks.Hud_Perk_Star_Orange',DrawColor=(B=255,G=255,R=255,A=255))
     OnHUDIcons(6)=(PerkIcon=Texture'ScrnTex.Perks.Perk_Demolition_Blood',StarIcon=Texture'ScrnTex.Perks.Hud_Perk_Star_Blood',DrawColor=(B=255,G=255,R=255,A=255))
     VeterancyName="Demolitions"
+    ShortName="DEMO"
+    bHardcoreReady=True
     Requirements(0)="Deal %x damage with the Explosives"
 }

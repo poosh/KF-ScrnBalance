@@ -54,7 +54,7 @@ static function int AddDamage(KFPlayerReplicationInfo KFPRI, KFMonster Injured, 
         )
     {
         // 30% base bonus + 5% per level
-        InDamage *= 1.30 + 0.05 * GetClientVeteranSkillLevel(KFPRI);
+        InDamage *= 1.3001 + 0.05 * GetClientVeteranSkillLevel(KFPRI);
     }
 
     // +5% husk gun and flare impact damage above level 6
@@ -78,9 +78,12 @@ static function int ReduceDamage(KFPlayerReplicationInfo KFPRI, KFPawn Injured, 
 {
     if ( class<KFWeaponDamageType>(DmgType) != none && class<KFWeaponDamageType>(DmgType).default.bDealBurningDamage )
     {
-        if ( class'ScrnBalance'.default.Mut.bHardcore )
-            return max(1, InDamage * 0.20); // limit fire damage resistance to 80%
+        if ( Injured != Instigator && class'ScrnBalance'.default.Mut.bHardcore )
+            return max(1, InDamage * 0.50); // limit fire damage resistance to 50%, except self damage
         return 0; // no damage from fire
+    }
+    else if ( class'ScrnBalance'.default.Mut.bHardcore && ZombieClot(Instigator) != none ) {
+        return InDamage * 4.0; // quad damage from Clots in hardcore mode
     }
     return InDamage;
 }
@@ -170,5 +173,7 @@ defaultproperties
     OnHUDIcons(5)=(PerkIcon=Texture'ScrnTex.Perks.Perk_Firebug_Orange',StarIcon=Texture'ScrnTex.Perks.Hud_Perk_Star_Orange',DrawColor=(B=255,G=255,R=255,A=255))
     OnHUDIcons(6)=(PerkIcon=Texture'ScrnTex.Perks.Perk_Firebug_Blood',StarIcon=Texture'ScrnTex.Perks.Hud_Perk_Star_Blood',DrawColor=(B=255,G=255,R=255,A=255))
     VeterancyName="Firebug"
+    ShortName="FB"
+    bHardcoreReady=True
     Requirements(0)="Deal %x damage with the Flamethrower"
 }

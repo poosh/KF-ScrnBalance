@@ -50,6 +50,9 @@ var Material HighDecMat;
 var name SamePerkAch; // achievement to give when game is won by everybody are playing this perk only
 
 var localized string SkillInfo;
+
+var string ShortName;
+var bool bHardcoreReady;
 // ==================================================  FUNCTIONS  ==================================================
 
 // try to avoid using this function on client-side, except for bNetOwner

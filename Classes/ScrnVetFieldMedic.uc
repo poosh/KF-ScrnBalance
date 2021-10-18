@@ -49,6 +49,9 @@ static function int ReduceDamage(KFPlayerReplicationInfo KFPRI, KFPawn Injured, 
 
         return InDamage * 0.25; // 75% decrease in damage from Bloat's Bile
     }
+    else if ( !DmgType.default.bArmorStops && class'ScrnBalance'.default.Mut.bHardcore ) {
+        return InDamage * 1.50;  // extra damage  from Siren Scream in Hardcore mode
+    }
     return InDamage;
 }
 
@@ -212,6 +215,8 @@ defaultproperties
     OnHUDIcons(5)=(PerkIcon=Texture'ScrnTex.Perks.Perk_Medic_Orange',StarIcon=Texture'ScrnTex.Perks.Hud_Perk_Star_Orange',DrawColor=(B=255,G=255,R=255,A=255))
     OnHUDIcons(6)=(PerkIcon=Texture'ScrnTex.Perks.Perk_Medic_Blood',StarIcon=Texture'ScrnTex.Perks.Hud_Perk_Star_Blood',DrawColor=(B=255,G=255,R=255,A=255))
     VeterancyName="Field Medic"
+    ShortName="MED"
+    bHardcoreReady=True
     Requirements(0)="Heal %x HP on your teammates"
     progressArray0(0)=100
     progressArray0(1)=500

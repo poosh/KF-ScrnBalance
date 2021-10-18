@@ -156,8 +156,35 @@ simulated function Tick(float dt)
     }
 }
 
+function SetInvulnerability(bool invul)
+{
+    SetCollision(!invul, !invul);
+
+    if ( Level.NetMode != NM_DedicatedServer ) {
+        SetSkin();
+    }
+    else {
+        AdjustCollision();
+    }
+}
+
+simulated function AdjustCollision()
+{
+    if ( bBlockActors ) {
+        OnlineHeadshotOffset = class'StinkyClotZed'.default.OnlineHeadshotOffset;
+        PrePivot = class'StinkyClotZed'.default.PrePivot;
+        SetCollisionSize(class'StinkyClotZed'.default.CollisionRadius, class'StinkyClotZed'.default.CollisionHeight);
+    }
+    else {
+        OnlineHeadshotOffset = default.OnlineHeadshotOffset;
+        PrePivot = default.PrePivot;
+        SetCollisionSize(default.CollisionRadius, default.CollisionHeight);
+    }
+}
+
 simulated function SetSkin()
 {
+    AdjustCollision();
     if ( bBlockActors && TeleportPhase == TELEPORT_NONE) {
         Skins[0] = default.Skins[0];
         if ( bCrispified )
@@ -307,7 +334,15 @@ defaultproperties
     EventClasses(0)="ScrnBalanceSrv.StinkyClot"
     ControllerClass=Class'ScrnBalanceSrv.StinkyController'
     bAlwaysRelevant=true
+
+    bCollideActors=false
     bBlockActors=false
+    // make collision the same as a regular clot while invulnerable - should less get stuck and fall into holes
+    CollisionRadius=26
+    CollisionHeight=44
+    PrePivot=(X=0,Y=0,Z=-20)
+    OnlineHeadshotOffset=(X=9,Z=-4)
+
     GroundSpeed=42
     OutOfBaseSpeed=31.5
     MaxBoostSpeed=150

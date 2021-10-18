@@ -172,7 +172,7 @@ function Timer()
                 VirusInf.InfectionCounter++;
                 if ( Virus.InfectionCounterRapid >= Virus.InfectionThreshholdRapid
                         || Virus.InfectionCounter >= Virus.InfectionThreshhold ) {
-                    Infect(i, frand());
+                    Infect(i, 1.5 * frand());
                     if (Virus.bInfected) {
                         SpreadCounter++;
                         Virus.SpreadCounter++;

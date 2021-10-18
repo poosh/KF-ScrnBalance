@@ -53,7 +53,7 @@ function int GetAvgBurnDamage(int BurnTicks, int InitialDamage)
 
     // Ignition takes 2 ticks, then average, constant damage is applied till the end of burning process
     // Total DoT is weaker comparing to original game due to 2 less ticks and burn-in damage decrement
-    if ( class'ScrnBalance'.default.Mut.bHardcore || BurnTicks == 0 )
+    if ( BurnTicks == 0 )
         AvgTickInc = 6;
     else if ( BurnTicks < BurnInCount )
         AvgTickInc = 12;

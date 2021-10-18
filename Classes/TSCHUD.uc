@@ -104,39 +104,11 @@ simulated function LinkActors()
 
 simulated function UpdateHud()
 {
-    TeamColors[0].A = KFHUDAlpha;
-    TeamColors[1].A = KFHUDAlpha;
-    TextColors[0].A = KFHUDAlpha;
-    TextColors[1].A = KFHUDAlpha;
-
-    if ( KFPRI != none && KFPRI.Team != none && KFPRI.Team.TeamIndex != TeamIndex )
+    if ( KFPRI != none && KFPRI.Team != none && KFPRI.Team.TeamIndex != TeamIndex ) {
         UpdateTeamHud();
+    }
 
     super.UpdateHud();
-
-    if ( TeamIndex == 1 ) {
-        // override hardcoded values in HUDKillingFloor.UpdateHud()
-        if ( HealthDigits.Tints[0].G <= 64 ) {
-            HealthDigits.Tints[0] = TeamColors[TeamIndex];
-            HealthDigits.Tints[1] = TeamColors[TeamIndex];
-        }
-        if ( SyringeDigits.Tints[0].R == 255 ) {
-            SyringeDigits.Tints[0] = TeamColors[TeamIndex];
-            SyringeDigits.Tints[1] = TeamColors[TeamIndex];
-        }
-        if ( QuickSyringeDigits.Tints[0].R == 255 ) {
-            QuickSyringeDigits.Tints[0] = TeamColors[TeamIndex];
-            QuickSyringeDigits.Tints[1] = TeamColors[TeamIndex];
-        }
-        if ( BulletsInClipDigits.Tints[0].R == 255 ) {
-            BulletsInClipDigits.Tints[0] = TeamColors[TeamIndex];
-            BulletsInClipDigits.Tints[1] = TeamColors[TeamIndex];
-        }
-        if ( ClipsDigits.Tints[0].R == 255 ) {
-            ClipsDigits.Tints[0] = TeamColors[TeamIndex];
-            ClipsDigits.Tints[1] = TeamColors[TeamIndex];
-        }
-    }
 }
 
 simulated function UpdateTeamHud()
@@ -149,6 +121,8 @@ simulated function UpdateTeamHud()
     ArmorDigits.Tints[1] = TeamColors[TeamIndex];
     WeightDigits.Tints[0] = TeamColors[TeamIndex];
     WeightDigits.Tints[1] = TeamColors[TeamIndex];
+    LeftGunAmmoDigits.Tints[0] = TeamColors[TeamIndex];
+    LeftGunAmmoDigits.Tints[1] = TeamColors[TeamIndex];
     GrenadeDigits.Tints[0] = TeamColors[TeamIndex];
     GrenadeDigits.Tints[1] = TeamColors[TeamIndex];
     ClipsDigits.Tints[0] = TeamColors[TeamIndex];
@@ -173,6 +147,7 @@ simulated function UpdateTeamHud()
     HealthBG.WidgetTexture = Boxes[TeamIndex];
     ArmorBG.WidgetTexture = Boxes[TeamIndex];
     WeightBG.WidgetTexture = Boxes[TeamIndex];
+    LeftGunAmmoBG.WidgetTexture = Boxes[TeamIndex];
     GrenadeBG.WidgetTexture = Boxes[TeamIndex];
     ClipsBG.WidgetTexture = Boxes[TeamIndex];
     SecondaryClipsBG.WidgetTexture = Boxes[TeamIndex];
@@ -253,6 +228,7 @@ simulated function UpdateTeamHud()
         // Cool HUD
         //CoolCashIcon.WidgetTexture=Texture'KillingFloorHUD.HUD.Hud_Pound_Symbol';
     }
+    LeftGunAmmoIcon.WidgetTexture = BulletsInClipIcon.WidgetTexture;
 
     SetHUDAlpha();
 }

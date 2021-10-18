@@ -13,7 +13,7 @@ class ScrnBalance extends Mutator
 #exec OBJ LOAD FILE=ScrnAch_T.utx
 
 
-const VERSION = 96602;
+const VERSION = 96700;
 
 var ScrnBalance Mut; // pointer to self to use in static functions, i.e class'ScrnBalance'.default.Mut
 
@@ -29,10 +29,11 @@ var localized string strBetaOnly;
 var transient int SrvFlags; // used for network replication of the values below
 var globalconfig bool bSpawn0, bNoStartCashToss, bMedicRewardFromTeam;
 var globalconfig bool bAltBurnMech;
-var globalconfig bool bReplaceNades, bShieldWeight, bHardcore, bBeta;
+var globalconfig bool bReplaceNades, bShieldWeight, bBeta;
 var globalconfig bool bShowDamages, bManualReload, bForceManualReload, bAllowWeaponLock;
 var globalconfig bool bNoPerkChanges, bPerkChangeBoss, bPerkChangeDead, b10Stars;
 var globalconfig bool bTraderSpeedBoost;
+var bool bHardcore;
 // END OF SRVFLAGS
 var transient byte HardcoreLevel; // set from ScrnGameRules. Used for replication purposes only.
 
@@ -1708,7 +1709,6 @@ static function FillPlayInfo(PlayInfo PlayInfo)
     PlayInfo.AddSetting(default.BonusCapGroup,"MaxZombiesOnce","Max Specimens At Once",1,0, "Text", "4;8:254",,,True);
 
     PlayInfo.AddSetting(default.BonusCapGroup,"bSpawn0","Zero Cost of Initial Inventory",1,0, "Check");
-    PlayInfo.AddSetting(default.BonusCapGroup,"bHardcore","Hardcore Mode",1,0, "Check");
     PlayInfo.AddSetting(default.BonusCapGroup,"bReplacePickups","Replace Pickups",1,0, "Check");
     PlayInfo.AddSetting(default.BonusCapGroup,"bReplacePickupsStory","Replace Pickups (Story)",1,0, "Check");
     PlayInfo.AddSetting(default.BonusCapGroup,"bReplaceNades","Replace Grenades",1,0, "Check");
@@ -1743,7 +1743,6 @@ static function string GetDescriptionText(string PropName)
         case "BonusLevelHoeMax":            return "Maximum perk level, which bonuses can be applied on HoE difficulty. Perk levels above this won't have any extra bonuses.";
         case "MaxZombiesOnce":              return "Maximum specimens at once on playtime, note that high values will LAG when theres a lot of them.";
 
-        case "bHardcore":                   return "For those who still think game is too easy...";
         case "bSpawn0":                     return "All initial weapons costs nothing";
         case "bReplacePickups":             return "Replaces weapon pickups on a map with their Scrn Editon (SE) versions.";
         case "bReplacePickupsStory":        return "Replaces weapon pickups in Objective Mode with their Scrn Editon (SE) versions.";
@@ -2358,6 +2357,7 @@ function SetupMonster(KFMonster M)
 function SetupRepLink(ClientPerkRepLink R)
 {
     local ScrnClientPerkRepLink ScrnRep;
+    local class<ScrnVeterancyTypes> Perk;
     local int i, j;
 
     if ( R == none )
@@ -2379,7 +2379,8 @@ function SetupRepLink(ClientPerkRepLink R)
     ScrnRep.CachePerks = R.CachePerks;
     // remove non-scrn perks
     for( i=0; i<ScrnRep.CachePerks.Length; ++i) {
-        if ( class<ScrnVeterancyTypes>(ScrnRep.CachePerks[i].PerkClass) == none )
+        Perk = class<ScrnVeterancyTypes>(ScrnRep.CachePerks[i].PerkClass);
+        if ( Perk == none || (bHardcore && !Perk.default.bHardcoreReady) )
             ScrnRep.CachePerks.remove(i--, 1);
     }
 
@@ -2656,17 +2657,9 @@ function PostBeginPlay()
     Persistence = new class'ScrnBalancePersistence';
 
     if ( Persistence.Difficulty > 0 ) {
-        if ( Persistence.Difficulty == 6 || Persistence.Difficulty == 8 ) {
-            bHardcore = true;
-            KF.GameDifficulty = Persistence.Difficulty - 1;
-            log("Game difficulty: " $ string(KF.GameDifficulty) $ " + Hardcore", 'ScrnBalance');
-        }
-        else {
-            bHardcore = false;
-            KF.GameDifficulty = Persistence.Difficulty;
-            log("Game difficulty: " $ string(KF.GameDifficulty), 'ScrnBalance');
-        }
+        KF.GameDifficulty = Persistence.Difficulty;
     }
+    SetGameDifficulty(KF.GameDifficulty);
 
     SetLevels();
     SetReplicationData();
@@ -2738,6 +2731,54 @@ function PostBeginPlay()
             KF.AddMutator(AutoLoadMutators[i], true);
         }
     }
+}
+
+function SetGameDifficulty(byte Difficulty)
+{
+    local KFGameReplicationInfo KFGRI;
+    local bool bNewHardcore;
+
+    switch (Difficulty) {
+        case 1:
+        case 2:
+        case 4:
+        case 5:
+        case 7:
+            bNewHardcore = false;
+            break;
+
+        case 6:
+        case 8:
+            bNewHardcore = true;
+            Difficulty--;
+            break;
+
+        default:
+            log("Bad difficulty value: " $ Difficulty, 'ScrnBalance');
+            return;
+    }
+
+    if ( bHardcore == bNewHardcore && KF.GameDifficulty == Difficulty )
+        return;
+
+    bHardcore = bNewHardcore;
+    KF.GameDifficulty = Difficulty;
+    KFGRI = KFGameReplicationInfo(KF.GameReplicationInfo);
+    if ( KFGRI != none ) {
+        KFGRI.GameDiff = KF.GameDifficulty;
+    }
+    if ( GameRules != none ) {
+        GameRules.InitHardcoreLevel();
+    }
+
+    if ( bHardcore ) {
+        log("Game difficulty: " $ string(KF.GameDifficulty) $ " + Hardcore", 'ScrnBalance');
+    }
+    else {
+        log("Game difficulty: " $ string(KF.GameDifficulty) $ "", 'ScrnBalance');
+    }
+    SetLevels();
+    SetStartCash();
 }
 
 function SetupSrvInfo()
@@ -3034,10 +3075,6 @@ function ServerTraveling(string URL, bool bItems)
     log("New Map: " $ MapName, 'ScrnBalance');
     log("Options: " $ Options, 'ScrnBalance');
 
-    Persistence.bNoTourney = !KF.HasOption(Options, "Tourney");
-    if ( Persistence.bNoTourney && SrvTourneyMode != 0 ) {
-        log("URL does not contain Tourney. Disabling Tourney Mode.", 'ScrnBalance');
-    }
     if ( Persistence.Difficulty > 0 && KF.HasOption(Options, "Difficulty") ) {
         log("URL contains Difficulty. Disabling MVOTE DIFF.", 'ScrnBalance');
         Persistence.Difficulty = 0;

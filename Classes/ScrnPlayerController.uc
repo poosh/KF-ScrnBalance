@@ -1,4 +1,5 @@
-class ScrnPlayerController extends KFPCServ;
+class ScrnPlayerController extends KFPCServ
+    config(ScrnUser);
 
 // ScrnPlayerController may possess only ScrnHumanPawn (or descendants).
 // Possessing non-ScrnHumanPawn cause undefined behavior
@@ -66,7 +67,7 @@ var transient float LastBlamedTime;
 
 // TSC
 var string ProfilePageClassString;
-var    string    TSCLobbyMenuClassString;
+var string TSCLobbyMenuClassString;
 var config bool bTSCAdvancedKeyBindings; // pressing altfire while carrying the guardian gnome, sets up the base
 var config bool bTSCAutoDetectKeys; // turns off bTSCAdvancedKeyBindings if a dedicated key is bound for SetupBase
 var config string RedCharacter, BlueCharacter;
@@ -79,10 +80,12 @@ var class<ScrnCustomPRI> CustomPlayerReplicationInfoClass;
 var ScrnCustomPRI ScrnCustomPRI;
 var transient bool bDestroying; // indicates that Destroyed() is executing
 
-var bool bDamageAck; // does server needs to acknowledge client of damages he made?
+var byte DamageAck;  // does server needs to acknowledge client of damages he made?
+var ScrnDamageNumbers DamageNumbers;
+var class<ScrnDamageNumbers> DamageNumbersClass;
 
 var transient byte PerkChangeWave; // wave num, when perk was changed last time
-var    localized string strNoPerkChanges, strPerkLocked;
+var localized string strNoPerkChanges, strPerkLocked;
 
 var transient Controller FavoriteSpecs[2];
 var localized string strSpecFavoriteAssigned, strSpecNoFavorites;
@@ -129,7 +132,7 @@ replication
     reliable if ( Role == ROLE_Authority )
         ClientMonsterBlamed, ClientPostLogin;
 
-    unreliable if ( bDamageAck && Role == ROLE_Authority )
+    unreliable if ( Role == ROLE_Authority )
         ClientPlayerDamaged;
 
     unreliable if ( Role == ROLE_Authority )
@@ -167,6 +170,7 @@ simulated function PreBeginPlay()
 // and only if using ScrnGameType, ScrnStoryGameInfo or descendants
 function PostLogin()
 {
+    ServerAcknowledgeDamages(DamageAck);
     ClientPostLogin();
 
     ScrnCustomPRI.GotoState('');
@@ -184,12 +188,14 @@ function PostLogin()
 
 simulated function ClientPostLogin()
 {
-    // DLC check moved to ScrnClientPerkRepLink
-    // if ( Viewport(Player) != None )  {
-        // CheckDLC();
-    // }
-}
+    local ScrnHUD hud;
 
+    hud = ScrnHUD(myHUD);
+    if ( hud != none && DamageAck != hud.ShowDamages ) {
+        DamageAck = hud.ShowDamages;
+        ServerAcknowledgeDamages(DamageAck);
+    }
+}
 
 simulated function LoadMutSettings()
 {
@@ -392,10 +398,12 @@ exec function QuickMelee()
  * 0 - normal
  * 1 - headshot
  * 2 - fire DoT
+ * 3 - shot to decapitated body
+ * 10 - player damage
  */
-function DamageMade(int Damage, vector HitLocation, byte DamTypeNum)
+function SendDamageAck(int Damage, vector HitLocation, byte DamTypeNum)
 {
-    local ScrnPlayerController ScrnPC;
+    local ScrnPlayerController SpecPC;
     local int i;
 
     ClientPlayerDamaged(Damage, HitLocation, DamTypeNum);
@@ -404,24 +412,40 @@ function DamageMade(int Damage, vector HitLocation, byte DamTypeNum)
         // show damage popups on spectating players
         for ( i=0; i<Level.GRI.PRIArray.length; ++i ) {
             if ( Level.GRI.PRIArray[i] != none && Level.GRI.PRIArray[i].bOnlySpectator ) {
-                ScrnPC = ScrnPlayerController(Level.GRI.PRIArray[i].Owner);
-                if ( ScrnPC != none && ScrnPC != self && ScrnPC.ViewTarget == Pawn )
-                    ScrnPC.ClientPlayerDamaged(Damage, HitLocation, DamTypeNum);
+                SpecPC = ScrnPlayerController(Level.GRI.PRIArray[i].Owner);
+                if ( SpecPC != none && SpecPC != self && SpecPC.ViewTarget == Pawn )
+                    SpecPC.ClientPlayerDamaged(Damage, HitLocation, DamTypeNum);
             }
         }
     }
 }
 
-simulated function ClientPlayerDamaged(int Damage, vector HitLocation, byte DamTypeNum)
+function DamageMade(int Damage, vector HitLocation, byte DamTypeNum, optional Pawn Victim,
+        optional class<DamageType> DamType)
+{
+    if ( DamageAck == 0 )
+        return;
+
+    if ( DamageAck == 2 || Victim == none || DamType == none || DamageNumbers == none ) {
+        SendDamageAck(Damage, HitLocation, DamTypeNum);
+        return;
+    }
+
+    DamageNumbers.DamageMade(Damage, HitLocation, DamTypeNum, Victim, DamType);
+}
+
+simulated protected function ClientPlayerDamaged(int Damage, vector HitLocation, byte DamTypeNum)
 {
     local ScrnHUD hud;
 
     hud = ScrnHUD(myHUD);
     if ( hud != none ) {
-        if ( hud.bShowDamages )
+        if ( hud.ShowDamages > 0 )
             hud.ShowDamage(Damage, Level.TimeSeconds, HitLocation, DamTypeNum);
-        else
-            ServerAcknowledgeDamages(false); // tell server we don't need damage acks
+        else {
+            DamageAck = 0;
+            ServerAcknowledgeDamages(0); // tell server we don't need damage acks
+        }
     }
 }
 
@@ -439,9 +463,20 @@ simulated function ClientFlareDamage(KFMonster Victim, byte DamageX4, byte BurnT
     cloud.SetLifeSpan(BurnTime);
 }
 
-function ServerAcknowledgeDamages(bool bWantDamage)
+function ServerAcknowledgeDamages(byte WantDamage)
 {
-    bDamageAck = bWantDamage;
+    DamageAck = WantDamage;
+
+    if (DamageAck == 1) {
+        if ( DamageNumbers == none ) {
+            DamageNumbers = spawn(DamageNumbersClass, self);
+            DamageNumbers.PC = self;
+        }
+    }
+    else if ( DamageNumbers != none ) {
+        DamageNumbers.Destroy();
+        DamageNumbers = none;
+    }
 }
 
 // Set a new recoil amount
@@ -492,7 +527,6 @@ exec function ScrnInit()
         ScrnCustomWeaponLink(L).LoadWeaponBonuses();
     }
 }
-
 
 simulated function PlayerTick( float DeltaTime )
 {
@@ -1392,6 +1426,11 @@ simulated event Destroyed()
 
     if ( ScrnPawn != none )
         ScrnPawn.HealthBeforeDeath = Pawn.Health;
+
+    if ( DamageNumbers != none ) {
+        DamageNumbers.Destroy();
+    }
+
 
     if ( Role == ROLE_Authority ) {
         if ( Mut != none &&  PlayerReplicationInfo != none ) {
@@ -2937,12 +2976,34 @@ function ServerCrap(int Amount)
 //     Mut.KF.WaveNum = Mut.KF.FinalWave + 1;
 //     Mut.KF.CheckEndGame(PlayerReplicationInfo, "Test");
 // }
+//
+// exec function BecomeAhmed(bool b)
+// {
+//     if ( Role != ROLE_Authority )
+//         return;
+//
+//     if (b) {
+//         class'ScrnSuicideBomb'.static.MakeSuicideBomber(Pawn);
+//     }
+//     else {
+//         class'ScrnSuicideBomb'.static.DisintegrateAll(Level);
+//     }
+// }
+//
+// exec function SilenceIKillYou()
+// {
+//     if ( Role != ROLE_Authority )
+//         return;
+//
+//     class'ScrnSuicideBomb'.static.ExplodeAll(Level);
+// }
 
 
 defaultproperties
 {
     bManualReload=True
-    bDamageAck=True
+    DamageAck=1  // make show the default value is the same as ScrnHUD.ShowDamages
+    DamageNumbersClass=class'ScrnBalanceSrv.ScrnDamageNumbers'
     AchievementDisplayCooldown=5.000000
     bChangedPerkDuringGame=True
     Custom3DScopeSens=24

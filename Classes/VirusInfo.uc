@@ -239,7 +239,7 @@ state Sick extends Infected
                     }
                 }
                 // player has 50% resistance from self damage,
-                // hence we need to pass the double value to get the // desired result.
+                // hence we need to pass the double value to get the desired result.
                 P.TakeDamage(2*d, P, vect(0,0,0), vect(0,0,0), class'VirusDamage');
                 Mut.SocHandler.PlayerCoughed(self, d);
                 NextDamageTime = DamageDelay;
@@ -383,6 +383,6 @@ defaultproperties
     DamageDelay=0.5
     DamageMod=1.0
     DamageRate=1.0
-    CoughedInShopPenalty=50
+    CoughedInShopPenalty=0
     strCoughedInShop="Virus spread warning! You have neen charged $%$ to disinfect the shop area."
 }

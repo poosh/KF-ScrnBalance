@@ -13,7 +13,7 @@ defaultproperties
     ColHeight=3
 
     DrawScale=0.5
-    CollisionRadius=15
+    CollisionRadius=18
     CollisionHeight=24
     PrePivot=(X=0,Y=0,Z=0)
     HeadRadius=4
@@ -24,7 +24,7 @@ defaultproperties
     Health=1000
     HealthMax=1000
     HeadHealth=1000
-    JumpZ=350
+    JumpZ=340
 
     MoanVoice=SoundGroup'KF_EnemiesFinalSnd.clot.Clot_Talk'
     MeleeAttackHitSound=SoundGroup'KF_EnemiesFinalSnd.clot.Clot_HitPlayer'

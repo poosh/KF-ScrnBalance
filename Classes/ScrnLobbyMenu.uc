@@ -195,8 +195,12 @@ DoneIt:
 
     if ( ScrnGRI != none ) {
         s = ScrnGRI.GameName;
-        if ( ScrnGRI.GameTitle != "" )
+        if ( ScrnGRI.GameTitle != "" ) {
             s $= ": " $ ScrnGRI.GameTitle;
+            if ( ScrnGRI.GameAuthor != "" && ScrnGRI.GameAuthor != "ScrN" ) {
+                s $= " (by " $ ScrnGRI.GameAuthor $ ")";
+            }
+        }
         s $= " @ " $  PC.Level.Title;
     }
     else {

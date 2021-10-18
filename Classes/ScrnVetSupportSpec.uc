@@ -64,7 +64,7 @@ static function int AddDamage(KFPlayerReplicationInfo KFPRI, KFMonster Injured, 
         )
     {
         // 30% base bonus + 5% per level
-        InDamage *= 1.30 + 0.05 * GetClientVeteranSkillLevel(KFPRI);
+        InDamage *= 1.3001 + 0.05 * GetClientVeteranSkillLevel(KFPRI);
     }
 
     return InDamage;
@@ -74,6 +74,10 @@ static function int ReduceDamage(KFPlayerReplicationInfo KFPRI, KFPawn Injured, 
 {
     if ( InDamage == 0 )
         return 0;
+
+    if ( class'ScrnBalance'.default.Mut.bHardcore && ZombieGorefast(Instigator) != none ) {
+        InDamage *= 1.5; // x1.5 damage from gorefasts in hardcore mode
+    }
 
     if ( ScrnChainsaw(Injured.Weapon) != none ) {
         InDamage *= 0.60; // 40% reduced Damage while holding Chainsaw
@@ -171,5 +175,7 @@ defaultproperties
     OnHUDIcons(5)=(PerkIcon=Texture'ScrnTex.Perks.Perk_Support_Orange',StarIcon=Texture'ScrnTex.Perks.Hud_Perk_Star_Orange',DrawColor=(B=255,G=255,R=255,A=255))
     OnHUDIcons(6)=(PerkIcon=Texture'ScrnTex.Perks.Perk_Support_Blood',StarIcon=Texture'ScrnTex.Perks.Hud_Perk_Star_Blood',DrawColor=(B=255,G=255,R=255,A=255))
     VeterancyName="Support Specialist"
+    ShortName="SUP"
+    bHardcoreReady=True
     Requirements(0)="Deal %x damage with shotguns"
 }

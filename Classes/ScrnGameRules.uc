@@ -105,7 +105,7 @@ struct SHardcoreMonster {
     var transient bool bUsed;
 };
 var config float HL_Normal, HLMult_Normal, HL_Hard, HLMult_Hard, HL_Suicidal, HLMult_Suicidal, HL_HoE, HLMult_HoE;
-var config float HL_Hardcore;
+var config float HL_Hardcore, HLMult_Hardcore;
 var config array<SHardcoreMonster> HardcoreZeds, HardcoreBosses;
 var transient float ZedHLMult;
 var config bool bBroadcastHL;
@@ -652,7 +652,7 @@ function int NetDamage( int OriginalDamage, int Damage, pawn injured, pawn insti
     if ( instigatedBy != none )
         ScrnPC = ScrnPlayerController(instigatedBy.Controller);
     bP2M = ZedVictim != none && KFDamType != none && instigatedBy != none && ScrnPC != none;
-    bDamageAck = bShowDamages && ScrnPC != none && ScrnPC.bDamageAck;
+    bDamageAck = bShowDamages && ScrnPC != none && ScrnPC.DamageAck > 0;
 
     if ( ZedVictim != none ) {
         idx = GetMonsterIndex(ZedVictim);
@@ -703,17 +703,17 @@ function int NetDamage( int OriginalDamage, int Damage, pawn injured, pawn insti
                 && KFDamType.default.HeadShotDamageMult < 1.0 && KFDamType.default.HeadShotDamageMult > 0 )
         {
             if ( bDamageAck && MonsterInfos[idx].bHeadshot ) {
-                ScrnPC.DamageMade(Damage, HitLocation, 1);
+                ScrnPC.DamageMade(Damage, HitLocation, 1, ZedVictim, KFDamType);
             }
             // weapon does less damage to head - make sure to do the rest of the damage to body
             Damage = Damage / KFDamType.default.HeadShotDamageMult + 1;
 
             if ( bDamageAck ) {
                 if (MonsterInfos[idx].bHeadshot) {
-                    ScrnPC.DamageMade(Damage - OriginalDamage, HitLocation, 0);
+                    ScrnPC.DamageMade(Damage - OriginalDamage, HitLocation, 0, ZedVictim, KFDamType);
                 }
                 else {
-                    ScrnPC.DamageMade(Damage, HitLocation, 0);
+                    ScrnPC.DamageMade(Damage, HitLocation, 3, ZedVictim, KFDamType);
                 }
             }
         }
@@ -723,10 +723,12 @@ function int NetDamage( int OriginalDamage, int Damage, pawn injured, pawn insti
                 DamTypeNum = 1;
             else if ( KFDamType.default.bDealBurningDamage )
                 DamTypeNum = 2;
+            else if ( ZedVictim.bDecapitated )
+                DamTypeNum = 3;
 
             if ( HitLocation == vect(0, 0, 0) ) //DoT
                 HitLocation = injured.Location;
-            ScrnPC.DamageMade(Damage, HitLocation, DamTypeNum);
+            ScrnPC.DamageMade(Damage, HitLocation, DamTypeNum, ZedVictim, KFDamType);
         }
 
         SPI = GetPlayerInfo(PlayerController(instigatedBy.Controller));
@@ -766,7 +768,7 @@ function int NetDamage( int OriginalDamage, int Damage, pawn injured, pawn insti
             if ( bShowDamages ) {
                 if ( HitLocation == vect(0, 0, 0) ) //DoT
                     HitLocation = injured.Location;
-                ScrnPC.ClientPlayerDamaged(Damage, HitLocation, 10);
+                ScrnPC.DamageMade(Damage, HitLocation, 10, injured, KFDamType);
             }
         }
     }
@@ -1073,7 +1075,7 @@ function bool WasHeadshot(KFMonster Monster)
     return RetrieveMonsterInfo(Monster, idx) && MonsterInfos[idx].bHeadshot;
 }
 
-function protected InitHardcoreLevel()
+function InitHardcoreLevel()
 {
     local int i;
     local string GameClass;
@@ -1097,8 +1099,10 @@ function protected InitHardcoreLevel()
        ZedHLMult = HLMult_Normal;
     }
 
-    if ( Mut.bHardcore )
+    if ( Mut.bHardcore ) {
         HardcoreLevelFloat += HL_Hardcore;
+        ZedHLMult += HLMult_Hardcore;
+    }
 
     for ( i=0; i<HardcoreGames.length; ++i ) {
         if ( HardcoreGames[i].GameClass ~= GameClass ) {
@@ -1110,7 +1114,6 @@ function protected InitHardcoreLevel()
     HardcoreLevel = int(HardcoreLevelFloat+0.01);
     // replicate to clients
     Mut.HardcoreLevel = clamp(HardcoreLevel,0,255);
-
 }
 
 function RaiseHardcoreLevel(float inc, string reason)
@@ -1631,6 +1634,7 @@ defaultproperties
     HL_HoE=7
     HLMult_HoE=1.25
     HL_Hardcore=2
+    HLMult_Hardcore=0.15
 
     HardcoreBosses(00)=(MonsterClass="HardPat",HL=2)
     HardcoreBosses(01)=(MonsterClass="HardPatC",HL=2)

@@ -15,6 +15,13 @@ static function int AddDamage(KFPlayerReplicationInfo KFPRI, KFMonster Injured, 
     return InDamage;
 }
 
+static function int ReduceDamage(KFPlayerReplicationInfo KFPRI, KFPawn Injured, Pawn Instigator, int InDamage, class<DamageType> DmgType)
+{
+    if ( class'ScrnBalance'.default.Mut.bHardcore && ZombieScrake(Instigator) != none ) {
+        return InDamage * 1.5; // 50% more damage from Scrake nad Jason in hardcore mode
+    }
+    return InDamage;
+}
 
 static function float GetHeadShotDamMulti(KFPlayerReplicationInfo KFPRI, KFPawn P, class<DamageType> DmgType)
 {
@@ -40,7 +47,7 @@ static function float GetHeadShotDamMulti(KFPlayerReplicationInfo KFPRI, KFPawn 
     ret *= 1.50;
 
     if ( class'ScrnBalance'.default.Mut.bHardcore )
-        ret *= 2.0; // to compensate 50% damage reduction in ReduceDamage();
+        ret *= 2.0; // to compensate 50% damage reduction in AddDamage();
 
     //Log("Headshot multiplier for " $ String(DmgType) $ " is " $ ret);
     return  ret;
@@ -84,6 +91,9 @@ static function float GetReloadSpeedModifierStatic(KFPlayerReplicationInfo KFPRI
     {
         return 1.6;
     }
+
+    if ( class'ScrnBalance'.default.Mut.bHardcore )
+        return 1.0;
 
     if ( ClassIsChildOf(Other, class'Single')
             || ClassIsChildOf(Other, class'Deagle')
@@ -181,6 +191,8 @@ defaultproperties
     OnHUDIcons(5)=(PerkIcon=Texture'ScrnTex.Perks.Perk_SharpShooter_Orange',StarIcon=Texture'ScrnTex.Perks.Hud_Perk_Star_Orange',DrawColor=(B=255,G=255,R=255,A=255))
     OnHUDIcons(6)=(PerkIcon=Texture'ScrnTex.Perks.Perk_Sharpshooter_Blood',StarIcon=Texture'ScrnTex.Perks.Hud_Perk_Star_Blood',DrawColor=(B=255,G=255,R=255,A=255))
     VeterancyName="Sharpshooter"
+    ShortName="SHA"
+    bHardcoreReady=True
     Requirements(0)="Get %x headshot kills with Pistols/Sniper Rifles"
     progressArray0(0)=10
     progressArray0(1)=50

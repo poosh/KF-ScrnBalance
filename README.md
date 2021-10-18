@@ -19,6 +19,96 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+### v9.67
+**WARNING! ScrnWaves.ini got split on ScrnGames.ini, ScrnZeds.ini and ScrnWaves.ini**
+#### ScrnGames.ini
+- TSC `NWaves`, `OTWaves`, and `SDWaves` moved from KFMapVote.ini.
+- Added `MinDifficulty` and `MaxDifficulty` to limit difficulty range for the given game. For example, setting
+  MinDifficulty=7 and MaxDifficulty=7 forces difficulty to HoE regardless of KFMapVote.ini or `MVOTE DIFF`
+- Added `bForceTourney` and `TourneyFlags` to override Tourney Mode
+- Passing `?Difficulty=` and `?Tourney=` in server cmd line or KFMapVote.ini is **unreliable and should NOT be used**.
+  The game caches command line arguments and passes them from game to game even if those are not set in KFMapVote.ini.
+- `bRandomTrader` - allows disabling trader randomization (does not work in TSC)
+- `SuicideTime`, `SuicideTimePerWave` - attaches a pipebomb to every player that triggers in the given time.
+  Forces players to finish the game/wave within the specified timelimit. This can be fine-tuned via game's
+#### ScrnWaves.ini
+- if `bStartAtTrader=true` but `bOpenTrader=false` players spawn at random trader. Can be used on wave 1 to spawn
+  players in different places.
+- `SuicideTime`, `bSuicideTimeReset` - allows fine-tuning the game's suicide timer for each wave.
+- Putting `^` (keep with above) at the beginning of squad definition makes the squad always spawn after the previous
+  one event if `bRandomSquads=true`. Multiple squads can be chained together. The next example always spawns Bloat,
+  then two Siren after FP, and two Husks after SC. However, the game randomly picks either FP or SC to spawn first.
+```
+Squads=FP
+Squads=^ BL
+Squads=^ 2*SI
+Squads=SC
+Squads=^ 2*HU  
+```
+
+#### ScrN Brutal KF Bundle
+- Excluded Workshop packages in NetReduce.ini. This should fix Xmas ammo boxes on ESL and Ice Cave.
+
+#### FTG
+- Made Stinky Clot fatter while invulnerable (green) to prevent him from falling into narrow holes
+
+#### Social Isolation
+- Disabled penalty for coughing in shop (due to multiple reports of being too annoying)
+- Infected by other players have more severe symptoms than the initially infected.
+
+#### Balance
+- Gunslinger deals 50% more pistol damage to *Bloats*, allowing popping their heads as efficient as Sharpie.
+- Killing a *Bloat*  with a pistol headshot gives +3 Gunslinger XP progress
+- Killing a *Scrake* with a pistol headshot gives +7 Gunslinger XP progress
+
+#### eXpert Challenge Mode (XCM)
+A new game mode designed to push pro players to the limit both in individual skills and team coordination.
+Work in progress. More info here:
+https://steamcommunity.com/groups/ScrNBalance/discussions/9/4580716151550023598/
+
+#### Hardcore Mode
+- Removed `bHardcore` from ScrnBalance.ini. Hardcore Mode can be enabled via game difficulty (6 or 8).
+- Non-hardcore perks are automatically disabled in Hardcore Mode
+- Fixed Difficulty=6 (Siu+Hardcore) and Difficulty=8 (HoE+Hardcore) in KFMapVote.ini  (thanks to *nmmblez*)
+- Config option `HLMult_Hardcore` (default 15%) - extra Hardcore Level multiplier in Hardcore Mode
+- Field and Combat Medics receive 50% more damage from Siren Scream (and any damage that bypasses armor)
+- Support Spec. has 20% slower fire rate and receives 50% more damage from Gorefasts
+- Sharpshooter deals half damage to bodies and has no reload speed bonus (except LAR).
+  Receives 50% more damage from Scrakes/Jasons.
+- Commando has no extra ammo bonus and receives quad damage from Stalkers
+- Berserker has no damage resistance against fire (except Doom3) and moves extremely slow while holding Syringe.
+- Firebug has only 50% fire damage resistance (but still immune to self fire). Receives quad damage from Clots.
+- Demolitions Expert receives one extra pipebomb per two levels (max 5 pipes on lv6) and 50% explosive resistance.
+  Receives 50% more damage from Fleshpounds.
+- Grenades, rockets, and HuskGun projectiles do not fly through teammates in Hardcore Mode.
+- Gunslinger has reduced reload speed bonus and receives double damage from Crawlers
+
+#### ScrnUser.ini
+- Moved ScrN user settings (ScrnPlayerController, ScrnHUD) from User.ini to ScrnUser.ini.
+- (ScrnHUD) `PerkStarsMax` (default=30) - limits the number of perk level starts drawn on HUD
+- (ScrnHUD) `bShowDamages` replaced with `ShowDamages` which has three options:
+- - 0 - hides damage numbers (same as old `bShowDamages=false`)
+- - 1 - combines multiple damages of the same type (e.g., shotgun pellets) and displays the total amount
+- - 2 - shows all damage numbers (same as old `bShowDamages=true`)
+
+#### Other changes
+- Introduced perk short names (`ScrnVeterancyTypes.ShortName`). Type `MVOTE LOCKPERK` without arguments to display perk
+  list.  You can use either perk number, short or long name to identify voted perk(-s).
+- Locking/unlocking multiple perks at once. For example: `MVOTE LOCKPERK FB DEMO BER`
+- Inverse perk selector by using `!`. The following command locks all perks but Sharpshooter, Commando and Gunslinger:
+  `MVOTE LOCKPERK ! SHA CMD GS`
+- Typing `MVOTE LOCKPERK` without arguments displays perk lists with numbers and short names.
+  You can use either perk number, short or long name to identify voted perk(-s)
+- Fixed glitch in MK23 and HC tactical reload animations in solo and listen server modes
+- Added left pistol ammo counter to Classic HUD
+- Added secondary ammo (e.g., M203) counter to Cool HUD
+
+#### Code Changes
+- `ScrnPlayerController.ClientPlayerDamaged()` made protected to prevent access from elsewhere.
+  Call `DamageMade()` instead.
+- Set `bHardcoreReady=true` in custom perks to make them available in Hardcore Mode
+
+
 ### v9.66
 - Fixed a bug that could cause too high recoil during the Zed Time
 - 3rd person view disabled in TSC and Tourney Mode. In addition, a new config option `bAllowBehindView`
@@ -50,7 +140,7 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 - Base saw loop damage reduced by 20% to compensate fixed difficulty scaling. HoE saw damage is higher by ~40% now.
 
 #### Horzine Technician v5
-- Removed Cryo Sirens because regulad Sirens from ScrnZedPack can shatter frozen zeds now
+- Removed Cryo Sirens because regular Sirens from ScrnZedPack can shatter frozen zeds now
 - Sirens can scream just to shatter zeds in front, even when not seeing players (e.g., standing around a corner next to
   frozen zeds)
 - Optimized performance of Freeze Mechanics

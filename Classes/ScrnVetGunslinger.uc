@@ -60,7 +60,14 @@ static function int AddDamage(KFPlayerReplicationInfo KFPRI, KFMonster Injured, 
         )
     {
         // 30% base bonus + 5% per level
-        InDamage *= 1.30 + 0.05 * GetClientVeteranSkillLevel(KFPRI);
+        InDamage *= 1.3001 + 0.05 * GetClientVeteranSkillLevel(KFPRI);
+
+        // Ideally, only headshot damage bonus should be granted, but GetHeadShotDamMulti() does not get Injured, so
+        // we cannot check for bloats there. Another option: hack into ScrnGameRules.NetDamage() - too complicated.
+        // Anyway, Bloat has much body hp, so it is not a big deal.
+        if ( ZombieBloat(Injured) != none ) {
+            InDamage *= 1.5;
+        }
     }
     else if ( ClassIsChildOf(DmgType, class'KFMod.DamTypeDualies') ) {
         InDamage *= 1.05 + 0.05 * GetClientVeteranSkillLevel(KFPRI); // Up to 35% increase in Damage with 9mm
@@ -141,6 +148,8 @@ static function float GetReloadSpeedModifierStatic(KFPlayerReplicationInfo KFPRI
             || ClassIsChildOf(Other, class'FlareRevolver') || ClassIsChildOf(Other, class'DualFlareRevolver')
             || Other.name == 'Colt' )
     {
+        if ( class'ScrnBalance'.default.Mut.bHardcore )
+            return 1.6;
         return 2.0;
     }
     else if ( ClassIsChildOf(Other, class'Dualies') // all dual pistols classes extend this
@@ -149,6 +158,8 @@ static function float GetReloadSpeedModifierStatic(KFPlayerReplicationInfo KFPRI
             || ClassIsChildOf(Other, class'Winchester')
             || ClassIsInArray(default.PerkedWeapons, Other) ) //v3 - custom weapon support
     {
+        if ( class'ScrnBalance'.default.Mut.bHardcore )
+            return 1.3;
         return 1.6; // Up to 60% faster reload with pistols
     }
 
@@ -207,7 +218,7 @@ defaultproperties
     DefaultDamageTypeNoBonus=Class'ScrnBalanceSrv.ScrnDamTypeDefaultGunslingerBase'
     SamePerkAch="OP_Gunslinger"
 
-    SkillInfo="PERK SKILLS:|100% faster reload with Revolvers|60% faster reload with Pistols|50% less recoil with Pistols||COWBOY MODE:|20% increase in movement speed|9mm Machine-Pistols"
+    SkillInfo="PERK SKILLS:|100% faster reload with Revolvers|60% faster reload with Pistols|50% less recoil with Pistols|+50% damage to Bloats||COWBOY MODE:|20% increase in movement speed|9mm Machine-Pistols"
     CustomLevelInfo="PERK BONUSES (LEVEL %L):|%x more damage with Pistols|%$ discount on Pistols|%a extra Pistol magazines"
 
     NumRequirements=1 // removed damage req. in v5.30 Beta 18
@@ -223,6 +234,8 @@ defaultproperties
     OnHUDIcons(6)=(PerkIcon=Texture'ScrnTex.Perks.Perk_Gunslinger_Blood',StarIcon=Texture'ScrnTex.Perks.Hud_Perk_Star_Blood',DrawColor=(B=255,G=255,R=255,A=255))
 
     VeterancyName="Gunslinger"
+    ShortName="GS"
+    bHardcoreReady=True
     Requirements(0)="Get %x kills with Pistols"
     progressArray0(0)=15
     progressArray0(1)=60

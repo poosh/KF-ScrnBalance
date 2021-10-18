@@ -33,7 +33,7 @@ var localized string strBoundToCook, strBoundToThrow, strCantFindNade;
 
 // HUD & Info
 var automated GUISectionBackground    bg_HUD;
-var automated moCheckBox              ch_ShowDamages;
+var automated moComboBox              cbx_ShowDamages;
 var automated moCheckBox              ch_ShowSpeed;
 var automated moCheckBox              ch_ShowAchProgress;
 
@@ -46,6 +46,7 @@ var automated moSlider                sl_HudY;
 
 var automated moSlider                sl_3DScopeSensScale; //I added this
 
+var array<localized string>           ShowDamagesItems;
 var array<localized string>           BarStyleItems;
 var array<localized string>           HudStyleItems;
 
@@ -109,6 +110,10 @@ function InitComponent(GUIController MyController, GUIComponent MyOwner)
     bg_Weapons.ManageComponent(b_PerkProgress);
     bg_Weapons.ManageComponent(b_Accuracy);
     */
+
+    cbx_ShowDamages.ResetComponent();
+    for ( i=0; i < ShowDamagesItems.length; ++i )
+        cbx_ShowDamages.AddItem(ShowDamagesItems[i]);
 
     cbx_BarStyle.ResetComponent();
     for ( i=0; i < BarStyleItems.length; ++i )
@@ -435,16 +440,16 @@ function InternalOnLoadINI(GUIComponent Sender, string s)
             break;
 
 
-        case ch_ShowDamages:
+        case cbx_ShowDamages:
             if ( !PC.Mut.bShowDamages || H == none ) {
-                ch_ShowDamages.Checked(false);
-                ch_ShowDamages.DisableMe();
-                ch_ShowDamages.Hint = strDisabledByServer;
+                cbx_ShowDamages.SetIndex(0);
+                cbx_ShowDamages.DisableMe();
+                cbx_ShowDamages.Hint = strDisabledByServer;
             }
             else {
-                ch_ShowDamages.Checked(H.bShowDamages);
-                ch_ShowDamages.EnableMe();
-                ch_ShowDamages.Hint = ch_ShowDamages.default.Hint;
+                cbx_ShowDamages.SetIndex(H.ShowDamages);
+                cbx_ShowDamages.EnableMe();
+                cbx_ShowDamages.Hint = cbx_ShowDamages.default.Hint;
             }
             break;
 
@@ -471,10 +476,12 @@ function InternalOnLoadINI(GUIComponent Sender, string s)
             else  {
                 if ( H.PlayerInfoVersionNumber < 80 )
                     cbx_BarStyle.SetIndex(0);
-                else if ( H.PlayerInfoVersionNumber < 90 )
+                else if ( H.PlayerInfoVersionNumber < 83 )
                     cbx_BarStyle.SetIndex(1);
-                else
+                else if ( H.PlayerInfoVersionNumber < 90 )
                     cbx_BarStyle.SetIndex(2);
+                else
+                    cbx_BarStyle.SetIndex(3);
                 cbx_BarStyle.EnableMe();
             }
             break;
@@ -557,10 +564,11 @@ function InternalOnChange(GUIComponent Sender)
                 PC.SaveConfig();
             break;
 
-        case ch_ShowDamages:
+        case cbx_ShowDamages:
                 if ( H != none ) {
-                    H.bShowDamages = ch_ShowDamages.IsChecked();
-                    PC.ServerAcknowledgeDamages(ch_ShowDamages.IsChecked());
+                    H.ShowDamages = cbx_ShowDamages.GetIndex();
+                    PC.DamageAck = H.ShowDamages;
+                    PC.ServerAcknowledgeDamages(H.ShowDamages);
                     H.SaveConfig();
                 }
             break;
@@ -581,8 +589,9 @@ function InternalOnChange(GUIComponent Sender)
         case cbx_BarStyle:
             switch (cbx_BarStyle.GetIndex()) {
                 case 0: PC.ConsoleCommand("PlayerInfoVersion 70"); break;
-                case 1: PC.ConsoleCommand("PlayerInfoVersion 83"); break;
-                case 2: PC.ConsoleCommand("PlayerInfoVersion 90"); break;
+                case 1: PC.ConsoleCommand("PlayerInfoVersion 81"); break;
+                case 2: PC.ConsoleCommand("PlayerInfoVersion 83"); break;
+                case 3: PC.ConsoleCommand("PlayerInfoVersion 90"); break;
             }
             sl_BarScale.SetVisibility(cbx_BarStyle.GetIndex() > 0);
             PC.myHUD.SaveConfig();
@@ -1170,23 +1179,25 @@ defaultproperties
     End Object
     bg_HUD=GUISectionBackground'ScrnBalanceSrv.ScrnTab_UserSettings.HUDBG'
 
-    Begin Object Class=moCheckBox Name=ShowDamages
-        Caption="Show Damages"
-        Hint="If checked, damage you're doing will popup on your screen"
-        bFlipped=False
-        CaptionWidth=0.955000
+    Begin Object Class=moComboBox Name=ShowDamagesList
+        bReadOnly=True
+        CaptionWidth=0
+        Caption=""
+        IniOption="@Internal"
+        Hint="Display damage popups"
         WinTop=0.23
         WinLeft=0.515
-        WinWidth=0.288
+        WinWidth=0.218
         TabOrder=20
-        RenderWeight=0.5
-        ComponentClassName="ScrnBalanceSrv.ScrnGUICheckBoxButton"
-        OnCreateComponent=ShowDamages.InternalOnCreateComponent
-        IniOption="@Internal"
+        RenderWeight=1.0
         OnChange=ScrnTab_UserSettings.InternalOnChange
         OnLoadINI=ScrnTab_UserSettings.InternalOnLoadINI
+        OnCreateComponent=ShowDamagesList.InternalOnCreateComponent
     End Object
-    ch_ShowDamages=moCheckBox'ScrnBalanceSrv.ScrnTab_UserSettings.ShowDamages'
+    cbx_ShowDamages=moComboBox'ScrnBalanceSrv.ScrnTab_UserSettings.ShowDamagesList'
+    ShowDamagesItems(0)="Hide damage numbers"
+    ShowDamagesItems(1)="Show combined damage"
+    ShowDamagesItems(2)="Show all numbers"
 
     Begin Object Class=moCheckBox Name=ShowSpeed
         Caption="Show Speed"
@@ -1290,7 +1301,8 @@ defaultproperties
     cbx_BarStyle=moComboBox'ScrnBalanceSrv.ScrnTab_UserSettings.BarStyleList'
     BarStyleItems(0)="Classic Bars"
     BarStyleItems(1)="Modern Bars"
-    BarStyleItems(2)="Cool Bars"
+    BarStyleItems(2)="Modern + Weapon"
+    BarStyleItems(3)="Cool Bars"
 
     Begin Object Class=moSlider Name=BarScale
         MinValue=0.5

@@ -66,8 +66,11 @@ static function float AddExtraAmmoFor(KFPlayerReplicationInfo KFPRI, Class<Ammun
 static function float GetWeaponMovementSpeedBonus(KFPlayerReplicationInfo KFPRI, Weapon Weap)
 {
     // Syringe is a child of KFMeleeGun, so need to check it first!
-    if ( Syringe(Weap) != none )
+    if ( Syringe(Weap) != none ) {
+        if ( class'ScrnBalance'.default.Mut.bHardcore )
+            return -0.30;
         return -0.15;
+    }
     else if ( KFMeleeGun(Weap) == none )
         return -0.15;
     else if ( Chainsaw(Weap) != none )
@@ -167,6 +170,8 @@ defaultproperties
 
     PerkIndex=4
     VeterancyName="Berserker"
+    ShortName="BER"
+    bHardcoreReady=True
     Requirements(0)="Deal %x damage with melee weapons"
 
     OnHUDIcon=Texture'KillingFloorHUD.Perks.Perk_Berserker'

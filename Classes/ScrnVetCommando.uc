@@ -19,8 +19,6 @@ static function SpecialHUDInfo(KFPlayerReplicationInfo KFPRI, Canvas C)
         return;
 
     MaxDistance = 800;
-    if ( class'ScrnBalance'.default.Mut.bHardcore )
-        MaxDistance *= 0.75;
 
     foreach C.ViewPort.Actor.VisibleCollidingActors(class'KFMonster',KFEnemy,MaxDistance,C.ViewPort.Actor.CalcViewLocation)
     {
@@ -36,9 +34,6 @@ static function bool ShowStalkers(KFPlayerReplicationInfo KFPRI)
 
 static function float GetStalkerViewDistanceMulti(KFPlayerReplicationInfo KFPRI)
 {
-    if ( class'ScrnBalance'.default.Mut.bHardcore )
-        return 0.75;
-
     return 1.0;
 }
 
@@ -64,6 +59,9 @@ static function float GetAmmoPickupMod(KFPlayerReplicationInfo KFPRI, KFAmmuniti
 
 static function float AddExtraAmmoFor(KFPlayerReplicationInfo KFPRI, Class<Ammunition> AmmoType)
 {
+    if ( class'ScrnBalance'.default.Mut.bHardcore )
+        return 1.0; // no extra ammo in Hardcore Mode
+
     if ( ClassIsChildOf(AmmoType, class'ScrnBalanceSrv.ScrnM203MAmmo') )
         return 1.0; // no extra medic grenades
 
@@ -112,7 +110,7 @@ static function int AddDamage(KFPlayerReplicationInfo KFPRI, KFMonster Injured, 
 static function int ReduceDamage(KFPlayerReplicationInfo KFPRI, KFPawn Injured, Pawn Instigator, int InDamage, class<DamageType> DmgType)
 {
     if ( class'ScrnBalance'.default.Mut.bHardcore && DmgType == class'DamTypeSlashingAttack' ) {
-        return InDamage * 3.5; // quad damage from Stalkers in hardcore mode
+        return InDamage * 4.0; // quad damage from Stalkers in hardcore mode
     }
 
     return InDamage;
@@ -193,5 +191,7 @@ defaultproperties
     OnHUDIcons(6)=(PerkIcon=Texture'ScrnTex.Perks.Perk_Commando_Blood',StarIcon=Texture'ScrnTex.Perks.Hud_Perk_Star_Blood',DrawColor=(B=255,G=255,R=255,A=255))
 
     VeterancyName="Commando"
+    ShortName="CMD"
+    bHardcoreReady=True
     Requirements(0)="Deal %x damage with Assault Rifles"
 }

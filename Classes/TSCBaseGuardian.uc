@@ -540,7 +540,7 @@ state Guarding
         if ( InstigatedBy != none )
             PC = ScrnPlayerController(InstigatedBy.Controller);
         if ( PC != none ) {
-            PC.ClientPlayerDamaged(Damage, Hitlocation, 10);
+            PC.DamageMade(Damage, Hitlocation, 10);
         }
         StunDamage += Damage;
         if ( StunDamage >= StunThreshold ) {

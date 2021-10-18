@@ -268,11 +268,12 @@ simulated function ReleaseEnhancedSlide()
     }
 }
 
-
+// compensates reload animation to keep slide in place
 simulated function StartTweeningSlide()
 {
-    bTweeningSlide = true; //start slide tweening
+    bTweeningSlide = true;
     TweenEndTime = Level.TimeSeconds + 0.2;
+    HandleSlideMovement();
 }
 
 simulated function WeaponTick(float dt)
@@ -466,6 +467,13 @@ function ActuallyFinishReloading()
    bIsReloading = false;
    // bReloadEffectDone = false;
    AddReloadedAmmo();
+
+   if ( Instigator.IsLocallyControlled() ) {
+       PlayIdle();
+       if(bShortReload) {
+           StartTweeningSlide();
+       }
+   }
 }
 
 function AddReloadedAmmo()

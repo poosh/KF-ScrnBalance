@@ -1,4 +1,5 @@
-class ScrnHUD extends SRHUDKillingFloor;
+class ScrnHUD extends SRHUDKillingFloor
+    config (ScrnUser);
 
 #exec OBJ LOAD FILE=ScrnTex.utx
 #exec OBJ LOAD FILE=ScrnAch_T.utx
@@ -28,6 +29,11 @@ var()   SpriteWidget            BlamedIcon;
 var     float                   BlamedIconSize;
 
 var()   SpriteWidget            SingleNadeIcon;
+
+var()   SpriteWidget            LeftGunAmmoBG;
+var()   SpriteWidget            LeftGunAmmoIcon;
+var()   NumericWidget           LeftGunAmmoDigits;
+
 
 // configurable variables from ScrnBuyMenuSaleList
 var globalconfig color TraderGroupColor, TraderActiveGroupColor, TraderSelectedGroupColor;
@@ -65,6 +71,7 @@ var bool bCoolHudTeamColor;
 var color CoolHudColor, CoolHudAmmoColor;
 var config byte PlayerInfoVersionNumber;
 var config float PlayerInfoScale;
+var config byte PerkStarsMax;
 var Material CoolBarBase,CoolBarOverlay;
 var int CoolBarSize, CoolHealthBarTop, CoolHealthBarHeight;
 var color HealthBarColor, HealingBarColor, FullHealthColor, OverchargeHealthColor, LowHealthColor, ArmorBarColor, BigArmorColor;
@@ -78,6 +85,8 @@ var localized string strBonusLevel;
 var()   NumericWidget           CoolPerkLevelDigits;
 var()   SpriteWidget            CoolCashIcon;
 var()   NumericWidget           CoolCashDigits;
+var Color LowAmmoColor;
+var Color NoAmmoColor;
 
 var transient float PulseAlpha;
 var float PulseRate;
@@ -109,13 +118,18 @@ struct DamageInfo
 const DAMAGEPOPUP_COUNT = 32;
 var DamageInfo DamagePopups[32];
 var int NextDamagePopupIndex;
-var() config bool bShowDamages;
-var() config byte DamagePopupFont;
-var() config float DamagePopupFadeOutTime;
 
-var() config bool bShowSpeed;
-var() config float SpeedometerX, SpeedometerY;
-var() config byte SpeedometerFont;
+
+const DAM_HIDE      = 0;
+const DAM_COMBO     = 1;
+const DAM_FULL      = 2;
+var config byte ShowDamages;
+var config byte DamagePopupFont;
+var config float DamagePopupFadeOutTime;
+
+var config bool bShowSpeed;
+var config float SpeedometerX, SpeedometerY;
+var config byte SpeedometerFont;
 
 var bool bHidePlayerInfo;
 
@@ -443,7 +457,7 @@ simulated function DrawHudPassA (Canvas C)
 
     if ( BlamedMonsterClass != none )
         DrawBlameIcons(C);
-    if ( bShowDamages )
+    if ( ShowDamages > 0 )
         DrawDamage(C);
 
     if ( bSpectatingScrn || bSpectatingZED )
@@ -511,8 +525,9 @@ simulated function DrawQuickSyringe(Canvas C)
         QuickSyringeDigits.Tints[0].G = 96;
         QuickSyringeDigits.Tints[0].B = 96;
     }
-    else
-        QuickSyringeDigits.Tints[0] = default.QuickSyringeDigits.Tints[0];
+    else {
+        QuickSyringeDigits.Tints[0] = TeamColors[TeamIndex];
+    }
     QuickSyringeDigits.Tints[1] = QuickSyringeDigits.Tints[0];
 
 
@@ -620,8 +635,9 @@ simulated function DrawOldHudItems(Canvas C)
                 MedicGunDigits.Tints[0].G = 96;
                 MedicGunDigits.Tints[0].B = 96;
             }
-            else
+            else {
                 MedicGunDigits.Tints[0] = default.MedicGunDigits.Tints[0];
+            }
             MedicGunDigits.Tints[0].A = KFHUDAlpha;
             MedicGunDigits.Tints[1] = MedicGunDigits.Tints[0];
             if ( !bLightHud )
@@ -646,12 +662,6 @@ simulated function DrawOldHudItems(Canvas C)
             if ( !bLightHud )
                 DrawSpriteWidget(C, ClipsBG);
 
-            // if ( ClassIsChildOf(OwnerWeaponClass, class'HuskGun') ) {
-                // ClipsDigits.PosX = 0.873;
-                // DrawNumericWidget(C, ClipsDigits, DigitsSmall);
-                // ClipsDigits.PosX = default.ClipsDigits.PosX;
-            // }
-            // else
             DrawNumericWidget(C, ClipsDigits, DigitsSmall);
 
             if ( ClassIsChildOf(OwnerWeaponClass, class'LAW') )
@@ -674,23 +684,28 @@ simulated function DrawOldHudItems(Canvas C)
                     DrawSpriteWidget(C, BulletsInClipBG);
                 DrawNumericWidget(C, BulletsInClipDigits, DigitsSmall);
 
-                if ( ClassIsChildOf(OwnerWeaponClass, class'Flamethrower') || ClassIsChildOf(OwnerWeaponClass, class'ScrnChainsaw') )
+                if ( ClassIsChildOf(OwnerWeaponClass, class'Flamethrower')
+                        || ClassIsChildOf(OwnerWeaponClass, class'ScrnChainsaw') )
                 {
                     DrawSpriteWidget(C, FlameIcon);
                     DrawSpriteWidget(C, FlameTankIcon);
                 }
-                else if ( ClassIsChildOf(OwnerWeaponClass, class'Shotgun') || ClassIsChildOf(OwnerWeaponClass, class'BoomStick') || ClassIsChildOf(OwnerWeaponClass, class'Winchester')
-                    || ClassIsChildOf(OwnerWeaponClass, class'BenelliShotgun') )
+                else if ( ClassIsChildOf(OwnerWeaponClass, class'Shotgun')
+                        || ClassIsChildOf(OwnerWeaponClass, class'BoomStick')
+                        || ClassIsChildOf(OwnerWeaponClass, class'Winchester')
+                        || ClassIsChildOf(OwnerWeaponClass, class'BenelliShotgun') )
                 {
                     DrawSpriteWidget(C, SingleBulletIcon);
                     DrawSpriteWidget(C, BulletsInClipIcon);
                 }
-                else if ( ClassIsChildOf(OwnerWeaponClass, class'ZEDGun') || ClassIsChildOf(OwnerWeaponClass, class'ZEDMKIIWeapon') )
+                else if ( ClassIsChildOf(OwnerWeaponClass, class'ZEDGun')
+                        || ClassIsChildOf(OwnerWeaponClass, class'ZEDMKIIWeapon') )
                 {
                     DrawSpriteWidget(C, ClipsIcon);
                     DrawSpriteWidget(C, ZedAmmoIcon);
                 }
-                else if ( ClassIsChildOf(OwnerWeaponClass, class'SealSquealHarpoonBomber') || ClassIsChildOf(OwnerWeaponClass, class'SeekerSixRocketLauncher') )
+                else if ( ClassIsChildOf(OwnerWeaponClass, class'SealSquealHarpoonBomber')
+                        || ClassIsChildOf(OwnerWeaponClass, class'SeekerSixRocketLauncher') )
                 {
                     DrawSpriteWidget(C, ClipsIcon);
                     DrawSpriteWidget(C, SingleNadeIcon);
@@ -723,8 +738,14 @@ simulated function DrawOldHudItems(Canvas C)
         }
 
 
-        // SECONDARY AMMO
-        if ( (OwnerWeapon != none && OwnerWeapon.bHasSecondaryAmmo) || (bSpectating && CurClipsSecondary > 0) ) {
+        // SECONDARY AMMO or LEFT GUN of dual pistols
+        if ( bHasLeftGun ) {
+            if ( !bLightHud )
+                DrawSpriteWidget(C, LeftGunAmmoBG);
+            DrawNumericWidget(C, LeftGunAmmoDigits, DigitsSmall);
+            DrawSpriteWidget(C, LeftGunAmmoIcon);
+        }
+        else if ( (OwnerWeapon != none && OwnerWeapon.bHasSecondaryAmmo) || (bSpectating && CurClipsSecondary > 0) ) {
             if ( !bLightHud )
                 DrawSpriteWidget(C, SecondaryClipsBG);
             DrawNumericWidget(C, SecondaryClipsDigits, DigitsSmall);
@@ -767,6 +788,7 @@ simulated function DrawOldHudItems(Canvas C)
     TempX += (TempSize - VetStarSize);
     TempY += (TempSize - (2.0 * VetStarSize));
 
+    TempLevel = min(TempLevel, PerkStarsMax);
     while( TempLevel > 0 ) {
         C.SetPos(TempX, TempY-(Counter*VetStarSize*0.8f));
         C.DrawTile(TempStarMaterial, VetStarSize, VetStarSize, 0, 0, TempStarMaterial.MaterialUSize(), TempStarMaterial.MaterialVSize());
@@ -792,6 +814,7 @@ simulated function DrawOldHudItems(Canvas C)
 
         TempY += (TempSize - (2.0 * VetStarSize));
 
+        TempLevel = min(TempLevel, PerkStarsMax);
         while( TempLevel > 0 ) {
             C.SetPos(TempX, TempY-(Counter*VetStarSize*0.8f));
             C.DrawTile(TempStarMaterial, VetStarSize, VetStarSize, 0, 0, TempStarMaterial.MaterialUSize(), TempStarMaterial.MaterialVSize());
@@ -1067,12 +1090,7 @@ simulated function DrawCoolHud(Canvas C)
         C.Font = LoadWaitingFont(0);// 0 - big, 1 - smaller
         C.TextSize(s, XL, YL);
         C.SetPos(TempX - XL, TempY - YL);
-        if ( bHasLeftGun ) {
-            if ( bRightGunLowAmmo ) {
-                SetLowAmmoColor(C.DrawColor, CurMagAmmo - CurLeftGunAmmo);
-            }
-        }
-        else if ( bLowAmmo || WeaponMaxCharge > 0 ) {
+        if ( bLowAmmo || (bHasLeftGun && bRightGunLowAmmo) || WeaponMaxCharge > 0 ) {
             C.DrawColor = BulletsInClipDigits.Tints[0];
         }
         C.DrawText(s);
@@ -1082,7 +1100,7 @@ simulated function DrawCoolHud(Canvas C)
             C.TextSize(s, XL, YL);
             C.SetPos(C.ClipX - TempX, TempY - YL);
             if ( bLeftGunLowAmmo ) {
-                SetLowAmmoColor(C.DrawColor, CurLeftGunAmmo);
+                C.DrawColor = LeftGunAmmoDigits.Tints[0];
             }
             else {
                 C.DrawColor = CoolHudAmmoColor;
@@ -1090,6 +1108,20 @@ simulated function DrawCoolHud(Canvas C)
             }
             C.DrawText(s);
         }
+        else if ( (OwnerWeapon != none && OwnerWeapon.bHasSecondaryAmmo) || (bSpectating && CurClipsSecondary > 0) ) {
+            s = string(int(CurClipsSecondary));
+            C.TextSize(s, XL, YL);
+            C.SetPos(C.ClipX - TempX, TempY - YL);
+            if ( CurClipsSecondary == 0 ) {
+                C.DrawColor = NoAmmoColor;
+            }
+            else {
+                C.DrawColor = CoolHudAmmoColor;
+            }
+            C.DrawColor.A = KFHUDAlpha;
+            C.DrawText(s);
+        }
+
         // restore
         C.FontScaleX = 1.0;
         C.FontScaleY = 1.0;
@@ -1130,19 +1162,22 @@ simulated function DrawWeaponName(Canvas C)
 
 simulated function SetLowAmmoColor(out Color C, int ammo)
 {
-    C.R = 192;
-    if ( ammo == 0 ) {
-        C.G = 0;
+    if ( ammo > 0 ) {
+        C = LowAmmoColor;
     }
     else {
-        C.G = 160;
+        C = NoAmmoColor;
     }
-    C.B = 0;
     C.A = PulseAlpha;
 }
 
 simulated function UpdateHud()
 {
+    TeamColors[0].A = KFHUDAlpha;
+    TeamColors[1].A = KFHUDAlpha;
+    TextColors[0].A = KFHUDAlpha;
+    TextColors[1].A = KFHUDAlpha;
+        
     if( PawnOwner == none ) {
         super.UpdateHud();
         return;
@@ -1161,10 +1196,15 @@ simulated function UpdateHud()
         FlashlightDigits.Value = 100 * (float(ScrnPawnOwner.TorchBatteryLife) / float(ScrnPawnOwner.default.TorchBatteryLife));
 
     //reset to default values
-    ClipsDigits.Tints[0] = default.ClipsDigits.Tints[0];
-    ClipsDigits.Tints[1] = default.ClipsDigits.Tints[1];
-    BulletsInClipDigits.Tints[0] = default.BulletsInClipDigits.Tints[0];
-    BulletsInClipDigits.Tints[1] = default.BulletsInClipDigits.Tints[1];
+    ClipsDigits.Tints[0]                = TeamColors[TeamIndex];
+    ClipsDigits.Tints[1]                = TeamColors[TeamIndex];
+    BulletsInClipDigits.Tints[0]        = TeamColors[TeamIndex];
+    BulletsInClipDigits.Tints[1]        = TeamColors[TeamIndex];
+    SecondaryClipsDigits.Tints[0]       = TeamColors[TeamIndex];
+    SecondaryClipsDigits.Tints[1]       = TeamColors[TeamIndex];
+    LeftGunAmmoDigits.Tints[0]          = TeamColors[TeamIndex];
+    LeftGunAmmoDigits.Tints[1]          = TeamColors[TeamIndex];
+
     if ( OwnerWeapon != none )  {
         if ( WeaponMaxCharge > 0 ) {
             BulletsInClipDigits.Value = WeaponChargePct * WeaponMaxCharge;
@@ -1176,9 +1216,9 @@ simulated function UpdateHud()
             BulletsInClipDigits.Tints[1] = BulletsInClipDigits.Tints[0];
         }
         else
-            BulletsInClipDigits.Value = CurMagAmmo;
+            BulletsInClipDigits.Value = CurMagAmmo - CurLeftGunAmmo;
 
-        if ( bLowAmmo ) {
+        if ( bLowAmmo || (bHasLeftGun && bRightGunLowAmmo) ) {
             SetLowAmmoColor(BulletsInClipDigits.Tints[0], BulletsInClipDigits.Value);
             BulletsInClipDigits.Tints[1] = BulletsInClipDigits.Tints[0];
         }
@@ -1197,7 +1237,20 @@ simulated function UpdateHud()
     }
 
     ClipsDigits.Value = CurClipsPrimary;
+
+    if (bHasLeftGun) {
+        LeftGunAmmoDigits.Value = CurLeftGunAmmo;
+        if ( bLeftGunLowAmmo ) {
+            SetLowAmmoColor(LeftGunAmmoDigits.Tints[0], LeftGunAmmoDigits.Value);
+            LeftGunAmmoDigits.Tints[1] = LeftGunAmmoDigits.Tints[0];
+        }
+    }
+
     SecondaryClipsDigits.Value = CurClipsSecondary;
+    if ( SecondaryClipsDigits.Value == 0 ) {
+        SetLowAmmoColor(SecondaryClipsDigits.Tints[0], SecondaryClipsDigits.Value);
+        SecondaryClipsDigits.Tints[1] = SecondaryClipsDigits.Tints[0];
+    }
 
     if( Vehicle(PawnOwner)!=None ) {
         if( Vehicle(PawnOwner).Driver!=None )
@@ -1208,7 +1261,6 @@ simulated function UpdateHud()
         HealthDigits.Value = PawnOwner.Health;
         ArmorDigits.Value = PawnOwner.ShieldStrength;
     }
-
 
     // "Poison" the health meter
     if ( VomitHudTimer > Level.TimeSeconds ) {
@@ -1231,8 +1283,9 @@ simulated function UpdateHud()
                 SwitchDigitColorTime = Level.TimeSeconds + 0.2;
         }
     }
-    else
-        HealthDigits.Tints[0] = default.HealthDigits.Tints[0];
+    else {
+        HealthDigits.Tints[0] = TeamColors[TeamIndex];
+    }
     HealthDigits.Tints[1] = HealthDigits.Tints[0];
 
     CashDigits.Value = PawnOwnerPRI.Score;
@@ -1250,8 +1303,9 @@ simulated function UpdateHud()
         SyringeDigits.Tints[0].G = 96;
         SyringeDigits.Tints[0].B = 96;
     }
-    else
-        SyringeDigits.Tints[0] = default.SyringeDigits.Tints[0];
+    else {
+        SyringeDigits.Tints[0] = TeamColors[TeamIndex];
+    }
     SyringeDigits.Tints[1] = SyringeDigits.Tints[0];
 
     // bypass ServerPerks and vanilla KF
@@ -1324,11 +1378,12 @@ simulated function CalculateAmmo()
 
             if ( OwnerWeapon.MagCapacity > MinMagCapacity ) {
                 i = max(OwnerWeapon.MagCapacity*LowAmmoPercent, 2);
+                bLowAmmo = CurMagAmmo <= i;
                 if (bHasLeftGun) {
+                    i = max(i/2, 2);
                     bLeftGunLowAmmo = CurLeftGunAmmo <= i;
                     bRightGunLowAmmo = (CurMagAmmo-CurLeftGunAmmo) <= i;
                 }
-                bLowAmmo = CurMagAmmo <= i;
             }
         }
     }
@@ -1719,6 +1774,7 @@ simulated function float DrawCoolBar(Canvas C, Pawn P, KFPlayerReplicationInfo P
         // center point
         TempX = BaseX + (BaseSize-TempSize)/2;
         TempY = BaseY + BaseSize*0.35 - TempSize/2;
+        TempLevel = min(TempLevel, PerkStarsMax);
         while (TempLevel > 0) {
             if (Counter == 0 ) {
                 Counter = 10;
@@ -2579,7 +2635,7 @@ simulated function DrawSpectatingHud(Canvas C)
 
     DrawStoryHUDInfo(C);
 
-    if ( bShowDamages )
+    if ( ShowDamages > 0 )
         DrawDamage(C);
 }
 
@@ -3317,6 +3373,12 @@ simulated function SetHUDAlpha()
     CoolCashIcon.Tints[1].A = KFHUDAlpha;
     CoolCashDigits.Tints[0].A = KFHUDAlpha;
     CoolCashDigits.Tints[1].A = KFHUDAlpha;
+    LeftGunAmmoBG.Tints[0].A = KFHUDAlpha;
+    LeftGunAmmoBG.Tints[1].A = KFHUDAlpha;
+    LeftGunAmmoDigits.Tints[0].A = KFHUDAlpha;
+    LeftGunAmmoDigits.Tints[1].A = KFHUDAlpha;
+    LeftGunAmmoIcon.Tints[0].A = KFHUDAlpha;
+    LeftGunAmmoIcon.Tints[1].A = KFHUDAlpha;
     CoolHudAmmoColor.A = KFHUDAlpha;
     WhiteAlphaColor.A = KFHUDAlpha;
     default.WhiteAlphaColor.A = KFHUDAlpha;
@@ -3350,7 +3412,7 @@ defaultproperties
     texCowboy=Texture'ScrnTex.HUD.CowboyMode'
     CowboyTileY=0.02
     CowboyTileWidth=0.250000
-    bShowDamages=true
+    ShowDamages=1
     DamagePopupFont=4
     DamagePopupFadeOutTime=3.000000
     bShowSpeed=true
@@ -3384,6 +3446,10 @@ defaultproperties
     DigitsSmall=(DigitTexture=Texture'KillingFloorHUD.Generic.HUD',TextureCoords[0]=(X1=8,Y1=6,X2=32,Y2=38),TextureCoords[1]=(X1=50,Y1=6,X2=68,Y2=38),TextureCoords[2]=(X1=83,Y1=6,X2=113,Y2=38),TextureCoords[3]=(X1=129,Y1=6,X2=157,Y2=38),TextureCoords[4]=(X1=169,Y1=6,X2=197,Y2=38),TextureCoords[5]=(X1=206,Y1=6,X2=235,Y2=38),TextureCoords[6]=(X1=241,Y1=6,X2=269,Y2=38),TextureCoords[7]=(X1=285,Y1=6,X2=315,Y2=38),TextureCoords[8]=(X1=318,Y1=6,X2=348,Y2=38),TextureCoords[9]=(X1=357,Y1=6,X2=388,Y2=38),TextureCoords[10]=(X1=390,Y1=6,X2=428,Y2=38))
     WeightDigits=(RenderStyle=STY_Alpha,TextureScale=0.300000,PosX=0.195000,PosY=0.942000,Tints[0]=(B=64,G=64,R=255,A=255),Tints[1]=(B=64,G=64,R=255,A=255))
 
+    LeftGunAmmoBG=(WidgetTexture=Texture'KillingFloorHUD.HUD.Hud_Box_128x64',RenderStyle=STY_Alpha,TextureCoords=(X2=128,Y2=64),TextureScale=0.35,PosX=0.260,PosY=0.935,ScaleMode=SM_Right,Scale=1.0,Tints[0]=(B=255,G=255,R=255,A=255),Tints[1]=(B=255,G=255,R=255,A=255))
+    LeftGunAmmoIcon=(WidgetTexture=Texture'KillingFloorHUD.HUD.Hud_Bullets',RenderStyle=STY_Alpha,TextureCoords=(X2=64,Y2=64),TextureScale=0.20,PosX=0.266,PosY=0.945,ScaleMode=SM_Right,Scale=1.0,Tints[0]=(B=255,G=255,R=255,A=255),Tints[1]=(B=255,G=255,R=255,A=255))
+    LeftGunAmmoDigits=(RenderStyle=STY_Alpha,TextureScale=0.300,PosX=0.292,PosY=0.950,Tints[0]=(B=64,G=64,R=255,A=255),Tints[1]=(B=64,G=64,R=255,A=255))
+
     HealthBarCutoffDist=1000
     HealthBarFullVisDist=350 // also max distance for enemy drawing
 
@@ -3409,6 +3475,7 @@ defaultproperties
     CoolHealthFadeOutTime=10
     PlayerInfoScale=1.0
     PlayerInfoVersionNumber=81
+    PerkStarsMax=30
     ScrnDrawPlayerInfoBase=ScrnDrawPlayerInfoNew
     CoolBarBase=Texture'ScrnTex.HUD.BarBase'
     CoolBarOverlay=Texture'ScrnTex.HUD.BarOverlay'
@@ -3430,6 +3497,8 @@ defaultproperties
     BigArmorColor=(R=0,G=255,B=255,A=200)
     CoolHudColor=(R=255,G=255,B=255,A=255)
     CoolHudAmmoColor=(R=160,G=160,B=160,A=200)
+    LowAmmoColor=(R=192,G=160,B=0,A=200)
+    NoAmmoColor=(R=192,G=0,B=0,A=200)
 
     strBonusLevel="^Bonus Level^"
     XPLevelShowTime=30

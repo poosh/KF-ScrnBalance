@@ -102,23 +102,22 @@ simulated function LockSlideBack()
 //only called by clients
 simulated function HandleSlideMovement()
 {
-    if ( TweenEndTime > 0 )
-    {
-        if (TweenEndTime > Level.TimeSeconds) {
-            SetBoneLocation( 'Slide', PistolSlideOffset, (TweenEndTime - Level.TimeSeconds)*500 ); //
-        }
-        else {
-            ResetSlidePosition();
-            TweenEndTime = 0;
-            bTweeningSlide = false;
-        }
+    if (TweenEndTime > Level.TimeSeconds) {
+        SetBoneLocation( 'Slide', PistolSlideOffset, (TweenEndTime - Level.TimeSeconds)*500 ); //
+    }
+    else {
+        ResetSlidePosition();
+        TweenEndTime = 0;
+        bTweeningSlide = false;
     }
 }
 
+// compensates reload animation to keep slide in place
 simulated function StartTweeningSlide()
 {
     bTweeningSlide = true; //start slide tweening
     TweenEndTime = Level.TimeSeconds + 0.2;
+    HandleSlideMovement();
 }
 
 simulated function WeaponTick(float dt)
@@ -261,13 +260,13 @@ simulated function ClientReload()
     {
         bShortReload = false;
         PlayAnim(ReloadAnim, ReloadAnimRate*ReloadMulti, 0.001);
-        SetBoneLocation( 'Slide', PistolSlideOffset, 0 ); //reset slide so that the animation's slide position gets used
+        ResetSlidePosition(); //reset slide so that the animation's slide position gets used
     }
     else if (MagAmmoRemaining >= 1)
     {
         bShortReload = true;
         PlayAnim(ReloadShortAnim, ReloadAnimRate*ReloadMulti, 0.001); //reduced tween time to prevent slide from sliding
-        SetBoneLocation( 'Slide', PistolSlideOffset, 100 ); //move the slide forward
+        SetBoneLocation( 'Slide', PistolSlideOffset, 100 ); //move the slide forward to compensate animations's pull back
     }
 }
 
@@ -279,6 +278,13 @@ function ActuallyFinishReloading()
    bIsReloading = false;
    // bReloadEffectDone = false;
    AddReloadedAmmo();
+
+   if ( Instigator.IsLocallyControlled() ) {
+       PlayIdle();
+       if(bShortReload) {
+           StartTweeningSlide();
+       }
+   }
 }
 
 function AddReloadedAmmo()
@@ -334,8 +340,9 @@ simulated function ClientFinishReloading()
     bIsReloading = false;
     PlayIdle();
 
-    if(bShortReload)
-        StartTweeningSlide(); //start tweening slide back
+    if(bShortReload) {
+        StartTweeningSlide();  // compensate slide movement in tween from reload to idle
+    }
 
     if(Instigator.PendingWeapon != none && Instigator.PendingWeapon != self)
         Instigator.Controller.ClientSwitchToBestWeapon();

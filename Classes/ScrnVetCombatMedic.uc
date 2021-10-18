@@ -49,6 +49,9 @@ static function float GetMovementSpeedModifier(KFPlayerReplicationInfo KFPRI, KF
 
 static function int ReduceDamage(KFPlayerReplicationInfo KFPRI, KFPawn Injured, Pawn Instigator, int InDamage, class<DamageType> DmgType)
 {
+    if ( !DmgType.default.bArmorStops && class'ScrnBalance'.default.Mut.bHardcore ) {
+        return InDamage * 1.50;  // extra damage  from Siren Scream in Hardcore mode
+    }
     return InDamage;    // no protection from Bloat Bile
 }
 
@@ -71,7 +74,7 @@ static function int AddDamage(KFPlayerReplicationInfo KFPRI, KFMonster Injured, 
             || ClassIsInArray(default.PerkedDamTypes, DmgType) )
     {
         // 30% base bonus + 5% per level
-        InDamage *= 1.30 + 0.05 * GetClientVeteranSkillLevel(KFPRI);
+        InDamage *= 1.3001 + 0.05 * GetClientVeteranSkillLevel(KFPRI);
     }
     return InDamage;
 }
@@ -142,6 +145,8 @@ defaultproperties
     PerkedPickups[0]= class'ScrnBalanceSrv.ScrnKatanaPickup'
 
     VeterancyName="Combat Medic"
+    ShortName="CBT"
+    bHardcoreReady=True
     Requirements(0)="Deal %x damage with the Medic Guns"
     progressArray0( 0)=5000
     progressArray0( 1)=25000

@@ -34,28 +34,31 @@ var localized string strNotInStoryMode, strNotInTSC;
 var localized string strCantEndWaveNow, strEndWavePenalty;
 var localized string strRCommands;
 var localized string strBlamed, strBlamedBaron;
+var localized string strWrongPerk;
 
 //variables for GamePaused state
 var int PauseTime;
 var transient bool bPauseable;
 var transient string msgPause;
+var transient array< class<ScrnVeterancyTypes> > VotedPerks;
 
 var string Reason; // reason why voting was started (e.g. kick player for being noob)
 
 var transient float LastBlameVoteTime;
 
-function class<ScrnVeterancyTypes> FindPerkByName(PlayerController Sender, string VeterancyNameOrIndex)
+static function ClientPerkRepLink GetPlayerLink(PlayerController Sender)
+{
+    if ( Sender == none || SRStatsBase(Sender.SteamStatsAndAchievements) == none )
+        return none;
+    return SRStatsBase(Sender.SteamStatsAndAchievements).Rep;
+}
+
+function class<ScrnVeterancyTypes> FindPerkByNameL(ClientPerkRepLink L, string VeterancyNameOrIndex)
 {
     local int i;
-    local ClientPerkRepLink L;
     local class<ScrnVeterancyTypes> Perk;
     local string s1, s2;
 
-    // log("FindPerkByName("$Sender$", "$VeterancyNameOrIndex$")", 'ScrnBalance');
-
-    if ( Sender == none || VeterancyNameOrIndex == "" || SRStatsBase(Sender.SteamStatsAndAchievements) == none )
-        return none;
-    L = SRStatsBase(Sender.SteamStatsAndAchievements).Rep;
     if ( L == none )
         return none;
 
@@ -67,15 +70,138 @@ function class<ScrnVeterancyTypes> FindPerkByName(PlayerController Sender, strin
         Perk = class<ScrnVeterancyTypes>(L.CachePerks[i].PerkClass);
         if ( Perk != none ) {
             // log(GetItemName(String(Perk.class)) @ Perk.default.VeterancyNameOrIndex, 'ScrnBalance');
-            if ( GetItemName(String(Perk.class)) ~= VeterancyNameOrIndex || Perk.default.VeterancyName ~= VeterancyNameOrIndex
-                    || (Divide(Perk.default.VeterancyName, " ", s1, s2) && (VeterancyNameOrIndex ~= s1 || VeterancyNameOrIndex ~= s2)) )
+            if ( Perk.default.ShortName ~= VeterancyNameOrIndex || Perk.default.VeterancyName ~= VeterancyNameOrIndex
+                    || (Divide(Perk.default.VeterancyName, " ", s1, s2)
+                        && (VeterancyNameOrIndex ~= s1 || VeterancyNameOrIndex ~= s2)) )
                 return Perk;
         }
     }
-
     return none;
 }
 
+function class<ScrnVeterancyTypes> FindPerkByName(PlayerController Sender, string VeterancyNameOrIndex)
+{
+    if ( VeterancyNameOrIndex == "" )
+        return none;
+    return FindPerkByNameL( GetPlayerLink(Sender), VeterancyNameOrIndex);
+}
+
+function bool StrToPerks(PlayerController Sender, string str, out array< class<ScrnVeterancyTypes> > Perks,
+        out String ErrorStr)
+{
+    local int i, j, c;
+    local ClientPerkRepLink L;
+    local class<ScrnVeterancyTypes> Perk;
+    local array<string> args;
+    local bool bInvert, bFound;
+
+    Perks.Length = 0;
+    ErrorStr = "";
+    if ( str == "" )
+        return false;
+    L = GetPlayerLink(Sender);
+    if ( L == none )
+        return false;
+
+    Split(str, " ", args);
+    if ( args.length == 0 )
+        return false;
+
+    i = 0;
+    if ( args[0] == "!" ) {
+        bInvert = true;
+        ++i;
+    }
+    while ( i < args.length ) {
+        Perk = FindPerkByNameL(L, args[i]);
+        if ( Perk == none ) {
+            ErrorStr = args[i];
+            return false;
+        }
+        Perks[Perks.length] = Perk;
+        ++i;
+    }
+    // check for duplicates
+    for ( i = 0; i < Perks.length; ++i ) {
+        for ( j = i + 1; j < Perks.length; ++j ) {
+            if (Perks[j] == Perks[i]) {
+                Perks.remove(j--, 1);
+            }
+        }
+    }
+    if ( bInvert ) {
+        c = Perks.length;
+        for ( j = 0; j < L.CachePerks.Length; ++j ) {
+            Perk = class<ScrnVeterancyTypes>(L.CachePerks[j].PerkClass);
+            if ( Perk == none )
+                continue;
+            bFound = false;
+            for ( i = 0; i < c; ++ i ) {
+                if ( Perks[i] == Perk ) {
+                    bFound = true;
+                    break;
+                }
+            }
+            if ( !bFound ) {
+                Perks[Perks.length] = Perk;
+            }
+        }
+        Perks.remove(0, c);
+    }
+    return true;
+}
+
+function String PerksStr(out array<class< ScrnVeterancyTypes> > Perks)
+{
+    local string s;
+    local int i;
+    local class<ScrnVeterancyTypes> Perk;
+
+    if ( Perks.length == 1 )
+        return Perk.default.VeterancyName;
+
+    for ( i = 0; i < Perks.length; ++i ) {
+        Perk = Perks[i];
+        if ( i > 0 ) {
+            s $= " ";
+        }
+        if ( Perk.default.ShortName != "") {
+            s $= Perk.default.ShortName;
+        }
+        else {
+            s $= Perk.default.VeterancyName;
+        }
+    }
+    return s;
+}
+
+
+function SendPerkList(PlayerController Sender)
+{
+    local ClientPerkRepLink L;
+    local class<ScrnVeterancyTypes> Perk;
+    local int i;
+    local string s;
+
+    L = GetPlayerLink(Sender);
+    if ( L == none )
+        return;
+
+    for ( i = 0; i < L.CachePerks.Length; ++i ) {
+        Perk = class<ScrnVeterancyTypes>(L.CachePerks[i].PerkClass);
+        if ( Perk == none )
+            continue;
+
+        if ( Perk.default.bLocked ) {
+            s = "[LOCKED] ";
+        }
+        else {
+            s = "";
+        }
+        s $= string(i + 1) $ ". " $ Perk.default.ShortName $ " - " $ Perk.default.VeterancyName;
+        Sender.ClientMessage(s);
+    }
+}
 
 function SendSquadList(PlayerController Sender)
 {
@@ -103,32 +229,39 @@ static function bool TryStrToInt(string str, out int val)
 
 function int GetVoteIndex(PlayerController Sender, string Key, out string Value, out string VoteInfo)
 {
-    local int result, v;
-    local class<ScrnVeterancyTypes> Perk;
+    local int result, v, i;
+    local string str, errstr;
+    local bool b;
 
-    if ( Key == "LOCKPERK" ) {
+    if ( Key == "LOCKPERK" || Key == "UNLOCKPERK") {
+        b = (Key == "LOCKPERK");
         if ( !Mut.bAllowLockPerkVote ) {
             Sender.ClientMessage(strOptionDisabled);
             return VOTE_NOEFECT;
         }
-        Perk = FindPerkByName(Sender, Value);
-        if ( Perk == none )
-            return VOTE_ILLEGAL;
-        if ( Perk.default.bLocked )
+        if (!StrToPerks(Sender, Value, VotedPerks, errstr) || VotedPerks.Length == 0) {
+            if (errstr != "") {
+                str = strWrongPerk;
+                ReplaceText(str, "%s", errstr);
+                Sender.ClientMessage(str);
+            }
+            SendPerkList(Sender);
+            return VOTE_LOCAL;
+        }
+        for ( i = 0; i < VotedPerks.length; ++i ) {
+            if ( VotedPerks[i].default.bLocked != b )
+                break;
+        }
+        if ( i == VotedPerks.length )
             return VOTE_NOEFECT;
+        VoteInfo = Key @ PerksStr(VotedPerks);
+        if (b) {
+            result = VOTE_PERKLOCK;
+        }
+        else {
+            result = VOTE_PERKUNLOCK;
 
-        result = VOTE_PERKLOCK;
-        Value = Perk.default.VeterancyName;
-    }
-    else if ( Key == "UNLOCKPERK" ) {
-        Perk = FindPerkByName(Sender, Value);
-        if ( Perk == none )
-            return VOTE_ILLEGAL;
-        if ( !Perk.default.bLocked )
-            return VOTE_NOEFECT;
-
-        result = VOTE_PERKUNLOCK;
-        Value = Perk.default.VeterancyName;
+        }
     }
     else if ( Key == "PAUSE" || (Level.Pauser != none && Key == "RESUME") ) {
         if ( !Mut.bAllowPauseVote ) {
@@ -490,13 +623,12 @@ function int GetVoteIndex(PlayerController Sender, string Key, out string Value,
 
 function ApplyVoteValue(int VoteIndex, string VoteValue)
 {
-    local class<ScrnVeterancyTypes> Perk;
+    local int i;
 
     switch ( VoteIndex ) {
         case VOTE_PERKLOCK: case VOTE_PERKUNLOCK:
-            Perk = FindPerkByName(VotingHandler.VoteInitiator, VoteValue);
-            if ( Perk != none ) {
-                Mut.LockPerk(Perk, VoteIndex == VOTE_PERKLOCK);
+            for ( i = 0; i < VotedPerks.length; ++i ) {
+                Mut.LockPerk(VotedPerks[i], VoteIndex == VOTE_PERKLOCK);
             }
             break;
         case VOTE_PAUSE:
@@ -879,7 +1011,7 @@ defaultproperties
 {
     bAlwaysTick=True // tick during game pause
 
-    HelpInfo(0)="%gLOCKPERK%w|%gUNLOCKPERK %y<perk_name> %w Disables/Enables perk at the end of the wave"
+    HelpInfo(0)="%gLOCKPERK%w|%gUNLOCKPERK %y[!] <perk1> [<perk2> ...]%w Disables/Enables perk at the end of the wave"
     HelpInfo(1)="%gLOCKTEAM%w|%gUNLOCKTEAM %w Locks/Unlocks teams. Only invited players may join locked team."
     HelpInfo(2)="%gPAUSE %yX %w Pause the game for X seconds"
     HelpInfo(3)="%gEND TRADE %w Immediately end current trader time and start next wave"
@@ -914,6 +1046,7 @@ defaultproperties
     strRCommands="R_* commands can be executed only by Referee (Admin rights + Tourney Mode)"
     strBlamed="%p blamed %r"
     strBlamedBaron="%p blamed for blaming Baron"
+    strWrongPerk="Wrong perk (%s)"
 
     viResume="RESUME GAME"
     viEndTrade="END TRADER TIME"

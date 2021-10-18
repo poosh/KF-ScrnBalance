@@ -1,9 +1,15 @@
-Warning: ZombieCrawler_HALLOWEEN KF-ZedDiscoThe2ndFloor.ZombieCrawler_HALLOWEEN (Function KFMod.KFMonster.TakeDamage:02FC) Accessed None 'LastDamagedBy'
-
 ? Fix bonus ammo replication bug
 ? ScrN Features crash
 
+?eXpert Challenge Mode (XCM)
+
+ScrN SQL Server
+
 A Blank Page
 
-fix missing laser dot on big zed heads due to lack of ExtendedZCollision on the client side
-Flare and HUsk Gun HDMG
+Flare and Husk Gun HDMG
+
+
+
+ScrnWaves.ini:
+Custom dialogs

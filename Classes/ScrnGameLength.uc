@@ -1,7 +1,7 @@
 Class ScrnGameLength extends Object
     dependson(ScrnWaveInfo)
     PerObjectConfig
-    Config(ScrnWaves);
+    Config(ScrnGames);
 
 var ScrnGameType Game;
 
@@ -14,7 +14,12 @@ var config array<string> Waves;
 var config array<string> Zeds;
 var config bool bLogStats;
 var config bool Doom3DisableSuperMonsters;
+var config bool bRandomTrader;
 var config int TraderSpeedBoost;
+var config int SuicideTime;
+var config int SuicideTimePerWave;
+var config byte NWaves, OTWaves, SDWaves;  // TSC-only
+
 
 struct SHL {
     var byte Difficulty;
@@ -23,6 +28,9 @@ struct SHL {
 var config array<SHL> HardcoreLevel;
 var config int LaterWavePct;
 var config float LaterWaveSpawnCooldown;
+var config byte MinDifficulty, MaxDifficulty;
+var config bool bForceTourney;
+var config int TourneyFlags;
 
 var class<KFMonster> FallbackZed;
 var array<ScrnZedInfo> ZedInfos;
@@ -40,6 +48,7 @@ struct SActiveZed {
 };
 var array<SActiveZed> ActiveZeds;
 
+const SQUAD_BREAK = -1;
 // per-wave data
 struct SSquadMember {
     var int ActiveZedIndex; // item index in ActiveZeds array
@@ -47,6 +56,7 @@ struct SSquadMember {
 };
 
 struct SSquad {
+    var bool bKeepWithPrev;
     var byte MinPlayers;
     var byte MaxPlayers;
     var byte ScaleByPlayers;
@@ -57,6 +67,8 @@ var array<SSquad> SpecialSquads;
 var array<int> PendingSquads;
 var array<int> PendingSpecialSquads;
 
+var transient array < class<KFMonster> > PendingNextSpawnSquad;
+
 var ScrnWaveInfo Wave, NextWave;
 var protected int NextWaveNum;
 var transient int ZedsBeforeSpecial;
@@ -66,6 +78,8 @@ var transient float PlayerCountOverrideForHealth;
 var float WaveEndTime;
 var int WaveCounter;
 
+// Called from InitGame()
+// WARNING! GameReplicationInfo does not yet exist at this moment
 function LoadGame(ScrnGameType MyGame)
 {
     local int i, j;
@@ -73,6 +87,15 @@ function LoadGame(ScrnGameType MyGame)
     local class<KFMonster> zedc;
 
     Game = MyGame;
+
+    if ( Game.GameDifficulty < MinDifficulty ) {
+        Game.ScrnBalanceMut.SetGameDifficulty(MinDifficulty);
+    }
+    else if ( MaxDifficulty != 0 && Game.GameDifficulty > MaxDifficulty ) {
+        Game.ScrnBalanceMut.SetGameDifficulty(MaxDifficulty);
+    }
+
+    Game.SuicideTime = SuicideTime;
 
     for ( i = 0; i < Mutators.length; ++i ) {
         if ( Mutators[i] != "" )  {
@@ -386,6 +409,7 @@ protected function bool LoadNextWave()
     PendingSpecialSquads.length = 0;
     Squads.length = 0;
     SpecialSquads.length = 0;
+    PendingNextSpawnSquad.length = 0;
 
     if ( bLogStats && Wave != none )
         LogStats();
@@ -420,6 +444,13 @@ protected function bool LoadNextWave()
         Game.MaxZombiesOnce = Wave.MaxZombiesOnce;
     else
         Game.MaxZombiesOnce = Game.StandardMaxZombiesOnce;
+
+    if ( Wave.SuicideTime != 0 || Wave.bSuicideTimeReset ) {
+        Game.AddSuicideTime(Wave.SuicideTime, Wave.bSuicideTimeReset);
+    }
+    else if ( SuicideTimePerWave != 0 && NextWaveNum != 0 ) {
+        Game.AddSuicideTime(SuicideTimePerWave, false);
+    }
 
     Game.ScrnGRI.bTraderArrow = Wave.bTraderArrow || Wave.bOpenTrader;
     Game.ScrnGRI.WaveEndRule = Wave.EndRule;
@@ -707,6 +738,11 @@ function float GetWaveEndTime()
 
 function AdjustNextSpawnTime(out float NextSpawnTime)
 {
+    if ( PendingNextSpawnSquad.length > 0 ) {
+        NextSpawnTime = 0.2;
+        return;
+    }
+
     NextSpawnTime /= Wave.SpawnRateMod;
     if( Game.WavePct >= LaterWavePct && Game.NumMonsters >= 16 ) {
         // longer cooldown on later waves if there are already many zeds spawned
@@ -726,19 +762,36 @@ function AdjustNextSpawnTime(out float NextSpawnTime)
 
 function LoadNextSpawnSquad(out array < class<KFMonster> > NextSpawnSquad)
 {
-    if ( ZedsBeforeSpecial <= 0 && SpecialSquads.length > 0 ) {
-        LoadNextSpawnSquadInternal(NextSpawnSquad, SpecialSquads, PendingSpecialSquads, Wave.bRandomSquads);
-        ZedsBeforeSpecial = Wave.ZedsPerSpecialSquad;
-        if ( Wave.bRandomSquads ) {
-            ZedsBeforeSpecial *= 0.85 + 0.3*frand();
+    local int i;
+
+    if ( PendingNextSpawnSquad.length == 0 ) {
+        if ( ZedsBeforeSpecial <= 0 && SpecialSquads.length > 0 ) {
+            LoadNextSpawnSquadInternal(PendingNextSpawnSquad, SpecialSquads, PendingSpecialSquads, Wave.bRandomSquads);
+            ZedsBeforeSpecial = Wave.ZedsPerSpecialSquad;
+            if ( Wave.bRandomSquads ) {
+                ZedsBeforeSpecial *= 0.85 + 0.3*frand();
+            }
+            bLoadedSpecial = true;
         }
-        bLoadedSpecial = true;
+        else {
+            LoadNextSpawnSquadInternal(PendingNextSpawnSquad, Squads, PendingSquads, Wave.bRandomSpecialSquads);
+            ZedsBeforeSpecial -= PendingNextSpawnSquad.length;
+            bLoadedSpecial = false;
+        }
     }
-    else {
-        LoadNextSpawnSquadInternal(NextSpawnSquad, Squads, PendingSquads, Wave.bRandomSpecialSquads);
-        ZedsBeforeSpecial -= NextSpawnSquad.length;
-        bLoadedSpecial = false;
+
+    for (i = 0; i < PendingNextSpawnSquad.Length; ++i) {
+        if ( PendingNextSpawnSquad[i] == class'KFMonster' ) {
+            // squad break
+            NextSpawnSquad.length = i;
+            PendingNextSpawnSquad.remove(0, i + 1);  // remove including KFMonster
+            return;
+        }
+        NextSpawnSquad[i] = PendingNextSpawnSquad[i];
     }
+    // if reached here, PendingNextSpawnSquad is fully copied into NextSpawnSquad
+    NextSpawnSquad.length = i;
+    PendingNextSpawnSquad.length = 0;
 }
 
 protected function LoadNextSpawnSquadInternal(out array < class<KFMonster> > NextSpawnSquad,
@@ -763,10 +816,15 @@ protected function LoadNextSpawnSquadInternal(out array < class<KFMonster> > Nex
             Pending[i] = i;
         }
     }
-    if (bRandom)
+    if (bRandom && !AllSquads[Pending[0]].bKeepWithPrev) {
         i = rand(Pending.length);
-    else
+        while (i > 0 && AllSquads[Pending[i]].bKeepWithPrev) {
+            --i;
+        }
+    }
+    else {
         i = 0;
+    }
     r = Pending[i];
     Pending.remove(i, 1);
 
@@ -800,6 +858,10 @@ function class<KFMonster> ActivateZed(int idx)
     local float r;
     local int i;
 
+    if ( idx == SQUAD_BREAK ) {
+        return class'KFMonster';
+    }
+
     ActiveZeds[idx].WaveSpawns++;
     ActiveZeds[idx].TotalSpawns++;
 
@@ -815,11 +877,13 @@ function class<KFMonster> ActivateZed(int idx)
 
 function bool ParseSquad(string SquadDef, out SSquad Squad)
 {
-    local int i, j, idx, count;
+    local int i, j, k, idx, count;
+    local array<string> blocks;
     local array<string> parts;
     local string s, count_str, alias, fallback;
 
     Squad.Members.length = 0;
+    Squad.bKeepWithPrev = false;
     Squad.MinPlayers = 0;
     Squad.MaxPlayers = 0;
     Squad.ScaleByPlayers = 0;
@@ -829,6 +893,11 @@ function bool ParseSquad(string SquadDef, out SSquad Squad)
 
     // get rid of spaces
     s = Repl(SquadDef, " ", "", true);
+
+    if ( Left(s, 1) == "^" ) {
+        Squad.bKeepWithPrev = true;
+        s = Right(s, Len(s) - 1);
+    }
 
     Divide(s, ":", count_str, s);
     if ( count_str != "" ) {
@@ -842,36 +911,46 @@ function bool ParseSquad(string SquadDef, out SSquad Squad)
         }
     }
 
-    Split(s, "+", parts);
-    for ( i = 0; i < parts.length; ++i ) {
-        s = parts[i];
-        do {
-            if ( !Divide(s, "/", alias, fallback) ) {
-                alias = s;
-                fallback = "";
-            }
-            s = alias;
-            if ( !Divide(s, "*", count_str, alias) ) {
-                count = 1;
-                alias = s;
-            }
-            else {
-                count = int(count_str);
-            }
-            idx = FindActiveZed(alias);
-            s = fallback;
-        } until ( idx != -1 || fallback == "" );
-
-        if ( idx == -1 ) {
-            log("No zeds available to fit " $ parts[i] $ " in " $ SquadDef, class.name);
-            Squad.Members.length = 0;
-            return false;
-        }
-        else {
+    Split(s, "|", blocks);
+    for ( k = 0; k < blocks.length; ++k ) {
+        if ( Squad.Members.length > 0 ) {
             j = Squad.Members.length;
             Squad.Members.insert(j, 1);
-            Squad.Members[j].ActiveZedIndex = idx;
-            Squad.Members[j].Count = count;
+            Squad.Members[j].ActiveZedIndex = SQUAD_BREAK;
+            Squad.Members[j].Count = 1;
+        }
+
+        Split(blocks[k], "+", parts);
+        for ( i = 0; i < parts.length; ++i ) {
+            s = parts[i];
+            do {
+                if ( !Divide(s, "/", alias, fallback) ) {
+                    alias = s;
+                    fallback = "";
+                }
+                s = alias;
+                if ( !Divide(s, "*", count_str, alias) ) {
+                    count = 1;
+                    alias = s;
+                }
+                else {
+                    count = int(count_str);
+                }
+                idx = FindActiveZed(alias);
+                s = fallback;
+            } until ( idx != -1 || fallback == "" );
+
+            if ( idx == -1 ) {
+                log("No zeds available to fit " $ parts[i] $ " in " $ SquadDef, class.name);
+                Squad.Members.length = 0;
+                return false;
+            }
+            else {
+                j = Squad.Members.length;
+                Squad.Members.insert(j, 1);
+                Squad.Members[j].ActiveZedIndex = idx;
+                Squad.Members[j].Count = count;
+            }
         }
     }
     return true;
@@ -1069,4 +1148,5 @@ defaultproperties
     bLogStats=true
     LaterWavePct=70
     LaterWaveSpawnCooldown=1.5
+    bRandomTrader=true
 }

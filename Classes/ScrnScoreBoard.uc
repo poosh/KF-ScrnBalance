@@ -4,6 +4,7 @@ var     localized   string      AssHeaderText;
 var     localized   string      KillsAssSeparator;
 var     localized   string      strPingMax;
 var     localized   string      SpectatorsText;
+var     localized   string      SuicideTimeText;
 
 
 var     material                 AdminIcon, BlameIcon, BigBlameIcon;
@@ -277,8 +278,12 @@ simulated event UpdateScoreBoard(Canvas Canvas)
     else {
         S = WaveString @ (InvasionGameReplicationInfo(GRI).WaveNumber + 1)$"/"$string(InvasionGameReplicationInfo(GRI).FinalWave);
     }
-    S = SkillLevel[Clamp(InvasionGameReplicationInfo(GRI).BaseDifficulty, 0, 7)] $ " | HL="$string(class'ScrnBalance'.default.Mut.HardcoreLevel)
+    S = SkillLevel[Clamp(InvasionGameReplicationInfo(GRI).BaseDifficulty, 0, 7)]
+        $ " | HL="$string(class'ScrnBalance'.default.Mut.HardcoreLevel)
         $ " | " $ S $ " | " $ Level.Title $ " | " $ FormatTime(GRI.ElapsedTime);
+    if ( ScrnGRI != none && ScrnGRI.SuicideTime > 0 ) {
+        S $= " | " $ SuicideTimeText @ FormatTime(max(0, ScrnGRI.SuicideTime - ScrnGRI.ElapsedTime));
+    }
 
     Canvas.TextSize(S, XL,YL);
     Canvas.SetPos( (Canvas.ClipX - XL)/2, HeaderOffsetY );
@@ -600,6 +605,7 @@ defaultproperties
     AssHeaderText="Ass."
     KillsAssSeparator=" + "
     SpectatorsText="Spectators"
+    SuicideTimeText="Suicide in"
     HealthText="Health"
     PointsText="Do$h"
     TimeText="Time"
