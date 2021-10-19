@@ -18,6 +18,7 @@ var config bool bRandomTrader;
 var config int TraderSpeedBoost;
 var config int SuicideTime;
 var config int SuicideTimePerWave;
+var config float SuicideTimePerPlayerMult;
 var config byte NWaves, OTWaves, SDWaves;  // TSC-only
 
 
@@ -94,8 +95,6 @@ function LoadGame(ScrnGameType MyGame)
     else if ( MaxDifficulty != 0 && Game.GameDifficulty > MaxDifficulty ) {
         Game.ScrnBalanceMut.SetGameDifficulty(MaxDifficulty);
     }
-
-    Game.SuicideTime = SuicideTime;
 
     for ( i = 0; i < Mutators.length; ++i ) {
         if ( Mutators[i] != "" )  {
@@ -403,6 +402,7 @@ protected function bool LoadNextWave()
     local SSquad squad;
     local Controller C;
     local KFPlayerController KFPC;
+    local int NumPlayers;
 
     ZedsBeforeSpecial = 0;
     PendingSquads.length = 0;
@@ -410,6 +410,8 @@ protected function bool LoadNextWave()
     Squads.length = 0;
     SpecialSquads.length = 0;
     PendingNextSpawnSquad.length = 0;
+
+    NumPlayers = max(Game.NumPlayers + Game.NumBots, Game.ScrnGRI.FakedPlayers);
 
     if ( bLogStats && Wave != none )
         LogStats();
@@ -445,11 +447,15 @@ protected function bool LoadNextWave()
     else
         Game.MaxZombiesOnce = Game.StandardMaxZombiesOnce;
 
-    if ( Wave.SuicideTime != 0 || Wave.bSuicideTimeReset ) {
-        Game.AddSuicideTime(Wave.SuicideTime, Wave.bSuicideTimeReset);
+    if ( NextWaveNum == 0 ) {
+        Game.AddSuicideTime(SuicideTime * (1.0 + SuicideTimePerPlayerMult * (NumPlayers - 1)), true);
+    }
+    else if ( Wave.SuicideTime != 0 || Wave.bSuicideTimeReset ) {
+        Game.AddSuicideTime(Wave.SuicideTime * (1.0 + Wave.SuicideTimePerPlayerMult * (NumPlayers - 1)),
+                Wave.bSuicideTimeReset);
     }
     else if ( SuicideTimePerWave != 0 && NextWaveNum != 0 ) {
-        Game.AddSuicideTime(SuicideTimePerWave, false);
+        Game.AddSuicideTime(SuicideTimePerWave * (1.0 + SuicideTimePerPlayerMult * (NumPlayers - 1)), false);
     }
 
     Game.ScrnGRI.bTraderArrow = Wave.bTraderArrow || Wave.bOpenTrader;
@@ -766,7 +772,7 @@ function LoadNextSpawnSquad(out array < class<KFMonster> > NextSpawnSquad)
 
     if ( PendingNextSpawnSquad.length == 0 ) {
         if ( ZedsBeforeSpecial <= 0 && SpecialSquads.length > 0 ) {
-            LoadNextSpawnSquadInternal(PendingNextSpawnSquad, SpecialSquads, PendingSpecialSquads, Wave.bRandomSquads);
+            LoadNextSpawnSquadInternal(PendingNextSpawnSquad, SpecialSquads, PendingSpecialSquads, Wave.bRandomSpecialSquads);
             ZedsBeforeSpecial = Wave.ZedsPerSpecialSquad;
             if ( Wave.bRandomSquads ) {
                 ZedsBeforeSpecial *= 0.85 + 0.3*frand();
@@ -774,7 +780,7 @@ function LoadNextSpawnSquad(out array < class<KFMonster> > NextSpawnSquad)
             bLoadedSpecial = true;
         }
         else {
-            LoadNextSpawnSquadInternal(PendingNextSpawnSquad, Squads, PendingSquads, Wave.bRandomSpecialSquads);
+            LoadNextSpawnSquadInternal(PendingNextSpawnSquad, Squads, PendingSquads, Wave.bRandomSquads);
             ZedsBeforeSpecial -= PendingNextSpawnSquad.length;
             bLoadedSpecial = false;
         }
@@ -1048,7 +1054,7 @@ function RecalculateSpawnChances()
 
 function bool ShouldBoostAmmo()
 {
-    return Wave != none && Wave.EndRule == RULE_GrabAmmo;
+    return Wave != none && (Wave.EndRule == RULE_GrabAmmo || Wave.bMoreAmmoBoxes);
 }
 
 function float GetBountyScale()

@@ -13,7 +13,7 @@ class ScrnBalance extends Mutator
 #exec OBJ LOAD FILE=ScrnAch_T.utx
 
 
-const VERSION = 96700;
+const VERSION = 96701;
 
 var ScrnBalance Mut; // pointer to self to use in static functions, i.e class'ScrnBalance'.default.Mut
 
@@ -763,13 +763,8 @@ function SetupPickups(optional bool bReduceAmount, optional bool bBoostAmount)
         W = 0.15;
         A = 0.35;
     }
-    else if ( KF.GameDifficulty >= 4.0 ) {
-        // Hard
-        W = 0.25;
-        A = 0.50;
-    }
     else {
-        // Normal
+        // Hard and below
         W = 0.35;
         A = 0.50;
     }
@@ -3133,15 +3128,15 @@ simulated function Destroyed()
 // Limits placed pipebomb count to perk's capacity
 function DestroyExtraPipebombs()
 {
-    local PipeBombProjectile P;
+    local ScrnPipeBombProjectile P;
     local KFPlayerReplicationInfo KFPRI;
     local array<KFPlayerReplicationInfo> KFPRIArray;
     local array<byte> PipeBombCapacity;
     local int i;
 
-    foreach DynamicActors(Class'PipeBombProjectile',P)
+    foreach DynamicActors(Class'ScrnPipeBombProjectile',P)
     {
-        if( !P.bHidden && P.Instigator != none )
+        if( !P.bHidden && P.Instigator != none && P.bDetectEnemies )
         {
             KFPRI = KFPlayerReplicationInfo(P.Instigator.PlayerReplicationInfo);
             if ( KFPRI == none || KFPRI.ClientVeteranSkill == none )

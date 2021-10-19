@@ -19,6 +19,16 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+### v9.67.01
+- Reduced shotgun penetration after hitting medium/big zeds.
+- Fixed a bug where surviving a game with no boss lead to a loss.
+- Fixed an issue where `bRandomSquads` and `bRandomSpecialSquads` were messed up with each other.
+- Added `SuicideTimePerPlayerMult` in both ScrnGames.ini and ScrnWaves.ini
+- Added `bMoreAmmoBoxes` to ScrnWaves.ini. Now ammo boost can be set for any wave, not only `RULE_GrabAmmo`.
+- Fixed an issue where a suicide bomb counted as a regular pipebomb and could be triggered at wave start due to limit
+- Added XCM Wave7 (W8 and W9 are not ready yet)
+
+
 ### v9.67
 **WARNING! ScrnWaves.ini got split on ScrnGames.ini, ScrnZeds.ini and ScrnWaves.ini**
 #### ScrnGames.ini

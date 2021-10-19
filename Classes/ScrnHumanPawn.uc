@@ -725,12 +725,10 @@ function RecalcAmmo()
 
 function DestroyMyPipebombs(optional int CountToLeave)
 {
-    local PipeBombProjectile P;
+    local ScrnPipeBombProjectile P;
 
-    foreach DynamicActors(Class'PipeBombProjectile',P)
-    {
-        if( !P.bHidden && P.Instigator==self )
-        {
+    foreach DynamicActors(Class'ScrnPipeBombProjectile',P) {
+        if( !P.bHidden && P.Instigator==self && P.bDetectEnemies ) {
             if ( CountToLeave > 0 )
                 CountToLeave--;
             else

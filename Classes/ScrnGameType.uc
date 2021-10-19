@@ -1835,6 +1835,60 @@ function GiveStartingCash(PlayerController PC)
         ScrnPlayerController(PC).StartCash = PC.PlayerReplicationInfo.Score; // prevent tossing bonus too
 }
 
+function bool CheckEndGame(PlayerReplicationInfo Winner, string Reason)
+{
+    local Controller P;
+    local PlayerController Player;
+    local KFSteamStatsAndAchievements KFAch;
+    local bool bSetAchievement;
+    local string MapName;
+
+    EndTime = Level.TimeSeconds + EndTimeDelay;
+
+    if ( WaveNum > FinalWave || (!bUseEndGameBoss && WaveNum == FinalWave) ) {
+        GameReplicationInfo.Winner = Teams[0];
+        ScrnGRI.EndGameType = 2;
+
+        if ( GameDifficulty >= 2.0 ) {
+            bSetAchievement = true;
+            // Get the MapName out of the URL
+            MapName = GetCurrentMapName(Level);
+        }
+    }
+    else  {
+        ScrnGRI.EndGameType = 1;
+    }
+
+    if ( (GameRulesModifiers != None) && !GameRulesModifiers.CheckEndGame(Winner, Reason) ) {
+        ScrnGRI.EndGameType = 0;
+        return false;
+    }
+
+    for ( P = Level.ControllerList; P != none; P = P.nextController ) {
+        Player = PlayerController(P);
+        if ( Player != none ) {
+            Player.ClientSetBehindView(true);
+            Player.ClientGameEnded();
+
+            if ( bSetAchievement ) {
+                KFAch = KFSteamStatsAndAchievements(Player.SteamStatsAndAchievements);
+                if ( KFAch != none ) {
+                    KFAch.WonGame(MapName, GameDifficulty, FinalWave >= 10);
+                }
+            }
+        }
+
+        P.GameHasEnded();
+    }
+
+    if ( CurrentGameProfile != none )  {
+        // do not set focus on individial player
+        CurrentGameProfile.bWonMatch = false;
+    }
+
+    return true;
+}
+
 // C&CI from Deathmatch strip color tags before name length check
 function ChangeName(Controller Other, string S, bool bNameChange)
 {
@@ -2887,7 +2941,7 @@ State MatchInProgress
         WaveNum++;
         WavePct = 100 * (WaveNum + 1) / FinalWave;
 
-        if ( WaveNum > FinalWave || (!bUseEndGameBoss && WaveNum >= FinalWave) ) {
+        if ( WaveNum > FinalWave || (!bUseEndGameBoss && WaveNum == FinalWave) ) {
             EndGame(None, "TimeLimit");
             return;
         }
@@ -2990,9 +3044,9 @@ State MatchInProgress
                 ShopList[i].OpenShop();
         }
 
-        if ( KFGameReplicationInfo(GameReplicationInfo).CurrentShop == none )
+        if ( ScrnGRI.CurrentShop == none )
             SelectShop();
-        KFGameReplicationInfo(GameReplicationInfo).CurrentShop.OpenShop();
+        ScrnGRI.CurrentShop.OpenShop();
 
         // Tell all players to start showing the path to the trader
         for( C=Level.ControllerList; C!=None; C=C.NextController ) {

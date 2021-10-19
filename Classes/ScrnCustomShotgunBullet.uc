@@ -139,9 +139,9 @@ simulated function float ZedPenDamageReduction(KFMonster Monster)
 
 defaultproperties
 {
-     BigZedPenDmgReduction=0.500000
+     BigZedPenDmgReduction=0.33
      BigZedMinHealth=1000
-     MediumZedPenDmgReduction=0.750000
+     MediumZedPenDmgReduction=0.50
      MediumZedMinHealth=500
      MaxPenetrations=3
      PenDamageReduction=0.700000

@@ -21,7 +21,7 @@ simulated function float ZedPenDamageReduction(KFMonster Monster)
 
 defaultproperties
 {
-     BigZedPenDmgReduction=0.75  // buff from 0.50 in v9.60.3
-     MediumZedPenDmgReduction=1.000000
+     BigZedPenDmgReduction=0.75
+     MediumZedPenDmgReduction=0.75
      MyDamageType=Class'KFMod.DamTypeBenelli'
 }
