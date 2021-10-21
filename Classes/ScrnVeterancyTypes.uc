@@ -508,10 +508,12 @@ static function AddDefaultInventory(KFPlayerReplicationInfo KFPRI, Pawn P)
     local int ExtraAmmo;
     local float SellValue;
     local ScrnBalance Mut;
+    local bool bBalance;
 
     Mut = class'ScrnBalance'.default.Mut;
+    bBalance = Mut.SpawnBalanceRequired();
 
-    if ( Mut.bUseExpLevelForSpawnInventory && !Mut.SpawnBalanceRequired() )
+    if ( Mut.bUseExpLevelForSpawnInventory && !bBalance )
         level = KFPRI.ClientVeteranSkillLevel;
     else
         level = GetBonusLevel(KFPRI.ClientVeteranSkillLevel);
@@ -526,8 +528,8 @@ static function AddDefaultInventory(KFPlayerReplicationInfo KFPRI, Pawn P)
         if ( default.DefaultInventory[i].PickupClass != none
                 && level >= default.DefaultInventory[i].MinPerkLevel
                 && level <= default.DefaultInventory[i].MaxPerkLevel
-                && (default.DefaultInventory[i].Achievement == ''
-                    || class'ScrnAchCtrl'.static.IsAchievementUnlocked(L, default.DefaultInventory[i].Achievement)) )
+                && (default.DefaultInventory[i].Achievement == '' || (!bBalance
+                    && class'ScrnAchCtrl'.static.IsAchievementUnlocked(L, default.DefaultInventory[i].Achievement))) )
         {
             ExtraAmmo = max(0, default.DefaultInventory[i].AmmoPerLevel * (level - default.DefaultInventory[i].MinPerkLevel));
             if ( !Mut.bSpawn0 )

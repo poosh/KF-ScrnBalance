@@ -19,6 +19,11 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+### v9.67.03
+- Added last two missing waves in XCM (w8 and 9)
+- Balanced XCM spawns (no more BL + HU spawns)
+- Fixed a bug where players spawned with achievement-related "candies" in TSC or/and Tourney
+
 ### v9.67.01
 - Reduced shotgun penetration after hitting medium/big zeds.
 - Fixed a bug where surviving a game with no boss lead to a loss.
