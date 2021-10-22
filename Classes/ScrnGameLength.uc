@@ -5,6 +5,7 @@ Class ScrnGameLength extends Object
 
 var ScrnGameType Game;
 
+var config int GameVersion;
 var config string GameTitle;
 var config string Author;
 var config float BountyScale;
@@ -199,6 +200,11 @@ function LoadGame(ScrnGameType MyGame)
     if ( Game.bUseEndGameBoss ) {
         Game.FinalWave--;  // the boss wave is after the final wave, e.g., wave 11/10
     }
+}
+
+function bool VersionCheck()
+{
+    return GameVersion == Wave.GameVersion || Wave.GameVersion == 0;
 }
 
 function AddVoting()

@@ -26,6 +26,7 @@ enum EDoorControl {
     DOOR_Randomize
 };
 
+var config int GameVersion;
 var config string Header, Title, Message, TraderMessage;
 var config int TraderTime;
 var config bool bOpenTrader;

@@ -1,5 +1,7 @@
 class ScrnLobbyMenu extends SRLobbyMenu;
 
+var localized string strBrokenGame;
+
 function AddPlayer( KFPlayerReplicationInfo PRI, int Index, Canvas C )
 {
     local float Top;
@@ -197,8 +199,17 @@ DoneIt:
         s = ScrnGRI.GameName;
         if ( ScrnGRI.GameTitle != "" ) {
             s $= ": " $ ScrnGRI.GameTitle;
-            if ( ScrnGRI.GameAuthor != "" && ScrnGRI.GameAuthor != "ScrN" ) {
-                s $= " (by " $ ScrnGRI.GameAuthor $ ")";
+            if ( ScrnGRI.GameVersion < 0 ) {
+                s $= strBrokenGame;
+            }
+            else {
+                if ( ScrnGRI.GameVersion > 0 ) {
+                    s @= class'ScrnFunctions'.static.VersionStr(ScrnGRI.GameVersion);
+                }
+
+                if ( ScrnGRI.GameAuthor != "" && ScrnGRI.GameAuthor != "ScrN" ) {
+                    s $= " (c) " $ ScrnGRI.GameAuthor;
+                }
             }
         }
         s $= " @ " $  PC.Level.Title;
@@ -226,6 +237,8 @@ function bool ShowPerkMenu(GUIComponent Sender)
 
 defaultproperties
 {
+    strBrokenGame = "(BAD GAME MODE!)"
+
      Begin Object Class=ScrnLobbyFooter Name=BuyFooter
          RenderWeight=0.300000
          TabOrder=8

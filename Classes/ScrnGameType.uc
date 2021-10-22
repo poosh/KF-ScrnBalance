@@ -40,6 +40,8 @@ var transient int WavePlayerCount; // alive player count at the beginning of the
 var transient int AlivePlayerCount, AliveTeamPlayerCount[2];
 var array<KFMonster> Bosses;
 var transient bool bBossSpawned;
+var transient float ZedLastSpawnTime;
+var float KillRemainingZedsCooldown;  // time after LastSpawnTime when games tries to kill the remaining zeds
 var int MaxSpawnAttempts, MaxSpecialSpawnAttempts; // maximum spawn attempts before deleting the squad
 var float SpawnRatePlayerMod;  // per-player zed spawn rate increase
 var int WavePct;  // Current wave's percentage to the final wave.
@@ -142,6 +144,14 @@ function InitGameReplicationInfo()
     }
 
     if ( ScrnGameLength != none ) {
+        if ( ScrnGameLength.VersionCheck() ) {
+            ScrnGRI.GameVersion = ScrnGameLength.GameVersion;
+        }
+        else {
+            ScrnGRI.GameVersion = -1;
+            log("Bad game version! Game " $ class'ScrnFunctions'.static.VersionStr(ScrnGameLength.GameVersion)
+                    $ ", Wave " $ class'ScrnFunctions'.static.VersionStr(ScrnGameLength.Wave.GameVersion), class.name);
+        }
         ScrnGRI.GameTitle = ScrnGameLength.GameTitle;
         ScrnGRI.GameAuthor = ScrnGameLength.Author;
         ScrnGRI.FakedPlayers = FakedPlayers;
@@ -2365,6 +2375,7 @@ function int SpawnSquad(ZombieVolume ZVol, out array< class<KFMonster> > Squad, 
     }
 
     if( numspawned>0 ) {
+        ZedLastSpawnTime = Level.TimeSeconds;
         ZVol.LastSpawnTime = Level.TimeSeconds;
         ZVol.LastFailedSpawnTime = 0;
     }
@@ -2647,7 +2658,14 @@ State MatchInProgress
 
         Super.BeginState();
 
+        ElapsedTime = 0;  // should be already reset, but just to be sure
+
         if ( ScrnGameLength != none ) {
+            if ( !ScrnGameLength.VersionCheck() ) {
+                ScrnBalanceMut.BroadcastMessage("^1BROKEN GAME! Tell admins to check ScrnGames/Waves/Zeds.ini",
+                        true);
+            }
+
             if (!ScrnGameLength.LoadWave(WaveNum)) {
                 DoWaveEnd();
             }
@@ -2710,7 +2728,7 @@ State MatchInProgress
              // all monsters spawned
             if ( ScrnGameLength == none && NumMonsters <= 0 )
                 DoWaveEnd();
-            else if ( NumMonsters <= 5 )
+            else if ( NumMonsters <= 5 && Level.TimeSeconds > ZedLastSpawnTime + KillRemainingZedsCooldown )
                 KillRemainingZeds(false);
         }
         else if ( Level.TimeSeconds > NextMonsterTime
@@ -3128,6 +3146,7 @@ defaultproperties
     MaxSpawnAttempts=3
     MaxSpecialSpawnAttempts=10
     SpawnRatePlayerMod=0.25
+    KillRemainingZedsCooldown=15.0
     BoringStages[0]=(SpawnPeriod=3.0,MinSpawnTime=1.5)  // SpawnPeriod may be further limited by KFLevelRules
     BoringStages[1]=(SpawnPeriod=1.0,MinSpawnTime=1.0)
     BoringStages[2]=(SpawnPeriod=0.5,MinSpawnTime=0.5)

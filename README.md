@@ -19,6 +19,12 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+### v9.67.04
+- Fixed an issue when last spawned zeds can be immediately killed by the game
+- XCM: Rebalanced Wave 10 and added the boss wave. Patriarch has +50% hp in XCM.
+- XCM: lowered suicide timer. Solo player has 2:30 per wave; +30s per player.
+- Added `GameVersion` to both ScrnGames.ini and ScrnWaves.ini for version tracking and sync validation.
+
 ### v9.67.03
 - Added last two missing waves in XCM (w8 and 9)
 - Balanced XCM spawns (no more BL + HU spawns)

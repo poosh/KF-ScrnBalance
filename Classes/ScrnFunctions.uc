@@ -38,6 +38,33 @@ static function string RPad(coerce string src, int to_len, optional string with)
     return src $ left(default.pad, pad_len);
 }
 
+// Converts version number in user-friendly string, e.g. 1.23 or 1.23.45
+static function string VersionStr(int v, optional bool bClean) {
+    local string s;
+    local int major, minor, patch;
+
+    // for some reason, UnrealScript has operator % declared only for float not for int.
+    // So we can't use % here due to precision
+    if (v >= 10000) {
+        major = v / 10000;  v -= major * 10000;
+        minor = v / 100;    v -= minor * 100;
+        patch = v;
+    }
+    else {
+        major = v / 100;    v -= major * 100;
+        minor = v;
+    }
+
+    if ( !bClean ) {
+        s $= "v";
+    }
+    s $= major $ "." $ LPad(string(minor), 2, "0");
+    if ( patch > 0) {
+        s $= "." $ LPad(string(patch), 2, "0");
+    }
+    return s;
+}
+
 
 defaultproperties
 {

@@ -259,6 +259,9 @@ simulated event UpdateScoreBoard(Canvas Canvas)
     if ( ScrnGRI != none ) {
         if ( ScrnGRI.GameTitle != "" ) {
             S $= ": " $ ScrnGRI.GameTitle;
+            if ( ScrnGRI.GameVersion > 0 ) {
+                s @= class'ScrnFunctions'.static.VersionStr(ScrnGRI.GameVersion);
+            }
         }
         if ( ScrnGRI.WaveTitle != "" )
             S $= " | " $ ScrnGRI.WaveTitle;

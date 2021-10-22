@@ -1020,7 +1020,7 @@ event ClientMessage( coerce string S, optional Name Type )
         return;
 
     if ( Type == 'Log' ) {
-        log(S, 'ScrnBalance');
+        log(Mut.StripColorTags(S), 'ScrnBalance');
         Type = '';
     }
 

@@ -13,14 +13,14 @@ class ScrnBalance extends Mutator
 #exec OBJ LOAD FILE=ScrnAch_T.utx
 
 
-const VERSION = 96703;
+const VERSION = 96704;
 
 var ScrnBalance Mut; // pointer to self to use in static functions, i.e class'ScrnBalance'.default.Mut
 
 var const string BonusCapGroup;
 
 var localized string strBonusLevel;
-var localized string strVersion;
+var deprecated localized string strVersion;
 var localized string strStatus, strStatus2;
 var localized string strSrvWarning, strSrvWarning2;
 var localized string strBetaOnly;
@@ -482,23 +482,7 @@ static function MessageBonusLevel(PlayerController KPC)
 
 static final function string GetVersionStr()
 {
-    local String msg;
-    local int v;
-    local byte major, minor, patch;
-
-    msg = default.strVersion;
-    v = VERSION;
-    // for some reason, UnrealScript has operator % declared only for float not for int.
-    // So we can't use % here do to precision
-    major = v / 10000; v -= major * 10000;
-    minor = v / 100;   v -= minor * 100;
-    patch = v;
-
-    ReplaceText(msg, "%m", string(major));
-    ReplaceText(msg, "%n", class'ScrnFunctions'.static.LPad(minor, 2, "0"));
-    ReplaceText(msg, "%p", string(patch));
-
-    return msg;
+    return class'ScrnFunctions'.static.VersionStr(VERSION);
 }
 static function MessageVersion(PlayerController PC)
 {
@@ -581,7 +565,7 @@ function BroadcastMessage(string Msg, optional bool bSaveToLog)
     local name MsgType;
 
     if ( bSaveToLog) {
-        log(Msg, 'ScrnBalance');
+        log(StripColorTags(Msg), 'ScrnBalance');
         MsgType = 'Log';
     }
 
@@ -3398,7 +3382,6 @@ defaultproperties
     bAllowWeaponLock=True
     bAutoKickOffPerkPlayers=True
     strAutoKickOffPerk="You have been auto kicked from the server for playing without a perk. Type RECONNECT in the console to join the server again and choose a perk."
-    strVersion="v%m.%n.%p"
 
     bLeaveCashOnDisconnect=True
     StartCashNormal=250

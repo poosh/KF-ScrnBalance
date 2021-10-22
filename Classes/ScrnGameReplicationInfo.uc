@@ -1,10 +1,12 @@
 class ScrnGameReplicationInfo extends KFGameReplicationInfo;
 
 var string GameTitle, GameAuthor;
+var int GameVersion;
 var string WaveHeader, WaveTitle, WaveMessage;
 var int WaveCounter;
 var int SuicideTime;  // the value of ElapsedTime when team suicides. 0 - disabled
 var transient int ClientSuicideTime, NextSuicideCheckTime;
+var transient int EndGameCounter;
 var byte WaveEndRule;
 var bool bTraderArrow;
 
@@ -14,7 +16,7 @@ var byte FakedPlayers, FakedAlivePlayers;
 replication
 {
     reliable if( bNetInitial && Role == ROLE_Authority )
-        GameTitle, GameAuthor;
+        GameTitle, GameAuthor, GameVersion;
 
     reliable if( (bNetInitial || bNetDirty) && Role == ROLE_Authority )
         WaveHeader, WaveTitle, WaveMessage, WaveEndRule, bTraderArrow;
@@ -26,6 +28,25 @@ replication
         FakedPlayers, FakedAlivePlayers;
 }
 
+simulated function PostNetBeginPlay()
+{
+    local PlayerReplicationInfo PRI;
+
+    Level.GRI = self;
+
+    if ( VoiceReplicationInfo == None )
+        foreach DynamicActors(class'VoiceChatReplicationInfo', VoiceReplicationInfo)
+            break;
+
+    SetTimer(Level.TimeDilation, true);
+
+    foreach DynamicActors(class'PlayerReplicationInfo',PRI)
+        AddPRI(PRI);
+
+    if ( Level.NetMode == NM_Client )
+        TeamSymbolNotify();
+}
+
 simulated function Timer()
 {
     super.Timer();
@@ -33,6 +54,14 @@ simulated function Timer()
     if ( Level.NetMode != NM_DedicatedServer ) {
         if ( SuicideTime > 0 && (ElapsedTime >= NextSuicideCheckTime || ClientSuicideTime != SuicideTime) ) {
             CheckSuicideMsg();
+        }
+        if ( EndGameType > 0 ) {
+            if (++EndGameCounter == 5) {
+                if ( EndGameType == 2 ) {
+                    // won the game = get rid of suicide bombs
+                    class'ScrnSuicideBomb'.static.DisintegrateAll(Level);
+                }
+            }
         }
     }
 }
