@@ -4,14 +4,13 @@ var string GameTitle, GameAuthor;
 var int GameVersion;
 var string WaveHeader, WaveTitle, WaveMessage;
 var int WaveCounter;
-var int SuicideTime;  // the value of ElapsedTime when team suicides. 0 - disabled
-var transient int ClientSuicideTime, NextSuicideCheckTime;
-var transient int EndGameCounter;
+var int EndGameCounter;
 var byte WaveEndRule;
 var bool bTraderArrow;
 
 var byte FakedPlayers, FakedAlivePlayers;
 
+var class<LocalMessage> RemainingTimeMsg;
 
 replication
 {
@@ -22,97 +21,124 @@ replication
         WaveHeader, WaveTitle, WaveMessage, WaveEndRule, bTraderArrow;
 
     reliable if( (bNetInitial || bNetDirty) && Role == ROLE_Authority )
-        WaveCounter, SuicideTime;
+        WaveCounter;
 
     reliable if( (bNetInitial || bNetDirty) && Role == ROLE_Authority )
         FakedPlayers, FakedAlivePlayers;
 }
 
+simulated function PostBeginPlay()
+{
+    super.PostBeginPlay();
+
+    // Level.TimeDilation does NOT affect KFGameType's timer rate, which is always 1.1. Same here.
+    SetTimer(1.1, true);
+}
+
 simulated function PostNetBeginPlay()
 {
-    local PlayerReplicationInfo PRI;
+    super.PostNetBeginPlay();
 
-    Level.GRI = self;
-
-    if ( VoiceReplicationInfo == None )
-        foreach DynamicActors(class'VoiceChatReplicationInfo', VoiceReplicationInfo)
-            break;
-
-    SetTimer(Level.TimeDilation, true);
-
-    foreach DynamicActors(class'PlayerReplicationInfo',PRI)
-        AddPRI(PRI);
-
-    if ( Level.NetMode == NM_Client )
-        TeamSymbolNotify();
+    SetTimer(1.1, true);
 }
 
 simulated function Timer()
 {
-    super.Timer();
+    local int i;
+    local PlayerReplicationInfo OldHolder[2];
+    local Controller C;
+    local bool bTimeSync, bForceDisplay;
 
-    if ( Level.NetMode != NM_DedicatedServer ) {
-        if ( SuicideTime > 0 && (ElapsedTime >= NextSuicideCheckTime || ClientSuicideTime != SuicideTime) ) {
-            CheckSuicideMsg();
+    if ( Level.NetMode == NM_Client ) {
+        if ( bMatchHasBegun ) {
+            ElapsedTime++;
         }
+
+        if ( RemainingMinute != 0 ) {
+            bTimeSync = true;
+            bForceDisplay = abs(RemainingMinute - RemainingTime) >= 60;
+            RemainingTime = RemainingMinute;
+            RemainingMinute = 0;
+        }
+        if ( RemainingTime > 0 && !bStopCountDown ) {
+            RemainingTime--;
+            if ( bTimeSync || ElapsedTime == 1 ) {
+                ShowTimeMsg(bForceDisplay);
+            }
+        }
+
+        if ( !bTeamSymbolsUpdated )
+            TeamSymbolNotify();
+
         if ( EndGameType > 0 ) {
-            if (++EndGameCounter == 5) {
+            EndGameCounter++;
+            if (EndGameCounter == 5) {
                 if ( EndGameType == 2 ) {
                     // won the game = get rid of suicide bombs
+                    // do it locally to show the disintegration effect. At this moment, server replication is halted.
                     class'ScrnSuicideBomb'.static.DisintegrateAll(Level);
                 }
             }
         }
     }
+    else if ( Level.NetMode != NM_Standalone ) {
+        OldHolder[0] = FlagHolder[0];
+        OldHolder[1] = FlagHolder[1];
+        FlagHolder[0] = None;
+        FlagHolder[1] = None;
+        for ( i=0; i<PRIArray.length; i++ )
+            if ( (PRIArray[i].HasFlag != None) && (PRIArray[i].Team != None) )
+                FlagHolder[PRIArray[i].Team.TeamIndex] = PRIArray[i];
+
+        for ( i=0; i<2; i++ )
+            if ( OldHolder[i] != FlagHolder[i] )
+            {
+                for ( C=Level.ControllerList; C!=None; C=C.NextController )
+                    if ( PlayerController(C) != None )
+                        PlayerController(C).ClientUpdateFlagHolder(FlagHolder[i],i);
+            }
+    }
 }
 
-simulated function CheckSuicideMsg()
+simulated function ShowTimeMsg(optional bool bForceDisplay)
 {
     local PlayerController PC;
-    local int TimeLeft, DisplayDuration;
-    local bool bTimeUpdated;
 
-    bTimeUpdated = ClientSuicideTime != SuicideTime;
-    ClientSuicideTime = SuicideTime;
-    if ( SuicideTime == 0 )
+    if ( RemainingTimeMsg == none || Level.NetMode == NM_DedicatedServer )
         return;
-
-    TimeLeft = SuicideTime - ElapsedTime;
-    if ( TimeLeft >= 3600 ) {
-        NextSuicideCheckTime = TimeLeft - 3600;
-        return;
-    }
-
-    if ( TimeLeft <= 60 ) {
-        DisplayDuration = TimeLeft + 10;
-        NextSuicideCheckTime = ElapsedTime + DisplayDuration;
-    }
-    else {
-        DisplayDuration = 10;
-        // display every 5 minutes if T > 5m, or every minute if T < 5m;
-        if ( TimeLeft > 300 ) {
-            NextSuicideCheckTime = SuicideTime - TimeLeft / 300 * 300;
-        }
-        else {
-            NextSuicideCheckTime = SuicideTime - TimeLeft / 60 * 60;
-        }
-
-        if ( NextSuicideCheckTime - ElapsedTime < 2*DisplayDuration ) {
-            return; // too close to the next display time - ignore for now
-        }
-    }
 
     PC = Level.GetLocalPlayerController();
     if ( PC == none )
         return;
 
-    class'ScrnSuicideMsg'.default.Lifetime = DisplayDuration;
-    PC.ReceiveLocalizedMessage(class'ScrnSuicideMsg', 0, PC.PlayerReplicationInfo, , self);
+    if ( RemainingTime >= 3600 )
+        return;
+
+    if ( RemainingTime <= 60 ) {
+        RemainingTimeMsg.default.Lifetime = RemainingTime + 10;
+        if ( RemainingTime < 30 ) {
+            RemainingTimeMsg.default.Lifetime += 10;
+        }
+    }
+    else {
+        if ( !bForceDisplay ) {
+            // display every five minutes, or every minute during the last 5m
+            if ( (RemainingTime > 300 && class'ScrnFunctions'.static.mod(RemainingTime, 300) != 0)
+                    || class'ScrnFunctions'.static.mod(RemainingTime, 60) != 0 )
+            {
+                return;
+            }
+        }
+        RemainingTimeMsg.default.Lifetime = 10;
+    }
+
+    PC.ReceiveLocalizedMessage(RemainingTimeMsg, 0, PC.PlayerReplicationInfo, , self);
 }
 
 
 defaultproperties
 {
+    RemainingTimeMsg=class'ScrnBalanceSrv.ScrnSuicideMsg'
     WaveEndRule=0 // RULE_KillEmAll
     bTraderArrow=True
 }

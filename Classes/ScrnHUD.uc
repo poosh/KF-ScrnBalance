@@ -1177,7 +1177,7 @@ simulated function UpdateHud()
     TeamColors[1].A = KFHUDAlpha;
     TextColors[0].A = KFHUDAlpha;
     TextColors[1].A = KFHUDAlpha;
-        
+
     if( PawnOwner == none ) {
         super.UpdateHud();
         return;
@@ -2186,7 +2186,7 @@ simulated function Tick(float deltaTime)
     if ( PulseAlpha < 100 )
         PulseAlpha = 250;
     else
-        PulseAlpha -= PulseRate * deltaTime;
+        PulseAlpha -= PulseRate * deltaTime / Level.TimeDilation;
 
     if ( bXPBonusFadingOut ) {
         CoolPerkAlpha -= XPBonusFadeRate * deltaTime;

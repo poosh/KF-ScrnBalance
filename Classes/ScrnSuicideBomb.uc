@@ -95,7 +95,7 @@ defaultproperties
 {
     Physics=PHYS_None
     bDetectEnemies=false
-    Damage=10000
+    Damage=6660
     bCollideWorld=false
     bCollideActors=false
     bBlockActors=false

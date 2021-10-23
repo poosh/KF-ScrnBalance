@@ -26,16 +26,18 @@ static function RenderComplexMessage(
     local String str;
 
     ScrnGRI = ScrnGameReplicationInfo(OptionalObject);
-    if ( ScrnGRI == none || ScrnGRI.SuicideTime == 0 )
+    if ( ScrnGRI == none || ScrnGRI.bStopCountDown )
         return;
-    PC  = ScrnPlayerController(RelatedPRI_1.Owner);
-    if ( PC == none || PC.Pawn == none || PC.Pawn.Health <= 0 )
+    PC = ScrnPlayerController(RelatedPRI_1.Owner);
+    if ( PC == none )
+        return;
+    if ( !RelatedPRI_1.bIsSpectator && (PC.Pawn == none || PC.Pawn.Health <= 0) )
         return;
     hud = ScrnHUD(PC.myHud);
     if ( hud == none )
         return;
 
-    TimeLeft = max(ScrnGRI.SuicideTime - ScrnGRI.ElapsedTime, 0);
+    TimeLeft = ScrnGRI.RemainingTime;
     if ( TimeLeft >= 3600 )
         return;
 
@@ -44,7 +46,7 @@ static function RenderComplexMessage(
         Seconds = TimeLeft;
         C.DrawColor = default.CriticalColor;
         C.DrawColor.A = hud.PulseAlpha;
-        if ( /*TimeLeft > 0 && */ hud.PulseAlpha > default.OldValue) {
+        if ( hud.PulseAlpha > default.OldValue) {
             // beep on pulse's peek
             PC.Pawn.PlaySound(class'ScrnSuicideBomb'.default.BeepSound, SLOT_Misc, 2.0, , 150.0);
         }

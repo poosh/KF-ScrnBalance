@@ -65,6 +65,14 @@ static function string VersionStr(int v, optional bool bClean) {
     return s;
 }
 
+// returns a % b.
+// The native operator % is defined only for float (wtf?), which doesn't ensure precission.
+// Use mod(a, b) only if the precission is a must-have. Otherwise, use the native operator, which performs faster.
+static function int Mod(int a, int b)
+{
+    return a - a / b * b;
+}
+
 
 defaultproperties
 {

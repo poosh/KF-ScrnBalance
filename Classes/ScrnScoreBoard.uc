@@ -284,8 +284,8 @@ simulated event UpdateScoreBoard(Canvas Canvas)
     S = SkillLevel[Clamp(InvasionGameReplicationInfo(GRI).BaseDifficulty, 0, 7)]
         $ " | HL="$string(class'ScrnBalance'.default.Mut.HardcoreLevel)
         $ " | " $ S $ " | " $ Level.Title $ " | " $ FormatTime(GRI.ElapsedTime);
-    if ( ScrnGRI != none && ScrnGRI.SuicideTime > 0 ) {
-        S $= " | " $ SuicideTimeText @ FormatTime(max(0, ScrnGRI.SuicideTime - ScrnGRI.ElapsedTime));
+    if ( ScrnGRI != none && !ScrnGRI.bStopCountDown ) {
+        S $= " | " $ SuicideTimeText @ FormatTime(ScrnGRI.RemainingTime);
     }
 
     Canvas.TextSize(S, XL,YL);

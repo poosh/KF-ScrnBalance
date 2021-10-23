@@ -19,6 +19,11 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+### v9.67.05
+- Fixed Suicide Timer being out of sync between the server and clients.
+- `SUICIDE` console command triggers the suicide bomb if such exists. That can be used as a last resort to kill the
+  remaining zeds via sacrificing.
+
 ### v9.67.04
 - Fixed an issue when last spawned zeds can be immediately killed by the game
 - XCM: Rebalanced Wave 10 and added the boss wave. Patriarch has +50% hp in XCM.

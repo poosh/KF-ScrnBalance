@@ -70,7 +70,7 @@ enum EDropKind {
 var bool bZedTimeEnabled;  // set it to false to completely disable the Zed Time in the game
 var transient byte PlayerSpawnTraderTeleportIndex;
 var name PlayerStartEvent;
-var int SuicideTime;
+var bool bSuicideTimer;
 
 
 // InitGame() gets called before PreBeginPlay()! Therefore, GameReplicationInfo does not exist yet.
@@ -156,7 +156,7 @@ function InitGameReplicationInfo()
         ScrnGRI.GameAuthor = ScrnGameLength.Author;
         ScrnGRI.FakedPlayers = FakedPlayers;
         ScrnGRI.FakedAlivePlayers = FakedAlivePlayers;
-        ScrnGRI.SuicideTime = SuicideTime;
+        ScrnGRI.bStopCountDown = !bSuicideTimer;
     }
 }
 
@@ -1755,7 +1755,7 @@ function RestartPlayer( Controller aPlayer )
             TriggerEvent(PlayerStartEvent, aPlayer.Pawn.Anchor, aPlayer.Pawn);
         }
 
-        if ( HasSuicideTimer() ) {
+        if ( bSuicideTimer ) {
             class'ScrnSuicideBomb'.static.MakeSuicideBomber(aPlayer.Pawn);
         }
 
@@ -1809,16 +1809,21 @@ function AddSuicideTime(int dt, bool bReset)
     local bool bHadTimer;
     local Controller C;
 
-    bHadTimer = HasSuicideTimer();
+    bHadTimer = bSuicideTimer;
     if ( bReset ) {
-        SuicideTime = ElapsedTime + dt;
+        RemainingTime = dt;
     }
     else {
-        SuicideTime += dt;
+        RemainingTime += dt;
     }
-    ScrnGRI.SuicideTime = SuicideTime;
+    bSuicideTimer = RemainingTime > 0;
+    ScrnGRI.RemainingMinute = RemainingTime;
+    ScrnGRI.bStopCountDown = !bSuicideTimer;
+    if ( bSuicideTimer && Level.NetMode != NM_DedicatedServer ) {
+        ScrnGRI.ShowTimeMsg(true);
+    }
 
-    if ( bHadTimer == HasSuicideTimer() )
+    if ( bHadTimer == bSuicideTimer )
         return;  // ho changes in state
 
     if ( bHadTimer ) {
@@ -1833,9 +1838,39 @@ function AddSuicideTime(int dt, bool bReset)
     }
 }
 
-function bool HasSuicideTimer()
+function SuicideTimer()
 {
-    return SuicideTime > 0;
+    if ( RemainingTime > 0 ) {
+        RemainingTime--;
+        ScrnGRI.RemainingTime = RemainingTime;
+    }
+
+    if ( RemainingTime == 0 ) {
+        class'ScrnSuicideBomb'.static.ExplodeAll(Level);
+        return;
+    }
+
+    if ( RemainingTime < 60 ) {
+        // sync every second during the last minute
+        ScrnGRI.RemainingMinute = RemainingTime;
+        if ( Level.Netmode != NM_DedicatedServer ) {
+            ScrnGRI.ShowTimeMsg();
+        }
+        return;
+    }
+
+    switch ( class'ScrnFunctions'.static.mod(RemainingTime, 60) ) {
+        case 0:
+            if ( Level.Netmode != NM_DedicatedServer ) {
+                ScrnGRI.ShowTimeMsg();
+            }
+            break;
+        case 1:
+            // Once per minute, sync clocks between the server and clients.
+            // Do it 1s ahead because client's ScrnGRI.Timer() decrements it on receive.
+            ScrnGRI.RemainingMinute = RemainingTime;
+            break;
+    }
 }
 
 function GiveStartingCash(PlayerController PC)
@@ -2658,7 +2693,8 @@ State MatchInProgress
 
         Super.BeginState();
 
-        ElapsedTime = 0;  // should be already reset, but just to be sure
+        ElapsedTime = 0;
+        AddSuicideTime(0, false);  // refresh timers
 
         if ( ScrnGameLength != none ) {
             if ( !ScrnGameLength.VersionCheck() ) {
@@ -2846,10 +2882,10 @@ State MatchInProgress
         GameReplicationInfo.ElapsedTime = ElapsedTime;
         if( !UpdateMonsterCount() ) {
             EndGame(None,"TimeLimit");
-            Return;
+            return;
         }
-        if ( SuicideTime > 0 && ElapsedTime > SuicideTime ) {
-            class'ScrnSuicideBomb'.static.ExplodeAll(Level);
+        if ( bSuicideTimer ) {
+            SuicideTimer();
         }
 
         AdjustBotCount();
@@ -3121,6 +3157,18 @@ State MatchInProgress
     function StartWaveBoss()
     {
         global.StartWaveBoss();
+    }
+} // MatchInProgress
+
+State MatchOver
+{
+    function Timer()
+    {
+        super.Timer();
+
+        if ( EndMessageCounter == 10 ) {
+            class'ScrnSuicideBomb'.static.DisintegrateAll(Level);
+        }
     }
 }
 

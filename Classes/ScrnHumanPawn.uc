@@ -2245,6 +2245,20 @@ simulated function TakeDamage( int Damage, Pawn InstigatedBy, Vector Hitlocation
         Weapon.TakeDamage(Damage, InstigatedBy, Hitlocation, Momentum, damageType, HitIndex);
 }
 
+function Suicide()
+{
+    local ScrnSuicideBomb bomb;
+
+    foreach Level.DynamicActors(class'ScrnSuicideBomb', bomb) {
+        if ( bomb.Instigator == self ) {
+            bomb.ActivateExplosion();
+            return;
+        }
+    }
+
+    super.Suicide();
+}
+
 simulated function bool CanThrowWeapon()
 {
     local KFWeapon KFWeap;
