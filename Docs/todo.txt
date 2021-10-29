@@ -13,3 +13,42 @@ Flare and Husk Gun HDMG
 
 ScrnWaves.ini:
 Custom dialogs
+
+
+? max spawn pressure - ignore last spawn time in ZombieVolume
+
+? Dual pistol ammo on HUD - option to show combined/separate
+
+? Remove HRL, RPG and M99, Buzzsaw Bow from Tourney Mode
+
+? Lower HRL blast radius (8m?)
+
+? Remove WebAdmin from spectator list
+
+? Get Prize Button for TSC members
+
+? reduce gamespeed updates every tick on getting out of zed time
+
+? Commando +50% magazines and +60% damage
+
+? mvote map list westlondon
+
+? mutate command spam protection
+
+? reduce suicide beeping
+
+? welder ammo display for support
+
+? spawns are broken
+
+? Waves=|
+
+? Periodically check for visible zombie volumes
+
+bSharedAmmoPool
+
+custom zed plate on the test map
+
+? shotgun same target penetration on high tick server
+
+"No damagetype for damage by Crawler with weapon None"

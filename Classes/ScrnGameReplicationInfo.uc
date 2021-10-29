@@ -11,6 +11,7 @@ var bool bTraderArrow;
 var byte FakedPlayers, FakedAlivePlayers;
 
 var class<LocalMessage> RemainingTimeMsg;
+var transient float LastBeepTime;
 
 replication
 {
@@ -66,6 +67,9 @@ simulated function Timer()
                 ShowTimeMsg(bForceDisplay);
             }
         }
+        else {
+            LastBeepTime = 0;
+        }
 
         if ( !bTeamSymbolsUpdated )
             TeamSymbolNotify();
@@ -103,6 +107,7 @@ simulated function Timer()
 simulated function ShowTimeMsg(optional bool bForceDisplay)
 {
     local PlayerController PC;
+    local int Beep;
 
     if ( RemainingTimeMsg == none || Level.NetMode == NM_DedicatedServer )
         return;
@@ -115,6 +120,7 @@ simulated function ShowTimeMsg(optional bool bForceDisplay)
         return;
 
     if ( RemainingTime <= 60 ) {
+        Beep = 1;
         RemainingTimeMsg.default.Lifetime = RemainingTime + 10;
         if ( RemainingTime < 30 ) {
             RemainingTimeMsg.default.Lifetime += 10;
@@ -129,10 +135,14 @@ simulated function ShowTimeMsg(optional bool bForceDisplay)
                 return;
             }
         }
+        Beep = int(LastBeepTime == 0);
         RemainingTimeMsg.default.Lifetime = 10;
     }
 
-    PC.ReceiveLocalizedMessage(RemainingTimeMsg, 0, PC.PlayerReplicationInfo, , self);
+    if ( Beep > 0 ) {
+        LastBeepTime = Level.TimeSeconds;
+    }
+    PC.ReceiveLocalizedMessage(RemainingTimeMsg, Beep, PC.PlayerReplicationInfo, , self);
 }
 
 

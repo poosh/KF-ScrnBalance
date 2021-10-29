@@ -212,7 +212,8 @@ simulated event UpdateScoreBoard(Canvas Canvas)
     local KFPlayerReplicationInfo KFPRI;
     local KF_StoryPRI StoryPRI;
     local ScrnGameReplicationInfo ScrnGRI;
-    local int i, fi, FontReduction, NetXPos, PlayerCount, HeaderOffsetY, HeadFoot, MessageFoot,
+    local int i, fi, FontReduction, NetXPos, PlayerCount, SpecCount, AliveCount, HeaderOffsetY,
+        HeadFoot, MessageFoot,
         PlayerBoxSizeY, BoxSpaceY, NameXPos, BoxTextOffsetY, HealthXPos, BoxXPos,
         KillsXPos, TitleYPos, BoxWidth, VetXPos, NotShownCount,
         StoryIconXPos;
@@ -232,20 +233,18 @@ simulated event UpdateScoreBoard(Canvas Canvas)
     bStoryMode = KF_StoryPRI(OwnerPRI) != none;
     ScrnGRI = ScrnGameReplicationInfo(GRI);
 
-    for ( i = 0; i < GRI.PRIArray.Length; i++)
-    {
+    for ( i = 0; i < GRI.PRIArray.Length; i++) {
         PRI = GRI.PRIArray[i];
-        if ( !PRI.bOnlySpectator )
-        {
-            if( !PRI.bOutOfLives && KFPlayerReplicationInfo(PRI).PlayerHealth>0 )
-                ++HeadFoot;
+        KFPRI = KFPlayerReplicationInfo(PRI);
+        if ( !PRI.bOnlySpectator ) {
+            if( !PRI.bOutOfLives && KFPRI != none && KFPRI.PlayerHealth > 0 )
+                ++AliveCount;
             PlayerCount++;
             TeamPRIArray[ TeamPRIArray.Length ] = PRI;
         }
-        else {
-            ++NetXPos;
-            if ( PRI.PlayerName != "WebAdmin" )
-                Spectators @= class'ScrnBalance'.default.Mut.StripColorTags(PRI.PlayerName) $ " |";
+        else if ( PRI.PlayerID != 0 || PRI.PlayerName != "WebAdmin" ) {
+            ++SpecCount;
+            Spectators @= class'ScrnBalance'.default.Mut.StripColorTags(PRI.PlayerName) $ " |";
         }
     }
 
@@ -293,8 +292,12 @@ simulated event UpdateScoreBoard(Canvas Canvas)
     Canvas.DrawTextClipped(S);
 
     // Second title line
-    S = PlayerCountText@PlayerCount @SpectatorCountText@NetXPos @AliveCountText@HeadFoot;
-    if ( ScrnGRI != none && ScrnGRI.FakedAlivePlayers > HeadFoot ) {
+    S = PlayerCountText @ PlayerCount;
+    if ( SpecCount > 0 ) {
+        S @= SpectatorCountText @ SpecCount;
+    }
+    S @= AliveCountText @ AliveCount;
+    if ( ScrnGRI != none && ScrnGRI.FakedAlivePlayers > AliveCount ) {
         S $= " ("$ScrnGRI.FakedAlivePlayers$")";
     }
     if ( OwnerPRI != none && OwnerPRI.Team != none )

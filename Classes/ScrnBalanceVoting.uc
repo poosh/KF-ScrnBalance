@@ -23,24 +23,29 @@ const VOTE_FAKEDPLAYERS = 17;
 const VOTE_FAKEDCOUNT   = 18;
 const VOTE_FAKEDHEALTH  = 19;
 const VOTE_DIFF         = 20;
+const VOTE_MAP          = 22;
 const VOTE_RKILL        = 100;
 
 var localized string strCantEndTrade;
 var localized string strTooLate;
 var localized string strGamePaused, strSecondsLeft, strGameUnPaused, strPauseTraderOnly;
 var localized string viResume, viEndTrade, viDifficulty;
+var localized string strZedSpawnsDoubled;
 var localized string strSquadNotFound, strCantSpawnSquadNow, strSquadList;
 var localized string strNotInStoryMode, strNotInTSC;
 var localized string strCantEndWaveNow, strEndWavePenalty;
 var localized string strRCommands;
 var localized string strBlamed, strBlamedBaron;
 var localized string strWrongPerk;
+var localized string strMapNameTooShort, strMapNotFound, strWrongGameConfig;
 
 //variables for GamePaused state
 var int PauseTime;
 var transient bool bPauseable;
 var transient string msgPause;
 var transient array< class<ScrnVeterancyTypes> > VotedPerks;
+var transient byte VotedDiff;
+var transient int VotedGameConfig;
 
 var string Reason; // reason why voting was started (e.g. kick player for being noob)
 
@@ -225,6 +230,181 @@ static function bool TryStrToInt(string str, out int val)
 {
     val = int(str);
     return val != 0 || str == "0";
+}
+
+function SendGameConfigs(PlayerController Sender, xVotingHandler vh)
+{
+    local int i;
+    local string s;
+
+    for ( i = 0; i < vh.GameConfig.length; ++i ) {
+        s = "";
+        if ( i == vh.CurrentGameConfig ) {
+            s = "^2";
+        }
+        s $= vh.GameConfig[i].Acronym $ " - " $ vh.GameConfig[i].GameName;
+        Sender.ClientMessage(s);
+    }
+}
+
+function SendMapList(PlayerController Sender, xVotingHandler vh, String Prefix, optional String Keyword)
+{
+    local int i;
+    local string s, KeywordHighlight;
+    local int prefixLen;
+    local bool bFilter;
+
+    prefixLen = len(Prefix);
+    Prefix = caps(Prefix);
+    bFilter = Keyword != "";
+    if (bFilter) {
+        KeywordHighlight = "^2" $ Keyword $ "^1";
+    }
+
+    for ( i = 0; i < vh.MapList.length; ++i ) {
+        if ( !vh.MapList[i].bEnabled )
+            continue;
+        s = caps(vh.MapList[i].MapName);
+        if ( Left(s, prefixLen) != prefix )
+            continue;
+        if ( bFilter ) {
+            if ( InStr(s, Keyword) == -1 )
+                continue;
+            ReplaceText(s, Keyword, KeywordHighlight);
+            s = "^1" $ s;
+        }
+        Sender.ClientMessage(s);
+    }
+}
+
+function int MapVote(PlayerController Sender, out string VoteValue, out string VoteInfo)
+{
+    local xVotingHandler vh;
+    local array<string> args;
+    local int i, GameIndex, MapIndex;
+    local byte diff;
+    local string s, prefix, MapKeyword, DiffStr;
+    local int prefixLen;
+    local VotingHandler.MapHistoryInfo MapInfo;
+
+    vh = xVotingHandler(Level.Game.VotingHandler);
+    if ( vh == none || !vh.bMapVote || vh.MapList.length == 0) {
+        Sender.ClientMessage(strOptionDisabled);
+        return VOTE_LOCAL;
+    }
+
+    VotedDiff = 0;
+    VotedGameConfig = -1;
+
+    if ( VoteValue == "RANDOM" ) {
+        vh.GetDefaultMap(MapIndex, GameIndex);
+        MapInfo = vh.History.PlayMap(vh.MapList[MapIndex].MapName);
+        VoteValue = vh.SetupGameMap(vh.MapList[MapIndex], GameIndex, MapInfo);
+        return VOTE_MAP;
+    }
+
+    Split(VoteValue, " ", args);
+    MapKeyword = args[0];
+    if ( len(MapKeyword) < 3 ) {
+        Sender.ClientMessage(strMapNameTooShort);
+        return VOTE_ILLEGAL;
+    }
+
+    GameIndex = vh.CurrentGameConfig;
+    if ( args.length > 1 && args[1] != "LIST" ) {
+        for ( i = 0; i < vh.GameConfig.length; ++i ) {
+            if ( vh.GameConfig[i].Acronym ~= args[1] ) {
+                GameIndex = i;
+                break;
+            }
+        }
+        if (i == vh.GameConfig.length) {
+            s = strWrongGameConfig;
+            ReplaceText(s, "%s", args[1]);
+            Sender.ClientMessage(s);
+            SendGameConfigs(Sender, vh);
+            return VOTE_ILLEGAL;
+        }
+    }
+
+    if ( MapKeyword == "HELP" || MapKeyword == "LIST" ) {
+        SendMapList(Sender, vh, vh.GameConfig[GameIndex].Prefix);
+        if ( MapKeyword == "HELP" || (args.length > 1 && args[1] == "LIST" ) ) {
+            Sender.ClientMessage("--------------------------------------------------");
+            SendGameConfigs(Sender, vh);
+        }
+        return VOTE_LOCAL;
+    }
+
+    if ( args.length > 2 ) {
+        DiffStr = args[2];
+        diff = GetDifficulty(DiffStr);
+        if ( diff < Mut.MinVoteDifficulty || diff > Mut.MaxDifficulty ) {
+            return VOTE_ILLEGAL;
+        }
+    }
+
+    prefix = caps(vh.GameConfig[GameIndex].Prefix);
+    prefixLen = len(prefix);
+    MapIndex = -1;
+    for ( i = 0; i < vh.MapList.length; ++i ) {
+        if ( !vh.MapList[i].bEnabled )
+            continue;
+        s = caps(vh.MapList[i].MapName);
+        if ( Left(s, prefixLen) != prefix )
+            continue;
+
+        if ( InStr(s, MapKeyword) != -1) {
+            if ( MapIndex == -1 ) {
+                MapIndex = i;
+            }
+            else {
+                SendMapList(Sender, vh, prefix, MapKeyword);
+                return VOTE_LOCAL;
+            }
+        }
+    }
+
+    if ( MapIndex == -1 ) {
+        Sender.ClientMessage(strMapNotFound);
+        return VOTE_LOCAL;
+    }
+
+    VotedDiff = diff;
+    MapInfo = vh.History.PlayMap(vh.MapList[MapIndex].MapName);
+    VoteValue = vh.SetupGameMap(vh.MapList[MapIndex], GameIndex, MapInfo);
+    if ( GameIndex == vh.CurrentGameConfig && diff == 0 ) {
+        VoteInfo = "MAP " $ vh.MapList[MapIndex].MapName;
+    }
+    else {
+        VotedGameConfig = GameIndex;
+        VoteInfo = vh.GameConfig[GameIndex].Acronym;
+        if ( diff > 0 ) {
+            VoteInfo @= DiffStr;
+        }
+        VoteInfo $= " @ " $ vh.MapList[MapIndex].MapName;
+    }
+    return VOTE_MAP;
+}
+
+function ApplyMapVote(string ServerTravelString)
+{
+    local xVotingHandler vh;
+
+    vh = xVotingHandler(Level.Game.VotingHandler);
+    vh.CloseAllVoteWindows();
+    vh.History.Save();
+    if ( VotedGameConfig >= 0 ) {
+        vh.CurrentGameConfig = VotedGameConfig;
+    }
+    vh.SaveConfig();
+
+    if ( VotedDiff > 0 ) {
+        Mut.Persistence.Difficulty = VotedDiff;
+        Mut.Persistence.SaveConfig();
+    }
+
+    Level.ServerTravel(ServerTravelString, false);
 }
 
 function int GetVoteIndex(PlayerController Sender, string Key, out string Value, out string VoteInfo)
@@ -419,14 +599,17 @@ function int GetVoteIndex(PlayerController Sender, string Key, out string Value,
         result = VOTE_INVITE;
     }
     else if ( Key == "BORING" ) {
-        if ( !Mut.CheckScrnGT(Sender) )
+        if ( Mut.bStoryMode ) {
+            Sender.ClientMessage(strNotInStoryMode);
             return VOTE_LOCAL;
-
+        }
         if ( !Mut.bAllowBoringVote && !Sender.PlayerReplicationInfo.bAdmin ) {
             Sender.ClientMessage(strOptionDisabled);
             return VOTE_LOCAL;
         }
-        else if ( Mut.KF.bTradingDoorsOpen || Mut.ScrnGT.BoringStageMaxed() ) {
+        if ( Mut.KF.bTradingDoorsOpen || (Mut.ScrnGT != none && Mut.ScrnGT.BoringStageMaxed())
+                    || (Mut.ScrnGT == none && Mut.KF.KFLRules.WaveSpawnPeriod < 0.5) )
+        {
             Sender.ClientMessage(strNotAvaliableATM);
             return VOTE_LOCAL;
         }
@@ -529,8 +712,13 @@ function int GetVoteIndex(PlayerController Sender, string Key, out string Value,
             VoteInfo = "Friendly Fire "$v$"%";
         return VOTE_FF;
     }
-    else if ( Key == "MAP" && Value == "RESTART" ) {
-        result = VOTE_MAPRESTART;
+    else if ( Key == "MAP" ) {
+        if ( Value == "RESTART" ) {
+            result = VOTE_MAPRESTART;
+        }
+        else {
+            return MapVote(Sender, Value, VoteInfo);
+        }
     }
     else if ( Key == "FAKED" || Key == "FAKEDPLAYERS" ) {
         if ( !Mut.CheckScrnGT(Sender) )
@@ -583,11 +771,12 @@ function int GetVoteIndex(PlayerController Sender, string Key, out string Value,
             return VOTE_LOCAL;
         }
         v = GetDifficulty(Value);
-        if ( v != 0 && v < Mut.MinVoteDifficulty || v > 8 )
+        if ( v != 0 && v < Mut.MinVoteDifficulty || v > Mut.MaxDifficulty )
             return VOTE_ILLEGAL;
         if ( v == Mut.Persistence.Difficulty )
             return VOTE_NOEFECT;
         VoteInfo = Value @ viDifficulty;
+        VotedDiff = v;
         Value = string(v);
         return VOTE_DIFF;
     }
@@ -693,8 +882,14 @@ function ApplyVoteValue(int VoteIndex, string VoteValue)
             break;
 
         case VOTE_BORING:
-            if ( Mut.ScrnGT.IncBoringStage() ) {
-                VotingHandler.BroadcastMessage(Mut.ScrnGT.GetBoringString(Mut.ScrnGT.GetBoringStage()));
+            if ( Mut.ScrnGT != none ) {
+                if ( Mut.ScrnGT.IncBoringStage() ) {
+                    VotingHandler.BroadcastMessage(Mut.ScrnGT.GetBoringString(Mut.ScrnGT.GetBoringStage()));
+                }
+            }
+            else {
+                Mut.KF.KFLRules.WaveSpawnPeriod *= 0.5;
+                VotingHandler.BroadcastMessage(strZedSpawnsDoubled $ " ("$Mut.KF.KFLRules.WaveSpawnPeriod$")");
             }
             break;
 
@@ -731,7 +926,10 @@ function ApplyVoteValue(int VoteIndex, string VoteValue)
                 TSCGame(Mut.KF).HdmgScale = Mut.KF.FriendlyFireScale;
             break;
         case VOTE_MAPRESTART:
-            Level.ServerTravel("?restart",false);
+            Level.ServerTravel("?restart", false);
+            break;
+        case VOTE_MAP:
+            ApplyMapVote(VoteValue);
             break;
         case VOTE_FAKEDPLAYERS:
             Mut.ScrnGT.ScrnGRI.FakedPlayers = byte(VoteValue);
@@ -744,7 +942,7 @@ function ApplyVoteValue(int VoteIndex, string VoteValue)
             Mut.ScrnGT.ScrnGRI.FakedAlivePlayers = byte(VoteValue);
             break;
         case VOTE_DIFF:
-            Mut.Persistence.Difficulty = byte(VoteValue);
+            Mut.Persistence.Difficulty = VotedDiff;
             Mut.Persistence.SaveConfig();
             break;
 
@@ -948,7 +1146,7 @@ function byte GetDifficulty(out string DiffStr)
 {
     if ( DiffStr == "0" || DiffStr == "DEFAULT" || DiffStr == "OFF" ) {
         DiffStr = "Default";
-        return 2;
+        return 0;
     }
     else if ( DiffStr == "2" || DiffStr == "NORMAL" ) {
         DiffStr = "Normal";
@@ -1024,11 +1222,13 @@ defaultproperties
     HelpInfo(10)="%gSPAWN %y<squad_name> %w Spawns zed squad"
     HelpInfo(11)="%gREADY%w|%gUNREADY %w Makes everybody ready/unready to play"
     HelpInfo(12)="%gFF %yX %w Set Friendly Fire to X%"
-    HelpInfo(13)="%gMAP RESTART %w Restarts current map"
-    HelpInfo(14)="%gFAKED %yX %w Set Faked Players to X (FAKEDCOUNT+FAKEDHEALTH)"
-    HelpInfo(15)="%gFAKEDCOUNT %yX %w Set Faked Players for zed count calculation"
-    HelpInfo(16)="%gFAKEDHEALTH %yX %w Set Faked Players for zed health calculation"
-    HelpInfo(17)="%gDIFF %yX %w Changes map difficulty (2-8) for the next map"
+    HelpInfo(13)="%gMAP RESTART %w Restart current map"
+    HelpInfo(14)="%gMAP RANDOM %w Switch to a random map"
+    HelpInfo(15)="%gMAP %y<mapname> %b[<game>] [<diff>] %w Switch map/gamemode/difficulty"
+    HelpInfo(16)="%gFAKED %yX %w Set Faked Players to X (FAKEDCOUNT+FAKEDHEALTH)"
+    HelpInfo(17)="%gFAKEDCOUNT %yX %w Set Faked Players for zed count calculation"
+    HelpInfo(18)="%gFAKEDHEALTH %yX %w Set Faked Players for zed health calculation"
+    HelpInfo(19)="%gDIFF %yX %w Changes map difficulty (2-8) for the next map"
 
     strCantEndTrade="Can not end trade time at the current moment"
     strTooLate="Too late"
@@ -1036,6 +1236,7 @@ defaultproperties
     strSecondsLeft="seconds left"
     strGameUnpaused="Game resumed"
     strPauseTraderOnly="Game can be paused only during trader time!"
+    strZedSpawnsDoubled="ZED spawn rate doubled!"
     strSquadNotFound="Monster squad with a given name not found"
     strCantSpawnSquadNow="Can not spawn monsters at this moment"
     strSquadList="Avaliable Squads:"
@@ -1047,6 +1248,9 @@ defaultproperties
     strBlamed="%p blamed %r"
     strBlamedBaron="%p blamed for blaming Baron"
     strWrongPerk="Wrong perk (%s)"
+    strMapNameTooShort="Enter at least 3 letters for map name to search or HELP|LIST|RESTART|RANDOM"
+    strMapNotFound="Map not found"
+    strWrongGameConfig="Wrong game config code: %s"
 
     viResume="RESUME GAME"
     viEndTrade="END TRADER TIME"

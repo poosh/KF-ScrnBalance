@@ -307,6 +307,7 @@ simulated function DrawTeam(Canvas Canvas, array<PlayerReplicationInfo> TeamPRIA
 simulated event UpdateScoreBoard(Canvas Canvas)
 {
     local PlayerReplicationInfo PRI, OwnerPRI;
+    local KFPlayerReplicationInfo KFPRI;
     local int i, fi, FontReduction, HeaderOffsetY, PlayerBoxSizeY;
     local int RedBoxXPos, RedBoxWidth, BlueBoxXpos, BlueBoxWidth;
     local float XL,YL;
@@ -326,10 +327,11 @@ simulated event UpdateScoreBoard(Canvas Canvas)
     for ( i = 0; i < GRI.PRIArray.Length; i++)
     {
         PRI = GRI.PRIArray[i];
+        KFPRI = KFPlayerReplicationInfo(PRI);
         if ( PRI != none ) {
             if ( !PRI.bOnlySpectator && PRI.Team != none )
             {
-                if( !PRI.bOutOfLives && KFPlayerReplicationInfo(PRI).PlayerHealth>0 )
+                if( !PRI.bOutOfLives && KFPRI != none && KFPRI.PlayerHealth>0 )
                     ++AliveCount;
 
                 if ( PRI.Team.TeamIndex == 0 )
@@ -337,10 +339,9 @@ simulated event UpdateScoreBoard(Canvas Canvas)
                 else if ( PRI.Team.TeamIndex == 1 )
                     BlueTeamPRIArray[BlueTeamPRIArray.Length] = PRI;
             }
-            else {
+            else if ( PRI.PlayerID != 0 || PRI.PlayerName != "WebAdmin" ) {
                 ++SpecCount;
-                if ( PRI.PlayerName != "WebAdmin" )
-                    Spectators @= class'ScrnBalance'.default.Mut.StripColorTags(PRI.PlayerName) $ " |";
+                Spectators @= class'ScrnBalance'.default.Mut.StripColorTags(PRI.PlayerName) $ " |";
             }
         }
     }
@@ -385,7 +386,11 @@ simulated event UpdateScoreBoard(Canvas Canvas)
         S $= "x";
     else
         S $= "vs";
-    S $= BlueTeamPRIArray.Length @SpectatorCountText@SpecCount @AliveCountText@AliveCount;
+    S $= BlueTeamPRIArray.Length;
+    if ( SpecCount > 0 ) {
+        S @= SpectatorCountText @ SpecCount;
+    }
+    S @= AliveCountText @ AliveCount;
     if ( OwnerPRI != none && OwnerPRI.Team != none )
         S @= "|" @ TeamScoreString;
     Canvas.TextSize(S, XL,YL);

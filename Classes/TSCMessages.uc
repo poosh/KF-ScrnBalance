@@ -125,7 +125,7 @@ defaultproperties
 
     strEnemyShop="Can not trade in Enemy Shop!"
     strBaseZ="Can not set up a Base just below the Enemy Base!"
-    strGetBackToBase="GET BACK TO THE BASE! Or it will be lost."
+    strGetBackToBase="GET BACK TO THE BASE!"
     strGetBackToBaseOrDie="GET BACK TO THE BASE OR DIE!"
     strGetOutFromBase="You are at the ENEMY BASE! Get out of here!"
     strBaseShop="Can not set up a Base inside a Shop!"

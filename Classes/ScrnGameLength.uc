@@ -74,7 +74,8 @@ var transient array < class<KFMonster> > PendingNextSpawnSquad;
 var ScrnWaveInfo Wave, NextWave;
 var protected int NextWaveNum;
 var transient int ZedsBeforeSpecial;
-var transient bool bLoadedSpecial;
+var transient bool bLoadedSpecial;  // is the last loaded squad special
+var transient int LoadedCount;  // loaded monster count (without squad breaks)
 var transient float PlayerCountOverrideForHealth;
 
 var float WaveEndTime;
@@ -236,7 +237,7 @@ function ZedCmd(PlayerController Sender, string cmd)
     local int search_idx, cur_idx; // starts with 1
     local int BoolValue;
     local int i, j;
-    local bool bChanged;
+    local bool bNeedChanges, bChanged;
     local color c;
     local float Pct;
     local bool bSetPct;
@@ -263,6 +264,7 @@ function ZedCmd(PlayerController Sender, string cmd)
         for ( i = 1; i < args.length; ++i ) {
             if ( args[i] ~= "PCT" && i < args.length - 1) {
                 bSetPct = true;
+                bNeedChanges = true;
                 Pct = float(args[i+1]);
                 args.remove(i,2);
                 max_args = i;
@@ -290,12 +292,17 @@ function ZedCmd(PlayerController Sender, string cmd)
             search_idx = int(args[1]);
             if ( max_args > 2 ) {
                 BoolValue = class'ScrnVotingOptions'.static.TryStrToBoolStatic(args[2]);
+                if ( BoolValue != -1 )
+                    bNeedChanges = true;
             }
         }
         else {
             search_idx = 1;
         }
     }
+
+    if ( bNeedChanges && !Game.ScrnBalanceMut.CheckAdmin(Sender) )
+        return;
 
     Sender.ClientMessage("INDEX / STATUS / SPAWN CHANCE / ZED CLASS");
     Sender.ClientMessage("=========================================================");
@@ -751,7 +758,7 @@ function float GetWaveEndTime()
 function AdjustNextSpawnTime(out float NextSpawnTime)
 {
     if ( PendingNextSpawnSquad.length > 0 ) {
-        NextSpawnTime = 0.2;
+        NextSpawnTime = 0.25;
         return;
     }
 
@@ -767,9 +774,6 @@ function AdjustNextSpawnTime(out float NextSpawnTime)
     else if ( Wave.bRandomSquads ) {
         NextSpawnTime *= 1.0 + Game.WaveSinMod();
     }
-    else {
-        NextSpawnTime *= 2.0;
-    }
 }
 
 function LoadNextSpawnSquad(out array < class<KFMonster> > NextSpawnSquad)
@@ -777,6 +781,7 @@ function LoadNextSpawnSquad(out array < class<KFMonster> > NextSpawnSquad)
     local int i;
 
     if ( PendingNextSpawnSquad.length == 0 ) {
+        LoadedCount = 0;
         if ( ZedsBeforeSpecial <= 0 && SpecialSquads.length > 0 ) {
             LoadNextSpawnSquadInternal(PendingNextSpawnSquad, SpecialSquads, PendingSpecialSquads, Wave.bRandomSpecialSquads);
             ZedsBeforeSpecial = Wave.ZedsPerSpecialSquad;
@@ -818,6 +823,7 @@ protected function LoadNextSpawnSquadInternal(out array < class<KFMonster> > Nex
     if ( AllSquads.length == 0 ) {
         NextSpawnSquad.length = 1;
         NextSpawnSquad[0] = FallbackZed;
+        LoadedCount++;
         return;
     }
 
@@ -876,6 +882,7 @@ function class<KFMonster> ActivateZed(int idx)
 
     ActiveZeds[idx].WaveSpawns++;
     ActiveZeds[idx].TotalSpawns++;
+    LoadedCount++;
 
     if ( ActiveZeds[idx].Candidates.length == 1 )
         return ActiveZeds[idx].Candidates[0].ZedClass;
@@ -925,11 +932,13 @@ function bool ParseSquad(string SquadDef, out SSquad Squad)
 
     Split(s, "|", blocks);
     for ( k = 0; k < blocks.length; ++k ) {
-        if ( Squad.Members.length > 0 ) {
+        if ( blocks[k] == "" || Squad.Members.length > 0 ) {
             j = Squad.Members.length;
             Squad.Members.insert(j, 1);
             Squad.Members[j].ActiveZedIndex = SQUAD_BREAK;
             Squad.Members[j].Count = 1;
+            if ( blocks[k] == "" )
+                continue;
         }
 
         Split(blocks[k], "+", parts);

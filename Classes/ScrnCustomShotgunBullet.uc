@@ -19,6 +19,9 @@ var() int   MediumZedMinHealth;         // If zed's base Health >= this value, z
 var     String         StaticMeshRef;
 var     String         AmbientSoundRef;
 
+var transient Pawn OldVictim;
+var transient bool bHeadshot;
+var transient int SameVictimCounter;
 
 static function PreloadAssets()
 {
@@ -87,10 +90,27 @@ simulated function ProcessTouch (Actor Other, vector HitLocation)
 
         KFM = KFMonster(Victim);
 
-        if ( Victim != none && Victim.IsHeadShot(HitLocation, X, 1.0))
-            Victim.TakeDamage(Damage * HeadShotDamageMult, Instigator, HitLocation, MomentumTransfer * X, MyDamageType);
-        else
+        if ( Victim != none ) {
+            if ( OldVictim != Victim ) {
+                OldVictim = Victim;
+                SameVictimCounter = 1;
+            }
+            else if ( ++SameVictimCounter >= 3 ) {
+                // the same target can hit twice max: body and head (ExtendedZCollision)
+                return;
+            }
+
+            bHeadshot = Victim.IsHeadShot(HitLocation, X, 1.0);
+            if ( bHeadshot ) {
+                Victim.TakeDamage(Damage * HeadShotDamageMult, Instigator, HitLocation, MomentumTransfer * X, MyDamageType);
+            }
+            else {
+                Victim.TakeDamage(Damage, Instigator, HitLocation, MomentumTransfer * X, MyDamageType);
+            }
+        }
+        else {
             Other.TakeDamage(Damage, Instigator, HitLocation, MomentumTransfer * X, MyDamageType);
+        }
     }
 
     if ( Instigator != none )

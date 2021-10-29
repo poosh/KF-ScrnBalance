@@ -72,6 +72,7 @@ var color CoolHudColor, CoolHudAmmoColor;
 var config byte PlayerInfoVersionNumber;
 var config float PlayerInfoScale;
 var config byte PerkStarsMax;
+var config bool bShowLeftGunAmmo;
 var Material CoolBarBase,CoolBarOverlay;
 var int CoolBarSize, CoolHealthBarTop, CoolHealthBarHeight;
 var color HealthBarColor, HealingBarColor, FullHealthColor, OverchargeHealthColor, LowHealthColor, ArmorBarColor, BigArmorColor;
@@ -1372,7 +1373,7 @@ simulated function CalculateAmmo()
             WeaponMaxCharge = ScrnHuskGunFire(OwnerWeapon.GetFireMode(0)).MaxChargeAmmo;
         }
         else {
-            if ( Dualies(OwnerWeapon) != none ) {
+            if ( bShowLeftGunAmmo && Dualies(OwnerWeapon) != none ) {
                 CalculateLeftGunAmmo();
             }
 
@@ -3403,6 +3404,11 @@ function SelectWeapon()
     if ( ScrnHumanPawn(PawnOwner) != none && ScrnHumanPawn(PawnOwner).bQuickMeleeInProgress )
         return;  // no weapon selection during quick melee
     super.SelectWeapon();
+}
+
+exec function LeftGunAmmo(bool b)
+{
+    bShowLeftGunAmmo = b;
 }
 
 defaultproperties

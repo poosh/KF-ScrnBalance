@@ -108,18 +108,18 @@ static function float ModifyRecoilSpread(KFPlayerReplicationInfo KFPRI, WeaponFi
 // v5.05 - Allow Cowboy Mode along with using laser sights
 static function bool CheckCowboyMode(KFPlayerReplicationInfo KFPRI, class<Weapon> WeapClass)
 {
-    local Controller C;
+    // local Controller C;
 
     if ( WeapClass == none )
         return false;
 
-    C = Controller(KFPRI.Owner);  // server-side
-    if ( C == none ) {
-        C = KFPRI.Level.GetLocalPlayerController();  // client-side
-    }
-    if ( C == none || C.Pawn == none || int(C.Pawn.ShieldStrength) > 25 ) {
-        return false;
-    }
+    // C = Controller(KFPRI.Owner);  // server-side
+    // if ( C == none ) {
+    //     C = KFPRI.Level.GetLocalPlayerController();  // client-side
+    // }
+    // if ( C == none || C.Pawn == none || int(C.Pawn.ShieldStrength) > 25 ) {
+    //     return false;
+    // }
 
     // if custom weapon has "*" bonus switch
     return ClassIsChildOf(WeapClass, class'Dualies') || ClassIsInArray(default.SpecialWeapons, WeapClass );
@@ -132,8 +132,8 @@ static function float GetFireSpeedModStatic(KFPlayerReplicationInfo KFPRI, class
         return 1.6;
 
     //increase fire only with full-automatic pistols
-    if ( CheckCowboyMode(KFPRI, Other) && (Other.class == class'Dualies' || ClassIsChildOf(Other, class'ScrnDualies')
-            || !Other.default.FireModeClass[0].default.bWaitForRelease) )
+    if ( (ClassIsChildOf(Other, class'ScrnDualies') || !Other.default.FireModeClass[0].default.bWaitForRelease)
+            && CheckCowboyMode(KFPRI, Other) )
     {
         return 1.6;
     }

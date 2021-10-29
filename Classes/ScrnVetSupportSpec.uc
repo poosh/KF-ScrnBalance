@@ -8,7 +8,7 @@ static function int GetStatValueInt(ClientPerkRepLink StatOther, byte ReqNum)
 
 static function int AddCarryMaxWeight(KFPlayerReplicationInfo KFPRI)
 {
-    return 10;
+    return 9;
 }
 
 // Adjust distance of welded door health status
@@ -42,7 +42,7 @@ static function float AddExtraAmmoFor(KFPlayerReplicationInfo KFPRI, Class<Ammun
         else
             return 1.5 + 0.05 * float(GetClientVeteranSkillLevel(KFPRI)-6); // +5% ammo above level 6
     }
-    else {
+    else if ( !ClassIsChildOf(AmmoType, class'WelderAmmo') ) {
         return 1.0 + (0.05 * float(GetClientVeteranSkillLevel(KFPRI)));
     }
     return 1.0;

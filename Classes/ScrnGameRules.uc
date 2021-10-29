@@ -188,6 +188,10 @@ function AdjustZedSpawnRate()
     if ( Mut.ScrnGT != none ) {
         Mut.ScrnGT.SetBoringStage(0);
     }
+    else if ( !Mut.bStoryMode ) {
+        Mut.KF.KFLRules.WaveSpawnPeriod = Mut.OriginalWaveSpawnPeriod;
+        Mut.KF.KFLRules.WaveSpawnPeriod /= 1.0 + 0.25 * fmax(0.0, AlivePlayerCount() - 6);
+    }
 }
 
 function OnBoringStageSet(byte BoringStage)
@@ -278,7 +282,6 @@ function PlayerEntering(ScrnPlayerController PC)
     CreatePlayerInfo(PC, true);
 }
 
-
 function WaveEnded()
 {
     local int i;
@@ -344,7 +347,7 @@ function WaveEnded()
 
 function bool IsMapBlackListed(string MapName)
 {
-    return false;
+    return !Mut.bTestMap;
 }
 
 //returns true if any custom or super specimens are found

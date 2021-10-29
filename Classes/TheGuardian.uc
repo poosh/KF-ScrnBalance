@@ -93,7 +93,7 @@ defaultproperties
     CollisionHeight=12
     DrawScale=0.5
     PrePivot=(Z=23)
-    SameTeamCounter=25
+    SameTeamCounter=28
     Damage=2 // do less damage to enemies due to moving
 
     strBlame="%p blamed for base setup failure"

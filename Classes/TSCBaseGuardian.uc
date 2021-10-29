@@ -587,7 +587,7 @@ state Guarding
                 BroadcastLocalizedMessage(class'TSCMessages', 2+Team.TeamIndex*100);
                 SendHome();
             }
-            else if ( SameTeamCounter % 3 == 0 ) {
+            else if ( (SameTeamCounter & 3) == 0 ) {
                 for ( C = Level.ControllerList; C != none; C = C.nextController ) {
                     if ( C.bIsPlayer && C.PlayerReplicationInfo != none
                             && C.Pawn != none && C.Pawn.Health > 0
@@ -596,7 +596,7 @@ state Guarding
                         SC = ScrnPlayerController(C);
                         if ( SC != none ) {
                             SC.ServerShowPathTo(1); // show path to base
-                            if ( ShouldWipeOnBaseLost() )
+                            if ( SameTeamCounter <= 12 || ShouldWipeOnBaseLost() )
                                 SC.ReceiveLocalizedMessage(class'TSCMessages', 311); // critical message
                             else
                                 SC.ReceiveLocalizedMessage(class'TSCMessages', 211);
@@ -700,7 +700,7 @@ defaultproperties
     WakeUpDuration=10
     InvulTime=10  // cannot be damaged for the first 10s of a wave
     StunFadeoutRate=50
-    SameTeamCounter=10
+    SameTeamCounter=13
     bCanBeDamaged=False
     ClientState=CS_Home
 

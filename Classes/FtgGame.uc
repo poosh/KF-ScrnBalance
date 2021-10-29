@@ -71,41 +71,40 @@ function Killed(Controller Killer, Controller Killed, Pawn KilledPawn, class<Dam
 
 function bool SpawnStinkyClot()
 {
-    local int numspawned;
-    local ZombieVolume zvol;
+    local ZombieVolume ZVol;
     local array< class<KFMonster> > StinkySquad;
-    local int i;
-    local int total;
+    local EZedSpawnLocation OldZedSpawnLoc;
+    local int StinkyCount;
 
-    while ( zvol == none && ++i < 5 )
-    {
-        zvol = ZedSpawnList[rand(ZedSpawnList.Length)];
-        if ( !zvol.bNormalZeds )
-            zvol = none; // unable to spawn clot in that zombie volume
-    }
-    if( zvol == none ) {
-        log("Couldn't find a place to spawn a Stinky Clot ("$StinkyClass$")! Trying again later.", class.name);
-        return false;
-    }
-
-    total = 32; // dummy value
     StinkySquad[0] = StinkyClass;
     if ( !bSingleTeamGame && StinkyControllers[0] == none && TeamBases[0].bActive
         && StinkyControllers[1] == none && TeamBases[1].bActive )
     {
         StinkySquad[1] = StinkyClass; // spawn two of them
     }
-    if( zvol.SpawnInHere(StinkySquad,,numspawned,total,32,,true))
-    {
-        //NumMonsters+=numspawned;
-        //WaveMonsters+=numspawned;
-        return true;
+    StinkyCount = StinkySquad.length;
+
+    OldZedSpawnLoc = ZedSpawnLoc;
+    ZedSpawnLoc = ZSLOC_RANDOM;
+    ZVol = FindSpawningVolumeForSquad(StinkySquad, false, 6250000);  // spawn Stinky at least 50m away
+    if ( Zvol == none ) {
+        // failed to find far spawn - look closer - 20m away, and don't ignore failed spawns
+        ZVol = FindSpawningVolumeForSquad(StinkySquad, true, 1000000);
     }
-    else
-    {
-        log("Failed to spawn the Stinky Clot: "$StinkyClass, class.name);
+    ZedSpawnLoc = OldZedSpawnLoc;
+    if( ZVol == none ) {
+        log("Couldn't find a place to spawn a Stinky Clot ("$StinkyClass$")! Trying again later.", class.name);
         return false;
     }
+
+    MaxMonsters += StinkyCount;
+    TotalMaxMonsters += StinkyCount;
+    SpawnSquad(ZVol, StinkySquad, true);
+    // at this moment, StinkySquad containes only not spawned zeds
+    MaxMonsters -= StinkyCount;
+    TotalMaxMonsters -= StinkySquad.length;
+
+    return StinkySquad.length == 0;
 }
 
 function byte GetTeamForStinkyController(StinkyController SC)

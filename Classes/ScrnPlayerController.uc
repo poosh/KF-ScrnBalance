@@ -118,14 +118,17 @@ var globalconfig byte ActiveMusicPlaylist;
 var globalconfig array<String> MusicPlaylistNames;
 var globalconfig array<SMusicRecord> MyMusic;
 
-var private transient array<int> MusicPlaylistIndex; // MusicPlaylistIndex[PL] = index of first playlist entry in MyMusic
-var private transient bool bMusicPlaylistIndexReady;
-var private transient int ActiveMusicSongIndex;
-var private transient string PendingSong;
+var protected transient array<int> MusicPlaylistIndex; // MusicPlaylistIndex[PL] = index of first playlist entry in MyMusic
+var protected transient bool bMusicPlaylistIndexReady;
+var protected transient int ActiveMusicSongIndex;
+var protected transient string PendingSong;
 var localized string strPlayingSong;
 
 var class<ScrnFlareCloud> FlareCloudClass;
 
+var transient float LastMutateTime;
+var transient int MutateCounter;
+var localized string strMutateProtection;
 
 replication
 {
@@ -1203,6 +1206,39 @@ exec function ResetMapAch(string MapName)
     }
 }
 
+function bool CheckMutateProtection()
+{
+    if ( Mut.CheckAdmin(self, true) )
+        return true;
+
+    if ( Level.TimeSeconds > LastMutateTime ) {
+        MutateCounter = 1;
+        LastMutateTime = Level.TimeSeconds + 10;
+    }
+    else if ( ++MutateCounter >= 10 ) {
+        if ( MutateCounter == 10 ) {
+            LastMutateTime = Level.TimeSeconds + 30;
+        }
+        if ( Level.NetMode != NM_DedicatedServer && Viewport(Player) != None ) {
+            ClientMessage(strMutateProtection);
+        }
+        return false;
+    }
+    return true;
+}
+
+exec function Mutate(string MutateString)
+{
+    if ( CheckMutateProtection() )
+        ServerMutate(MutateString);
+}
+
+function ServerMutate(string MutateString)
+{
+    if( Level.NetMode == NM_Client || !CheckMutateProtection() )
+        return;
+    Level.Game.BaseMutator.Mutate(MutateString, Self);
+}
 
 exec function MVote(string VoteString)
 {
@@ -3022,6 +3058,7 @@ defaultproperties
     strAlreadySpectating="Already spectating. Type READY, if you want to join the game."
     strNoPerkChanges="Mid-game perk changes disabled"
     strPerkLocked="Perk is locked"
+    strMutateProtection="Cannot mutate too often. Wait a bit."
     bWaveGarbageCollection=False
     bOtherPlayerLasersBlue=true
 

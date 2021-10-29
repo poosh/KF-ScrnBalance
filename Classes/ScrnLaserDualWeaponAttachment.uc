@@ -30,7 +30,7 @@ static function bool UnloadAssets() { return true; }
 simulated function PostNetReceive()
 {
     super.PostNetReceive();
-    
+
     if ( Role < ROLE_Authority ) {
         if ( Beam == none )
             SpawnBeam();
@@ -56,7 +56,7 @@ simulated function SpawnBeam()
 {
     if ( Beam != none || Level.NetMode == NM_DedicatedServer || Instigator == none /*|| Instigator.IsLocallyControlled()*/ )
         return; // spawn only on clients and only if Instigator is already replicated
-    
+
     Beam = spawn(BeamClass, self);
     if ( Beam != None ) {
         Beam.MyWeaponAttachment = self;
@@ -79,7 +79,7 @@ simulated function SetLaserType(byte value)
     if ( Role == ROLE_Authority ) {
         NetUpdateTime = Level.TimeSeconds - 1;
         if ( Level.NetMode != NM_DedicatedServer && Beam == none )
-            SpawnBeam(); // spawn beam on listen server 
+            SpawnBeam(); // spawn beam on listen server
     }
     if ( Beam != none )
         Beam.SetLaserType(value);
@@ -92,4 +92,5 @@ defaultproperties
     LaserAttachmentBone="Tip"
     BeamClass=class'ScrnBalanceSrv.ScrnLaserBeam3rd'
     bNetNotify=True
- 
+    HitAnims(0)="HitF_Dual9mm"
+}

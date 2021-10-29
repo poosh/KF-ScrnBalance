@@ -116,7 +116,8 @@ function ServerSetLaserType(byte NewLaserType)
 {
     LaserType = NewLaserType;
     bLaserActive = NewLaserType > 0;
-    ScrnLaserWeaponAttachment(ThirdPersonActor).SetLaserType(LaserType);
+    if ( ThirdPersonActor != none )
+        ScrnLaserWeaponAttachment(ThirdPersonActor).SetLaserType(LaserType);
 }
 
 simulated function bool PutDown()

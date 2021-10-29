@@ -19,7 +19,7 @@ var         byte                        LaserType;       //current laser type
 
 var         float                         FireSpotRenrerTime;         // how long to render RightDot after weapon fire (after that RightDot will be put in the center of the screen)
 
-
+var float LaserRecoilReduction;
 
 replication
 {
@@ -65,6 +65,8 @@ simulated function ApplyLaserState()
         ScrnLaserDualWeaponAttachment(ThirdPersonActor).SetLaserType(LaserType);
     if ( altThirdPersonActor != none )
         ScrnLaserDualWeaponAttachment(altThirdPersonActor).SetLaserType(LaserType);
+
+    AdjustRecoil();
 
     if ( !Instigator.IsLocallyControlled() )
         return;
@@ -156,6 +158,8 @@ simulated function TurnOffLaser()
         RightDot.Destroy();
     if (LeftDot != None)
         LeftDot.Destroy();
+
+    AdjustRecoil();
 }
 
 
@@ -166,8 +170,24 @@ function ServerSetLaserType(byte NewLaserType)
     LaserType = NewLaserType;
     ScrnLaserDualWeaponAttachment(ThirdPersonActor).SetLaserType(LaserType);
     ScrnLaserDualWeaponAttachment(altThirdPersonActor).SetLaserType(LaserType);
+    AdjustRecoil();
 }
 
+simulated function AdjustRecoil()
+{
+    local KFFire f;
+
+    f = KFFIre(FireMode[0]);
+    if ( LaserType == 0 ) {
+        f.maxVerticalRecoilAngle = f.default.maxVerticalRecoilAngle;
+        f.maxHorizontalRecoilAngle = f.default.maxHorizontalRecoilAngle;
+    }
+    else {
+        // reduced recoild while using laser sights
+        f.maxVerticalRecoilAngle = f.default.maxVerticalRecoilAngle * LaserRecoilReduction;
+        f.maxHorizontalRecoilAngle = f.default.maxHorizontalRecoilAngle * LaserRecoilReduction;
+    }
+}
 
 simulated function RenderOverlays( Canvas Canvas )
 {
@@ -421,6 +441,7 @@ function GiveTo( pawn Other, optional Pickup Pickup )
 
 defaultproperties
 {
+     LaserRecoilReduction=0.5
      LaserAttachmentClass=Class'ScrnBalanceSrv.ScrnLaserAttachmentFirstPerson'
      LaserDotClass=Class'ScrnBalanceSrv.ScrnLocalLaserDot'
      Weight=5.000000

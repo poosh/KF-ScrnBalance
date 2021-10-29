@@ -13,7 +13,7 @@ class ScrnBalance extends Mutator
 #exec OBJ LOAD FILE=ScrnAch_T.utx
 
 
-const VERSION = 96705;
+const VERSION = 96707;
 
 var ScrnBalance Mut; // pointer to self to use in static functions, i.e class'ScrnBalance'.default.Mut
 
@@ -55,6 +55,7 @@ var KFGameType KF;
 var ScrnGameType ScrnGT;
 var bool bStoryMode; // Objective Game mode (KFStoryGameInfo)
 var bool bTSCGame; // Team Survival Competition (TSCGame)
+var bool bTestMap;
 
 
 struct SPickupReplacement {
@@ -158,6 +159,7 @@ var globalconfig bool bVoteKillCheckVisibility;
 var globalconfig float VoteKillPenaltyMult;
 var globalconfig byte MinVoteFF, MaxVoteFF;
 var globalconfig byte MinVoteDifficulty;
+var byte MaxDifficulty;
 
 var ScrnBalancePersistence Persistence;
 
@@ -327,7 +329,7 @@ replication
 
     // non-config vars and configs vars which seem to replicate fine
     reliable if ( bNetInitial && Role == ROLE_Authority )
-        CustomWeaponLink, SrvTourneyMode, bTSCGame;
+        CustomWeaponLink, SrvTourneyMode, bTSCGame, bTestMap;
 
 }
 
@@ -412,14 +414,11 @@ simulated function InitSettings()
 
     default.bStoryMode = bStoryMode;
     default.bTSCGame = bTSCGame;
+    default.bTestMap = bTestMap;
 
     // fixes critical bug:
     // Assertion failed: inst->KPhysRootIndex != INDEX_NONE && inst->KPhysLastIndex != INDEX_NONE [File:.\KSkeletal.cpp] [Line: 595]
     class'FellLava'.default.bSkeletize = false;
-
-    // Fix missing textures
-    class'Welder'.default.TraderInfoTexture = texture(class'Welder'.default.SelectedHudImage);
-    class'Syringe'.default.TraderInfoTexture = texture(class'Syringe'.default.SelectedHudImage);
 
     EventZedNames();
 
@@ -1321,13 +1320,15 @@ static function LongMessage(PlayerController Sender, string S, optional int MaxL
 }
 
 
-function bool CheckAdmin(PlayerController Sender)
+function bool CheckAdmin(PlayerController Sender, optional bool bNoMsg)
 {
     if ( (Sender.PlayerReplicationInfo != none && Sender.PlayerReplicationInfo.bAdmin)
             || Level.NetMode == NM_Standalone || Level.NetMode == NM_ListenServer )
         return true;
 
-    Sender.ClientMessage("Requires ADMIN priviledges");
+    if ( !bNoMsg ) {
+        Sender.ClientMessage("Requires ADMIN priviledges");
+    }
     return false;
 }
 
@@ -1390,7 +1391,7 @@ function Mutate(string MutateString, PlayerController Sender)
             GameRules.DebugSPI(Sender);
             break;
         case MUTATE_ENEMIES:
-            if ( CheckAdmin(Sender) )
+            if ( bTestMap || CheckAdmin(Sender) )
                 MsgEnemies(Sender);
             break;
         case MUTATE_GIMMECOOKIES:
@@ -1435,7 +1436,7 @@ function Mutate(string MutateString, PlayerController Sender)
         case MUTATE_ZED:
             if ( ScrnGT == none || ScrnGT.ScrnGameLength == none )
                 Sender.ClientMessage("Avaliable only in ScrnGameType + bScrnWaves");
-            else if ( CheckAdmin(Sender) ) {
+            else if ( bTestMap || CheckAdmin(Sender) ) {
                 ScrnGT.ScrnGameLength.ZedCmd(Sender, Value);
             }
             break;
@@ -1507,22 +1508,16 @@ function XPBoost(PlayerController Sender, name Achievement, byte Level)
     if ( Achievement == '' || SPI.ProgressAchievement(Achievement, 1) ) {
         SteamStats.AddDamageHealed(class'ScrnVetFieldMedic'.default.progressArray0[Level]);
         SteamStats.AddShotgunDamage(class'ScrnVetSupportSpec'.default.progressArray0[Level]);
-        SteamStats.AddWeldingPoints(class'ScrnVetSupportSpec'.default.progressArray1[Level]);
         v = class'ScrnVetSharpshooter'.default.progressArray0[Level];
-        while ( v-- > 0 )
+        while ( --v >= 0 )
             SteamStats.AddHeadshotKill(false);
-        v = class'ScrnVetCommando'.default.progressArray0[Level];
-        while ( v-- > 0 )
-            SteamStats.AddStalkerKill();
-        SteamStats.AddBullpupDamage(class'ScrnVetCommando'.default.progressArray1[Level]);
+        SteamStats.AddBullpupDamage(class'ScrnVetCommando'.default.progressArray0[Level]);
         SteamStats.AddMeleeDamage(class'ScrnVetBerserker'.default.progressArray0[Level]);
         SteamStats.AddFlameThrowerDamage(class'ScrnVetFirebug'.default.progressArray0[Level]);
         SteamStats.AddExplosivesDamage(class'ScrnVetDemolitions'.default.progressArray0[Level]);
         for ( S = SteamStats.Rep.CustomLink; S!=none; S=S.NextLink ) {
             if ( ScrnPistolKillProgress(S) != none )
                 S.IncrementProgress(class'ScrnVetGunslinger'.default.progressArray0[Level]);
-            else if ( ScrnPistolDamageProgress(S) != none )
-                S.IncrementProgress(class'ScrnVetGunslinger'.default.progressArray1[Level]);
         }
         SaveStats(); // for ServerPerks to write stats
         // ensure that xp boost won't be multiplied by end-game bonus
@@ -1640,7 +1635,7 @@ function SendAccuracy(PlayerController Sender)
 
 }
 
-function String GameTimeStr()
+function simulated String GameTimeStr()
 {
     return FormatTime(Level.Game.GameReplicationInfo.ElapsedTime);
 }
@@ -1930,6 +1925,10 @@ simulated function ApplyWeaponFix()
     class'Knife'.default.bCanThrow = bStoryMode;
     class'Syringe'.default.bCanThrow = bStoryMode;
     class'Welder'.default.bCanThrow = bStoryMode;
+
+    // Fix missing textures
+    class'Welder'.default.TraderInfoTexture = texture(class'Welder'.default.SelectedHudImage);
+    class'Syringe'.default.TraderInfoTexture = texture(class'Syringe'.default.SelectedHudImage);
 }
 
 
@@ -2560,6 +2559,7 @@ function PostBeginPlay()
     local ScrnVotingHandlerMut VH;
     local ScrnAchHandler AchHandler;
     local int i;
+    local String MapName;
 
     KF = KFGameType(Level.Game);
     if (KF == none) {
@@ -2591,6 +2591,9 @@ function PostBeginPlay()
     else if ( ScrnStoryGameInfo(KF) != none ) {
         ScrnStoryGameInfo(KF).ScrnBalanceMut = self;
     }
+
+    MapName = Caps(KF.GetCurrentMapName(Level));
+    bTestMap = InStr(MapName, "TESTMAP") != -1 || InStr(MapName, "TESTGROUNDS") != -1;
     MapInfo = Spawn(Class'ScrnBalanceSrv.ScrnMapInfo');
 
     if ( bForceEvent )
@@ -2611,7 +2614,7 @@ function PostBeginPlay()
 
     // CHECK & LOAD SERVERPERKS
     if ( FindServerPerksMut() == none ) {
-        log("ServerPerksMut is not loaded! Loading it now...", 'ScrnBalance');
+        log("Loading ServerPerksMut...", 'ScrnBalance');
         Level.Game.AddMutator(ServerPerksPkgName, false);
         //check again
         if ( FindServerPerksMut() == none )
@@ -3296,6 +3299,7 @@ defaultproperties
     bVoteKillCheckVisibility=True
     VoteKillPenaltyMult=5.0
     MinVoteDifficulty=2
+    MaxDifficulty=8
     bTraderSpeedBoost=True
     bAllowBehindView=True
 

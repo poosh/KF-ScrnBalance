@@ -11,7 +11,8 @@ var transient KFAmmoPickup CurrentAmmoCandidate;
 
 var transient Actor LastAlternatePathTarget;
 var transient NavigationPoint LastAlternatePathPoint;
-var transient Actor OldMoveTarget;
+var transient Actor OldMoveTarget, PrevActionTarget;
+var transient int ActionMoves;
 var int MoveAttempts;
 
 var localized string BlameStr;
@@ -172,12 +173,21 @@ state Moving extends Scripting
         MoveTarget = Target;
 
         if ( !ActorReachable(MoveTarget) ) {
-            MoveTarget = FindPathToward(MoveTarget,false);
+            MoveTarget = FindPathToward(MoveTarget, false);
 
-            if ( MoveTarget == OldMoveTarget && --MoveAttempts <= 0) {
+            if ( MoveTarget == none && ActionMoves == 0 ) {
+                // this could be a dead end, like badly placed ammo box or base guardian
+                // teleport one step back and try again
+                log("No path to " $ GetItemName(string(Target)));
+                ActionMoves++;
+                return;
+            }
+
+            if ( MoveTarget == none || (MoveTarget == OldMoveTarget && --MoveAttempts <= 0)) {
                 log("Stuck @ (" $ Pawn.Location $ ") while navigating to " $ GetItemName(string(MoveTarget))
                         $ " / " $ GetItemName(string(Target)), class.name);
-                if ( MoveTarget.IsA('NavigationPoint') ) {
+                StinkyClot.LogPath();
+                if ( NavigationPoint(MoveTarget) != none ) {
                     // make sure we don't use this navigation point anymore
                     FtgGame.InvalidatePathTarget(MoveTarget);
                 }
@@ -197,6 +207,7 @@ state Moving extends Scripting
         }
 
         if ( OldMoveTarget != MoveTarget ) {
+            ActionMoves++;
             StinkyClot.OnMoveTarget(MoveTarget);
             OldMoveTarget = MoveTarget;
             MoveAttempts = default.MoveAttempts;
@@ -218,8 +229,12 @@ KeepMoving:
         sleep(1.0);
         Goto('Begin');
     }
-    SetMoveTarget();
     DoAdditionalActions();
+    SetMoveTarget();
+    if ( MoveTarget == none ) {
+        StinkyClot.TeleportToActor(PrevActionTarget);
+        Goto('KeepMoving');
+    }
     Pawn.GroundSpeed = CalcSpeed();
     Pawn.WaterSpeed = Pawn.GroundSpeed;
     Pawn.AirSpeed = Pawn.GroundSpeed;
@@ -233,8 +248,9 @@ KeepMoving:
         }
 
         // make sure the Stinky Clot won't teleport at this phase
+        ActionMoves = 0;
         MoveTarget = none;
-        OldMoveTarget = none;
+        PrevActionTarget = StinkyClot.MoveHistory[1];  // keep the previous navpoint in case we want to jump back
         StinkyClot.ClearMoveHistory();
     }
     sleep( PlayCompleteAnimation() );

@@ -895,7 +895,7 @@ function Died(Controller Killer, class<DamageType> DamType)
         bDied = true;
         Deaths++;
         LastKilledBy = Killer;
-        if ( KFMonster(Killer.Pawn) != none )
+        if ( Killer != none && KFMonster(Killer.Pawn) != none )
             DeathsByMonster++;
         for ( i=0; i<GameRules.AchHandlers.length; ++i ) {
             GameRules.AchHandlers[i].PlayerDied(self, Killer, DamType);

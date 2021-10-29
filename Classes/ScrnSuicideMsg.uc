@@ -10,7 +10,7 @@ static function RenderComplexMessage(
         out float XL,
         out float YL,
         optional String MessageString,
-        optional int Switch,
+        optional int Beep,
         optional PlayerReplicationInfo RelatedPRI_1,
         optional PlayerReplicationInfo RelatedPRI_2,
         optional Object OptionalObject // must be ScrnGameReplicationInfo
@@ -46,7 +46,7 @@ static function RenderComplexMessage(
         Seconds = TimeLeft;
         C.DrawColor = default.CriticalColor;
         C.DrawColor.A = hud.PulseAlpha;
-        if ( hud.PulseAlpha > default.OldValue) {
+        if ( Beep > 0 && hud.PulseAlpha > default.OldValue) {
             // beep on pulse's peek
             PC.Pawn.PlaySound(class'ScrnSuicideBomb'.default.BeepSound, SLOT_Misc, 2.0, , 150.0);
         }
@@ -57,7 +57,7 @@ static function RenderComplexMessage(
         Seconds = TimeLeft % 60;
         // C.Color = DrawColor;
         // C.Color.A = KFHUDAlpha;
-        if ( TimeLeft != default.OldValue ) {
+        if ( Beep > 0 && TimeLeft != default.OldValue ) {
             // beep once per second
             PC.Pawn.PlaySound(class'ScrnSuicideBomb'.default.BeepSound, SLOT_Misc, 2.0, , 150.0);
             default.OldValue = TimeLeft;

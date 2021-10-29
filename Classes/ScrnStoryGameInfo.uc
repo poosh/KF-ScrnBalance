@@ -3,18 +3,38 @@ class ScrnStoryGameInfo extends KFStoryGameInfo;
 var ScrnBalance ScrnBalanceMut;
 var protected transient int ObjTraderIndex;
 
+var globalconfig string VotingHandlerOverride;  // override VotingHandlerType with this one
+
 event InitGame( string Options, out string Error )
 {
     local int ConfigMaxPlayers;
+    local string InOpt;
 
     ObjTraderIndex = -1;
     ConfigMaxPlayers = default.MaxPlayers;
 
+    InOpt = ParseOption( Options, "VotingHandler");
+    if( InOpt != "" ) {
+        log("VotingHandlerType="$InOpt, class.name);
+    }
+    else if ( VotingHandlerOverride != "" ) {
+        log("Override VotingHandlerType with " $ VotingHandlerOverride, class.name);
+        Options $= "?VotingHandler=" $ VotingHandlerOverride;
+    }
+
     super.InitGame(Options, Error);
-    CheckScrnBalance();
+
+    if ( VotingHandler != none ) {
+        log("VotingHandler=" $ VotingHandler.class, class.name);
+    }
+    else if ( Level.NetMode != NM_StandAlone ) {
+        warn("No VotingHandler!");
+    }
 
     MaxPlayers = Clamp(GetIntOption( Options, "MaxPlayers", MaxPlayers ),0,32);
     default.MaxPlayers = Clamp( ConfigMaxPlayers, 0, 32 );
+
+    CheckScrnBalance();
 
     log("MonsterCollection = " $ MonsterCollection);
 }
@@ -22,8 +42,8 @@ event InitGame( string Options, out string Error )
 protected function CheckScrnBalance()
 {
     if ( ScrnBalanceMut == none ) {
-        log("ScrnBalance is not loaded! Loading it now...", class.name);
-        AddMutator(class.outer.name $ ".ScrnBalance", false);
+        log("Loading ScrnBalance...", class.name);
+        AddMutator(class'ScrnStoryGameInfo'.outer.name $ ".ScrnBalance", false);
         if ( ScrnBalanceMut == none )
             log("Unable to spawn ScrnBalance!", class.name);
     }
@@ -447,4 +467,5 @@ State MatchInProgress
 defaultproperties
 {
     GameName="ScrN Objective Mode"
+    VotingHandlerOverride="KFMapVoteV2.KFVotingHandler"
 }

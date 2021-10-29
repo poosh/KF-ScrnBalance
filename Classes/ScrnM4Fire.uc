@@ -6,13 +6,14 @@ state FireLoop
     function BeginState()
     {
         super.BeginState();
-        
+
         NextFireTime = Level.TimeSeconds - 0.000001; //fire now!
     }
-}    
+}
 
 defaultproperties
 {
-     FireLoopAnimRate=1.59
-     DamageType=Class'ScrnBalanceSrv.ScrnDamTypeM4AssaultRifle'
+    DamageMax=41
+    FireLoopAnimRate=1.59
+    DamageType=Class'ScrnBalanceSrv.ScrnDamTypeM4AssaultRifle'
 }

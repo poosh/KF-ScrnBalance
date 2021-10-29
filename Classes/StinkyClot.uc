@@ -197,7 +197,32 @@ simulated function SetSkin()
     }
 }
 
-function TeleportToNextPath()
+function LogPath()
+{
+    log("Path history:  " $ MoveHistory[2] $ " => "  $ MoveHistory[1] $ " => " $ MoveHistory[0], class.name);
+    log("Current route: " $ Controller.CurrentPath.Start $ " => " $ Controller.CurrentPath.End, class.name);
+    log("Next route:    " $ Controller.NextRoutePath.Start $ " => " $ Controller.NextRoutePath.End, class.name);
+}
+
+function TeleportToActor(Actor TeleportDest)
+{
+    if ( TeleportDest == none )
+        return;
+
+    TeleportLocation = TeleportDest.Location;
+    TeleportLocation.Z += CollisionHeight + 5;
+
+    log("Teleporting to " $ TeleportDest $ " @ ("$TeleportLocation$")", class.name);
+    LogPath();
+
+    ClearMoveHistory();
+    StuckCounter = 0;
+    NextStuckTestTime = Level.TimeSeconds + 5;
+
+    StartTeleport();
+}
+
+function bool TeleportToNextPath()
 {
     local Actor TeleportDest;
 
@@ -207,19 +232,11 @@ function TeleportToNextPath()
     if ( TeleportDest == none ) {
         TeleportDest = MoveHistory[0];
     }
-    TeleportLocation = TeleportDest.Location;
-    TeleportLocation.Z += CollisionHeight + 5;
-
-    log("Teleporting to " $ TeleportDest $ " @ ("$TeleportLocation$")", class.name);
-    log("Path history:  " $ MoveHistory[2] $ " => "  $ MoveHistory[1] $ " => " $ MoveHistory[0], class.name);
-    log("Current route: " $ Controller.CurrentPath.Start $ " => " $ Controller.CurrentPath.End, class.name);
-    log("Next route:    " $ Controller.NextRoutePath.Start $ " => " $ Controller.NextRoutePath.End, class.name);
-
-    ClearMoveHistory();
-    StuckCounter = 0;
-    NextStuckTestTime = Level.TimeSeconds + 5;
-
-    StartTeleport();
+    if ( TeleportDest == none ) {
+        return false;
+    }
+    TeleportToActor(TeleportDest);
+    return true;
 }
 
 function StartTeleport()

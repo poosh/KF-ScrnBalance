@@ -829,6 +829,8 @@ function SetupWave()
 {
     local int i;
 
+    UpdateMonsterCount();
+
     bWaveInProgress = true;
     TSCGRI.bWaveInProgress = true;
 
@@ -842,7 +844,12 @@ function SetupWave()
     WaveMonsters = 0;
     WaveNumClasses = 0;
     bWaveEnding = false;
-
+    NextSquadTarget[0] = rand(AliveTeamPlayerCount[0]);
+    NextSquadTarget[1] = rand(AliveTeamPlayerCount[1]);
+    // reset spawn volumes
+    LastZVol = none;
+    LastSpawningVolume = none;
+    
     SetupPickups();
 
     i = rand(2);
@@ -907,8 +914,6 @@ function SetupWave()
     TSCGRI.MaxMonstersOn = true; // I've no idea what is this for
 
     NextSquadTeam = rand(2); // pickup random team for the next special squad
-    for( i=0; i<ZedSpawnList.Length; ++i )
-        ZedSpawnList[i].Reset();
 
     //Now build the first squad to use
     SquadsToUse.Length = 0; // force BuildNextSquad() to rebuild squad list
@@ -957,21 +962,31 @@ function bool AddSquad()
     return super.AddSquad();
 }
 
-// returns random alive player
+// returns every alive player in a row
 function Controller FindSquadTarget()
 {
-    local array<Controller> CL;
-    local Controller C;
+    local Controller C, FirstC;
+    local int i;
 
-    for( C=Level.ControllerList; C!=None; C=C.NextController ) {
-        if ( C.bIsPlayer && C.Pawn!=None && C.Pawn.Health>0
-                && (bTeamWiped || !bCheckSquadTeam || C.GetTeamNum() == NextSquadTeam) )
-            CL[CL.Length] = C;
+    if ( bTeamWiped || !bCheckSquadTeam || NextSquadTeam > 1 ) {
+        return super.FindSquadTarget();
     }
-    if( CL.Length>0 )
-        return CL[Rand(CL.Length)];
 
-    return super.FindSquadTarget(); // in case when there are no team players alive
+    for ( C = Level.ControllerList; C != none; C = C.NextController ) {
+        if ( C.bIsPlayer && C.Pawn!=None && C.Pawn.Health>0  && C.GetTeamNum() == NextSquadTeam ) {
+            if (i == NextSquadTarget[NextSquadTeam]) {
+                ++NextSquadTarget[NextSquadTeam];
+                return C;
+            }
+            ++i;
+            if ( FirstC == none ) {
+                FirstC = C;
+            }
+        }
+    }
+
+    NextSquadTarget[NextSquadTeam] = 1;  // cuz we return zeroth
+    return FirstC;
 }
 
 protected function StartTourney()

@@ -19,6 +19,66 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+### v9.67.07
+### Balance
+- Commando now has 60% damage bonus @ Lv6 like all other perks (up from 50%)
+- Commando received +50% bigger magazines for perked weapons (up from +25%)
+- Removed Bullpup bullet penetration due to increased stats
+- M4 magazine size restored to 30 (down from 32).
+- M4 damage increased to 41 to match M4-203 primary damage.
+- Regular M4 headshot multiplier lowered to x1.2 (down from x1.3)
+- M4-203 price increased to $1750 (up from $1600)
+- Gunslinger has lower recoil with laser pistols while laser sights are active
+- Removed armor requirement for Cowboy Mode. Now Gunslinger can wear armor like all other perks.
+- Lowered Demolitions discount on pipebombs. Now Demo receives -60% discount @ Lv6 like on all other weapons.
+- Support Specialist carry weight lowered to 24 (down from 25). I have no idea why Support received weight buff before.
+- Removed M99, CrossBuzzSaw, HRL, and RPG from Tourney Mode (unless TOURNEY_ALL_WEAPONS flag is set)
+
+### QoL improvements and bug fixes
+- Added `LeftGunAmmo 1|0` console command to display left gun ammo separately in case of dual pistols.
+  By default, classic mode is used - combined ammo counter.
+- Restored `MVOTE BORING` for legacy games (`KFGameType`).
+- Fixed an issue where `MVOTE BORING` could cause zeds to spawn further from players due to overused close volumes.
+- Optimized zed spawn mechanics, achieving at least 30x better CPU usage (removing lag spikes),
+  especially on map with many ZombieVolumes, like FrightYard.
+- On a test map, `MUTATE ZED FP SPAWN` can be used without admin privileges
+- Shotgun pellets can damage the same targets no more than twise (head + body). It fixes insane shotgun damage
+  on servers with high TickRate, where shotgun pellets do damage per every tick.
+- Reduced network replication of game speed during zed time exit. This should reduce lags at zed time end,
+  especially on servers with high TickRate.
+- Fixed warning: "PlayAnim: Sequence 'HitF_Dual9mmm' not found for mesh"
+- Fixed a bug where a player did not receive burning damage after killing the Husk who set player on fire.
+
+### KillingFloor.ini
+- Added `VotingHandlerOverride=KFMapVoteV2.KFVotingHandler` to `ScrnGameType` and `ScrnStoryGameInfo` to override map
+  voting handlerr to KFMapVoteV2 by default. New players do not have to edit KillingFloor.ini to install the bundle.
+- Added `LogZedSpawnLevel=2` to ScrnGameType config (KillingFloor.ini). Set it to 7 to debug zed spawns.
+
+### XCM v0.20
+- Reworked early wave spawns
+- Fixed a bug that halved zed spawn rate
+- Fixed another bug that slowered bug zed squad spawns
+- Lowered usage of Sucicide Timer beeps (except the last minute remaining)
+
+### FTG
+- FTG: On The Clock game mode updated to v2.01 (by *nmmblez*)
+- Fixed a bug where Stinky Clot could teleport to the null point of the map (X=0,Y=0,Z=0)
+- Fixed an issue where Stinky Clot could spawn too close to the players
+- Log more telemetry data if Stinky Clot gets stuck
+
+### ScrN Weapon Pack
+- Restored normal HS multiplier for *VAL* (x1.1, was x1.0)
+- *HK-417* magazine size raised to 20 and price to $3500
+- *HRL* blast radius lowered to 8m (down from 9m)
+- *Saiga 12* price raised to $3000 (up from $2500)
+
+### ScrN Zed Pack v2.10
+- HardPat does not become invulnerable anymore. Now, when clocked and escaping, he has 80% damage resistance,
+  but can attack players who block him.
+- Male and Female FP do not attack or push each other anymore
+- Players can push Crawlers away - the latter are too small to block players
+- Fixed warning about missing jump animation for crawler
+
 ### v9.67.05
 - Fixed Suicide Timer being out of sync between the server and clients.
 - `SUICIDE` console command triggers the suicide bomb if such exists. That can be used as a last resort to kill the

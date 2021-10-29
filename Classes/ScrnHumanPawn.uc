@@ -100,9 +100,6 @@ var transient KFWeapon WeaponToFixClientState;
 var transient bool bQuickMeleeInProgress;
 var transient float QuickMeleeFinishTime;
 
-var localized string BlameStrM99;
-var localized string BlameStrRPG;
-
 // indicates that the player is buying something at the current moment. Server-side only.
 var transient bool bServerShopping;
 var transient float NextBrownCrapTime;
@@ -387,6 +384,16 @@ function DeleteInventory( inventory Item )
             PendingWeapon = QuickMeleeWeapon;
     }
     CalcCarriedInventorySpeed();
+}
+
+simulated function SetWeaponAttachment(WeaponAttachment NewAtt)
+{
+    super.SetWeaponAttachment(NewAtt);
+
+    // fixes bug in DualiesAttachment
+    if ( HitAnims[0] == 'HitF_Dual9mmm') {
+        HitAnims[0] = 'HitF_Dual9mm';
+    }
 }
 
 // todo: add support for modded guns
@@ -1730,7 +1737,7 @@ simulated function Tick(float DeltaTime)
     AlphaAmount = 255; // hack to avoid KFHumanPawn of updating KFPRI.ThreeSecondScore
     super.Tick(DeltaTime);
 
-    bCowboyMode = bCowboyMode && ShieldStrength < 26;
+    // bCowboyMode = bCowboyMode && ShieldStrength < 26;
 
     if ( Role == ROLE_Authority ) {
         if ( MacheteBoost > 0 && Level.TimeSeconds > MacheteResetTime ) {
@@ -2122,7 +2129,8 @@ simulated function TakeDamage( int Damage, Pawn InstigatedBy, Vector Hitlocation
     if ( InstigatedBy == none ) {
         // Player received non-zombie KF damage from unknown source.
         // Let's assume that it is friendly damage, e.g. from just disconnected/crashed/cheating teammate and ignore it.
-        if ( KFDamType != none && class<DamTypeZombieAttack>(KFDamType) == none )
+        if ( KFDamType != none && class<DamTypeZombieAttack>(KFDamType) == none
+                && (!bBurnified || KFDamType != class'DamTypeBurned') )
             return;
     }
     else {
@@ -2792,14 +2800,11 @@ event Bump(actor Other)
 
     super.Bump(Other);
 
-    if ( class'ScrnBalance'.default.Mut.bBeta ) {
-        // push crawlers away
-        crawler = ZombieCrawler(Other);
-        if ( crawler != none && crawler.health > 0 && !crawler.bPouncing //&& !crawler.bShotAnim
-                && (LastDamagedBy != crawler || Level.TimeSeconds - LastDamageTime > 0.2) )
-        {
-            crawler.Velocity = GroundSpeed * 0.5 * normal(Velocity);
-        }
+    // push crawlers away
+    crawler = ZombieCrawler(Other);
+    if ( crawler != none && crawler.health > 0 && !crawler.bPouncing ) {
+        crawler.Velocity = GroundSpeed * 2 * normal(Acceleration);
+        crawler.Acceleration = crawler.Velocity;
     }
 }
 
@@ -2887,8 +2892,6 @@ defaultproperties
      CarriedInventorySpeed=1.0
      PrevPerkLevel=-1
      MaxFallSpeed=750
-     BlameStrM99="%p blamed for using a Noobgun"
-     BlameStrRPG="%p blamed for buying an RPG on Boss wave"
      FartSound=SoundGroup'ScrnSnd.Fart'
      RequiredEquipment(0)="ScrnBalanceSrv.ScrnKnife"
      RequiredEquipment(1)="ScrnBalanceSrv.ScrnSingle"

@@ -47,7 +47,7 @@ static function float GetMagCapacityModStatic(KFPlayerReplicationInfo KFPRI, cla
             || ClassIsInArray(default.PerkedAmmo, Other.default.FiremodeClass[0].default.AmmoClass)  //v3 - custom weapon support
         )
     {
-        return 1.25; // 25% bigger assault rifle magazine
+        return 1.5001; // 50% bigger assault rifle magazine
     }
     return 1.0;
 }
@@ -78,7 +78,7 @@ static function float AddExtraAmmoFor(KFPlayerReplicationInfo KFPRI, Class<Ammun
                 || ClassIsInArray(default.PerkedAmmo, AmmoType)  //v3 - custom weapon support
             )
         {
-            return 1.25 + fmax(0.00, 0.05 * float(GetClientVeteranSkillLevel(KFPRI)-6)); // +10% per level above 6
+            return 1.2501 + fmax(0.00, 0.05 * float(GetClientVeteranSkillLevel(KFPRI)-6)); // +5% per level above 6
         }
     }
     return 1.0;
@@ -101,8 +101,8 @@ static function int AddDamage(KFPlayerReplicationInfo KFPRI, KFMonster Injured, 
             || ClassIsInArray(default.PerkedDamTypes, DmgType) //v3 - custom weapon support
         )
     {
-        // 20% base bonus + 5% per level
-        InDamage *= 1.20 + 0.05 * GetClientVeteranSkillLevel(KFPRI);
+        // 30% base bonus + 5% per level
+        InDamage *= 1.3001 + 0.05 * GetClientVeteranSkillLevel(KFPRI);
     }
     return InDamage;
 }
@@ -163,7 +163,7 @@ static function string GetCustomLevelInfo( byte Level )
 
     S = Default.CustomLevelInfo;
     ReplaceText(S, "%L", string(Level));
-    ReplaceText(S, "%x", GetPercentStr(0.20 + 0.05*Level));
+    ReplaceText(S, "%x", GetPercentStr(0.30 + 0.05*Level));
     ReplaceText(S, "%z", string(min(10, 2 + Level/3)));
     ReplaceText(S, "%$", GetPercentStr(fmin(0.90, 0.30 + 0.05*Level)));
     return S;

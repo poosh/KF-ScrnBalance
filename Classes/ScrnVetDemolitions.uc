@@ -87,8 +87,8 @@ static function float GetCostScaling(KFPlayerReplicationInfo KFPRI, class<Pickup
     if ( ClassIsChildOf(Item, class'PipeBombPickup')
         || (ClassIsChildOf(Item, class'M79Pickup') && !ClassIsChildOf(Item, class'ScrnM79IncPickup')) )
     {
-        // Applied pipebomb discount to M79 (c) PooSH, 2012
-        return fmax(0.10, 0.48 - 0.04 * GetClientVeteranSkillLevel(KFPRI)); // Up to 76% discount on M79 to match spawn value [Aze]
+        // 30% base discount + 5% extra per level
+        return fmax(0.10, 0.70 - 0.05 * GetClientVeteranSkillLevel(KFPRI));
     }
     else if ( ClassIsChildOf(Item, class 'M32Pickup')
                 || ClassIsChildOf(Item, class 'LawPickup')
@@ -112,7 +112,7 @@ static function float GetAmmoCostScaling(KFPlayerReplicationInfo KFPRI, class<Pi
 
     if ( ClassIsChildOf(Item, class'PipeBombPickup') )
     {
-        return fmax(0.1, 0.48 - (0.04 * GetClientVeteranSkillLevel(KFPRI))); // Up to 76% discount on PipeBomb
+        return fmax(0.1, 0.70 - (0.05 * GetClientVeteranSkillLevel(KFPRI)));
     }
     else if ( ClassIsChildOf(Item, class'M79Pickup') || ClassIsChildOf(Item, class'M32Pickup')
             || ClassIsChildOf(Item, class'LAWPickup') || ClassIsChildOf(Item, class'M4203Pickup')

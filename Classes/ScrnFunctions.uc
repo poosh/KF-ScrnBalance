@@ -38,6 +38,16 @@ static function string RPad(coerce string src, int to_len, optional string with)
     return src $ left(default.pad, pad_len);
 }
 
+static function bool StartsWith(string str, string part)
+{
+    return left(str, len(part)) ~= part;
+}
+
+static function bool EndsWith(string str, string part)
+{
+    return right(str, len(part)) ~= part;
+}
+
 // Converts version number in user-friendly string, e.g. 1.23 or 1.23.45
 static function string VersionStr(int v, optional bool bClean) {
     local string s;
