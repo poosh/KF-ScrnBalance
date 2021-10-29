@@ -35,6 +35,15 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 - Removed M99, CrossBuzzSaw, HRL, and RPG from Tourney Mode (unless TOURNEY_ALL_WEAPONS flag is set)
 
 ### QoL improvements and bug fixes
+- `MVOTE MAP RESTART` - restarts the current map
+- `MVOTE MAP RANDOM` - votes for random map
+- `MVOTE MAP WESTLONDON` - votes for specific map
+- `MVOTE MAP LONDON` - short names are allowed too
+- `MVOTE MAP LONDON XCM HOE` - Votes for map/game/difficulty
+- `MVOTE MAP HELP` - returns available maps and game modes
+- `MVOTE MAP LIST` - returns available maps
+- `MVOTE MAP LIST OBJ` - returns available maps for the specified game mode. In this case, `OBJ` is an acronym for
+  Objective Mode
 - Added `LeftGunAmmo 1|0` console command to display left gun ammo separately in case of dual pistols.
   By default, classic mode is used - combined ammo counter.
 - Restored `MVOTE BORING` for legacy games (`KFGameType`).
