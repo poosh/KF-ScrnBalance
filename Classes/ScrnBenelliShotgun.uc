@@ -46,14 +46,17 @@ simulated function Destroyed()
 //bring Laser to current state, which is indicating by LaserType
 simulated function ApplyLaserState()
 {
+    local ScrnLaserWeaponAttachment Laser3rd;
+
     //bLaserActive = LaserType > 0;
     LaserType = 1; //always red laser
     bLaserActive = LaserType > 0;
     if( Role < ROLE_Authority  )
         ServerSetLaserType(LaserType);
 
-    if ( ThirdPersonActor != none )
-        ScrnLaserWeaponAttachment(ThirdPersonActor).SetLaserType(LaserType);
+    Laser3rd = ScrnLaserWeaponAttachment(ThirdPersonActor);
+    if ( Laser3rd != none )
+        Laser3rd.SetLaserType(LaserType);
 
     if ( !Instigator.IsLocallyControlled() )
         return;
@@ -114,10 +117,13 @@ simulated function ClientReload()
 // Set the new fire mode on the server
 function ServerSetLaserType(byte NewLaserType)
 {
+    local ScrnLaserWeaponAttachment Laser3rd;
+
     LaserType = NewLaserType;
     bLaserActive = NewLaserType > 0;
-    if ( ThirdPersonActor != none )
-        ScrnLaserWeaponAttachment(ThirdPersonActor).SetLaserType(LaserType);
+    Laser3rd = ScrnLaserWeaponAttachment(ThirdPersonActor);
+    if ( Laser3rd != none )
+        Laser3rd.SetLaserType(LaserType);
 }
 
 simulated function bool PutDown()

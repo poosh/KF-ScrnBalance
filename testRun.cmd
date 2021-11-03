@@ -19,6 +19,7 @@ set /A IS_SRV=0
 :args
 if .%1. == ./?. goto help
 if .%1. == ./m. goto arg_make
+if .%1. == ./l. goto arg_listen
 if .%1. == ./s. goto arg_server
 if not .%1. == .. goto help
 
@@ -30,6 +31,11 @@ echo Compiling project...
 call make.cmd
 set /A ERR=%ERRORLEVEL%
 if %ERR% NEQ 0 goto end
+shift
+goto args
+
+:arg_listen
+set KFARGS=%KFARGS%?listen
 shift
 goto args
 
@@ -67,6 +73,7 @@ echo Launches Killing Floor game
 echo Usage:
 echo %0 [/m] [/s]
 echo    /m      - calls make, on success launches KF
+echo    /l      - Launches KF in listen server test mode
 echo    /s      - Launches KF in dedicated server test mode
 
 :end

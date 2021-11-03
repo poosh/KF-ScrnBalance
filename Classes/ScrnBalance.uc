@@ -13,7 +13,7 @@ class ScrnBalance extends Mutator
 #exec OBJ LOAD FILE=ScrnAch_T.utx
 
 
-const VERSION = 96707;
+const VERSION = 96708;
 
 var ScrnBalance Mut; // pointer to self to use in static functions, i.e class'ScrnBalance'.default.Mut
 
@@ -55,8 +55,9 @@ var KFGameType KF;
 var ScrnGameType ScrnGT;
 var bool bStoryMode; // Objective Game mode (KFStoryGameInfo)
 var bool bTSCGame; // Team Survival Competition (TSCGame)
-var bool bTestMap;
-
+var transient bool bTestMap;
+var transient string MapName;
+var transient string OriginalMapName; // based on ScrnGameRules.MapAliases
 
 struct SPickupReplacement {
     var class<Pickup> oldClass;
@@ -136,8 +137,8 @@ var protected transient byte CurWave; // used to check wave start / end
 
 var ScrnCustomWeaponLink CustomWeaponLink;
 
-var transient float FirstTickTime;
-var transient bool bTickExecuted;
+var deprecated float FirstTickTime;
+var deprecated bool bTickExecuted;
 var transient bool bInitReplicationReceived;
 
 var Mutator ServerPerksMut, Doom3Mut;
@@ -231,9 +232,10 @@ var globalconfig bool bServerInfoVeterancy;
 var transient array<KFUseTrigger> DoorKeys;
 var transient array<KFUseTrigger> DoubleDoorKeys; // keys with at least 2 doors
 
-var StaticMesh          AmmoBoxMesh;
-var float               AmmoBoxDrawScale;
-var vector              AmmoBoxDrawScale3D;
+var transient name                AmmoBoxName;
+var transient StaticMesh          AmmoBoxMesh;
+var transient float               AmmoBoxDrawScale;
+var transient vector              AmmoBoxDrawScale3D;
 
 struct SSpecialPlayers {
     var int SteamID32;
@@ -1141,47 +1143,66 @@ function FixMusic()
         KF.BossBattleSong = KF.MapSongHandler.WaveBasedSongs[10].CombatSong;
 }
 
-simulated function Tick( float DeltaTime )
+auto simulated state WaitingForTick
 {
-    if ( !bTickExecuted ) {
-        bTickExecuted = true;
-        FirstTickTime = Level.TimeSeconds;
-    }
-
-    if ( Role == ROLE_Authority ) {
-        OriginalWaveSpawnPeriod = KF.KFLRules.WaveSpawnPeriod;
-        if ( OriginalWaveSpawnPeriod < MinZedSpawnPeriod ) {
-            OriginalWaveSpawnPeriod = MinZedSpawnPeriod;
-            KF.KFLRules.WaveSpawnPeriod = MinZedSpawnPeriod;
+    function SrvFirstTick()
+    {
+        if ( MapInfo.WaveSpawnPeriod > 0 ) {
+            OriginalWaveSpawnPeriod = MapInfo.WaveSpawnPeriod;
+            KF.KFLRules.WaveSpawnPeriod = MapInfo.WaveSpawnPeriod;
         }
+        else {
+            OriginalWaveSpawnPeriod = KF.KFLRules.WaveSpawnPeriod;
+            if ( OriginalWaveSpawnPeriod < MinZedSpawnPeriod ) {
+                OriginalWaveSpawnPeriod = MinZedSpawnPeriod;
+                KF.KFLRules.WaveSpawnPeriod = MinZedSpawnPeriod;
+            }
+        }
+
         ForceMaxPlayers();
         if ( !bStoryMode ) {
-            if ( ScrnGT != none ) {
-                ScrnGT.CheckZedSpawnList();
-            }
             InitDoors();
             SetStartCash();
-            if ( bFixMusic )
+            if ( bFixMusic ) {
                 FixMusic();
-        }
-        if ( bTSCGame ) {
-            Level.GRI.bNoTeamSkins = bNoTeamSkins && !ScrnGT.IsTourney();
+            }
+            if ( ScrnGT != none ) {
+                if ( bTSCGame ) {
+                    Level.GRI.bNoTeamSkins = bNoTeamSkins && !ScrnGT.IsTourney();
+                }
+                ScrnGT.CheckZedSpawnList();
+            }
         }
         if ( ColoredServerName != "" ) {
             Level.GRI.ServerName = ParseColorTags(ColoredServerName);
         }
+    }
 
-        SetTimer(1, true);
+    simulated function Tick( float DeltaTime )
+    {
         Disable('Tick');
+
+        if ( Role == ROLE_Authority) {
+            SrvFirstTick();
+            SetTimer(1, true);
+            GoToState('');
+        }
+        else {
+            GotoState('ClientWaitingForNet');
+        }
     }
-    else if ( bInitialized ) {
-        Disable('Tick');
+}
+
+simulated state ClientWaitingForNet
+{
+Begin:
+    sleep(5.0);
+    if ( bInitialized ) {
+        GotoState('');
     }
-    else if ( Level.TimeSeconds - FirstTickTime > 5 ) {
-        // this shouldn't happen
+    else {
         Timelog("Settings receiving timeout failed - initializing with default settings");
         InitSettings();
-        Disable('Tick');
     }
 }
 
@@ -1353,7 +1374,7 @@ function bool CheckNotTourney(PlayerController Sender)
 function Mutate(string MutateString, PlayerController Sender)
 {
     local string Value;
-    local int cmd;
+    local int cmd, i;
 
     if ( MutateString == "" )
         return;
@@ -1407,14 +1428,20 @@ function Mutate(string MutateString, PlayerController Sender)
             MessageBonusLevel(Sender);
             break;
         case MUTATE_MAPDIFF:
-            if ( CheckAdmin(Sender) )
-                MapInfo.SetMapDifficulty(Value, Sender);
+            // deprecated
             break;
         case MUTATE_MAPZEDS:
             if ( CheckAdmin(Sender) && CheckNotTourney(Sender) ) {
-                if ( MapInfo.SetMapZeds(int(Value), Sender) ) {
-                    SetMaxZombiesOnce();
-                    BroadcastMessage("Max zeds at once set to " $ KF.MaxZombiesOnce);
+                i = int(value);
+                if ( i == 0 ) {
+                    Sender.ClientMessage("MaxZombiesOnce=" $ KF.MaxZombiesOnce);
+                }
+                else if ( i < 32 || i > 192 ) {
+                    Sender.ClientMessage("Map-zeds-at-once must be in range [32..192], e.g.: MUTATE MAPZEDS 64");
+                }
+                else {
+                    SetMaxZombiesOnce(i);
+                    BroadcastMessage("MaxZombiesOnce=" $ KF.MaxZombiesOnce);
                 }
             }
             break;
@@ -2270,6 +2297,7 @@ function bool CheckReplacement(Actor Other, out byte bSuperRelevant)
         return false;
     }
     else if ( Other.class == class'KFAmmoPickup' ) {
+        AmmoBoxName = Other.name;
         AmmoBoxMesh = Other.StaticMesh;
         AmmoBoxDrawScale = Other.DrawScale;
         AmmoBoxDrawScale3D = Other.DrawScale3D;
@@ -2300,6 +2328,7 @@ function bool CheckReplacement(Actor Other, out byte bSuperRelevant)
         SetupRepLink(SRStatsBase(Other).Rep);
     }
     else if ( Other.class == class'ScrnAmmoPickup' ) {
+        ScrnAmmoPickup(Other).OriginalName = AmmoBoxName;
         Other.SetStaticMesh(AmmoBoxMesh);
         Other.SetDrawScale(AmmoBoxDrawScale);
         Other.SetDrawScale3D(AmmoBoxDrawScale3D);
@@ -2402,23 +2431,25 @@ function SetupRepLink(ClientPerkRepLink R)
 
 function ForceEvent()
 {
-    local int i;
     local class<KFMonstersCollection> MC;
 
-    i = MapInfo.FindMapInfo(false);
-    if ( i != -1 && MapInfo.MapInfo[i].ForceEventNum > 0 )
-        CurrentEventNum = MapInfo.MapInfo[i].ForceEventNum;
-    else if ( EventNum == 0 )
-        CurrentEventNum = int(KF.GetSpecialEventType()); // autodetect event
-    else
-        CurrentEventNum = EventNum;
+    CurrentEventNum = EventNum;
+    if ( EventNum == 0 &&  MapInfo.ZedEventNum > 0 ) {
+        CurrentEventNum = MapInfo.ZedEventNum;
+    }
 
-    if ( CurrentEventNum == 254 ) {
-        // 254 - random event
-        CurrentEventNum = 1 + rand(4);
+    switch ( CurrentEventNum ) {
+        case 254:  // random event
+            CurrentEventNum = 1 + rand(4);
+            break;
+        case 255:
+            CurrentEventNum = 4;  // force regular zeds
+            break;
     }
 
     if (bScrnWaves) {
+        if ( CurrentEventNum != 0 )
+            log("ZED Event " $ CurrentEventNum, 'ScrnBalance');
         return;  // all we need for ScrnWaves is to load CurrentEventNum. ScrnGameLength will handle everything else.
     }
 
@@ -2442,7 +2473,7 @@ function ForceEvent()
                 KF.MonsterCollection = class'KFMod.KFMonstersXmas';
                 break;
             default:
-                log("Unknown Event Number: "$CurrentEventNum, 'ScrnBalance');
+                log("Custom ZED Event Number: "$CurrentEventNum, 'ScrnBalance');
                 CurrentEventNum = EventNum;
                 return;
         }
@@ -2532,15 +2563,14 @@ function SpawnSquad(String SquadName)
     KF.LastSpawningVolume = KF.LastZVol;
 }
 
-function SetMaxZombiesOnce()
+function SetMaxZombiesOnce(optional int value)
 {
-    local int i, value;
-
-    i = MapInfo.FindMapInfo(false);
-    if ( i != -1 && MapInfo.MapInfo[i].MaxZombiesOnce >= 16 )
-        value = MapInfo.MapInfo[i].MaxZombiesOnce;
-    else
-        value = MaxZombiesOnce;
+    if ( value < 16 ) {
+        if ( MapInfo.MaxZombiesOnce >= 16 )
+            value = MapInfo.MaxZombiesOnce;
+        else
+            value = MaxZombiesOnce;
+    }
 
     value = clamp(value, 16, 254);
     KF.StandardMaxZombiesOnce = value;
@@ -2559,7 +2589,7 @@ function PostBeginPlay()
     local ScrnVotingHandlerMut VH;
     local ScrnAchHandler AchHandler;
     local int i;
-    local String MapName;
+    local string s;
 
     KF = KFGameType(Level.Game);
     if (KF == none) {
@@ -2592,14 +2622,31 @@ function PostBeginPlay()
         ScrnStoryGameInfo(KF).ScrnBalanceMut = self;
     }
 
-    MapName = Caps(KF.GetCurrentMapName(Level));
-    bTestMap = InStr(MapName, "TESTMAP") != -1 || InStr(MapName, "TESTGROUNDS") != -1;
-    MapInfo = Spawn(Class'ScrnBalanceSrv.ScrnMapInfo');
+    bUseAchievements = bool(AchievementFlags & ACH_ENABLE);
+    GameRules = Spawn(Class'ScrnBalanceSrv.ScrnGameRules');
+    GameRules.Mut = self;
+    GameRules.bShowDamages = bShowDamages;
+    GameRules.bUseAchievements = bUseAchievements && KF.GameDifficulty >= 2;
+    if ( GameRules.bUseAchievements ) {
+        // spawn achievement handlers
+        AchHandler = GameRules.Spawn(Class'ScrnBalanceSrv.ScrnAchHandler');
+    }
+
+    MapName = KF.GetCurrentMapName(Level);
+    OriginalMapName = GameRules.GetOriginalMapName(MapName);
+    s = caps(MapName);
+    bTestMap = InStr(MapName, s) != -1 || InStr(MapName, s) != -1;
+    MapInfo = new(none, OriginalMapName) class'ScrnMapInfo';
+    MapInfo.Mut = self;
 
     if ( bForceEvent )
         ForceEvent();
     else
         CurrentEventNum = int(KF.GetSpecialEventType()); // autodetect event
+
+    if ( !bScrnWaves && (bResetSquadsAtStart || EventNum == 254) ) {
+        GameRules.ResetGameSquads(KF, CurrentEventNum);
+    }
 
     AddToPackageMap("ScrnAnims.ukx");
     AddToPackageMap("ScrnSM.usx");
@@ -2637,7 +2684,6 @@ function PostBeginPlay()
     KF.LoginMenuClass = string(Class'ScrnBalanceSrv.ScrnInvasionLoginMenu');
 
     Persistence = new class'ScrnBalancePersistence';
-
     if ( Persistence.Difficulty > 0 ) {
         KF.GameDifficulty = Persistence.Difficulty;
     }
@@ -2648,25 +2694,6 @@ function PostBeginPlay()
     //exec this on server side only
     ApplySpawnBalance();
     ApplyWeaponFix();
-
-    bUseAchievements = bool(AchievementFlags & ACH_ENABLE);
-    GameRules = Spawn(Class'ScrnBalanceSrv.ScrnGameRules');
-    if ( GameRules != none ) {
-        GameRules.Mut = self;
-        GameRules.bShowDamages = bShowDamages;
-        GameRules.bUseAchievements = bUseAchievements && KF.GameDifficulty >= 2;
-        if ( GameRules.bUseAchievements ) {
-            // spawn achievement handlers
-            AchHandler = GameRules.Spawn(Class'ScrnBalanceSrv.ScrnAchHandler');
-        }
-
-        if ( !bScrnWaves && (bResetSquadsAtStart || EventNum == 254) ) {
-            GameRules.ResetGameSquads(KF, CurrentEventNum);
-        }
-    }
-    else {
-        log("Unable to spawn Game Rules!", 'ScrnBalance');
-    }
 
     if (bAltBurnMech) {
         BurnMech = spawn(class'ScrnBalanceSrv.ScrnBurnMech');
@@ -2781,6 +2808,27 @@ function InitDoors()
         if ( t.DoorOwners.Length >= 2 )
             DoubleDoorKeys[DoubleDoorKeys.Length] = t;
     }
+}
+
+function KFDoorMover FindDoorByName(name n)
+{
+    local KFUseTrigger key;
+    local KFDoorMover door;
+    local int i, j;
+
+    if ( n == '' )
+        return none;
+
+    for ( i = 0; i < DoorKeys.length; ++i ) {
+        key = DoorKeys[i];
+        for ( j = 0; j < key.DoorOwners.Length; ++j ) {
+            door = key.DoorOwners[j];
+            if ( door.name == n ) {
+                return door;
+            }
+        }
+    }
+    return none;
 }
 
 function CheckDoors()
@@ -3049,12 +3097,12 @@ static function DestroyLinkedInfo( LinkedReplicationInfo EntryLink )
 function ServerTraveling(string URL, bool bItems)
 {
     local int j;
-    local string MapName, Options;
+    local string NewMapName, Options;
 
     log("******************** SERVER TRAVEL ********************", 'ScrnBalance');
-    Divide(URL, "?", MapName, Options);
+    Divide(URL, "?", NewMapName, Options);
     Options = "?" $ Options;  // Options must start with "?", option parsing routines won't work
-    log("New Map: " $ MapName, 'ScrnBalance');
+    log("New Map: " $ NewMapName, 'ScrnBalance');
     log("Options: " $ Options, 'ScrnBalance');
 
     if ( Persistence.Difficulty > 0 && KF.HasOption(Options, "Difficulty") ) {
@@ -3089,7 +3137,7 @@ function ServerTraveling(string URL, bool bItems)
 
     // destroy local objects
     if ( MapInfo != none ) {
-        MapInfo.Destroy();
+        MapInfo.Mut = none;
         MapInfo = none;
     }
     if ( BurnMech != none ) {

@@ -43,6 +43,7 @@ const BUY_BLAME       = 0x10;
 
 struct MonsterInfo {
     var KFMonster Monster;
+    var ZombieVolume ZVol;  // ZombieVolume where the zed got spawned
     var float SpawnTime;
     var float FirstHitTime; // time when Monster took first damage
     var int HitCount; // how many hits monster received
@@ -78,6 +79,7 @@ var private transient int       LastFoundMonsterIndex;
 struct MapAlias {
     var string FileName;
     var string AchName;
+    var string OriginalMap;
 };
 var config array<MapAlias> MapAliases;
 
@@ -356,17 +358,36 @@ function bool HasCustomZeds()
     return bHasCustomZeds;
 }
 
-function bool CheckMapAlias(out String MapName)
+function string GetOriginalMapName(String FileName)
 {
     local int i;
 
     for ( i = 0; i < MapAliases.length; ++i ) {
-        if ( MapName ~= MapAliases[i].FileName ) {
-            MapName = MapAliases[i].AchName;
-            return true;
+        if ( FileName ~= MapAliases[i].FileName ) {
+            if ( MapAliases[i].OriginalMap != "" )
+                return MapAliases[i].OriginalMap;
+            if ( MapAliases[i].AchName != "" )
+                return MapAliases[i].AchName;
+            return FileName;
         }
     }
-    return false;
+    return FileName;
+}
+
+function string GetMapAchName(String FileName)
+{
+    local int i;
+
+    for ( i = 0; i < MapAliases.length; ++i ) {
+        if ( FileName ~= MapAliases[i].FileName ) {
+            if ( MapAliases[i].AchName != "" )
+                return MapAliases[i].AchName;
+            if ( MapAliases[i].OriginalMap != "" )
+                return MapAliases[i].OriginalMap;
+            return FileName;
+        }
+    }
+    return FileName;
 }
 
 function bool CheckEndGame(PlayerReplicationInfo Winner, string Reason)
@@ -396,8 +417,7 @@ function bool CheckEndGame(PlayerReplicationInfo Winner, string Reason)
         mut.BroadcastMessage("Game WON in " $ Mut.GameTimeStr()
             $". HL="$HardcoreLevel, true);
         // Map achievements
-        MapName = Mut.KF.GetCurrentMapName(Level);
-        CheckMapAlias(MapName);
+        MapName = GetMapAchName(Mut.MapName);
         if ( !IsMapBlackListed(MapName) ) {
             Mut.bNeedToSaveStats = false;
             GiveMapAchievements(MapName);
@@ -444,7 +464,6 @@ function GiveMapAchievements(optional String MapName)
     local TeamInfo WinnerTeam;
     local float BonusMult;
     local bool bGiveBonus;
-    local int i;
     local int MapResult;
 
     WinnerTeam = TeamInfo(Level.Game.GameReplicationInfo.Winner);
@@ -464,9 +483,7 @@ function GiveMapAchievements(optional String MapName)
     BonusMult = Mut.EndGameStatBonus;
     if ( Mut.bStatBonusUsesHL )
         BonusMult *= fmax(1.0, HardcoreLevel - Mut.StatBonusMinHL);
-    i = Mut.MapInfo.FindMapInfo();
-    if ( i != -1 )
-        BonusMult *= 1.0 + Mut.MapInfo.MapInfo[i].Difficulty;
+    BonusMult *= Mut.MapInfo.XPBonusMult;
     bGiveBonus = BonusMult >= 0.1;
     if ( bGiveBonus )
         log("Giving bonus xp to winners (x"$BonusMult$")", 'ScrnBalance');
@@ -1051,13 +1068,14 @@ function InitBoss(KFMonster Monster)
         AchHandlers[i].BossSpawned(Monster);
 }
 
-function ReinitMonster(KFMonster Monster)
+function ReinitMonster(KFMonster Monster, optional ZombieVolume SpawnedAt)
 {
     local int index;
 
     index = GetMonsterIndex(Monster);
     MonsterInfos[index].MaxHeadHealth = Monster.HeadHealth;
     MonsterInfos[index].HeadHealth = Monster.HeadHealth;
+    MonsterInfos[index].ZVol = SpawnedAt;
 }
 
 // called from ScrnNade
@@ -1598,8 +1616,8 @@ defaultproperties
     AchClass=class'ScrnBalanceSrv.ScrnAchievements'
     MapAchClass=class'ScrnBalanceSrv.ScrnMapAchievements'
 
-    MapAliases(0)=(FileName="KF-HarbourV3-fix",AchName="KF-HarbourV3")
-    MapAliases(1)=(FileName="KF-Harbor",AchName="KF-HarbourV3")
+    MapAliases(0)=(FileName="KF-HarbourV3-fix",AchName="KF-HarbourV3",OriginalMap="KF-HarbourV3")
+    MapAliases(1)=(FileName="KF-Harbor",AchName="KF-HarbourV3",OriginalMap="KF-Harbor")
     MapAliases(2)=(FileName="KF-SantasRetreatFinal1-1",AchName="KF-SantasRetreat")
     MapAliases(3)=(FileName="KF-BigSunriseBeta1-6",AchName="KF-BigSunrise")
     MapAliases(4)=(FileName="KF-SunnyLandSanitariumBeta1-5",AchName="KF-SunnyLandSanitarium")
@@ -1609,8 +1627,8 @@ defaultproperties
     MapAliases(8)=(FileName="KF-Doom2-Final-V7",AchName="KF-D2M1")
     MapAliases(9)=(FileName="KF-Doom2-HiRes",AchName="KF-D2M1")
     MapAliases(10)=(FileName="KF-Doom2-HiRes11",AchName="KF-D2M1")
-    MapAliases(11)=(FileName="KF-ZedDiscoThe1stFloor",AchName="KF-ZedDisco")
-    MapAliases(12)=(FileName="KF-ZedDiscoThe2ndFloor",AchName="KF-ZedDisco")
+    MapAliases(11)=(FileName="KF-ZedDiscoThe1stFloor",AchName="KF-ZedDisco",OriginalMap="KF-ZedDiscoThe1stFloor")
+    MapAliases(12)=(FileName="KF-ZedDiscoThe2ndFloor",AchName="KF-ZedDisco",OriginalMap="KF-ZedDiscoThe2ndFloor")
     MapAliases(13)=(FileName="KF-Abandoned-Moonbase",AchName="KF-MoonBase")
     MapAliases(14)=(FileName="KF-DepartedNight",AchName="KF-Departed")
     MapAliases(15)=(FileName="KF-FoundryLightsOut",AchName="KF-Foundry")

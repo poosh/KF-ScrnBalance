@@ -468,4 +468,9 @@ defaultproperties
 {
     GameName="ScrN Objective Mode"
     VotingHandlerOverride="KFMapVoteV2.KFVotingHandler"
+    HUDType="ScrnBalanceSrv.ScrnHUD"
+    ScoreBoardType="ScrnBalanceSrv.ScrnScoreBoard"
+    LoginMenuClass="ScrnBalanceSrv.ScrnInvasionLoginMenu"
+    PlayerControllerClass=Class'ScrnBalanceSrv.ScrnPlayerController'
+    PlayerControllerClassName="ScrnBalanceSrv.ScrnPlayerController"
 }

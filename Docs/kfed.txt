@@ -1,0 +1,9 @@
+Console commands for KFEd (Unreal Editor)
+
+ZombieVolume Debug (hide lights, all other volumes but ZombieVolume)
+--------------------------------------------------
+ACTOR SELECT OFCLASS CLASS=Light
+ACTOR SELECT OFCLASS CLASS=BlockingVolume
+ACTOR SELECT OFCLASS CLASS=KFZombieZoneVolume
+ACTOR SELECT OFCLASS CLASS=Volume
+ACTOR HIDE SELECTED

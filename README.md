@@ -19,6 +19,43 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+### v9.67.08
+### ScrnMapInfo.ini
+- Completely reworked the *ScrnMapInfo.ini*. Now it has per-map objects (somewhat similar to Games/Waves/Zeds).
+- Zed spawning can be fine-tuned for each map via multiple config options.
+- Added `DebugZedSpawn` console command which draws zombie volumes where zed spawned. Works only in Solo/Listen mode.
+- Allows altering Stinky Clot paths in FTG individually for each map.
+- Check the default *ScrnMapInfo.ini* for details.
+- ScrnMapInfo.ini is far from complete, and have only few map definitions. Please contribute!
+
+### ScrnGames.ini
+- Added `bAllowZedEvents` and `bDebug`
+- Zed squad logging obeys `LogZedSpawnLevel` under `[ScrnBalanceSrv.ScrnGameType]` in *KillingFloor.ini*
+
+### ScrnBalanceSrv.ini
+- Added `OriginalMap` under `MapAlias` to specify the map object in *ScrnMapInfo.ini* (if it differs from `AchName`)
+- `bForceEvent=True` by default but now it obeys `bAllowZedEvents` value in *ScrnGames.ini*
+
+### FTG
+- wrote yet another workaround for Stinky Clot when he gets stuck.
+- fixed an issue when Stinky Clot could get a 300uu/s speed boost while not seen by the players.
+- Added `bDebugStinkyPath` config option under `[ScrnBalanceSrv.FtgGame]` in *KillingFloor.ini* to log Stinky paths
+
+### Bugfixes and QoL improvements
+- **XCM v0.21**
+- Speed up **M32** drrum close animation during reload interruption. Now it is less annoying while still realistic
+  (unlike vanilla)
+- ScrN Features: added a checkbox to show left pistol ammo separately (while dual-wielding)
+- Fixed multiple log warnings
+
+### ScrN Weapon Pack
+- Lowered **HK-417** weight to 7 (down from 8)
+- Fixed warnings
+
+### ScrN Zed Pack
+- Fixed multiple log warnings
+
+
 ### v9.67.07
 ### Balance
 - Commando now has 60% damage bonus @ Lv6 like all other perks (up from 50%)

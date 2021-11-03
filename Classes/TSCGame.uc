@@ -849,7 +849,7 @@ function SetupWave()
     // reset spawn volumes
     LastZVol = none;
     LastSpawningVolume = none;
-    
+
     SetupPickups();
 
     i = rand(2);
@@ -931,7 +931,7 @@ function SetupWave()
 
 function bool AddSquad()
 {
-    if ( NextSpawnSquad.length == 0 ) {
+    if ( !bSingleTeamGame && NextSpawnSquad.length == 0 ) {
         NextSquadTeam = 1 - NextSquadTeam;
         LastZVol = none;
 

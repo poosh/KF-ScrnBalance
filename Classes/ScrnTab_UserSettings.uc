@@ -21,6 +21,7 @@ var automated moCheckBox              ch_CookNade;
 var automated moCheckBox              ch_PrioritizePerkedWeapons;
 // var automated moCheckBox              ch_PrioritizeBoomstick;
 var automated moCheckBox              ch_NeverSwitchOnPickup;
+var automated moCheckBox              ch_ShowLeftGunAmmo;
 
 var automated GUIButton               b_GunSkin;
 var automated GUIButton               b_WeaponLock;
@@ -439,6 +440,16 @@ function InternalOnLoadINI(GUIComponent Sender, string s)
             ch_NeverSwitchOnPickup.Checked(PC.bNeverSwitchOnPickup);
             break;
 
+        case ch_ShowLeftGunAmmo:
+            if ( H == none ) {
+                ch_ShowLeftGunAmmo.Checked(false);
+                ch_ShowLeftGunAmmo.DisableMe();
+            }
+            else {
+                ch_ShowLeftGunAmmo.Checked(H.bShowLeftGunAmmo);
+                ch_ShowLeftGunAmmo.EnableMe();
+            }
+            break;
 
         case cbx_ShowDamages:
             if ( !PC.Mut.bShowDamages || H == none ) {
@@ -560,8 +571,15 @@ function InternalOnChange(GUIComponent Sender)
         //     break;
 
         case ch_NeverSwitchOnPickup:
+            if ( H != none ) {
                 PC.bNeverSwitchOnPickup = ch_NeverSwitchOnPickup.IsChecked();
                 PC.SaveConfig();
+            }
+            break;
+
+        case ch_ShowLeftGunAmmo:
+            H.bShowLeftGunAmmo = ch_ShowLeftGunAmmo.IsChecked();
+            H.SaveConfig();
             break;
 
         case cbx_ShowDamages:
@@ -1078,6 +1096,24 @@ defaultproperties
     End Object
     ch_NeverSwitchOnPickup=moCheckBox'ScrnBalanceSrv.ScrnTab_UserSettings.NeverSwitchOnPickup'
 
+    Begin Object Class=moCheckBox Name=ShowLeftGunAmmo
+        Caption="Left Pistol Ammo"
+        Hint="If checked, ammo in left pistol is displayed separately when dual-weilding."
+        bFlipped=False
+        CaptionWidth=0.955000
+        WinTop=0.43
+        WinLeft=0.015
+        WinWidth=0.288
+        TabOrder=14
+        RenderWeight=0.5
+        ComponentClassName="ScrnBalanceSrv.ScrnGUICheckBoxButton"
+        OnCreateComponent=NeverSwitchOnPickup.InternalOnCreateComponent
+        IniOption="@Internal"
+        OnChange=ScrnTab_UserSettings.InternalOnChange
+        OnLoadINI=ScrnTab_UserSettings.InternalOnLoadINI
+    End Object
+    ch_ShowLeftGunAmmo=moCheckBox'ScrnBalanceSrv.ScrnTab_UserSettings.ShowLeftGunAmmo'
+
     Begin Object Class=GUIButton Name=GunSkinButton
         Caption="Gun Skin"
         Hint="Toggles current weapon skin: normal / gold / camo / neon. Requires appropriate DLC(-s)."
@@ -1087,7 +1123,7 @@ defaultproperties
         WinWidth=0.175
         WinHeight=0.045
         RenderWeight=1.0
-        TabOrder=14
+        TabOrder=20
         bBoundToParent=True
         bScaleToParent=True
         OnClick=ScrnTab_UserSettings.ButtonClicked
@@ -1103,7 +1139,7 @@ defaultproperties
         WinWidth=0.175
         WinHeight=0.045
         RenderWeight=1.0
-        TabOrder=15
+        TabOrder=21
         bBoundToParent=True
         bScaleToParent=True
         OnClick=ScrnTab_UserSettings.ButtonClicked
@@ -1121,13 +1157,12 @@ defaultproperties
         WinWidth=0.175
         WinHeight=0.045
         RenderWeight=1.0
-        TabOrder=16
+        TabOrder=22
         bBoundToParent=True
         bScaleToParent=True
         OnClick=ScrnTab_UserSettings.ButtonClicked
     End Object
     b_PerkProgress=GUIButton'ScrnBalanceSrv.ScrnTab_UserSettings.PerkProgressButton'
-
 
     Begin Object Class=GUIButton Name=AccuracyButton
         Caption="Show Accuracy"
@@ -1140,7 +1175,7 @@ defaultproperties
         RenderWeight=1.0
         bBoundToParent=True
         bScaleToParent=True
-        TabOrder=17
+        TabOrder=23
         OnClick=ScrnTab_UserSettings.ButtonClicked
     End Object
     b_Accuracy=GUIButton'ScrnBalanceSrv.ScrnTab_UserSettings.AccuracyButton'
@@ -1156,16 +1191,17 @@ defaultproperties
         LabelColor=(B=255,G=255,R=255)
         Hint="Adjust mouse sensitivity scale when using 3D scopes (Value in FOV, 24 for vanilla behaviour)"
         WinTop=0.43 //0.38 + 0.05
-        WinLeft=0.31 //0.31
-        WinWidth=0.175 //0.175 //        WinLeft=0.015        WinWidth=0.288
+        WinLeft=0.32 //0.31
+        WinWidth=0.155 //0.175 //        WinLeft=0.015        WinWidth=0.288
         WinHeight=0.045
         //RenderWeight=1.0
-        TabOrder=18
+        TabOrder=24
         OnChange=ScrnTab_UserSettings.InternalOnChange
         OnLoadINI=ScrnTab_UserSettings.InternalOnLoadINI
         OnCreateComponent=Custom3DScopeSens.InternalOnCreateComponent
     End Object
     sl_3DScopeSensScale=moSlider'ScrnBalanceSrv.ScrnTab_UserSettings.Custom3DScopeSens'
+
 
     // HUD & INFO ----------------------------------------------------------------------
     Begin Object Class=GUISectionBackground Name=HUDBG
@@ -1187,8 +1223,8 @@ defaultproperties
         Hint="Display damage popups"
         WinTop=0.23
         WinLeft=0.515
-        WinWidth=0.218
-        TabOrder=20
+        WinWidth=0.288
+        TabOrder=30
         RenderWeight=1.0
         OnChange=ScrnTab_UserSettings.InternalOnChange
         OnLoadINI=ScrnTab_UserSettings.InternalOnLoadINI
@@ -1207,7 +1243,7 @@ defaultproperties
         WinTop=0.28
         WinLeft=0.515
         WinWidth=0.288
-        TabOrder=21
+        TabOrder=31
         RenderWeight=0.5
         ComponentClassName="ScrnBalanceSrv.ScrnGUICheckBoxButton"
         OnCreateComponent=ShowSpeed.InternalOnCreateComponent
@@ -1225,7 +1261,7 @@ defaultproperties
         WinTop=0.33
         WinLeft=0.515
         WinWidth=0.288
-        TabOrder=22
+        TabOrder=32
         RenderWeight=0.5
         OnCreateComponent=ShowAchProgress.InternalOnCreateComponent
         ComponentClassName="ScrnBalanceSrv.ScrnGUICheckBoxButton"
@@ -1234,6 +1270,7 @@ defaultproperties
         OnLoadINI=ScrnTab_UserSettings.InternalOnLoadINI
     End Object
     ch_ShowAchProgress=moCheckBox'ScrnBalanceSrv.ScrnTab_UserSettings.ShowAchProgress'
+
 
     Begin Object Class=GUIButton Name=StatusButton
         Caption="Server Status"
@@ -1244,7 +1281,7 @@ defaultproperties
         WinWidth=0.175
         WinHeight=0.045
         RenderWeight=1.0
-        TabOrder=23
+        TabOrder=33
         bBoundToParent=True
         bScaleToParent=True
         OnClick=ScrnTab_UserSettings.ButtonClicked
@@ -1260,7 +1297,7 @@ defaultproperties
         WinWidth=0.175
         WinHeight=0.045
         RenderWeight=1.0
-        TabOrder=24
+        TabOrder=34
         bBoundToParent=True
         bScaleToParent=True
         OnClick=ScrnTab_UserSettings.ButtonClicked
@@ -1276,7 +1313,7 @@ defaultproperties
         WinWidth=0.175
         WinHeight=0.045
         RenderWeight=1.0
-        TabOrder=25
+        TabOrder=35
         bBoundToParent=True
         bScaleToParent=True
         OnClick=ScrnTab_UserSettings.ButtonClicked
@@ -1292,7 +1329,7 @@ defaultproperties
         WinTop=0.38
         WinLeft=0.515
         WinWidth=0.218
-        TabOrder=26
+        TabOrder=36
         RenderWeight=1.0
         OnChange=ScrnTab_UserSettings.InternalOnChange
         OnLoadINI=ScrnTab_UserSettings.InternalOnLoadINI
@@ -1317,7 +1354,7 @@ defaultproperties
         WinTop=0.38
         WinLeft=0.76
         WinWidth=0.10
-        TabOrder=27
+        TabOrder=37
         OnChange=ScrnTab_UserSettings.InternalOnChange
         OnLoadINI=ScrnTab_UserSettings.InternalOnLoadINI
         OnCreateComponent=BarScale.InternalOnCreateComponent
@@ -1333,7 +1370,7 @@ defaultproperties
         WinTop=0.43
         WinLeft=0.515
         WinWidth=0.218
-        TabOrder=29
+        TabOrder=39
         RenderWeight=1.0
         OnChange=ScrnTab_UserSettings.InternalOnChange
         OnLoadINI=ScrnTab_UserSettings.InternalOnLoadINI
@@ -1358,7 +1395,7 @@ defaultproperties
         WinTop=0.43
         WinLeft=0.76
         WinWidth=0.10
-        TabOrder=30
+        TabOrder=40
         OnChange=ScrnTab_UserSettings.InternalOnChange
         OnLoadINI=ScrnTab_UserSettings.InternalOnLoadINI
         OnCreateComponent=HudScale.InternalOnCreateComponent
@@ -1378,7 +1415,7 @@ defaultproperties
         WinTop=0.415
         WinLeft=0.87
         WinWidth=0.10
-        TabOrder=31
+        TabOrder=41
         OnChange=ScrnTab_UserSettings.InternalOnChange
         OnLoadINI=ScrnTab_UserSettings.InternalOnLoadINI
         OnCreateComponent=HudAmmoScale.InternalOnCreateComponent
@@ -1398,7 +1435,7 @@ defaultproperties
         WinTop=0.445
         WinLeft=0.87
         WinWidth=0.10
-        TabOrder=32
+        TabOrder=42
         OnChange=ScrnTab_UserSettings.InternalOnChange
         OnLoadINI=ScrnTab_UserSettings.InternalOnLoadINI
         OnCreateComponent=HudY.InternalOnCreateComponent

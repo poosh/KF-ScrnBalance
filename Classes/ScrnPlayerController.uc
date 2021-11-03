@@ -2938,6 +2938,13 @@ function ServerCrap(int Amount)
     }
 }
 
+exec function DebugZedSpawn()
+{
+    if ( Mut.CheckScrnGT(self) ) {
+        Mut.ScrnGT.ToggleDebugZedSpawn();
+    }
+}
+
 // ======================== COMMENT BEFORE RELEASE !!! =====================
 
 // exec function SetSID64(coerce string SteamID64)

@@ -11,7 +11,7 @@ var transient KFAmmoPickup CurrentAmmoCandidate;
 
 var transient Actor LastAlternatePathTarget;
 var transient NavigationPoint LastAlternatePathPoint;
-var transient Actor OldMoveTarget, PrevActionTarget;
+var transient Actor OldMoveTarget;
 var transient int ActionMoves;
 var int MoveAttempts;
 
@@ -20,9 +20,10 @@ var localized string BlameStr;
 function PostBeginPlay()
 {
     FtgGame = FtgGame(Level.Game);
-    AmmoCandidates = FtgGame.AmmoPickups;
+    AmmoCandidates = FtgGame.StinkyAmmoPickups;
     super.PostBeginPlay();
 }
+
 function Possess(Pawn aPawn)
 {
     super.Possess(aPawn);
@@ -34,47 +35,38 @@ function Possess(Pawn aPawn)
 
 function TakeControlOf(Pawn aPawn) {}
 
+function int GetActionCount()
+{
+    return MoveTargets.length;
+}
+
+function Actor GetActionStart()
+{
+    if ( ActionNum > 0 && ActionNum - 1 < MoveTargets.length )
+        return MoveTargets[ActionNum - 1];
+    return none;
+}
+
+function Actor GetActionTarget()
+{
+    if ( ActionNum < MoveTargets.length )
+        return MoveTargets[ActionNum];
+    return none;
+}
 
 function Actor GetMoveTarget()
 {
     local Actor result;
 
-    if ( ActionNum < MoveTargets.length ) {
-        result = MoveTargets[ActionNum];
-        if ( result == LastAlternatePathTarget && LastAlternatePathPoint != none )
-            result = LastAlternatePathPoint; // target unreachable -> reroute to closest nav. point
-    }
+    result = GetActionTarget();
+    if ( result != none && result == LastAlternatePathTarget && LastAlternatePathPoint != none )
+        result = LastAlternatePathPoint; // target unreachable -> reroute to closest nav. point
     return result;
 }
 
 function NavigationPoint FindClosestPathNode(Actor anActor)
 {
-    local NavigationPoint N, BestN;
-    local float NDistSquared, BestDistSquared;
-    local bool bNVisible, bBestVisible;
-
-    if ( anActor == none )
-        return none;
-
-    for (N = Level.NavigationPointList; N != none; N = N.nextNavigationPoint) {
-        if ( !N.IsA('PathNode') || N == anActor )
-            continue; // ignore teleporters, jumpads etc.
-        NDistSquared = VSizeSquared(anActor.Location - N.Location);
-        if ( NDistSquared < 250000 ) {
-            // 10m or closer
-            bNVisible = FastTrace(anActor.Location, N.Location);
-            if ( bBestVisible && !bNVisible )
-                continue; // ignore invisible points if there are visible alteratives
-            else if ( BestN == none || (bNVisible && !bBestVisible) || NDistSquared < BestDistSquared ) {
-                if ( FtgGame.IsPathTargetValid(N) ) {
-                    BestN = N;
-                    BestDistSquared = NDistSquared;
-                    bBestVisible = bNVisible;
-                }
-            }
-        }
-    }
-    return BestN;
+    return FtgGame.FindClosestPathNode(anActor);
 }
 
 // returns closest reachable point to a given actor
@@ -101,7 +93,7 @@ function Actor FindAlternatePath(Actor anActor)
             LastAlternatePathPoint = N;
         }
         else {
-            FtgGame.InvalidatePathTarget(N, true); // make sure we don't use this navigation point anymore
+            FtgGame.InvalidatePathTarget(N); // make sure we don't use this navigation point anymore
             LastAlternatePathPoint = none;
         }
     }
@@ -152,12 +144,22 @@ state LatentDeath
 {
 Begin:
     sleep(2.0);
-    Pawn.Suicide();
+    if ( Pawn != none ) {
+        Pawn.Suicide();
+    }
 }
 
 state Moving extends Scripting
 {
     ignores Timer;
+
+    function AbortScript()
+    {
+        if ( StinkyClot != none ) {
+            StinkyClot.Suicide();
+        }
+        LeaveScripting();
+    }
 
     function SetMoveTarget()
     {
@@ -172,9 +174,8 @@ state Moving extends Scripting
             Focus = Target;
         MoveTarget = Target;
 
-        if ( !ActorReachable(MoveTarget) ) {
+        if ( MoveTarget != none && !ActorReachable(MoveTarget) ) {
             MoveTarget = FindPathToward(MoveTarget, false);
-
             if ( MoveTarget == none && ActionMoves == 0 ) {
                 // this could be a dead end, like badly placed ammo box or base guardian
                 // teleport one step back and try again
@@ -182,7 +183,6 @@ state Moving extends Scripting
                 ActionMoves++;
                 return;
             }
-
             if ( MoveTarget == none || (MoveTarget == OldMoveTarget && --MoveAttempts <= 0)) {
                 log("Stuck @ (" $ Pawn.Location $ ") while navigating to " $ GetItemName(string(MoveTarget))
                         $ " / " $ GetItemName(string(Target)), class.name);
@@ -198,14 +198,14 @@ state Moving extends Scripting
                 // if we can't reach the target, then move to closest NavigationPoint
                 MoveTarget = FindAlternatePath(Target);
             }
-            if ( MoveTarget == None ) {
-                AbortScript();
-                return;
-            }
-            if ( Focus == Target )
-                Focus = MoveTarget;
         }
 
+        if ( MoveTarget == None ) {
+            AbortScript();
+            return;
+        }
+        if ( Focus == Target )
+            Focus = MoveTarget;
         if ( OldMoveTarget != MoveTarget ) {
             ActionMoves++;
             StinkyClot.OnMoveTarget(MoveTarget);
@@ -232,7 +232,8 @@ KeepMoving:
     DoAdditionalActions();
     SetMoveTarget();
     if ( MoveTarget == none ) {
-        StinkyClot.TeleportToActor(PrevActionTarget);
+        // Stuck at dead end - teleport one path node back
+        StinkyClot.TeleportToActor(StinkyClot.MoveHistory[1]);
         Goto('KeepMoving');
     }
     Pawn.GroundSpeed = CalcSpeed();
@@ -247,11 +248,11 @@ KeepMoving:
             Goto('KeepMoving');
         }
 
-        // make sure the Stinky Clot won't teleport at this phase
         ActionMoves = 0;
         MoveTarget = none;
-        PrevActionTarget = StinkyClot.MoveHistory[1];  // keep the previous navpoint in case we want to jump back
-        StinkyClot.ClearMoveHistory();
+        // make sure the Stinky Clot won't teleport at this phase
+        StinkyClot.StuckCounter = 0;
+        StinkyClot.NextStuckTestTime = Level.TimeSeconds + 5;
     }
     sleep( PlayCompleteAnimation() );
     CompleteAction();
@@ -343,7 +344,7 @@ state MoveToShop extends Moving
 
     function CompleteAction()
     {
-        AmmoCandidates = FtgGame.AmmoPickups; // allow respawing ammo boxes
+        AmmoCandidates = FtgGame.StinkyAmmoPickups; // allow respawing ammo boxes
         global.CompleteAction();
     }
 }

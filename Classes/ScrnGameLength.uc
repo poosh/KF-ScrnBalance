@@ -13,7 +13,9 @@ var config int StartingCashBonus;
 var config array<string> Mutators;
 var config array<string> Waves;
 var config array<string> Zeds;
+var config bool bAllowZedEvents;
 var config bool bLogStats;
+var config bool bDebug;
 var config bool Doom3DisableSuperMonsters;
 var config bool bRandomTrader;
 var config int TraderSpeedBoost;
@@ -91,6 +93,10 @@ function LoadGame(ScrnGameType MyGame)
 
     Game = MyGame;
 
+    if ( bDebug ) {
+        Game.MaximizeDebugLogging();
+    }
+
     if ( Game.GameDifficulty < MinDifficulty ) {
         Game.ScrnBalanceMut.SetGameDifficulty(MinDifficulty);
     }
@@ -124,6 +130,11 @@ function LoadGame(ScrnGameType MyGame)
     for ( i = 0; i < Zeds.length; ++i ) {
         zi = new(none, Zeds[i]) class'ScrnZedInfo';
 
+        if ( bAllowZedEvents && zi.EventNum != Game.ScrnBalanceMut.CurrentEventNum
+                && zi.EventNum != 0 && Game.ScrnBalanceMut.CurrentEventNum != 0 ) {
+            continue;
+        }
+
         for ( j = 0; j < zi.Zeds.length; ++j ) {
             if ( zi.Zeds[j].Vote != "" )
                 AddZedVote(zi.Zeds[j].Vote);
@@ -133,7 +144,8 @@ function LoadGame(ScrnGameType MyGame)
 
             zedc = class<KFMonster>(DynamicLoadObject(zi.Zeds[j].ZedClass, class'Class'));
             if ( zedc == none ) {
-                log("Unable to load zed class '" $ zi.Zeds[j].ZedClass $ "' for " $ zi.Zeds[j].Alias, class.name);
+                Game.LogZedSpawn(Game.LOG_WARN, "Unable to load zed class '" $ zi.Zeds[j].ZedClass $ "' for "
+                        $ zi.Zeds[j].Alias);
                 continue;
             }
 
@@ -150,11 +162,12 @@ function LoadGame(ScrnGameType MyGame)
         ZedInfos[i] = zi;
     }
     if ( ActiveZeds.length == 0 ) {
-        log("No active zeds! Loading fallback zeds", class.name);
+        Game.LogZedSpawn(Game.LOG_ERROR, "No active zeds! Loading fallback zeds");
         for ( j = 0; j < class'ScrnZedInfo'.default.Zeds.length; ++j ) {
             zedc = class<KFMonster>(DynamicLoadObject(class'ScrnZedInfo'.default.Zeds[j].ZedClass, class'Class'));
             if ( zedc == none ) {
-                log("Unable to load a fallback zed class '" $ class'ScrnZedInfo'.default.Zeds[j].ZedClass, class.name);
+                Game.LogZedSpawn(Game.LOG_ERROR, "Unable to load a fallback zed class '"
+                        $ class'ScrnZedInfo'.default.Zeds[j].ZedClass);
                 continue;
             }
             AddActiveZed(class'ScrnZedInfo'.default.Zeds[j].Alias, zedc, 0.f);
@@ -432,6 +445,7 @@ protected function bool LoadNextWave()
     if ( NextWave == none ) {
         return false;
     }
+    log("Loading wave #"$NextWaveNum @ NextWave.name, class.name);
     Wave = NextWave;
     NextWave = none;
 
@@ -962,7 +976,7 @@ function bool ParseSquad(string SquadDef, out SSquad Squad)
             } until ( idx != -1 || fallback == "" );
 
             if ( idx == -1 ) {
-                log("No zeds available to fit " $ parts[i] $ " in " $ SquadDef, class.name);
+                Game.LogZedSpawn(Game.LOG_DETAIL, "No zeds available to fit " $ parts[i] $ " in " $ SquadDef);
                 Squad.Members.length = 0;
                 return false;
             }
@@ -985,7 +999,7 @@ function int FindActiveZed(string alias)
         if ( ActiveZeds[i].Alias == alias )
             return i;
     }
-    log("Zed with alias '"$alias$"' not found", class.name);
+    Game.LogZedSpawn(Game.LOG_DEBUG, "Zed with alias '"$alias$"' not found");
     return -1;
 }
 
@@ -1031,7 +1045,7 @@ function RecalculateSpawnChances()
 
     for ( i = 0; i < ActiveZeds.length; ++i ) {
         if ( ActiveZeds[i].Candidates.length == 0 ) {
-            log("Alias " $ ActiveZeds[i].Alias $ " has no zeds", class.name);
+            Game.LogZedSpawn(Game.LOG_DEBUG, "Alias " $ ActiveZeds[i].Alias $ " has no zeds");
             ActiveZeds[i].Candidates.remove(i--, 1);
             continue;
         }
@@ -1157,7 +1171,7 @@ function byte SpawnZed(string Alias, string ZedClassStr, byte count, out string 
         Squad[i] = Squad[0];
     }
 
-    return Game.SpawnSquad(Game.FindSpawningVolumeForSquad(Squad, true), Squad, true);
+    return Game.SpawnSquadLog(Game.FindSpawningVolumeForSquad(Squad, true), Squad);
 }
 
 defaultproperties

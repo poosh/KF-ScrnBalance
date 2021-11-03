@@ -62,6 +62,11 @@ simulated event PostNetReceive()
     SetSkin();
 }
 
+function bool CanSpeedAdjust()
+{
+    return false;
+}
+
 function ClearMoveHistory()
 {
     local int i;
@@ -199,9 +204,27 @@ simulated function SetSkin()
 
 function LogPath()
 {
+    local StinkyController SC;
+
+    SC = StinkyController(Controller);
+    if ( SC != none ) {
+        log(class'ScrnFunctions'.static.RPad("Action " $ string(SC.ActionNum + 1) $ "/" $ SC.GetActionCount()$":", 15)
+                $ SC.GetActionStart() $ " => " $ SC.GetActionTarget(), class.name);
+    }
     log("Path history:  " $ MoveHistory[2] $ " => "  $ MoveHistory[1] $ " => " $ MoveHistory[0], class.name);
-    log("Current route: " $ Controller.CurrentPath.Start $ " => " $ Controller.CurrentPath.End, class.name);
-    log("Next route:    " $ Controller.NextRoutePath.Start $ " => " $ Controller.NextRoutePath.End, class.name);
+    if ( Controller.CurrentPath != none ) {
+        log("Current route: " $ Controller.CurrentPath.Start $ " => " $ Controller.CurrentPath.End, class.name);
+    }
+    else {
+        log ("No current route");
+    }
+
+    if ( Controller.CurrentPath != none ) {
+        log("Next route:    " $ Controller.NextRoutePath.Start $ " => " $ Controller.NextRoutePath.End, class.name);
+    }
+    else {
+        log ("No next route");
+    }
 }
 
 function TeleportToActor(Actor TeleportDest)

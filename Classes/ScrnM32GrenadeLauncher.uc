@@ -121,6 +121,7 @@ simulated function bool AllowReload()
 // -- PooSH
 simulated function DoReload()
 {
+    local KFPlayerReplicationInfo KFPRI;
     if ( bHasAimingMode && bAimingRifle ) {
         FireMode[1].bIsFiring = False;
         ZoomOut(false);
@@ -129,8 +130,9 @@ simulated function DoReload()
         // ServerZoomOut(false);
     }
 
-    if ( KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo) != none && KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo).ClientVeteranSkill != none )
-        ReloadMulti = KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo).ClientVeteranSkill.Static.GetReloadSpeedModifier(KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo), self);
+    KFPRI = KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo);
+    if ( KFPRI != none && KFPRI.ClientVeteranSkill != none )
+        ReloadMulti = KFPRI.ClientVeteranSkill.Static.GetReloadSpeedModifier(KFPRI, self);
     else
         ReloadMulti = 1.0;
 
@@ -148,9 +150,9 @@ simulated function DoReload()
     if ( MagAmmoRemaining != MagCapacity && AmmoAmount(0) > MagAmmoRemaining)
         Instigator.SetAnimAction(WeaponReloadAnim); //loop animation unless full or out of ammo
 }
+
 // This function is triggered by client, replicated to server and NOT EXECUTED on client,
 // even if marked as simulated
-
 exec function ReloadMeNow()
 {
     local KFPlayerController PC;
@@ -167,8 +169,8 @@ exec function ReloadMeNow()
     if ( PC != none && Level.Game.NumPlayers > 1 && KFGameType(Level.Game).bWaveInProgress
             && Level.TimeSeconds - PC.LastReloadMessageTime > PC.ReloadMessageDelay )
     {
-        KFPlayerController(Instigator.Controller).Speech('AUTO', 2, "");
-        KFPlayerController(Instigator.Controller).LastReloadMessageTime = Level.TimeSeconds;
+        PC.Speech('AUTO', 2, "");
+        PC.LastReloadMessageTime = Level.TimeSeconds;
     }
 }
 
@@ -186,10 +188,7 @@ simulated function ClientReload()
 
 // This function now is triggered by ReloadMeNow() and executed on local side only
 
-
-
 function AddReloadedAmmo() {} // magazine is filled in WeaponTick now
-
 
 simulated function bool StartFire(int Mode)
 {
@@ -230,10 +229,12 @@ simulated function bool InterruptReload()
 function ServerInterruptReload()
 {
     if ( Role == ROLE_Authority && bInterruptedReload == false ) {
-        ReloadTimer = Level.TimeSeconds + 0.4/ReloadMulti;
+        ReloadTimer = Level.TimeSeconds + 0.2/ReloadMulti;
         bInterruptedReload = true;
-        //PlayAnim(ReloadAnim, ReloadAnimRate*ReloadMulti, 0.1); //added this
-        SetAnimFrame(279, 0 , 1);  // go to closing drum stage
+        if ( Level.NetMode != NM_DedicatedServer && Instigator.IsLocallyControlled() ) {
+            PlayAnim(ReloadAnim, 2.0*ReloadAnimRate*ReloadMulti, 0.1); //added this
+            SetAnimFrame(279, 0 , 1);  // go to closing drum stage
+        }
     }
 }
 
@@ -241,7 +242,7 @@ simulated function ClientInterruptReload()
 {
     if ( Role < ROLE_Authority && bInterruptedReload == false) {
         bInterruptedReload = true;
-        PlayAnim(ReloadAnim, ReloadAnimRate*ReloadMulti, 0.1); //added this
+        PlayAnim(ReloadAnim, 2.0*ReloadAnimRate*ReloadMulti, 0.1); //added this
         SetAnimFrame(279, 0 , 1);  // go to closing drum stage
         //ShowAllBullets();
     }

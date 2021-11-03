@@ -1,5 +1,7 @@
 class ScrnAmmoPickup extends KFAmmoPickup;
 
+var name OriginalName;  // original name of KFAmmoPickup placed in the map
+
 function float GetRespawnTime()
 {
     local ScrnGameType ScrnGT;

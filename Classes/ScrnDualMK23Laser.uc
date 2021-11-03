@@ -61,9 +61,9 @@ simulated function ApplyLaserState()
     if( Role < ROLE_Authority  )
         ServerSetLaserType(LaserType);
 
-    if ( ThirdPersonActor != none )
+    if ( ScrnLaserDualWeaponAttachment(ThirdPersonActor) != none )
         ScrnLaserDualWeaponAttachment(ThirdPersonActor).SetLaserType(LaserType);
-    if ( altThirdPersonActor != none )
+    if ( ScrnLaserDualWeaponAttachment(altThirdPersonActor) != none )
         ScrnLaserDualWeaponAttachment(altThirdPersonActor).SetLaserType(LaserType);
 
     AdjustRecoil();
@@ -168,8 +168,10 @@ simulated function TurnOffLaser()
 function ServerSetLaserType(byte NewLaserType)
 {
     LaserType = NewLaserType;
-    ScrnLaserDualWeaponAttachment(ThirdPersonActor).SetLaserType(LaserType);
-    ScrnLaserDualWeaponAttachment(altThirdPersonActor).SetLaserType(LaserType);
+    if ( ScrnLaserDualWeaponAttachment(ThirdPersonActor) != none )
+        ScrnLaserDualWeaponAttachment(ThirdPersonActor).SetLaserType(LaserType);
+    if ( ScrnLaserDualWeaponAttachment(altThirdPersonActor) != none )
+        ScrnLaserDualWeaponAttachment(altThirdPersonActor).SetLaserType(LaserType);
     AdjustRecoil();
 }
 
