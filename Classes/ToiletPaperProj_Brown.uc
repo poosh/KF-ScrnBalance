@@ -19,7 +19,7 @@ function bool PickBy(Pawn Other)
 
     if ( picked && OtherPC != none && Level.TimeSeconds - OtherPC.LastBlamedTime > 60.0 ) {
         reason = strBlame;
-        ReplaceText(reason, "%o", Instigator.GetHumanReadableName());
+        reason = Repl(reason, "%o", Instigator.GetHumanReadableName(), true);
         class'ScrnBalance'.static.Myself(Level).BlamePlayer(OtherPC, reason);
     }
 

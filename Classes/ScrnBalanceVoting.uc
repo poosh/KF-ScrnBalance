@@ -270,7 +270,7 @@ function SendMapList(PlayerController Sender, xVotingHandler vh, String Prefix, 
         if ( bFilter ) {
             if ( InStr(s, Keyword) == -1 )
                 continue;
-            ReplaceText(s, Keyword, KeywordHighlight);
+            s = Repl(s, Keyword, KeywordHighlight, true);
             s = "^1" $ s;
         }
         Sender.ClientMessage(s);
@@ -320,7 +320,7 @@ function int MapVote(PlayerController Sender, out string VoteValue, out string V
         }
         if (i == vh.GameConfig.length) {
             s = strWrongGameConfig;
-            ReplaceText(s, "%s", args[1]);
+            s = Repl(s, "%s", args[1]);
             Sender.ClientMessage(s);
             SendGameConfigs(Sender, vh);
             return VOTE_ILLEGAL;
@@ -353,6 +353,12 @@ function int MapVote(PlayerController Sender, out string VoteValue, out string V
         s = caps(vh.MapList[i].MapName);
         if ( Left(s, prefixLen) != prefix )
             continue;
+
+        if ( s == MapKeyword ) {
+            // full match
+            MapIndex = i;
+            break;
+        }
 
         if ( InStr(s, MapKeyword) != -1) {
             if ( MapIndex == -1 ) {
@@ -422,7 +428,7 @@ function int GetVoteIndex(PlayerController Sender, string Key, out string Value,
         if (!StrToPerks(Sender, Value, VotedPerks, errstr) || VotedPerks.Length == 0) {
             if (errstr != "") {
                 str = strWrongPerk;
-                ReplaceText(str, "%s", errstr);
+                str = Repl(str, "%s", errstr);
                 Sender.ClientMessage(str);
             }
             SendPerkList(Sender);
@@ -1015,9 +1021,9 @@ function Blame(string VoteValue)
     LastBlameVoteTime = Level.TimeSeconds;
 
     str = strBlamed;
-    ReplaceText(str, "%r", Reason);
+    str = Repl(str, "%r", Reason);
     if ( BlamedPlayer == none ) {
-        ReplaceText(str, "%p", VoteValue);
+        str = Repl(str, "%p", VoteValue);
         VotingHandler.BroadcastMessage(str);
     }
 
@@ -1183,7 +1189,7 @@ Begin:
     if ( Level.Pauser != none ) {
         // tell players that game is paused
         msgPause = strGamePaused;
-        ReplaceText(msgPause, "%s", string(PauseTime));
+        msgPause = Repl(msgPause, "%s", string(PauseTime));
         VotingHandler.BroadcastMessage(msgPause);
 
         // wait for pause time ends or game resumes by other source (e.g. admin)

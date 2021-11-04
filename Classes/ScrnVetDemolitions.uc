@@ -133,13 +133,13 @@ static function string GetCustomLevelInfo( byte Level )
     local string S;
 
     S = Default.CustomLevelInfo;
-    ReplaceText(S,"%L",string(Level));
-    ReplaceText(S,"%x",GetPercentStr(0.30 + 0.05*Level));
-    ReplaceText(S,"%a",GetPercentStr(0.10*Level));
-    ReplaceText(S,"%g",string(Level));
-    ReplaceText(S,"%$",GetPercentStr(fmin(0.90, 0.30 + 0.05*Level)));
-    ReplaceText(S,"%p",GetPercentStr(fmin(0.90, 0.52 + 0.04*Level)));
-    ReplaceText(S,"%d",GetPercentStr(fmin(0.50, 0.05*Level)));
+    S = Repl(S,"%L",string(Level), true);
+    S = Repl(S,"%x",GetPercentStr(0.30 + 0.05*Level), true);
+    S = Repl(S,"%a",GetPercentStr(0.10*Level), true);
+    S = Repl(S,"%g",string(Level), true);
+    S = Repl(S,"%$",GetPercentStr(fmin(0.90, 0.30 + 0.05*Level)), true);
+    S = Repl(S,"%p",GetPercentStr(fmin(0.90, 0.52 + 0.04*Level)), true);
+    S = Repl(S,"%d",GetPercentStr(fmin(0.50, 0.05*Level)), true);
     return S;
 }
 

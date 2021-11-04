@@ -379,10 +379,10 @@ simulated function InitCustomLocks()
                 if ( Level.NetMode != NM_DedicatedServer ) {
                     Locks[i].Icon = IconPerkLocked;
                     s = strLevelTitle;
-                    ReplaceText(s, "%C", string(Locks[i].MaxProgress));
+                    s = Repl(s, "%C", string(Locks[i].MaxProgress));
                     Locks[i].Title = s;
                     s = strLevelText;
-                    ReplaceText(s, "%C", string(Locks[i].MaxProgress));
+                    s = Repl(s, "%C", string(Locks[i].MaxProgress));
                     Locks[i].Text = s;
                 }
                 break;
@@ -417,12 +417,12 @@ simulated function InitCustomLocks()
                 if ( Level.NetMode != NM_DedicatedServer ) {
                     g = class'ScrnAchCtrl'.static.GroupCaption(self, Locks[i].ID);
                     s = strGrpTitle;
-                    ReplaceText(s, "%C", string(Locks[i].MaxProgress));
-                    ReplaceText(s, "%G", g);
+                    s = Repl(s, "%C", string(Locks[i].MaxProgress));
+                    s = Repl(s, "%G", g);
                     Locks[i].Title = s;
                     s = strGrpText;
-                    ReplaceText(s, "%C", string(Locks[i].MaxProgress));
-                    ReplaceText(s, "%G", g);
+                    s = Repl(s, "%C", string(Locks[i].MaxProgress));
+                    s = Repl(s, "%G", g);
                     Locks[i].Text = s;
 
                     if ( Locks[i].CurProgress >= Locks[i].MaxProgress )

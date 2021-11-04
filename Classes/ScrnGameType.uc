@@ -2406,8 +2406,8 @@ function ChangeName(Controller Other, string S, bool bNameChange)
 
     if ( len(ScrnBalanceMut.StripColorTags(S)) > 20 )
         S = Left( ScrnBalanceMut.StripColorTags(S), 20 );
-    ReplaceText(S, " ", "_");
-    ReplaceText(S, "|", "I");
+    S = Repl(S, " ", "_", true);
+    S = Repl(S, "|", "I", true);
 
     if ( bEpicNames && (Bot(Other) != None) )
     {

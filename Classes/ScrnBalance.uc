@@ -13,7 +13,7 @@ class ScrnBalance extends Mutator
 #exec OBJ LOAD FILE=ScrnAch_T.utx
 
 
-const VERSION = 96709;
+const VERSION = 96710;
 
 var ScrnBalance Mut; // pointer to self to use in static functions, i.e class'ScrnBalance'.default.Mut
 
@@ -476,7 +476,8 @@ static function MessageBonusLevel(PlayerController KPC)
         return;
 
     msg = default.strBonusLevel;
-    ReplaceText(msg, "%s", String(class'ScrnBalanceSrv.ScrnVeterancyTypes'.static.GetClientVeteranSkillLevel(KFPlayerReplicationInfo(KPC.PlayerReplicationInfo))));
+    msg = Repl(msg, "%s", String(class'ScrnBalanceSrv.ScrnVeterancyTypes'.static.GetClientVeteranSkillLevel(
+            KFPlayerReplicationInfo(KPC.PlayerReplicationInfo))), true);
 
     KPC.ClientMessage(msg);
 }
@@ -509,15 +510,15 @@ function MessageStatus(PlayerController PC)
         PC.ClientMessage("*** TOURNEY MODE ***", 'Log');
 
     msg = strStatus;
-    ReplaceText(msg, "%v", String(KFPRI.ClientVeteranSkillLevel));
-    ReplaceText(msg, "%b", String(class'ScrnBalanceSrv.ScrnVeterancyTypes'.static.GetClientVeteranSkillLevel(KFPRI)));
-    ReplaceText(msg, "%n", String(MinLevel));
-    ReplaceText(msg, "%x", String(MaxLevel));
+    msg = Repl(msg, "%v", String(KFPRI.ClientVeteranSkillLevel), true);
+    msg = Repl(msg, "%b", String(class'ScrnBalanceSrv.ScrnVeterancyTypes'.static.GetClientVeteranSkillLevel(KFPRI)), true);
+    msg = Repl(msg, "%n", String(MinLevel), true);
+    msg = Repl(msg, "%x", String(MaxLevel), true);
     PC.ClientMessage(msg, 'Log');
 
     msg = strStatus2;
-    ReplaceText(msg, "%a", String(bAltBurnMech));
-    ReplaceText(msg, "%m", String(KF.MaxZombiesOnce));
+    msg = Repl(msg, "%a", String(bAltBurnMech), true);
+    msg = Repl(msg, "%m", String(KF.MaxZombiesOnce), true);
     PC.ClientMessage(msg, 'Log');
 
     R = SRStatsBase(PC.SteamStatsAndAchievements).Rep;
@@ -638,19 +639,19 @@ simulated function string ParseColorTags(string ColoredText, optional PlayerRepl
 
     s = ColoredText;
     if ( PRI != none && PRI.Team != none )
-        ReplaceText(s, "^t", ColorStringC("", class'ScrnHUD'.default.TextColors[PRI.Team.TeamIndex]));
+        s = Repl(s, "^t", ColorStringC("", class'ScrnHUD'.default.TextColors[PRI.Team.TeamIndex]), true);
     else
-        ReplaceText(s, "^t", "");
+        s = Repl(s, "^t", "", true);
 
     if ( KFPlayerReplicationInfo(PRI) != none )
-        ReplaceText(s, "^p", ColorStringC("", class'ScrnHUD'.static.PerkColor(KFPlayerReplicationInfo(PRI).ClientVeteranSkillLevel)));
+        s = Repl(s, "^p", ColorStringC("", class'ScrnHUD'.static.PerkColor(KFPlayerReplicationInfo(PRI).ClientVeteranSkillLevel)), true);
     else
-        ReplaceText(s, "^p", "");
+        s = Repl(s, "^p", "", true);
 
 
     for ( i=0; i<ColorTags.Length; ++i ) {
-        ReplaceText(s, ColorTags[i].T, ColorString("",
-                ColorTags[i].R, ColorTags[i].G, ColorTags[i].B));
+        s = Repl(s, ColorTags[i].T, ColorString("",
+                ColorTags[i].R, ColorTags[i].G, ColorTags[i].B), true);
     }
 
     return s;
@@ -662,10 +663,10 @@ simulated function string StripColorTags(string ColoredText)
     local string s;
 
     s = ColoredText;
-    ReplaceText(s, "^p", "");
-    ReplaceText(s, "^t", "");
+    s = Repl(s, "^p", "", true);
+    s = Repl(s, "^t", "", true);
     for ( i=0; i<ColorTags.Length; ++i ) {
-        ReplaceText(s, ColorTags[i].T, "");
+        s = Repl(s, ColorTags[i].T, "", true);
     }
 
     return s;
@@ -684,10 +685,10 @@ function StolenWeapon(Pawn NewOwner, KFWeaponPickup WP)
     local string str;
 
     str = BroadcastPickupText;
-    ReplaceText(str, "%p", ColorString(ParseColorTags(NewOwner.GetHumanReadableName(), NewOwner.PlayerReplicationInfo), 192, 1, 1) $ ColorString("", 192, 192, 192));
-    ReplaceText(str, "%o", ColorString(ColoredPlayerName(WP.DroppedBy.PlayerReplicationInfo), 1, 192, 1) $ ColorString("", 192, 192, 192));
-    ReplaceText(str, "%w", ColorString(WP.ItemName, 1, 96, 192) $ ColorString("", 192, 192, 192));
-    ReplaceText(str, "%$", ColorString(String(WP.SellValue), 192, 192, 1) $ ColorString("", 192, 192, 192));
+    str = Repl(str, "%p", ColorString(ParseColorTags(NewOwner.GetHumanReadableName(), NewOwner.PlayerReplicationInfo), 192, 1, 1) $ ColorString("", 192, 192, 192), true);
+    str = Repl(str, "%o", ColorString(ColoredPlayerName(WP.DroppedBy.PlayerReplicationInfo), 1, 192, 1) $ ColorString("", 192, 192, 192), true);
+    str = Repl(str, "%w", ColorString(WP.ItemName, 1, 96, 192) $ ColorString("", 192, 192, 192), true);
+    str = Repl(str, "%$", ColorString(String(WP.SellValue), 192, 192, 1) $ ColorString("", 192, 192, 192), true);
     BroadcastMessage(str);
 }
 
@@ -875,8 +876,8 @@ function BroadcastAchEarn(ScrnAchievements AchHandler, int AchIndex)
         return;
 
     s = strAchEarn;
-    ReplaceText(s, "%p", PlayerController(AchHandler.Owner).PlayerReplicationInfo.PlayerName);
-    ReplaceText(s, "%a", AchHandler.AchDefs[AchIndex].DisplayName);
+    s = Repl(s, "%p", PlayerController(AchHandler.Owner).PlayerReplicationInfo.PlayerName, true);
+    s = Repl(s, "%a", AchHandler.AchDefs[AchIndex].DisplayName, true);
 
     for (C = Level.ControllerList; C != None; C = C.NextController) {
         if ( !C.bIsPlayer )
@@ -3217,7 +3218,7 @@ function BlamePlayer(ScrnPlayerController PC, string Reason, optional int BlameI
     PC.ReceiveLocalizedMessage(class'ScrnBlamedMsg', ScrnPRI.BlameCounter);
 
     if ( Reason != "" ) {
-        ReplaceText(Reason, "%p", Mut.ColoredPlayerName(PC.PlayerReplicationInfo));
+        Reason = Repl(Reason, "%p", Mut.ColoredPlayerName(PC.PlayerReplicationInfo), true);
         BroadcastMessage(ColorString(Reason, 200, 200, 1), false);
     }
 

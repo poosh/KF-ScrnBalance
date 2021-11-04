@@ -44,8 +44,8 @@ simulated function ClientSuccessfulHeal(int HealedPlayerCount, int HealedAmount)
 
     if( PlayerController(Instigator.Controller) != none ) {
         str = SuccessfulHealMessage;
-        ReplaceText(str, "%c", String(HealedPlayerCount));
-        ReplaceText(str, "%a", String(HealedAmount));
+        str = Repl(str, "%c", String(HealedPlayerCount));
+        str = Repl(str, "%a", String(HealedAmount));
 
         PlayerController(Instigator.controller).ClientMessage(str, 'CriticalEvent');
     }

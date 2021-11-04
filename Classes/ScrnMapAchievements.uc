@@ -26,7 +26,7 @@ simulated function SetDefaultAchievementData()
     d = 0;
     for ( i = 0; i < AchDefs.Length; ++i ) {
         s = UniversalDescriptions[d];
-        ReplaceText(s, "%m", AchDefs[i].Description);
+        s = Repl(s, "%m", AchDefs[i].Description, true);
         AchDefs[i].Description = s;
         if ( ++d > 3 )
             d = 0;

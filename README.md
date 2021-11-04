@@ -19,6 +19,14 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+### v9.67.10
+- Entering the full map name in `MVOTE MAP` have selection priority over a partial match.
+  For example, previously it was impossible to vote for KF-Foundry, if you the server also had KF-FoundryLightsOut
+  because it selected two maps. Now, `MVOTE MAP KF-FOUNDRY` selects KF-Foundry.
+- Code execution optimization. Replaced `ReplaceText()` calls with `Repl()` since the former is an UnrealScript
+  function (slow) while the latter is a native one. I have no idea why Tripwire wrote `ReplaceText()` in
+  UnrealScript instead of C++.
+
 ### v9.67.09
 - Added `bTestMap` and `GuardianLight` to *ScrnMapInfo.ini*
 - TSC/FTG: lowered default brightness of Base Guardian (but can be altered in *ScrnMapInfo.ini*)

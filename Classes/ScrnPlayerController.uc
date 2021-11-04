@@ -1810,8 +1810,8 @@ function ChangeName( coerce string S )
 {
     local string PlainName;
 
-    ReplaceText(S, " ", "_");
-    ReplaceText(S, "\"", "");
+    S = Repl(S, " ", "_", true);
+    S = Repl(S, "\"", "", true);
 
     PlainName = Mut.StripColorTags(S);
     if ( len(PlainName) > 20 )

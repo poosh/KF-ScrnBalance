@@ -250,7 +250,7 @@ state Sick extends Infected
                         if (Shop.bCurrentlyOpen && !Shop.bAlwaysEnabled && AnyHealthyInShop(Shop)) {
                             SPI.PlayerOwner.PlayerReplicationInfo.Score -= CoughedInShopPenalty; // allow go negative
                             s = strCoughedInShop;
-                            ReplaceText(s, "%$", string(CoughedInShopPenalty));
+                            s = Repl(s, "%$", string(CoughedInShopPenalty), true);
                             SPI.PlayerOwner.ClientMessage(class'ScrnBalance'.static.ColorString(s,192,128,1));
                             ShopBoot(Shop, P);
                             break;

@@ -714,7 +714,7 @@ function SetCookNade(bool bCook)
                     if ( j < LocalizedBindKeyNames.length && LocalizedBindKeyNames[j] != "" )
                         s = LocalizedBindKeyNames[j];
                     msg = strBoundToCook;
-                    ReplaceText(msg, "%s", s);
+                    msg = Repl(msg, "%s", s, true);
                     PlayerOwner().ClientMessage(msg);
                 }
             }
@@ -733,7 +733,7 @@ function SetCookNade(bool bCook)
                 if ( j < LocalizedBindKeyNames.length && LocalizedBindKeyNames[j] != "" )
                     s = LocalizedBindKeyNames[j];
                 msg = strBoundToThrow;
-                ReplaceText(msg, "%s", s);
+                msg = Repl(msg, "%s", s, true);
                 PlayerOwner().ClientMessage(msg);
             }
         }

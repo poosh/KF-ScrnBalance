@@ -320,8 +320,8 @@ function WaveEnded()
             Accuracy = SPI.GetAccuracyWave();
             if ( Accuracy > 0.75 ) {
                 s = strWaveAccuracy;
-                ReplaceText(s, "%p", Mut.ColoredPlayerName(SPI.PlayerOwner.PlayerReplicationInfo));
-                ReplaceText(s, "%a", Mut.GetColoredPercent(Accuracy));
+                s = Repl(s, "%p", Mut.ColoredPlayerName(SPI.PlayerOwner.PlayerReplicationInfo), true);
+                s = Repl(s, "%a", Mut.GetColoredPercent(Accuracy), true);
                 mut.BroadcastMessage(s);
             }
         }
@@ -1158,9 +1158,9 @@ function RaiseHardcoreLevel(float inc, string reason)
             s = msgHardcore;
         else
             s = msgHardcoreLowered;
-        ReplaceText(s, "%a", String(HardcoreLevel));
-        ReplaceText(s, "%i", String(inc));
-        ReplaceText(s, "%r", reason);
+        s = Repl(s, "%a", String(HardcoreLevel), true);
+        s = Repl(s, "%i", String(inc), true);
+        s = Repl(s, "%r", reason, true);
         Mut.BroadcastMessage(s, true);
     }
 }
@@ -1476,8 +1476,8 @@ function bool OverridePickupQuery(Pawn Other, Pickup item, out byte bAllowPickup
                     bAllowPickup = 0;
                     if ( ScrnPlayerController(Other.Controller) != none && Level.TimeSeconds > ScrnPlayerController(Other.Controller).LastLockMsgTime + 1.0 ) {
                         str = strWeaponLocked;
-                        ReplaceText(str, "%o",  Mut.ColoredPlayerName(WP.DroppedBy.PlayerReplicationInfo));
-                        ReplaceText(str, "%w", WP.ItemName);
+                        str = Repl(str, "%o",  Mut.ColoredPlayerName(WP.DroppedBy.PlayerReplicationInfo), true);
+                        str = Repl(str, "%w", WP.ItemName, true);
                         ScrnPlayerController(Other.Controller).ClientMessage(Mut.ColorString(str,192,1,1));
                         ScrnPlayerController(Other.Controller).LastLockMsgTime = Level.TimeSeconds;
                     }
@@ -1548,7 +1548,7 @@ function bool CanBuyWeapon(ScrnHumanPawn P, class<KFWeaponPickup> WP)
 
     if ( (BuyRules & BUY_BLAME) != 0 ) {
         s = msgWeaponBlame;
-        ReplaceText(s, "%w", WP.default.ItemName);
+        s = Repl(s, "%w", WP.default.ItemName, true);
         Mut.BlamePlayer(PC, s);
     }
 

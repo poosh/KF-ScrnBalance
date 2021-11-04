@@ -149,7 +149,7 @@ simulated function DrawTSCHUDTextElements(Canvas C)
                     s = PlayerOwner.ConsoleCommand("BINDINGTOKEY ToggleDuck");
                 if ( s == "" )
                     s = PlayerOwner.ConsoleCommand("BINDINGTOKEY Crouch");
-                ReplaceText(aHint, "%KEY%", s);
+                aHint = Repl(aHint, "%KEY%", s);
             }
             else if ( TSCGRI.TimeToNextWave < 30 )
                 aHint = hintFollowCarrier; // enough shopping, time to get to the base

@@ -605,7 +605,7 @@ function SetWaveInfo()
     Game.ScrnGRI.WaveHeader = Wave.Header;
     Game.ScrnGRI.WaveTitle = Wave.Title;
     Game.ScrnGRI.WaveMessage = Wave.Message;
-    ReplaceText(Game.ScrnGRI.WaveMessage, "%c", string(WaveCounter));
+    Game.ScrnGRI.WaveMessage = Repl(Game.ScrnGRI.WaveMessage, "%c", string(WaveCounter), true);
 
     Game.ScrnGRI.WaveCounter = 0;
     WaveTimer();

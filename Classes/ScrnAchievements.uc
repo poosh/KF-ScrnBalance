@@ -178,7 +178,7 @@ simulated function SetDefaultAchievementData()
 
     for ( i = 0; i < AchDefs.Length; ++i ) {
         if (InStr(AchDefs[i].Description, "%c") != -1 )
-            ReplaceText(AchDefs[i].Description, "%c", string(AchDefs[i].MaxProgress));
+            AchDefs[i].Description = Repl(AchDefs[i].Description, "%c", string(AchDefs[i].MaxProgress), true);
     }
 }
 
