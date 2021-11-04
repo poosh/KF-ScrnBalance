@@ -19,6 +19,18 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+### v9.67.09
+- Added `bTestMap` and `GuardianLight` to *ScrnMapInfo.ini*
+- TSC/FTG: lowered default brightness of Base Guardian (but can be altered in *ScrnMapInfo.ini*)
+- Achievement progress disabled on test maps, but perk changes are always allowed.
+- Fixed a bug in `MVOTE ZED FP SPAWN`
+### ScrN Zed Pack
+- Added *ScrnZedPack.ini* to change headshot detection on dedicated servers.
+- `bHeadshotSrvAnim=false` fixes headshot detection. Set it to false for vanilla behavior (where you cannot decapitate
+  a Bloat while your noobie teammates is body-spamming him)
+- Reduced **Siren** Vortex Pull strength on Hard and below.
+- Made **Crawlers** lighter. Now it is easier to push them. You can even stomp Crawlers to kill them.
+
 ### v9.67.08
 ### ScrnMapInfo.ini
 - Completely reworked the *ScrnMapInfo.ini*. Now it has per-map objects (somewhat similar to Games/Waves/Zeds).

@@ -2248,9 +2248,6 @@ simulated function TakeDamage( int Damage, Pawn InstigatedBy, Vector Hitlocation
         else if ( Health < HealthBeforeHealing )
             HealthBeforeHealing = Health;
     }
-    // ScrN 9.15: allow weapon handle damage
-    if ( Weapon != none )
-        Weapon.TakeDamage(Damage, InstigatedBy, Hitlocation, Momentum, damageType, HitIndex);
 }
 
 function Suicide()

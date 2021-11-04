@@ -75,7 +75,7 @@ static final function bool ProgressAchievementByID(ClientPerkRepLink L, name ID,
     local ScrnAchievements.AchStrInfo A;
     local int CacheIndex;
 
-    if ( L == none || L.Level.Game.GameDifficulty < 2 )
+    if ( L == none || L.Level.Game.GameDifficulty < 2 || class'ScrnBalance'.default.Mut.bTestMap )
         return false;
 
     if ( !FindAchievement(L, ID, A, CacheIndex) )

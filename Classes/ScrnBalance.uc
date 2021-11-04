@@ -13,7 +13,7 @@ class ScrnBalance extends Mutator
 #exec OBJ LOAD FILE=ScrnAch_T.utx
 
 
-const VERSION = 96708;
+const VERSION = 96709;
 
 var ScrnBalance Mut; // pointer to self to use in static functions, i.e class'ScrnBalance'.default.Mut
 
@@ -2635,9 +2635,9 @@ function PostBeginPlay()
     MapName = KF.GetCurrentMapName(Level);
     OriginalMapName = GameRules.GetOriginalMapName(MapName);
     s = caps(MapName);
-    bTestMap = InStr(MapName, s) != -1 || InStr(MapName, s) != -1;
     MapInfo = new(none, OriginalMapName) class'ScrnMapInfo';
     MapInfo.Mut = self;
+    bTestMap = MapInfo.bTestMap;
 
     if ( bForceEvent )
         ForceEvent();
@@ -2667,7 +2667,7 @@ function PostBeginPlay()
         if ( FindServerPerksMut() == none )
             log("Unable to spawn " $ ServerPerksPkgName, 'ScrnBalance');
     }
-    bAllowAlwaysPerkChanges = ServerPerksMut.GetPropertyText("bAllowAlwaysPerkChanges") ~= "True";
+    bAllowAlwaysPerkChanges = bTestMap || ServerPerksMut.GetPropertyText("bAllowAlwaysPerkChanges") ~= "True";
     bNoPerkChanges = bNoPerkChanges && !bAllowAlwaysPerkChanges;
 
     if ( !ClassIsChildOf(KF.PlayerControllerClass, class'ScrnBalanceSrv.ScrnPlayerController') ) {

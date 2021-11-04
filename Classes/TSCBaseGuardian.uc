@@ -25,6 +25,8 @@ var float InvulTime;
 var ShopVolume MyShop;
 var transient ScrnPlayerController LastHolder;
 
+var byte GuardianBrightness;
+
 var enum EClientState {
     CS_Home,
     CS_Dropped,
@@ -39,6 +41,9 @@ replication
 {
     reliable if ((bNetInitial || bNetDirty) && Role == ROLE_Authority)
         Team, ClientState;
+
+    reliable if (bNetInitial && Role == ROLE_Authority)
+        GuardianBrightness;
 }
 
 simulated function PostBeginPlay()
@@ -293,7 +298,7 @@ function SetClientState(EClientState NewState)
 simulated function ApplyClientState()
 {
     LightRadius = default.LightRadius;
-    LightBrightness = default.LightBrightness;
+    LightBrightness = GuardianBrightness;
     switch (ClientState) {
         case CS_Home:
             LightType = LT_None;
@@ -308,7 +313,7 @@ simulated function ApplyClientState()
         case CS_SettingUp:
         case CS_WakingUp:
             LightType = LT_Pulse;
-            LightBrightness = 220;
+            LightBrightness *= 1.5;
             break;
 
         case CS_Guarding:
@@ -635,7 +640,6 @@ state Stunned
     function EndState()
     {
         // log("State <-- Stunned", class.name);
-        LightRadius = default.LightRadius;
     }
 
     function ScoreOrHome()
@@ -708,7 +712,8 @@ defaultproperties
     LightEffect=LE_QuadraticNonIncidence
     LightRadius=50
     LightSaturation=128
-    LightBrightness=180 // 220
+    LightBrightness=150 // 180
+    GuardianBrightness=150
     LightPeriod=30
     bStatic=False
     bHidden=True

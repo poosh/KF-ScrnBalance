@@ -357,7 +357,8 @@ function bool ProgressAchievement(int AchIndex, int Inc)
     local bool result;
     local bool bSilent;
 
-    if ( !IsAchievementIndexValid(AchIndex) || Inc == 0 || Level.Game.GameDifficulty < 2 )
+    if ( !IsAchievementIndexValid(AchIndex) || Inc == 0 || Level.Game.GameDifficulty < 2
+            || class'ScrnBalance'.default.Mut.bTestMap )
         return false;
 
     bReplicateDataToClients = false; // further data updates will be send via ClientSetAchProgress()

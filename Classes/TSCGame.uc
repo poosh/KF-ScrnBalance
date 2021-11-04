@@ -772,6 +772,11 @@ function TSCBaseGuardian SpawnBaseGuardian(byte TeamIndex)
     gnome.TSCGRI = TSCGRI;
     TeamBases[TeamIndex] = gnome;
 
+    if ( ScrnBalanceMut.MapInfo.GuardianLight > 0 ) {
+        gnome.GuardianBrightness = ScrnBalanceMut.MapInfo.GuardianLight;
+        gnome.LightBrightness = gnome.GuardianBrightness;
+    }
+
     return gnome;
 }
 

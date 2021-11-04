@@ -9,10 +9,14 @@ A Blank Page
 
 Flare and Husk Gun HDMG
 
-
-
 ScrnWaves.ini:
 Custom dialogs
+
+bSharedAmmoPool
+
+custom zed plate on the test map
+
+Check Murphy's maps why they crashing dedicated servers.
 
 
 ? max spawn pressure - ignore last spawn time in ZombieVolume
@@ -45,28 +49,25 @@ Custom dialogs
 
 ? Periodically check for visible zombie volumes
 
-bSharedAmmoPool
-
-custom zed plate on the test map
-
 ? shotgun same target penetration on high tick server
 
 ? "No damagetype for damage by Crawler with weapon None"
 
 ? M32 faster drump close animation on reload interruption
 
-Check Murphy's maps why they crashing dedicated servers.
-
 ? Stinky stuck on frigth yard if put base in a glitch spot
 
-Tesla Damage after death
-
-check laser3rd for pistols
-
-lower Guardian's brightness
-
-no siren pull on normal diff
+? check laser3rd for pistols
 
 ? FTGPaths: allow empty From or To - global routes
 
+
+? lower Guardian's brightness - add it to ScrnMapInfo
+? no siren pull on normal diff
 Replace ReplaceText() with Repl() everywhere in code because the latter is a native function
+
+? messed up headshots after a body shot on high tickrate servers
+
+? Zed Pack: adjust Mass of each zed (allow crushing cralers by jumping on them)
+
+? Weapon.AdjustPlayerDamage - chansaw?

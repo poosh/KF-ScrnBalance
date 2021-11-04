@@ -20,6 +20,7 @@ var config int MaxZombiesOnce;
 var config float WaveSpawnPeriod;
 var config float XPBonusMult;
 var config byte ZedEventNum; // use event zeds for this map. 0 - don't force
+var config bool bTestMap;
 
 var config float ZVolDisableTime;
 var config float ZedSpawnMaxDist;
@@ -34,6 +35,7 @@ var config array<name> ZVolElevated;
 var config array<name> ZVolJumpable;
 var config array<SZVolDoor> ZVolDoors;
 
+var config byte GuardianLight;
 var config byte FTGTargetsPerWave;
 var config array<name> FTGBadAmmo;
 var config array<name> FTGTargets;

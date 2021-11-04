@@ -274,7 +274,8 @@ simulated state Reloading
         }
     }
 
-    function TakeDamage(int Damage, Pawn EventInstigator, vector HitLocation, vector Momentum, class<DamageType> DamageType, optional int HitIndex)
+    function AdjustPlayerDamage( out int Damage, Pawn InstigatedBy, Vector HitLocation,
+                                 out Vector Momentum, class<DamageType> DamageType)
     {
         local ScrnFlameNade nade;
         local int FuelInTank;
@@ -305,6 +306,24 @@ simulated state Reloading
             nade.Explode(Location, vect(0,0,1));
         }
     }
+}
+
+function AdjustPlayerDamage( out int Damage, Pawn InstigatedBy, Vector HitLocation,
+                             out Vector Momentum, class<DamageType> DamageType)
+{
+    local class<KFWeaponDamageType> KFDamType;
+
+    // 30% damage resistance from melee damage while holding a working chainsaw
+    if ( MagAmmoRemaining <= 0 )
+        return;
+
+    KFDamType = class<KFWeaponDamageType>(DamageType);
+    if ( KFDamType == none || KFDamType.default.bDealBurningDamage || KFDamType.default.bIsExplosive
+            || !KFDamType.default.bArmorStops || !KFDamType.default.bCheckForHeadShots )
+        return;
+
+    if ( KFDamType.default.bIsMeleeDamage || ClassIsChildOf(KFDamType, class'DamTypeZombieAttack') )
+        Damage *= 0.70;
 }
 
 simulated function HideGasCan()

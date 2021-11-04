@@ -339,6 +339,9 @@ function CheckZedSpawnList()
         rot.roll = 0;
         ZVol.DesiredRotation = rot;
     }
+    if ( MapInfo.bTestMap ) {
+        LogZedSpawn(LOG_INFO, "TEST MAP");
+    }
     LogZedSpawn(LOG_INFO, "Map has " $ ZedSpawnList.Length $ " valid zombie volumes: " $ ZVolVisibleCount
             $ " visible + " $ string(ZedSpawnList.Length - ZVolVisibleCount) $ " invisible");
     if ( DesireMax - DesireMin < 1 ) {
@@ -2822,7 +2825,7 @@ function int SpawnSquadLog(ZombieVolume ZVol, out array< class<KFMonster> > Squa
 
     OriginalLogZedSpawnLevel = LogZedSpawnLevel;
     LogZedSpawnLevel = LOG_DEBUG;
-    NumSpawned = SpawnSquad(LastZVol, Squad);
+    NumSpawned = SpawnSquad(ZVol, Squad);
     LogZedSpawnLevel = OriginalLogZedSpawnLevel;
     return NumSpawned;
 }
