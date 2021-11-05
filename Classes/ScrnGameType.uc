@@ -1082,20 +1082,11 @@ exec function KillZeds()
 {
     local KFMonster M;
     local array <KFMonster> Monsters;
-    local Controller PC;
     local int i;
     local bool bZedDropDoshOriginal;
 
     bZedDropDoshOriginal = bZedDropDosh;
     bZedDropDosh = false;
-
-    for ( PC = Level.ControllerList; PC != none; PC = PC.NextController )
-    {
-        if ( PC.PlayerReplicationInfo != none && PC.PlayerReplicationInfo.SteamStatsAndAchievements != none )
-        {
-            PC.PlayerReplicationInfo.SteamStatsAndAchievements.bUsedCheats = true;
-        }
-    }
 
     // fill the array first, because direct M killing may screw up DynamicActors() iteration
     // -- PooSH
@@ -1103,9 +1094,10 @@ exec function KillZeds()
         if(M.Health > 0 && !M.bDeleteMe)
             Monsters[Monsters.length] = M;
     }
-
-    for ( i=0; i<Monsters.length; ++i )
+    for ( i=0; i<Monsters.length; ++i ) {
         Monsters[i].Died(Monsters[i].Controller, class'DamageType', Monsters[i].Location);
+    }
+
     bZedDropDosh = bZedDropDoshOriginal;
 }
 

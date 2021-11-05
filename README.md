@@ -19,6 +19,14 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+### v9.67.11
+- New game mode: **XCM DUEL** - two players in TSC-like game try to survive as long as possible in XCM waves.
+  The one who dies first, loses.
+- `MVOTE DIFFICULTY` does not require map restart the match has not begun yet.
+- Mid-game difficulty changes are allowed on a test map.
+- TSC: During Overtime or Sudden Wave, if one team gets wiped, then other wins immediately. No need to survive until
+  the end of the wave anymore. XCM DUEL has only Sudden Death waves.
+
 ### v9.67.10
 - Entering the full map name in `MVOTE MAP` have selection priority over a partial match.
   For example, previously it was impossible to vote for KF-Foundry, if you the server also had KF-FoundryLightsOut

@@ -149,7 +149,7 @@ event InitGame( string Options, out string Error )
         if ( ScrnGameLength != none ) {
             OvertimeWaves = ScrnGameLength.OTWaves;
             SudDeathWaves = ScrnGameLength.SDWaves;
-            if ( ScrnGameLength.NWaves > 0 ) {
+            if ( ScrnGameLength.NWaves + OvertimeWaves + SudDeathWaves > 0 ) {
                 FinalWave = ScrnGameLength.NWaves;
             }
             else {
@@ -508,7 +508,7 @@ function int CalcStartingCashBonus(PlayerController PC)
             && PC.PlayerReplicationInfo.Team.Size <= Teams[1-PC.PlayerReplicationInfo.Team.TeamIndex].Size
         )
     {
-        result += WaveNum * LateJoinerCashBonus/OriginalFinalWave * (1.0 - CurrentTeamMoneyPenalty);
+        result += RelativeWaveNum(WaveNum) * LateJoinerCashBonus * (1.0 - CurrentTeamMoneyPenalty);
     }
     return result;
 }
@@ -619,7 +619,6 @@ function Killed(Controller Killer, Controller Killed, Pawn KilledPawn, class<Dam
             }
             BroadcastLocalizedMessage(class'TSCMessages', 10+KilledTeam.TeamIndex*100);
             TeamBases[KilledTeam.TeamIndex].SendHome();
-
         }
     }
     else if  ( NumMonsters == 0 && bHadMonsters && !bSingleTeam && damageType != class'Suicided' ) {
@@ -825,9 +824,16 @@ function BalanceTeams(byte SmallTeamIndex, float BalanceMult)
 // returns wave number relative to the current game length
 function byte RelativeWaveNum(float LongGameWaveNum)
 {
-    if ( OriginalFinalWave == 10 )
+    local int w;
+
+    if ( OriginalFinalWave == 0 )
+        w = OvertimeWaves;
+    if ( OriginalFinalWave == 0 )
+        w = SudDeathWaves;
+
+    if ( w == 10 )
         return ceil(LongGameWaveNum);
-    return ceil(LongGameWaveNum * OriginalFinalWave / 10.0);
+    return ceil(LongGameWaveNum * w / 10.0);
 }
 
 function SetupWave()
@@ -890,17 +896,18 @@ function SetupWave()
     if ( WaveNum == 0 ) {
         BroadcastLocalizedMessage(class'TSCMessages', 230); // human damage disabled
     }
-    else if ( WaveNum >= OriginalFinalWave ) {
+
+    if ( WaveNum >= OriginalFinalWave ) {
+        TSCGRI.bOverTime = true;
+        if ( bLockTeamsOnSuddenDeath )
+            LockTeams();
+
         if ( WaveNum >= OriginalFinalWave + OvertimeWaves ) {
             TSCGRI.bSuddenDeath = true;
             BroadcastLocalizedMessage(class'TSCMessages', 302); // sudden death
-            // if one of the team do not have a base - wipe it
         }
         else {
             BroadcastLocalizedMessage(class'TSCMessages', 201); // overtime
-            // lock teams one wave before Sudden Death
-            if ( bLockTeamsOnSuddenDeath && SudDeathWaves > 0 && WaveNum+1 == OriginalFinalWave + OvertimeWaves )
-                LockTeams();
         }
     }
     else if ( HumanDamageMode > HDMG_None ) {
@@ -912,7 +919,7 @@ function SetupWave()
 
     TotalMaxMonsters = ScrnGameLength.GetWaveZedCount() + NumMonsters;
     WaveEndTime = ScrnGameLength.GetWaveEndTime();
-    AdjustedDifficulty = GameDifficulty + lerp(float(WaveNum)/FinalWave, 0.1, 0.3);
+    AdjustedDifficulty = GameDifficulty + 0.3 * RelativeWaveNum(WaveNum);
 
     MaxMonsters = min(TotalMaxMonsters, MaxZombiesOnce); // max monsters that can be spawned
     TSCGRI.MaxMonsters = TotalMaxMonsters; // num monsters in wave replicated to clients
@@ -1009,7 +1016,7 @@ protected function StartTourney()
 function bool RewardSurvivingPlayers()
 {
     // At this WaveNum isn't increased yet
-    if ( OvertimeTeamMoneyPenalty > 0 && WaveNum+1 >= OriginalFinalWave ) {
+    if ( OvertimeTeamMoneyPenalty > 0 && OriginalFinalWave > 0 && WaveNum+1 >= OriginalFinalWave ) {
         CurrentTeamMoneyPenalty = fmin(CurrentTeamMoneyPenalty + OvertimeTeamMoneyPenalty, 1);
         Teams[0].Score = int(Teams[0].Score * (1.0 - CurrentTeamMoneyPenalty));
         Teams[1].Score = int(Teams[1].Score * (1.0 - CurrentTeamMoneyPenalty));
@@ -1056,6 +1063,16 @@ function ShopVolume TeamShop(byte TeamIndex)
 
 State MatchInProgress
 {
+    function BattleTimer()
+    {
+        super.BattleTimer();
+
+        if ( TSCGRI.bOverTime && bTeamWiped && !bSingleTeam ) {
+            KillZeds();
+            EndGame(none, "TeamScoreLimit");
+        }
+    }
+
     function WaveTimer()
     {
         super.WaveTimer();
@@ -1102,7 +1119,11 @@ State MatchInProgress
                 return;
             }
             if ( OvertimeWaves > 0 && NextWave == OriginalFinalWave ) {
+                TSCGRI.bOverTime = true;
                 BroadcastLocalizedMessage(class'TSCMessages', 201);
+                // legacy config name - now locking teams on overtime too
+                if ( bLockTeamsOnSuddenDeath )
+                    LockTeams();
             }
             else if ( NextWave >= OriginalFinalWave + OvertimeWaves ) {
                 TSCGRI.bSuddenDeath = true;

@@ -13,7 +13,7 @@ class ScrnBalance extends Mutator
 #exec OBJ LOAD FILE=ScrnAch_T.utx
 
 
-const VERSION = 96710;
+const VERSION = 96711;
 
 var ScrnBalance Mut; // pointer to self to use in static functions, i.e class'ScrnBalance'.default.Mut
 
@@ -323,7 +323,7 @@ var transient int SrvTourneyMode;
 replication
 {
     reliable if ( (bNetInitial || bNetDirty) && Role == ROLE_Authority )
-        SrvMinLevel, SrvMaxLevel, HardcoreLevel, bTeamsLocked;
+        SrvMinLevel, SrvMaxLevel, HardcoreLevel, bTeamsLocked, bHardcore;
 
         // flags to replicate config variables
     reliable if ( bNetInitial && Role == ROLE_Authority )
@@ -1841,6 +1841,7 @@ function SetLevels()
     //for the replication
     SrvMinLevel = MinLevel;
     SrvMaxLevel = MaxLevel;
+    DynamicLevelCap();
 }
 
 
@@ -2558,8 +2559,6 @@ function SpawnSquad(String SquadName)
     KF.NextSpawnSquad.insert(0, count);
     for ( i=0; i<count; ++i )
         KF.NextSpawnSquad[i] = Squads[q].Monsters[i];
-    //if( KF.NextSpawnSquad.length > 6 )
-    //        KF.NextSpawnSquad.Remove(6, KF.NextSpawnSquad.length - 6);
     KF.LastZVol = KF.FindSpawningVolume();
     KF.LastSpawningVolume = KF.LastZVol;
 }
@@ -2743,10 +2742,32 @@ function PostBeginPlay()
     }
 }
 
+
+function ChangeGameDifficulty(byte NewDifficulty, optional bool bForce)
+{
+    // save difficulty for the next map
+    Mut.Persistence.Difficulty = NewDifficulty;
+    Mut.Persistence.SaveConfig();
+
+    if ( bForce && NewDifficulty > 0 && ScrnGT != none )
+    {
+        // mid-game difficulty change
+        SetGameDifficulty(NewDifficulty);
+    }
+}
+
 function SetGameDifficulty(byte Difficulty)
 {
     local KFGameReplicationInfo KFGRI;
     local bool bNewHardcore;
+
+    if ( ScrnGT != none && ScrnGT.ScrnGameLength != none && (Difficulty < ScrnGT.ScrnGameLength.MinDifficulty)
+            || (ScrnGT.ScrnGameLength.MaxDifficulty != 0 && Difficulty > ScrnGT.ScrnGameLength.MaxDifficulty) )
+    {
+        log("Game difficulty " $ Difficulty $ " out of founds ["$ScrnGT.ScrnGameLength.MinDifficulty$".."
+                $ ScrnGT.ScrnGameLength.MaxDifficulty $ "]", class.name);
+        return;
+    }
 
     switch (Difficulty) {
         case 1:
@@ -2775,17 +2796,21 @@ function SetGameDifficulty(byte Difficulty)
     KF.GameDifficulty = Difficulty;
     KFGRI = KFGameReplicationInfo(KF.GameReplicationInfo);
     if ( KFGRI != none ) {
-        KFGRI.GameDiff = KF.GameDifficulty;
+        KFGRI.BaseDifficulty = KF.GameDifficulty;  // only initial replication
+        KFGRI.GameDiff = KF.GameDifficulty;  // only initial replication
+        if ( ScrnGT != none ) {
+            ScrnGT.ScrnGRI.NewDifficulty = Difficulty;  // dirty replication
+        }
     }
-    if ( GameRules != none ) {
-        GameRules.InitHardcoreLevel();
-    }
-
     if ( bHardcore ) {
         log("Game difficulty: " $ string(KF.GameDifficulty) $ " + Hardcore", 'ScrnBalance');
     }
     else {
         log("Game difficulty: " $ string(KF.GameDifficulty) $ "", 'ScrnBalance');
+    }
+
+    if ( GameRules != none ) {
+        GameRules.InitHardcoreLevel();
     }
     SetLevels();
     SetStartCash();

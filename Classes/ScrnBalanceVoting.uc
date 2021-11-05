@@ -406,8 +406,7 @@ function ApplyMapVote(string ServerTravelString)
     vh.SaveConfig();
 
     if ( VotedDiff > 0 ) {
-        Mut.Persistence.Difficulty = VotedDiff;
-        Mut.Persistence.SaveConfig();
+        Mut.ChangeGameDifficulty(VotedDiff);
     }
 
     Level.ServerTravel(ServerTravelString, false);
@@ -625,7 +624,7 @@ function int GetVoteIndex(PlayerController Sender, string Key, out string Value,
         result = VOTE_BORING;
     }
     else if ( Key == "SPAWN" ) {
-        if ( Mut.bStoryMode && !Mut.bBeta ) {
+        if ( Mut.bStoryMode && !Mut.bTestMap ) {
             Sender.ClientMessage(strNotInStoryMode);
             return VOTE_NOEFECT;
         }
@@ -702,7 +701,7 @@ function int GetVoteIndex(PlayerController Sender, string Key, out string Value,
             Sender.ClientMessage(strNotInTSC);
             return VOTE_NOEFECT;
         }
-        if ( Level.GRI.bMatchHasBegun ) {
+        if ( Level.GRI.bMatchHasBegun && !Mut.bTestMap ) {
             Sender.ClientMessage(strNotAvaliableATM);
             return VOTE_LOCAL;
         }
@@ -948,8 +947,8 @@ function ApplyVoteValue(int VoteIndex, string VoteValue)
             Mut.ScrnGT.ScrnGRI.FakedAlivePlayers = byte(VoteValue);
             break;
         case VOTE_DIFF:
-            Mut.Persistence.Difficulty = VotedDiff;
-            Mut.Persistence.SaveConfig();
+            // apply new difficulty on-the-fly on a test map or before the game begins
+            Mut.ChangeGameDifficulty(VotedDiff, Mut.bTestMap || !Level.GRI.bMatchHasBegun);
             break;
 
         case VOTE_RKILL:

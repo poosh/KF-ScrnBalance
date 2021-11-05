@@ -7,7 +7,7 @@ var KFGameType KF;
 var bool bShowDamages;
 
 var int HardcoreLevel;
-var float HardcoreLevelFloat;
+var float HardcoreLevelFloat, InitialHardcoreLevelFloat;
 var bool bForceHardcoreLevel;
 var localized string msgHardcore, msgHardcoreLowered, msgWeaponBlame;
 var bool bUseAchievements;
@@ -1100,6 +1100,9 @@ function InitHardcoreLevel()
 {
     local int i;
     local string GameClass;
+    local float HLInc;
+
+    HLInc = HardcoreLevelFloat - InitialHardcoreLevelFloat;
 
     GameClass = GetItemName(string(Level.Game.Class));
 
@@ -1131,6 +1134,10 @@ function InitHardcoreLevel()
             break;
         }
     }
+
+    // in case of mid-game calls
+    HardcoreLevelFloat += HLInc;
+    InitialHardcoreLevelFloat = HardcoreLevelFloat;
 
     HardcoreLevel = int(HardcoreLevelFloat+0.01);
     // replicate to clients

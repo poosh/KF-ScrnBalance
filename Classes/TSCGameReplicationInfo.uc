@@ -4,7 +4,7 @@ var bool bSingleTeamGame;
 var ShopVolume BlueShop;
 var byte OvertimeWaves;         // number of Overtime waves
 var byte SudDeathWaves;         // number of Sudden Death waves
-var transient bool bSuddenDeath;
+var transient bool bOverTime, bSuddenDeath;
 var byte HumanDamageMode;
 
 var PlayerReplicationInfo TeamCaptain[2];   // MVOTE TEAM CAPTAIN
@@ -19,7 +19,7 @@ replication
         BaseRadiusSqr, MinBaseZ, MaxBaseZ;
 
     reliable if( bNetDirty && Role == ROLE_Authority )
-        BlueShop, bSuddenDeath,
+        BlueShop, bOverTime, bSuddenDeath,
         HumanDamageMode, TeamCaptain, TeamCarrier;
 }
 

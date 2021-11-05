@@ -9,6 +9,7 @@ var byte WaveEndRule;
 var bool bTraderArrow;
 
 var byte FakedPlayers, FakedAlivePlayers;
+var byte NewDifficulty;  // allows changing difficulty mid-game
 
 var class<LocalMessage> RemainingTimeMsg;
 var transient float LastBeepTime;
@@ -25,7 +26,7 @@ replication
         WaveCounter;
 
     reliable if( (bNetInitial || bNetDirty) && Role == ROLE_Authority )
-        FakedPlayers, FakedAlivePlayers;
+        FakedPlayers, FakedAlivePlayers, NewDifficulty;
 }
 
 simulated function PostBeginPlay()
@@ -41,6 +42,15 @@ simulated function PostNetBeginPlay()
     super.PostNetBeginPlay();
 
     SetTimer(1.1, true);
+}
+
+simulated function PostNetReceive()
+{
+    if ( NewDifficulty != 0 ) {
+        BaseDifficulty = NewDifficulty;
+        GameDiff = NewDifficulty;
+        NewDifficulty = 0;
+    }
 }
 
 simulated function Timer()
@@ -148,6 +158,7 @@ simulated function ShowTimeMsg(optional bool bForceDisplay)
 
 defaultproperties
 {
+    bNetNotify = true;
     RemainingTimeMsg=class'ScrnBalanceSrv.ScrnSuicideMsg'
     WaveEndRule=0 // RULE_KillEmAll
     bTraderArrow=True
