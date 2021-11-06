@@ -1250,6 +1250,11 @@ exec function MVB(string Params)
     ServerMutate("VOTE BLAME " $ Params);
 }
 
+exec function MVM(string Params)
+{
+    ServerMutate("VOTE MAP " $ Params);
+}
+
 exec function Say(string Msg)
 {
     // Msg = Level.Game.StripColor(Msg);

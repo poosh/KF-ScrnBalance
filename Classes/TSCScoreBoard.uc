@@ -306,6 +306,7 @@ simulated function DrawTeam(Canvas Canvas, array<PlayerReplicationInfo> TeamPRIA
 
 simulated event UpdateScoreBoard(Canvas Canvas)
 {
+    local TSCGameReplicationInfo TSCGRRI;
     local PlayerReplicationInfo PRI, OwnerPRI;
     local KFPlayerReplicationInfo KFPRI;
     local int i, fi, FontReduction, HeaderOffsetY, PlayerBoxSizeY;
@@ -318,6 +319,7 @@ simulated event UpdateScoreBoard(Canvas Canvas)
     local byte HumanDamageMode;
     local String Spectators;
 
+    TSCGRRI = TSCGameReplicationInfo(GRI);
     OwnerPRI = KFPlayerController(Owner).PlayerReplicationInfo;
     if ( OwnerPRI != none && OwnerPRI.Team != none )
         MyTeamIndex = OwnerPRI.Team.TeamIndex;
@@ -347,8 +349,8 @@ simulated event UpdateScoreBoard(Canvas Canvas)
     }
     DisplayedCount = max(RedTeamPRIArray.Length, BlueTeamPRIArray.Length);
 
-    if ( TSCGameReplicationInfo(GRI) != none )
-        HumanDamageMode = TSCGameReplicationInfo(GRI).HumanDamageMode;
+    if ( TSCGRRI != none )
+        HumanDamageMode = TSCGRRI.HumanDamageMode;
     else
         HumanDamageMode = 3; // Normal, just in case
 
@@ -374,6 +376,9 @@ simulated event UpdateScoreBoard(Canvas Canvas)
     S $= SkillLevel[Clamp(InvasionGameReplicationInfo(GRI).BaseDifficulty, 0, 7)]  $ " | HL="$string(class'ScrnBalance'.default.Mut.HardcoreLevel)
             $ " | " $ WaveString @ string(InvasionGameReplicationInfo(GRI).WaveNumber + 1)$"/"$string(InvasionGameReplicationInfo(GRI).FinalWave)
             $ " | " $ Level.Title $ " | " $ FormatTime(GRI.ElapsedTime);
+    if ( TSCGRRI != none && !TSCGRRI.bStopCountDown ) {
+        S $= " | " $ SuicideTimeText @ FormatTime(TSCGRRI.RemainingTime);
+    }
     Canvas.TextSize(S, XL,YL);
     Canvas.SetPos(0.5 * (Canvas.ClipX - XL), HeaderOffsetY);
     Canvas.DrawTextClipped(S);

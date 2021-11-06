@@ -19,6 +19,16 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+### v9.67.14
+- `MVM` - console command as a shortcut for `MVOTE MAP`
+- Fixed missing smiley tags in ServerPerks
+- Fixed multiple issues in  **XCM DUEL**
+- Adjusted zed spawns in **FTG**
+- Adjusted zed spawn rate in **FTG-OTC**.
+- ScrnWaves.ini: Fixed an issue where waves with `bRandomSquads=false` doubled zed spawn rate
+- Adjusted **XCM** waves to compensate the above bug fix
+
+
 ### v9.67.11
 - New game mode: **XCM DUEL** - two players in TSC-like game try to survive as long as possible in XCM waves.
   The one who dies first, loses.

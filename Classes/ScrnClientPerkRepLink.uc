@@ -291,6 +291,9 @@ simulated function ClientReceiveChar( string CharName, int Num )
 
 simulated function ClientReceiveTag( Texture T, string Tag, bool bInCaps )
 {
+    if ( bClientDebug )
+        OwnerPC.ClientMessage("SmileyTag " $ Tag);
+
     super.ClientReceiveTag(T, Tag, bInCaps);
     if( OwnerPC!=None && SRHUDKillingFloor(OwnerPC.MyHUD)!=None )
         SRHUDKillingFloor(OwnerPC.MyHUD).SmileyMsgs = SmileyTags;

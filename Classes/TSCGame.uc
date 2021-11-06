@@ -90,6 +90,7 @@ event PreBeginPlay()
     Super.PreBeginPlay();
     GameReplicationInfo.bNoTeamSkins = bSingleTeamGame;
     GameReplicationInfo.bNoTeamChanges = bSingleTeamGame;
+    TSCGRI.FinalWave = OriginalFinalWave;
 }
 
 function PostBeginPlay()
@@ -112,6 +113,7 @@ function PostBeginPlay()
     Teams[1].TeamColor=class'Canvas'.static.MakeColor(32, 92, 255, 255);
 }
 
+// InitGame() gets called before PreBeginPlay()! Therefore, GameReplicationInfo does not exist yet.
 event InitGame( string Options, out string Error )
 {
     local ScrnVotingHandlerMut VH;
@@ -163,6 +165,9 @@ event InitGame( string Options, out string Error )
         }
     }
     OriginalFinalWave = FinalWave;
+    if ( FinalWave == 0 ) {
+        FinalWave = OvertimeWaves + SudDeathWaves;
+    }
 
     // force FriendlyFireScale to 10%
     FriendlyFireScale = HDmgScale;
@@ -1129,7 +1134,9 @@ State MatchInProgress
                 TSCGRI.bSuddenDeath = true;
                 BroadcastLocalizedMessage(class'TSCMessages', 202);
             }
-            FinalWave++;
+            if ( NextWave >= FinalWave ) {
+                FinalWave = OriginalFinalWave + OvertimeWaves + SudDeathWaves;
+            }
         }
 
         if ( !bSingleTeamGame ) {

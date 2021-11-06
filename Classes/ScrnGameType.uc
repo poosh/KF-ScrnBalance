@@ -3061,6 +3061,7 @@ function BattleTimer() {}
 function WaveTimer() {}
 function BossWaveTimer() {}
 function TraderTimer() {}
+function float CalcNextSquadSpawnTime() { return 5.0; }
 
 // ==================================== STATES ===============================
 auto State PendingMatch
@@ -3653,7 +3654,8 @@ defaultproperties
 
     PathWhisps(0)="KFMod.RedWhisp"
     PathWhisps(1)="KFMod.RedWhisp"
-    HUDType="ScrnBalanceSrv.ScrnHUD"
+    // Cannot set HUDType by default or ServerPerksMut won't enable smiley tags
+    // HUDType="ScrnBalanceSrv.ScrnHUD"
     ScoreBoardType="ScrnBalanceSrv.ScrnScoreBoard"
     LoginMenuClass="ScrnBalanceSrv.ScrnInvasionLoginMenu"
     PlayerControllerClass=Class'ScrnBalanceSrv.ScrnPlayerController'

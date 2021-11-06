@@ -786,7 +786,11 @@ function AdjustNextSpawnTime(out float NextSpawnTime)
         NextSpawnTime *= 1.0 + Wave.SpecialSquadCooldown;
     }
     else if ( Wave.bRandomSquads ) {
+        // * 1.0 .. 3.0
         NextSpawnTime *= 1.0 + Game.WaveSinMod();
+    }
+    else {
+        NextSpawnTime *= 2.0;  // average between 1.0 and 3.0
     }
 }
 
