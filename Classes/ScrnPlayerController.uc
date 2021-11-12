@@ -1054,18 +1054,15 @@ event TeamMessage( PlayerReplicationInfo PRI, coerce string S, name Type  )
     if ( myHUD != None )
         myHUD.Message( PRI, c$S, Type );
 
-        if ( (Player != None) && (Player.Console != None) )
-    {
-        if ( PRI!=None )
-        {
-            if ( PRI.Team!=None && GameReplicationInfo.bTeamGame)
-            {
-                if (PRI.Team.TeamIndex==0)
+    if ( Player != None && Player.Console != None ) {
+        if ( PRI!=None ) {
+            if ( PRI.Team!=None && GameReplicationInfo.bTeamGame ) {
+                if ( PRI.Team.TeamIndex == 0 )
                     c = chr(27)$chr(200)$chr(1)$chr(1);
-                else if (PRI.Team.TeamIndex==1)
+                else if ( PRI.Team.TeamIndex == 1 )
                     c = chr(27)$chr(75)$chr(139)$chr(198);
             }
-            S = Mut.ColoredPlayerName(PRI)$c$": "$ Mut.ParseColorTags(S, PRI);
+            S = Mut.ColoredPlayerName(PRI) $ c $ ": " $ Mut.ParseColorTags(S, PRI);
         }
         Player.Console.Chat( c$s, 6.0, PRI );
     }

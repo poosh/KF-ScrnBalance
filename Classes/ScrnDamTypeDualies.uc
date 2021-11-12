@@ -10,7 +10,7 @@ static function AwardKill(KFSteamStatsAndAchievements KFStatsAndAchievements, KF
 static function ScoredHeadshot(KFSteamStatsAndAchievements KFStatsAndAchievements, class<KFMonster> MonsterClass,
         bool bLSM14Kill)
 {
-    class'ScrnDamTypeDefaultGunslingerBase'.static.ScoredHeadshot(KFStatsAndAchievements, MonsterClass, bLSM14Kill);
+    class'ScrnDamTypeDefaultGunslingerBase'.static.ScoredHeadshot(KFStatsAndAchievements, MonsterClass, default.bSniperWeapon);
 }
 
 static function AwardDamage(KFSteamStatsAndAchievements KFStatsAndAchievements, int Amount)

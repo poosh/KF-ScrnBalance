@@ -32,7 +32,7 @@ var float ZVolVisibilityCheckPeriod;  // Time to check all zombie volumes.
 var float ZVolDisableTime;
 var transient float ZVolVisibilityCheckStart;
 var float ZedSpawnMinDist, ZedSpawnMaxDist, BossSpawnRecDist;
-var float FloorHeight;
+var float FloorHeight, BasementZ;
 var float FloorPenalty;
 var float ElevatedSpawnMinZ, ElevatedSpawnMaxZ;
 var bool bHighGround;
@@ -276,6 +276,7 @@ function CheckZedSpawnList()
     // second pass: load ZVol map config
     FloorPenalty = fclamp(MapInfo.FloorPenalty, 0.0, 0.9);
     FloorHeight = fmax(MapInfo.FloorHeight, 64);
+    BasementZ = MapInfo.BasementZ;
     if ( MapInfo.ElevatedSpawnMinZ != 0 ) {
         ElevatedSpawnMinZ = MapInfo.ElevatedSpawnMinZ;
     }
@@ -358,6 +359,8 @@ function CheckZedSpawnList()
     LogZedSpawn(LOG_INFO,   "ZVolDisableTime=" $ ZVolDisableTime);
     LogZedSpawn(LOG_INFO,   "ZedSpawnMaxDist=" $ ZedSpawnMaxDist);
     LogZedSpawn(LOG_INFO,   "FloorHeight=" $ FloorHeight);
+    if ( BasementZ != 0 )
+        LogZedSpawn(LOG_INFO, "BasementZ=" $ BasementZ);
     LogZedSpawn(LOG_INFO,   "FloorPenalty=" $ FloorPenalty);
     LogZedSpawn(LOG_INFO,   "bHighGround=" $ bHighGround);
     LogZedSpawn(LOG_INFO,   "ElevatedSpawnMinZ=" $ ElevatedSpawnMinZ);
@@ -1179,7 +1182,7 @@ function float RateZombieVolume(ZombieVolume ZVol, Pawn SpawnCloseTo, float MaxU
     local int i;
     local float PlayerDistScore, UsageScore, f;
     local vector ZVolLoc, LocationXY, TestLocationXY;
-    local bool bIgnoreZDist;
+    local bool bIgnoreZDist, bBasementDiff;
 
     if ( ZVol == none )
         return -1;
@@ -1203,16 +1206,18 @@ function float RateZombieVolume(ZombieVolume ZVol, Pawn SpawnCloseTo, float MaxU
 
     // Rate the Volume on how close it is to the player
     f = 0;
-    bIgnoreZDist = ZVol.bNoZAxisDistPenalty;
     // Use an actual spawn location instead of arbitrary volume location.
     // The latter can be messed up due to prepivot.
     ZVolLoc = ZVol.SpawnPos[0];
+    bBasementDiff = BasementZ != 0 && SpawnCloseTo != none
+            && ((ZVolLoc.Z < BasementZ) ^^ (SpawnCloseTo.Location.Z < BasementZ));
+    bIgnoreZDist = ZVol.bNoZAxisDistPenalty && !bBasementDiff;
     if ( SpawnCloseTo == none ) {
         // distance to the closest player
         f = ZVol.CanRespawnTime;
         bIgnoreZDist = true;
     }
-    else if ( ZVol.bHasInitSpawnPoints ) {
+    else if ( ZVol.bHasInitSpawnPoints ) {  // elevated spawn
         if ( ZVolLoc.Z < SpawnCloseTo.Location.Z + ElevatedSpawnMinZ
             || ZVolLoc.Z > SpawnCloseTo.Location.Z + ElevatedSpawnMaxZ )
         {
@@ -1220,7 +1225,7 @@ function float RateZombieVolume(ZombieVolume ZVol, Pawn SpawnCloseTo, float MaxU
         }
         bIgnoreZDist = true;
     }
-    else if ( bHighGround && ZVolLoc.Z + 50 > SpawnCloseTo.Location.Z ) {
+    else if ( bHighGround && !bBasementDiff && ZVolLoc.Z + 50 > SpawnCloseTo.Location.Z ) {
         bIgnoreZDist = true;
     }
 
@@ -1245,13 +1250,15 @@ function float RateZombieVolume(ZombieVolume ZVol, Pawn SpawnCloseTo, float MaxU
     // If the volume is too far away - Z distance does not matter anymore
     if ( !bIgnoreZDist && FloorPenalty > 0 && PlayerDistScore > 0 ) {
         PlayerDistScore *= 1.0 - FloorPenalty;
-        f = abs(SpawnCloseTo.Location.Z - ZVolLoc.Z);
-        if ( f < 50 ) {
-            // prevents crouching or jumping players to mess up the rating
-            PlayerDistScore += FloorPenalty;
-        }
-        else if ( f < FloorHeight ) {
-            PlayerDistScore += FloorPenalty * (1.0 - f / FloorHeight);
+        if ( !bBasementDiff ) {
+            f = abs(SpawnCloseTo.Location.Z - ZVolLoc.Z);
+            if ( f < 50 ) {
+                // prevents crouching or jumping players to mess up the rating
+                PlayerDistScore += FloorPenalty;
+            }
+            else if ( f < FloorHeight ) {
+                PlayerDistScore += FloorPenalty * (1.0 - f / FloorHeight);
+            }
         }
     }
 
@@ -3026,6 +3033,7 @@ function BossGrandEntry()
                 if ( PC.Pawn == None && !C.PlayerReplicationInfo.bOnlySpectator )
                     PC.GotoState('PlayerWaiting');
             }
+            ScrnBalanceMut.MessageEndGameBonus(PC);
         }
     }
 }

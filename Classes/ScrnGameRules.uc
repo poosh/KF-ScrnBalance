@@ -456,13 +456,27 @@ function bool CheckEndGame(PlayerReplicationInfo Winner, string Reason)
     return true;
 }
 
+function float CalcEndGameBonusMult()
+{
+    local float BonusMult;
+
+    BonusMult = Mut.EndGameStatBonus;
+    if ( Mut.bStatBonusUsesHL )
+        BonusMult *= fmax(1.0, HardcoreLevel - Mut.StatBonusMinHL);
+    BonusMult *= Mut.MapInfo.XPBonusMult;
+    if ( Mut.bRandomMap && Mut.Persistence.bRandomMapBonus && !Mut.bTSCGame )
+        BonusMult *= fmax(1.0, Mut.RandomMapStatBonus);
+        
+    return BonusMult;
+}
+
 function GiveMapAchievements(optional String MapName)
 {
     local bool bCustomMap, bGiveHardAch, bGiveSuiAch, bGiveHoeAch, bNewAch;
     local ScrnPlayerInfo SPI;
     local ClientPerkRepLink PerkLink;
     local TeamInfo WinnerTeam;
-    local float BonusMult;
+    local float BonusMult, f;
     local bool bGiveBonus;
     local int MapResult;
 
@@ -480,10 +494,7 @@ function GiveMapAchievements(optional String MapName)
     }
 
     // end game bonus
-    BonusMult = Mut.EndGameStatBonus;
-    if ( Mut.bStatBonusUsesHL )
-        BonusMult *= fmax(1.0, HardcoreLevel - Mut.StatBonusMinHL);
-    BonusMult *= Mut.MapInfo.XPBonusMult;
+    BonusMult = CalcEndGameBonusMult();
     bGiveBonus = BonusMult >= 0.1;
     if ( bGiveBonus )
         log("Giving bonus xp to winners (x"$BonusMult$")", 'ScrnBalance');
@@ -530,10 +541,10 @@ function GiveMapAchievements(optional String MapName)
         }
         // END-GAME STAT BONUS
         if ( bGiveBonus ) {
+            f = BonusMult;
             if ( bNewAch )
-                SPI.BonusStats(SPI.GameStartStats, BonusMult * fmax(1.0, Mut.FirstStatBonusMult));
-            else
-                SPI.BonusStats(SPI.GameStartStats, BonusMult);
+                f *= fmax(1.0, Mut.FirstStatBonusMult);
+            SPI.BonusStats(SPI.GameStartStats, f);
         }
     }
 }

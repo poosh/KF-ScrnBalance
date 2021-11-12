@@ -24,7 +24,7 @@ var config bool bTestMap;
 
 var config float ZVolDisableTime;
 var config float ZedSpawnMaxDist;
-var config float FloorHeight;
+var config float FloorHeight, BasementZ;
 var config float FloorPenalty;
 var config float ElevatedSpawnMinZ, ElevatedSpawnMaxZ;
 var config bool bHighGround;

@@ -48,9 +48,6 @@ var automated moSlider                sl_HudY;
 var automated moSlider                sl_3DScopeSensScale; //I added this
 
 var array<localized string>           ShowDamagesItems;
-var array<localized string>           BarStyleItems;
-var array<localized string>           HudStyleItems;
-
 
 var automated GUIButton               b_Status;
 var automated GUIButton               b_HL;
@@ -98,31 +95,37 @@ var transient bool bFillPlayerList;
 function InitComponent(GUIController MyController, GUIComponent MyOwner)
 {
     local int i;
+    local ScrnHUD H;
 
     Super.InitComponent(MyController, MyOwner);
 
-    /*
-    bg_Weapons.ManageComponent(ch_ManualReload);
-    bg_Weapons.ManageComponent(ch_CookNade);
-    bg_Weapons.ManageComponent(ch_PrioritizePerkedWeapons);
-    bg_Weapons.ManageComponent(ch_PrioritizeBoomstick);
-    bg_Weapons.ManageComponent(b_GunSkin);
-    bg_Weapons.ManageComponent(b_WeaponLock);
-    bg_Weapons.ManageComponent(b_PerkProgress);
-    bg_Weapons.ManageComponent(b_Accuracy);
-    */
+    H = ScrnHUD(PlayerOwner().myHUD);
 
     cbx_ShowDamages.ResetComponent();
+    cbx_BarStyle.ResetComponent();
+    cbx_HudStyle.ResetComponent();
+
     for ( i=0; i < ShowDamagesItems.length; ++i )
         cbx_ShowDamages.AddItem(ShowDamagesItems[i]);
 
-    cbx_BarStyle.ResetComponent();
-    for ( i=0; i < BarStyleItems.length; ++i )
-        cbx_BarStyle.AddItem(BarStyleItems[i]);
-
-    cbx_HudStyle.ResetComponent();
-    for ( i=0; i < HudStyleItems.length; ++i )
-        cbx_HudStyle.AddItem(HudStyleItems[i]);
+    if ( H == none ) {
+        cbx_BarStyle.DisableMe();
+        cbx_HudStyle.DisableMe();
+    }
+    else {
+        if ( H.BarStyles.length > 0 ) {
+            for ( i=0; i < H.BarStyles.length; ++i ) {
+                cbx_BarStyle.AddItem(H.BarStyles[i]);
+            }
+            cbx_BarStyle.EnableMe();
+        }
+        if ( H.HudStyles.length > 0 ) {
+            for ( i=0; i < H.HudStyles.length; ++i ) {
+                cbx_HudStyle.AddItem(H.HudStyles[i]);
+            }
+            cbx_HudStyle.EnableMe();
+        }
+    }
 }
 
 function ShowPanel(bool bShow)
@@ -167,7 +170,7 @@ function ShowPanel(bool bShow)
     b_TSC_C.SetVisibility(b);
     b_TSC_A.SetVisibility(b);
 
-    sl_BarScale.SetVisibility(H.PlayerInfoVersionNumber >= 80);
+    sl_BarScale.SetVisibility(H.BarStyle != H.BARSTL_CLASSIC);
     sl_HudScale.SetVisibility(H.bCoolHud);
     sl_HudAmmoScale.SetVisibility(H.bCoolHud);
     sl_HudY.SetVisibility(H.bCoolHud);
@@ -480,43 +483,14 @@ function InternalOnLoadINI(GUIComponent Sender, string s)
             break;
 
         case cbx_BarStyle:
-            if ( H == none ) {
-                cbx_BarStyle.SetIndex(0);
-                cbx_BarStyle.DisableMe();
-            }
-            else  {
-                if ( H.PlayerInfoVersionNumber < 80 )
-                    cbx_BarStyle.SetIndex(0);
-                else if ( H.PlayerInfoVersionNumber < 83 )
-                    cbx_BarStyle.SetIndex(1);
-                else if ( H.PlayerInfoVersionNumber < 90 )
-                    cbx_BarStyle.SetIndex(2);
-                else
-                    cbx_BarStyle.SetIndex(3);
-                cbx_BarStyle.EnableMe();
+            if ( H != none ) {
+                cbx_BarStyle.SetIndex(H.BarStyle);
             }
             break;
 
         case cbx_HudStyle:
-            if ( H == none ) {
-                if ( class'ScrnVeterancyTypes'.default.bOldStyleIcons )
-                    cbx_HudStyle.SetIndex(0);
-                else
-                    cbx_HudStyle.SetIndex(1);
-                cbx_HudStyle.DisableMe();
-            }
-            else  {
-                cbx_HudStyle.EnableMe();
-                if ( H.bCoolHud ) {
-                    if ( H.bCoolHudLeftAlign )
-                        cbx_HudStyle.SetIndex(3);
-                    else
-                        cbx_HudStyle.SetIndex(2);
-                }
-                else if ( class'ScrnVeterancyTypes'.default.bOldStyleIcons )
-                    cbx_HudStyle.SetIndex(0);
-                else
-                    cbx_HudStyle.SetIndex(1);
+            if ( H != none ) {
+                cbx_HudStyle.SetIndex(H.HudStyle);
             }
             break;
 
@@ -605,38 +579,16 @@ function InternalOnChange(GUIComponent Sender)
 
 
         case cbx_BarStyle:
-            switch (cbx_BarStyle.GetIndex()) {
-                case 0: PC.ConsoleCommand("PlayerInfoVersion 70"); break;
-                case 1: PC.ConsoleCommand("PlayerInfoVersion 81"); break;
-                case 2: PC.ConsoleCommand("PlayerInfoVersion 83"); break;
-                case 3: PC.ConsoleCommand("PlayerInfoVersion 90"); break;
+            if ( H != none ) {
+                H.SetBarStyle(cbx_BarStyle.GetIndex());
+                sl_BarScale.SetVisibility(H.BarStyle != H.BARSTL_CLASSIC);
+                H.SaveConfig();
             }
-            sl_BarScale.SetVisibility(cbx_BarStyle.GetIndex() > 0);
-            PC.myHUD.SaveConfig();
             break;
 
         case cbx_HudStyle:
             if ( H != none ) {
-                switch (cbx_HudStyle.GetIndex()) {
-                    case 0:
-                        class'ScrnBalanceSrv.ScrnVeterancyTypes'.default.bOldStyleIcons = true;
-                        H.bCoolHud = false;
-                        break;
-                    case 1:
-                        class'ScrnBalanceSrv.ScrnVeterancyTypes'.default.bOldStyleIcons = false;
-                        H.bCoolHud = false;
-                        break;
-                    case 2:
-                        class'ScrnBalanceSrv.ScrnVeterancyTypes'.default.bOldStyleIcons = false;
-                        H.bCoolHud = true;
-                        H.bCoolHudLeftAlign = false;
-                        break;
-                    case 3:
-                        class'ScrnBalanceSrv.ScrnVeterancyTypes'.default.bOldStyleIcons = false;
-                        H.bCoolHud = true;
-                        H.bCoolHudLeftAlign = true;
-                        break;
-                }
+                H.SetHudStyle(cbx_HudStyle.GetIndex());
                 sl_HudScale.SetVisibility(H.bCoolHud);
                 sl_HudAmmoScale.SetVisibility(H.bCoolHud);
                 sl_HudY.SetVisibility(H.bCoolHud);
@@ -1336,10 +1288,6 @@ defaultproperties
         OnCreateComponent=BarStyleList.InternalOnCreateComponent
     End Object
     cbx_BarStyle=moComboBox'ScrnBalanceSrv.ScrnTab_UserSettings.BarStyleList'
-    BarStyleItems(0)="Classic Bars"
-    BarStyleItems(1)="Modern Bars"
-    BarStyleItems(2)="Modern + Weapon"
-    BarStyleItems(3)="Cool Bars"
 
     Begin Object Class=moSlider Name=BarScale
         MinValue=0.5
@@ -1377,10 +1325,7 @@ defaultproperties
         OnCreateComponent=HudStyleList.InternalOnCreateComponent
     End Object
     cbx_HudStyle=moComboBox'ScrnBalanceSrv.ScrnTab_UserSettings.HudStyleList'
-    HudStyleItems(0)="Classic HUD, old icons"
-    HudStyleItems(1)="Classic HUD, new icons"
-    HudStyleItems(2)="Cool HUD (center)"
-    HudStyleItems(3)="Cool HUD (left)"
+
 
     Begin Object Class=moSlider Name=HudScale
         MinValue=1.5

@@ -46,6 +46,7 @@ var transient string msgPause;
 var transient array< class<ScrnVeterancyTypes> > VotedPerks;
 var transient byte VotedDiff;
 var transient int VotedGameConfig;
+var transient bool bRandomMap;
 
 var string Reason; // reason why voting was started (e.g. kick player for being noob)
 
@@ -286,6 +287,7 @@ function int MapVote(PlayerController Sender, out string VoteValue, out string V
     local string s, prefix, MapKeyword, DiffStr;
     local int prefixLen;
     local VotingHandler.MapHistoryInfo MapInfo;
+    local bool bFirstMatch;
 
     vh = xVotingHandler(Level.Game.VotingHandler);
     if ( vh == none || !vh.bMapVote || vh.MapList.length == 0) {
@@ -295,17 +297,11 @@ function int MapVote(PlayerController Sender, out string VoteValue, out string V
 
     VotedDiff = 0;
     VotedGameConfig = -1;
-
-    if ( VoteValue == "RANDOM" ) {
-        vh.GetDefaultMap(MapIndex, GameIndex);
-        MapInfo = vh.History.PlayMap(vh.MapList[MapIndex].MapName);
-        VoteValue = vh.SetupGameMap(vh.MapList[MapIndex], GameIndex, MapInfo);
-        return VOTE_MAP;
-    }
+    bRandomMap = false;
 
     Split(VoteValue, " ", args);
     MapKeyword = args[0];
-    if ( len(MapKeyword) < 3 ) {
+    if ( MapKeyword != "*" && len(MapKeyword) < 3 ) {
         Sender.ClientMessage(strMapNameTooShort);
         return VOTE_ILLEGAL;
     }
@@ -344,29 +340,45 @@ function int MapVote(PlayerController Sender, out string VoteValue, out string V
         }
     }
 
-    prefix = caps(vh.GameConfig[GameIndex].Prefix);
-    prefixLen = len(prefix);
-    MapIndex = -1;
-    for ( i = 0; i < vh.MapList.length; ++i ) {
-        if ( !vh.MapList[i].bEnabled )
-            continue;
-        s = caps(vh.MapList[i].MapName);
-        if ( Left(s, prefixLen) != prefix )
-            continue;
-
-        if ( s == MapKeyword ) {
-            // full match
-            MapIndex = i;
-            break;
+    if ( MapKeyword == "RANDOM" || MapKeyword == "*" ) {
+        bRandomMap = true;
+        i = vh.CurrentGameConfig;
+        vh.CurrentGameConfig = GameIndex;
+        vh.bDefaultToCurrentGameType = true;
+        vh.GetDefaultMap(MapIndex, GameIndex);
+        vh.CurrentGameConfig = i;
+    }
+    else {
+        prefix = caps(vh.GameConfig[GameIndex].Prefix);
+        prefixLen = len(prefix);
+        if ( Right(MapKeyword, 1) == "^" ) {
+            bFirstMatch = true;
+            MapKeyword = Left(MapKeyword, Len(MapKeyword) - 1);
         }
+        MapIndex = -1;
+        for ( i = 0; i < vh.MapList.length; ++i ) {
+            if ( !vh.MapList[i].bEnabled )
+                continue;
+            s = caps(vh.MapList[i].MapName);
+            if ( Left(s, prefixLen) != prefix )
+                continue;
 
-        if ( InStr(s, MapKeyword) != -1) {
-            if ( MapIndex == -1 ) {
+            if ( s == MapKeyword ) {
+                // full match
                 MapIndex = i;
+                break;
             }
-            else {
-                SendMapList(Sender, vh, prefix, MapKeyword);
-                return VOTE_LOCAL;
+
+            if ( InStr(s, MapKeyword) != -1) {
+                if ( MapIndex == -1 ) {
+                    MapIndex = i;
+                    if ( bFirstMatch )
+                        break;
+                }
+                else {
+                    SendMapList(Sender, vh, prefix, MapKeyword);
+                    return VOTE_LOCAL;
+                }
             }
         }
     }
@@ -380,7 +392,7 @@ function int MapVote(PlayerController Sender, out string VoteValue, out string V
     MapInfo = vh.History.PlayMap(vh.MapList[MapIndex].MapName);
     VoteValue = vh.SetupGameMap(vh.MapList[MapIndex], GameIndex, MapInfo);
     if ( GameIndex == vh.CurrentGameConfig && diff == 0 ) {
-        VoteInfo = "MAP " $ vh.MapList[MapIndex].MapName;
+        VoteInfo = "MAP ";
     }
     else {
         VotedGameConfig = GameIndex;
@@ -388,8 +400,9 @@ function int MapVote(PlayerController Sender, out string VoteValue, out string V
         if ( diff > 0 ) {
             VoteInfo @= DiffStr;
         }
-        VoteInfo $= " @ " $ vh.MapList[MapIndex].MapName;
+        VoteInfo $= " @ ";
     }
+    VoteInfo $= eval(bRandomMap, "RANDOM", vh.MapList[MapIndex].MapName);
     return VOTE_MAP;
 }
 
@@ -409,6 +422,7 @@ function ApplyMapVote(string ServerTravelString)
         Mut.ChangeGameDifficulty(VotedDiff);
     }
 
+    Mut.Persistence.bRandomMap = bRandomMap;
     Level.ServerTravel(ServerTravelString, false);
 }
 
@@ -931,6 +945,7 @@ function ApplyVoteValue(int VoteIndex, string VoteValue)
                 TSCGame(Mut.KF).HdmgScale = Mut.KF.FriendlyFireScale;
             break;
         case VOTE_MAPRESTART:
+            Mut.Persistence.bRandomMap = Mut.bRandomMap;  // restore previous value
             Level.ServerTravel("?restart", false);
             break;
         case VOTE_MAP:

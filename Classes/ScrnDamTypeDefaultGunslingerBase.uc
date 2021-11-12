@@ -16,7 +16,7 @@ static function AwardKill(KFSteamStatsAndAchievements KFStatsAndAchievements, KF
 }
 
 static function ScoredHeadshot(KFSteamStatsAndAchievements KFStatsAndAchievements, class<KFMonster> MonsterClass,
-        bool bLaserSightedM14EBRKill)
+        bool bSniper)
 {
     local SRStatsBase stats;
     local int Amount;
@@ -24,8 +24,8 @@ static function ScoredHeadshot(KFSteamStatsAndAchievements KFStatsAndAchievement
     if ( KFStatsAndAchievements == none )
         return;
 
-    if ( Default.bSniperWeapon )
-        KFStatsAndAchievements.AddHeadshotKill(bLaserSightedM14EBRKill);
+    if ( default.bSniperWeapon || bSniper )
+        KFStatsAndAchievements.AddHeadshotKill(false);
 
     stats = SRStatsBase(KFStatsAndAchievements);
     if( stats == none || stats.Rep == none )

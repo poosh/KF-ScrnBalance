@@ -8,8 +8,24 @@ class ScrnHUD extends SRHUDKillingFloor
 
 var localized string strCowboyMode;
 
-var() config int                MinMagCapacity; //don't show low ammo warning, if weapon magazine smaller than this
-var() config float              LowAmmoPercent;
+var array<localized string> HudStyles;
+var const byte HUDSTL_CLASSIC;
+var const byte HUDSTL_MODERN;
+var const byte HUDSTL_COOL;
+var const byte HUDSTL_COOL_LEFT;
+var config byte HudStyle;
+
+var array<localized string> BarStyles;
+var const byte BARSTL_CLASSIC;
+var const byte BARSTL_MODERN;
+var const byte BARSTL_MODERN_EX;
+var const byte BARSTL_COOL;
+var config byte BarStyle;
+var deprecated byte PlayerInfoVersionNumber;
+var config float PlayerInfoScale;  // BarScale
+
+var config int                  MinMagCapacity; //don't show low ammo warning, if weapon magazine smaller than this
+var config float                LowAmmoPercent;
 // set inside CalculateAmmo()
 var transient bool              bLowAmmo;
 var transient float             WeaponChargePct; //0..1
@@ -63,14 +79,11 @@ var config byte SpecHeaderFont;
 var localized string strFollowing;
 var localized string strTrader;
 
-var config bool bCoolHud;
+var bool bCoolHud, bCoolHudLeftAlign;
 var config float CoolHudScale;
-var config bool bCoolHudLeftAlign;
 var config float CoolHudAmmoOffsetX, CoolHudAmmoOffsetY, CoolHudAmmoScale;
 var bool bCoolHudTeamColor;
 var color CoolHudColor, CoolHudAmmoColor;
-var config byte PlayerInfoVersionNumber;
-var config float PlayerInfoScale;
 var config byte PerkStarsMax;
 var config bool bShowLeftGunAmmo;
 var Material CoolBarBase,CoolBarOverlay;
@@ -134,8 +147,6 @@ var config byte SpeedometerFont;
 
 var bool bHidePlayerInfo;
 
-var config bool bOldStyleIcons;
-
 var class<KFMonster> BlamedMonsterClass;
 var float BlameCountdown;
 var float BlameDrawDistance; // max distance to draw a turn on blamed pawn's head
@@ -163,10 +174,8 @@ function PostBeginPlay()
         SpeedometerY = 0.80;
         PlayerOwner.ClientMessage("HUD Cheat Prevention: Speedometer position set to default");
     }
-    class'ScrnBalanceSrv.ScrnVeterancyTypes'.default.bOldStyleIcons = bOldStyleIcons;
 
-    if ( MyColorMod==None )
-    {
+    if ( MyColorMod==None ) {
         MyColorMod = ColorModifier(Level.ObjectPool.AllocateObject(class'ColorModifier'));
         MyColorMod.AlphaBlend = True;
         MyColorMod.Color.R = 255;
@@ -175,7 +184,10 @@ function PostBeginPlay()
     }
 
     SpecHeaderFont = clamp(SpecHeaderFont, 0, 1);
-    PlayerInfoVersion(PlayerInfoVersionNumber); // force update
+
+    // force update
+    SetHudStyle(HudStyle);
+    SetBarStyle(BarStyle);
 }
 
 function Destroyed()
@@ -269,7 +281,7 @@ simulated function string GetSpeedStr(Canvas C)
 
     Velocity2D = PawnOwner.Velocity;
     Velocity2D.Z = 0;
-    Speed = VSize(Velocity2D);
+    Speed = round(VSize(Velocity2D));
     s = string(Speed);
     if ( PlayerOwner.Pawn == PawnOwner ) {
         // GroundSpeed is replicated to owner pawn only
@@ -1412,34 +1424,47 @@ exec function TogglePlayerInfo()
     bHidePlayerInfo = !bHidePlayerInfo;
 }
 
-exec function PlayerInfoVersion(optional byte value)
+exec function SetBarStyle(byte value)
 {
-    if ( value == 0 )
-        PlayerOwner.Player.Console.Message("ScrN HUD Player Info Version = " $ PlayerInfoVersionNumber, 0);
-    else {
-        if ( PlayerInfoVersionNumber != value ) {
-            PlayerInfoVersionNumber = value;
-            SaveConfig();
-        }
-        if ( PlayerInfoVersionNumber < 90 )
-            ScrnDrawPlayerInfoBase = ScrnDrawPlayerInfoClassic;
-        else
-            ScrnDrawPlayerInfoBase = ScrnDrawPlayerInfoNew;
+    if ( value >= BarStyles.length )
+        return;
 
+    BarStyle = value;
+    if ( BarStyle < BARSTL_COOL ) {
+        ScrnDrawPlayerInfoBase = ScrnDrawPlayerInfoClassic;
     }
+    else {
+        ScrnDrawPlayerInfoBase = ScrnDrawPlayerInfoNew;
+    }
+}
+
+exec function ToggleBarStyle()
+{
+    if ( BarStyle + 1 < BarStyles.length )
+        SetBarStyle(BarStyle + 1);
+    else {
+        SetBarStyle(0);
+    }
+    SaveConfig();
+}
+
+exec function SetHudStyle(byte value)
+{
+    if ( value >= HudStyles.length )
+        return;
+
+    HudStyle = value;
+    bCoolHudLeftAlign = HudStyle == HUDSTL_COOL_LEFT;
+    bCoolHud = bCoolHudLeftAlign || HudStyle == HUDSTL_COOL;
+    class'ScrnVeterancyTypes'.default.bOldStyleIcons = HudStyle == HUDSTL_CLASSIC;
 }
 
 exec function ToggleHudStyle()
 {
-    if ( bCoolHud ) {
-        if ( bCoolHudLeftAlign )
-            bCoolHud = false;
-        else
-            bCoolHudLeftAlign = true;
-    }
+    if ( HudStyle + 1 < HudStyles.length )
+        SetHudStyle(HudStyle + 1);
     else {
-        bCoolHud = true;
-        bCoolHudLeftAlign = false;
+        SetHudStyle(0);
     }
     SaveConfig();
 }
@@ -1513,7 +1538,7 @@ function DrawPlayerInfo(Canvas C, Pawn P, float ScreenLocX, float ScreenLocY)
         if ( fZoom < 0.01 )
             return; // too far away
     }
-    if ( PlayerInfoVersionNumber >= 80 ) {
+    if ( BarStyle >= BARSTL_MODERN ) {
         fZoom = 1.0 - 0.5*Dist/HealthBarCutoffDist;
         if ( ScrnPerk != none )
             fZoom *= fclamp(ScrnPerk.static.GetHealPotency(KFPRI), 1.0, 1.5); // larger HP bars for medic
@@ -1576,7 +1601,7 @@ simulated function ScrnDrawPlayerInfoClassic(Canvas C, Pawn P, float ScreenLocX,
         EnemyScrnPawn = ScrnHumanPawn(P);
 
         // Draw Tourney Icon only during trader time
-        if ( PlayerInfoVersionNumber >= 81 || (KFGRI != none && !KFGRI.bWaveInProgress) ) {
+        if ( BarStyle >= BARSTL_MODERN_EX || (KFGRI != none && !KFGRI.bWaveInProgress) ) {
             EnemyScrnPRI = class'ScrnCustomPRI'.static.FindMe(EnemyPRI);
             if ( EnemyScrnPRI != none && EnemyScrnPRI.GetSpecialIcon() != none ) {
                 TempMaterial = EnemyScrnPRI.GetSpecialIcon();
@@ -1641,7 +1666,7 @@ simulated function ScrnDrawPlayerInfoClassic(Canvas C, Pawn P, float ScreenLocX,
         C.SetPos(TempX, TempY);
         C.DrawTile(ChatIcon, TempSize, TempSize, 0, 0, ChatIcon.MaterialUSize(), ChatIcon.MaterialVSize());
     }
-    else if ( bSameTeam && EnemyScrnPawn != none && EnemyScrnPawn.SpecWeapon != none && PlayerInfoVersionNumber >= 83 ){
+    else if ( bSameTeam && EnemyScrnPawn != none && EnemyScrnPawn.SpecWeapon != none && BarStyle >= BARSTL_MODERN_EX ){
         // draw weapon icon and ammo status
         TempMaterial = EnemyScrnPawn.SpecWeapon.default.TraderInfoTexture;
         if ( TempMaterial != none ) {
@@ -1949,7 +1974,7 @@ simulated function DrawKFBarEx(Canvas C, float XCentre, float YCentre, float Bar
         C.SetPos(XCentre - (0.5 * BarLength) - HealthIconSize - 2.0, YCentre - (HealthIconSize * 0.5));
         C.DrawTile(HealthIcon.WidgetTexture, HealthIconSize, HealthIconSize, 0, 0, HealthIcon.WidgetTexture.MaterialUSize(), HealthIcon.WidgetTexture.MaterialVSize());
 
-        if ( PlayerInfoVersionNumber >= 80 && BarPercentage + BarPercentage2 >= 1.0 )
+        if ( BarStyle >= BARSTL_MODERN && BarPercentage + BarPercentage2 >= 1.0 )
             C.DrawColor = FullHealthColor;
         else
             C.DrawColor = HealthBarColor;
@@ -3473,14 +3498,33 @@ defaultproperties
     PerkColors(5)=(R=255,G=128,B=0,A=255)
     PerkColors(6)=(R=160,G=0,B=0,A=255)
 
-    bCoolHud=false
+
+    HudStyles(0)="Classic HUD, old icons"
+    HudStyles(1)="Classic HUD, new icons"
+    HudStyles(2)="Cool HUD (center)"
+    HudStyles(3)="Cool HUD (left)"
+    HUDSTL_CLASSIC=0
+    HUDSTL_MODERN=1
+    HUDSTL_COOL=2
+    HUDSTL_COOL_LEFT=3
+    HudStyle=1
+
+    BarStyles(0)="Classic Bars"
+    BarStyles(1)="Modern Bars"
+    BarStyles(2)="Modern Extended"
+    BarStyles(3)="Cool Bars"
+    BARSTL_CLASSIC=0
+    BARSTL_MODERN=1
+    BARSTL_MODERN_EX=2
+    BARSTL_COOL=3
+    BarStyle=1
+    PlayerInfoScale=1.0
+
     CoolHudScale=2.0
     CoolHudAmmoOffsetX = 0.995
     CoolHudAmmoOffsetY = 0.95
     CoolHudAmmoScale=0.75
     CoolHealthFadeOutTime=10
-    PlayerInfoScale=1.0
-    PlayerInfoVersionNumber=81
     PerkStarsMax=30
     ScrnDrawPlayerInfoBase=ScrnDrawPlayerInfoNew
     CoolBarBase=Texture'ScrnTex.HUD.BarBase'

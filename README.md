@@ -19,6 +19,30 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+### v9.67.15
+- **XCM** moved into beta phase (v0.30)
+- Random map voting allows also game and difficult selection. For example:
+  `MVOTE MAP RANDOM DooM3 HoE`
+- Added `RandomMapStatBonus` to *ScrnBalanceSrv.ini* - allows boosting `EndGameStatBonus` when voted for a random map.
+  Should encourage playing on different maps instead of BioticsLab 24/7.
+- Added alias `*` for `RANDOM`. `MVM *` is the shortest way to vote for a random map.
+- Typing `^` at the end of the map name selects the first match even if multiple matches detected. For example,
+  `MVOTE MAP LONDON^` votes for KF-WestLondon even if KF-WestLondonNight and KF-WestLondonWinter exist on the server.
+- Fixed a bug where single pistols headshot kills did not give Sharpshooter XP progress
+#### ScrnMapInfo.ini
+Added map definitions for the following maps:
+- AbusementPark
+- Aperture
+- Biohazard
+- HospitalHorrors (fix)
+- Wyre
+#### Code Changes
+- Moved `BarStyleItems` and `HudStyleItems` from `ScrnTab_UserSettings` to `ScrnHUD` and renamed to `BarStyles` and
+  `HudStyles` respectively. That allows custom HUD to be selected by the player via GIU with zero changes to GUI and
+  without forcing selection to the custom HUD.
+- `PlayerInfoVersion` command deprecated. Use `ToggleBarStyle` instead.
+- `bCoolHud` and `bCoolHudLeftAlign` are not configurable anymore. Replaced with `HudStyle`.
+
 ### v9.67.14
 - `MVM` - console command as a shortcut for `MVOTE MAP`
 - Fixed missing smiley tags in ServerPerks
@@ -50,7 +74,7 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 - TSC/FTG: lowered default brightness of Base Guardian (but can be altered in *ScrnMapInfo.ini*)
 - Achievement progress disabled on test maps, but perk changes are always allowed.
 - Fixed a bug in `MVOTE ZED FP SPAWN`
-### ScrN Zed Pack
+#### ScrN Zed Pack
 - Added *ScrnZedPack.ini* to change headshot detection on dedicated servers.
 - `bHeadshotSrvAnim=false` fixes headshot detection. Set it to false for vanilla behavior (where you cannot decapitate
   a Bloat while your noobie teammates is body-spamming him)
@@ -58,7 +82,7 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 - Made **Crawlers** lighter. Now it is easier to push them. You can even stomp Crawlers to kill them.
 
 ### v9.67.08
-### ScrnMapInfo.ini
+#### ScrnMapInfo.ini
 - Completely reworked the *ScrnMapInfo.ini*. Now it has per-map objects (somewhat similar to Games/Waves/Zeds).
 - Zed spawning can be fine-tuned for each map via multiple config options.
 - Added `DebugZedSpawn` console command which draws zombie volumes where zed spawned. Works only in Solo/Listen mode.
@@ -66,7 +90,7 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 - Check the default *ScrnMapInfo.ini* for details.
 - ScrnMapInfo.ini is far from complete, and have only few map definitions. Please contribute!
 
-### ScrnGames.ini
+#### ScrnGames.ini
 - Added `bAllowZedEvents` and `bDebug`
 - Zed squad logging obeys `LogZedSpawnLevel` under `[ScrnBalanceSrv.ScrnGameType]` in *KillingFloor.ini*
 
@@ -74,28 +98,28 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 - Added `OriginalMap` under `MapAlias` to specify the map object in *ScrnMapInfo.ini* (if it differs from `AchName`)
 - `bForceEvent=True` by default but now it obeys `bAllowZedEvents` value in *ScrnGames.ini*
 
-### FTG
+#### FTG
 - wrote yet another workaround for Stinky Clot when he gets stuck.
 - fixed an issue when Stinky Clot could get a 300uu/s speed boost while not seen by the players.
 - Added `bDebugStinkyPath` config option under `[ScrnBalanceSrv.FtgGame]` in *KillingFloor.ini* to log Stinky paths
 
-### Bugfixes and QoL improvements
+#### Bugfixes and QoL improvements
 - **XCM v0.21**
 - Speed up **M32** drrum close animation during reload interruption. Now it is less annoying while still realistic
   (unlike vanilla)
 - ScrN Features: added a checkbox to show left pistol ammo separately (while dual-wielding)
 - Fixed multiple log warnings
 
-### ScrN Weapon Pack
+#### ScrN Weapon Pack
 - Lowered **HK-417** weight to 7 (down from 8)
 - Fixed warnings
 
-### ScrN Zed Pack
+#### ScrN Zed Pack
 - Fixed multiple log warnings
 
 
 ### v9.67.07
-### Balance
+#### Balance
 - Commando now has 60% damage bonus @ Lv6 like all other perks (up from 50%)
 - Commando received +50% bigger magazines for perked weapons (up from +25%)
 - Removed Bullpup bullet penetration due to increased stats
@@ -109,7 +133,7 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 - Support Specialist carry weight lowered to 24 (down from 25). I have no idea why Support received weight buff before.
 - Removed M99, CrossBuzzSaw, HRL, and RPG from Tourney Mode (unless TOURNEY_ALL_WEAPONS flag is set)
 
-### QoL improvements and bug fixes
+#### QoL improvements and bug fixes
 - `MVOTE MAP RESTART` - restarts the current map
 - `MVOTE MAP RANDOM` - votes for random map
 - `MVOTE MAP WESTLONDON` - votes for specific map
@@ -133,30 +157,30 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 - Fixed warning: "PlayAnim: Sequence 'HitF_Dual9mmm' not found for mesh"
 - Fixed a bug where a player did not receive burning damage after killing the Husk who set player on fire.
 
-### KillingFloor.ini
+#### KillingFloor.ini
 - Added `VotingHandlerOverride=KFMapVoteV2.KFVotingHandler` to `ScrnGameType` and `ScrnStoryGameInfo` to override map
   voting handlerr to KFMapVoteV2 by default. New players do not have to edit KillingFloor.ini to install the bundle.
 - Added `LogZedSpawnLevel=2` to ScrnGameType config (KillingFloor.ini). Set it to 7 to debug zed spawns.
 
-### XCM v0.20
+#### XCM v0.20
 - Reworked early wave spawns
 - Fixed a bug that halved zed spawn rate
 - Fixed another bug that slowered bug zed squad spawns
 - Lowered usage of Sucicide Timer beeps (except the last minute remaining)
 
-### FTG
+#### FTG
 - FTG: On The Clock game mode updated to v2.01 (by *nmmblez*)
 - Fixed a bug where Stinky Clot could teleport to the null point of the map (X=0,Y=0,Z=0)
 - Fixed an issue where Stinky Clot could spawn too close to the players
 - Log more telemetry data if Stinky Clot gets stuck
 
-### ScrN Weapon Pack
+#### ScrN Weapon Pack
 - Restored normal HS multiplier for *VAL* (x1.1, was x1.0)
 - *HK-417* magazine size raised to 20 and price to $3500
 - *HRL* blast radius lowered to 8m (down from 9m)
 - *Saiga 12* price raised to $3000 (up from $2500)
 
-### ScrN Zed Pack v2.10
+#### ScrN Zed Pack v2.10
 - HardPat does not become invulnerable anymore. Now, when clocked and escaping, he has 80% damage resistance,
   but can attack players who block him.
 - Male and Female FP do not attack or push each other anymore

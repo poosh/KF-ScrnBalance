@@ -13,7 +13,7 @@ class ScrnBalance extends Mutator
 #exec OBJ LOAD FILE=ScrnAch_T.utx
 
 
-const VERSION = 96714;
+const VERSION = 96715;
 
 var ScrnBalance Mut; // pointer to self to use in static functions, i.e class'ScrnBalance'.default.Mut
 
@@ -24,6 +24,7 @@ var deprecated localized string strVersion;
 var localized string strStatus, strStatus2;
 var localized string strSrvWarning, strSrvWarning2;
 var localized string strBetaOnly;
+var localized string strXPInitial, strXPProgress, strXPBonus;
 
 // SRVFLAGS
 var transient int SrvFlags; // used for network replication of the values below
@@ -55,7 +56,7 @@ var KFGameType KF;
 var ScrnGameType ScrnGT;
 var bool bStoryMode; // Objective Game mode (KFStoryGameInfo)
 var bool bTSCGame; // Team Survival Competition (TSCGame)
-var transient bool bTestMap;
+var transient bool bTestMap, bRandomMap;
 var transient string MapName;
 var transient string OriginalMapName; // based on ScrnGameRules.MapAliases
 
@@ -177,8 +178,9 @@ var globalconfig int MaxZombiesOnce;
 
 var globalconfig float EndGameStatBonus;
 var globalconfig float FirstStatBonusMult;
+var globalconfig float RandomMapStatBonus;
 var globalconfig bool  bStatBonusUsesHL;
-var globalconfig int  StatBonusMinHL;
+var globalconfig int   StatBonusMinHL;
 
 var globalconfig bool bBroadcastPickups; // broadcast weapon pickups
 var globalconfig String BroadcastPickupText; // broadcast weapon pickups
@@ -670,6 +672,14 @@ simulated function string StripColorTags(string ColoredText)
     }
 
     return s;
+}
+
+simulated function string PlainPlayerName(PlayerReplicationInfo PRI)
+{
+    if ( PRI == none )
+        return "";
+
+    return StripColorTags(PRI.PlayerName);
 }
 
 simulated function string ColoredPlayerName(PlayerReplicationInfo PRI)
@@ -1267,8 +1277,18 @@ function MessagePerkStats(PlayerController Sender)
     if ( SPI == none )
         Sender.ClientMessage("No player info record found");
     else {
-        Sender.ClientMessage(ColorString("Initial Perk Stats: " $ SPI.PerkStatStr(SPI.GameStartStats), 255, 1, 200));
-        Sender.ClientMessage(ColorString("Perk Progression:   " $ SPI.PerkProgressStr(SPI.GameStartStats), 255, 1, 200));
+        LongMessage(Sender, strXPInitial $ SPI.PerkStatStr(SPI.GameStartStats));
+        LongMessage(Sender, strXPProgress $ SPI.PerkProgressStr(SPI.GameStartStats));
+    }
+}
+
+function MessageEndGameBonus(PlayerController Sender)
+{
+    local float BonusMult;
+
+    BonusMult = GameRules.CalcEndGameBonusMult();
+    if (BonusMult >= 0.1) {
+        Sender.ClientMessage(strXPBonus $ class'ScrnVeterancyTypes'.static.GetPercentStr(BonusMult));
     }
 }
 
@@ -1451,6 +1471,7 @@ function Mutate(string MutateString, PlayerController Sender)
             break;
         case MUTATE_PERKSTATS:
             MessagePerkStats(Sender);
+            MessageEndGameBonus(Sender);
             break;
         case MUTATE_PLAYERLIST:
             SendPlayerList(Sender);
@@ -2684,6 +2705,8 @@ function PostBeginPlay()
     KF.LoginMenuClass = string(Class'ScrnBalanceSrv.ScrnInvasionLoginMenu');
 
     Persistence = new class'ScrnBalancePersistence';
+    bRandomMap = Persistence.bRandomMap;
+    Persistence.bRandomMap = false;
     if ( Persistence.Difficulty > 0 ) {
         KF.GameDifficulty = Persistence.Difficulty;
     }
@@ -3124,16 +3147,35 @@ function ServerTraveling(string URL, bool bItems)
 {
     local int j;
     local string NewMapName, Options;
+    local KFGameReplicationInfo KFGRI;
+    local bool bMapRestart;
+
+    KFGRI = KFGameReplicationInfo(Level.GRI);
+    bMapRestart = URL ~= "?restart";
 
     log("******************** SERVER TRAVEL ********************", 'ScrnBalance');
     Divide(URL, "?", NewMapName, Options);
     Options = "?" $ Options;  // Options must start with "?", option parsing routines won't work
-    log("New Map: " $ NewMapName, 'ScrnBalance');
-    log("Options: " $ Options, 'ScrnBalance');
+    if ( bMapRestart ) {
+        log("MAP RESTART", 'ScrnBalance');
+    }
+    else {
+        log("New Map: " $ NewMapName, 'ScrnBalance');
+        log("Options: " $ Options, 'ScrnBalance');
+    }
 
     if ( Persistence.Difficulty > 0 && KF.HasOption(Options, "Difficulty") ) {
         log("URL contains Difficulty. Disabling MVOTE DIFF.", 'ScrnBalance');
         Persistence.Difficulty = 0;
+    }
+    if ( KFGRI != none ) {
+        Persistence.LastEndGameType = KFGRI.EndGameType;
+    }
+    else {
+        Persistence.LastEndGameType = 0;
+    }
+    if ( !bMapRestart ) {
+        Persistence.bRandomMapBonus = !bTSCGame && Persistence.LastEndGameType == 2;
     }
     Persistence.SaveConfig();
 
@@ -3352,6 +3394,9 @@ defaultproperties
     strSrvWarning="You are using dedicated server version of ScrnBalance that shouldn't be installed on local machines! Please Obtain client version from Steam Workshop."
     strSrvWarning2="If you are getting version mismatch erros, delete KillingFloorSystemScrnBalanceSrv.u file."
     strBetaOnly="Only avaliable during Beta testing (bBeta=True)"
+    strXPInitial="^G$Initial Perk Stats:"
+    strXPProgress="^G$Perk Progression:"
+    strXPBonus="^G$XP Bonus for winning: ^c$"
 
     bSpawn0=true
     bAltBurnMech=True
@@ -3545,7 +3590,8 @@ defaultproperties
     EndGameStatBonus=0.5
     bStatBonusUsesHL=True
     StatBonusMinHL=0
-    FirstStatBonusMult=2
+    FirstStatBonusMult=2.0
+    RandomMapStatBonus=2.0
 
     MutateCommands(0)="ACCURACY"
     MutateCommands(1)="CHECK"

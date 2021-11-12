@@ -30,11 +30,13 @@ struct TPerkStats {
         RStalkerKillsStat, RBullpupDamageStat,
         RMeleeDamageStat,
         RFlameThrowerDamageStat,
-        RExplosivesDamageStat;
+        RExplosivesDamageStat,
+        PistolKillsStat;
     var array<TCustomStat> CustomStats;
 };
 var TPerkStats GameStartStats; // perk stats at the game start or when player just joined the game
 var globalconfig array<string> ExcludeBonusStats;
+var localized string strXPBonus;
 
 
 struct TWeapInfo {
@@ -144,32 +146,79 @@ function ClientPerkRepLink GetRep()
     return class'ScrnClientPerkRepLink'.static.FindMe(PlayerOwner);
 }
 
+function AddStatStr(out string str, string prefix, int value)
+{
+    if ( value > 0 ) {
+        str $= " ^G$" $ prefix $ ":";
+        if ( value >= 1000000 ) {
+            str $= "^o$" $(value / 1000000) $ "M";
+        }
+        else if ( value >= 1000 ) {
+            str $= "^u$" $(value / 1000) $ "k";
+        }
+        else {
+            str $= "^c$" $ value;
+        }
+    }
+}
+
 function string PerkStatStr(out TPerkStats Stats)
 {
-    return "MEDIC"$Stats.RDamageHealedStat
-        @"SUP"$Stats.RWeldingPointsStat$"/"$Stats.RShotgunDamageStat
-        @"SS"$Stats.RHeadshotKillsStat
-        @"CMD"$Stats.RStalkerKillsStat$"/"$Stats.RBullpupDamageStat
-        @"ZERK"$Stats.RMeleeDamageStat
-        @"FB"$Stats.RFlameThrowerDamageStat
-        @"DEMO"$Stats.RExplosivesDamageStat;
+    local string str;
+
+    AddStatStr(str, "MED", Stats.RDamageHealedStat);
+    AddStatStr(str, "SUP", Stats.RShotgunDamageStat);
+    AddStatStr(str, "SHA", Stats.RHeadshotKillsStat);
+    AddStatStr(str, "CMD", Stats.RBullpupDamageStat);
+    AddStatStr(str, "ZERK", Stats.RMeleeDamageStat);
+    AddStatStr(str, "FB", Stats.RFlameThrowerDamageStat);
+    AddStatStr(str, "DEMO", Stats.RExplosivesDamageStat);
+    AddStatStr(str, "GS", Stats.PistolKillsStat);
+    return str;
 }
 
 function string PerkProgressStr(out TPerkStats InitialStats)
 {
+    local string str;
     local ClientPerkRepLink L;
 
     L = GetRep();
     if ( L == none )
         return "";
 
-    return "MEDIC"$(L.RDamageHealedStat - InitialStats.RDamageHealedStat)
-        @"SUP"$(L.RWeldingPointsStat - InitialStats.RWeldingPointsStat)$"/"$(L.RShotgunDamageStat - InitialStats.RShotgunDamageStat)
-        @"SS"$(L.RHeadshotKillsStat - InitialStats.RHeadshotKillsStat)
-        @"CMD"$(L.RStalkerKillsStat - InitialStats.RStalkerKillsStat)$"/"$(L.RBullpupDamageStat - InitialStats.RBullpupDamageStat)
-        @"ZERK"$(L.RMeleeDamageStat - InitialStats.RMeleeDamageStat )
-        @"FB"$(L.RFlameThrowerDamageStat - InitialStats.RFlameThrowerDamageStat)
-        @"DEMO"$(L.RExplosivesDamageStat - InitialStats.RExplosivesDamageStat);
+    AddStatStr(str, "MED", L.RDamageHealedStat - InitialStats.RDamageHealedStat);
+    AddStatStr(str, "SUP", L.RShotgunDamageStat - InitialStats.RShotgunDamageStat);
+    AddStatStr(str, "SHA", L.RHeadshotKillsStat - InitialStats.RHeadshotKillsStat);
+    AddStatStr(str, "CMD", L.RBullpupDamageStat - InitialStats.RBullpupDamageStat);
+    AddStatStr(str, "ZERK", L.RMeleeDamageStat - InitialStats.RMeleeDamageStat);
+    AddStatStr(str, "FB", L.RFlameThrowerDamageStat - InitialStats.RFlameThrowerDamageStat);
+    AddStatStr(str, "DEMO", L.RExplosivesDamageStat - InitialStats.RExplosivesDamageStat);
+    AddStatStr(str, "GS", GetPistolKillsStats(L) - InitialStats.PistolKillsStat);
+    return str;
+}
+
+function ScrnPistolKillProgress FindPistolKillsStats(ClientPerkRepLink L)
+{
+    local SRCustomProgress S;
+
+    if ( L == none )
+        return none;
+
+    for ( S=L.CustomLink; S!=none; S=S.NextLink ) {
+        if ( S.class == class'ScrnPistolKillProgress' )
+            return ScrnPistolKillProgress(S);
+    }
+    return none;
+}
+
+function int GetPistolKillsStats(ClientPerkRepLink L)
+{
+    local ScrnPistolKillProgress P;
+
+    P = FindPistolKillsStats(L);
+    if ( P != none )
+        return P.GetProgressInt();
+    return 0;
 }
 
 // backups only if Stats.bSet = false !!!
@@ -203,6 +252,11 @@ function BackupStats(out TPerkStats Stats)
         if ( SRCustomProgressInt(S) == none && SRCustomProgressFloat(S) == none )
             continue; // store only int values
 
+        if ( S.class == class'ScrnPistolKillProgress' ) {
+            Stats.PistolKillsStat = S.GetProgressInt();
+            continue;
+        }
+
         ClassName = GetItemName(String(S.class));
         for ( i=0; i<ExcludeBonusStats.length; ++i ) {
             if ( ClassName ~= ExcludeBonusStats[i] ) {
@@ -218,8 +272,6 @@ function BackupStats(out TPerkStats Stats)
         Stats.CustomStats[i].CustomStatClass = S.class;
         Stats.CustomStats[i].Progress = S.GetProgressInt();
     }
-    //PlayerOwner.ClientMessage(class'ScrnPlayerController'.static.ConsoleColorString("Initial Perks Stats: " $ PerkStatStr(Stats), 255, 1, 200));
-
 }
 
 // add bonus values to all stats by multiplying gained progress with Mult, e.g.:
@@ -236,7 +288,8 @@ function BonusStats(out TPerkStats InitialStats, float Mult)
     if ( Mult <= 0 )
         return;
     if ( !InitialStats.bSet ) {
-        PlayerOwner.ClientMessage(class'ScrnPlayerController'.static.ConsoleColorString("Unable to give end game bonus! No stat backup found", 255, 1, 1));
+        log("No end game bonus for " $ class'ScrnBalance'.default.Mut.PlainPlayerName(PlayerOwner.PlayerReplicationInfo)
+                $ ". No stat backup found");
         return;
     }
 
@@ -248,7 +301,7 @@ function BonusStats(out TPerkStats InitialStats, float Mult)
     if ( L == none )
         return;
 
-    PlayerOwner.ClientMessage(class'ScrnPlayerController'.static.ConsoleColorString("Stat Bonus (x"$Mult$"): " $ PerkProgressStr(InitialStats), 255, 1, 200));
+    PlayerOwner.ClientMessage(Repl(strXPBonus, "%x", string(Mult)) $ PerkProgressStr(InitialStats));
 
     v = Mult * (L.RDamageHealedStat - InitialStats.RDamageHealedStat);
     if ( v > 0 )
@@ -288,6 +341,13 @@ function BonusStats(out TPerkStats InitialStats, float Mult)
     for ( S=L.CustomLink; S!=none; S=S.NextLink ) {
         if ( SRCustomProgressInt(S) == none && SRCustomProgressFloat(S) == none )
             continue; // proceed only int and float values
+
+        if ( S.class == class'ScrnPistolKillProgress' ) {
+            v = Mult * (S.GetProgressInt() - InitialStats.PistolKillsStat);
+            if ( v > 0 )
+                S.IncrementProgress(v);
+            continue;
+        }
 
         for ( i=0; i< InitialStats.CustomStats.length; ++i) {
             if ( InitialStats.CustomStats[i].CustomStatClass == S.Class ) {
@@ -1109,4 +1169,5 @@ defaultproperties
     TriggerRowHeadshots=2
     RemoteRole=ROLE_None
     PRI_TeamIndex=255
+    strXPBonus="^G$XP Bonus (^c$x%x^G$):"
 }
