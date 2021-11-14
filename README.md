@@ -19,6 +19,11 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+### v9.67.16
+- Fixed a bug that preventing earning map achievements and end game bonuses
+- HoE map achievement requires HoE difficulty (cannot get it on FTG/Doom3 Suicidal)
+- Winning XCM grants HoE map achievement
+
 ### v9.67.15
 - **XCM** moved into beta phase (v0.30)
 - Random map voting allows also game and difficult selection. For example:

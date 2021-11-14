@@ -19,3 +19,5 @@ custom zed plate on the test map
 Check Murphy's maps why they crashing dedicated servers.
 
 ? Get Prize Button for TSC members
+
+Move localized string parsing client-side to use client's localization instead of server's.

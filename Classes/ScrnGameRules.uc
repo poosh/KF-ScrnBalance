@@ -349,7 +349,7 @@ function WaveEnded()
 
 function bool IsMapBlackListed(string MapName)
 {
-    return !Mut.bTestMap;
+    return Mut.bTestMap;
 }
 
 //returns true if any custom or super specimens are found
@@ -466,7 +466,7 @@ function float CalcEndGameBonusMult()
     BonusMult *= Mut.MapInfo.XPBonusMult;
     if ( Mut.bRandomMap && Mut.Persistence.bRandomMapBonus && !Mut.bTSCGame )
         BonusMult *= fmax(1.0, Mut.RandomMapStatBonus);
-        
+
     return BonusMult;
 }
 
@@ -489,8 +489,9 @@ function GiveMapAchievements(optional String MapName)
     else {
         bGiveHardAch = HardcoreLevel >= 5 && HasCustomZeds();
         bGiveSuiAch = HardcoreLevel >= 10 && ( Mut.KF.IsA('TurboGame') || Mut.KF.KFGameLength == 9
-                || (Mut.KF.KFGameLength >= 72 && Mut.KF.KFGameLength <= 99) );
-        bGiveHoeAch = HardcoreLevel >= 15 && ( GameDoom3Kills > 0 ) || Mut.KF.IsA('FtgGame');
+                || Mut.KF.KFGameLength >= 72);
+        bGiveHoeAch = HardcoreLevel >= 15 && Level.Game.GameDifficulty >= 7
+                && ( Mut.KF.IsA('FtgGame') || GameDoom3Kills > 0 || Mut.KF.KFGameLength == 7);
     }
 
     // end game bonus
