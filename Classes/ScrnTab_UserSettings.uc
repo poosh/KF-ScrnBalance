@@ -40,6 +40,7 @@ var automated moCheckBox              ch_ShowAchProgress;
 
 var automated moComboBox              cbx_BarStyle;
 var automated moSlider                sl_BarScale;
+var automated moSlider                sl_BarOffset;
 var automated moComboBox              cbx_HudStyle;
 var automated moSlider                sl_HudScale;
 var automated moSlider                sl_HudAmmoScale;
@@ -171,11 +172,13 @@ function ShowPanel(bool bShow)
     b_TSC_A.SetVisibility(b);
 
     sl_BarScale.SetVisibility(H.BarStyle != H.BARSTL_CLASSIC);
+    sl_BarOffset.SetVisibility(H.BarStyle != H.BARSTL_CLASSIC);
     sl_HudScale.SetVisibility(H.bCoolHud);
     sl_HudAmmoScale.SetVisibility(H.bCoolHud);
     sl_HudY.SetVisibility(H.bCoolHud);
 
     sl_BarScale.SetValue(H.PlayerInfoScale);
+    sl_BarOffset.SetValue(H.PlayerInfoOffset);
     sl_HudScale.SetValue(H.CoolHudScale);
     sl_HudAmmoScale.SetValue(H.CoolHudAmmoScale);
     sl_HudY.SetValue(H.CoolHudAmmoOffsetY);
@@ -497,12 +500,23 @@ function InternalOnLoadINI(GUIComponent Sender, string s)
         case sl_BarScale:
             if ( H == none ) {
                 sl_BarScale.DisableMe();
-                sl_BarScale.DisableMe();
             }
             else {
+                sl_BarScale.SetValue(H.PlayerInfoScale);
                 sl_BarScale.EnableMe();
             }
             break;
+
+        case sl_BarOffset:
+            if ( H == none ) {
+                sl_BarOffset.DisableMe();
+            }
+            else {
+                sl_BarOffset.SetValue(H.PlayerInfoOffset);
+                sl_BarOffset.EnableMe();
+            }
+            break;
+
         case sl_3DScopeSensScale:
             if ( H == none ) {
                 sl_3DScopeSensScale.DisableMe();
@@ -582,6 +596,7 @@ function InternalOnChange(GUIComponent Sender)
             if ( H != none ) {
                 H.SetBarStyle(cbx_BarStyle.GetIndex());
                 sl_BarScale.SetVisibility(H.BarStyle != H.BARSTL_CLASSIC);
+                sl_BarOffset.SetVisibility(H.BarStyle != H.BARSTL_CLASSIC);
                 H.SaveConfig();
             }
             break;
@@ -603,6 +618,12 @@ function InternalOnChange(GUIComponent Sender)
             }
             break;
 
+        case sl_BarOffset:
+            if ( H != none ) {
+                H.PlayerInfoOffset = sl_BarOffset.GetValue();
+                H.SaveConfig();
+            }
+            break;
 
         case sl_HudScale:
             if ( H != none ) {
@@ -1308,6 +1329,26 @@ defaultproperties
         OnCreateComponent=BarScale.InternalOnCreateComponent
     End Object
     sl_BarScale=moSlider'ScrnBalanceSrv.ScrnTab_UserSettings.BarScale'
+
+    Begin Object Class=moSlider Name=BarOffset
+        MinValue=-1.5
+        MaxValue=1.5
+        bIntSlider=false
+        LabelJustification=TXTA_Center
+        ComponentJustification=TXTA_Left
+        CaptionWidth=0
+        Caption=""
+        LabelColor=(B=255,G=255,R=255)
+        Hint="Adjust Vertical offset of the Player Bars"
+        WinTop=0.38
+        WinLeft=0.87
+        WinWidth=0.10
+        TabOrder=38
+        OnChange=ScrnTab_UserSettings.InternalOnChange
+        OnLoadINI=ScrnTab_UserSettings.InternalOnLoadINI
+        OnCreateComponent=BarScale.InternalOnCreateComponent
+    End Object
+    sl_BarOffset=moSlider'ScrnBalanceSrv.ScrnTab_UserSettings.BarOffset'
 
     Begin Object Class=moComboBox Name=HudStyleList
         bReadOnly=True

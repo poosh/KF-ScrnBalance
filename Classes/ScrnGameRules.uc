@@ -7,7 +7,7 @@ var KFGameType KF;
 var bool bShowDamages;
 
 var int HardcoreLevel;
-var float HardcoreLevelFloat, InitialHardcoreLevelFloat;
+var float HardcoreLevelFloat;
 var bool bForceHardcoreLevel;
 var localized string msgHardcore, msgHardcoreLowered, msgWeaponBlame;
 var bool bUseAchievements;
@@ -131,7 +131,6 @@ function PostBeginPlay()
     Mut = class'ScrnBalance'.static.Myself(Level);
 
     MonsterInfos.Length = Mut.KF.MaxZombiesOnce; //reserve a space that will be required anyway
-    InitHardcoreLevel();
 }
 
 event Destroyed()
@@ -1112,27 +1111,24 @@ function InitHardcoreLevel()
 {
     local int i;
     local string GameClass;
-    local float HLInc;
-
-    HLInc = HardcoreLevelFloat - InitialHardcoreLevelFloat;
 
     GameClass = GetItemName(string(Level.Game.Class));
 
     if ( Level.Game.GameDifficulty >= 7 ) {
-       HardcoreLevelFloat = HL_HoE;
-       ZedHLMult = HLMult_HoE;
+        HardcoreLevelFloat = HL_HoE;
+        ZedHLMult = HLMult_HoE;
     }
     else if ( Level.Game.GameDifficulty >= 5 ) {
-       HardcoreLevelFloat = HL_Suicidal;
-       ZedHLMult = HLMult_Suicidal;
+        HardcoreLevelFloat = HL_Suicidal;
+        ZedHLMult = HLMult_Suicidal;
     }
     else if ( Level.Game.GameDifficulty >= 4 ) {
-       HardcoreLevelFloat = HL_Hard;
-       ZedHLMult = HLMult_Hard;
+        HardcoreLevelFloat = HL_Hard;
+        ZedHLMult = HLMult_Hard;
     }
     else {
-       HardcoreLevelFloat = HL_Normal;
-       ZedHLMult = HLMult_Normal;
+        HardcoreLevelFloat = HL_Normal;
+        ZedHLMult = HLMult_Normal;
     }
 
     if ( Mut.bHardcore ) {
@@ -1146,10 +1142,6 @@ function InitHardcoreLevel()
             break;
         }
     }
-
-    // in case of mid-game calls
-    HardcoreLevelFloat += HLInc;
-    InitialHardcoreLevelFloat = HardcoreLevelFloat;
 
     HardcoreLevel = int(HardcoreLevelFloat+0.01);
     // replicate to clients
@@ -1191,6 +1183,7 @@ function ForceHardcoreLevel(int value)
     bForceHardcoreLevel = true;
     // replicate to clients
     Mut.HardcoreLevel = clamp(HardcoreLevel,0,255);
+    log("Force HL="$HardcoreLevel);
 }
 
 function WeaponReloaded(PlayerController WeaponOwner, KFWeapon W)
@@ -1673,7 +1666,7 @@ defaultproperties
     HLMult_Suicidal=1.0
     HL_HoE=7
     HLMult_HoE=1.25
-    HL_Hardcore=2
+    HL_Hardcore=1
     HLMult_Hardcore=0.15
 
     HardcoreBosses(00)=(MonsterClass="HardPat",HL=2)

@@ -4,6 +4,7 @@ Class ScrnGameLength extends Object
     Config(ScrnGames);
 
 var ScrnGameType Game;
+var ScrnBalance Mut;
 
 var config int GameVersion;
 var config string GameTitle;
@@ -90,18 +91,23 @@ function LoadGame(ScrnGameType MyGame)
     local int i, j;
     local ScrnZedInfo zi;
     local class<KFMonster> zedc;
+    local byte HardcoreDifficulty;
 
     Game = MyGame;
+    Mut = Game.ScrnBalanceMut;
 
     if ( bDebug ) {
         Game.MaximizeDebugLogging();
     }
 
-    if ( Game.GameDifficulty < MinDifficulty ) {
-        Game.ScrnBalanceMut.SetGameDifficulty(MinDifficulty);
+    HardcoreDifficulty = byte(Game.GameDifficulty + 0.1) + byte(Mut.bHardcore);
+    if ( HardcoreDifficulty < MinDifficulty ) {
+        Mut.SetGameDifficulty(MinDifficulty);
+        HardcoreDifficulty = byte(Game.GameDifficulty + 0.1) + byte(Mut.bHardcore);
     }
-    else if ( MaxDifficulty != 0 && Game.GameDifficulty > MaxDifficulty ) {
-        Game.ScrnBalanceMut.SetGameDifficulty(MaxDifficulty);
+    else if ( MaxDifficulty != 0 && HardcoreDifficulty > MaxDifficulty ) {
+        Mut.SetGameDifficulty(MaxDifficulty);
+        HardcoreDifficulty = byte(Game.GameDifficulty + 0.1) + byte(Mut.bHardcore);
     }
 
     for ( i = 0; i < Mutators.length; ++i ) {
@@ -110,28 +116,28 @@ function LoadGame(ScrnGameType MyGame)
             Game.AddMutator(Mutators[i], true);
         }
     }
-    Game.ScrnBalanceMut.CheckMutators();
+    Mut.CheckMutators();
     if ( Doom3DisableSuperMonsters ) {
-        if ( Game.ScrnBalanceMut.Doom3Mut == none ) {
+        if ( Mut.Doom3Mut == none ) {
             Log("Cannot disable super monsters. Doom 3 Mutator is not loaded", 'ScrnGameLength');
         }
         else {
             Log("Disable Doom3 super monsters", 'ScrnGameLength');
-            Game.ScrnBalanceMut.Doom3Mut.GotoState('');
+            Mut.Doom3Mut.GotoState('');
         }
     }
 
     if (TraderSpeedBoost != 0) {
-        Game.ScrnBalanceMut.bTraderSpeedBoost = TraderSpeedBoost > 0;
-        Game.ScrnBalanceMut.SetReplicationData();
+        Mut.bTraderSpeedBoost = TraderSpeedBoost > 0;
+        Mut.SetReplicationData();
     }
 
     ZedInfos.length = Zeds.length;
     for ( i = 0; i < Zeds.length; ++i ) {
         zi = new(none, Zeds[i]) class'ScrnZedInfo';
 
-        if ( bAllowZedEvents && zi.EventNum != Game.ScrnBalanceMut.CurrentEventNum
-                && zi.EventNum != 0 && Game.ScrnBalanceMut.CurrentEventNum != 0 ) {
+        if ( bAllowZedEvents && zi.EventNum != Mut.CurrentEventNum
+                && zi.EventNum != 0 && Mut.CurrentEventNum != 0 ) {
             continue;
         }
 
@@ -187,12 +193,11 @@ function LoadGame(ScrnGameType MyGame)
     if ( HardcoreLevel.length > 0 ) {
         j = 0;
         for ( i = 0; i < HardcoreLevel.length; ++i ) {
-            if ( Game.GameDifficulty >= HardcoreLevel[i].Difficulty && j < HardcoreLevel[i].HL )
+            if ( HardcoreDifficulty >= HardcoreLevel[i].Difficulty && j < HardcoreLevel[i].HL )
                 j = HardcoreLevel[i].HL;
         }
         if ( j > 0 ) {
-            log("HL forced to " $ j, class.name);
-            Game.ScrnBalanceMut.GameRules.ForceHardcoreLevel(j);
+            Mut.GameRules.ForceHardcoreLevel(j);
         }
     }
 
@@ -314,7 +319,7 @@ function ZedCmd(PlayerController Sender, string cmd)
         }
     }
 
-    if ( bNeedChanges && !Game.ScrnBalanceMut.CheckAdmin(Sender) )
+    if ( bNeedChanges && !Mut.CheckAdmin(Sender) )
         return;
 
     Sender.ClientMessage("INDEX / STATUS / SPAWN CHANCE / ZED CLASS");
@@ -565,7 +570,7 @@ function RunWave()
 
     if ( Game.ScrnGRI.WaveTitle != "" || Game.ScrnGRI.WaveMessage != "" ) {
         if ( Game.ScrnGRI.WaveTitle != "" ) {
-            s = Game.ScrnBalanceMut.ColorString(Game.ScrnGRI.WaveTitle, 255, 204, 1);
+            s = Mut.ColorString(Game.ScrnGRI.WaveTitle, 255, 204, 1);
         }
         if ( Game.ScrnGRI.WaveMessage != "" ) {
             if ( s != "" )
@@ -597,7 +602,7 @@ function SetWaveInfo()
     switch (Wave.EndRule) {
         case RULE_GrabAmmo:
             if ( Game.DesiredAmmoBoxCount < WaveCounter ) {
-                Game.ScrnBalanceMut.AdjustAmmoBoxCount(max(WaveCounter, Game.AmmoPickups.length * 0.8));
+                Mut.AdjustAmmoBoxCount(max(WaveCounter, Game.AmmoPickups.length * 0.8));
             }
             break;
     }
@@ -628,7 +633,7 @@ function WaveTimer()
             break;
 
         case RULE_GrabAmmo:
-            Game.ScrnGRI.WaveCounter = max(0, WaveCounter - Game.ScrnBalanceMut.GameRules.WaveAmmoPickups);
+            Game.ScrnGRI.WaveCounter = max(0, WaveCounter - Mut.GameRules.WaveAmmoPickups);
             break;
     }
 }
@@ -639,7 +644,7 @@ function WaveEnded()
     local ScrnPlayerInfo SPI;
 
     if ( !(Wave.XP_Bonus ~= 0 && Wave.XP_BonusAlive ~= 0) ) {
-        for ( SPI=Game.ScrnBalanceMut.GameRules.PlayerInfo; SPI!=none; SPI=SPI.NextPlayerInfo ) {
+        for ( SPI=Mut.GameRules.PlayerInfo; SPI!=none; SPI=SPI.NextPlayerInfo ) {
             if ( SPI.PlayerOwner == none || SPI.PlayerOwner.PlayerReplicationInfo == none )
                 continue;
 
@@ -657,36 +662,36 @@ function DoorControl(ScrnWaveInfo.EDoorControl dc)
 {
     switch (dc) {
         case DOOR_Default:
-            if (Game.ScrnBalanceMut.bRespawnDoors || Game.ScrnBalanceMut.bTSCGame) {
-                Game.ScrnBalanceMut.RespawnDoors();
+            if (Mut.bRespawnDoors || Mut.bTSCGame) {
+                Mut.RespawnDoors();
             }
             break;
         case DOOR_Respawn:
-            Game.ScrnBalanceMut.RespawnDoors();
+            Mut.RespawnDoors();
             break;
         case DOOR_Blow:
-            Game.ScrnBalanceMut.BlowDoors();
+            Mut.BlowDoors();
             break;
         case DOOR_Unweld:
-            Game.ScrnBalanceMut.UnweldDoors();
+            Mut.UnweldDoors();
             break;
         case DOOR_UnweldRespawn:
-            Game.ScrnBalanceMut.WeldDoors(0);
+            Mut.WeldDoors(0);
             break;
         case DOOR_Weld1p:
-            Game.ScrnBalanceMut.WeldDoors(0.01);
+            Mut.WeldDoors(0.01);
             break;
         case DOOR_WeldHalf:
-            Game.ScrnBalanceMut.WeldDoors(0.5);
+            Mut.WeldDoors(0.5);
             break;
         case DOOR_WeldFull:
-            Game.ScrnBalanceMut.WeldDoors(1.0);
+            Mut.WeldDoors(1.0);
             break;
         case DOOR_WeldRandom:
-            Game.ScrnBalanceMut.WeldDoors(-1.0);
+            Mut.WeldDoors(-1.0);
             break;
         case DOOR_Randomize:
-            Game.ScrnBalanceMut.RandomizeDoors();
+            Mut.RandomizeDoors();
             break;
     }
 }
@@ -737,7 +742,7 @@ function bool CheckWaveEnd()
             return max(Game.Teams[0].Score, Game.Teams[1].Score) >= WaveCounter;
 
         case RULE_GrabAmmo:
-            return Game.ScrnBalanceMut.GameRules.WaveAmmoPickups >= WaveCounter;
+            return Mut.GameRules.WaveAmmoPickups >= WaveCounter;
     }
 
     // fallback scenario
@@ -1153,7 +1158,7 @@ function byte SummonZed(PlayerController Sender, string Alias, string ZedClassSt
      }
 
      Game.OverrideMonsterHealth(M);
-     Game.ScrnBalanceMut.GameRules.ReinitMonster(M);
+     Mut.GameRules.ReinitMonster(M);
      return 1;
 }
 

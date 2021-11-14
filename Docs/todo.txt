@@ -21,3 +21,5 @@ Check Murphy's maps why they crashing dedicated servers.
 ? Get Prize Button for TSC members
 
 Move localized string parsing client-side to use client's localization instead of server's.
+
+? Spectators start dead if joined for the next game

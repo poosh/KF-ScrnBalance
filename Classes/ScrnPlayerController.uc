@@ -1609,10 +1609,12 @@ exec function GunSlot(optional byte Slot)
 
 exec function Ready()
 {
-    if ( PlayerReplicationInfo.bOnlySpectator )
+    if ( PlayerReplicationInfo.bOnlySpectator ) {
         BecomeActivePlayer();
+        return;
+    }
 
-    if ( PlayerReplicationInfo.Team == none || Level.GRI.bMatchHasBegun )
+    if ( PlayerReplicationInfo.Team == none )
         return;
 
     if ( Level.NetMode == NM_Standalone || !PlayerReplicationInfo.bReadyToPlay ) {

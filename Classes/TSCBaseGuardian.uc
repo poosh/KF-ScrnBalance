@@ -601,7 +601,7 @@ state Guarding
                         SC = ScrnPlayerController(C);
                         if ( SC != none ) {
                             SC.ServerShowPathTo(1); // show path to base
-                            if ( SameTeamCounter <= 12 || ShouldWipeOnBaseLost() )
+                            if ( SameTeamCounter <= 12 && ShouldWipeOnBaseLost() )
                                 SC.ReceiveLocalizedMessage(class'TSCMessages', 311); // critical message
                             else
                                 SC.ReceiveLocalizedMessage(class'TSCMessages', 211);

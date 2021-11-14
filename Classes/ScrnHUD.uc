@@ -22,7 +22,7 @@ var const byte BARSTL_MODERN_EX;
 var const byte BARSTL_COOL;
 var config byte BarStyle;
 var deprecated byte PlayerInfoVersionNumber;
-var config float PlayerInfoScale;  // BarScale
+var config float PlayerInfoScale, PlayerInfoOffset;  // BarScale
 
 var config int                  MinMagCapacity; //don't show low ammo warning, if weapon magazine smaller than this
 var config float                LowAmmoPercent;
@@ -60,6 +60,7 @@ var protected class<ScrnScoreBoard> ScrnScoreBoardClass; // modder friendly inte
 // vars below are set inside LinkActors()
 var protected transient class<ScrnVeterancyTypes> ScrnPerk;
 var private transient class<KFVeterancyTypes> PrevPerk;
+var protected transient ScrnPlayerController ScrnPC;
 var protected transient ScrnHumanPawn ScrnPawnOwner; // ScrN Pawn we are playing or spectating
 var protected transient KFWeapon OwnerWeapon;
 var protected transient class<KFWeapon> OwnerWeaponClass;
@@ -285,7 +286,7 @@ simulated function string GetSpeedStr(Canvas C)
     s = string(Speed);
     if ( PlayerOwner.Pawn == PawnOwner ) {
         // GroundSpeed is replicated to owner pawn only
-        Speed = PawnOwner.GroundSpeed;
+        Speed = round(PawnOwner.GroundSpeed);
         s $= "/" $ Speed;
     }
 
@@ -487,8 +488,6 @@ simulated function DrawHudPassA (Canvas C)
         }
     }
 }
-
-
 
 simulated function DrawHudPassC(Canvas C)
 {
@@ -1436,6 +1435,9 @@ exec function SetBarStyle(byte value)
     else {
         ScrnDrawPlayerInfoBase = ScrnDrawPlayerInfoNew;
     }
+    if ( BarStyle == BARSTL_CLASSIC ) {
+        PlayerInfoOffset = 1.0;
+    }
 }
 
 exec function ToggleBarStyle()
@@ -1446,6 +1448,24 @@ exec function ToggleBarStyle()
         SetBarStyle(0);
     }
     SaveConfig();
+}
+
+exec function BarScale(float value)
+{
+    if ( value == 0.0 ) {
+        PlayerOwner.ClientMessage("BarScale="$PlayerInfoScale);
+        return;
+    }
+    PlayerInfoScale = value;
+}
+
+exec function BarOffset(float value)
+{
+    if ( value == 0.0 ) {
+        PlayerOwner.ClientMessage("BarOffset="$PlayerInfoScale);
+        return;
+    }
+    PlayerInfoOffset = value;
 }
 
 exec function SetHudStyle(byte value)
@@ -2135,6 +2155,10 @@ simulated function LinkActors()
 
     ScrnGRI = ScrnGameReplicationInfo(PlayerOwner.GameReplicationInfo);
 
+    if ( PlayerOwner != ScrnPC ) {
+        ScrnPC = ScrnPlayerController(PlayerOwner);
+    }
+
     if ( PawnOwner != none ) {
         if ( PawnOwner != ScrnPawnOwner )
             ScrnPawnOwner = ScrnHumanPawn(PawnOwner);
@@ -2595,12 +2619,98 @@ simulated function DrawFirstPersonSpectatorHUD(Canvas C)
     }
 }
 
+simulated function DrawPlayerInfos(Canvas C)
+{
+    local KFPawn KFBuddy;
+    local vector CamPos, ViewDir, ScreenPos;
+    local rotator CamRot;
+
+    // Grab our View Direction
+    C.GetCameraLocation(CamPos,CamRot);
+    ViewDir = vector(CamRot);
+
+    // Draw the Name, Health, Armor, and Veterancy above other players (using this way to fix portal's beacon errors).
+    foreach VisibleCollidingActors(class'KFPawn', KFBuddy, 1000.f, CamPos) {
+        KFBuddy.bNoTeamBeacon = true;
+        if ( KFBuddy!=PawnOwner && KFBuddy.PlayerReplicationInfo != none && KFBuddy.Health > 0
+                && ((KFBuddy.Location - CamPos) Dot ViewDir) > 0.8 )
+        {
+            ScreenPos = C.WorldToScreen(KFBuddy.Location + vect(0,0,1) * KFBuddy.CollisionHeight * PlayerInfoOffset);
+            if( ScreenPos.X>=0 && ScreenPos.Y>=0 && ScreenPos.X<=C.ClipX && ScreenPos.Y<=C.ClipY )
+                DrawPlayerInfo(C, KFBuddy, ScreenPos.X, ScreenPos.Y);
+        }
+    }
+}
+
+simulated function DrawHud(Canvas C)
+{
+    RenderDelta = Level.TimeSeconds - LastHUDRenderTime;
+    LastHUDRenderTime = Level.TimeSeconds;
+
+    if ( FontsPrecached < 2 )
+        PrecacheFonts(C);
+
+    UpdateHud();
+
+    PassStyle = STY_Modulated;
+    DrawModOverlay(C);
+
+    if ( bUseBloom )
+        PlayerOwner.PostFX_SetActive(0, true);
+
+    if ( bHideHud ) {
+        // Draw fade effects even if the hud is hidden so poeple can't just turn off thier hud
+        C.Style = ERenderStyle.STY_Alpha;
+        DrawFadeEffect(C);
+        return;
+    }
+
+    if ( !KFPRI.bViewingMatineeCinematic ) {
+        if ( bShowTargeting )
+            DrawTargeting(C);
+
+        DrawPlayerInfos(C);
+
+        PassStyle = STY_Alpha;
+        DrawDamageIndicators(C);
+        DrawHudPassA(C);
+        DrawHudPassC(C);
+
+        if ( ScrnPC != none && ScrnPC.ActiveNote != none ) {
+            if( PlayerOwner.Pawn == none )
+                ScrnPC.ActiveNote = None;
+            else
+                ScrnPC.ActiveNote.RenderNote(C);
+        }
+
+        PassStyle = STY_None;
+        DisplayLocalMessages(C);
+        DrawWeaponName(C);
+        DrawVehicleName(C);
+
+        PassStyle = STY_Alpha;
+
+        if ( KFGRI != none && KFGRI.EndGameType > 0 )
+        {
+            DrawEndGameHUD(C, KFGRI.EndGameType==2);
+            return;
+        }
+
+        RenderFlash(C);
+        C.Style = PassStyle;
+        DrawKFHUDTextElements(C);
+    }
+    if ( KFPRI.bViewingMatineeCinematic ) {
+        PassStyle = STY_Alpha;
+        DrawCinematicHUD(C);
+    }
+    if ( bShowNotification )
+        DrawPopupNotification(C);
+}
+
 // a lot of copy-paste job, because some devs are using "final" mark too much
 simulated function DrawSpectatingHud(Canvas C)
 {
-    local rotator CamRot;
-    local vector CamPos, ViewDir, ScreenPos;
-    local KFPawn KFBuddy;
     local bool bGameEnded;
 
     DrawModOverlay(C);
@@ -2610,26 +2720,12 @@ simulated function DrawSpectatingHud(Canvas C)
 
     PlayerOwner.PostFX_SetActive(0, false);
 
-    // Grab our View Direction
-    C.GetCameraLocation(CamPos, CamRot);
-    ViewDir = vector(CamRot);
-
-    // Draw the Name, Health, Armor, and Veterancy above other players (using this way to fix portal's beacon errors).
-    foreach VisibleCollidingActors(Class'KFPawn',KFBuddy,HealthBarCutoffDist,CamPos)
-    {
-        KFBuddy.bNoTeamBeacon = true;
-        if ( KFBuddy.PlayerReplicationInfo!=None && KFBuddy.Health>0 && ((KFBuddy.Location - CamPos) Dot ViewDir)>0.8 )
-        {
-            ScreenPos = C.WorldToScreen(KFBuddy.Location+vect(0,0,1)*KFBuddy.CollisionHeight);
-            if( ScreenPos.X>=0 && ScreenPos.Y>=0 && ScreenPos.X<=C.ClipX && ScreenPos.Y<=C.ClipY )
-                DrawPlayerInfo(C, KFBuddy, ScreenPos.X, ScreenPos.Y);
-        }
-    }
+    DrawPlayerInfos(C);
 
     DrawFadeEffect(C);
 
-    if ( KFPlayerController(PlayerOwner) != None && KFPlayerController(PlayerOwner).ActiveNote != None )
-        KFPlayerController(PlayerOwner).ActiveNote = None;
+    if ( ScrnPC != none && ScrnPC.ActiveNote != none )
+        ScrnPC.ActiveNote = none;
 
     bGameEnded = KFGRI != none && KFGRI.EndGameType > 0;
     if( KFGRI != none && KFGRI.EndGameType > 0 ) {
@@ -2650,12 +2746,9 @@ simulated function DrawSpectatingHud(Canvas C)
     else if ( !bGameEnded && (PlayerOwner.PlayerReplicationInfo == none || PlayerOwner.PlayerReplicationInfo.bOnlySpectator) )
         DrawSpecialSpectatingHUD(C);
 
-
-    // portrait
     if ( bShowPortrait && Portrait != None )
         DrawPortraitSE(C);
 
-    // Draw hints
     if ( bDrawHint )
         DrawHint(C);
 
@@ -2673,7 +2766,7 @@ simulated function DrawKFHUDTextElements(Canvas C)
     local float    CircleSize;
     local float    ResScale;
 
-    if ( PlayerOwner == none || KFGRI == none || !KFGRI.bMatchHasBegun || KFPlayerController(PlayerOwner).bShopping )
+    if ( PlayerOwner == none || KFGRI == none || !KFGRI.bMatchHasBegun || ScrnPC.bShopping )
         return;
 
     if( KF_StoryGRI(Level.GRI) != none )
@@ -3519,6 +3612,7 @@ defaultproperties
     BARSTL_COOL=3
     BarStyle=1
     PlayerInfoScale=1.0
+    PlayerInfoOffset=1.0
 
     CoolHudScale=2.0
     CoolHudAmmoOffsetX = 0.995
@@ -3526,7 +3620,7 @@ defaultproperties
     CoolHudAmmoScale=0.75
     CoolHealthFadeOutTime=10
     PerkStarsMax=30
-    ScrnDrawPlayerInfoBase=ScrnDrawPlayerInfoNew
+    ScrnDrawPlayerInfoBase=ScrnDrawPlayerInfoClassic
     CoolBarBase=Texture'ScrnTex.HUD.BarBase'
     CoolBarOverlay=Texture'ScrnTex.HUD.BarOverlay'
     CoolBarSize=512

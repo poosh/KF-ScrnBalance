@@ -19,6 +19,21 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+### v9.67.18
+- Fixed an issue when players started a game as dead if joined from spectators
+- Added `PlayerInfoOffset` config variable to `ScrnHUD` (*ScrnUser.ini*) allowing to tweak vertical offset of player
+  health bars. For example, bars can be lowered down to the ground to prevent obscuring vision.
+  The config variable can be controlled via ScrN Features GUI or `BarOffset` console command.
+- Fixed multiple issues in Hardcore Level calculation
+- Raised XCM HL to 30 if played on HoE + Hardcore Mode
+- Fixed an issue where TSC displayed "GET BACK TO THE BASE OR DIE!" even when the base loss did not result in a wipe.
+- FTG displays a regular "GET BACK TO THE BASE!" message at the beginning, then switches to
+  "GET BACK TO THE BASE OR DIE!" for the last 12s before the wipe. Message is displayed every 4 seconds, allowing
+  players to predict the remaining time to get back to the base:
+  - regular message: time left > 15s;
+  - 3 die messages at 12, 8, and 4s left respectively;
+  - team wipe in 4s after the 3rd die message.
+
 ### v9.67.17
 - Removed HoE difficulty requirement for HoE map achievements. It still requires HL15+, therefore, players need
   add more custom zeds on Suicidal to boost HL.

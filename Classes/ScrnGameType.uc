@@ -2151,17 +2151,38 @@ function NavigationPoint FindPlayerStart( Controller Player, optional byte InTea
     return super.FindPlayerStart(Player, TeamIndex, incomingName);
 }
 
+function StartMatch()
+{
+    local Controller C;
+    local PlayerReplicationInfo PRI;
+
+    // make sure that all non-spectators can join the game
+    for ( C = Level.ControllerList; C != none; C = C.nextController ) {
+        PRI = C.PlayerReplicationInfo;
+        if ( PRI != none && !PRI.bOnlySpectator ) {
+            PRI.bOutOfLives = false;
+            PRI.NumLives = 0;
+        }
+    }
+
+    super.StartMatch();
+}
+
 function bool PlayerCanRestart(PlayerController PC)
 {
+    local PlayerReplicationInfo PRI;
+
+    PRI = PC.PlayerReplicationInfo;
+
     if ( ScrnBalanceMut.bTeamsLocked && !IsInvited(PC) ) {
         PC.ReceiveLocalizedMessage(class'ScrnGameMessages', 243);
-        if ( !PC.PlayerReplicationInfo.bOnlySpectator ) {
+        if ( !PRI.bOnlySpectator ) {
             PC.BecomeSpectator();
         }
-        if ( !PC.PlayerReplicationInfo.bOnlySpectator ) {
+        if ( !PRI.bOnlySpectator ) {
             // Max spectator count reached. Leave player in the team but rejecft respawning
-            PC.PlayerReplicationInfo.bOutOfLives = true;
-            PC.PlayerReplicationInfo.NumLives = 1;
+            PRI.bOutOfLives = true;
+            PRI.NumLives = 1;
             PC.GoToState('Spectating');
         }
         return false;
@@ -2170,11 +2191,14 @@ function bool PlayerCanRestart(PlayerController PC)
     if ( bWaveInProgress )
         return false;
 
+    if ( PC.Pawn != none && PC.Pawn.Health > 0 )
+        return false;  // wtf? Already alive.
+
     if ( ScrnGameLength != none && !ScrnGameLength.Wave.bRespawnDeadPlayers )
         return false;
 
     // NumLives actually is NumDeaths this wave
-    return !PC.PlayerReplicationInfo.bOutOfLives && PC.PlayerReplicationInfo.NumLives == 0;
+    return !PRI.bOutOfLives && PRI.NumLives == 0;
 }
 
 function RestartPlayer( Controller aPlayer )
@@ -3074,6 +3098,12 @@ function float CalcNextSquadSpawnTime() { return 5.0; }
 // ==================================== STATES ===============================
 auto State PendingMatch
 {
+    function RestartPlayer( Controller aPlayer )
+    {
+        if ( CountDown <= 0 )
+            Super(Invasion).RestartPlayer(aPlayer);
+    }
+
     // overrided to require at least 1 player to be ready to start LobbyTimeout
     function Timer()
     {

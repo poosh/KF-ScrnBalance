@@ -13,7 +13,7 @@ class ScrnBalance extends Mutator
 #exec OBJ LOAD FILE=ScrnAch_T.utx
 
 
-const VERSION = 96717;
+const VERSION = 96718;
 
 var ScrnBalance Mut; // pointer to self to use in static functions, i.e class'ScrnBalance'.default.Mut
 
@@ -1027,7 +1027,7 @@ function DynamicLevelCap()
         return;
 
     m = OriginalMaxLevel;
-    if ( bTSCGame )
+    if ( bTSCGame && KF.Teams[1] != none )
         num = max(KF.Teams[0].Size, KF.Teams[1].Size);
     else
         num = KF.NumPlayers;
@@ -2712,7 +2712,6 @@ function PostBeginPlay()
     }
     SetGameDifficulty(KF.GameDifficulty);
 
-    SetLevels();
     SetReplicationData();
     //exec this on server side only
     ApplySpawnBalance();
@@ -2765,7 +2764,6 @@ function PostBeginPlay()
     }
 }
 
-
 function ChangeGameDifficulty(byte NewDifficulty, optional bool bForce)
 {
     // save difficulty for the next map
@@ -2784,10 +2782,10 @@ function SetGameDifficulty(byte Difficulty)
     local KFGameReplicationInfo KFGRI;
     local bool bNewHardcore;
 
-    if ( ScrnGT != none && ScrnGT.ScrnGameLength != none && (Difficulty < ScrnGT.ScrnGameLength.MinDifficulty)
-            || (ScrnGT.ScrnGameLength.MaxDifficulty != 0 && Difficulty > ScrnGT.ScrnGameLength.MaxDifficulty) )
+    if ( ScrnGT != none && ScrnGT.ScrnGameLength != none && (Difficulty < ScrnGT.ScrnGameLength.MinDifficulty
+            || (ScrnGT.ScrnGameLength.MaxDifficulty != 0 && Difficulty > ScrnGT.ScrnGameLength.MaxDifficulty)) )
     {
-        log("Game difficulty " $ Difficulty $ " out of founds ["$ScrnGT.ScrnGameLength.MinDifficulty$".."
+        log("Game difficulty " $ Difficulty $ " is out of founds ["$ScrnGT.ScrnGameLength.MinDifficulty$".."
                 $ ScrnGT.ScrnGameLength.MaxDifficulty $ "]", class.name);
         return;
     }
@@ -2811,9 +2809,6 @@ function SetGameDifficulty(byte Difficulty)
             log("Bad difficulty value: " $ Difficulty, 'ScrnBalance');
             return;
     }
-
-    if ( bHardcore == bNewHardcore && KF.GameDifficulty == Difficulty )
-        return;
 
     bHardcore = bNewHardcore;
     KF.GameDifficulty = Difficulty;
