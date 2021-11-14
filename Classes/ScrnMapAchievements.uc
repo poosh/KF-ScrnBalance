@@ -124,8 +124,8 @@ defaultproperties
 {
     UniversalDescriptions(0)="Survive on %m in ScrN Balance mode"
     UniversalDescriptions(1)="Survive on %m against Super/Custom specimens and Hardcore Level 5+"
-    UniversalDescriptions(2)="Survive on %m in Turbo/Nightmare/Custom game and HL 10+"
-    UniversalDescriptions(3)="Survive on %m in HoE FTG/XCM/Doom3 game and HL 15+"
+    UniversalDescriptions(2)="Survive on %m in Turbo/Nightmare/SocIso/Custom game and HL 10+"
+    UniversalDescriptions(3)="Survive on %m in FTG/XCM/Doom3 game and HL 15+"
 
     UniversalFilters(0)=0
     UniversalFilters(1)=2 // custom monsters

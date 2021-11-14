@@ -19,6 +19,26 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+### v9.67.17
+- Removed HoE difficulty requirement for HoE map achievements. It still requires HL15+, therefore, players need
+  add more custom zeds on Suicidal to boost HL.
+- Suicidal map achievements can be earned on any custom game, included user-defined (GameLength=60+)
+- Tweaked HL increase for Doom3 monsters to ensure HL15+ on HoE even if no mid-game bosses spawned.
+- Enabled Tesla Husks and Shivers in FTG by default to give a HoE map achievement for winning a Suicidal game.
+- Disabled Hard+ map achievements in TSC
+##### Map Achievement Summary:
+- Normal ach is granted for winning any game (including TSC)
+- Hard ach requires HL5+ and at least one custom/super/doom zed (excluding Boss)
+- Suicidal ach requires HL10+ and one of the following:
+  - Turbo Floor
+  - Nightmare game (GameLength=9)
+  - Social Isolation
+  - Any custom game with GameLength >= 60
+- HoE ach requires HL15+ and one of the following:
+  - FTG
+  - Doom3 demons
+  - XCM (GameLength=7)
+
 ### v9.67.16
 - Fixed a bug that preventing earning map achievements and end game bonuses
 - HoE map achievement requires HoE difficulty (cannot get it on FTG/Doom3 Suicidal)

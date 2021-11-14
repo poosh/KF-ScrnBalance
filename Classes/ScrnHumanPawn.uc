@@ -394,6 +394,21 @@ simulated function SetWeaponAttachment(WeaponAttachment NewAtt)
     if ( HitAnims[0] == 'HitF_Dual9mmm') {
         HitAnims[0] = 'HitF_Dual9mm';
     }
+    else if ( HitAnims[0] == 'HitF_M14' ) {
+        HitAnims[0] = 'HitF_M14_EBR';
+    }
+
+    if ( HitAnims[1] == 'HitB_M14' ) {
+        HitAnims[1] = 'HitB_M14_EBR';
+    }
+
+    if ( HitAnims[2] == 'HitL_M14' ) {
+        HitAnims[2] = 'HitL_M14_EBR';
+    }
+
+    if ( HitAnims[3] == 'HitR_M14' ) {
+        HitAnims[4] = 'HitR_M14_EBR';
+    }
 }
 
 // todo: add support for modded guns

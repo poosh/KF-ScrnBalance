@@ -486,12 +486,14 @@ function GiveMapAchievements(optional String MapName)
         bGiveSuiAch = Level.Game.GameDifficulty >= 5;
         bGiveHoeAch = Level.Game.GameDifficulty >= 7;
     }
-    else {
+    else if ( !Mut.bTSCGame ) {
         bGiveHardAch = HardcoreLevel >= 5 && HasCustomZeds();
-        bGiveSuiAch = HardcoreLevel >= 10 && ( Mut.KF.IsA('TurboGame') || Mut.KF.KFGameLength == 9
-                || Mut.KF.KFGameLength >= 72);
-        bGiveHoeAch = HardcoreLevel >= 15 && Level.Game.GameDifficulty >= 7
-                && ( Mut.KF.IsA('FtgGame') || GameDoom3Kills > 0 || Mut.KF.KFGameLength == 7);
+        bGiveSuiAch = HardcoreLevel >= 10 && ( Mut.KF.IsA('TurboGame')
+                || Mut.KF.KFGameLength == 9     // Nightmare
+                || Mut.KF.KFGameLength >= 60);  // SocIso +
+        bGiveHoeAch = HardcoreLevel >= 15 && ( Mut.KF.IsA('FtgGame')
+                || GameDoom3Kills > 0           // any doom game
+                || Mut.KF.KFGameLength == 7);   // XCM
     }
 
     // end game bonus
@@ -549,8 +551,6 @@ function GiveMapAchievements(optional String MapName)
         }
     }
 }
-
-
 
 static function TrimCollectionToDefault(out class<KFMonstersCollection> Collection, class<KFMonstersCollection> DefaultCollection)
 {
@@ -1709,22 +1709,23 @@ defaultproperties
     HardcoreZeds(15)=(MonsterClass="ZombieSuperHusk",HL=1.4)
     HardcoreZeds(16)=(MonsterClass="HuskG",HL=1.4)
     HardcoreZeds(17)=(MonsterClass="ZombieSuperScrake",HL=1.4)
-    HardcoreZeds(18)=(MonsterClass="Imp",HL=1)
-    HardcoreZeds(19)=(MonsterClass="Pinky",HL=1)
-    HardcoreZeds(20)=(MonsterClass="Archvile",HL=1)
-    HardcoreZeds(21)=(MonsterClass="HellKnight",HL=1)
-    HardcoreZeds(22)=(MonsterClass="Sabaoth",HL=1)
-    HardcoreZeds(23)=(MonsterClass="Vagary",HL=1)
-    HardcoreZeds(24)=(MonsterClass="Maledict",HL=1)
-    HardcoreZeds(25)=(MonsterClass="HunterInvul",HL=1)
-    HardcoreZeds(26)=(MonsterClass="HunterBerserk",HL=1)
-    HardcoreZeds(27)=(MonsterClass="HunterHellTime",HL=1)
-    HardcoreZeds(28)=(MonsterClass="Guardian",HL=1)
-    HardcoreZeds(29)=(MonsterClass="Cyberdemon",HL=1)
+    HardcoreZeds(18)=(MonsterClass="Imp",HL=0.3)
+    HardcoreZeds(19)=(MonsterClass="Pinky",HL=0.5)
+    HardcoreZeds(20)=(MonsterClass="Commando",HL=0.5)
+    HardcoreZeds(21)=(MonsterClass="Revenant",HL=0.7)
+    HardcoreZeds(22)=(MonsterClass="Archvile",HL=1)
+    HardcoreZeds(23)=(MonsterClass="HellKnight",HL=1)
+    HardcoreZeds(24)=(MonsterClass="Mancubus",HL=1)
+    HardcoreZeds(25)=(MonsterClass="Sabaoth",HL=1)
+    HardcoreZeds(26)=(MonsterClass="Vagary",HL=1)
+    HardcoreZeds(27)=(MonsterClass="Maledict",HL=1)
+    HardcoreZeds(28)=(MonsterClass="HunterInvul",HL=1)
+    HardcoreZeds(29)=(MonsterClass="HunterBerserk",HL=1)
+    HardcoreZeds(30)=(MonsterClass="HunterHellTime",HL=1)
+    HardcoreZeds(31)=(MonsterClass="Guardian",HL=1)
+    HardcoreZeds(32)=(MonsterClass="Cyberdemon",HL=1)
 
     HardcoreGames(0)=(GameClass="ScrnStoryGameInfo",HL=3)
-    HardcoreGames(1)=(GameClass="TSCGame",HL=6)
-    HardcoreGames(2)=(GameClass="FtgGame",HL=6)
-    HardcoreGames(3)=(GameClass="TurboGame",HL=3)
-    HardcoreGames(4)=(GameClass="FscGame",HL=10)
+    HardcoreGames(1)=(GameClass="FtgGame",HL=6)
+    HardcoreGames(2)=(GameClass="TurboGame",HL=3)
 }
