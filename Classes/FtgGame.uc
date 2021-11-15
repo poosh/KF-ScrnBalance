@@ -11,8 +11,6 @@ var transient array<KFAmmoPickup> StinkyAmmoPickups;   // ammo pickups that are 
 var transient array<NavigationPoint> StinkyTargets;
 
 var transient float NextStinkySpawnTime;
-var float FtgSpawnDelayMod;     // modyfies delay between zed squad spawns while guarding is being carried
-var float FtgSpawnMinDelayMod;  // modyfies minimum delay between zed squad spawns while guarding is being carried
 
 struct SPathRedirect {
     var name From;
@@ -489,6 +487,9 @@ function StinkyControllerCompeledAction(StinkyController SC, int CompletedAction
             gnome.bHeld = true;
             ZedSpawnLoc = ZSLOC_RANDOM;
             SetBoringStage(0);
+            if ( !bWaveBossInProgress && ScrnGameLength != none ) {
+                NextMonsterTime += ScrnGameLength.FtgSpawnDelayOnPickup;
+            }
         }
         if ( bDebugStinkyPathCheat ) {
             log("Next Stinky Path: " $ SC.MoveTargets[CompletedActionNum] $ " => " $ SC.MoveTargets[SC.ActionNum],
@@ -604,26 +605,6 @@ State MatchInProgress
         NextStinkySpawnTime = Level.TimeSeconds + 30; // give enough time for Boss to spawn
         super.StartWaveBoss();
     }
-
-    function float CalcNextSquadSpawnTime()
-    {
-        local float result;
-
-        result = super.CalcNextSquadSpawnTime();
-        if ( TeamBases[0].bHeld || TeamBases[1].bHeld )
-            result *= FtgSpawnDelayMod; // slower spawns when Guardian is carried
-        return result;
-    }
-
-    function float GetMinSpawnDelay()
-    {
-        local float result;
-
-        result = super.GetMinSpawnDelay();
-        if ( TeamBases[0].bHeld || TeamBases[1].bHeld )
-            result *= FtgSpawnMinDelayMod; // slower spawns when Guardian is carried
-        return result;
-    }
 }
 
 defaultproperties
@@ -638,8 +619,6 @@ defaultproperties
     MaxBaseZ =  500
     OvertimeTeamMoneyPenalty=0
     ZedSpawnLoc=ZSLOC_AUTO
-    FtgSpawnDelayMod=1.5  // 50% slower spawns while guarding is being carried
-    FtgSpawnMinDelayMod=3.0  // x3 minimum delay between spawns
 
     BaseGuardianClasses(0)=class'ScrnBalanceSrv.TheGuardianRed'
     BaseGuardianClasses(1)=class'ScrnBalanceSrv.TheGuardianBlue'

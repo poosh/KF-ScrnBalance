@@ -1618,9 +1618,9 @@ function AddBossBuddySquad()
     if ( !bWaveBossInProgress )
         return;
 
-    TotalMaxMonsters += ScaleMonsterCount(ScrnGameLength.Wave.Counter); // num monsters in wave
+    TotalMaxMonsters += ScaleMonsterCount(ScrnGameLength.Wave.Counter, ScrnGameLength.Wave.MaxCounter);
     ScrnGRI.MaxMonsters = TotalMaxMonsters + NumMonsters; // num monsters in wave replicated to clients
-    MaxMonsters = Clamp(TotalMaxMonsters,1,16); // max monsters that can be spawned - limit to 16 in boss waves
+    MaxMonsters = Clamp(TotalMaxMonsters, 1, MaxZombiesOnce);
     NextMonsterTime = Level.TimeSeconds;
     FinalSquadNum++;
 }
@@ -1643,7 +1643,7 @@ function bool SetBoringStage(byte stage)
         BoringStages.insert(0, 1);
         BoringStages[0].MinSpawnTime = 1.5;
         BoringStages[0].SpawnPeriod = 3.0;
-        BoringStages[0].ZVolUsageTime = 30.0;
+        BoringStages[0].ZVolUsageTime = 20.0;
         BoringStage = 0;
     }
     return false;
@@ -2496,9 +2496,15 @@ function ChangeName(Controller Other, string S, bool bNameChange)
 
 function int CalcStartingCashBonus(PlayerController PC)
 {
-    if ( ScrnGameLength != none )
-        return ScrnGameLength.StartingCashBonus;
-    return 0;
+    local int result;
+
+    if ( ScrnGameLength != none ) {
+        result = ScrnGameLength.StartingCashBonus;
+        if ( ScrnGameLength.bStartingCashRelative ) {
+            result *= RelativeWaveNum(WaveNum);
+        }
+    }
+    return result;
 }
 
 // returns wave number relative to the current game length
@@ -2509,10 +2515,14 @@ function byte RelativeWaveNum(float LongGameWaveNum)
     return ceil(LongGameWaveNum * FinalWave / 10.0);
 }
 
-function int ScaleMonsterCount(int SoloNormalCounter)
+function int ScaleMonsterCount(int SoloNormalCounter, optional int MaxCounter)
 {
     local int UsedNumPlayers;
     local float DifficultyMod, NumPlayersMod;
+
+    if ( MaxCounter == 0 ) {
+        MaxCounter = ScrnBalanceMut.MaxWaveSize;
+    }
 
     // scale number of zombies by difficulty
     if ( GameDifficulty >= 7.0 ) // Hell on Earth
@@ -2552,7 +2562,7 @@ function int ScaleMonsterCount(int SoloNormalCounter)
         default:
             NumPlayersMod = 4.5 + (UsedNumPlayers-6)*0.4; // 7+ player game
     }
-    return Clamp(SoloNormalCounter * DifficultyMod * NumPlayersMod, 1, ScrnBalanceMut.MaxWaveSize);
+    return Clamp(SoloNormalCounter * DifficultyMod * NumPlayersMod, 1, MaxCounter);
 }
 
 function SetupWave()
@@ -3450,7 +3460,7 @@ State MatchInProgress
     {
         local float NextSpawnTime;
 
-        if( NextSpawnSquad.length > 0 || ScrnGameLength != none && ScrnGameLength.PendingNextSpawnSquad.length > 0 ) {
+        if( NextSpawnSquad.length > 0 ) {
             return 0.25;
         }
 
@@ -3471,19 +3481,9 @@ State MatchInProgress
             }
             // classic sine mod
             NextSpawnTime *= 1.0 + WaveSinMod();
+            NextSpawnTime = fmax(NextSpawnTime, BoringStages[BoringStage].MinSpawnTime);
         }
-
-        return fmax(NextSpawnTime, GetMinSpawnDelay());
-    }
-
-    function float GetMinSpawnDelay()
-    {
-        local float result;
-
-        result = BoringStages[BoringStage].MinSpawnTime;
-        if ( ScrnGameLength != none )
-            result /= ScrnGameLength.Wave.SpawnRateMod;
-        return result;
+        return NextSpawnTime;
     }
 
     function DoWaveEnd()

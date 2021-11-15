@@ -4,6 +4,7 @@ Class ScrnGameLength extends Object
     Config(ScrnGames);
 
 var ScrnGameType Game;
+var FtgGame FTG;
 var ScrnBalance Mut;
 
 var config int GameVersion;
@@ -11,20 +12,18 @@ var config string GameTitle;
 var config string Author;
 var config float BountyScale;
 var config int StartingCashBonus;
+var config bool bStartingCashRelative;
 var config array<string> Mutators;
 var config array<string> Waves;
 var config array<string> Zeds;
 var config bool bAllowZedEvents;
 var config bool bLogStats;
 var config bool bDebug;
-var config bool Doom3DisableSuperMonsters;
 var config bool bRandomTrader;
 var config int TraderSpeedBoost;
 var config int SuicideTime;
 var config int SuicideTimePerWave;
 var config float SuicideTimePerPlayerMult;
-var config byte NWaves, OTWaves, SDWaves;  // TSC-only
-
 
 struct SHL {
     var byte Difficulty;
@@ -36,6 +35,16 @@ var config float LaterWaveSpawnCooldown;
 var config byte MinDifficulty, MaxDifficulty;
 var config bool bForceTourney;
 var config int TourneyFlags;
+
+// Doom3
+var config bool Doom3DisableSuperMonsters;
+var config byte Doom3DisableSuperMonstersFromWave;
+
+// TSC
+var config byte NWaves, OTWaves, SDWaves;
+
+// FTG
+var config float FtgSpawnRateMod, FtgSpawnDelayOnPickup;
 
 var class<KFMonster> FallbackZed;
 var array<ScrnZedInfo> ZedInfos;
@@ -81,8 +90,8 @@ var transient bool bLoadedSpecial;  // is the last loaded squad special
 var transient int LoadedCount;  // loaded monster count (without squad breaks)
 var transient float PlayerCountOverrideForHealth;
 
-var float WaveEndTime;
-var int WaveCounter;
+var transient float WaveEndTime;
+var transient int WaveCounter;
 
 // Called from InitGame()
 // WARNING! GameReplicationInfo does not yet exist at this moment
@@ -94,6 +103,7 @@ function LoadGame(ScrnGameType MyGame)
     local byte HardcoreDifficulty;
 
     Game = MyGame;
+    FTG = FtgGame(MyGame);
     Mut = Game.ScrnBalanceMut;
 
     if ( bDebug ) {
@@ -476,6 +486,8 @@ protected function bool LoadNextWave()
 
     if ( Wave.MaxZombiesOnce > 0 )
         Game.MaxZombiesOnce = Wave.MaxZombiesOnce;
+    else if ( Wave.EndRule == RULE_KillBoss )
+        Game.MaxZombiesOnce = 16;
     else
         Game.MaxZombiesOnce = Game.StandardMaxZombiesOnce;
 
@@ -579,6 +591,11 @@ function RunWave()
         }
         Game.Broadcast(Game, s);
     }
+
+    if ( Mut.Doom3Mut != none && Game.WaveNum + 1 == Doom3DisableSuperMonstersFromWave ) {
+        Log("Disable Doom3 super monsters", 'ScrnGameLength');
+        Mut.Doom3Mut.GotoState('');
+    }
 }
 
 function SetWaveInfo()
@@ -588,7 +605,7 @@ function SetWaveInfo()
         switch ( Wave.EndRule ) {
             case RULE_KillEmAll:
             case RULE_SpawnEmAll:
-                WaveCounter = Game.ScaleMonsterCount(WaveCounter); // apply default scaling
+                WaveCounter = Game.ScaleMonsterCount(WaveCounter, Wave.MaxCounter); // apply default scaling
         }
     }
     else {
@@ -776,12 +793,19 @@ function float GetWaveEndTime()
 
 function AdjustNextSpawnTime(out float NextSpawnTime)
 {
+    local float SpawnRateMod;
+
     if ( PendingNextSpawnSquad.length > 0 ) {
         NextSpawnTime = 0.25;
         return;
     }
 
-    NextSpawnTime /= Wave.SpawnRateMod;
+    SpawnRateMod = fclamp(Wave.SpawnRateMod, 0.1, 10.0);
+    if ( FTG != none && (FTG.TeamBases[0].bHeld || FTG.TeamBases[1].bHeld) ) {
+        SpawnRateMod *= fclamp(FtgSpawnRateMod, 0.2, 1.0);
+    }
+    NextSpawnTime /= SpawnRateMod;
+
     if( Game.WavePct >= LaterWavePct && Game.NumMonsters >= 16 ) {
         // longer cooldown on later waves if there are already many zeds spawned
         NextSpawnTime *= LaterWaveSpawnCooldown;
@@ -797,6 +821,7 @@ function AdjustNextSpawnTime(out float NextSpawnTime)
     else {
         NextSpawnTime *= 2.0;  // average between 1.0 and 3.0
     }
+    NextSpawnTime = fmax(NextSpawnTime, Game.BoringStages[Game.GetBoringStage()].MinSpawnTime / SpawnRateMod);
 }
 
 function LoadNextSpawnSquad(out array < class<KFMonster> > NextSpawnSquad)
@@ -1193,4 +1218,6 @@ defaultproperties
     LaterWavePct=70
     LaterWaveSpawnCooldown=1.5
     bRandomTrader=true
+    FtgSpawnRateMod=0.8
+    FtgSpawnDelayOnPickup=5.0
 }

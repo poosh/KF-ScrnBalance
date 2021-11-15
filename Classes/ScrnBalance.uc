@@ -13,7 +13,7 @@ class ScrnBalance extends Mutator
 #exec OBJ LOAD FILE=ScrnAch_T.utx
 
 
-const VERSION = 96718;
+const VERSION = 96719;
 
 var ScrnBalance Mut; // pointer to self to use in static functions, i.e class'ScrnBalance'.default.Mut
 
@@ -3578,7 +3578,7 @@ defaultproperties
     bUseDLCLocks=False
     bUseDLCLevelLocks=True
     bFixMusic=True
-    LockTeamMinWave=7.0
+    LockTeamMinWave=5.0
     LockTeamAutoWave=8.5
     bForceSteamNames=True
 

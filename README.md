@@ -19,6 +19,26 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+### v9.67.19
+#### FTG
+- Zed spawns made faster
+- Added `FtgSpawnRateMod` and `FtgSpawnDelayOnPickup` config options to *ScrnGames.ini* for fine-tuning.
+- FTG-OTC v2.20: adjusted spawn rates and added more zeds to "Kill Remaining" waves to give more
+  time for Stinky Clot to get to the trader.
+
+#### TSC
+- Deprecated `LateJoinerCashBonus` - replaced by `StartingCashBonus` and `bStartingCashRelative` in *ScrnGames.ini*
+- Deprecated `OvertimeTeamMoneyPenalty` - harder waves are used in overtime instead of cutting dosh.
+- Added `TSCOT` and `TSCSD` waves in *ScrnWaves.ini* for Overtime and Sudden Death respectively.
+- Lowered Overtime wave count to 1 by default (down from 2). Now there are 7 normal waves + 1 OT + 1 SD.
+
+#### ScrnGames/Waves.ini
+- Added `Doom3DisableSuperMonstersFromWave` to disable Doom3 mid-game bosses on last waves before the boss.
+- Doom3 mid-game boss disabled on Doom3 Wave 10 because the final wave wave is generally harder when boss is not spawned
+- `MaxZombiesOnce` can be used to control end-game boss waves. If not set, the default value for RULE_KillBoss is 16.
+-
+
+
 ### v9.67.18
 - Fixed an issue when players started a game as dead if joined from spectators
 - Added `PlayerInfoOffset` config variable to `ScrnHUD` (*ScrnUser.ini*) allowing to tweak vertical offset of player

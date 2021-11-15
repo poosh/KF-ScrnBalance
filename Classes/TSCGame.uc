@@ -9,11 +9,11 @@ var localized string RedTeamHumanName, BlueTeamHumanName;
 
 var config byte OvertimeWaves;         // number of Overtime waves
 var config byte SudDeathWaves;         // number of Sudden Death waves
-var config float OvertimeTeamMoneyPenalty; // team receives less and less money for each subsequent overtime wave
-var config int LateJoinerCashBonus; // extra money for late joiners to prevent, for example, joining before wave 100 with only $100 cash
+var deprecated float OvertimeTeamMoneyPenalty;
+var deprecated int LateJoinerCashBonus; // replaced with ScrnGameLength.StartingCashBonus and bStartingCashRelative
 var config string SongRedWin, SongBlueWin, SongBothWin, SongBothWiped;
 
-var float CurrentTeamMoneyPenalty;
+var deprecated float CurrentTeamMoneyPenalty;
 var localized string strBudgetCut;
 
 var TSCBaseGuardian TeamBases[2];
@@ -500,24 +500,6 @@ function bool ShouldKillOnTeamChange(Pawn TeamChanger)
     return true;
 }
 
-function int CalcStartingCashBonus(PlayerController PC)
-{
-    local int result;
-
-    result = super.CalcStartingCashBonus(PC);
-    if ( WaveNum > 0 && LateJoinerCashBonus > 0
-            && !PC.PlayerReplicationInfo.bOnlySpectator
-            && PC.PlayerReplicationInfo.Team != none
-            && PC.PlayerReplicationInfo.Team.TeamIndex < 2
-            && PC.PlayerReplicationInfo.Team.Size <= BigTeamSize
-            && PC.PlayerReplicationInfo.Team.Size <= Teams[1-PC.PlayerReplicationInfo.Team.TeamIndex].Size
-        )
-    {
-        result += RelativeWaveNum(WaveNum) * LateJoinerCashBonus * (1.0 - CurrentTeamMoneyPenalty);
-    }
-    return result;
-}
-
 function bool BecomeSpectator(PlayerController P)
 {
     if ( super.BecomeSpectator(P) ) {
@@ -838,7 +820,7 @@ function byte RelativeWaveNum(float LongGameWaveNum)
 
     if ( w == 10 )
         return ceil(LongGameWaveNum);
-    return ceil(LongGameWaveNum * w / 10.0);
+    return min(10, ceil(LongGameWaveNum * w / 10.0));
 }
 
 function SetupWave()
@@ -1012,23 +994,8 @@ protected function StartTourney()
 
     GameReplicationInfo.bNoTeamSkins = bSingleTeamGame;
 
-    OvertimeTeamMoneyPenalty = 0.50;
-    LateJoinerCashBonus = 0;
     bAntiBlocker = true;
     bVoteHDmg = false;
-}
-
-function bool RewardSurvivingPlayers()
-{
-    // At this WaveNum isn't increased yet
-    if ( OvertimeTeamMoneyPenalty > 0 && OriginalFinalWave > 0 && WaveNum+1 >= OriginalFinalWave ) {
-        CurrentTeamMoneyPenalty = fmin(CurrentTeamMoneyPenalty + OvertimeTeamMoneyPenalty, 1);
-        Teams[0].Score = int(Teams[0].Score * (1.0 - CurrentTeamMoneyPenalty));
-        Teams[1].Score = int(Teams[1].Score * (1.0 - CurrentTeamMoneyPenalty));
-        Broadcast(Self, strBudgetCut @ int(100*(CurrentTeamMoneyPenalty)) $ "%");
-    }
-
-    return super.RewardSurvivingPlayers();
 }
 
 function ShowPathTo(PlayerController P, int DestinationIndex)
@@ -1336,10 +1303,8 @@ defaultproperties
     bVoteHDmg=True
     bVoteHDmgOnlyBeforeStart=False
 
-    OvertimeWaves=2 // if both teams survived regular waves, add 2 overtime waves
+    OvertimeWaves=1 // if both teams survived regular waves, add an OverTime wave
     SudDeathWaves=1 // if both team survived overtime waves, add a Sudden Death wave
-    OvertimeTeamMoneyPenalty=0.33 // 33% less money each wave
-    LateJoinerCashBonus=700 // $700 will be given before final wave. Cash bonus is proportionally smaller in earlier waves.
     strBudgetCut="Team wallets were cut off by"
 
     SongRedWin="KF_WPrevention"
