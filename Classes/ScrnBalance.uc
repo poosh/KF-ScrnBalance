@@ -132,7 +132,7 @@ var ScrnCustomWeaponLink CustomWeaponLink;
 
 var transient bool bInitReplicationReceived;
 
-var Mutator ServerPerksMut, Doom3Mut;
+var Mutator ServerPerksMut;
 var transient bool bAllowAlwaysPerkChanges; // value replicated from ServerPerksMut
 
 var globalconfig bool bAllowVoting;
@@ -901,9 +901,6 @@ function CheckMutators()
         if ( M.IsA('ServerPerksMut') ) {
             ServerPerksMut = M;
         }
-        else if ( M.IsA('Doom3Mutator') ) {
-            Doom3Mut = M;
-        }
     }
 }
 
@@ -1122,6 +1119,14 @@ function FixMusic()
         KF.BossBattleSong = KF.MapSongHandler.WaveBasedSongs[10].CombatSong;
 }
 
+function DisableDoom3Monsters()
+{
+    log("Disabling Doom3 monsters", 'ScrnBalance');
+    if ( !BroadcastValue('SpawnDoom3Monsters', 0) ) {
+        log("Doom3Mutator not found!", 'ScrnBalance');
+    }
+}
+
 auto simulated state WaitingForTick
 {
     function SrvFirstTick()
@@ -1150,6 +1155,17 @@ auto simulated state WaitingForTick
                     Level.GRI.bNoTeamSkins = bNoTeamSkins && !ScrnGT.IsTourney();
                 }
                 ScrnGT.CheckZedSpawnList();
+                if ( ScrnGT.ScrnGameLength != none ) {
+                    if ( ScrnGT.ScrnGameLength.Doom3DisableSuperMonsters
+                            || ScrnGT.ScrnGameLength.Doom3DisableSuperMonstersFromWave == 1 )
+                    {
+                        DisableDoom3Monsters();
+                    }
+                    else {
+                        // Enable super monsters bud disable regular D3 mobs cuz we will spawn them via ScrnWaves
+                        BroadcastValue('SpawnDoom3Monsters', 1);
+                    }
+                }
             }
         }
         if ( ColoredServerName != "" ) {
@@ -3407,7 +3423,7 @@ function RegisterVersion(string ItemName, int Version)
 
 defaultproperties
 {
-    VersionNumber=96802
+    VersionNumber=96900
     GroupName="KF-Scrn"
     FriendlyName="ScrN Balance"
     Description="Total rework of KF1 to make it modern and the best game in the world while sticking to the roots of the original."

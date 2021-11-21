@@ -131,16 +131,6 @@ function LoadGame(ScrnGameType MyGame)
             Game.AddMutator(Mutators[i], true);
         }
     }
-    Mut.CheckMutators();
-    if ( Doom3DisableSuperMonsters ) {
-        if ( Mut.Doom3Mut == none ) {
-            Log("Cannot disable super monsters. Doom 3 Mutator is not loaded", 'ScrnGameLength');
-        }
-        else {
-            Log("Disable Doom3 super monsters", 'ScrnGameLength');
-            Mut.Doom3Mut.GotoState('');
-        }
-    }
 
     if (TraderSpeedBoost != 0) {
         Mut.bTraderSpeedBoost = TraderSpeedBoost > 0;
@@ -598,9 +588,8 @@ function RunWave()
         Game.Broadcast(Game, s);
     }
 
-    if ( Mut.Doom3Mut != none && Game.WaveNum + 1 == Doom3DisableSuperMonstersFromWave ) {
-        Log("Disable Doom3 super monsters", 'ScrnGameLength');
-        Mut.Doom3Mut.GotoState('');
+    if ( Doom3DisableSuperMonstersFromWave > 1 && Game.WaveNum + 1 == Doom3DisableSuperMonstersFromWave ) {
+        Mut.DisableDoom3Monsters();
     }
 }
 
