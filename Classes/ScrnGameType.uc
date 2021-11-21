@@ -201,8 +201,8 @@ function InitGameReplicationInfo()
         }
         else {
             ScrnGRI.GameVersion = -1;
-            log("Bad game version! Game " $ class'ScrnFunctions'.static.VersionStr(ScrnGameLength.GameVersion)
-                    $ ", Wave " $ class'ScrnFunctions'.static.VersionStr(ScrnGameLength.Wave.GameVersion), class.name);
+            log("Bad game version! Game " $ ScrnBalanceMut.VersionStr(ScrnGameLength.GameVersion)
+                    $ ", Wave " $ ScrnBalanceMut.VersionStr(ScrnGameLength.Wave.GameVersion), class.name);
         }
         ScrnGRI.GameTitle = ScrnGameLength.GameTitle;
         ScrnGRI.GameAuthor = ScrnGameLength.Author;
@@ -1894,7 +1894,7 @@ function final string GetCmdLine()
 }
 
 // this must be called after ServerPerksMut.SetupRepLink()
-function SetupRepLink(ClientPerkRepLink R)
+function SetupRepLink(ScrnClientPerkRepLink R)
 {
     local int i;
     local class<Pickup> PC;
@@ -1904,6 +1904,13 @@ function SetupRepLink(ClientPerkRepLink R)
 
     if ( R == none )
         return; // wtf?
+
+    if ( ScrnGameLength != none ) {
+        R.Zeds.length = ScrnGameLength.AllZeds.length;
+        for ( i = 0; i < ScrnGameLength.AllZeds.length; ++i ) {
+            R.Zeds[i] = ScrnGameLength.AllZeds[i];
+        }
+    }
 
     if ( TourneyMode == 0 )
         return;
@@ -2339,7 +2346,7 @@ function SuicideTimer()
         return;
     }
 
-    switch ( class'ScrnFunctions'.static.mod(RemainingTime, 60) ) {
+    switch ( class'ScrnF'.static.mod(RemainingTime, 60) ) {
         case 0:
             if ( Level.Netmode != NM_DedicatedServer ) {
                 ScrnGRI.ShowTimeMsg();

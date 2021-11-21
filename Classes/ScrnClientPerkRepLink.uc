@@ -7,15 +7,17 @@ var ScrnPlayerController OwnerPC;
 
 var String CurrentJob; // for debug purposes
 var byte TotalCategories;
-var int TotalWeapons, TotalChars, TotalLocks;
+var int TotalWeapons, TotalChars, TotalLocks, TotalZeds;
 // how many more records client is expecting to receive from the server
 // used on client-side only
 var transient int PendingItems;
 var transient byte PendingCategories;
-var transient int PendingWeapons, PendingChars, PendingLocks;
+var transient int PendingWeapons, PendingChars, PendingLocks, PendingZeds;
 var transient float RepStartTime;
 var bool bClientDebug;
 var protected int CheckDataAttempts;
+
+var transient array< class<KFMonster> > Zeds;
 
 const DLC_LOCK_STEAM_APP    = 1;
 const DLC_LOCK_STEAM_ACH    = 2;
@@ -53,13 +55,13 @@ var config bool bWaitForACK;
 replication
 {
     reliable if ( bNetOwner && bNetInitial && Role == ROLE_Authority )
-        TotalWeapons, TotalChars, TotalCategories, TotalLocks;
+        TotalWeapons, TotalChars, TotalCategories, TotalLocks, TotalZeds;
 
     reliable if ( Role < ROLE_Authority )
         ServerStartInitialReplication, ServerSelectPerkSE;
 
     reliable if ( Role == ROLE_Authority )
-        ClientReceiveLevelLock, ClientReceiveAchLock, ClientReceiveGroupLock;
+        ClientReceiveLevelLock, ClientReceiveAchLock, ClientReceiveGroupLock, ClientReceiveZed;
 }
 
 // Just look for the stats. Don't do mysterious things as Marco intended in FindStats()
@@ -233,6 +235,17 @@ simulated function ClientReceiveWeapon( int Index, class<Pickup> P, byte Categ )
     OnClientRepItemReceived();
 }
 
+simulated function ClientReceiveZed(int Index, class<KFMonster> Zed)
+{
+    if ( bClientDebug )
+        OwnerPC.ClientMessage("Zed " $ Zed);
+
+    --PendingZeds;
+    --PendingItems;
+    Zeds[Index] = Zed;
+    Zed.static.PreCacheMaterials(Level);
+}
+
 simulated function ClientReceiveLevelLock(int Index, class<Pickup> PC, byte Group, byte MinLevel)
 {
     if ( bClientDebug )
@@ -275,7 +288,6 @@ simulated function ClientReceiveGroupLock(int Index, class<Pickup> PC, byte Grou
     Locks[Index].MaxProgress = Count;
     OnClientRepItemReceived();
 }
-
 
 simulated function ClientReceiveChar( string CharName, int Num )
 {
@@ -625,13 +637,15 @@ Begin:
     bRepCompleted = false;
     ShopCategories.Length = TotalCategories;
     ShopInventory.Length = TotalWeapons;
+    Zeds.Length = TotalZeds;
     Locks.Length = TotalLocks;
     CustomChars.Length = TotalChars;
     PendingCategories = TotalCategories;
     PendingWeapons = TotalWeapons;
+    PendingZeds = TotalZeds;
     PendingLocks = TotalLocks;
     PendingChars = TotalChars;
-    PendingItems = TotalCategories + TotalWeapons + TotalLocks + TotalChars;
+    PendingItems = TotalCategories + TotalWeapons + TotalZeds + TotalLocks + TotalChars;
     ClientAccknowledged[0] = 0;
     ClientAccknowledged[1] = 0;
     ClientAckSkinNum = 0;
@@ -656,7 +670,7 @@ ignores StartClientInitialReplication;
         CurrentJob = "Receiving Data";
         RepStartTime = Level.TimeSeconds;
         log("["$Level.TimeSeconds$"s] Waiting for server data: Categories="$TotalCategories $ " Weapons="$TotalWeapons
-            $ " DLCLocks="$TotalLocks $ " Characters="$TotalChars, 'ScrnBalance');
+            $ " Zeds="$TotalZeds $ " DLCLocks="$TotalLocks $ " Characters="$TotalChars, 'ScrnBalance');
     }
 
     simulated function EndState()
@@ -679,6 +693,8 @@ ignores StartClientInitialReplication;
             CurrentJob = "Receiving Categories";
         else if ( PendingWeapons > 0 )
             CurrentJob = "Receiving Weapons";
+        else if ( PendingZeds > 0 )
+            CurrentJob = "Receiving Zeds";
         else if ( PendingLocks > 0 )
             CurrentJob = "Receiving DLC Locks";
         else
@@ -788,6 +804,15 @@ Begin:
         ClientReceiveWeapon(SendIndex, ShopInventory[SendIndex].PC, ShopInventory[SendIndex].CatNum);
         NextRepTime += WeaponSendCooldown;
         Sleep(WeaponSendCooldown);
+    }
+
+    if ( Zeds.length > 0 ) {
+        CurrentJob = "Sending Zeds";
+        for ( SendIndex = 0; SendIndex < Zeds.length; ++SendIndex ) {
+            ClientReceiveZed(SendIndex, Zeds[SendIndex]);
+            NextRepTime += WeaponSendCooldown;
+            Sleep(WeaponSendCooldown);
+        }
     }
 
     CurrentJob = "Sending DLC Locks";

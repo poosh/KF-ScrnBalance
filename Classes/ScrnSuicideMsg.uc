@@ -67,8 +67,8 @@ static function RenderComplexMessage(
     C.Style = ERenderStyle.STY_Alpha;
     C.Font = hud.LoadWaitingFont(0);
 
-    str = class'ScrnFunctions'.static.LPad(string(Minutes), 2, "0") $ ":"
-        $ class'ScrnFunctions'.static.LPad(string(Seconds), 2, "0");
+    str = class'ScrnF'.static.LPad(string(Minutes), 2, "0") $ ":"
+        $ class'ScrnF'.static.LPad(string(Seconds), 2, "0");
 
     C.StrLen("00:00", TextWidth, TextHeight);
     y = C.ClipY * 0.15;

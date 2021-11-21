@@ -51,6 +51,9 @@ static final function RegisterAchievements( class<ScrnAchievements> NewAchClass 
 {
     local int i;
 
+    if ( NewAchClass == none )
+        return;
+
     for ( i = 0; i < default.AchClassList.Length; ++i ) {
         if ( default.AchClassList[i] == NewAchClass )
             return;
@@ -75,7 +78,7 @@ static final function bool ProgressAchievementByID(ClientPerkRepLink L, name ID,
     local ScrnAchievements.AchStrInfo A;
     local int CacheIndex;
 
-    if ( L == none || L.Level.Game.GameDifficulty < 2 || class'ScrnBalance'.default.Mut.bTestMap )
+    if ( L == none || L.Level.Game.GameDifficulty < 2 )
         return false;
 
     if ( !FindAchievement(L, ID, A, CacheIndex) )

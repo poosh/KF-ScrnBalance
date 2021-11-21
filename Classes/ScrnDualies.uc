@@ -463,6 +463,7 @@ defaultproperties
      ReloadHalfShortRate = 3.23 //right slide locked back
      //ReloadRate=3.500000 //both
      Weight=1
+     ModeSwitchAnim="LightOn"
      FireModeClass(0)=Class'ScrnBalanceSrv.ScrnDualiesFire'
      DemoReplacement=Class'ScrnBalanceSrv.ScrnSingle'
      PickupClass=Class'ScrnBalanceSrv.ScrnDualiesPickup'

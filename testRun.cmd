@@ -55,7 +55,7 @@ start %STEAMEXE% -applaunch %STEAMAPPID% 127.0.0.1:%KFSRVPORT%
 
 echo Syncing System directory
 cd %STEAMDIR%\System2
-xcopy /U /D /Y ..\System\*.u .\
+xcopy /D /Y ..\System\*.u .\
 
 echo Waiting for KF to start...
 echo You can press a key once you see the game logo

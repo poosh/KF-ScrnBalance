@@ -19,6 +19,37 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+### v9.68
+- Introduced ScrN Shared Library - **ScrnShared.u** that is used by all mutators.
+- All ScrN mutators have the same version numbering and extended from `ScrnShared.ScrnMutator`.
+  No More HMG v5, HTec v4, ZedPack v2 - all are v9.68.xx from now on.
+- Make sure to update ALL Scrn*.u packages!
+- Added `ScrnAchMutator` - base class for achievement-tracking mutators.
+- `MUTATE VERSION` displays all ScrN mutator versions, even inactive ones (e.g., achievement trackers)
+- Make sure to add those new mutators to *ScrnBalanceSrv.ini*:
+```
+AutoLoadMutators=ScrnZedPack.ZedPackMut
+AutoLoadMutators=ScrnHMG.HmgMut
+```
+- Added `LockTeamMinWaveTourney=1.0` in *ScrnBalanceSrv.ini* to allow locking team earlier in Tourney Mode
+  (e.g., prevent some random noobs from ruining your XCM run)
+- Fixed an issue where `MVOTE LOCKPERK` did not display perk name
+- Fixed zed precaching on client-side. Should remove stuttering on the first appearance of a custom zed or Doom monster.
+- Perk and achievement progress is not saved on a test map. Players can still gain progress (for testing) but it is not
+  saved to there perk database. Works like vanilla greylisted servers.
+- Achievement earning restored on a test map (for testing) - but gained achievements are not saved.
+- Added `bTest` to *ScrnGames.ini*. Forces `bTestMap=true` on any map for the given game mode.
+- **XCM** v0.31
+- Set `FtgSpawnDelayOnPickup=10` by default.
+- Zeds nailed to a wall bleed out in ~20s. That prevents an issue on some custom maps where nailed zed could stuck
+  outside the map.
+- Added map definition for Suburbia.
+
+#### ScrN Voting Handler
+- Partial player name search in `MVOTE <cmd> <playername>`
+- Fixed an issue where vote percent did not recalculate on player leaving
+
+
 ### v9.67.19
 #### FTG
 - Zed spawns made faster
@@ -36,7 +67,6 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 - Added `Doom3DisableSuperMonstersFromWave` to disable Doom3 mid-game bosses on last waves before the boss.
 - Doom3 mid-game boss disabled on Doom3 Wave 10 because the final wave wave is generally harder when boss is not spawned
 - `MaxZombiesOnce` can be used to control end-game boss waves. If not set, the default value for RULE_KillBoss is 16.
--
 
 
 ### v9.67.18

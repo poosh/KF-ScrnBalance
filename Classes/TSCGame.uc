@@ -9,11 +9,8 @@ var localized string RedTeamHumanName, BlueTeamHumanName;
 
 var config byte OvertimeWaves;         // number of Overtime waves
 var config byte SudDeathWaves;         // number of Sudden Death waves
-var deprecated float OvertimeTeamMoneyPenalty;
-var deprecated int LateJoinerCashBonus; // replaced with ScrnGameLength.StartingCashBonus and bStartingCashRelative
 var config string SongRedWin, SongBlueWin, SongBothWin, SongBothWiped;
 
-var deprecated float CurrentTeamMoneyPenalty;
 var localized string strBudgetCut;
 
 var TSCBaseGuardian TeamBases[2];

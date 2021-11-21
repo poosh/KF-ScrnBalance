@@ -981,6 +981,7 @@ simulated function DisplayAchievementStatus(ScrnAchievements AchHandler, int Ach
 
         if ( PendingAchievements.Length == 0 && (Level.TimeSeconds > AchievementDisplayCooldown
                 || (!bWasAchUnlockedJustNow && (AchHandler.AchDefs[AchIndex].bUnlockedJustNow
+                    || CurrentAchHandler == none
                     || AchHandler.AchDefs[AchIndex].MaxProgress < CurrentAchHandler.AchDefs[CurrentAchIndex].MaxProgress))) )
         {
             // no need to use a queue for a single achievement
@@ -1081,7 +1082,7 @@ simulated function ReceiveLocalizedMessage( class<LocalMessage> Message, optiona
                 break;
             case 311:   // loosing base means wipe
                 if ( ScrnHUD(myHUD) != none )
-                    ScrnHUD(myHUD).CriticalOverlayTimer = Level.TimeSeconds + 3.0;
+                    ScrnHUD(myHUD).CriticalOverlayTimer = Level.TimeSeconds + 4.0;
                 break;
         }
     }
@@ -1816,10 +1817,15 @@ function ChangeName( coerce string S )
 
     S = Repl(S, " ", "_", true);
     S = Repl(S, "\"", "", true);
+    S = Repl(S, "'", "", true);
 
     PlainName = Mut.StripColorTags(S);
     if ( len(PlainName) > 20 )
         S = left(PlainName, 20);
+
+    if ( S ~= "WebAdmin" ) {
+        S = "FakeAdmin_KillMe!";
+    }
 
     Level.Game.ChangeName( self, S, true );
 }
@@ -2094,6 +2100,7 @@ final function ServerTourneyCheck()
     for ( M = Level.Game.BaseMutator; M != None; M = M.NextMutator )
         s @= string(M.class);
     LongMessage(s, 80, " ");
+    ServerMutate("VERSION");
 
     s = "Rules:";
     for ( G=Level.Game.GameRulesModifiers; G!=None; G=G.NextGameRules )

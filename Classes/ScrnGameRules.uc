@@ -70,6 +70,7 @@ struct MonsterInfo {
     var int HeadHealth; // track head health to check headshots
     var bool bWasDecapitated; // was the monster decapitated before last damage? If bWasDecapitated=true then bHeadshot=false
     var bool bWasBackstabbed; // previous hit was a melee backstab
+    var float BleedOutTime;  // time when zed should die from bleeding
 };
 var array<MonsterInfo> MonsterInfos;
 var private transient KFMonster LastSeachedMonster; //used to optimize GetMonsterIndex()
@@ -931,11 +932,16 @@ function RewardTeamwork(ScrnPlayerInfo KillerInfo, int MonsterIndex, name Achiev
 function ClearMonsterInfo(int index)
 {
     MonsterInfos[index].Monster = none;
-    MonsterInfos[index].HitCount = 0;
+    MonsterInfos[index].ZVol = none;
+    MonsterInfos[index].SpawnTime = 0;
     MonsterInfos[index].FirstHitTime = 0;
+    MonsterInfos[index].HitCount = 0;
+
     MonsterInfos[index].PlayerKillCounter = 0;
     MonsterInfos[index].DamageCounter = 0;
     MonsterInfos[index].PlayerKillTime = 0;
+
+    MonsterInfos[index].FirstHitTime = 0;
     MonsterInfos[index].KillAss1 = none;
     MonsterInfos[index].DamType1 = none;
     MonsterInfos[index].DamageFlags1 = 0;
@@ -943,15 +949,19 @@ function ClearMonsterInfo(int index)
     MonsterInfos[index].DamType2 = none;
     MonsterInfos[index].DamageFlags2 = 0;
     MonsterInfos[index].TW_Ach_Failed = false;
+
     MonsterInfos[index].bHeadshot = false;
     MonsterInfos[index].RowHeadshots = 0;
     MonsterInfos[index].Headshots = 0;
     MonsterInfos[index].BodyShots = 0;
     MonsterInfos[index].OtherHits = 0;
+
     MonsterInfos[index].LastHitTime = 0;
     MonsterInfos[index].MaxHeadHealth = 0;
     MonsterInfos[index].HeadHealth = 0;
     MonsterInfos[index].bWasDecapitated = false;
+    MonsterInfos[index].bWasBackstabbed = false;
+    MonsterInfos[index].BleedOutTime = 0;
 }
 
 //creates a new record, if monster not found
@@ -1097,6 +1107,18 @@ function ScrakeNaded(ZombieScrake Scrake)
     index = GetMonsterIndex(Scrake);
     MonsterInfos[index].DamType2 = class'KFMod.DamTypeFrag';
     MonsterInfos[index].DamageFlags2 = DF_RAGED | DF_STUPID;
+}
+
+function BleedingMonster(KFMonster M, float BleedOutTime)
+{
+    local int index;
+
+    if ( M == none || M.Health <= 0 )
+        return;
+
+    index = GetMonsterIndex(M);
+    MonsterInfos[index].BleedOutTime = Level.TimeSeconds + BleedOutTime;
+    StartProcessing();
 }
 
 // returns true if last damage to zed was a headshot
@@ -1611,6 +1633,64 @@ function bool HasInventoryClass( Pawn P, class<Inventory> IC )
             return true;
     return false;
 }
+
+function StartProcessing()
+{
+    GotoState('Processing');
+}
+
+state Processing
+{
+    ignores StartProcessing;
+
+    function BeginState()
+    {
+        Timer();
+    }
+
+    function EndState()
+    {
+        SetTimer(0, false);
+    }
+
+    function Timer()
+    {
+        local bool bKeepProcessing;
+        local float NextTime;
+        local int i;
+        local KFMonster M;
+        local Controller C;
+
+        NextTime = Level.TimeSeconds + 3600;
+        for ( i = 0; i < MonsterInfos.length; ++i ) {
+            M = MonsterInfos[i].Monster;
+            if ( M == none || M.Health <= 0 )
+                continue;
+
+            if ( MonsterInfos[i].BleedOutTime > 0 ) {
+                if ( Level.TimeSeconds >= MonsterInfos[i].BleedOutTime ) {
+                    if ( M.LastDamagedBy != none )
+                        C = M.LastDamagedBy.Controller;
+                    else
+                        C = none;
+                    M.Died(C, class'DamTypeBleedOut', M.Location);
+                }
+                else {
+                    bKeepProcessing = true;
+                    NextTime = fmin(NextTime, MonsterInfos[i].BleedOutTime);
+                }
+            }
+        }
+
+        if ( NextTime > Level.TimeSeconds ) {
+            SetTimer(NextTime - Level.TimeSeconds, false);
+        }
+        else {
+            GotoState('');
+        }
+    }
+}
+
 
 defaultproperties
 {

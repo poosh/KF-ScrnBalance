@@ -204,7 +204,7 @@ DoneIt:
             }
             else {
                 if ( ScrnGRI.GameVersion > 0 ) {
-                    s @= class'ScrnFunctions'.static.VersionStr(ScrnGRI.GameVersion);
+                    s @= class'ScrnF'.static.VersionStr(ScrnGRI.GameVersion);
                 }
 
                 if ( ScrnGRI.GameAuthor != "" && ScrnGRI.GameAuthor != "ScrN" ) {

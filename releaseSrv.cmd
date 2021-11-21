@@ -35,8 +35,9 @@ mkdir %RELEASEDIR%\System 2>nul
 xcopy /F /I /Y %KFDIR%\System\%KFPACKAGE%.int %RELEASEDIR%\System\
 xcopy /F /I /Y %KFDIR%\System\%KFPACKAGE%.u %RELEASEDIR%\System\
 xcopy /F /I /Y %KFDIR%\System\%KFPACKAGE%.ucl %RELEASEDIR%\System\
+xcopy /F /I /Y %KFDIR%\System\ScrnShared.* %RELEASEDIR%\System\
 xcopy /F /I /Y %KFDIR%\System\ScrnSP.* %RELEASEDIR%\System\
-xcopy /F /I /Y %KFDIR%\System\ScrnVotingHandlerV4.* %RELEASEDIR%\System\
+xcopy /F /I /Y %KFDIR%\System\ScrnVotingHandler.* %RELEASEDIR%\System\
 
 mkdir %RELEASEDIR%\Animations 2>nul
 xcopy /F /I /Y %STEAMDIR%\Animations\ScrnAnims.ukx %RELEASEDIR%\Animations\

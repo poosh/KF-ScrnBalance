@@ -18,7 +18,7 @@ var config array<string> Waves;
 var config array<string> Zeds;
 var config bool bAllowZedEvents;
 var config bool bLogStats;
-var config bool bDebug;
+var config bool bDebug, bTest;
 var config bool bRandomTrader;
 var config int TraderSpeedBoost;
 var config int SuicideTime;
@@ -61,6 +61,7 @@ struct SActiveZed {
     var int WaveSpawns, TotalSpawns;
 };
 var array<SActiveZed> ActiveZeds;
+var array < class<KFMonster> > AllZeds;
 
 const SQUAD_BREAK = -1;
 // per-wave data
@@ -105,6 +106,10 @@ function LoadGame(ScrnGameType MyGame)
     Game = MyGame;
     FTG = FtgGame(MyGame);
     Mut = Game.ScrnBalanceMut;
+
+    if ( bTest ) {
+        Mut.SetTestMap();
+    }
 
     if ( bDebug ) {
         Game.MaximizeDebugLogging();
@@ -191,9 +196,10 @@ function LoadGame(ScrnGameType MyGame)
     }
     RecalculateSpawnChances();
 
-    for ( i = 0; i < ActiveZeds.length; ++i ) {
-        for ( j = 0; j < ActiveZeds[i].Candidates.length; ++j ) {
-            ActiveZeds[i].Candidates[j].ZedClass.static.PreCacheAssets(Game.Level);
+    Game.LogZedSpawn(Game.LOG_INFO, AllZeds.length $ " unique zeds");
+    if ( Game.Level.NetMode != NM_DedicatedServer ) {
+        for ( i = 0; i < AllZeds.length; ++i ) {
+            AllZeds[i].static.PreCacheAssets(Game.Level);
         }
     }
 
@@ -371,9 +377,9 @@ function ZedCmd(PlayerController Sender, string cmd)
                     c.G = 255;
                 }
                 Sender.ClientMessage(class'ScrnBalance'.static.ColorStringC(
-                    class'ScrnFunctions'.static.LPad(string(cur_idx), 3)
-                        @ class'ScrnFunctions'.static.RPad(eval(ZedInfos[i].Zeds[j].bDisabled, "OFF", "ON"), 5)
-                        @ class'ScrnFunctions'.static.LPad(eval(ZedInfos[i].Zeds[j].Pct == 0, "AUTO", string(ZedInfos[i].Zeds[j].Pct)), 7)
+                    class'ScrnF'.static.LPad(string(cur_idx), 3)
+                        @ class'ScrnF'.static.RPad(eval(ZedInfos[i].Zeds[j].bDisabled, "OFF", "ON"), 5)
+                        @ class'ScrnF'.static.LPad(eval(ZedInfos[i].Zeds[j].Pct == 0, "AUTO", string(ZedInfos[i].Zeds[j].Pct)), 7)
                         @ ZedInfos[i].Zeds[j].ZedClass
                     , c ));
             }
@@ -1068,6 +1074,14 @@ function AddActiveZed(string Alias, class<KFMonster> ZedClass, optional float Ch
     ActiveZeds[i].Candidates.insert(j, 1);
     ActiveZeds[i].Candidates[j].ZedClass = ZedClass;
     ActiveZeds[i].Candidates[j].Chance = Chance;
+
+    for ( i = 0; i < AllZeds.length; ++i ) {
+        if ( AllZeds[i] == ZedClass )
+            break;
+    }
+    if ( i == AllZeds.length ) {
+        AllZeds[i] = ZedClass;
+    }
 }
 
 // Recalculate spawn chances, removes records that have zero chance to spawn.
@@ -1219,5 +1233,5 @@ defaultproperties
     LaterWaveSpawnCooldown=1.5
     bRandomTrader=true
     FtgSpawnRateMod=0.8
-    FtgSpawnDelayOnPickup=5.0
+    FtgSpawnDelayOnPickup=10.0
 }

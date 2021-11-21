@@ -52,6 +52,12 @@ var string Reason; // reason why voting was started (e.g. kick player for being 
 
 var transient float LastBlameVoteTime;
 
+
+function string GetPlayerName(PlayerReplicationInfo PRI)
+{
+    return Mut.PlainPlayerName(PRI);
+}
+
 static function ClientPerkRepLink GetPlayerLink(PlayerController Sender)
 {
     if ( Sender == none || SRStatsBase(Sender.SteamStatsAndAchievements) == none )
@@ -164,7 +170,7 @@ function String PerksStr(out array<class< ScrnVeterancyTypes> > Perks)
     local class<ScrnVeterancyTypes> Perk;
 
     if ( Perks.length == 1 )
-        return Perk.default.VeterancyName;
+        return Perks[0].default.VeterancyName;
 
     for ( i = 0; i < Perks.length; ++i ) {
         Perk = Perks[i];
@@ -426,6 +432,34 @@ function ApplyMapVote(string ServerTravelString)
     Level.ServerTravel(ServerTravelString, false);
 }
 
+function bool CheckReferee(PlayerController Sender)
+{
+    if ( Sender.PlayerReplicationInfo.bAdmin && Sender.PlayerReplicationInfo.bOnlySpectator
+            && Mut.SrvTourneyMode != 0 )
+        return true;
+
+    Sender.ClientMessage(strRCommands);
+    return false;
+}
+
+function bool CanLockTeam()
+{
+    local int CurWave, MinLockWave;
+
+    if ( Level.GRI.bMatchHasBegun ) {
+        CurWave = Mut.ScrnGT.WaveNum + 1;
+    }
+
+    if ( Mut.ScrnGT.IsTourney() ) {
+        MinLockWave = Mut.LockTeamMinWaveTourney;
+    }
+    else {
+        MinLockWave = Mut.LockTeamMinWave;
+    }
+    MinLockWave = Mut.ScrnGT.RelativeWaveNum(MinLockWave);
+    return CurWave >= MinLockWave;
+}
+
 function int GetVoteIndex(PlayerController Sender, string Key, out string Value, out string VoteInfo)
 {
     local int result, v, i;
@@ -530,7 +564,7 @@ function int GetVoteIndex(PlayerController Sender, string Key, out string Value,
                 if ( Value ~= "ME" )
                     VotingHandler.VotedPlayer = Sender;
                 else
-                    VotingHandler.VotedPlayer = FindPlayer(Value);
+                    VotingHandler.VotedPlayer = FindPlayer(Value, Sender);
                 if ( VotingHandler.VotedPlayer == none ) {
                     Sender.ClientMessage(strPlayerNotFound);
                     SendPlayerList(Sender);
@@ -559,7 +593,7 @@ function int GetVoteIndex(PlayerController Sender, string Key, out string Value,
 
         Reason = "";
         Divide(Value, " ", Value, Reason);
-        VotingHandler.VotedPlayer = FindPlayer(Value);
+        VotingHandler.VotedPlayer = FindPlayer(Value, Sender);
         if ( VotingHandler.VotedPlayer == none ) {
             Sender.ClientMessage(strPlayerNotFound);
             SendPlayerList(Sender);
@@ -582,7 +616,7 @@ function int GetVoteIndex(PlayerController Sender, string Key, out string Value,
 
         Reason = "";
         Divide(Value, " ", Value, Reason);
-        VotingHandler.VotedPlayer = FindPlayer(Value);
+        VotingHandler.VotedPlayer = FindPlayer(Value, Sender);
         if ( VotingHandler.VotedPlayer == none ) {
             Sender.ClientMessage(strPlayerNotFound);
             SendPlayerList(Sender);
@@ -603,7 +637,7 @@ function int GetVoteIndex(PlayerController Sender, string Key, out string Value,
 
         Reason = "";
         Divide(Value, " ", Value, Reason);
-        VotingHandler.VotedPlayer = FindPlayer(Value);
+        VotingHandler.VotedPlayer = FindPlayer(Value, Sender);
         if ( VotingHandler.VotedPlayer == none ) {
             Sender.ClientMessage(strPlayerNotFound);
             SendPlayerList(Sender);
@@ -697,7 +731,7 @@ function int GetVoteIndex(PlayerController Sender, string Key, out string Value,
             return VOTE_LOCAL;
         else if ( Mut.bTeamsLocked )
             return VOTE_NOEFECT;
-        else if ( !Sender.PlayerReplicationInfo.bAdmin && (Mut.ScrnGT.WaveNum+1) < Mut.ScrnGT.RelativeWaveNum(Mut.LockTeamMinWave) ) {
+        else if ( !Sender.PlayerReplicationInfo.bAdmin && !CanLockTeam() ) {
             Sender.ClientMessage(strNotAvaliableATM);
             return VOTE_LOCAL;
         }
@@ -800,10 +834,8 @@ function int GetVoteIndex(PlayerController Sender, string Key, out string Value,
         return VOTE_DIFF;
     }
     else if ( Key == "R_KILL" ) {
-        if ( !Sender.PlayerReplicationInfo.bAdmin || Mut.SrvTourneyMode == 0 ) {
-            Sender.ClientMessage(strRCommands);
+        if ( !CheckReferee(Sender) )
             return VOTE_LOCAL;
-        }
 
         if ( Value == "" ) {
             SendPlayerList(Sender);
@@ -827,7 +859,6 @@ function int GetVoteIndex(PlayerController Sender, string Key, out string Value,
 
     return result;
 }
-
 
 function ApplyVoteValue(int VoteIndex, string VoteValue)
 {
@@ -1264,7 +1295,7 @@ defaultproperties
     strNotInTSC="Not avaliable in TSC"
     strCantEndWaveNow="Can't end the wave now"
     strEndWavePenalty="Team charged for premature wave end with $"
-    strRCommands="R_* commands can be executed only by Referee (Admin rights + Tourney Mode)"
+    strRCommands="R_* commands can be executed only by Referee (Spectator + Admin rights + Tourney Mode)"
     strBlamed="%p blamed %r"
     strBlamedBaron="%p blamed for blaming Baron"
     strWrongPerk="Wrong perk (%s)"

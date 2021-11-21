@@ -5,24 +5,19 @@
  * Copyright (c) 2012-2021 PU Developing IK, All Rights Reserved.
  *****************************************************************************/
 
-class ScrnBalance extends Mutator
+class ScrnBalance extends ScrnMutator
     Config(ScrnBalanceSrv);
 
 #exec OBJ LOAD FILE=ScrnAnims.ukx
 #exec OBJ LOAD FILE=ScrnTex.utx
 #exec OBJ LOAD FILE=ScrnAch_T.utx
 
-
-const VERSION = 96719;
-
 var ScrnBalance Mut; // pointer to self to use in static functions, i.e class'ScrnBalance'.default.Mut
 
 var const string BonusCapGroup;
 
 var localized string strBonusLevel;
-var deprecated localized string strVersion;
 var localized string strStatus, strStatus2;
-var localized string strSrvWarning, strSrvWarning2;
 var localized string strBetaOnly;
 var localized string strXPInitial, strXPProgress, strXPBonus;
 
@@ -52,7 +47,6 @@ var transient int MinLevel, MaxLevel;
 var transient int SrvMinLevel, SrvMaxLevel;
 var transient bool bInitialized;
 
-var KFGameType KF;
 var ScrnGameType ScrnGT;
 var bool bStoryMode; // Objective Game mode (KFStoryGameInfo)
 var bool bTSCGame; // Team Survival Competition (TSCGame)
@@ -67,8 +61,6 @@ struct SPickupReplacement {
 var array<SPickupReplacement> pickupReplaceArray;
 var const int FragReplacementIndex;
 var globalconfig bool bReplacePickups, bReplacePickupsStory;
-
-var class<ScrnFunctions> Functions;
 
 var protected  byte GameStartCountDown;
 
@@ -138,8 +130,6 @@ var protected transient byte CurWave; // used to check wave start / end
 
 var ScrnCustomWeaponLink CustomWeaponLink;
 
-var deprecated float FirstTickTime;
-var deprecated bool bTickExecuted;
 var transient bool bInitReplicationReceived;
 
 var Mutator ServerPerksMut, Doom3Mut;
@@ -282,7 +272,7 @@ var globalconfig bool bFixMusic;
 var globalconfig bool bRespawnDoors;
 
 var transient bool bTeamsLocked; // Set by ScrnGameType. Used for replication purposes.
-var globalconfig float LockTeamMinWave, LockTeamAutoWave;
+var globalconfig float LockTeamMinWave, LockTeamMinWaveTourney, LockTeamAutoWave;
 var globalconfig bool bForceSteamNames;
 
 var globalconfig bool bLogObjectsAtMapStart, bLogObjectsAtMapEnd;
@@ -314,6 +304,12 @@ enum EMutateCommand
 };
 
 var globalconfig bool bScrnWaves;
+
+struct SVersionedItem {
+    var string item;
+    var int v;
+};
+var array<SVersionedItem> Versions;
 
 // TSC stuff
 var globalconfig bool bNoTeamSkins;
@@ -414,11 +410,6 @@ simulated function InitSettings()
 
     // Achievements
     bUseAchievements = bool(AchievementFlags & ACH_ENABLE);
-    default.bUseAchievements = bUseAchievements;
-
-    default.bStoryMode = bStoryMode;
-    default.bTSCGame = bTSCGame;
-    default.bTestMap = bTestMap;
 
     // fixes critical bug:
     // Assertion failed: inst->KPhysRootIndex != INDEX_NONE && inst->KPhysLastIndex != INDEX_NONE [File:.\KSkeletal.cpp] [Line: 595]
@@ -484,14 +475,18 @@ static function MessageBonusLevel(PlayerController KPC)
     KPC.ClientMessage(msg);
 }
 
-static final function string GetVersionStr()
+function MessageVersion(PlayerController PC)
 {
-    return class'ScrnFunctions'.static.VersionStr(VERSION);
-}
-static function MessageVersion(PlayerController PC)
-{
-    if ( PC != none )
-        PC.ClientMessage(default.FriendlyName @ GetVersionStr());
+    local int i;
+
+    if ( PC == none )
+        return;
+
+    PC.ClientMessage("ScrN Shared Lib" @ VersionStr(LibVersion()));
+    PC.ClientMessage(FriendlyName @ GetVersionStr());
+    for ( i = 0; i < Versions.length; ++i ) {
+        PC.ClientMessage(Versions[i].item @ VersionStr(Versions[i].v));
+    }
 }
 
 function MessageStatus(PlayerController PC)
@@ -710,19 +705,6 @@ function RecalcAllPawnWeight()
     foreach DynamicActors(class'ScrnBalanceSrv.ScrnHumanPawn', P)
         P.RecalcWeight();
 }
-
-function WelcomeMessage(PlayerController PC)
-{
-    if ( PC != none ) {
-        MessageVersion(PC);
-        MessageStatus(PC);
-        if ( (Level.NetMode == NM_Standalone || Level.NetMode == NM_ListenServer) && class.outer.name == 'ScrnBalanceSrv' ) {
-            PC.ClientMessage(strSrvWarning);
-            PC.ClientMessage(strSrvWarning2);
-        }
-    }
-}
-
 
 // Setup the random ammo pickups
 function SetupPickups(optional bool bReduceAmount, optional bool bBoostAmount)
@@ -984,6 +966,9 @@ function SaveStats()
 {
     bNeedToSaveStats = false;
 
+    if ( bTestMap )
+        return;
+
     if ( ServerPerksMut == none )
         FindServerPerksMut();
     if ( ServerPerksMut == none )
@@ -1001,23 +986,6 @@ function SaveStats()
         ServerPerksMut.SetPropertyText("LastSavedWave", "-1");
     }
 }
-
-/*
-state StatsSaving
-{
-Begin:
-    log("Saving stats...", 'ScrnBalance');
-    ServerPerksMut.GotoState('');
-    sleep(1.0);
-    if ( ServerPerksMut.IsInState('EndGameTracker') ) {
-        log("Can't save stats!", 'ScrnBalance');
-    }
-    else {
-        ServerPerksMut.GotoState('EndGameTracker');
-    }
-    GotoState('');
-}
-*/
 
 function DynamicLevelCap()
 {
@@ -1394,19 +1362,19 @@ function bool CheckNotTourney(PlayerController Sender)
 
 function Mutate(string MutateString, PlayerController Sender)
 {
-    local string Value;
+    local string Key, Value;
     local int cmd, i;
 
     if ( MutateString == "" )
         return;
 
-    super.Mutate(MutateString, Sender);
-
-    Divide(MutateString, " ", MutateString, Value);
-    MutateString = caps(MutateString);
-    cmd = BinarySearchStr(MutateCommands, MutateString);
-    if ( cmd == -1 )
+    Key = caps(MutateString);
+    Divide(Key, " ", Key, Value);
+    cmd = BinarySearchStr(MutateCommands, Key);
+    if ( cmd == -1 ) {
+        super(Mutator).Mutate(MutateString, Sender);
         return; //unknown command
+    }
 
     switch ( EMutateCommand(cmd) ) {
         case MUTATE_ACCURACY:
@@ -1496,6 +1464,8 @@ function Mutate(string MutateString, PlayerController Sender)
                 ScrnGT.ScrnGameLength.ZedCmd(Sender, "LIST");
             break;
     }
+
+    super(Mutator).Mutate(MutateString, Sender);
 }
 
 // for debug purposes only
@@ -1792,10 +1762,10 @@ static function string GetDescriptionText(string PropName)
 function GetServerDetails( out GameInfo.ServerResponseLine ServerState )
 {
     // append the mutator name.
-    local int i;
+    local int i, j;
     local string wave_status;
 
-    super.GetServerDetails(ServerState);
+    super(Mutator).GetServerDetails(ServerState);
 
     if ( !bServerInfoVeterancy ) {
         for ( i=0; i<ServerState.ServerInfo.Length; ++i ) {
@@ -1805,10 +1775,18 @@ function GetServerDetails( out GameInfo.ServerResponseLine ServerState )
     }
 
     i = ServerState.ServerInfo.Length;
-    ServerState.ServerInfo.insert(i, 4);
+    ServerState.ServerInfo.insert(i, 5 + Versions.length);
+
+    ServerState.ServerInfo[i].Key = "ScrN Shared Lib";
+    ServerState.ServerInfo[i++].Value = VersionStr(LibVersion());
 
     ServerState.ServerInfo[i].Key = "ScrN Balance";
     ServerState.ServerInfo[i++].Value = GetVersionStr();
+
+    for ( j = 0; j < Versions.length; ++j ) {
+        ServerState.ServerInfo[i].Key = Versions[j].item;
+        ServerState.ServerInfo[i++].Value = VersionStr(Versions[j].v);
+    }
 
     ServerState.ServerInfo[i].Key = "Perk bonus level min";
     ServerState.ServerInfo[i++].Value = String(MinLevel);
@@ -2448,6 +2426,7 @@ function SetupRepLink(ClientPerkRepLink R)
         ScrnRep.ShopCategories.Length = 250; //wtf?
     ScrnRep.TotalCategories = ScrnRep.ShopCategories.Length;
     ScrnRep.TotalWeapons = ScrnRep.ShopInventory.Length;
+    ScrnRep.TotalZeds = ScrnRep.Zeds.Length;
     ScrnRep.TotalLocks = ScrnRep.Locks.Length;
     ScrnRep.TotalChars = ScrnRep.CustomChars.Length;
 }
@@ -2612,21 +2591,35 @@ function PostBeginPlay()
     local int i;
     local string s;
 
-    KF = KFGameType(Level.Game);
-    if (KF == none) {
-        Log("ERROR: Wrong GameType (requires KFGameType)", 'ScrnBalance');
-        Destroy();
-        return;
-    }
-
     if ( bLogObjectsAtMapStart )
         LogObjects();
 
+    super.PostBeginPlay();
+    if ( bDeleteMe )
+        return;
+
+    // CHECK & LOAD SERVERPERKS
+    if ( FindServerPerksMut() == none ) {
+        log("Loading ServerPerksMut...", 'ScrnBalance');
+        Level.Game.AddMutator(ServerPerksPkgName, false);
+        //check again
+        if ( FindServerPerksMut() == none ) {
+            warn("Unable to spawn " $ ServerPerksPkgName);
+            Level.Game.AddMutator("ScrnSP.ServerPerksMutSE", false);
+        }
+        if ( FindServerPerksMut() == none ) {
+            warn("ServerPerksMut is required for ScrnBalance");
+            Destroy();
+            return;
+        }
+    }
     if ( Mut != none && Mut != self )
         Mut.Destroy();
     Mut = self;
     default.Mut = self;
     class'ScrnBalance'.default.Mut = self; // in case of classes extended from ScrnBalance
+    // prematurely add myself to mutator chain, otherwise AutoLoadMutators won't find me in their PostBeginPlay()
+    ServerPerksMut.AddMutator(self);
 
     KF.MonsterCollection = KF.SpecialEventMonsterCollections[KF.GetSpecialEventType()]; // v1061 fix
     KF.bUseZEDThreatAssessment = true; // always use ScrnHumanPawn.AssessThreatTo()
@@ -2658,7 +2651,6 @@ function PostBeginPlay()
     s = caps(MapName);
     MapInfo = new(none, OriginalMapName) class'ScrnMapInfo';
     MapInfo.Mut = self;
-    bTestMap = MapInfo.bTestMap;
 
     if ( bForceEvent )
         ForceEvent();
@@ -2672,6 +2664,7 @@ function PostBeginPlay()
     AddToPackageMap("ScrnAnims.ukx");
     AddToPackageMap("ScrnSM.usx");
     AddToPackageMap("ScrnSnd.uax");
+    AddToPackageMap("ScrnShared.u");
 
     if ( bStoryMode ) {
         bTraderSpeedBoost = false;
@@ -2680,16 +2673,8 @@ function PostBeginPlay()
         SetMaxZombiesOnce();
     }
 
-    // CHECK & LOAD SERVERPERKS
-    if ( FindServerPerksMut() == none ) {
-        log("Loading ServerPerksMut...", 'ScrnBalance');
-        Level.Game.AddMutator(ServerPerksPkgName, false);
-        //check again
-        if ( FindServerPerksMut() == none )
-            log("Unable to spawn " $ ServerPerksPkgName, 'ScrnBalance');
-    }
-    bAllowAlwaysPerkChanges = bTestMap || ServerPerksMut.GetPropertyText("bAllowAlwaysPerkChanges") ~= "True";
-    bNoPerkChanges = bNoPerkChanges && !bAllowAlwaysPerkChanges;
+    if ( MapInfo.bTestMap )
+        SetTestMap();
 
     if ( !ClassIsChildOf(KF.PlayerControllerClass, class'ScrnBalanceSrv.ScrnPlayerController') ) {
         KF.PlayerControllerClass = class'ScrnBalanceSrv.ScrnPlayerController';
@@ -2733,8 +2718,9 @@ function PostBeginPlay()
                 MyVotingOptions.Mut = self;
             }
         }
-        else
+        else {
             log("Unable to spawn voting handler mutator", 'ScrnBalance');
+        }
     }
 
     LoadCustomWeapons();
@@ -2762,6 +2748,14 @@ function PostBeginPlay()
             KF.AddMutator(AutoLoadMutators[i], true);
         }
     }
+}
+
+function SetTestMap()
+{
+    bTestMap = true;
+    ServerPerksMut.GotoState('TestMap');
+    bAllowAlwaysPerkChanges = true;
+    bNoPerkChanges = false;
 }
 
 function ChangeGameDifficulty(byte NewDifficulty, optional bool bForce)
@@ -3380,14 +3374,48 @@ final static function int BinarySearchStr(out array<string> arr, string val)
     return -1;
 }
 
+function bool IsScrnAuthority()
+{
+    return true;
+}
+
+function RegisterVersion(string ItemName, int Version)
+{
+    local int i;
+
+    if ( Version == 0 ) {
+        warn(ItemName $ " has no version");
+        return;
+    }
+
+    log(ItemName @ VersionStr(Version), 'ScrnBalance');
+
+    for ( i = 0; i < Versions.length; ++i ) {
+        if ( Versions[i].item ~= ItemName ) {
+            if ( Versions[i].v != Version ) {
+                warn(ItemName $ " is already registered but versions differ: " $ VersionStr(Versions[i].v)  $ " <> "
+                        $ VersionStr(Version));
+            }
+            return;
+        }
+    }
+    Versions.insert(i, 1);
+    Versions[i].item = ItemName;
+    Versions[i].v = Version;
+}
+
+
 defaultproperties
 {
+    VersionNumber=96802
+    GroupName="KF-Scrn"
+    FriendlyName="ScrN Balance"
+    Description="Total rework of KF1 to make it modern and the best game in the world while sticking to the roots of the original."
+
     BonusCapGroup="ScrnBalance"
     strBonusLevel="Your effective perk bonus level is [%s]"
     strStatus="Your perk level: Visual=%v, Effective=[%b]. Server perk range is [%n..%x]."
     strStatus2="Alt.Burn=%a. MaxZombiesOnce=%m."
-    strSrvWarning="You are using dedicated server version of ScrnBalance that shouldn't be installed on local machines! Please Obtain client version from Steam Workshop."
-    strSrvWarning2="If you are getting version mismatch erros, delete KillingFloorSystemScrnBalanceSrv.u file."
     strBetaOnly="Only avaliable during Beta testing (bBeta=True)"
     strXPInitial="^G$Initial Perk Stats:"
     strXPProgress="^G$Perk Progression:"
@@ -3473,8 +3501,6 @@ defaultproperties
     pickupReplaceArray(47)=(oldClass=Class'KFMod.CrossbowPickup',NewClass=Class'ScrnBalanceSrv.ScrnCrossbowPickup')
     pickupReplaceArray(48)=(oldClass=Class'KFMod.KnifePickup',NewClass=Class'ScrnBalanceSrv.ScrnKnifePickup')
     FragReplacementIndex=45
-
-    Functions=Class'ScrnBalanceSrv.ScrnFunctions'
 
     Perks(0)=Class'ScrnBalanceSrv.ScrnVetFieldMedic'
     Perks(1)=Class'ScrnBalanceSrv.ScrnVetSupportSpec'
@@ -3579,6 +3605,7 @@ defaultproperties
     bUseDLCLevelLocks=True
     bFixMusic=True
     LockTeamMinWave=5.0
+    LockTeamMinWaveTourney=1.0
     LockTeamAutoWave=8.5
     bForceSteamNames=True
 
@@ -3614,14 +3641,6 @@ defaultproperties
     bOnlyDirtyReplication=False
     RemoteRole=ROLE_SimulatedProxy
     bNetNotify=True
-
-    GroupName="KF-Scrn"
-
-    FriendlyName="The ScrN Balance Server"
-    Description="This Mutator must be used only on servers. Clients should use workshop version"
-
-    // FriendlyName="Total Game Balance + Gunslinger Perk [ScrN]"
-    // Description="Balances perk levels, weapons and money. Fixes bugs, issues and exploits. Brings new Gunslinger perk and server-side achievements. Supports workshop weapons."
 
     HighlyDecorated(0)=(SteamID32=3907835,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(A=0),PostfixIconColor=(A=0))
     HighlyDecorated(1)=(SteamID32=4787302,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(A=0),PostfixIconColor=(A=0))

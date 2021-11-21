@@ -622,6 +622,13 @@ function MonsterDamaged(int Damage, KFMonster Victim, ScrnPlayerInfo InstigatorI
                 }
             }
         }
+        else if ( Victim.bDecapitated && !bWasDecapitated ) {
+            if  ( ClassIsChildOf(DamType, class'DamTypeM99HeadShot') && Level.Game.GameDifficulty >= 5
+                    && Victim.Health < 0.75 * Victim.HealthMax )
+            {
+                InstigatorInfo.ProgressAchievement('M99Kill3SC', 1);
+            }
+        }
     }
     else if ( ZombieFleshpound(Victim) != none ) {
         if ( Victim.bDecapitated && !bWasDecapitated && ClassIsChildOf(DamType, class'DamTypeAxe') )
@@ -823,7 +830,7 @@ function MonsterKilled(KFMonster Victim, ScrnPlayerInfo KillerInfo, class<KFWeap
             // Overkills
             if (  ClassIsChildOf(DamType, class'KFMod.DamTypeM99HeadShot') )
                 KillerInfo.ProgressAchievement('Overkill', 1);
-            else if ( Victim.LastDamageAmount > 6950 && ClassIsChildOf(DamType, class'KFMod.DamTypeHuskGunProjectileImpact') )
+            else if ( Victim.LastDamageAmount > 3600 && ClassIsChildOf(DamType, class'KFMod.DamTypeHuskGunProjectileImpact') )
                 KillerInfo.ProgressAchievement('Overkill1', 1);
             else if ( ClassIsChildOf(DamType, class'KFMod.DamTypeLawRocketImpact') )
                 KillerInfo.ProgressAchievement('Overkill2', 1);
@@ -892,13 +899,16 @@ function MonsterKilled(KFMonster Victim, ScrnPlayerInfo KillerInfo, class<KFWeap
             KillerInfo.ProgressAchievement('ScrakeUnnader', 1);
 
         if ( DamType.default.bSniperWeapon || ClassIsChildOf(DamType, class'KFMod.DamTypeCrossbuzzsawHeadShot') ) {
-            KillerInfo.ProgressAchievement('Snipe250SC', 1);
-            // Teamwork: InstantKill
-            if ( GameRules.MonsterInfos[index].KillAss1 != KillerInfo
+            if ( GameRules.MonsterInfos[index].bHeadshot ) {
+                KillerInfo.ProgressAchievement('Snipe250SC', 1);
+                // Teamwork: InstantKill
+                if ( GameRules.MonsterInfos[index].KillAss1 != KillerInfo
                     && GameRules.MonsterInfos[index].DamType1 != none && GameRules.MonsterInfos[index].DamType1.default.bSniperWeapon
                     && (GameRules.MonsterInfos[index].DamageFlags1 & DF_STUNNED) > 0
-                    && Level.TimeSeconds - GameRules.MonsterInfos[index].FirstHitTime < InstantKillTime ) {
-                GameRules.RewardTeamwork(KillerInfo, index, 'TW_SC_Instant');
+                    && Level.TimeSeconds - GameRules.MonsterInfos[index].FirstHitTime < InstantKillTime )
+                {
+                    GameRules.RewardTeamwork(KillerInfo, index, 'TW_SC_Instant');
+                }
             }
         }
         else if ( DamType.default.bIsPowerWeapon ) {

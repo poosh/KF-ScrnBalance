@@ -72,7 +72,7 @@ function CheckZedSpawnList()
             StinkyTargets[i] = FindClosestPathNode(StinkyAmmoPickups[i]);
             if ( bDebugStinkyPath ) {
                 log("Target for "
-                        $ class'ScrnFunctions'.static.RPad(ScrnAmmoPickup(StinkyAmmoPickups[i]).OriginalName, 14)
+                        $ class'ScrnF'.static.RPad(ScrnAmmoPickup(StinkyAmmoPickups[i]).OriginalName, 14)
                         $ " is " $ StinkyTargets[i],
                         class.name);
             }
@@ -617,7 +617,6 @@ defaultproperties
     bUseEndGameBoss=True
     MinBaseZ = -500
     MaxBaseZ =  500
-    OvertimeTeamMoneyPenalty=0
     ZedSpawnLoc=ZSLOC_AUTO
 
     BaseGuardianClasses(0)=class'ScrnBalanceSrv.TheGuardianRed'

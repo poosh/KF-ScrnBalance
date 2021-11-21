@@ -16,11 +16,12 @@ var bool bFinishedPenetrating;
 
 var KFMonster MonsterHeadAttached;
 var ProjectileBodyPart Giblet;
+var float NailedBleedTime;  // nailed monster bleeds out and dies in the given amount of seconds
 
 
-var KFMonster   NailedMonster; //monster that currently is attached to nail
+var transient KFMonster   NailedMonster; //monster that currently is attached to nail
 var transient KFMonster   OldNailedMonster; //used for replication
-var vector      NailHitDelta; // distance between hit's and victim's locations
+var transient vector      NailHitDelta; // distance between hit's and victim's locations
 var transient vector      NailingLocation; // location, where zed was hit by nail
 var transient float       NailedFlyDistance; // how far did zed flew away?
 var transient bool        bStillFlying; // NailedMonster is still flying (not pinned yet)
@@ -96,8 +97,7 @@ simulated function PostNetReceive()
     //log ("Nail.PostNetReceive NailedMonster="$NailedMonster @ "NailHitDelta="$NailHitDelta, 'ScrnBalance');
 
 
-    if( Giblet == none && MonsterHeadAttached != none )
-    {
+    if( Giblet == none && MonsterHeadAttached != none && MonsterHeadAttached.DetachedHeadClass != none ) {
        boneCoords = MonsterHeadAttached.GetBoneCoords( 'head' );
 
        Giblet = Spawn( Class'ProjectileBodyPart',,, boneCoords.Origin, Rotator(boneCoords.XAxis) );
@@ -174,6 +174,7 @@ function ReleaseMonster()
 
     NailedMonster.TakeDamage(2*Damage, Instigator, Location, MomentumTransfer * Normal(Velocity), MyDamageType);
 
+    class'ScrnBalance'.default.Mut.GameRules.BleedingMonster(NailedMonster, NailedBleedTime * (0.9 + 0.2*frand()));
     NailedMonster = none;
     NetUpdateTime = Level.TimeSeconds - 1;
 }
@@ -393,10 +394,6 @@ simulated function ProcessTouch (Actor Other, vector HitLocation)
     }
 }
 
-
-
-
-
 simulated function HitWall( vector HitNormal, actor Wall )
 {
     if ( !Wall.bStatic && !Wall.bWorldGeometry
@@ -496,6 +493,7 @@ defaultproperties
      ImpactSoundRefs(4)="ProjectileSounds.Bullets.Impact_Metal"
      ImpactSoundRefs(5)="ProjectileSounds.Bullets.Impact_Metal"
      Bounces=2
+     NailedBleedTime=20.0
      LifeSpanAfterHitWall=2.000000
      VelocityModMass=0.005000
      VelocityModHealth=0.120000

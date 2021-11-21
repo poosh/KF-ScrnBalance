@@ -139,8 +139,8 @@ simulated function ShowTimeMsg(optional bool bForceDisplay)
     else {
         if ( !bForceDisplay ) {
             // display every five minutes, or every minute during the last 5m
-            if ( (RemainingTime > 300 && class'ScrnFunctions'.static.mod(RemainingTime, 300) != 0)
-                    || class'ScrnFunctions'.static.mod(RemainingTime, 60) != 0 )
+            if ( (RemainingTime > 300 && class'ScrnF'.static.mod(RemainingTime, 300) != 0)
+                    || class'ScrnF'.static.mod(RemainingTime, 60) != 0 )
             {
                 return;
             }

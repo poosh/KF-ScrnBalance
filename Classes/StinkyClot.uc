@@ -208,7 +208,7 @@ function LogPath()
 
     SC = StinkyController(Controller);
     if ( SC != none ) {
-        log(class'ScrnFunctions'.static.RPad("Action " $ string(SC.ActionNum + 1) $ "/" $ SC.GetActionCount()$":", 15)
+        log(class'ScrnF'.static.RPad("Action " $ string(SC.ActionNum + 1) $ "/" $ SC.GetActionCount()$":", 15)
                 $ SC.GetActionStart() $ " => " $ SC.GetActionTarget(), class.name);
     }
     log("Path history:  " $ MoveHistory[2] $ " => "  $ MoveHistory[1] $ " => " $ MoveHistory[0], class.name);
