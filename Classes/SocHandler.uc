@@ -13,7 +13,7 @@ function WaveStarted(byte WaveNum)
     local ScrnPlayerInfo SPI;
     local VirusInfo Virus;
     local int CuredCount;
-    local int i, count;
+    local int count;
 
     Infected.length = 0;
     Healthy.length = 0;
@@ -32,8 +32,12 @@ function WaveStarted(byte WaveNum)
     }
 
     count = GameRules.PlayerCountInWave();
-    if ( count <= 1 ) {
-        // Do nothing. The mod not suited for solo play.
+    if ( count == 1 ) {
+        // Solo player is always infected. No asymptomatic cases.
+        // The game is not recommended for solo play.
+        if ( Healthy.length > 0 ) {
+            Infect(0, 0.25 + 0.5 * frand());
+        }
     }
     else if ( count == 2 ) {
         // infect one of the players with very light symphoms
@@ -43,21 +47,18 @@ function WaveStarted(byte WaveNum)
     }
     else {
         // infect every third person
-        count = count/3 - Infected.length - CuredCount;
-        if (count > 0) {
-            for ( i = 0; i < count; ++i ) {
-                InfectRand(frand());
-            }
-
-            count = GameRules.PlayerCountInWave() % 3;
-            if ( count > 0 ) {
-                // if there is the remainder, then infect one one person with light symptoms, e..g:
-                // in 4p game, there will be one fully infected + one with 40% of virus damage;
-                // in 5p game: one full + one with 80% sick damage;
-                // in 6p game: two fully infected;
-                // etc.
-                InfectRand(0.4 * count * frand());
-            }
+        count -= 3 * (Infected.length + CuredCount);
+        while ( count >= 3 ) {
+            InfectRand(frand());
+            count -= 3;
+        }
+        if ( count > 0 ) {
+            // if there is the remainder, then infect one one person with light symptoms, e..g:
+            // in 4p game, there will be one fully infected + one with 40% of virus damage;
+            // in 5p game: one full + one with 80% sick damage;
+            // in 6p game: two fully infected;
+            // etc.
+            InfectRand(0.4 * count * frand());
         }
     }
     SetTimer(1.0, true);
@@ -101,7 +102,7 @@ function GameWon(string MapName)
     if ( SpreadCounter == 0 && PlayerCount >= 3 ) {
         Ach2All('TW_Isolation', 1);
     }
-    if ( GameRules.Mut.BlameCounter == 0 && PlayerCount >= 6 ) {
+    if ( GameRules.Mut.BlameCounter == 0 && PlayerCount >= 3 ) {
         Ach2All('NoShit', 1, none, WinnerTeam);
     }
 

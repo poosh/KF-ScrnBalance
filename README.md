@@ -19,6 +19,36 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+### v9.69.01
+- Slightly lowered Zed count in Doom3 Wave 10
+- When playing **Social Isolation** solo, the player always gets sick. Playing SocIso solo is not recommended.
+- Reduced achievement player count requirement from 5-6 down to 3-4 where Zed health does not matter (thanks *Joe*)
+- "Unassisted" can be earned only on HoE (Kill 6p HoE FP)
+- "Kenny" requires a game with at least 5 waves.
+- Fixed an issue where Speedrun achievements could be earned in shorter games.
+- Fixed "All Your Cookies Belong To Me" and "Eye for an Eye" achievements (thanks *Joe*)
+- `b10Stars` is taken into account when granting perk-color achievements (Gold, Green, Blue, etc.)
+- Unlocking Blue perk achievement grants the Green one too. The same applies to Purple and Orange.
+  That solves an issue where players may jump from Gold directly to Blue by winning a game with huge end-game bonuses.
+
+#### ScrN Weapon Pack
+- Lowered **HRL** arming distance to 8m (down from 10m) due to reduced explosion radius
+- Fixed a bug in "AK Fanboy(-girl)" achievement
+
+#### ScrN Zed Pack
+- Fixed a bug that prevented **FP** raging from damage < 300 (behaved like FFP)
+- Pat/HardPat's **Radial Attack**:
+  - Removed ridiculous double damage to players with >50 armor
+  - Made radial damage more consistent and scaled across difficulties.
+    Originally, Pat did 54-108 damage to unarmored players, 108 - 216 to armored.
+    Now, Pat does 52-87 damage on Hard, Suicidal: 63-105, Hoe: 73-122
+  - Radial Attack can be performed only on Hard+ difficulty
+  - Damage delivery matches the animation: first, Pat attacks players on the left, then on the right.
+    Players straightly in front and at the back are attacked twice.
+- Sui/HoE **HardPat**, when low on health, can perform Radial Attack against a single player (thanks *Vrana*)
+- Increased HardPat impale strike range from 0.9 to ~1.9m (thanks *#NikC-*)
+
+
 ### v9.68
 - Introduced ScrN Shared Library - **ScrnShared.u** that is used by all mutators.
 - All ScrN mutators have the same version numbering and extended from `ScrnShared.ScrnMutator`.

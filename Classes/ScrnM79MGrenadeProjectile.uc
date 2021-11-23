@@ -246,7 +246,7 @@ function HealRadius(float HealAmount, float HealRadius, vector HealLocation)
 
 function SuccessfulHealAchievements()
 {
-    if ( HealedPlayers.Length >= 6 && Instigator != none )
+    if ( HealedPlayers.Length >= 4 && Instigator != none )
         class'ScrnAchCtrl'.static.Ach2Pawn(Instigator, 'ExplosionLove', 1);
 }
 

@@ -1,43 +1,48 @@
-Total rebalance of the game. Adds new guns, Gunslinger perk, and server-side achievements.
-Version 9.68
+Total rebalance of the game. Added new guns, Gunslinger perk, and server-side achievements.
+Version [b]9.69[/b].
 
 → [URL=http://steamcommunity.com/groups/ScrNBalance]OFFICIAL STEAM GROUP[/URL] ←
 → [URL=https://steamcommunity.com/groups/ScrNBalance/discussions/2/483368526570475472/]DOWNLOAD[/URL] ←
 → [URL=https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=VFARLRAL7CNJ4&lc=LV&item_name=Scrake%20Naders%20Community&item_number=ScrnBalance&currency_code=EUR&bn=PP%2dDonationsBF%3abtn_donateCC_LG%2egif%3aNonHosted]DONATE[/URL] ←
 
-[i]If you have any questions about this mod, then post them on the Official Steam Group forums.[/i]
-
-Main features:
+[h1]Main Features[/h1]
 [list]
+[*] Featuring [url=https://steamcommunity.com/groups/ScrNBalance/discussions/9/4580716151550023598/]eXpert Challenge Mode (XCM)[/url]
 [*] Featuring [url=https://steamcommunity.com/groups/ScrNBalance/discussions/2/4666237625653274273/]Social Isolation Mod[/url]
-[*] New perks: [b]Gunslinger[/b] and [b]Combat Medic[/b];
-[*] More than 400 custom [b]achievements[/b] can be earned;
-[*] Earn achievements to unlock weapons.
-[*] New weapons: Golden M79 Incendiary, Napalm Thrower, MK23 with laser sights, etc.;
-[*] Medic Grenade Launchers: M79M Medic GL, M4-203M Medic Rifle;
-[*] Quick Melee Bash feature.
-[*] Tactical Reload for Commando and Combat Medic.
-[*] Chainsaw consumes fuel and brings real massacre to the game;
-[*] Perk bonuses for custom weapons (the ones you can get via workshop);
-[*] Changing gun skins "on-the-fly"
-[*] Balances weapons and perks, making each perk useful in the game;
-[*] Alternate Burning Mechanism makes Firebug awesome (but not OP);
-[*] Perks support custom weapons: install a new weapon, add it to the config and receive perk bonuses for that;
-[*] Configurable spawn inventory and weapon prices;
-[*] New HUD (optional);
-[*] Manual Reloading (optional);
-[*] Grenade "Cooking" (optional);
-[*] Show Damage (optional)
-[*] User-defined soundtrack.
-[*] Voting for ending trader time, zed spawn boost, etc.
-[*] Configurable max zeds at once on the map. Now you can raise the previously hardcoded value of 32 zeds and fight against the 100-zed crowd!
+[*] New perks: [b]Gunslinger[/b] and [b]Combat Medic[/b].
+[*] Balances weapons and perks, making each perk useful in the game.
+[*] Perk levels up to 70 but no grinding required! Perk [i]bonus[/i] levels automatically adjust to the game difficulty and player count always to bring a balanced gameplay experience while allowing perk progression (making e-penis bigger).
+[*] Perk bonuses for custom weapons (the ones you get from Workshop)
+[*] New weapons: [b]Golden M79 Incendiary[/b], [b]Napalm Thrower[/b], [b]Laser Dual-MK23[/b], etc.
+[*] Medic Grenade Launchers: [b]M79M Medic GL[/b], [b]M4-203M Medic Rifle[/b].
+[*] [b]Tactical Reload[/b] for Assault Rifles, Sniper Rifles, SMG, and pistols.
+[*] [b]Quick Melee Bash[/b]
+[*] [b]Chainsaw[/b] consumes fuel and brings real massacre to the game.
+[*] Changing gun skins "on-the-fly", e.g., switch from the regular to golden AK-47 on a key press.
+[*] [b]30 game modes[/b] (some require [url=https://steamcommunity.com/groups/ScrNBalance/discussions/2/483368526570475472/]ScrN Brutal KF Bundle[/url])
+[*] Enhanced server-side zed hitboxes (less wonky headshots)
+[*] More than [b]400 achievements[/b].
 [/list]
 Most features are configurable (turn on only what you like).
 
-Detailed info on Group Page:
-[url=http://steamcommunity.com/groups/ScrNBalance/discussions/2/]ScrN Balance News Page[/url]
+[h1]Optional Features[/h1]
+[list]
+[*] Configurable spawn inventory and weapon prices.
+[*] Cool HUD
+[*] Manual Reloading
+[*] Grenade "Cooking"
+[*] Show Damage Numbers
+[*] User-defined soundtrack.
+[*] Voting to end trader time, boost zed spawn, etc.
+[*] Configurable max zeds at once on the map. Now you can raise the previously hardcoded value of 32 zeds and fight against a 100-zed crowd!
+[/list]
 
-[url=http://steamcommunity.com/sharedfiles/filedetails/?id=124250783]Guide on how to use custom weapons with this mutator[/url]
+[h1]Links[/h1]
+[list]
+[*] Detailed info on the [url=http://steamcommunity.com/groups/ScrNBalance/discussions/2/]ScrN Balance News Page[/url]
+[*] [url=http://steamcommunity.com/sharedfiles/filedetails/?id=124250783]A guide on how to use custom weapons with this mutator[/url]
+[*] Any questions about this mod should be posted on [url=https://steamcommunity.com/groups/ScrNBalance/discussions/1/]ScrN Balance Steam Group Forums[/url]. Your feedback is more than welcome!
+[/list]
 
-IMPORTANT NOTICE:
-[b][u]Make a backup of your ScrnBalance.ini and ServerPerks.ini files[/u][/b], if you make any changes to them. Otherwise, they will be overwritten by future releases.
+[h1]IMPORTANT NOTICE[/h1]
+[b][i]Make a backup of your Scrn*.ini and ServerPerks.ini config files[/i][/b] if you made any changes there! Otherwise, they will be overwritten by future releases.

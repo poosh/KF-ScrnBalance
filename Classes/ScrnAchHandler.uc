@@ -52,7 +52,7 @@ function PlayerDied(ScrnPlayerInfo DeadPlayerInfo, Controller Killer, class<Dama
 {
     bPerfectGame = false;
 
-    if ( DeadPlayerInfo.Deaths >= GameRules.Mut.KF.FinalWave * 0.8 )
+    if ( GameRules.Mut.KF.FinalWave >= 5 && DeadPlayerInfo.Deaths >= GameRules.Mut.KF.FinalWave * 0.8 )
         Ach2All('Kenny', 1);
 
     if ( Killer != none && Killer.Pawn != none && Killer.Pawn.IsA('Jason') )
@@ -228,22 +228,22 @@ function WaveEnded(byte WaveNum)
 
     }
 
-    if ( OnlyHealerSPI != none && TotalPlayers >= 4 )
+    if ( OnlyHealerSPI != none && TotalPlayers >= 3 )
         OnlyHealerSPI.ProgressAchievement('OnlyHealer', 1);
-    if ( AlivePlayers == 1 && TotalPlayers >= 4) {
+    if ( AlivePlayers == 1 && TotalPlayers >= 3) {
         LastAliveSPI.ProgressAchievement('ThinIcePirouette', 1);
         KFSteamStatsAndAchievements(SPI.PlayerOwner.SteamStatsAndAchievements).AddOnlySurvivorOfWave();
     }
 
     if ( TotalPlayers >= 3 && MinKills > max(1, MaxKills * 0.9) )
         Ach2All('NoI', 1);
-    if ( TotalPlayers >= 5 && MaxKills > SecondPlaceKills * 2.5 )
+    if ( TotalPlayers >= 3 && MaxKills > SecondPlaceKills * 2.5 )
         TopKillsSPI.ProgressAchievement('KillWhore', 1);
 
     if ( bPerfectWave )
         Ach2Alive('PerfectWave', 1);
 
-    if ( PlayersKilledByJason >= 3 )
+    if ( PlayersKilledByJason >= 2 )
         Ach2Alive('Friday13', 1);
 }
 
@@ -294,7 +294,9 @@ function GameWon(string MapName)
             if ( bPerfectGame )
                 SPI.ProgressAchievement('PerfectGame', 1);
 
-            if ( GameRules.Mut.KF.ShopList.Length >= 3 && Level.Game.GameReplicationInfo.ElapsedTime <= 2700 ) {
+            if ( GameRules.Mut.KF.FinalWave >= 10 && GameRules.Mut.KF.ShopList.Length >= 3
+                    && Level.Game.GameReplicationInfo.ElapsedTime <= 2700 )
+            {
                 SPI.ProgressAchievement('SpeedrunBronze', 1);
                 if ( Level.Game.GameReplicationInfo.ElapsedTime <= 2400) {
                     SPI.ProgressAchievement('SpeedrunSilver', 1);
@@ -963,7 +965,7 @@ function MonsterKilled(KFMonster Victim, ScrnPlayerInfo KillerInfo, class<KFWeap
 
         if ( (MC.KillAssistants.Length == 0 ||
                     (MC.KillAssistants.Length == 1 && MC.KillAssistants[0].PC == KillerInfo.PlayerOwner))
-                && GameRules.AlivePlayerCount() >= 6 )
+                && Level.Game.GameDifficulty >= 7 && GameRules.AlivePlayerCount() >= 6 )
         {
             KillerInfo.ProgressAchievement('Unassisted', 1);
         }

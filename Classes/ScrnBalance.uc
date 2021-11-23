@@ -900,6 +900,9 @@ function CheckMutators()
     for ( M = KF.BaseMutator; M != None; M = M.NextMutator ) {
         if ( M.IsA('ServerPerksMut') ) {
             ServerPerksMut = M;
+            if ( ScrnMutator(M) == none ) {
+                log("ScrnSP.ServerPerksMutSE is recommeded. Used: " $ M.class, 'ScrnBalance');
+            }
         }
     }
 }
@@ -3423,7 +3426,7 @@ function RegisterVersion(string ItemName, int Version)
 
 defaultproperties
 {
-    VersionNumber=96900
+    VersionNumber=96901
     GroupName="KF-Scrn"
     FriendlyName="ScrN Balance"
     Description="Total rework of KF1 to make it modern and the best game in the world while sticking to the roots of the original."

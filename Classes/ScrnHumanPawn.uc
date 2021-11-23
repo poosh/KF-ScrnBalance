@@ -654,6 +654,7 @@ function CheckPerkAchievements()
 {
     local ClientPerkRepLink StatRep;
     local int i;
+    local int StarsPerMedal;
 
     if ( Role < ROLE_Authority )
         return; // ROLE_AutonomousProxy can execute non-simulated functions too
@@ -675,24 +676,30 @@ function CheckPerkAchievements()
     if ( StatRep == none )
         return;
 
-    if ( KFPRI.ClientVeteranSkillLevel < 6 )
+    if ( class'ScrnBalance'.default.Mut.b10Stars )
+        StarsPerMedal = 10;
+    else
+        StarsPerMedal = 5;
+
+    if ( KFPRI.ClientVeteranSkillLevel <= StarsPerMedal )
         return;
 
-    if ( KFPRI.ClientVeteranSkillLevel >= 26 )
+    if ( KFPRI.ClientVeteranSkillLevel > 5*StarsPerMedal )
         class'ScrnAchCtrl'.static.ProgressAchievementByID(StatRep, 'PerkOrange', 1);
-    else if ( KFPRI.ClientVeteranSkillLevel >= 21 )
+    if ( KFPRI.ClientVeteranSkillLevel > 4*StarsPerMedal )
         class'ScrnAchCtrl'.static.ProgressAchievementByID(StatRep, 'PerkPurple', 1);
-    else if ( KFPRI.ClientVeteranSkillLevel >= 16 )
+    if ( KFPRI.ClientVeteranSkillLevel > 3*StarsPerMedal )
         class'ScrnAchCtrl'.static.ProgressAchievementByID(StatRep, 'PerkBlue', 1);
-    else if ( KFPRI.ClientVeteranSkillLevel >= 11 )
+    if ( KFPRI.ClientVeteranSkillLevel > 2*StarsPerMedal )
         class'ScrnAchCtrl'.static.ProgressAchievementByID(StatRep, 'PerkGreen', 1);
 
-    // Mr. Perky
+    // Mr. Golden Perky
     for ( i = 0; i < StatRep.CachePerks.length; ++i ) {
-        if ( StatRep.CachePerks[i].CurrentLevel < 6 )
-            return;
+        if ( StatRep.CachePerks[i].CurrentLevel <= StarsPerMedal )
+            break;
     }
-    class'ScrnAchCtrl'.static.ProgressAchievementByID(StatRep, 'MrPerky', 1);
+    if ( i == StatRep.CachePerks.length )
+        class'ScrnAchCtrl'.static.ProgressAchievementByID(StatRep, 'MrPerky', 1);
 }
 
 simulated function VeterancyChanged()
@@ -2305,43 +2312,16 @@ simulated function bool CanThrowWeapon()
     return false;
 }
 
-// store bonus ammo in pawn's class
 function TossWeapon(Vector TossVel)
 {
-    // local int a;
-    // local class<Ammunition> ac;
-    // local class<KFWeaponPickup> wpc;
     local KFWeapon w;
-    // local KFWeaponPickup wp;
-    // local Actor other;
 
     w = KFWeapon(Weapon);
     if ( w != none ) {
         w.bIsTier2Weapon = false; // This hack is needed because KFWeaponPickup.DroppedBy isn't set for tier 2 weapons.
         w.bIsTier3Weapon = w.default.bIsTier3Weapon; // restore default value from the hack in AddInventory()
     }
-
-
-    // if ( w != none && w.FireModeClass[0] != none && w.FireModeClass[0] != class'KFMod.NoFire' ) {
-        // wpc = class<KFWeaponPickup>(w.PickupClass);
-        // ac =  w.FireModeClass[0].default.AmmoClass;
-        // if ( ac != none )
-            // a = max(0, w.AmmoAmount(0) - ac.default.MaxAmmo); // bonus ammo
-    // }
-
     super.TossWeapon(TossVel);
-
-    // if ( Health > 0 && a > 0 ) {
-        // foreach DynamicActors(wpc, other) {
-            // wp = KFWeaponPickup(other);
-            // if ( wp != none && wp.Inventory == w ) {
-                // wp.AmmoAmount[0] = ac.default.MaxAmmo; // remove bonus ammo from pickup (it will be lost anyway)
-                // BonusAmmoClass = ac;
-                // BonusAmmoAmount = a;
-                // return;
-            // }
-        // }
-    // }
 }
 
 exec function SwitchToLastWeapon()
@@ -2572,8 +2552,10 @@ static function DropAllWeapons(Pawn P)
         for ( Inv = P.Inventory; Inv != none && ++c < 1000; Inv = NextInv ) {
             NextInv = Inv.Inventory;
             Weap = KFWeapon(Inv);
-            if (Weap != none && Weap.bCanThrow && !Weap.bKFNeverThrow /* && Weap.SellValue > 0 */ ) {
+            if (Weap != none && Weap.bCanThrow && !Weap.bKFNeverThrow ) {
                 //PlayerController(P.Controller).ClientMessage("Dropping " $ GetItemName(String(Weap.class)) $ "...");
+                Weap.bIsTier2Weapon = false; // This hack is needed because KFWeaponPickup.DroppedBy isn't set for tier 2 weapons.
+                Weap.bIsTier3Weapon = Weap.default.bIsTier3Weapon; // restore default value from the hack in AddInventory()
                 r.yaw += 4096 + 8192.0 * frand(); // 45 +/- 22.5 degrees
                 P.GetAxes(r,X,Y,Z);
                 TossVel = Vector(r);

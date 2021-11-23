@@ -764,7 +764,7 @@ function Killed(Controller Killer, Controller Killed, Pawn KilledPawn, class<Dam
 
 function DramaticEvent(float BaseZedTimePossibility, optional float DesiredZedTimeDuration)
 {
-    if (bZedTimeEnabled) {
+    if ( bZedTimeEnabled && BaseZedTimePossibility > 0 ) {
         super.DramaticEvent(BaseZedTimePossibility, DesiredZedTimeDuration);
     }
 }
