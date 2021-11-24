@@ -1028,8 +1028,15 @@ function SetReady(byte TeamIndex, bool bReady)
 
 function class<KFMonster> Str2Monster(string MonsterName)
 {
-    MonsterName = caps(MonsterName);
+    local class<KFMonster> M;
 
+    if ( Mut.ScrnGT != none && Mut.ScrnGT.ScrnGameLength != none ) {
+        M = Mut.ScrnGT.ScrnGameLength.FindActiveZedByAlias(MonsterName);
+        if ( M != none )
+            return M;
+    }
+
+    MonsterName = caps(MonsterName);
     if ( MonsterName == "CLOT" )
         return class'ZombieClot';
     if ( MonsterName == "CRAWLER" )

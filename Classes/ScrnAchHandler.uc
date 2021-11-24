@@ -237,7 +237,7 @@ function WaveEnded(byte WaveNum)
 
     if ( TotalPlayers >= 3 && MinKills > max(1, MaxKills * 0.9) )
         Ach2All('NoI', 1);
-    if ( TotalPlayers >= 3 && MaxKills > SecondPlaceKills * 2.5 )
+    if ( TotalPlayers >= 3 && MaxKills >= 50 && MaxKills > SecondPlaceKills * 2.5 )
         TopKillsSPI.ProgressAchievement('KillWhore', 1);
 
     if ( bPerfectWave )

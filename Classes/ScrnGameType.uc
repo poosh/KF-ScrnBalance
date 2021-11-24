@@ -17,6 +17,15 @@ const LOG_INFO      = 4;
 const LOG_DETAIL    = 5;
 const LOG_DEBUG     = 7;
 
+var byte BaseDifficulty;  // rounded GameDifficulty, cuz the latter is float (wtf?)
+const DIFF_MIN      = 1;
+const DIFF_BEGINNER = 1;
+const DIFF_NORMAL   = 2;
+const DIFF_HARD     = 4;
+const DIFF_SUICIDAL = 5;
+const DIFF_HOE      = 7;
+const DIFF_MAX      = 8; // HoE + Hardcore
+
 var const float MAX_DIST_SQ;
 
 enum EZedSpawnLocation {
@@ -638,7 +647,7 @@ function int ReduceDamage(int Damage, pawn injured, pawn instigatedBy, vector Hi
 
     if ( injured == instigatedBy ) {
         // self damage
-        if ( GameDifficulty <= 3 )
+        if ( BaseDifficulty < DIFF_HARD )
             Damage *= 0.25;
         else
             Damage *= 0.5;
@@ -991,17 +1000,17 @@ function bool RewardSurvivingPlayers()
 }
 
 function CalcDoshDifficultyMult() {
-    if ( GameDifficulty >= 5.0 ) {
-        DoshDifficultyMult = 0.65;   // Suicidal and Hell on Earth
+    if ( BaseDifficulty >= DIFF_SUICIDAL ) {
+        DoshDifficultyMult = 0.65;
     }
-    else if ( GameDifficulty >= 4.0 ) {
-        DoshDifficultyMult = 0.85;  // Hard
+    else if ( BaseDifficulty >= DIFF_HARD ) {
+        DoshDifficultyMult = 0.85;
     }
-    else if ( GameDifficulty <= 1.0 ) {
-        DoshDifficultyMult = 2.0;  // Beginner
+    else if ( BaseDifficulty >= DIFF_NORMAL ) {
+        DoshDifficultyMult = 1.0;
     }
     else {
-        DoshDifficultyMult = 1.0; // Normal
+        DoshDifficultyMult = 2.0;  // Beginner
     }
 
     if( ScrnGameLength != none ) {
@@ -1377,7 +1386,7 @@ function ZombieVolume FindSpawningVolumeForSquad(out array< class<KFMonster> > S
 
         case ZSLOC_AUTO:
         default:
-            if (BoringLocal < 2 && NumMonsters > 4 + (4 * GameDifficulty) && TotalMaxMonsters >= 20) {
+            if (BoringLocal < 2 && NumMonsters > 4 + (4 * BaseDifficulty) && TotalMaxMonsters >= 20) {
                 // many zeds already spawned, so spawn them more randomly
                 wDist = 0.15 * (1 + BoringLocal);
                 wUsage = 0.30;
@@ -1836,12 +1845,6 @@ protected function StartTourney()
 
     log("Starting TOURNEY MODE " $ TourneyMode, 'ScrnBalance');
 
-    if ( GameDifficulty < 4 ) {
-        // hard difficulty at least
-        GameDifficulty = 4;
-        ScrnGRI.GameDiff = GameDifficulty;
-        ScrnBalanceMut.SetLevels();
-    }
     TurboScale = 1.0;
     ScrnBalanceMut.SrvTourneyMode = TourneyMode;
     ScrnBalanceMut.bAltBurnMech = true;
@@ -2373,19 +2376,13 @@ function bool CheckEndGame(PlayerReplicationInfo Winner, string Reason)
     local PlayerController Player;
     local KFSteamStatsAndAchievements KFAch;
     local bool bSetAchievement;
-    local string MapName;
 
     EndTime = Level.TimeSeconds + EndTimeDelay;
 
     if ( WaveNum > FinalWave || (!bUseEndGameBoss && WaveNum == FinalWave) ) {
         GameReplicationInfo.Winner = Teams[0];
         ScrnGRI.EndGameType = 2;
-
-        if ( GameDifficulty >= 2.0 ) {
-            bSetAchievement = true;
-            // Get the MapName out of the URL
-            MapName = GetCurrentMapName(Level);
-        }
+        bSetAchievement = BaseDifficulty >= DIFF_NORMAL;
     }
     else  {
         ScrnGRI.EndGameType = 1;
@@ -2405,7 +2402,7 @@ function bool CheckEndGame(PlayerReplicationInfo Winner, string Reason)
             if ( bSetAchievement ) {
                 KFAch = KFSteamStatsAndAchievements(Player.SteamStatsAndAchievements);
                 if ( KFAch != none ) {
-                    KFAch.WonGame(MapName, GameDifficulty, FinalWave >= 10);
+                    KFAch.WonGame(ScrnBalanceMut.MapName, GameDifficulty, FinalWave >= 10);
                 }
             }
         }
@@ -2532,14 +2529,14 @@ function int ScaleMonsterCount(int SoloNormalCounter, optional int MaxCounter)
     }
 
     // scale number of zombies by difficulty
-    if ( GameDifficulty >= 7.0 ) // Hell on Earth
+    if ( BaseDifficulty >= DIFF_HOE )
         DifficultyMod=1.7;
-    else if ( GameDifficulty >= 5.0 ) // Suicidal
+    else if ( BaseDifficulty >= DIFF_SUICIDAL )
         DifficultyMod=1.5;
-    else if ( GameDifficulty >= 4.0 ) // Hard
+    else if ( BaseDifficulty >= DIFF_HARD )
         DifficultyMod=1.3;
     else
-        DifficultyMod=1.0;            // Normal and below
+        DifficultyMod=1.0;
 
     UsedNumPlayers = max( max(ScrnGRI.FakedPlayers,1), WavePlayerCount );
     // Scale the number of zombies by the number of players. Don't want to
@@ -3473,7 +3470,7 @@ State MatchInProgress
 
         NextSpawnTime = fclamp(KFLRules.WaveSpawnPeriod, 0.2, BoringStages[BoringStage].SpawnPeriod);
         NextSpawnTime /= 1.0 + (AlivePlayerCount - 1) * SpawnRatePlayerMod;
-        if ( GameDifficulty < 4 && NumMonsters >= 16 ) {
+        if ( BaseDifficulty < DIFF_HARD && NumMonsters >= 16 ) {
             // slower spawns on Normal difficulty if there are already many zeds spawned
             NextSpawnTime *= 2.0;
         }

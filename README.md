@@ -19,6 +19,23 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+### v9.69.02
+- **XCM** v1.00 - final (more or less) release
+- Winning a **Nightmare** game (GameLength=9) grants all four map achievements
+- Added `HLMult` to *ScrnGames.ini*
+- Fixed an issue where `MVOTE DIFF` before the game start didn't recalculate HL.
+- Another attempt to fix "All Your Cookies Belong To Me" and "Eye for an Eye" achievements
+- Fixed "Balls of Steel" achievement
+- "KillWhore" achievement requires at least 50 kills.
+- Zed aliases from *ScrnZeds.ini* can be used to blame monsters. For example:
+  `MVOTE BLAME "SH" for teleporting behind me`
+
+#### ScrN Weapon Pack
+- Increased **RPG7** undetonated rocket damage to 500 (up from 400)
+- Lowered **HRL** damage to 600 (down from 625)
+- Changed HK417 achievement requirement to kill 7 Fleshpounds (thanks *Joe*)
+
+
 ### v9.69.01
 - Slightly lowered Zed count in Doom3 Wave 10
 - When playing **Social Isolation** solo, the player always gets sick. Playing SocIso solo is not recommended.

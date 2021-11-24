@@ -122,10 +122,10 @@ simulated function string LocalGroupCaption(ClientPerkRepLink L, name Group)
 
 defaultproperties
 {
-    UniversalDescriptions(0)="Survive on %m in ScrN Balance mode"
+    UniversalDescriptions(0)="Survive on %m in any ScrN Balance game"
     UniversalDescriptions(1)="Survive on %m against Super/Custom specimens and Hardcore Level 5+"
     UniversalDescriptions(2)="Survive on %m in Turbo/Nightmare/SocIso/Custom game and HL 10+"
-    UniversalDescriptions(3)="Survive on %m in FTG/XCM/Doom3 game and HL 15+"
+    UniversalDescriptions(3)="Survive on %m in FTG/XCM/Nightmare/Doom3 game and HL 15+"
 
     UniversalFilters(0)=0
     UniversalFilters(1)=2 // custom monsters

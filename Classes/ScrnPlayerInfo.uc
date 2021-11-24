@@ -567,7 +567,7 @@ function int RegisterDamageType(KFWeapon Weapon, class<DamageType> DamType, bool
     // So only PrevOwner can be used to identify origonal owner
     if ( Weapon.Tier3WeaponGiver != none && Weapon.Tier3WeaponGiver != self ) {
         WeapInfos[i].PrevOwner = Weapon.Tier3WeaponGiver;
-        WeapInfos[i].bPrevOwnerDead = Weapon.Tier3WeaponGiver.IsDead();
+        WeapInfos[i].bPrevOwnerDead = Weapon.Tier3WeaponGiver.Pawn == none || Weapon.Tier3WeaponGiver.Pawn.Health <= 0;
     }
     WeapInfos[i].DamType = KFDamType;
     WeapInfos[i].TriggerRowHeadshots = 2;

@@ -235,7 +235,7 @@ final static function byte GetClientVeteranSkillLevel(KFPlayerReplicationInfo KF
 
 static function bool CanBeGrabbed(KFPlayerReplicationInfo KFPRI, KFMonster Other)
 {
-    return KFGameReplicationInfo(KFPRI.Level.GRI).GameDiff > 3; // Can't be grabbed on Normal and below
+    return KFGameReplicationInfo(KFPRI.Level.GRI).BaseDifficulty >= 4; // Can't be grabbed on Normal and below
 }
 
 final static function bool IsGunslingerEnabled()

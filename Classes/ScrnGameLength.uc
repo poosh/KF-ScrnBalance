@@ -30,6 +30,7 @@ struct SHL {
     var int HL;
 };
 var config array<SHL> HardcoreLevel;
+var config float HLMult;
 var config int LaterWavePct;
 var config float LaterWaveSpawnCooldown;
 var config byte MinDifficulty, MaxDifficulty;
@@ -115,19 +116,29 @@ function LoadGame(ScrnGameType MyGame)
         Game.MaximizeDebugLogging();
     }
 
-    HardcoreDifficulty = byte(Game.GameDifficulty + 0.1) + byte(Mut.bHardcore);
+    MinDifficulty = clamp(MinDifficulty, Game.DIFF_MIN, Game.DIFF_MAX);
+    if ( MaxDifficulty == 0 ) {
+        MaxDifficulty = Game.DIFF_MAX;
+    }
+    else {
+        MaxDifficulty = clamp(MaxDifficulty, MinDifficulty, Game.DIFF_MAX);
+    }
+    HardcoreDifficulty = Mut.GetHardcoreDifficulty();
     if ( HardcoreDifficulty < MinDifficulty ) {
         Mut.SetGameDifficulty(MinDifficulty);
-        HardcoreDifficulty = byte(Game.GameDifficulty + 0.1) + byte(Mut.bHardcore);
+        HardcoreDifficulty = Mut.GetHardcoreDifficulty();
     }
-    else if ( MaxDifficulty != 0 && HardcoreDifficulty > MaxDifficulty ) {
+    else if ( HardcoreDifficulty > MaxDifficulty ) {
         Mut.SetGameDifficulty(MaxDifficulty);
-        HardcoreDifficulty = byte(Game.GameDifficulty + 0.1) + byte(Mut.bHardcore);
+        HardcoreDifficulty = Mut.GetHardcoreDifficulty();
+    }
+    else {
+        ApplyGameDifficulty(HardcoreDifficulty);
     }
 
     for ( i = 0; i < Mutators.length; ++i ) {
         if ( Mutators[i] != "" )  {
-            Log("Loading additional mutator: " $ Mutators[i], 'ScrnGameLength');
+            Log("Loading additional mutator: " $ Mutators[i], class.name);
             Game.AddMutator(Mutators[i], true);
         }
     }
@@ -196,17 +207,6 @@ function LoadGame(ScrnGameType MyGame)
     if ( ZedVotes.length > 0 )
         AddVoting();
 
-    if ( HardcoreLevel.length > 0 ) {
-        j = 0;
-        for ( i = 0; i < HardcoreLevel.length; ++i ) {
-            if ( HardcoreDifficulty >= HardcoreLevel[i].Difficulty && j < HardcoreLevel[i].HL )
-                j = HardcoreLevel[i].HL;
-        }
-        if ( j > 0 ) {
-            Mut.GameRules.ForceHardcoreLevel(j);
-        }
-    }
-
     // this makes sure the Wave is never none
     if ( Waves.length == 0 ) {
         warn("ScrnGameLength: NO WAVES DEFINED!");
@@ -225,6 +225,32 @@ function LoadGame(ScrnGameType MyGame)
     if ( Game.bUseEndGameBoss ) {
         Game.FinalWave--;  // the boss wave is after the final wave, e.g., wave 11/10
     }
+}
+
+function bool ApplyGameDifficulty(byte HardcoreDifficulty)
+{
+    local int i, ForceHL;
+
+    if ( HardcoreDifficulty < MinDifficulty || HardcoreDifficulty > MaxDifficulty ) {
+        log("Game difficulty " $ HardcoreDifficulty $ " is out of founds ["$MinDifficulty$".." $ MaxDifficulty $ "]",
+                class.name);
+        return false;
+    }
+
+    if ( HardcoreLevel.length > 0 ) {
+        for ( i = 0; i < HardcoreLevel.length; ++i ) {
+            if ( HardcoreDifficulty >= HardcoreLevel[i].Difficulty && ForceHL < HardcoreLevel[i].HL )
+                ForceHL = HardcoreLevel[i].HL;
+        }
+    }
+
+    if ( ForceHL > 0 ) {
+        Mut.GameRules.ForceHardcoreLevel(ForceHL);
+    }
+    else {
+        Mut.GameRules.ScaleHardcoreLevel(HLMult);
+    }
+    return true;
 }
 
 function bool VersionCheck()
@@ -1216,6 +1242,7 @@ defaultproperties
     Waves(0)="Wave1"
     Zeds(0)="NormalZeds"
     FallbackZed=class'KFChar.ZombieClot_STANDARD'
+    HLMult=1.0
     BountyScale=1.0
     bLogStats=true
     LaterWavePct=70

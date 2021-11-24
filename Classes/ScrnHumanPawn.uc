@@ -341,7 +341,9 @@ function bool AddInventory( inventory NewItem )
 
     weap = KFWeapon(NewItem);
     if( weap != none ) {
-        weap.bIsTier3Weapon = true; // hack to set weap.Tier3WeaponGiver for all weapons
+        // hack to set weap.Tier3WeaponGiver for all weapons
+        weap.bPreviouslyDropped = false;
+        weap.bIsTier3Weapon = true;
     }
 
     if ( super.AddInventory(NewItem) ) {
@@ -624,7 +626,7 @@ simulated function ApplyWeaponStats(Weapon NewWeapon)
         }
 
         if ( Role == ROLE_Authority ) {
-            ScrnPC.bHadArmor = ScrnPC.bHadArmor && int(ShieldStrength) > 25;
+            ScrnPC.bHadArmor = ScrnPC.bHadArmor || ShieldStrength >= 26;
             ScrnPC.bCowboyForWave = ScrnPC.bCowboyForWave && bCowboyMode;
             UpdateSpecInfo();
         }
@@ -2312,15 +2314,20 @@ simulated function bool CanThrowWeapon()
     return false;
 }
 
+// fixes Tripwire's achievement crap
+static function OnWeaponDrop(KFWeapon w)
+{
+    if ( w == none )
+        return;
+
+    w.bPreviouslyDropped = false;  // needed to set Tier3WeaponGiver
+    w.bIsTier2Weapon = false; // This hack is needed because KFWeaponPickup.DroppedBy isn't set for tier 2 weapons.
+    w.bIsTier3Weapon = w.default.bIsTier3Weapon; // restore default value from the hack in AddInventory()
+}
+
 function TossWeapon(Vector TossVel)
 {
-    local KFWeapon w;
-
-    w = KFWeapon(Weapon);
-    if ( w != none ) {
-        w.bIsTier2Weapon = false; // This hack is needed because KFWeaponPickup.DroppedBy isn't set for tier 2 weapons.
-        w.bIsTier3Weapon = w.default.bIsTier3Weapon; // restore default value from the hack in AddInventory()
-    }
+    OnWeaponDrop(KFWeapon(Weapon));
     super.TossWeapon(TossVel);
 }
 
@@ -2554,8 +2561,7 @@ static function DropAllWeapons(Pawn P)
             Weap = KFWeapon(Inv);
             if (Weap != none && Weap.bCanThrow && !Weap.bKFNeverThrow ) {
                 //PlayerController(P.Controller).ClientMessage("Dropping " $ GetItemName(String(Weap.class)) $ "...");
-                Weap.bIsTier2Weapon = false; // This hack is needed because KFWeaponPickup.DroppedBy isn't set for tier 2 weapons.
-                Weap.bIsTier3Weapon = Weap.default.bIsTier3Weapon; // restore default value from the hack in AddInventory()
+                OnWeaponDrop(Weap);
                 r.yaw += 4096 + 8192.0 * frand(); // 45 +/- 22.5 degrees
                 P.GetAxes(r,X,Y,Z);
                 TossVel = Vector(r);

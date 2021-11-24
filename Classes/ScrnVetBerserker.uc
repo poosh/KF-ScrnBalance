@@ -11,7 +11,9 @@ static function int AddDamage(KFPlayerReplicationInfo KFPRI, KFMonster Injured, 
     if ( DmgType == default.DefaultDamageTypeNoBonus )
         return InDamage;
 
-    if ( Injured == none || (ZombieScrake(Injured) != none && KFGameReplicationInfo(KFPRI.Level.GRI).GameDiff >= 5.0) ) {
+    if ( Injured == none || (ZombieScrake(Injured) != none
+            && KFGameReplicationInfo(KFPRI.Level.GRI).BaseDifficulty >= 5) )
+    {
         // lower Buzzsaw damage vs humans and Scrakes on Sui+
         if ( ClassIsChildOf(DmgType, class'ScrnBalanceSrv.ScrnDamTypeCrossbuzzsaw') )
             InDamage *= 0.8; // 800 * 0.8 = 640

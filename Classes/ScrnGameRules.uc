@@ -110,7 +110,7 @@ struct SHardcoreMonster {
 var config float HL_Normal, HLMult_Normal, HL_Hard, HLMult_Hard, HL_Suicidal, HLMult_Suicidal, HL_HoE, HLMult_HoE;
 var config float HL_Hardcore, HLMult_Hardcore;
 var config array<SHardcoreMonster> HardcoreZeds, HardcoreBosses;
-var transient float ZedHLMult;
+var float ZedHLMult, HLScale;
 var config bool bBroadcastHL;
 
 struct SHardcoreGame
@@ -493,7 +493,8 @@ function GiveMapAchievements(optional String MapName)
                 || Mut.KF.KFGameLength >= 60);  // SocIso +
         bGiveHoeAch = HardcoreLevel >= 15 && ( Mut.KF.IsA('FtgGame')
                 || GameDoom3Kills > 0           // any doom game
-                || Mut.KF.KFGameLength == 7);   // XCM
+                || Mut.KF.KFGameLength == 7     // XCM
+                || Mut.KF.KFGameLength == 9);   // Nightmare
     }
 
     // end game bonus
@@ -1134,6 +1135,9 @@ function InitHardcoreLevel()
     local int i;
     local string GameClass;
 
+    if ( bForceHardcoreLevel )
+        return;
+
     GameClass = GetItemName(string(Level.Game.Class));
 
     if ( Level.Game.GameDifficulty >= 7 ) {
@@ -1165,9 +1169,10 @@ function InitHardcoreLevel()
         }
     }
 
-    HardcoreLevel = int(HardcoreLevelFloat+0.01);
-    // replicate to clients
-    Mut.HardcoreLevel = clamp(HardcoreLevel,0,255);
+    HardcoreLevelFloat *= HLScale;
+    ZedHLMult *= HLScale;
+
+    SetHardcoreLevel(HardcoreLevelFloat);
 }
 
 function RaiseHardcoreLevel(float inc, string reason)
@@ -1198,14 +1203,29 @@ function RaiseHardcoreLevel(float inc, string reason)
     }
 }
 
+function SetHardcoreLevel(float value)
+{
+    HardcoreLevelFloat = value;
+    HardcoreLevel = int(HardcoreLevelFloat+0.01);
+    Mut.HardcoreLevel = clamp(HardcoreLevel,0,255);  // replicate to clients
+}
+
 function ForceHardcoreLevel(int value)
 {
-    HardcoreLevel = value;
-    HardcoreLevelFloat = value;
     bForceHardcoreLevel = true;
-    // replicate to clients
-    Mut.HardcoreLevel = clamp(HardcoreLevel,0,255);
+    SetHardcoreLevel(value);
     log("Force HL="$HardcoreLevel);
+}
+
+function ScaleHardcoreLevel(float scale)
+{
+    if ( scale < 0.0001 || scale ~= 1.0 )
+        return;
+
+    HLScale = scale;
+    ZedHLMult *= scale;
+    SetHardcoreLevel(HardcoreLevelFloat * scale);
+    log("HL Scale="$scale);
 }
 
 function WeaponReloaded(PlayerController WeaponOwner, KFWeapon W)
@@ -1748,6 +1768,7 @@ defaultproperties
     HLMult_HoE=1.25
     HL_Hardcore=1
     HLMult_Hardcore=0.15
+    HLScale=1.0
 
     HardcoreBosses(00)=(MonsterClass="HardPat",HL=2)
     HardcoreBosses(01)=(MonsterClass="HardPatC",HL=2)
@@ -1771,32 +1792,33 @@ defaultproperties
     HardcoreZeds(04)=(MonsterClass="Brute",HL=2.0)
     HardcoreZeds(05)=(MonsterClass="FemaleFP",HL=2.5)
     HardcoreZeds(06)=(MonsterClass="FemaleFP_MKII",HL=2.5)
-    HardcoreZeds(07)=(MonsterClass="ZombieSuperStalker",HL=0.3)
-    HardcoreZeds(08)=(MonsterClass="ZombieSuperGorefast",HL=0.3)
-    HardcoreZeds(09)=(MonsterClass="GorefastG",HL=0.3)
-    HardcoreZeds(10)=(MonsterClass="ZombieSuperCrawler",HL=0.3)
-    HardcoreZeds(11)=(MonsterClass="ZombieSuperBloat",HL=0.3)
-    HardcoreZeds(12)=(MonsterClass="BloatG",HL=0.3)
-    HardcoreZeds(13)=(MonsterClass="ZombieSuperSiren",HL=1.0)
-    HardcoreZeds(14)=(MonsterClass="ZombieSuperFP",HL=1.0)
-    HardcoreZeds(15)=(MonsterClass="ZombieSuperHusk",HL=1.4)
-    HardcoreZeds(16)=(MonsterClass="HuskG",HL=1.4)
-    HardcoreZeds(17)=(MonsterClass="ZombieSuperScrake",HL=1.4)
-    HardcoreZeds(18)=(MonsterClass="Imp",HL=0.3)
-    HardcoreZeds(19)=(MonsterClass="Pinky",HL=0.5)
-    HardcoreZeds(20)=(MonsterClass="Commando",HL=0.5)
-    HardcoreZeds(21)=(MonsterClass="Revenant",HL=0.7)
-    HardcoreZeds(22)=(MonsterClass="Archvile",HL=1)
-    HardcoreZeds(23)=(MonsterClass="HellKnight",HL=1)
-    HardcoreZeds(24)=(MonsterClass="Mancubus",HL=1)
-    HardcoreZeds(25)=(MonsterClass="Sabaoth",HL=1)
-    HardcoreZeds(26)=(MonsterClass="Vagary",HL=1)
-    HardcoreZeds(27)=(MonsterClass="Maledict",HL=1)
-    HardcoreZeds(28)=(MonsterClass="HunterInvul",HL=1)
-    HardcoreZeds(29)=(MonsterClass="HunterBerserk",HL=1)
-    HardcoreZeds(30)=(MonsterClass="HunterHellTime",HL=1)
-    HardcoreZeds(31)=(MonsterClass="Guardian",HL=1)
-    HardcoreZeds(32)=(MonsterClass="Cyberdemon",HL=1)
+    HardcoreZeds(07)=(MonsterClass="GorefastG",HL=0.3)
+    HardcoreZeds(08)=(MonsterClass="BloatG",HL=0.3)
+    HardcoreZeds(09)=(MonsterClass="SirenG",HL=1.0)
+    HardcoreZeds(10)=(MonsterClass="HuskG",HL=1.4)
+    HardcoreZeds(11)=(MonsterClass="ZombieSuperCrawler",HL=0.3)
+    HardcoreZeds(12)=(MonsterClass="ZombieSuperStalker",HL=0.3)
+    HardcoreZeds(13)=(MonsterClass="ZombieSuperGorefast",HL=0.3)
+    HardcoreZeds(14)=(MonsterClass="ZombieSuperBloat",HL=0.3)
+    HardcoreZeds(15)=(MonsterClass="ZombieSuperSiren",HL=1.0)
+    HardcoreZeds(16)=(MonsterClass="ZombieSuperFP",HL=1.0)
+    HardcoreZeds(17)=(MonsterClass="ZombieSuperHusk",HL=1.4)
+    HardcoreZeds(18)=(MonsterClass="ZombieSuperScrake",HL=1.4)
+    HardcoreZeds(19)=(MonsterClass="Imp",HL=0.3)
+    HardcoreZeds(20)=(MonsterClass="Pinky",HL=0.5)
+    HardcoreZeds(21)=(MonsterClass="Commando",HL=0.5)
+    HardcoreZeds(22)=(MonsterClass="Revenant",HL=0.7)
+    HardcoreZeds(23)=(MonsterClass="Archvile",HL=1)
+    HardcoreZeds(24)=(MonsterClass="HellKnight",HL=1)
+    HardcoreZeds(25)=(MonsterClass="Mancubus",HL=1)
+    HardcoreZeds(26)=(MonsterClass="Sabaoth",HL=1)
+    HardcoreZeds(27)=(MonsterClass="Vagary",HL=1)
+    HardcoreZeds(28)=(MonsterClass="Maledict",HL=1)
+    HardcoreZeds(29)=(MonsterClass="HunterInvul",HL=1)
+    HardcoreZeds(30)=(MonsterClass="HunterBerserk",HL=1)
+    HardcoreZeds(31)=(MonsterClass="HunterHellTime",HL=1)
+    HardcoreZeds(32)=(MonsterClass="Guardian",HL=1)
+    HardcoreZeds(33)=(MonsterClass="Cyberdemon",HL=1)
 
     HardcoreGames(0)=(GameClass="ScrnStoryGameInfo",HL=3)
     HardcoreGames(1)=(GameClass="FtgGame",HL=6)

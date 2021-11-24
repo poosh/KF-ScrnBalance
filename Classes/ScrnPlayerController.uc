@@ -1098,7 +1098,7 @@ function ResetWaveStats()
     bCowboyForWave = true;
     BeggingForMoney = 0;
     bShoppedThisWave = false;
-    bHadArmor = bHadArmor || (KFPRI != none    && KFPRI.ClientVeteranSkill != none
+    bHadArmor = bHadArmor || (KFPRI != none && KFPRI.ClientVeteranSkill != none
         && KFPRI.ClientVeteranSkill.static.ReduceDamage(KFPRI, KFPawn(Pawn), none, 100, none) < 100);
 
     if ( ScrnPawn != none )

@@ -2790,32 +2790,31 @@ function ChangeGameDifficulty(byte NewDifficulty, optional bool bForce)
     }
 }
 
-function SetGameDifficulty(byte Difficulty)
+function byte GetHardcoreDifficulty()
+{
+    return byte(KF.GameDifficulty + 0.1) + byte(bHardcore);
+}
+
+function SetGameDifficulty(byte HardcoreDifficulty)
 {
     local KFGameReplicationInfo KFGRI;
     local bool bNewHardcore;
+    local byte Difficulty;
 
-    if ( ScrnGT != none && ScrnGT.ScrnGameLength != none && (Difficulty < ScrnGT.ScrnGameLength.MinDifficulty
-            || (ScrnGT.ScrnGameLength.MaxDifficulty != 0 && Difficulty > ScrnGT.ScrnGameLength.MaxDifficulty)) )
-    {
-        log("Game difficulty " $ Difficulty $ " is out of founds ["$ScrnGT.ScrnGameLength.MinDifficulty$".."
-                $ ScrnGT.ScrnGameLength.MaxDifficulty $ "]", class.name);
-        return;
-    }
-
-    switch (Difficulty) {
+    switch (HardcoreDifficulty) {
         case 1:
         case 2:
         case 4:
         case 5:
         case 7:
             bNewHardcore = false;
+            Difficulty = HardcoreDifficulty;
             break;
 
         case 6:
         case 8:
             bNewHardcore = true;
-            Difficulty--;
+            Difficulty = HardcoreDifficulty - 1;
             break;
 
         default:
@@ -2823,12 +2822,17 @@ function SetGameDifficulty(byte Difficulty)
             return;
     }
 
+    if ( ScrnGT != none ) {
+        if ( ScrnGT.ScrnGameLength != none && !ScrnGT.ScrnGameLength.ApplyGameDifficulty(HardcoreDifficulty) )
+            return;
+        ScrnGT.BaseDifficulty = Difficulty;
+    }
     bHardcore = bNewHardcore;
     KF.GameDifficulty = Difficulty;
     KFGRI = KFGameReplicationInfo(KF.GameReplicationInfo);
     if ( KFGRI != none ) {
-        KFGRI.BaseDifficulty = KF.GameDifficulty;  // only initial replication
-        KFGRI.GameDiff = KF.GameDifficulty;  // only initial replication
+        KFGRI.BaseDifficulty = Difficulty;  // only initial replication
+        KFGRI.GameDiff = Difficulty;  // only initial replication
         if ( ScrnGT != none ) {
             ScrnGT.ScrnGRI.NewDifficulty = Difficulty;  // dirty replication
         }
@@ -3426,7 +3430,7 @@ function RegisterVersion(string ItemName, int Version)
 
 defaultproperties
 {
-    VersionNumber=96901
+    VersionNumber=96902
     GroupName="KF-Scrn"
     FriendlyName="ScrN Balance"
     Description="Total rework of KF1 to make it modern and the best game in the world while sticking to the roots of the original."

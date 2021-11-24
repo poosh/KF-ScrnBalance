@@ -642,7 +642,6 @@ function bool CheckEndGame(PlayerReplicationInfo Winner, string Reason)
     local PlayerController PC;
     local KFPlayerController KFPC;
     local bool bSetAchievement;
-    local string MapName;
     local String EndSong;
 
     if ( Reason == "TeamScoreLimit" ) {
@@ -654,8 +653,9 @@ function bool CheckEndGame(PlayerReplicationInfo Winner, string Reason)
             TSCGRI.Winner = Teams[1];
             EndSong = SongBlueWin;
         }
-        else
+        else {
             return false;
+        }
         TSCGRI.EndGameType = 2;
         ScrnBalanceMut.BroadcastMessage(TeamInfo(TSCGRI.Winner).GetHumanReadableName() $ " team won the game on wave "
                 $ string(WaveNum+1), true);
@@ -665,14 +665,7 @@ function bool CheckEndGame(PlayerReplicationInfo Winner, string Reason)
             TSCGRI.Winner = none;
             TSCGRI.EndGameType = 2;
             EndSong = SongBothWin;
-
-            if ( GameDifficulty >= 2.0 )
-            {
-                bSetAchievement = true;
-
-                // Get the MapName out of the URL
-                MapName = GetCurrentMapName(Level);
-            }
+            bSetAchievement = BaseDifficulty >= DIFF_NORMAL;
         }
         else {
             TSCGRI.EndGameType = 1;
@@ -701,8 +694,8 @@ function bool CheckEndGame(PlayerReplicationInfo Winner, string Reason)
                     && (PC.PlayerReplicationInfo.Team == GameReplicationInfo.Winner
                         || GameReplicationInfo.Winner == none) )
             {
-                KFSteamStatsAndAchievements(PC.SteamStatsAndAchievements).WonGame(MapName, GameDifficulty,
-                        KFGameLength == GL_Long);
+                KFSteamStatsAndAchievements(PC.SteamStatsAndAchievements).WonGame(ScrnBalanceMut.MapName,
+                        GameDifficulty, false);
             }
 
             KFPC = KFPlayerController(PC);
