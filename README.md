@@ -19,6 +19,18 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+### v9.69.03
+- Refactored *ScrnBalanceSrv.ini* by commenting out the default values. That allows users to override a default value
+  by uncommenting and changing the value. Keeping a value commented means "follow the default value" - if the default
+  value changes in next version, it gets automatically applied on the user side without updating the config.
+- Added `MaxPauseTime` and `MaxPauseTimePerWave` to *ScrnBalanceSrv.ini*
+- `bForceManualReload` deprecated
+- `VoteSquad` / `MVOTE SPAWN` deprecated due to bugs and exploits
+- **Short & Dramatic** game moved to GameLength=62 (from 82) to better indicate that it uses Social Isolation.
+- **FTG On The Clock** v2.30 - replaced the introduction wave with modified version of XCM1.
+- Fixed an issue where sometimes a healing cloud did not get replicated to other players.
+
+
 ### v9.69.02
 - **XCM** v1.00 - final (more or less) release
 - Winning a **Nightmare** game (GameLength=9) grants all four map achievements

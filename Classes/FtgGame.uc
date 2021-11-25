@@ -21,18 +21,17 @@ var transient array<SPathRedirect> StinkyPaths;
 
 event InitGame( string Options, out string Error )
 {
-    // setting bCustomScoreboard=true tells TSCGame to do NOT set TSC Scoreboard
-    bCustomScoreboard = bSingleTeamGame;
     super.InitGame(Options, Error);
-    HUDType = string(Class'FtgHUD');
 
     if ( bSingleTeamGame ) {
         FriendlyFireScale = 0;
         bSingleTeam = true;
         bTeamWiped = true;
-        bUseEndGameBoss = true;
-        OvertimeWaves = 1; // boss wave
-        SudDeathWaves = 0;
+        if ( ScrnGameLength == none ) {
+            bUseEndGameBoss = true;
+            OvertimeWaves = 1; // boss wave
+            SudDeathWaves = 0;
+        }
     }
 }
 
@@ -614,11 +613,13 @@ defaultproperties
     ScreenShotName="TSC_T.Team.SteampunkLogo"
 
     bSingleTeamGame=true
-    bUseEndGameBoss=True
+    bUseEndGameBoss=true
     MinBaseZ = -500
     MaxBaseZ =  500
     ZedSpawnLoc=ZSLOC_AUTO
 
+    HUDType="ScrnBalanceSrv.FtgHUD"
+    ScoreBoardType="ScrnBalanceSrv.ScrnScoreBoard"
     BaseGuardianClasses(0)=class'ScrnBalanceSrv.TheGuardianRed'
     BaseGuardianClasses(1)=class'ScrnBalanceSrv.TheGuardianBlue'
     StinkyClass=class'ScrnBalanceSrv.StinkyClot'

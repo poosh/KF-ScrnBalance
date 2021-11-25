@@ -43,7 +43,7 @@ struct SClanTags {
 var config array<SClanTags> ClanTags;
 var config bool bClanCheck;
 
-var bool bCustomHUD, bCustomScoreboard;
+var deprecated bool bCustomHUD, bCustomScoreboard;
 
 var bool bPvP, bNoBases;
 var bool bCtryTags; // indicates if Country Tags mutator is running
@@ -174,12 +174,6 @@ event InitGame( string Options, out string Error )
     if ( MaxZombiesOnce < 48 && !bSingleTeamGame && ShopList.Length > 1 ) {
         MaxZombiesOnce = 48;
     }
-
-    // todo - allow mutators to alter those settings
-    if ( !bCustomHUD )
-        HUDType = string(Class'ScrnBalanceSrv.TSCHUD');
-    if ( !bCustomScoreboard )
-        ScoreBoardType = string(Class'ScrnBalanceSrv.TSCScoreBoard');
 }
 
 
@@ -1302,12 +1296,9 @@ defaultproperties
     SongBothWin="KF_Containment"
     SongBothWiped="KF_Hunger"
 
-    //GameMessageClass=Class'ScrnBalanceSrv.TSCGameMessages'
     GameReplicationInfoClass=Class'ScrnBalanceSrv.TSCGameReplicationInfo'
-    //PlayerControllerClass=class'ScrnBalanceSrv.TSCPlayerController'
-    //PlayerControllerClassName="ScrnBalanceSrv.TSCPlayerController"
-    //HUDType="ScrnBalanceSrv.TSCHUD" // set it in InitGame() after ServerPerksMut loading to enable chat smiles
-    //LoginMenuClass="ScrnBalanceSrv.TSCInvasionLoginMenu"
+    HUDType="ScrnBalanceSrv.TSCHUD"
+    ScoreBoardType="ScrnBalanceSrv.TSCScoreBoard"
     BaseGuardianClasses(0)=class'ScrnBalanceSrv.TSCGuardianRed'
     BaseGuardianClasses(1)=class'ScrnBalanceSrv.TSCGuardianBlue'
 

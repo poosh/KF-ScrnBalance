@@ -1850,7 +1850,6 @@ protected function StartTourney()
     ScrnBalanceMut.bAltBurnMech = true;
     ScrnBalanceMut.bReplacePickups = true;
     ScrnBalanceMut.bNoRequiredEquipment = false;
-    ScrnBalanceMut.bForceManualReload = false;
     ScrnBalanceMut.bDynamicLevelCap = false;
     ScrnBalanceMut.bAllowBehindView = false;
 
@@ -3696,8 +3695,7 @@ defaultproperties
 
     PathWhisps(0)="KFMod.RedWhisp"
     PathWhisps(1)="KFMod.RedWhisp"
-    // Cannot set HUDType by default or ServerPerksMut won't enable smiley tags
-    // HUDType="ScrnBalanceSrv.ScrnHUD"
+    HUDType="ScrnBalanceSrv.ScrnHUD"
     ScoreBoardType="ScrnBalanceSrv.ScrnScoreBoard"
     LoginMenuClass="ScrnBalanceSrv.ScrnInvasionLoginMenu"
     PlayerControllerClass=Class'ScrnBalanceSrv.ScrnPlayerController'

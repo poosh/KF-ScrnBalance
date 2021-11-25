@@ -431,6 +431,7 @@ defaultproperties
     bUpdateSimulatedPosition=true
     bSkipActorPropertyReplication=true
     bNetTemporary=false  // Need to be false, otherwise no replication will happen after the spawn
+    bAlwaysRelevant=true
 
     DrawScale=2.0
     bUnlit=false

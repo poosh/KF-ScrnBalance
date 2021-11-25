@@ -9,7 +9,7 @@ const VOTE_ENDTRADE     = 3;
 const VOTE_BLAME        = 4;
 const VOTE_KICK         = 5;
 const VOTE_BORING       = 6;
-const VOTE_SPAWN        = 7;
+const VOTE_SPAWN        = 7;  // deprecated
 const VOTE_ENDWAVE      = 8;
 const VOTE_SPEC         = 9;
 const VOTE_READY        = 10;
@@ -215,24 +215,6 @@ function SendPerkList(PlayerController Sender)
     }
 }
 
-function SendSquadList(PlayerController Sender)
-{
-    local int i;
-    local string s;
-
-    if ( Mut.Squads.Length == 0 ) {
-        Sender.ClientMessage(strOptionDisabled);
-        return;
-    }
-
-    s = strSquadList @ Mut.Squads[0].SquadName;
-    for ( i=1; i<Mut.Squads.Length; ++i ) {
-        s = s $ ", " $ Mut.Squads[i].SquadName;
-    }
-
-    Sender.ClientMessage(s);
-}
-
 static function bool TryStrToInt(string str, out int val)
 {
     val = int(str);
@@ -432,10 +414,15 @@ function ApplyMapVote(string ServerTravelString)
     Level.ServerTravel(ServerTravelString, false);
 }
 
+function bool IsReferee(PlayerController Sender)
+{
+    return Sender.PlayerReplicationInfo.bAdmin && Sender.PlayerReplicationInfo.bOnlySpectator
+            && Mut.SrvTourneyMode != 0;
+}
+
 function bool CheckReferee(PlayerController Sender)
 {
-    if ( Sender.PlayerReplicationInfo.bAdmin && Sender.PlayerReplicationInfo.bOnlySpectator
-            && Mut.SrvTourneyMode != 0 )
+    if ( IsReferee(Sender) )
         return true;
 
     Sender.ClientMessage(strRCommands);
@@ -497,25 +484,32 @@ function int GetVoteIndex(PlayerController Sender, string Key, out string Value,
         }
     }
     else if ( Key == "PAUSE" || (Level.Pauser != none && Key == "RESUME") ) {
-        if ( !Mut.bAllowPauseVote ) {
-            Sender.ClientMessage(strOptionDisabled);
+        if ( !Mut.bAllowPauseVote && !Mut.CheckAdmin(Sender) ) {
             return VOTE_NOEFECT;
         }
-        if ( Mut.bPauseTraderOnly && !Mut.KF.bTradingDoorsOpen && Mut.KF.IsInState('MatchInProgress') ) {
+        if ( Mut.bPauseTraderOnly && !Mut.KF.bTradingDoorsOpen && Mut.KF.IsInState('MatchInProgress')
+                && !Mut.IsAdmin(Sender) )
+        {
             Sender.ClientMessage(strPauseTraderOnly);
             return VOTE_NOEFECT;
         }
-        result = VOTE_PAUSE;
-        if ( Value == "" )
-            Value = "60";
+        if (Level.Pauser != none ) {
+            VoteInfo = viResume;
+        }
         else {
             v = int(Value);
             if ( v <= 0 )
-                v = 60;
+                v = 120;
+            if ( !Mut.IsAdmin(Sender) ) {
+                v = min(min(v, Mut.MaxPauseTime), Mut.PauseTimeRemaining);
+            }
+            if ( v <= 0 ) {
+                Sender.ClientMessage(strNotAvaliableATM);
+                return VOTE_LOCAL;
+            }
             Value = string(v);
         }
-        if ( Level.Pauser != none )
-            VoteInfo = viResume;
+        result = VOTE_PAUSE;
     }
     else if ( Key == "ENDTRADE" || (Key == "END" && Value == "TRADE") ) {
         if ( Mut.bStoryMode ) {
@@ -580,7 +574,7 @@ function int GetVoteIndex(PlayerController Sender, string Key, out string Value,
     else if ( Key == "SPEC" ) {
         if ( Level.Game.AccessControl == none
                 || Level.Game.NumSpectators > Level.Game.MaxSpectators
-                || (!Mut.bAllowKickVote && !Sender.PlayerReplicationInfo.bAdmin) )
+                || (!Mut.bAllowKickVote && !Mut.IsAdmin(Sender)) )
         {
             Sender.ClientMessage(strOptionDisabled);
             return VOTE_NOEFECT;
@@ -604,7 +598,7 @@ function int GetVoteIndex(PlayerController Sender, string Key, out string Value,
         result = VOTE_SPEC;
     }
     else if ( Key == "KICK" ) {
-        if ( Level.Game.AccessControl == none || (!Mut.bAllowKickVote && !Sender.PlayerReplicationInfo.bAdmin) ) {
+        if ( Level.Game.AccessControl == none || (!Mut.bAllowKickVote && !Mut.IsAdmin(Sender)) ) {
             Sender.ClientMessage(strOptionDisabled);
             return VOTE_NOEFECT;
         }
@@ -656,7 +650,7 @@ function int GetVoteIndex(PlayerController Sender, string Key, out string Value,
             Sender.ClientMessage(strNotInStoryMode);
             return VOTE_LOCAL;
         }
-        if ( !Mut.bAllowBoringVote && !Sender.PlayerReplicationInfo.bAdmin ) {
+        if ( !Mut.bAllowBoringVote && !Mut.IsAdmin(Sender) ) {
             Sender.ClientMessage(strOptionDisabled);
             return VOTE_LOCAL;
         }
@@ -670,29 +664,6 @@ function int GetVoteIndex(PlayerController Sender, string Key, out string Value,
         Value = "";
         VoteInfo = "Game is BORING";
         result = VOTE_BORING;
-    }
-    else if ( Key == "SPAWN" ) {
-        if ( Mut.bStoryMode && !Mut.bTestMap ) {
-            Sender.ClientMessage(strNotInStoryMode);
-            return VOTE_NOEFECT;
-        }
-        if ( Mut.Squads.Length == 0 ) {
-            Sender.ClientMessage(strOptionDisabled);
-            return VOTE_NOEFECT;
-        }
-        if ( Value == "" ) {
-            SendSquadList(Sender);
-            return VOTE_LOCAL;
-        }
-        if ( Mut.FindSquad(Value) == -1 ) {
-            Sender.ClientMessage(strSquadNotFound);
-            return VOTE_ILLEGAL;
-        }
-        if ( Mut.KF.TotalMaxMonsters < 10 ) {
-            Sender.ClientMessage(strCantSpawnSquadNow);
-            return VOTE_NOEFECT;
-        }
-        result = VOTE_SPAWN;
     }
     else if ( Key == "ENDWAVE" || (Key == "END" && Value == "WAVE") ) {
         VotingHandler.VotedTeam = Sender.PlayerReplicationInfo.Team;
@@ -731,7 +702,7 @@ function int GetVoteIndex(PlayerController Sender, string Key, out string Value,
             return VOTE_LOCAL;
         else if ( Mut.bTeamsLocked )
             return VOTE_NOEFECT;
-        else if ( !Sender.PlayerReplicationInfo.bAdmin && !CanLockTeam() ) {
+        else if ( !Mut.IsAdmin(Sender) && !CanLockTeam() ) {
             Sender.ClientMessage(strNotAvaliableATM);
             return VOTE_LOCAL;
         }
@@ -903,7 +874,7 @@ function ApplyVoteValue(int VoteIndex, string VoteValue)
             break;
 
         case VOTE_SPEC:
-            if ( VotingHandler.VotedPlayer != none && !VotingHandler.VotedPlayer.PlayerReplicationInfo.bAdmin ) {
+            if ( VotingHandler.VotedPlayer != none && !Mut.IsAdmin(VotingHandler.VotedPlayer) ) {
                 if ( Mut.ScrnGT != none )
                     Mut.ScrnGT.UninvitePlayer(VotingHandler.VotedPlayer);
                 VotingHandler.VotedPlayer.BecomeSpectator();
@@ -911,7 +882,7 @@ function ApplyVoteValue(int VoteIndex, string VoteValue)
             break;
 
         case VOTE_KICK:
-            if ( VotingHandler.VotedPlayer != none && !VotingHandler.VotedPlayer.PlayerReplicationInfo.bAdmin && NetConnection(VotingHandler.VotedPlayer.Player)!=None ) {
+            if ( VotingHandler.VotedPlayer != none && !Mut.IsAdmin(VotingHandler.VotedPlayer) ) {
                 if ( Mut.ScrnGT != none )
                     Mut.ScrnGT.UninvitePlayer(VotingHandler.VotedPlayer);
 
@@ -944,7 +915,7 @@ function ApplyVoteValue(int VoteIndex, string VoteValue)
             break;
 
         case VOTE_SPAWN:
-            Mut.SpawnSquad(VoteValue);
+            // deprecated
             break;
 
         case VOTE_ENDWAVE:
@@ -1177,7 +1148,7 @@ function bool CanEndWave()
 
         if ( Mut.bVoteKillCheckVisibility ) {
             foreach VisibleCollidingActors(class'KFHumanPawn', P, 1000) {
-                if ( P.Health > 0 && P.Controller != none && P.Controller.bIsPlayer && KF_StoryNPC(P) == none && MC.CanSee(P) )
+                if ( P.Health > 0 && PlayerController(P.Controller) != none && MC.CanSee(P) )
                     return false;
             }
         }
@@ -1243,6 +1214,7 @@ Begin:
         msgPause = strGamePaused;
         msgPause = Repl(msgPause, "%s", string(PauseTime));
         VotingHandler.BroadcastMessage(msgPause);
+        Mut.PauseTimeRemaining -= PauseTime;
 
         // wait for pause time ends or game resumes by other source (e.g. admin)
         while ( PauseTime > 0 && Level.Pauser != none ) {
@@ -1259,6 +1231,7 @@ Begin:
             Level.Pauser = none;
             VotingHandler.BroadcastMessage(strGameUnpaused);
         }
+        Mut.PauseTimeRemaining += PauseTime;
     }
     GotoState('');
 }
@@ -1267,26 +1240,25 @@ defaultproperties
 {
     bAlwaysTick=True // tick during game pause
 
-    HelpInfo(0)="%gLOCKPERK%w|%gUNLOCKPERK %y[!] <perk1> [<perk2> ...]%w Disables/Enables perk at the end of the wave"
-    HelpInfo(1)="%gLOCKTEAM%w|%gUNLOCKTEAM %w Locks/Unlocks teams. Only invited players may join locked team."
-    HelpInfo(2)="%gPAUSE %yX %w Pause the game for X seconds"
-    HelpInfo(3)="%gEND TRADE %w Immediately end current trader time and start next wave"
-    HelpInfo(4)="%gEND WAVE %w Kills last stuck zeds to end the wave"
-    HelpInfo(5)="%gBLAME %y<player_name> %b[<reason>] %w Blame player [for the <reason>]"
-    HelpInfo(6)="%gSPEC %y<player_name> %b[<reason>] %w Move player to spectators"
-    HelpInfo(7)="%gKICK %y<player_name> %b[<reason>] %w Kick player [for the <reason>]"
-    HelpInfo(8)="%gINVITE %y<player_name> %w Invite player to join locked team."
-    HelpInfo(9)="%gBORING %w Doubles ZED spawn rate"
-    HelpInfo(10)="%gSPAWN %y<squad_name> %w Spawns zed squad"
-    HelpInfo(11)="%gREADY%w|%gUNREADY %w Makes everybody ready/unready to play"
-    HelpInfo(12)="%gFF %yX %w Set Friendly Fire to X%"
-    HelpInfo(13)="%gMAP RESTART %w Restart current map"
-    HelpInfo(14)="%gMAP RANDOM %w Switch to a random map"
-    HelpInfo(15)="%gMAP %y<mapname> %b[<game>] [<diff>] %w Switch map/gamemode/difficulty"
-    HelpInfo(16)="%gFAKED %yX %w Set Faked Players to X (FAKEDCOUNT+FAKEDHEALTH)"
-    HelpInfo(17)="%gFAKEDCOUNT %yX %w Set Faked Players for zed count calculation"
-    HelpInfo(18)="%gFAKEDHEALTH %yX %w Set Faked Players for zed health calculation"
-    HelpInfo(19)="%gDIFF %yX %w Changes map difficulty (2-8) for the next map"
+    HelpInfo(00)="%gLOCKPERK%w|%gUNLOCKPERK %y[!] <perk1> [<perk2> ...]%w Disables/Enables perk at the end of the wave"
+    HelpInfo(01)="%gLOCKTEAM%w|%gUNLOCKTEAM %w Locks/Unlocks teams. Only invited players may join locked team."
+    HelpInfo(02)="%gPAUSE %yX %w Pause the game for X seconds"
+    HelpInfo(03)="%gEND TRADE %w Immediately end current trader time and start next wave"
+    HelpInfo(04)="%gEND WAVE %w Kills last stuck zeds to end the wave"
+    HelpInfo(05)="%gBLAME %y<player_name> %b[<reason>] %w Blame player [for the <reason>]"
+    HelpInfo(06)="%gSPEC %y<player_name> %b[<reason>] %w Move player to spectators"
+    HelpInfo(07)="%gKICK %y<player_name> %b[<reason>] %w Kick player [for the <reason>]"
+    HelpInfo(08)="%gINVITE %y<player_name> %w Invite player to join locked team."
+    HelpInfo(09)="%gBORING %w Doubles ZED spawn rate"
+    HelpInfo(10)="%gREADY%w|%gUNREADY %w Makes everybody ready/unready to play"
+    HelpInfo(11)="%gFF %yX %w Set Friendly Fire to X%"
+    HelpInfo(12)="%gMAP RESTART %w Restart current map"
+    HelpInfo(13)="%gMAP RANDOM %w Switch to a random map"
+    HelpInfo(14)="%gMAP %y<mapname> %b[<game>] [<diff>] %w Switch map/gamemode/difficulty"
+    HelpInfo(15)="%gFAKED %yX %w Set Faked Players to X (FAKEDCOUNT+FAKEDHEALTH)"
+    HelpInfo(16)="%gFAKEDCOUNT %yX %w Set Faked Players for zed count calculation"
+    HelpInfo(17)="%gFAKEDHEALTH %yX %w Set Faked Players for zed health calculation"
+    HelpInfo(18)="%gDIFF %yX %w Changes map difficulty (2-8) for the next map"
 
     strCantEndTrade="Can not end trade time at the current moment"
     strTooLate="Too late"

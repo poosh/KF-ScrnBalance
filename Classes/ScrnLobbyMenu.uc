@@ -247,4 +247,15 @@ defaultproperties
          OnPreDraw=BuyFooter.InternalOnPreDraw
      End Object
      t_Footer=ScrnLobbyFooter'ScrnBalanceSrv.ScrnLobbyMenu.BuyFooter'
+
+     Begin Object Class=GUILabel Name=CurrentMapL
+         Caption="This is a placeholder line (tm)"
+         TextColor=(B=158,G=176,R=175)
+         WinTop=0.042179
+         WinLeft=0.496524
+         WinWidth=0.49
+         WinHeight=0.035714
+         RenderWeight=0.900000
+     End Object
+     CurrentMapLabel=GUILabel'ScrnBalanceSrv.ScrnLobbyMenu.CurrentMapL'
 }

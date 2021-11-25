@@ -637,6 +637,7 @@ static function ResetGameSquads(KFGameType Game, byte EventNum)
 
     switch ( EventNum ) {
         case 0:
+        case 4:
             DefaultCollection = class'DefaultMonstersCollection';
             break;
         case 1:
@@ -1038,9 +1039,6 @@ function RegisterMonster(KFMonster Monster)
         if ( Monster.class == CheckedMonsterClasses[i] )
             return;
     }
-
-    if ( Mut.IsSquadWaitingToSpawn() )
-        return; // this monster is spawned by "mvote spawn", so ignore it in HL and achievement calculations
 
     //log("Monster=" $ String(Other) @ "Outer="$String(Other.outer) @ "OuterClass="$String(Other.class.outer), 'ScrnBalance');
     CheckedMonsterClasses[CheckedMonsterClasses.length] = Monster.class;
@@ -1728,30 +1726,6 @@ defaultproperties
     AchClass=class'ScrnBalanceSrv.ScrnAchievements'
     MapAchClass=class'ScrnBalanceSrv.ScrnMapAchievements'
 
-    MapAliases(0)=(FileName="KF-HarbourV3-fix",AchName="KF-HarbourV3",OriginalMap="KF-HarbourV3")
-    MapAliases(1)=(FileName="KF-Harbor",AchName="KF-HarbourV3",OriginalMap="KF-Harbor")
-    MapAliases(2)=(FileName="KF-SantasRetreatFinal1-1",AchName="KF-SantasRetreat")
-    MapAliases(3)=(FileName="KF-BigSunriseBeta1-6",AchName="KF-BigSunrise")
-    MapAliases(4)=(FileName="KF-SunnyLandSanitariumBeta1-5",AchName="KF-SunnyLandSanitarium")
-    MapAliases(5)=(FileName="KF-SilentHillBeta2-0",AchName="KF-SilentHill")
-    MapAliases(6)=(FileName="KF-HellGateFinal1-2",AchName="KF-HellGate")
-    MapAliases(7)=(FileName="Kf-HellFinal1-5",AchName="KF-Hell")
-    MapAliases(8)=(FileName="KF-Doom2-Final-V7",AchName="KF-D2M1")
-    MapAliases(9)=(FileName="KF-Doom2-HiRes",AchName="KF-D2M1")
-    MapAliases(10)=(FileName="KF-Doom2-HiRes11",AchName="KF-D2M1")
-    MapAliases(11)=(FileName="KF-ZedDiscoThe1stFloor",AchName="KF-ZedDisco",OriginalMap="KF-ZedDiscoThe1stFloor")
-    MapAliases(12)=(FileName="KF-ZedDiscoThe2ndFloor",AchName="KF-ZedDisco",OriginalMap="KF-ZedDiscoThe2ndFloor")
-    MapAliases(13)=(FileName="KF-Abandoned-Moonbase",AchName="KF-MoonBase")
-    MapAliases(14)=(FileName="KF-DepartedNight",AchName="KF-Departed")
-    MapAliases(15)=(FileName="KF-FoundryLightsOut",AchName="KF-Foundry")
-    MapAliases(16)=(FileName="KF-HospitalhorrorsLightsOut",AchName="KF-Hospitalhorrors")
-    MapAliases(17)=(FileName="KF-Doom2-SE",AchName="KF-D2M1")
-    MapAliases(18)=(FileName="KF-Icebreaker-SE",AchName="KF-Icebreaker")
-    MapAliases(19)=(FileName="KF-HellFreezesOver1-2",AchName="KF-Hell")
-    MapAliases(20)=(FileName="KF-Train-fix",AchName="KF-Train")
-    MapAliases(21)=(FileName="KF-PandorasBoxV2-fix",AchName="KF-PandorasBox")
-    MapAliases(22)=(FileName="KF-Constriction-SE",AchName="KF-Constriction")
-
     SovietDamageTypes(0)=class'KFMod.DamTypeKnife'
     SovietDamageTypes(1)=class'KFMod.DamTypeFrag'
     SovietDamageTypes(2)=class'KFMod.DamTypeAK47AssaultRifle'
@@ -1770,20 +1744,9 @@ defaultproperties
     HLMult_Hardcore=0.15
     HLScale=1.0
 
-    HardcoreBosses(00)=(MonsterClass="HardPat",HL=2)
-    HardcoreBosses(01)=(MonsterClass="HardPatC",HL=2)
-    HardcoreBosses(02)=(MonsterClass="HardPatG",HL=2)
-    HardcoreBosses(03)=(MonsterClass="HardPatH",HL=2)
-    HardcoreBosses(04)=(MonsterClass="HardPatX",HL=2)
-    HardcoreBosses(05)=(MonsterClass="ZombieSuperBoss",HL=2)
-    HardcoreBosses(06)=(MonsterClass="Sabaoth",HL=2)
-    HardcoreBosses(07)=(MonsterClass="Vagary",HL=2)
-    HardcoreBosses(08)=(MonsterClass="Maledict",HL=2)
-    HardcoreBosses(09)=(MonsterClass="HunterInvul",HL=2)
-    HardcoreBosses(10)=(MonsterClass="HunterBerserk",HL=2)
-    HardcoreBosses(11)=(MonsterClass="HunterHellTime",HL=2)
-    HardcoreBosses(12)=(MonsterClass="Guardian",HL=2)
-    HardcoreBosses(13)=(MonsterClass="Cyberdemon",HL=2)
+    HardcoreGames(0)=(GameClass="ScrnStoryGameInfo",HL=3)
+    HardcoreGames(1)=(GameClass="FtgGame",HL=6)
+    HardcoreGames(2)=(GameClass="TurboGame",HL=3)
 
     HardcoreZeds(00)=(MonsterClass="Ghost",HL=0.5)
     HardcoreZeds(01)=(MonsterClass="Shiver",HL=1.0)
@@ -1820,7 +1783,42 @@ defaultproperties
     HardcoreZeds(32)=(MonsterClass="Guardian",HL=1)
     HardcoreZeds(33)=(MonsterClass="Cyberdemon",HL=1)
 
-    HardcoreGames(0)=(GameClass="ScrnStoryGameInfo",HL=3)
-    HardcoreGames(1)=(GameClass="FtgGame",HL=6)
-    HardcoreGames(2)=(GameClass="TurboGame",HL=3)
+    HardcoreBosses(00)=(MonsterClass="HardPat",HL=2)
+    HardcoreBosses(01)=(MonsterClass="HardPatC",HL=2)
+    HardcoreBosses(02)=(MonsterClass="HardPatG",HL=2)
+    HardcoreBosses(03)=(MonsterClass="HardPatH",HL=2)
+    HardcoreBosses(04)=(MonsterClass="HardPatX",HL=2)
+    HardcoreBosses(05)=(MonsterClass="ZombieSuperBoss",HL=2)
+    HardcoreBosses(06)=(MonsterClass="Sabaoth",HL=2)
+    HardcoreBosses(07)=(MonsterClass="Vagary",HL=2)
+    HardcoreBosses(08)=(MonsterClass="Maledict",HL=2)
+    HardcoreBosses(09)=(MonsterClass="HunterInvul",HL=2)
+    HardcoreBosses(10)=(MonsterClass="HunterBerserk",HL=2)
+    HardcoreBosses(11)=(MonsterClass="HunterHellTime",HL=2)
+    HardcoreBosses(12)=(MonsterClass="Guardian",HL=2)
+    HardcoreBosses(13)=(MonsterClass="Cyberdemon",HL=2)
+
+    MapAliases(00)=(FileName="KF-HarbourV3-fix",AchName="KF-HarbourV3",OriginalMap="KF-HarbourV3")
+    MapAliases(01)=(FileName="KF-Harbor",AchName="KF-HarbourV3",OriginalMap="KF-Harbor")
+    MapAliases(02)=(FileName="KF-SantasRetreatFinal1-1",AchName="KF-SantasRetreat")
+    MapAliases(03)=(FileName="KF-BigSunriseBeta1-6",AchName="KF-BigSunrise")
+    MapAliases(04)=(FileName="KF-SunnyLandSanitariumBeta1-5",AchName="KF-SunnyLandSanitarium")
+    MapAliases(05)=(FileName="KF-SilentHillBeta2-0",AchName="KF-SilentHill")
+    MapAliases(06)=(FileName="KF-HellGateFinal1-2",AchName="KF-HellGate")
+    MapAliases(07)=(FileName="Kf-HellFinal1-5",AchName="KF-Hell")
+    MapAliases(08)=(FileName="KF-Doom2-Final-V7",AchName="KF-D2M1")
+    MapAliases(09)=(FileName="KF-Doom2-HiRes",AchName="KF-D2M1")
+    MapAliases(10)=(FileName="KF-Doom2-HiRes11",AchName="KF-D2M1")
+    MapAliases(11)=(FileName="KF-Doom2-SE",AchName="KF-D2M1")
+    MapAliases(12)=(FileName="KF-ZedDiscoThe1stFloor",AchName="KF-ZedDisco",OriginalMap="KF-ZedDiscoThe1stFloor")
+    MapAliases(13)=(FileName="KF-ZedDiscoThe2ndFloor",AchName="KF-ZedDisco",OriginalMap="KF-ZedDiscoThe2ndFloor")
+    MapAliases(14)=(FileName="KF-Abandoned-Moonbase",AchName="KF-MoonBase")
+    MapAliases(15)=(FileName="KF-DepartedNight",AchName="KF-Departed")
+    MapAliases(16)=(FileName="KF-FoundryLightsOut",AchName="KF-Foundry")
+    MapAliases(17)=(FileName="KF-HospitalhorrorsLightsOut",AchName="KF-Hospitalhorrors")
+    MapAliases(18)=(FileName="KF-Icebreaker-SE",AchName="KF-Icebreaker")
+    MapAliases(19)=(FileName="KF-HellFreezesOver1-2",AchName="KF-Hell")
+    MapAliases(20)=(FileName="KF-Train-fix",AchName="KF-Train")
+    MapAliases(21)=(FileName="KF-PandorasBoxV2-fix",AchName="KF-PandorasBox")
+    MapAliases(22)=(FileName="KF-Constriction-SE",AchName="KF-Constriction")    
 }

@@ -203,8 +203,6 @@ simulated function ClientPostLogin()
 simulated function LoadMutSettings()
 {
     if ( Mut != none ) {
-        if ( Mut.bForceManualReload)
-            bManualReload = Mut.bManualReload;
         if ( Mut.bHardCore )
             bOtherPlayerLasersBlue = false;
         if ( ScrnPawn != none )
@@ -212,11 +210,7 @@ simulated function LoadMutSettings()
     }
     else {
         //this shouldn't happen
-        log("Player Controller can not find ScrnBalance!", 'ScrnBalance');
-        if ( class'ScrnBalance'.default.Mut.bForceManualReload)
-            bManualReload =  class'ScrnBalance'.default.bManualReload;
-        if ( class'ScrnBalance'.default.Mut.bHardcore )
-            bOtherPlayerLasersBlue = false;
+        log("Player Controller cannot find ScrnBalance!", 'ScrnBalance');
     }
 }
 
@@ -1206,7 +1200,7 @@ exec function ResetMapAch(string MapName)
 
 function bool CheckMutateProtection()
 {
-    if ( Mut.CheckAdmin(self, true) )
+    if ( Mut.IsAdmin(self) )
         return true;
 
     if ( Level.TimeSeconds > LastMutateTime ) {

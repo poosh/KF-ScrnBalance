@@ -411,14 +411,6 @@ function InternalOnLoadINI(GUIComponent Sender, string s)
     {
         case ch_ManualReload:
             ch_ManualReload.Checked(PC.bManualReload);
-            if ( PC.Mut.bForceManualReload ) {
-                ch_ManualReload.DisableMe();
-                ch_ManualReload.Hint = strForcedByServer;
-            }
-            else {
-                ch_ManualReload.EnableMe();
-                ch_ManualReload.Hint = ch_ManualReload.default.Hint;
-            }
             break;
 
         case ch_CookNade:

@@ -26,7 +26,8 @@ var transient int SrvFlags; // used for network replication of the values below
 var globalconfig bool bSpawn0, bNoStartCashToss, bMedicRewardFromTeam;
 var globalconfig bool bAltBurnMech;
 var globalconfig bool bReplaceNades, bShieldWeight, bBeta;
-var globalconfig bool bShowDamages, bManualReload, bForceManualReload, bAllowWeaponLock;
+var globalconfig bool bShowDamages, bAllowWeaponLock;
+var deprecated bool bManualReload, bForceManualReload;
 var globalconfig bool bNoPerkChanges, bPerkChangeBoss, bPerkChangeDead, b10Stars;
 var globalconfig bool bTraderSpeedBoost;
 var bool bHardcore;
@@ -133,7 +134,8 @@ var ScrnCustomWeaponLink CustomWeaponLink;
 var transient bool bInitReplicationReceived;
 
 var Mutator ServerPerksMut;
-var transient bool bAllowAlwaysPerkChanges; // value replicated from ServerPerksMut
+var transient bool bDoom;
+var transient bool bAllowAlwaysPerkChanges;
 
 var globalconfig bool bAllowVoting;
 var ScrnBalanceVoting MyVotingOptions;
@@ -145,6 +147,8 @@ var globalconfig int BlameVoteCoolDown;
 var globalconfig bool bBlameFart;
 var transient int BlameCounter;
 var globalconfig bool bAllowPauseVote, bAllowLockPerkVote, bAllowBoringVote;
+var globalconfig int MaxPauseTime, MaxPauseTimePerWave;
+var transient int PauseTimeRemaining;
 var globalconfig byte MaxVoteKillMonsters;
 var globalconfig int  MaxVoteKillHP;
 var globalconfig bool bVoteKillCheckVisibility;
@@ -178,6 +182,7 @@ var globalconfig String BroadcastPickupText; // broadcast weapon pickups
 var protected globalconfig byte EventNum;
 var transient byte CurrentEventNum;
 var globalconfig bool bForceEvent;
+var globalconfig bool bResetSquadsAtStart; // calls ScrnGameRules.ResetSquads() at map start
 
 var globalconfig bool bAutoKickOffPerkPlayers;
 var localized String strAutoKickOffPerk;
@@ -187,19 +192,15 @@ struct SSquadConfig {
     var string MonsterClass;
     var byte NumMonsters;
 };
-var globalconfig array<SSquadConfig> VoteSquad;
+var deprecated array<SSquadConfig> VoteSquad;
 
-var globalconfig bool bResetSquadsAtStart; // calls ScrnGameRules.ResetSquads() at map start
 
 struct SSquad {
     var String SquadName;
     var array < class<KFMonster> > Monsters;
 };
-var array<SSquad> Squads;
-// KF.WaveMonsters value after all zeds added by SpawnSquad() are spawned
-// if ( SquadSpawnedMonsters > 0 && KF.WaveMonsters < SquadSpawnedMonsters )
-// then those zeds are still waiting in spawn queue
-var int SquadSpawnedMonsters;
+var deprecated array<SSquad> Squads;
+var deprecated int SquadSpawnedMonsters;
 
 var globalconfig bool bNoRequiredEquipment;
 var globalconfig bool bUseExpLevelForSpawnInventory;
@@ -377,15 +378,6 @@ simulated function ClientInitSettings()
     InitSettings();
 }
 
-
-// v8: no more using default settings
-// use class'ScrnBalance'.default.Mut.<variable> instead of class'ScrnBalance'.default.<variable>
-/*
-simulated function ClientInitStaticSettings(class<ScrnBalance> MyBalanceClass)
-{
-}
-*/
-
 // client & server side
 simulated function InitSettings()
 {
@@ -394,14 +386,12 @@ simulated function InitSettings()
 
     if (bShieldWeight) {
         bReplaceNades = true;
-        default.bReplaceNades = true;
-        class'ScrnBalance'.default.bReplaceNades = true;
         class'ScrnFrag'.default.Weight = 0;
-        class'ScrnBalanceSrv.ScrnHumanPawn'.default.StandardVestClass.default.Weight = 1;
+        class'ScrnHumanPawn'.default.StandardVestClass.default.Weight = 1;
     }
     else {
         class'ScrnFrag'.default.Weight = 1;
-        class'ScrnBalanceSrv.ScrnHumanPawn'.default.StandardVestClass.default.Weight = 0;
+        class'ScrnHumanPawn'.default.StandardVestClass.default.Weight = 0;
     }
     class'ScrnFragPickup'.default.Weight = class'ScrnFrag'.default.Weight;
     RecalcAllPawnWeight();
@@ -469,7 +459,7 @@ static function MessageBonusLevel(PlayerController KPC)
         return;
 
     msg = default.strBonusLevel;
-    msg = Repl(msg, "%s", String(class'ScrnBalanceSrv.ScrnVeterancyTypes'.static.GetClientVeteranSkillLevel(
+    msg = Repl(msg, "%s", String(class'ScrnVeterancyTypes'.static.GetClientVeteranSkillLevel(
             KFPlayerReplicationInfo(KPC.PlayerReplicationInfo))), true);
 
     KPC.ClientMessage(msg);
@@ -508,7 +498,7 @@ function MessageStatus(PlayerController PC)
 
     msg = strStatus;
     msg = Repl(msg, "%v", String(KFPRI.ClientVeteranSkillLevel), true);
-    msg = Repl(msg, "%b", String(class'ScrnBalanceSrv.ScrnVeterancyTypes'.static.GetClientVeteranSkillLevel(KFPRI)), true);
+    msg = Repl(msg, "%b", String(class'ScrnVeterancyTypes'.static.GetClientVeteranSkillLevel(KFPRI)), true);
     msg = Repl(msg, "%n", String(MinLevel), true);
     msg = Repl(msg, "%x", String(MaxLevel), true);
     PC.ClientMessage(msg, 'Log');
@@ -551,7 +541,7 @@ function BroadcastBonusLevels()
         Player = KFPlayerController(P);
         if ( Player != none ) {
             KFPRI = KFPlayerReplicationInfo(Player.PlayerReplicationInfo);
-            if (KFPRI.ClientVeteranSkillLevel != class'ScrnBalanceSrv.ScrnVeterancyTypes'.static.GetClientVeteranSkillLevel(KFPRI))
+            if (KFPRI.ClientVeteranSkillLevel != class'ScrnVeterancyTypes'.static.GetClientVeteranSkillLevel(KFPRI))
                 MessageBonusLevel(Player);
         }
     }
@@ -702,7 +692,7 @@ function RecalcAllPawnWeight()
 {
     local ScrnHumanPawn P;
 
-    foreach DynamicActors(class'ScrnBalanceSrv.ScrnHumanPawn', P)
+    foreach DynamicActors(class'ScrnHumanPawn', P)
         P.RecalcWeight();
 }
 
@@ -889,7 +879,7 @@ function BroadcastFakedAchievement(int AchIndex)
         if ( !C.bIsPlayer )
             continue;
         if ( PlayerController(C) != none)
-            PlayerController(C).ReceiveLocalizedMessage(class'ScrnBalanceSrv.ScrnFakedAchMsg', AchIndex);
+            PlayerController(C).ReceiveLocalizedMessage(class'ScrnFakedAchMsg', AchIndex);
     }
 }
 
@@ -1036,6 +1026,50 @@ function KickOffPerkPlayers()
     }
 }
 
+function OnTraderTime()
+{
+    if ( bStoryMode && KF.WaveNum == CurWave ) {
+        // seems like story game doesn't increment wave counter
+        KF.WaveNum++;
+    }
+
+    GameRules.WaveEnded();
+
+    if ( MyVotingOptions != none && MyVotingOptions.VotingHandler.IsVoteInProgress() ) {
+        if ( MyVotingOptions.VotingHandler.IsMyVotingRunning(MyVotingOptions, MyVotingOptions.VOTE_BORING )
+                || MyVotingOptions.VotingHandler.IsMyVotingRunning(MyVotingOptions, MyVotingOptions.VOTE_ENDWAVE ) )
+        {
+            MyVotingOptions.VotingHandler.VoteFailed();
+        }
+    }
+
+    KF.WaveCountDown += TradeTimeAddSeconds;
+    TradeTimeAddSeconds = 0;
+    PauseTimeRemaining = MaxPauseTimePerWave;
+}
+
+function OnWaveBegin()
+{
+    // Wave in Progress
+    CurWave = KF.WaveNum;
+
+    if ( bAutoKickOffPerkPlayers )
+        KickOffPerkPlayers();
+
+    GameRules.WaveStarted();
+
+    if ( MyVotingOptions != none && MyVotingOptions.VotingHandler.IsMyVotingRunning(MyVotingOptions,
+            MyVotingOptions.VOTE_ENDTRADE) )
+        MyVotingOptions.VotingHandler.VoteFailed();
+
+    DestroyExtraPipebombs();
+
+    // call SetupPickups only when playing non-ScrnGameType mode.
+    // ScrnGameType automatically calls SetupPickups() during wave begin.
+    if ( ScrnGT == none && !bStoryMode )
+        SetupPickups(false);
+}
+
 // executes each second while match is in progress
 function GameTimer()
 {
@@ -1049,36 +1083,10 @@ function GameTimer()
     {
         bTradingDoorsOpen = KF.bTradingDoorsOpen;
         if ( bTradingDoorsOpen ) {
-            // Trader Time
-            if ( bStoryMode && KF.WaveNum == CurWave ) {
-                // seems like story game doesn't increment wave counter
-                KF.WaveNum++;
-            }
-
-            GameRules.WaveEnded();
-
-            KF.WaveCountDown += TradeTimeAddSeconds;
-            TradeTimeAddSeconds = 0;
+            OnTraderTime();
         }
         else {
-            // Wave in Progress
-            CurWave = KF.WaveNum;
-
-            if ( bAutoKickOffPerkPlayers )
-                KickOffPerkPlayers();
-            SquadSpawnedMonsters = 0;
-
-            GameRules.WaveStarted();
-
-            if ( MyVotingOptions != none && MyVotingOptions.VotingHandler.IsMyVotingRunning(MyVotingOptions, MyVotingOptions.VOTE_ENDTRADE) )
-                MyVotingOptions.VotingHandler.VoteFailed();
-
-            DestroyExtraPipebombs();
-
-            // call SetupPickups only when playing non-ScrnGameType mode.
-            // ScrnGameType automatically calls SetupPickups() during wave begin.
-            if ( ScrnGT == none && !bStoryMode )
-                SetupPickups(false);
+            OnWaveBegin();
         }
 
         if ( bDynamicLevelCap )
@@ -1113,19 +1121,23 @@ function FixMusic()
     if ( KF.MapSongHandler == none )
         KF.MapSongHandler = spawn(class'ScrnMusicTrigger');
     // Allow L.D. to set boss battle song.
-    // Don't use Dirge music as boss battle, because default KF_Abandon better.
-    if ( left(KF.MonsterCollection.default.EndGameBossClass,
-            InStr(KF.MonsterCollection.default.EndGameBossClass,".")) ~= "ScrnDoom3KF" )
-        KF.BossBattleSong = "EGT-SignOfEvil"; // try this. If client doesn't have that song, then KF_Abandon will be played
+    // Don't use Dirge music as boss battle, because the default KF_Abandon is much better.
+    if ( bDoom ) {
+        // try this. If client doesn't have that song, then KF_Abandon will be played
+        KF.BossBattleSong = "EGT-SignOfEvil";
+    }
     else if ( KF.MapSongHandler.WaveBasedSongs.Length > 10 && KF.MapSongHandler.WaveBasedSongs[10].CombatSong != ""
             &&  !(left(KF.MapSongHandler.WaveBasedSongs[10].CombatSong, 5) ~= "Dirge") )
+    {
         KF.BossBattleSong = KF.MapSongHandler.WaveBasedSongs[10].CombatSong;
+    }
 }
 
 function DisableDoom3Monsters()
 {
     log("Disabling Doom3 monsters", 'ScrnBalance');
-    if ( !BroadcastValue('SpawnDoom3Monsters', 0) ) {
+    bDoom = BroadcastValue('SpawnDoom3Monsters', 0);
+    if ( !bDoom ) {
         log("Doom3Mutator not found!", 'ScrnBalance');
     }
 }
@@ -1150,9 +1162,6 @@ auto simulated state WaitingForTick
         if ( !bStoryMode ) {
             InitDoors();
             SetStartCash();
-            if ( bFixMusic ) {
-                FixMusic();
-            }
             if ( ScrnGT != none ) {
                 if ( bTSCGame ) {
                     Level.GRI.bNoTeamSkins = bNoTeamSkins && !ScrnGT.IsTourney();
@@ -1166,9 +1175,12 @@ auto simulated state WaitingForTick
                     }
                     else {
                         // Enable super monsters bud disable regular D3 mobs cuz we will spawn them via ScrnWaves
-                        BroadcastValue('SpawnDoom3Monsters', 1);
+                        bDoom = BroadcastValue('SpawnDoom3Monsters', 1);
                     }
                 }
+            }
+            if ( bFixMusic ) {
+                FixMusic();
             }
         }
         if ( ColoredServerName != "" ) {
@@ -1348,16 +1360,19 @@ static function LongMessage(PlayerController Sender, string S, optional int MaxL
         Sender.ClientMessage(part);
 }
 
-
-function bool CheckAdmin(PlayerController Sender, optional bool bNoMsg)
+function bool IsAdmin(PlayerController Sender)
 {
-    if ( (Sender.PlayerReplicationInfo != none && Sender.PlayerReplicationInfo.bAdmin)
-            || Level.NetMode == NM_Standalone || Level.NetMode == NM_ListenServer )
+    return (Sender.PlayerReplicationInfo != none && Sender.PlayerReplicationInfo.bAdmin)
+            || Level.NetMode == NM_Standalone
+            || (Level.NetMode == NM_ListenServer && NetConnection(Sender.Player) == none);
+}
+
+function bool CheckAdmin(PlayerController Sender)
+{
+    if ( IsAdmin(Sender) )
         return true;
 
-    if ( !bNoMsg ) {
-        Sender.ClientMessage("Requires ADMIN priviledges");
-    }
+    Sender.ClientMessage("Requires ADMIN priviledges");
     return false;
 }
 
@@ -1886,8 +1901,8 @@ function SetReplicationData()
     if ( bBeta )                            SrvFlags = SrvFlags | 0x00000800;
 
     if ( bShowDamages )                     SrvFlags = SrvFlags | 0x00001000;
-    if ( bManualReload )                    SrvFlags = SrvFlags | 0x00002000;
-    if ( bForceManualReload )               SrvFlags = SrvFlags | 0x00004000;
+    // if ( bManualReload )                    SrvFlags = SrvFlags | 0x00002000;
+    // if ( bForceManualReload )               SrvFlags = SrvFlags | 0x00004000;
     if ( bAllowWeaponLock )                 SrvFlags = SrvFlags | 0x00008000;
 
     if ( bNoPerkChanges )                   SrvFlags = SrvFlags | 0x00010000;
@@ -1921,8 +1936,8 @@ simulated function LoadReplicationData()
     bBeta                              = (SrvFlags & 0x00000800) > 0;
 
     bShowDamages                       = (SrvFlags & 0x00001000) > 0;
-    bManualReload                      = (SrvFlags & 0x00002000) > 0;
-    bForceManualReload                 = (SrvFlags & 0x00004000) > 0;
+    // bManualReload                      = (SrvFlags & 0x00002000) > 0;
+    // bForceManualReload                 = (SrvFlags & 0x00004000) > 0;
     bAllowWeaponLock                   = (SrvFlags & 0x00008000) > 0;
 
     bNoPerkChanges                     = (SrvFlags & 0x00010000) > 0;
@@ -2072,7 +2087,7 @@ function LoadCustomWeapons()
             continue;
         }
 
-        ClientLink = spawn(class'ScrnBalanceSrv.ScrnCustomWeaponLink');
+        ClientLink = spawn(class'ScrnCustomWeaponLink');
         if ( ClientLink == none ) {
             log("Can't load Client Replication Link for a Custom Weapon: '" $ W $"'!", 'ScrnBalance');
             continue;
@@ -2505,83 +2520,6 @@ function ForceEvent()
     KF.LoadUpMonsterList();
 }
 
-// returns index from Squads array or -1, if squad is not found and bCreateNew=false
-// quad is not found and bCreateNew=true, new squad will be added with a given name
-function int FindSquad(String SquadName, optional bool bCreateNew)
-{
-    local int i;
-
-    for ( i=0; i<Squads.length; ++i )
-        if ( Squads[i].SquadName ~= SquadName )
-            return i;
-
-    if ( bCreateNew ) {
-        Squads.insert(i, 1);
-        Squads[i].SquadName = SquadName;
-        return i;
-    }
-
-    return -1;
-}
-
-function SetupVoteSquads()
-{
-    local int i, j, q;
-    local Class<KFMonster> MC;
-    local name pkg;
-
-    for ( i=0; i<VoteSquad.length; ++i ) {
-        if ( VoteSquad[i].SquadName == "" || VoteSquad[i].MonsterClass == "" || VoteSquad[i].NumMonsters == 0 )
-            continue;
-
-        MC = Class<KFMonster>(DynamicLoadObject(VoteSquad[i].MonsterClass,Class'Class'));
-        if ( MC == none ) {
-            log("SetupVoteSquad: Unable to load monster '"$VoteSquad[i].MonsterClass, 'ScrnBalance');
-            continue;
-        }
-
-        MC.static.PreCacheAssets(Level);
-
-        pkg = MC.outer.name;
-        if ( pkg != 'KFChar' ) {
-            AddToPackageMap(String(pkg));
-            log(pkg $ " added to ServerPackages", 'ScrnBalance');
-        }
-
-        q = FindSquad(VoteSquad[i].SquadName, true);
-        j = VoteSquad[i].NumMonsters;
-        while ( j-- > 0 )
-            Squads[q].Monsters[Squads[q].Monsters.length] = MC;
-    }
-}
-
-function bool IsSquadWaitingToSpawn()
-{
-    return SquadSpawnedMonsters > 0 && KF.WaveMonsters < SquadSpawnedMonsters;
-}
-
-function SpawnSquad(String SquadName)
-{
-    local int q, count, i;
-
-    if ( KF.bTradingDoorsOpen || KF.TotalMaxMonsters <= 0 || IsSquadWaitingToSpawn() )
-        return;
-
-    q = FindSquad(SquadName);
-    if ( q == -1 )
-        return;
-
-    count = Squads[q].Monsters.length;
-    if ( count == 0 || count > KF.TotalMaxMonsters - KF.NextSpawnSquad.Length )
-        return;
-    SquadSpawnedMonsters = KF.WaveMonsters + count;
-    KF.NextSpawnSquad.insert(0, count);
-    for ( i=0; i<count; ++i )
-        KF.NextSpawnSquad[i] = Squads[q].Monsters[i];
-    KF.LastZVol = KF.FindSpawningVolume();
-    KF.LastSpawningVolume = KF.LastZVol;
-}
-
 function SetMaxZombiesOnce(optional int value)
 {
     if ( value < 16 ) {
@@ -2650,19 +2588,20 @@ function PostBeginPlay()
     ScrnGT = ScrnGameType(KF);
     if ( ScrnGT != none ) {
         ScrnGT.ScrnBalanceMut = self;
+        MaxDifficulty = ScrnGT.DIFF_MAX;
     }
     else if ( ScrnStoryGameInfo(KF) != none ) {
         ScrnStoryGameInfo(KF).ScrnBalanceMut = self;
     }
 
     bUseAchievements = bool(AchievementFlags & ACH_ENABLE);
-    GameRules = Spawn(Class'ScrnBalanceSrv.ScrnGameRules');
+    GameRules = Spawn(Class'ScrnGameRules');
     GameRules.Mut = self;
     GameRules.bShowDamages = bShowDamages;
     GameRules.bUseAchievements = bUseAchievements && KF.GameDifficulty >= 2;
     if ( GameRules.bUseAchievements ) {
         // spawn achievement handlers
-        AchHandler = GameRules.Spawn(Class'ScrnBalanceSrv.ScrnAchHandler');
+        AchHandler = GameRules.Spawn(Class'ScrnAchHandler');
     }
 
     MapName = KF.GetCurrentMapName(Level);
@@ -2676,7 +2615,7 @@ function PostBeginPlay()
     else
         CurrentEventNum = int(KF.GetSpecialEventType()); // autodetect event
 
-    if ( !bScrnWaves && (bResetSquadsAtStart || EventNum == 254) ) {
+    if ( bResetSquadsAtStart || EventNum == 254 ) {
         GameRules.ResetGameSquads(KF, CurrentEventNum);
     }
 
@@ -2695,18 +2634,19 @@ function PostBeginPlay()
     if ( MapInfo.bTestMap )
         SetTestMap();
 
-    if ( !ClassIsChildOf(KF.PlayerControllerClass, class'ScrnBalanceSrv.ScrnPlayerController') ) {
-        KF.PlayerControllerClass = class'ScrnBalanceSrv.ScrnPlayerController';
-        KF.PlayerControllerClassName = string(Class'ScrnBalanceSrv.ScrnPlayerController');
+    if ( !ClassIsChildOf(KF.PlayerControllerClass, class'ScrnPlayerController') ) {
+        KF.PlayerControllerClass = class'ScrnPlayerController';
+        KF.PlayerControllerClassName = string(Class'ScrnPlayerController');
     }
 
-    if ( bReplaceHUD )
-        KF.HUDType = string(Class'ScrnBalanceSrv.ScrnHUD');
+    if ( ScrnGT == none && ScrnStoryGameInfo(KF) == none ) {
+        if ( bReplaceHUD )
+            KF.HUDType = string(Class'ScrnHUD');
 
-    if ( bReplaceScoreBoard )
-        Level.Game.ScoreBoardType = string(Class'ScrnBalanceSrv.ScrnScoreBoard');
-
-    KF.LoginMenuClass = string(Class'ScrnBalanceSrv.ScrnInvasionLoginMenu');
+        if ( bReplaceScoreBoard )
+            Level.Game.ScoreBoardType = string(Class'ScrnScoreBoard');
+    }
+    KF.LoginMenuClass = string(Class'ScrnInvasionLoginMenu');
 
     Persistence = new class'ScrnBalancePersistence';
     bRandomMap = Persistence.bRandomMap;
@@ -2722,7 +2662,7 @@ function PostBeginPlay()
     ApplyWeaponFix();
 
     if (bAltBurnMech) {
-        BurnMech = spawn(class'ScrnBalanceSrv.ScrnBurnMech');
+        BurnMech = spawn(class'ScrnBurnMech');
     }
 
     if ( bAllowVoting ) {
@@ -2732,7 +2672,7 @@ function PostBeginPlay()
             VH = class'ScrnVotingHandlerMut'.static.GetVotingHandler(Level.Game);
         }
         if ( VH != none ) {
-            MyVotingOptions = ScrnBalanceVoting(VH.AddVotingOptions(class'ScrnBalanceSrv.ScrnBalanceVoting'));
+            MyVotingOptions = ScrnBalanceVoting(VH.AddVotingOptions(class'ScrnBalanceVoting'));
             if ( MyVotingOptions != none ) {
                 MyVotingOptions.Mut = self;
             }
@@ -2740,6 +2680,7 @@ function PostBeginPlay()
         else {
             log("Unable to spawn voting handler mutator", 'ScrnBalance');
         }
+        PauseTimeRemaining = MaxPauseTimePerWave;
     }
 
     LoadCustomWeapons();
@@ -2752,7 +2693,6 @@ function PostBeginPlay()
     }
     InitSettings();
     LoadSpawnInventory();
-    SetupVoteSquads();
     SetupSrvInfo();
 
     if ( bStoryMode ) {
@@ -2854,7 +2794,7 @@ function SetGameDifficulty(byte HardcoreDifficulty)
 function SetupSrvInfo()
 {
     if ( SrvInfo == none )
-        SrvInfo = Spawn(Class'ScrnBalanceSrv.ScrnSrvReplInfo');
+        SrvInfo = Spawn(Class'ScrnSrvReplInfo');
 
     SrvInfo.bForceSteamNames = bForceSteamNames;
 }
@@ -3430,50 +3370,91 @@ function RegisterVersion(string ItemName, int Version)
 
 defaultproperties
 {
-    VersionNumber=96902
+    VersionNumber=96903
     GroupName="KF-Scrn"
     FriendlyName="ScrN Balance"
     Description="Total rework of KF1 to make it modern and the best game in the world while sticking to the roots of the original."
+
+    // TODO: Mutator should exist server-side only. Move client stuff to ScrnSrvReplInfo.
+    bAddToServerPackages=true
+    bAlwaysRelevant=true
+    bOnlyDirtyReplication=false
+    RemoteRole=ROLE_SimulatedProxy
+    bNetNotify=true
 
     BonusCapGroup="ScrnBalance"
     strBonusLevel="Your effective perk bonus level is [%s]"
     strStatus="Your perk level: Visual=%v, Effective=[%b]. Server perk range is [%n..%x]."
     strStatus2="Alt.Burn=%a. MaxZombiesOnce=%m."
-    strBetaOnly="Only avaliable during Beta testing (bBeta=True)"
+    strBetaOnly="Only avaliable during Beta testing (bBeta=true)"
     strXPInitial="^G$Initial Perk Stats:"
     strXPProgress="^G$Perk Progression:"
     strXPBonus="^G$XP Bonus for winning: ^c$"
 
-    bSpawn0=true
-    bAltBurnMech=True
-    bReplacePickups=True
-    bReplacePickupsStory=True
-    bReplaceNades=True
-    bShowDamages=True
-    bAllowVoting=True
-    bAllowBlameVote=True
-    BlameVoteCoolDown=60
-    bBlameFart=True
-    bAllowKickVote=True
-    bPauseTraderOnly=True
-    bAllowPauseVote=True
-    bAllowLockPerkVote=True
-    bAllowBoringVote=True
-    MaxVoteKillMonsters=5
-    MaxVoteKillHP=2000
-    bVoteKillCheckVisibility=True
-    VoteKillPenaltyMult=5.0
-    MinVoteDifficulty=2
-    MaxDifficulty=8
-    bTraderSpeedBoost=True
-    bAllowBehindView=True
+    Perks(0)=Class'ScrnBalanceSrv.ScrnVetFieldMedic'
+    Perks(1)=Class'ScrnBalanceSrv.ScrnVetSupportSpec'
+    Perks(2)=Class'ScrnBalanceSrv.ScrnVetSharpshooter'
+    Perks(3)=Class'ScrnBalanceSrv.ScrnVetCommando'
+    Perks(4)=Class'ScrnBalanceSrv.ScrnVetBerserker'
+    Perks(5)=Class'ScrnBalanceSrv.ScrnVetFirebug'
+    Perks(6)=Class'ScrnBalanceSrv.ScrnVetDemolitions'
+    Perks(7)=Class'ScrnBalanceSrv.ScrnVeterancyTypes' // off-perk
+    Perks(8)=Class'ScrnBalanceSrv.ScrnVetGunslinger'
+    Perks(9)=Class'ScrnBalanceSrv.ScrnVetCombatMedic'
 
-    BonusLevelNormalMax=4
-    BonusLevelHardMax=5
-    BonusLevelSuiMin=4
+    BonusLevelNormalMax=6
+    BonusLevelHardMin=0
+    BonusLevelHardMax=6
+    BonusLevelSuiMin=5
     BonusLevelSuiMax=6
     BonusLevelHoeMin=6
     BonusLevelHoeMax=6
+    bDynamicLevelCap=true
+    b10Stars=false
+    bNoPerkChanges=false
+    bPerkChangeBoss=false
+    bPerkChangeDead=false
+    bBuyPerkedWeaponsOnly=false
+    bPickPerkedWeaponsOnly=false
+
+    bSpawn0=true
+    bMedicRewardFromTeam=true
+    bLeaveCashOnDisconnect=true
+    bNoStartCashToss=false
+    StartCashNormal=100
+    StartCashHard=100
+    StartCashSui=100
+    StartCashHoE=100
+    MinRespawnCashNormal=100
+    MinRespawnCashHard=100
+    MinRespawnCashSui=100
+    MinRespawnCashHoE=100
+
+    bScrnWaves=true
+    MaxWaveSize=500
+    MaxZombiesOnce=48
+    MinZedSpawnPeriod=2.0
+    EventNum=0
+    bForceEvent=true
+    bResetSquadsAtStart=false
+
+    ForcedMaxPlayers=0
+    bBroadcastPickups=true
+    BroadcastPickupText="%p picked up %o's %w ($%$)."
+    bAllowWeaponLock=true
+    bAutoKickOffPerkPlayers=true
+    strAutoKickOffPerk="You have been auto kicked from the server for playing without a perk. Type RECONNECT in the console to join the server again and choose a perk."
+    bNoTeamSkins=false
+    bForceSteamNames=true
+    bPlayerZEDTime=true
+    bShowDamages=true
+    bAllowBehindView=true
+
+    bReplacePickups=true
+    bReplacePickupsStory=true
+    bAltBurnMech=true
+    bReplaceNades=true
+    bShieldWeight=true
     pickupReplaceArray(0)=(oldClass=Class'KFMod.MP7MPickup',NewClass=Class'ScrnBalanceSrv.ScrnMP7MPickup')
     pickupReplaceArray(1)=(oldClass=Class'KFMod.MP5MPickup',NewClass=Class'ScrnBalanceSrv.ScrnMP5MPickup')
     pickupReplaceArray(2)=(oldClass=Class'KFMod.KrissMPickup',NewClass=Class'ScrnBalanceSrv.ScrnKrissMPickup')
@@ -3525,61 +3506,115 @@ defaultproperties
     pickupReplaceArray(48)=(oldClass=Class'KFMod.KnifePickup',NewClass=Class'ScrnBalanceSrv.ScrnKnifePickup')
     FragReplacementIndex=45
 
-    Perks(0)=Class'ScrnBalanceSrv.ScrnVetFieldMedic'
-    Perks(1)=Class'ScrnBalanceSrv.ScrnVetSupportSpec'
-    Perks(2)=Class'ScrnBalanceSrv.ScrnVetSharpshooter'
-    Perks(3)=Class'ScrnBalanceSrv.ScrnVetCommando'
-    Perks(4)=Class'ScrnBalanceSrv.ScrnVetBerserker'
-    Perks(5)=Class'ScrnBalanceSrv.ScrnVetFirebug'
-    Perks(6)=Class'ScrnBalanceSrv.ScrnVetDemolitions'
-    Perks(7)=Class'ScrnBalanceSrv.ScrnVeterancyTypes' // off-perk
-    Perks(8)=Class'ScrnBalanceSrv.ScrnVetGunslinger'
-    Perks(9)=Class'ScrnBalanceSrv.ScrnVetCombatMedic'
-    strAchEarn="%p earned an achievement: %a"
-    bBroadcastAchievementEarn=True
-    AchievementFlags=255
-    bSaveStatsOnAchievementEarned=True
-    bTradingDoorsOpen=True
-    SkippedTradeTimeMult=0.75
-    ServerPerksPkgName="ScrnSP.ServerPerksMutSE"
-    bReplaceHUD=True
-    bReplaceScoreBoard=True
-    bBroadcastPickups=True
-    BroadcastPickupText="%p picked up %o's %w ($%$)."
-    bAllowWeaponLock=True
-    bAutoKickOffPerkPlayers=True
-    strAutoKickOffPerk="You have been auto kicked from the server for playing without a perk. Type RECONNECT in the console to join the server again and choose a perk."
+    SpawnInventory(00)="*:ScrnBalanceSrv.ScrnKnifePickup:0-255::0"
+    SpawnInventory(01)="*:ScrnBalanceSrv.ScrnSyringePickup:0-255::0"
+    SpawnInventory(02)="*:KFMod.WelderPickup:0-255::0"
+    SpawnInventory(03)="*:ScrnBalanceSrv.ScrnSinglePickup:0-255::0"
+    SpawnInventory(04)="*:ScrnBalanceSrv.ScrnFragPickup:0-255:2:0"
+    SpawnInventory(05)="0:ScrnBalanceSrv.ScrnCombatVestPickup:0-255:100"
+    SpawnInventory(06)="0:ScrnBalanceSrv.ScrnMP7MPickup:0-255:80+20:150"
+    SpawnInventory(07)="0:ScrnBalanceSrv.ScrnM79MPickup:0-255:3:0:OnlyHealer"
+    SpawnInventory(08)="0:ScrnBalanceSrv.ScrnM79MAmmoPickup:0-255:1:0:ExplosionLove"
+    SpawnInventory(09)="0:ScrnBalanceSrv.ScrnM79MAmmoPickup:0-255:1:0:TouchOfSavior"
+    SpawnInventory(10)="1:ScrnBalanceSrv.ScrnShotgunPickup:0-255:24+4:150"
+    SpawnInventory(11)="1:ScrnBalanceSrv.ScrnBoomStickPickup:0-255:12:0:TW_SC_LAWHSG"
+    SpawnInventory(12)="1:ScrnBalanceSrv.ScrnBoomStickPickup:0-255:12:0:EvilDeadCombo"
+    SpawnInventory(13)="1:KFMod.DBShotgunAmmoPickup:0-255:12::GetOffMyLawn"
+    SpawnInventory(14)="1:KFMod.DBShotgunAmmoPickup:0-255:12::TW_Husk_Stun"
+    SpawnInventory(15)="1:ScrnBalanceSrv.ScrnNailGunPickup:0-255:150:0:Nail250Zeds"
+    SpawnInventory(16)="2:ScrnBalanceSrv.ScrnWinchesterPickup:0-255:30+5:150"
+    SpawnInventory(17)="2:ScrnBalanceSrv.ScrnM14EBRPickup:0-255:40+5:0:DotOfDoom"
+    SpawnInventory(18)="2-1:ScrnBalanceSrv.ScrnSPSniperPickup:0-255:20+5:0:SteampunkSniper"
+    SpawnInventory(19)="2-1:ScrnBalanceSrv.ScrnMagnum44Pickup:0-255:18+2:0:Impressive"
+    SpawnInventory(20)="3:ScrnBalanceSrv.ScrnAK47Pickup:0-255:90+30:150:Accuracy"
+    SpawnInventory(21)="3:ScrnBalanceSrv.ScrnAK47Pickup:0-255:90+30:150:OutOfTheGum"
+    SpawnInventory(22)="3:ScrnBalanceSrv.ScrnAK47Pickup:0-255:90+30:150:OP_Commando"
+    SpawnInventory(23)="3-3:ScrnBalanceSrv.ScrnBullpupPickup:0-255:160+40:150"
+    SpawnInventory(24)="3:ScrnBalanceSrv.ScrnSPThompsonPickup:0-255:300:150:OldGangster"
+    SpawnInventory(25)="4:ScrnBalanceSrv.ScrnKatanaPickup:0-255::0:MeleeGod"
+    SpawnInventory(26)="4:ScrnBalanceSrv.ScrnChainsawPickup:0-255:400+25:150:EvilDeadCombo"
+    SpawnInventory(27)="4:ScrnBalanceSrv.ScrnChainsawPickup:0-255:400+25:150:BitterIrony"
+    SpawnInventory(28)="4-2:ScrnBalanceSrv.ScrnAxePickup:0-255::150"
+    SpawnInventory(29)="5:ScrnBalanceSrv.ScrnThompsonIncPickup:0-255:50+10:150:TW_Shiver"
+    SpawnInventory(30)="5:ScrnBalanceSrv.ScrnThompsonIncPickup:0-255:50+10:150:OP_Firebug"
+    SpawnInventory(31)="5-2:ScrnBalanceSrv.ScrnMAC10Pickup:0-255:120+30:150"
+    SpawnInventory(32)="5:ScrnBalanceSrv.ScrnFlareRevolverPickup:0-255:12+2:0:iDoT"
+    SpawnInventory(33)="5:KFMod.FragAmmoPickup:0-255:2:0:NapalmStrike"
+    SpawnInventory(34)="5:KFMod.FragAmmoPickup:0-255:2:0:HuskGunSC"
+    SpawnInventory(35)="6:ScrnBalanceSrv.ScrnM4203Pickup:0-255:60+15:150"
+    SpawnInventory(36)="6:KFMod.M203AmmoPickup:1-255:1+1"
+    SpawnInventory(37)="6:ScrnBalanceSrv.ScrnM79Pickup:0-255:3+1:0:RocketBlow"
+    SpawnInventory(38)="6:KFMod.FragAmmoPickup:0-255:2:0:TW_PipeBlock"
+    SpawnInventory(39)="6:KFMod.FragAmmoPickup:0-255:2:0:TW_FP_Pipe"
+    SpawnInventory(40)="6:KFMod.FragAmmoPickup:0-255:2:0:MindBlowingSacrifice"
+    SpawnInventory(41)="8:ScrnBalanceSrv.ScrnDual44MagnumPickup:0-255:36+12:150"
+    SpawnInventory(42)="8:ScrnBalanceSrv.ScrnDualiesPickup:0-255:90+15:150:MadCowboy"
+    SpawnInventory(43)="8:KFMod.Vest:0-255:25:0:TrueCowboy"
+    SpawnInventory(44)="9:ScrnBalanceSrv.ScrnMP7MPickup:0-255:160+40:150"
+    SpawnInventory(45)="9:ScrnBalanceSrv.ScrnKatanaPickup:0-255::0:MeleeKillMidairCrawlers"
+    SpawnInventory(46)="9-1:ScrnBalanceSrv.ScrnKatanaPickup:0-255::0:TW_BackstabSC"
+    SpawnInventory(47)="9:ScrnBalanceSrv.ScrnCombatVestPickup:0-255:50:CombatMedic"
+    SpawnInventory(48)="*:ScrnBalanceSrv.ScrnMachetePickup:0-255::0:ComeatMe"
+    SpawnInventory(49)="*-1:ScrnBalanceSrv.ScrnMachetePickup:0-255::0:Friday13"
+    SpawnInventory(50)="*-2:ScrnBalanceSrv.ScrnMachetePickup:0-255::0:ThinIcePirouette"
+    SpawnInventory(51)="*-3:ScrnBalanceSrv.ScrnMachetePickup:0-255::0:MacheteKillMidairCrawler"
+    SpawnInventory(52)="*:ScrnBalanceSrv.ScrnAxePickup:0-255::0:OldSchoolKiting"
+    SpawnInventory(53)="*:KFMod.FragAmmoPickup:0-255:50:0:ScrakeNader"
+    SpawnInventory(54)="*:KFMod.CashPickup:0-255:50:0:MilkingCow"
+    SpawnInventory(55)="*:KFMod.CashPickup:0-255:50:0:SavingResources"
+    SpawnInventory(56)="*:KFMod.CashPickup:0-255:1+1:0:SpareChange"
+    bNoRequiredEquipment=true
+    bUseExpLevelForSpawnInventory=true
+    bUseDLCLocks=false
+    bUseDLCLevelLocks=true
 
-    bLeaveCashOnDisconnect=True
-    StartCashNormal=250
-    StartCashHard=250
-    StartCashSui=200
-    StartCashHoE=200
-    MinRespawnCashNormal=200
-    MinRespawnCashHard=200
-    MinRespawnCashSui=150
-    MinRespawnCashHoE=100
+    bBeta=false
+    bReplaceHUD=true
+    bReplaceScoreBoard=true
+    ServerPerksPkgName="ScrnSP.ServerPerksMutSE"
+    bServerInfoVeterancy=true
+    bFixMusic=true
+    bRespawnDoors=false
+
+    AchievementFlags=255
+    bSaveStatsOnAchievementEarned=false
+    bBroadcastAchievementEarn=true
+    strAchEarn="%p earned an achievement: %a"
+    EndGameStatBonus=0.5
+    bStatBonusUsesHL=true
+    StatBonusMinHL=0
+    FirstStatBonusMult=2.0
+    RandomMapStatBonus=2.0
+
+    SkippedTradeTimeMult=0.75
     TraderTimeNormal=60
     TraderTimeHard=60
     TraderTimeSui=60
     TraderTimeHoE=60
+    bTraderSpeedBoost=true
 
-    SpawnInventory(0)="0:ScrnBalanceSrv.ScrnCombatVestPickup:5-255:100"
-    SpawnInventory(1)="0:ScrnBalanceSrv.ScrnMP7MPickup:6-255:200+20:157"
-    SpawnInventory(2)="1:ScrnBalanceSrv.ScrnShotgunPickup:5:24:150"
-    SpawnInventory(3)="1:ScrnBalanceSrv.ScrnBoomStickPickup:6-255:24+6:225"
-    SpawnInventory(4)="2:ScrnBalanceSrv.ScrnWinchesterPickup:5:40:150"
-    SpawnInventory(5)="2:ScrnBalanceSrv.ScrnCrossbowPickup:6-255:12+3:225"
-    SpawnInventory(6)="3:ScrnBalanceSrv.ScrnBullpupPickup:5:200:150"
-    SpawnInventory(7)="3:ScrnBalanceSrv.ScrnAK47Pickup:6-255:150+30:225"
-    SpawnInventory(8)="4:ScrnBalanceSrv.ScrnAxePickup:5::150"
-    SpawnInventory(9)="4:ScrnBalanceSrv.ScrnChainsawPickup:6-255:500+50:225"
-    SpawnInventory(10)="5:ScrnBalanceSrv.ScrnMAC10Pickup:5:200:150"
-    SpawnInventory(11)="5:ScrnBalanceSrv.ScrnFlameThrowerPickup:6-255:320+80:225"
-    SpawnInventory(12)="6:ScrnBalanceSrv.ScrnFragPickup:5:10"
-    SpawnInventory(13)="6:ScrnBalanceSrv.ScrnM79Pickup:6-255:12+2:225"
-    SpawnInventory(14)="8:ScrnBalanceSrv.ScrnDualiesPickup:5:150:150"
-    SpawnInventory(15)="8:ScrnBalanceSrv.ScrnDual44MagnumPickup:6-255:66+12:225"
+    bAllowVoting=true
+    bAllowPauseVote=true
+    bPauseTraderOnly=false
+    MaxPauseTime=120
+    MaxPauseTimePerWave=180
+    bAllowLockPerkVote=true
+    bAllowKickVote=true
+    bAllowBlameVote=true
+    BlameVoteCoolDown=60
+    bBlameFart=true
+    bAllowBoringVote=true
+    MaxVoteKillMonsters=10
+    MaxVoteKillHP=2000
+    bVoteKillCheckVisibility=true
+    VoteKillPenaltyMult=5.0
+    LockTeamMinWave=5.0
+    LockTeamMinWaveTourney=1.0
+    LockTeamAutoWave=8.5
+    MinVoteFF=0
+    MaxVoteFF=0
+    MinVoteDifficulty=2
+    MaxDifficulty=8
 
     ColorTags( 0)=(T="^0",R=1,G=1,B=1)
     ColorTags( 1)=(T="^1",R=200,G=1,B=1)
@@ -3617,26 +3652,8 @@ defaultproperties
     AmmoBoxMesh=StaticMesh'kf_generic_sm.pickups.Metal_Ammo_Box'
     AmmoBoxDrawScale=1.000000
     AmmoBoxDrawScale3D=(X=1.000000,Y=1.000000,Z=1.000000)
-    MaxWaveSize=500
-    MaxZombiesOnce=48
     GameStartCountDown=12
-    MinZedSpawnPeriod=2.0
-    bScrnWaves=True
-    bServerInfoVeterancy=True
-    bPlayerZEDTime=True
-    bUseDLCLocks=False
-    bUseDLCLevelLocks=True
-    bFixMusic=True
-    LockTeamMinWave=5.0
-    LockTeamMinWaveTourney=1.0
-    LockTeamAutoWave=8.5
-    bForceSteamNames=True
-
-    EndGameStatBonus=0.5
-    bStatBonusUsesHL=True
-    StatBonusMinHL=0
-    FirstStatBonusMult=2.0
-    RandomMapStatBonus=2.0
+    bTradingDoorsOpen=true
 
     MutateCommands(0)="ACCURACY"
     MutateCommands(1)="CHECK"
@@ -3658,12 +3675,6 @@ defaultproperties
     MutateCommands(17)="VERSION"
     MutateCommands(18)="ZED"
     MutateCommands(19)="ZEDLIST"
-
-    bAddToServerPackages=True
-    bAlwaysRelevant=True
-    bOnlyDirtyReplication=False
-    RemoteRole=ROLE_SimulatedProxy
-    bNetNotify=True
 
     HighlyDecorated(0)=(SteamID32=3907835,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(A=0),PostfixIconColor=(A=0))
     HighlyDecorated(1)=(SteamID32=4787302,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(A=0),PostfixIconColor=(A=0))
