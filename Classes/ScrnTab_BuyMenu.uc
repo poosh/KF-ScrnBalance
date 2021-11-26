@@ -14,7 +14,7 @@ var automated   ScrnTraderRequirementsListBox   ItemRequirements;
 var localized string strSelectedItemRequirements;
 var localized string strIntoScrnLocked;
 var byte InfoPageNum, ForceInfoPageNum;
-var localized string SaleButtonCaption;
+var localized string SaleButtonCaption, strSale0, strNoSale;
 
 var transient ScrnClientPerkRepLink PerkLink;
 var transient KFPlayerReplicationInfo KFPRI;
@@ -216,8 +216,14 @@ function UpdateBuySellButtons()
 {
     super.UpdateBuySellButtons();
 
-    if ( SaleButton.MenuState != MSAT_Disabled && TheBuyable.bIsVest ) {
+    if ( SaleButton.MenuState == MSAT_Disabled || TheBuyable == none ) {
+        SaleButton.Caption = strNoSale;
+    }
+    else if ( TheBuyable.bIsVest ) {
         SaleButton.Caption = ScrnHumanPawn(PlayerOwner().Pawn).LightVestClass.default.ItemName;
+    }
+    else if ( TheBuyable.ItemSellValue <= 0 ) {
+        SaleButton.Caption = strSale0;
     }
     else {
         SaleButton.Caption = SaleButtonCaption;
@@ -525,6 +531,8 @@ defaultproperties
      End Object
      SaleButton=GUIButton'ScrnBalanceSrv.ScrnTab_BuyMenu.SaleB'
      SaleButtonCaption="Sell Weapon"
+     strSale0="Donate to Charity"
+     strNoSale="Not Sellable"
 
      Begin Object Class=GUIButton Name=PurchaseB
          Caption="Purchase Weapon"

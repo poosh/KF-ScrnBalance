@@ -1211,6 +1211,15 @@ static function bool CalcAmmoCost(Pawn P, Class<Ammunition> AClass,
     return true;
 }
 
+function FixAmmo(Class<Ammunition> AClass)
+{
+    local Ammunition MyAmmo;
+    local float ClipPrice, FullRefillPrice;
+    local int ClipSize;
+
+    CalcAmmoCost(self, AClass, MyAmmo, ClipPrice, FullRefillPrice, ClipSize);
+}
+
 function UsedStartCash(int UseAmount)
 {
     if ( UseAmount != 0 && ScrnPC != none )
@@ -1527,6 +1536,11 @@ function ServerBuyWeapon( Class<Weapon> WClass, float ItemWeight )
         }
 
         I.GiveTo(self);
+        if ( KFW != none && KFW.AmmoClass[0] != none ) {
+            // fixes a bug in KFWeapon.GiveAmmo() which applies AddExtraAmmoFor() twice if both fire modes share
+            // the same ammo
+            FixAmmo(KFW.AmmoClass[0]);
+        }
         PlayerReplicationInfo.Score -= Price;
         UsedStartCash(Price);
         ClientForceChangeWeapon(I);
@@ -1669,7 +1683,7 @@ function Timer()
     if (BurnDown > 0) {
         if ( BurnInstigator == self || KFPawn(BurnInstigator) == none ) {
             // lower damage each burn tick unless it is PvP damage
-            LastBurnDamage *= 0.5;
+            LastBurnDamage /= 2;
         }
         TakeFireDamage(LastBurnDamage, BurnInstigator);
     }

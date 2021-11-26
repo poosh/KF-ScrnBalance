@@ -66,8 +66,8 @@ static function int ReduceDamage(KFPlayerReplicationInfo KFPRI, KFPawn Injured, 
             || class<DamTypeRocketImpact>(DmgType) != none )
     {
         if ( class'ScrnBalance'.default.Mut.bHardcore )
-            return InDamage *= 0.50; // 50% damage resistance to explosives
-        InDamage *= 0.20; // 80% damage resistance to explosives
+            return InDamage *= 0.65; // 35% damage resistance to explosives
+        InDamage *= 0.30; // 70% damage resistance to explosives
     }
     else if ( class'ScrnBalance'.default.Mut.bHardcore && Instigator != none
             && (Instigator.IsA('ZombieFleshpound') || Instigator.IsA('FemaleFP')) ) {
@@ -149,7 +149,7 @@ defaultproperties
     DefaultDamageTypeNoBonus=Class'ScrnBalanceSrv.ScrnDamTypeDefaultDemoBase'
     SamePerkAch="OP_Demo"
 
-    SkillInfo="PERK SKILLS:|80% resistance to explosions"
+    SkillInfo="PERK SKILLS:|70% resistance to explosions"
     CustomLevelInfo="PERK BONUSES (LEVEL %L):|%x extra Explosive damage|%a extra Rockets|+%g extra Pipebombs, M203 and Hand Grenades|%$ discount on Explosives|%d discount on explosive ammo|%p discount on Pipebombs"
 
     PerkIndex=6

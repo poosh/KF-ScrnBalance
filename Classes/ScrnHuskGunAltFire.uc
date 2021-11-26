@@ -28,10 +28,17 @@ function ModeDoFire()
 {
     if (!AllowFire())
         return;
-        
-    Weapon.ConsumeAmmo(ThisModeNum, MaxChargeAmmo-1); // +1 will be consumed in parent function
+
+    Load = MaxChargeAmmo;  // ammo to consume
     super(KFShotgunFire).ModeDoFire();
 }
+
+function DoFireEffect()
+{
+    Load = 1;  // affects projectile count
+    super.DoFireEffect();
+}
+
 
 defaultproperties
 {

@@ -87,7 +87,9 @@ event PreBeginPlay()
     Super.PreBeginPlay();
     GameReplicationInfo.bNoTeamSkins = bSingleTeamGame;
     GameReplicationInfo.bNoTeamChanges = bSingleTeamGame;
-    TSCGRI.FinalWave = OriginalFinalWave;
+    if ( OriginalFinalWave > 0 ) {
+        TSCGRI.FinalWave = OriginalFinalWave;
+    }
 }
 
 function PostBeginPlay()

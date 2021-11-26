@@ -19,6 +19,17 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+### v9.69.04
+- Reduced Demolition's explosive resistance to 70% (down from 80%)
+- Hardcore Mode: Reduced Demolition's explosive resistance to 35% (down from 50%)
+- Increased Husk Gun ammo to 250/400 base/lv6 (up from 200/320)
+- Fixed a bug where perk ammo bonus got applied twice on weapons that use the same ammo for both primary and secondary
+  fire (Husk Gun, Boomstick). Thanks to *Lost_Champ*
+- Fixed an issue where wave count displayed 0 in XCM DUEL (e.g., "Wave 3/0").
+- "Sell Weapon" button in the Shop changes to "Donate to Charity" if the sell price is $0.
+- Minor map improvements in *ScrnMapInfo.ini*
+
+
 ### v9.69.03
 - Refactored *ScrnBalanceSrv.ini* by commenting out the default values. That allows users to override a default value
   by uncommenting and changing the value. Keeping a value commented means "follow the default value" - if the default

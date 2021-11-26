@@ -53,25 +53,22 @@ state Pickup
 
         for ( CurInv = Other.Inventory; CurInv != none; CurInv = CurInv.Inventory ) {
             ammo = KFAmmunition(CurInv);
-            if ( ammo != none && ammo.bAcceptsAmmoPickups ) {
-                // changed from 1 to 0  -- PooSH
+            if ( ammo != none && ammo.bAcceptsAmmoPickups && ammo.AmmoAmount < ammo.MaxAmmo ) {
                 if ( ammo.AmmoPickupAmount > 0 ) {
-                    if ( ammo.AmmoAmount < ammo.MaxAmmo ) {
-                        if ( Perk != none ) {
-                            AmmoPickupAmount = float(ammo.AmmoPickupAmount)
-                                    * Perk.static.GetAmmoPickupMod(KFPRI, ammo);
-                        }
-                        else {
-                            AmmoPickupAmount = ammo.AmmoPickupAmount;
-                        }
-                        ammo.AmmoAmount = Min(ammo.MaxAmmo, ammo.AmmoAmount + AmmoPickupAmount);
-                        bPickedUp = true;
+                    if ( Perk != none ) {
+                        AmmoPickupAmount = float(ammo.AmmoPickupAmount)
+                                * Perk.static.GetAmmoPickupMod(KFPRI, ammo) + 0.0001;
                     }
+                    else {
+                        AmmoPickupAmount = ammo.AmmoPickupAmount;
+                    }
+                    ammo.AddAmmo(AmmoPickupAmount);
+                    bPickedUp = true;
                 }
-                else if ( ammo.AmmoAmount < ammo.MaxAmmo ) {
+                else {
                     bPickedUp = true;
                     if ( FRand() <= (1.0 / Level.Game.GameDifficulty) )
-                        ammo.AmmoAmount++;
+                        ammo.AddAmmo(1);
                 }
             }
         }

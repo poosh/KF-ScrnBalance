@@ -91,12 +91,6 @@ static function int ReduceDamage(KFPlayerReplicationInfo KFPRI, KFPawn Injured, 
     if ( InDamage == 0 )
         return 0;
 
-    // HARDCORE - no damage resistance from Husk's fire damage
-    // Except Doom3 Monsters mode, because there is no way to differ Husk damage from Imp or ArchVile damage
-    if ( DmgType == class'DamTypeBurned' && class'ScrnBalance'.default.Mut.bHardcore
-            && class'ScrnBalance'.default.Mut.GameRules.GameDoom3Kills == 0 )
-        return InDamage;
-
     if ( DmgType == class'DamTypeVomit' ) {
         InDamage *= 0.20; // 80% reduced Bloat Bile damage
     }
@@ -104,6 +98,11 @@ static function int ReduceDamage(KFPlayerReplicationInfo KFPRI, KFPawn Injured, 
         InDamage *= 0.40; // 60% reduced damage from Doom Demons
     }
     else {
+        // HARDCORE - no damage resistance from burning damage
+        // v9.69.04 - Doom monsters use DamTypeD3Burned instead - keep resistance to that
+        if ( DmgType == class'DamTypeBurned' && class'ScrnBalance'.default.Mut.bHardcore )
+            return InDamage;
+
         if ( KFPawn(Instigator) != none )
             InDamage *= 0.70; // v7.46: player-to-player damage
         else
