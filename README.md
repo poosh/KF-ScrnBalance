@@ -19,6 +19,23 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+### v9.69.06
+- Fixed an issue where locked perks could stay locked after map restart
+- Restored default zed count in Doom3 Wave 10.
+- Fixed an issue where a regular Grittier Patriarch was spawned instead of Grittier HardPat in some game modes
+  (thanks *Duckbuster* and *Joe*)
+
+#### FTG
+- Fixed a critical bug that caused team wipe on Patriarch kill
+- Enhanced Stinky Clot's teleportation ability to get out of bad paths
+- Fixed an issue where a player could be blamed multiple time for placing the base at a glitch spot
+- **FTG On The Clock** v2.31 - fixed trader arrow in "trader path" waves
+
+#### ScrN Zed Pack
+- **HardPat** can fire chaingun on escaping when low on health
+- Players cannot interrupt HardPat's healing process by dealing damage on Suicidal/HoE
+
+
 ### v9.69.04
 - Reduced Demolition's explosive resistance to 70% (down from 80%)
 - Hardcore Mode: Reduced Demolition's explosive resistance to 35% (down from 50%)

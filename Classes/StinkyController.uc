@@ -12,6 +12,8 @@ var transient KFAmmoPickup CurrentAmmoCandidate;
 var transient Actor LastAlternatePathTarget;
 var transient NavigationPoint LastAlternatePathPoint;
 var transient Actor OldMoveTarget;
+var transient Actor TeleportTarget;
+var transient int TeleportAttempts;
 var transient int ActionMoves;
 var int MoveAttempts;
 
@@ -64,40 +66,33 @@ function Actor GetMoveTarget()
     return result;
 }
 
-function NavigationPoint FindClosestPathNode(Actor anActor)
-{
-    return FtgGame.FindClosestPathNode(anActor);
-}
-
-// returns closest reachable point to a given actor
-function Actor FindAlternatePath(Actor anActor)
+function Stuck()
 {
     local NavigationPoint N;
-    local Actor result;
+    local string s;
 
-    if ( LastAlternatePathTarget == anActor && LastAlternatePathPoint != none )
-        N = LastAlternatePathPoint;
+    if ( Target == none ) {
+        warn("No Target");
+        return;
+    }
+
+    if ( LastAlternatePathTarget == Target && LastAlternatePathPoint != none ) {
+        // make sure we don't use this navigation point anymore
+        FtgGame.InvalidatePathTarget(LastAlternatePathPoint);
+    }
+
+    s = "Unreachable actor " $ GetItemName(string(Target)) $ " @ (" $ Target.Location $ ")";
+    N = FtgGame.FindClosestPathNode(Target);
+
+    if ( N == none ) {
+        log(s $ " => abort", class.name);
+    }
     else {
-        N = FindClosestPathNode(anActor);
-        log("Unreachable actor " $ GetItemName(string(anActor)) $ " @ (" $ anActor.Location $ ") -> rerouting to "
-                $ N, class.name);
-        if ( TheGuardian(anActor) != none ) {
-            FtgGame.ScrnBalanceMut.BlamePlayer(TheGuardian(anActor).GetBaseSetter(), BlameStr);
-        }
+        log(s $ " => rerouting to " $ N, class.name);
+        MoveTarget = FindPathToward(N, false);
     }
-    if ( N != none ) {
-        result = FindPathToward(N, false);
-        if ( result != none ) {
-            // cache found navigation point for next calls
-            LastAlternatePathTarget = anActor;
-            LastAlternatePathPoint = N;
-        }
-        else {
-            FtgGame.InvalidatePathTarget(N); // make sure we don't use this navigation point anymore
-            LastAlternatePathPoint = none;
-        }
-    }
-    return result;
+    LastAlternatePathTarget = Target;
+    LastAlternatePathPoint = N;
 }
 
 function CompleteAction()
@@ -173,6 +168,7 @@ state Moving extends Scripting
         if ( Focus == None )
             Focus = Target;
         MoveTarget = Target;
+        TeleportTarget = none;
 
         if ( MoveTarget != none && !ActorReachable(MoveTarget) ) {
             MoveTarget = FindPathToward(MoveTarget, false);
@@ -180,23 +176,35 @@ state Moving extends Scripting
                 // this could be a dead end, like badly placed ammo box or base guardian
                 // teleport one step back and try again
                 log("No path to " $ GetItemName(string(Target)));
+                TeleportTarget = StinkyClot.MoveHistory[1];
                 ActionMoves++;
-                return;
+                if ( TeleportTarget != none )
+                    return;
             }
-            if ( MoveTarget == none || (MoveTarget == OldMoveTarget && --MoveAttempts <= 0)) {
+
+            if ( MoveTarget == none || (MoveTarget == OldMoveTarget && --MoveAttempts <= 0) ) {
                 log("Stuck @ (" $ Pawn.Location $ ") while navigating to " $ GetItemName(string(MoveTarget))
                         $ " / " $ GetItemName(string(Target)), class.name);
                 StinkyClot.LogPath();
-                if ( NavigationPoint(MoveTarget) != none ) {
-                    // make sure we don't use this navigation point anymore
-                    FtgGame.InvalidatePathTarget(MoveTarget);
+
+                switch (TeleportAttempts) {
+                    case 0:
+                        if ( CurrentPath != none && CurrentPath.End != none ) {
+                            TeleportTarget = CurrentPath.End;
+                            break;
+                        }
+                        // else fallthrough
+                    case 1:
+                        if ( NextRoutePath != none && NextRoutePath.End != none ) {
+                            TeleportTarget = NextRoutePath.End;
+                            break;
+                        }
+                        // else fallthrough
+                    default:
+                        Stuck();
                 }
-                LastAlternatePathPoint = none;
-                MoveTarget = none;
-            }
-            if ( MoveTarget == None ) {
-                // if we can't reach the target, then move to closest NavigationPoint
-                MoveTarget = FindAlternatePath(Target);
+                if ( TeleportTarget != none )
+                    return;
             }
         }
 
@@ -204,6 +212,7 @@ state Moving extends Scripting
             AbortScript();
             return;
         }
+
         if ( Focus == Target )
             Focus = MoveTarget;
         if ( OldMoveTarget != MoveTarget ) {
@@ -231,11 +240,13 @@ KeepMoving:
     }
     DoAdditionalActions();
     SetMoveTarget();
-    if ( MoveTarget == none ) {
-        // Stuck at dead end - teleport one path node back
-        StinkyClot.TeleportToActor(StinkyClot.MoveHistory[1]);
+    if ( TeleportTarget != none ) {
+        StinkyClot.TeleportToActor(TeleportTarget);
+        TeleportTarget = none;
+        TeleportAttempts++;
         Goto('KeepMoving');
     }
+    TeleportAttempts = 0;
     Pawn.GroundSpeed = CalcSpeed();
     Pawn.WaterSpeed = Pawn.GroundSpeed;
     Pawn.AirSpeed = Pawn.GroundSpeed;
@@ -260,6 +271,20 @@ KeepMoving:
 
 state MoveToGuardian extends Moving
 {
+    function Stuck()
+    {
+        global.Stuck();
+
+        if ( MoveTarget == none && LastAlternatePathPoint != none && TeleportAttempts < 3 ) {
+            // Most-likely spawned in glitch spot due to map level design
+            // teleport next to guardian
+            TeleportTarget = LastAlternatePathPoint;
+        }
+        else if ( TheGuardian(Target) != none ) {
+            TheGuardian(Target).BlameBaseSetter(BlameStr);
+        }
+    }
+
     function int CalcSpeed()
     {
         if ( FtgGame.bWaveBossInProgress )
@@ -289,12 +314,14 @@ state MoveToShop extends Moving
         return global.GetMoveTarget();
     }
 
-    function Actor FindAlternatePath(Actor anActor)
+    function Stuck()
     {
-        if ( KFAmmoPickup(anActor) != none ) {
-            return none; // no alternate paths for ammo boxes -> simply go to next action
+        if ( KFAmmoPickup(Target) != none ) {
+            AbortScript();
         }
-        return super.FindAlternatePath(anActor);
+        else {
+            global.Stuck();
+        }
     }
 
     function DoAdditionalActions()
@@ -380,9 +407,9 @@ state MoveToAmmo extends Moving
         CompleteAction();
     }
 
-    function Actor FindAlternatePath(Actor anActor)
+    function Stuck()
     {
-        return none;
+        AbortScript();
     }
 
     function CompleteAction()

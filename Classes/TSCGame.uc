@@ -145,7 +145,11 @@ event InitGame( string Options, out string Error )
     else
         log("Voting (mvote) disabled.", 'TSC');
 
-    if ( !bSingleTeamGame ) {
+    if ( bSingleTeamGame ) {
+        OvertimeWaves = 0;
+        SudDeathWaves = 0;
+    }
+    else {
         bUseEndGameBoss = false;
         if ( ScrnGameLength != none ) {
             OvertimeWaves = ScrnGameLength.OTWaves;
@@ -1137,6 +1141,8 @@ State MatchInProgress
             // just to avoid deadends, but TSC games shouldn't be played on maps with only 1 shop
             TSCGRI.CurrentShop = TempShopList[0];
             TSCGRI.BlueShop = TempShopList[0];
+            TeamShops[0] = TempShopList[0];
+            TeamShops[1] = TempShopList[0];
             return;
         }
 

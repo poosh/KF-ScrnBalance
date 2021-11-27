@@ -73,7 +73,7 @@ var float ZEDTimeTransitionTime;  // time to transit from slowmo to normal game 
 var float ZEDTimeTransitionRate;  // how often (in seconds) to update game speed
 var transient float ZEDTimeNextUpdate;
 
-var bool bSingleTeamGame;
+var const bool bSingleTeamGame;
 var transient int WavePlayerCount; // alive player count at the beginning of the wave
 var transient int AlivePlayerCount, AliveTeamPlayerCount[2];
 var array<KFMonster> Bosses;

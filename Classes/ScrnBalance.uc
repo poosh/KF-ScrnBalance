@@ -3148,9 +3148,12 @@ function ServerTraveling(string URL, bool bItems)
         class'ScrnBalance'.default.Mut = none;
     }
 
-    for ( j=0; j<Perks.length; ++j )
-        if ( Perks[j] != none )
+    for ( j=0; j<Perks.length; ++j ) {
+        if ( Perks[j] != none ) {
             Perks[j].default.DefaultInventory.length = 0;
+            Perks[j].default.bLocked = false;
+        }
+    }
 
     DestroyLinkedInfo(CustomWeaponLink);
     CustomWeaponLink = none;
@@ -3370,7 +3373,7 @@ function RegisterVersion(string ItemName, int Version)
 
 defaultproperties
 {
-    VersionNumber=96904
+    VersionNumber=96906
     GroupName="KF-Scrn"
     FriendlyName="ScrN Balance"
     Description="Total rework of KF1 to make it modern and the best game in the world while sticking to the roots of the original."

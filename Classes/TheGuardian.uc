@@ -2,6 +2,7 @@ class TheGuardian extends TSCBaseGuardian
     abstract;
 
 var localized string strBlame;
+var transient bool bBlamed;
 
 function PawnBaseDied()
 {
@@ -21,12 +22,9 @@ function PawnBaseDied()
 
 function BaseSetupFailed()
 {
-    local TscGame game;
-
-    game = TscGame(Level.Game);
-    game.ScrnBalanceMut.BlamePlayer(GetBaseSetter(), strBlame);
+    BlameBaseSetter(strBlame);
     if ( TSCGRI.bWaveInProgress ) {
-        game.BootShopPlayers();
+        TscGame(Level.Game).BootShopPlayers();
     }
 
     MoveToShop(MyShop); // teleport next to shop
@@ -36,6 +34,15 @@ function BaseSetupFailed()
         log( "Base setup failed", class.name );
         SendHome();
     }
+}
+
+function BlameBaseSetter(string BlameStr)
+{
+    if ( bBlamed )
+        return;
+
+    bBlamed = true;
+    TscGame(Level.Game).ScrnBalanceMut.BlamePlayer(GetBaseSetter(), BlameStr);
 }
 
 auto state Home
@@ -71,6 +78,7 @@ state Guarding
         }
         Holder = none;
         bHeld = false;
+        bBlamed = false;
 
         super.EndState();
     }
