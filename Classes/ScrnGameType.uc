@@ -1200,8 +1200,10 @@ function float RateZombieVolume(ZombieVolume ZVol, Pawn SpawnCloseTo, float MaxU
     for ( i=0; i<ZVol.RoomDoorsList.Length; ++i ) {
         if ( ZVol.RoomDoorsList[i].DoorActor!=None && (ZVol.RoomDoorsList[i].DoorActor.bSealed
                 || (!ZVol.RoomDoorsList[i].bOnlyWhenWelded && ZVol.RoomDoorsList[i].DoorActor.KeyNum==0)) )
+        {
             DisableZombieVolume(ZVol);
             return -1;
+        }
     }
 
     // Rate how long its been since this spawn was used

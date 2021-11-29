@@ -19,6 +19,32 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+### v9.69.07
+- Fixed a critical bug that prevented zed spawns in any door-related volumes (thanks *Joe*)
+  For instance, this bug completely blocked spawns on KF-TheGreatPyramid-Arena.
+- Added map definitions for Clandestine and TheGreatPyramid-Arena.
+- Hardcore Level in `HardcoreGames` now gets multiplied by per-difficulty `HLMult_X`.
+  Previously, players could get "cheap" HL=6 by playing FTG on Normal.
+- Replaced hardcored HL for Social Isolation with x1.5 multiplier.
+  Now, enabling custom zeds in Social Isolation raises HL.
+- `HLMult_Hard=0.60` (down from 0.75)
+- `HLMult_Normal=0.40` (down from 0.75)
+- Grittier Siren's HL lowered to 0.5 (down from 1.0)
+- HL table: https://docs.google.com/spreadsheets/d/1Jd5S5XrgrVjq8V8NvHiTG1y6JgE83yzzBYKBeZjRHsg/edit?usp=sharing
+
+#### ScrN SP
+- Fixed "PlayInfo" warnings (thanks *nmmblez*)
+
+#### ScrN Weapon Pack
+- Raised HopMine damage to 500 (up from 450) for more reliable Scrake stunning.
+- Fixed an issue where HopMines didn't explode on hitting zeds
+
+#### ScrN Zed Pack
+- **HardPat** gets 50% damage resistance during the healing process on HoE
+- HardPat cannot be knocked down while shooting the first rocket on Suicidal/HoE
+- Fixed "NoiseMaker" warning
+
+
 ### v9.69.06
 - Fixed an issue where locked perks could stay locked after map restart
 - Restored default zed count in Doom3 Wave 10.

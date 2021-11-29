@@ -18,7 +18,7 @@ static function float GetSyringeChargeRate(KFPlayerReplicationInfo KFPRI)
 
 static function float GetHealPotency(KFPlayerReplicationInfo KFPRI)
 {
-    return 1.05; // added 5% to bypass IsMedic() check
+    return 1.05; // added 5% to pass IsMedic() check
 }
 
 static function float GetFireSpeedModStatic(KFPlayerReplicationInfo KFPRI, class<Weapon> Other)

@@ -1162,7 +1162,7 @@ function InitHardcoreLevel()
 
     for ( i=0; i<HardcoreGames.length; ++i ) {
         if ( HardcoreGames[i].GameClass ~= GameClass ) {
-            HardcoreLevelFloat += HardcoreGames[i].HL;
+            HardcoreLevelFloat += HardcoreGames[i].HL * ZedHLMult;
             break;
         }
     }
@@ -1733,9 +1733,9 @@ defaultproperties
 
     bBroadcastHL=true
     HL_Normal=0
-    HLMult_Normal=0.5
+    HLMult_Normal=0.40
     HL_Hard=2
-    HLMult_Hard=0.75
+    HLMult_Hard=0.60
     HL_Suicidal=5
     HLMult_Suicidal=1.0
     HL_HoE=7
@@ -1757,13 +1757,13 @@ defaultproperties
     HardcoreZeds(06)=(MonsterClass="FemaleFP_MKII",HL=2.5)
     HardcoreZeds(07)=(MonsterClass="GorefastG",HL=0.3)
     HardcoreZeds(08)=(MonsterClass="BloatG",HL=0.3)
-    HardcoreZeds(09)=(MonsterClass="SirenG",HL=1.0)
+    HardcoreZeds(09)=(MonsterClass="SirenG",HL=0.5)
     HardcoreZeds(10)=(MonsterClass="HuskG",HL=1.4)
     HardcoreZeds(11)=(MonsterClass="ZombieSuperCrawler",HL=0.3)
     HardcoreZeds(12)=(MonsterClass="ZombieSuperStalker",HL=0.3)
     HardcoreZeds(13)=(MonsterClass="ZombieSuperGorefast",HL=0.3)
     HardcoreZeds(14)=(MonsterClass="ZombieSuperBloat",HL=0.3)
-    HardcoreZeds(15)=(MonsterClass="ZombieSuperSiren",HL=1.0)
+    HardcoreZeds(15)=(MonsterClass="ZombieSuperSiren",HL=0.5)
     HardcoreZeds(16)=(MonsterClass="ZombieSuperFP",HL=1.0)
     HardcoreZeds(17)=(MonsterClass="ZombieSuperHusk",HL=1.4)
     HardcoreZeds(18)=(MonsterClass="ZombieSuperScrake",HL=1.4)
@@ -1820,5 +1820,5 @@ defaultproperties
     MapAliases(19)=(FileName="KF-HellFreezesOver1-2",AchName="KF-Hell")
     MapAliases(20)=(FileName="KF-Train-fix",AchName="KF-Train")
     MapAliases(21)=(FileName="KF-PandorasBoxV2-fix",AchName="KF-PandorasBox")
-    MapAliases(22)=(FileName="KF-Constriction-SE",AchName="KF-Constriction")    
+    MapAliases(22)=(FileName="KF-Constriction-SE",AchName="KF-Constriction")
 }
