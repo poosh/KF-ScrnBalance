@@ -636,22 +636,16 @@ function WipeTeam(TeamInfo Team, optional class<DamageType> DamageType)
     }
 }
 
-function bool CheckEndGame(PlayerReplicationInfo Winner, string Reason)
+function bool AllowGameEnd(PlayerReplicationInfo Winner, string Reason)
 {
-    local Controller C, N;
-    local PlayerController PC;
-    local KFPlayerController KFPC;
-    local bool bSetAchievement;
-    local String EndSong;
-
     if ( Reason == "TeamScoreLimit" ) {
         if ( AliveTeamPlayerCount[0] > 0 && AliveTeamPlayerCount[1] == 0 ) {
             TSCGRI.Winner = Teams[0];
-            EndSong = SongRedWin;
+            EngGameSong = SongRedWin;
         }
         else if ( AliveTeamPlayerCount[0] == 0 && AliveTeamPlayerCount[1] > 0 ) {
             TSCGRI.Winner = Teams[1];
-            EndSong = SongBlueWin;
+            EngGameSong = SongBlueWin;
         }
         else {
             return false;
@@ -660,55 +654,19 @@ function bool CheckEndGame(PlayerReplicationInfo Winner, string Reason)
         ScrnBalanceMut.BroadcastMessage(TeamInfo(TSCGRI.Winner).GetHumanReadableName() $ " team won the game on wave "
                 $ string(WaveNum+1), true);
     }
-    else {
-        if ( WaveNum >= OriginalFinalWave + OvertimeWaves + SudDeathWaves ) {
-            TSCGRI.Winner = none;
-            TSCGRI.EndGameType = 2;
-            EndSong = SongBothWin;
-            bSetAchievement = BaseDifficulty >= DIFF_NORMAL;
-        }
-        else {
-            TSCGRI.EndGameType = 1;
-            EndSong = SongBothWiped;
-        }
-    }
-
-    if ( (GameRulesModifiers != None) && !GameRulesModifiers.CheckEndGame(Winner, Reason) ) {
-        TSCGRI.EndGameType = 0;
+    else if ( AlivePlayerCount <= 0 ) {
+        TSCGRI.EndGameType = 1;
         TSCGRI.Winner = none;
+        EngGameSong = SongBothWiped;
+    }
+    else if ( WaveNum >= EndWaveNum() ) {
+        TSCGRI.Winner = none;
+        TSCGRI.EndGameType = 2;
+        EngGameSong = SongBothWin;
+    }
+    else {
         return false;
     }
-
-    // if we reached here, game must be ended
-    EndTime = Level.TimeSeconds + EndTimeDelay;
-
-    for ( C = Level.ControllerList; C != none; C = N ) {
-        N = C.nextController;  // save it noe in case C gets destroyed
-        PC = PlayerController(C);
-        if ( PC != none ) {
-            PC.ClientSetBehindView(true);
-            PC.ClientGameEnded();
-
-            if ( bSetAchievement && PC.PlayerReplicationInfo != none
-                    && KFSteamStatsAndAchievements(PC.SteamStatsAndAchievements) != none
-                    && (PC.PlayerReplicationInfo.Team == GameReplicationInfo.Winner
-                        || GameReplicationInfo.Winner == none) )
-            {
-                KFSteamStatsAndAchievements(PC.SteamStatsAndAchievements).WonGame(ScrnBalanceMut.MapName,
-                        GameDifficulty, false);
-            }
-
-            KFPC = KFPlayerController(PC);
-            if ( KFPC != none) {
-                KFPC.NetPlayMusic(EndSong, 0.5, 0);
-            }
-        }
-        C.GameHasEnded();
-    }
-
-    if ( CurrentGameProfile != none )
-        CurrentGameProfile.bWonMatch = false;
-
     return true;
 }
 
@@ -811,6 +769,11 @@ function byte RelativeWaveNum(float LongGameWaveNum)
     if ( w == 10 )
         return ceil(LongGameWaveNum);
     return min(10, ceil(LongGameWaveNum * w / 10.0));
+}
+
+function int EndWaveNum()
+{
+    return OriginalFinalWave + OvertimeWaves + SudDeathWaves + int(bUseEndGameBoss);
 }
 
 function SetupWave()
@@ -1072,14 +1035,11 @@ State MatchInProgress
 
         NextWave = WaveNum + 1;
         if ( !bSingleTeam && (AliveTeamPlayerCount[0] == 0 ^^ AliveTeamPlayerCount[1] == 0) ) {
-            EndGame(None,"TeamScoreLimit");
-        }
-        else if ( AlivePlayerCount > 0 && NextWave >= OriginalFinalWave ) {
-            if ( NextWave >= OriginalFinalWave + OvertimeWaves + SudDeathWaves ) {
-                WaveNum++;
-                EndGame(None,"TimeLimit");
+            EndGame(none, "TeamScoreLimit");
+            if ( bGameEnded )
                 return;
-            }
+        }
+        else if ( AlivePlayerCount > 0 && NextWave >= OriginalFinalWave && NextWave < EndWaveNum() ) {
             if ( OvertimeWaves > 0 && NextWave == OriginalFinalWave ) {
                 TSCGRI.bOverTime = true;
                 BroadcastLocalizedMessage(class'TSCMessages', 201);
@@ -1112,9 +1072,10 @@ State MatchInProgress
             WaveNum = ScrnGameLength.Waves.length - 2;
         }
         super.DoWaveEnd();
-        if ( !bGameEnded ) {
-            WaveNum = NextWave;
-        }
+        if ( bGameEnded )
+            return;
+
+        WaveNum = NextWave;
         TSCGRI.WaveNumber = WaveNum;
 
         if ( bPendingShuffle ) {

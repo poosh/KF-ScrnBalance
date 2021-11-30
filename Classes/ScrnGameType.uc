@@ -84,6 +84,7 @@ var float KillRemainingZedsCooldown;  // time after LastSpawnTime when games tri
 var int MaxSpawnAttempts, MaxSpecialSpawnAttempts; // maximum spawn attempts before deleting the squad
 var float SpawnRatePlayerMod;  // per-player zed spawn rate increase
 var int WavePct;  // Current wave's percentage to the final wave.
+var string EngGameSong;
 
 struct SBoringStage {
     var float SpawnPeriod;
@@ -107,6 +108,7 @@ enum EDropKind {
     DK_FART
 };
 
+var int ExtraZedTimeExtensions;  // extra zed time extentions for all players
 var bool bZedTimeEnabled;  // set it to false to completely disable the Zed Time in the game
 var transient byte PlayerSpawnTraderTeleportIndex;
 var name PlayerStartEvent;
@@ -600,7 +602,7 @@ function HandleZedTime(float dt)
         bZEDTimeActive = false;
         bSpeedingBackUp = false;
         SetGameSpeed(TurboScale);
-        ZedTimeExtensionsUsed = 0;
+        ZedTimeExtensionsUsed = -ExtraZedTimeExtensions;
     }
     else if( CurrentZEDTimeDuration < ZEDTimeTransitionTime ) {
         if( !bSpeedingBackUp ) {
@@ -2371,51 +2373,79 @@ function GiveStartingCash(PlayerController PC)
         ScrnPlayerController(PC).StartCash = PC.PlayerReplicationInfo.Score; // prevent tossing bonus too
 }
 
-function bool CheckEndGame(PlayerReplicationInfo Winner, string Reason)
+function bool AllowGameEnd(PlayerReplicationInfo Winner, string Reason)
 {
-    local Controller P;
-    local PlayerController Player;
-    local KFSteamStatsAndAchievements KFAch;
-    local bool bSetAchievement;
-
-    EndTime = Level.TimeSeconds + EndTimeDelay;
-
-    if ( WaveNum > FinalWave || (!bUseEndGameBoss && WaveNum == FinalWave) ) {
-        GameReplicationInfo.Winner = Teams[0];
+    if ( AlivePlayerCount <= 0 ) {
+        ScrnGRI.EndGameType = 1;
+        ScrnGRI.Winner = none;
+    }
+    else if ( WaveNum >= EndWaveNum() ) {
         ScrnGRI.EndGameType = 2;
-        bSetAchievement = BaseDifficulty >= DIFF_NORMAL;
+        if ( AliveTeamPlayerCount[0] > 0 && AliveTeamPlayerCount[1] <= 0 ) {
+            ScrnGRI.Winner = Teams[0];
+        }
+        else if ( AliveTeamPlayerCount[0] <= 0 && AliveTeamPlayerCount[1] > 0 ) {
+            ScrnGRI.Winner = Teams[1];
+        }
+        else {
+            ScrnGRI.Winner = none;
+        }
     }
     else  {
-        ScrnGRI.EndGameType = 1;
+        return false;
     }
+    return true;
+}
 
-    if ( (GameRulesModifiers != None) && !GameRulesModifiers.CheckEndGame(Winner, Reason) ) {
+function bool CheckEndGame(PlayerReplicationInfo Winner, string Reason)
+{
+    local Controller C, N;
+    local PlayerController PC;
+    local KFPlayerController KFPC;
+    local PlayerReplicationInfo PRI;
+    local KFSteamStatsAndAchievements KFAch;
+
+    UpdateMonsterCount();
+
+    if ( !AllowGameEnd(Winner, Reason)
+            || (GameRulesModifiers != none && !GameRulesModifiers.CheckEndGame(Winner, Reason)) )
+    {
         ScrnGRI.EndGameType = 0;
+        ScrnGRI.Winner = none;
         return false;
     }
 
-    for ( P = Level.ControllerList; P != none; P = P.nextController ) {
-        Player = PlayerController(P);
-        if ( Player != none ) {
-            Player.ClientSetBehindView(true);
-            Player.ClientGameEnded();
+    // if we reached here, the game must be ended
+    EndTime = Level.TimeSeconds + EndTimeDelay;
 
-            if ( bSetAchievement ) {
-                KFAch = KFSteamStatsAndAchievements(Player.SteamStatsAndAchievements);
-                if ( KFAch != none ) {
-                    KFAch.WonGame(ScrnBalanceMut.MapName, GameDifficulty, FinalWave >= 10);
-                }
+    for ( C = Level.ControllerList; C != none; C = N ) {
+        N = C.nextController;  // save it in case C gets destroyed
+        PC = PlayerController(C);
+        if ( PC != none ) {
+            KFPC = KFPlayerController(PC);
+            PRI = PC.PlayerReplicationInfo;
+            KFAch = KFSteamStatsAndAchievements(PC.SteamStatsAndAchievements);
+
+            PC.ClientSetBehindView(true);
+            PC.ClientGameEnded();
+
+            if ( BaseDifficulty >= DIFF_NORMAL && KFAch != none && PRI != none
+                    && (PRI.Team == ScrnGRI.Winner || ScrnGRI.Winner == none) )
+            {
+                KFAch.WonGame(ScrnBalanceMut.MapName, GameDifficulty, FinalWave >= 10);
+            }
+
+            if ( KFPC != none && EngGameSong != "" ) {
+                KFPC.NetPlayMusic(EngGameSong, 0.5, 0);
             }
         }
-
-        P.GameHasEnded();
+        C.GameHasEnded();
     }
 
     if ( CurrentGameProfile != none )  {
         // do not set focus on individial player
         CurrentGameProfile.bWonMatch = false;
     }
-
     return true;
 }
 
@@ -2518,6 +2548,12 @@ function byte RelativeWaveNum(float LongGameWaveNum)
     if ( FinalWave == 10 )
         return ceil(LongGameWaveNum);
     return ceil(LongGameWaveNum * FinalWave / 10.0);
+}
+
+// returns the wave number at which the game is considered ended (players win)
+function int EndWaveNum()
+{
+    return FinalWave + int(bUseEndGameBoss);
 }
 
 function int ScaleMonsterCount(int SoloNormalCounter, optional int MaxCounter)
@@ -2788,9 +2824,8 @@ function StartWaveBoss()
     NextMonsterTime = Level.TimeSeconds;
     bBossSpawned = false;
 
-    WaveEndTime = Level.TimeSeconds+60;
-
     if ( ScrnGameLength == none ) {
+        WaveEndTime = Level.TimeSeconds + 60;
         if( KFGameLength != GL_Custom ) {
             NextSpawnSquad[0] = Class<KFMonster>(DynamicLoadObject(MonsterCollection.default.EndGameBossClass,Class'Class'));
             NextspawnSquad[0].static.PreCacheAssets(Level);
@@ -2801,13 +2836,14 @@ function StartWaveBoss()
         }
     }
     else {
+        WaveEndTime = ScrnGameLength.GetWaveEndTime();
         ScrnGameLength.LoadNextSpawnSquad(NextSpawnSquad);
         log("Boss Squad: " $ ZedSquadToString(NextSpawnSquad), class.name);
     }
 
     if ( NextSpawnSquad.length == 0 ) {
         Broadcast(Self,"Game ended due to lack of bosses");
-        EndGame(None,"TimeLimit");
+        DoWaveEnd();
         return;
     }
 
@@ -3109,6 +3145,7 @@ function WaveTimer() {}
 function BossWaveTimer() {}
 function TraderTimer() {}
 function float CalcNextSquadSpawnTime() { return 5.0; }
+function DoWaveEnd() {}
 
 // ==================================== STATES ===============================
 auto State PendingMatch
@@ -3289,7 +3326,7 @@ State MatchInProgress
         if ( !MusicPlaying )
             StartGameMusic(True);
 
-        if ( TotalMaxMonsters<=0 ) {
+        if ( TotalMaxMonsters <= 0 ) {
              // all monsters spawned
             if ( ScrnGameLength == none && NumMonsters <= 0 )
                 DoWaveEnd();
@@ -3297,12 +3334,12 @@ State MatchInProgress
                 KillRemainingZeds(false);
         }
         else if ( Level.TimeSeconds > NextMonsterTime && NumMonsters + 4 <= MaxMonsters ) {
-            if ( ScrnGameLength != none )
-                WaveEndTime = ScrnGameLength.WaveEndTime;
-            else
-                WaveEndTime = Level.TimeSeconds + 60;
-
-            AddSquad();
+            if ( AddSquad() ) {
+                if ( ScrnGameLength != none )
+                    WaveEndTime = ScrnGameLength.GetWaveEndTime();
+                else
+                    WaveEndTime = Level.TimeSeconds + 60;
+            }
             NextMonsterTime = Level.TimeSeconds + CalcNextSquadSpawnTime();
         }
     }
@@ -3431,9 +3468,8 @@ State MatchInProgress
             else if( bWaveInProgress ) {
                 WaveTimer();
             }
-            else if ( TotalMaxMonsters <= 0 && NumMonsters <= 0 )
-            {
-                if ( WaveNum > FinalWave || (!bUseEndGameBoss && WaveNum == FinalWave) ) {
+            else if ( TotalMaxMonsters <= 0 && NumMonsters <= 0 ) {
+                if ( WaveNum >= EndWaveNum() ) {
                     EndGame(None,"TimeLimit");
                     return;
                 }
@@ -3510,7 +3546,7 @@ State MatchInProgress
         WaveNum++;
         WavePct = 100 * (WaveNum + 1) / FinalWave;
 
-        if ( WaveNum > FinalWave || (!bUseEndGameBoss && WaveNum == FinalWave) ) {
+        if ( WaveNum >= EndWaveNum() ) {
             EndGame(None, "TimeLimit");
             return;
         }

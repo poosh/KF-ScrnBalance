@@ -19,6 +19,17 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+### v9.69.08
+- Fixed a bug where an FTG game was considered won if players got killed by the boss.
+- The game is considered LOST if all players die together with the boss (e.g., blew Pat on their own pipebombs)
+- Doom mid-game boss name is hidden in the HL broadcast message to prevent early reveal (thanks *Duckbuster*)
+- Slightly adjusted per-game Hardcore Levels in *ScrnGames.ini*
+  https://docs.google.com/spreadsheets/d/1Jd5S5XrgrVjq8V8NvHiTG1y6JgE83yzzBYKBeZjRHsg/edit?usp=sharing
+
+#### ScrN Weapon Pack
+- Fixed an issue where HopMines were blocked by Blocking Volumes.
+
+
 ### v9.69.07
 - Fixed a critical bug that prevented zed spawns in any door-related volumes (thanks *Joe*)
   For instance, this bug completely blocked spawns on KF-TheGreatPyramid-Arena.

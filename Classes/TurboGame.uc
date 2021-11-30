@@ -1,6 +1,5 @@
 class TurboGame extends ScrnGameType;
 
-
 State MatchInProgress
 {
     function BeginState()
@@ -8,12 +7,6 @@ State MatchInProgress
         super.BeginState();
         SetGameSpeed(TurboScale);
     }
-}
-event Tick(float DeltaTime)
-{
-    super.Tick(DeltaTime);
-    if ( !bZEDTimeActive )
-        ZedTimeExtensionsUsed = -3; // + 3 zed time extensions to all perks
 }
 
 defaultproperties
@@ -25,4 +18,5 @@ defaultproperties
 
     ZEDTimeDuration=4.5
     ZedTimeSlomoScale=0.50
+    ExtraZedTimeExtensions=3
 }

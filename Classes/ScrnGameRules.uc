@@ -1059,7 +1059,8 @@ function CheckNewMonster(KFMonster Monster)
         if ( !HardcoreZeds[i].bUsed && HardcoreZeds[i].MonsterClass ~= MCS ) {
             HardcoreZeds[i].bUsed = true;
             bHasCustomZeds = true;
-            RaiseHardcoreLevel(HardcoreZeds[i].HL * ZedHLMult, Monster.MenuName);
+            RaiseHardcoreLevel(HardcoreZeds[i].HL * ZedHLMult,
+                    eval(Monster.IsA('DoomBoss'), msgDoom3Boss, Monster.MenuName));
             break;
         }
     }
