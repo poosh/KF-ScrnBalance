@@ -890,7 +890,7 @@ function CheckMutators()
     for ( M = KF.BaseMutator; M != None; M = M.NextMutator ) {
         if ( M.IsA('ServerPerksMut') ) {
             ServerPerksMut = M;
-            if ( ScrnMutator(M) == none ) {
+            if ( !M.IsA('ServerPerksMutSE') ) {
                 log("ScrnSP.ServerPerksMutSE is recommeded. Used: " $ M.class, 'ScrnBalance');
             }
         }
@@ -1136,11 +1136,32 @@ function FixMusic()
 function DisableDoom3Monsters()
 {
     log("Disabling Doom3 monsters", 'ScrnBalance');
-    bDoom = BroadcastValue('SpawnDoom3Monsters', 0);
+    bDoom = PublishValue('SpawnDoom3Monsters', 0);
     if ( !bDoom ) {
         log("Doom3Mutator not found!", 'ScrnBalance');
     }
 }
+
+function bool SetCustomValue(name Key, int Value, optional ScrnMutator Publisher)
+{
+    switch (Key) {
+        case 'GetSpawnDoom3Monsters':
+            // Bit mask:
+            // 1 - regular monsters
+            // 2 - mid-game bosses
+            // 4 - end-game boss
+            bDoom = true;
+            if ( Publisher != none && ScrnGT != none && bScrnWaves ) {
+                // regular monsters and end-game boss are spawned via ScrnGameLength.
+                // Keep only mid-game bosses
+                // WARNING! ScrnGT.ScrnGameLength may not yet exist at this moment
+                Publisher.SetCustomValue('SpawnDoom3Monsters', Value & 2, self);
+                return true;
+            }
+    }
+    return false;
+}
+
 
 auto simulated state WaitingForTick
 {
@@ -1161,6 +1182,7 @@ auto simulated state WaitingForTick
         ForceMaxPlayers();
         if ( !bStoryMode ) {
             InitDoors();
+            FixShops();
             SetStartCash();
             if ( ScrnGT != none ) {
                 if ( bTSCGame ) {
@@ -1173,9 +1195,9 @@ auto simulated state WaitingForTick
                     {
                         DisableDoom3Monsters();
                     }
-                    else {
-                        // Enable super monsters bud disable regular D3 mobs cuz we will spawn them via ScrnWaves
-                        bDoom = BroadcastValue('SpawnDoom3Monsters', 1);
+                    else if ( !bDoom ) {
+                        // Enable super monsters but disable regular D3 mobs cuz we will spawn them via ScrnWaves
+                        bDoom = PublishValue('SpawnDoom3Monsters', 2);
                     }
                 }
             }
@@ -2799,6 +2821,52 @@ function SetupSrvInfo()
     SrvInfo.bForceSteamNames = bForceSteamNames;
 }
 
+function FixShops()
+{
+    local int i, j;
+    local ShopVolume Shop;
+    local WeaponLocker Trader;
+    local array<WeaponLocker> Traders;
+    local float Dist, BestDist;
+
+    foreach DynamicActors(class'WeaponLocker', Trader) {
+        Traders[Traders.length] = Trader;
+    }
+
+    if ( Traders.length == 0 ) {
+        log("Map does not have WeaponLockers (Traders)", 'ScrnBalance');
+        return;
+    }
+
+    for ( i = 0; i < KF.ShopList.Length; ++i) {
+        Shop = KF.ShopList[i];
+        // First pass: look for WeaponLocker inside the shop
+        if ( Shop.MyTrader == none ) {
+            for ( j = 0; j < Traders.length; ++j ) {
+                Trader = Traders[j];
+                if ( Shop.Encompasses(Trader) ) {
+                    Shop.MyTrader = Trader;
+                    log("Fixed " $ Shop.name $ ".MyTrader=" $ Trader.name);
+                    break;
+                }
+            }
+        }
+        // Second pass: Find the closest weapon locker
+        if ( Shop.MyTrader == none ) {
+            Trader = Traders[0];
+            BestDist = VSizeSquared(Trader.Location - Shop.Location);
+            for ( j = 1; j < Traders.length; ++j ) {
+                Dist = VSizeSquared(Traders[j].Location - Shop.Location);
+                if ( Dist < BestDist ) {
+                    Trader = Traders[j];
+                    BestDist = Dist;
+                }
+            }
+            Shop.MyTrader = Trader;
+            log("Used closest " $ Shop.name $ ".MyTrader=" $ Trader.name);
+        }
+    }
+}
 
 function InitDoors()
 {
@@ -3373,7 +3441,7 @@ function RegisterVersion(string ItemName, int Version)
 
 defaultproperties
 {
-    VersionNumber=96908
+    VersionNumber=96909
     GroupName="KF-Scrn"
     FriendlyName="ScrN Balance"
     Description="Total rework of KF1 to make it modern and the best game in the world while sticking to the roots of the original."

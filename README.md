@@ -19,6 +19,25 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+### v9.69.09 - FINAL
+- **Version number of all ScrN packages bumped to v9.69.09** to be the same for the final release.
+- Removed "50. Follow The Guardian" from the official game rotation (*KFMapVote.ini*).
+  We recommend playing "51. Follow The Guardian: On The Clock" instead for better FTG experience.
+- Updated `MapAliases` in *ScrnBalanceSrv.ini*
+- Fixed the warning "ShopVolume Accessed None MyTrader"
+- If all players die on a test map, the game triggers `RestartPlayers` event, allowing the test map to respawn dead
+  players. If the test map does not respawn players, the game is lost.
+- Fixed an issue that prevented spawning more than 5 zeds at once on a test map.
+
+#### ScrN Weapon Pack
+- Lowered AK-12 headshot damage multiplier to x1.2 (down from x1.3)
+
+#### Scrn Zed Pack
+- Fixed an issue where **Tesla Husk** EMP explosion did too little or no damage to players
+- Fixed Tesla's healing ability
+- Sui/HoE: Fixed Tesla's ability to use zeds in-between to build an electrical chain to players
+
+
 ### v9.69.08
 - Fixed a bug where an FTG game was considered won if players got killed by the boss.
 - The game is considered LOST if all players die together with the boss (e.g., blew Pat on their own pipebombs)

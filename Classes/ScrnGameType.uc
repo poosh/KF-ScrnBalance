@@ -113,6 +113,7 @@ var bool bZedTimeEnabled;  // set it to false to completely disable the Zed Time
 var transient byte PlayerSpawnTraderTeleportIndex;
 var name PlayerStartEvent;
 var bool bSuicideTimer;
+var transient bool bRestartPlayersTriggered;
 
 var protected transient bool bDebugZedSpawn;
 var protected transient ZombieVolume DebugZVols[5];
@@ -2256,6 +2257,7 @@ function RestartPlayer( Controller aPlayer )
             if ( FriendlyFireScale > 0 )
                 ScrnBalanceMut.SendFriendlyFireWarning(PC);
         }
+        bRestartPlayersTriggered = false;
     }
 }
 
@@ -2376,6 +2378,12 @@ function GiveStartingCash(PlayerController PC)
 function bool AllowGameEnd(PlayerReplicationInfo Winner, string Reason)
 {
     if ( AlivePlayerCount <= 0 ) {
+        if ( IsTestMap() && !bRestartPlayersTriggered ) {
+            // allow the test map to respawn dead players. If it doesn't - end game in a second.
+            bRestartPlayersTriggered = true;
+            TriggerEvent('RestartPlayers', none, none);
+            return false;
+        }
         ScrnGRI.EndGameType = 1;
         ScrnGRI.Winner = none;
     }
@@ -2417,6 +2425,11 @@ function bool CheckEndGame(PlayerReplicationInfo Winner, string Reason)
 
     // if we reached here, the game must be ended
     EndTime = Level.TimeSeconds + EndTimeDelay;
+
+    if ( ScrnGRI.EndGameType == 2 ) {
+        // squad survived - don't let remaining zeds to eat players at end-game screen
+        KillZeds();
+    }
 
     for ( C = Level.ControllerList; C != none; C = N ) {
         N = C.nextController;  // save it in case C gets destroyed
@@ -3269,6 +3282,8 @@ State MatchInProgress
             }
             else {
                 WaveCountDown = max(10, ScrnGameLength.Wave.TraderTime);
+                // MaxMonsters will be altered leter in SetupWave(). We need it now for test map.
+                MaxMonsters = MaxZombiesOnce;
             }
         }
     }

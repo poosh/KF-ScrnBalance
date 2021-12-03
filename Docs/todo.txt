@@ -1,8 +1,3 @@
-? Fix bonus ammo replication bug
-? ScrN Features crash
-
-?eXpert Challenge Mode (XCM)
-
 ScrN SQL Server
 
 A Blank Page
@@ -22,15 +17,6 @@ Check Murphy's maps why they crashing dedicated servers.
 
 Move localized string parsing client-side to use client's localization instead of server's.
 
-? Spectators start dead if joined for the next game
-
-? Auto-kill Nailed zeds if get stuck
-
-
 Achievements:
 Teamwork: ARAP - decapitate FP with 2+ Armor-Piercing Assault Rifles
 HMG cheevos
-
-? All your cookies belong to me
-? SocIso No shit achievement - lower player counter
-? Check 4+p cheevos

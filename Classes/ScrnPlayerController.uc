@@ -1200,7 +1200,7 @@ exec function ResetMapAch(string MapName)
 
 function bool CheckMutateProtection()
 {
-    if ( Mut.IsAdmin(self) )
+    if ( Mut.IsAdmin(self) || Mut.bTestMap )
         return true;
 
     if ( Level.TimeSeconds > LastMutateTime ) {
@@ -1209,7 +1209,7 @@ function bool CheckMutateProtection()
     }
     else if ( ++MutateCounter >= 10 ) {
         if ( MutateCounter == 10 ) {
-            LastMutateTime = Level.TimeSeconds + 30;
+            LastMutateTime = Level.TimeSeconds + 10;
         }
         if ( Level.NetMode != NM_DedicatedServer && Viewport(Player) != None ) {
             ClientMessage(strMutateProtection);
