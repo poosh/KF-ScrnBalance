@@ -892,7 +892,7 @@ Made a few changes to make being sick less "pleasant":
 - Lowered Boomstick total ammo count from 48 down to 42 (62 -> 54 @ L6)
 - Ammo box gives 6 Boomstick shells (down from 10)
 
-## ScrN Voting Handler v4.06
+#### ScrN Voting Handler v4.06
 - Fixed a potential player crash issue
 - Fixed an alignment issue when vote value contains color tags
 
