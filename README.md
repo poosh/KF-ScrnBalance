@@ -51,19 +51,21 @@ Requirments:
 * [ScrN SP](https://github.com/poosh/KF-ScrnSP).
 * [ScrN Voting Handler](https://github.com/poosh/KF-ScrnVotingHandler).
 * ScrN packages:
-  * Animation/blabla.ukx
-  * Texture/blabla.utx
-  * StaticMeshes/blabla.usx
+  * Animations\ScrnAnims.ukx
+  * Sounds\ScrnSnd.uax
+  * StaticMeshes\ScrnSM.usx
+  * Textures\ScrnAch_T.utx
+  * Textures\ScrnTex.utx
+  * Textures\TSC_T.utx
 
 **EditPackages**:
 
 ```cpp
 EditPackages=ServerPerks
 EditPackages=ServerPerksMut
-EditPackages=ServerPerksP
 EditPackages=ScrnShared
 EditPackages=ScrnSP
-EditPackages=ScrnVotingHandlerV4
+EditPackages=ScrnVotingHandler
 EditPackages=ScrnBalanceSrv
 ```
 
