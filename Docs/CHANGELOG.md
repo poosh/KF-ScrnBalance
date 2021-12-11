@@ -1,4 +1,4 @@
-![ScrN Balance](Logo/ScrNBalanceLogo256.jpg "ScrN Balance")
+![ScrN Balance](img/ScrNBalanceLogo256.jpg "ScrN Balance")
 
 > [go back to README](../README.md 'go back to Table of Content')
 
