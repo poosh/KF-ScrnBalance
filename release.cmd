@@ -27,9 +27,8 @@ echo Exporting .int file...
 
 echo.
 echo Copying release files...
-xcopy /F /I /Y *.ini %RELEASEDIR%
-xcopy /F /I /Y *.txt %RELEASEDIR%
-xcopy /F /I /Y *.md  %RELEASEDIR%
+xcopy /F /I /Y Configs\*.ini %RELEASEDIR%
+xcopy /F /I /Y Docs\Release\* %RELEASEDIR%
 
 mkdir %RELEASEDIR%\System 2>nul
 xcopy /F /I /Y %KFDIR%\System\%KFPACKAGE%.int %RELEASEDIR%\System\
@@ -59,9 +58,9 @@ if not exist %RELEASEDIR%\System\%KFPACKAGE%.u (
     goto :error
 )
 
-echo.
-echo Update public release notes
-xcopy /F /I /Y README.md %WEBDIR%\ScrnBalanceVersionHistory.md
+REM echo.
+REM echo Update public release notes
+REM xcopy /F /I /Y README.md %WEBDIR%\ScrnBalanceVersionHistory.md
 
 echo.
 echo Updating the bundle...

@@ -15,7 +15,7 @@ You can view complete changelog [here](Docs/CHANGELOG.md).
 
 * Featuring [eXpert Challenge Mode (XCM)](https://steamcommunity.com/groups/ScrNBalance/discussions/9/4580716151550023598/).
 * Featuring [Social Isolation Mod](https://steamcommunity.com/groups/ScrNBalance/discussions/2/4666237625653274273/).
-* New perks: **Gunslinger** and Combat **Medic**.
+* New perks: **Gunslinger** and **Combat Medic**.
 * Balances weapons and perks, making each perk useful in the game.
 * Perk levels up to 70 but no grinding required! Perk *bonus* levels automatically adjust to the game difficulty and player count always to bring a balanced gameplay experience while allowing perk progression (making e-penis bigger).
 * Perk bonuses for custom weapons (the ones you get from Workshop)
@@ -50,7 +50,7 @@ Requirements:
 * [ScrN Shared](https://github.com/poosh/KF-ScrnShared).
 * [ScrN SP](https://github.com/poosh/KF-ScrnSP).
 * [ScrN Voting Handler](https://github.com/poosh/KF-ScrnVotingHandler).
-* ScrN packages:
+* ScrN Packages (included in [ScrN Brutal KF Bundle]):
   * Animations\ScrnAnims.ukx
   * Sounds\ScrnSnd.uax
   * StaticMeshes\ScrnSM.usx
@@ -62,9 +62,7 @@ Requirements:
 
 ```cpp
 EditPackages=ServerPerks
-EditPackages=ServerPerksMut
 EditPackages=ScrnShared
-EditPackages=ScrnSP
 EditPackages=ScrnVotingHandler
 EditPackages=ScrnBalanceSrv
 ```

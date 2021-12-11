@@ -8,7 +8,7 @@ if not exist ..\ScrnMakeEnv.cmd (
     set /A ERR=101
     echo ..\ScrnMakeEnv.cmd not found!
     echo Using the sample file as a temlate...
-    copy /-Y Docs\ScrnMakeEnv.sample ..\ScrnMakeEnv.cmd ^
+    copy /-Y Docs\make\ScrnMakeEnv.sample ..\ScrnMakeEnv.cmd ^
         && powershell -command "start -verb edit ..\ScrnMakeEnv.cmd" ^
         || notepad ..\ScrnMakeEnv.cmd
     echo Change the environmental variables in ScrnMakeEnv.cmd according to your system
