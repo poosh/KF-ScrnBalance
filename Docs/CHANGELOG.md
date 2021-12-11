@@ -2,19 +2,22 @@
 
 > [go back to README](../README.md 'go back to Table of Content')
 
-# KF-ScrnBalance
-
-ScrN Total Game Balance mutator for Killing Floor 1.
-
-*Copyright (c) 2012-2021 PU Developing IK, Latvia, All Rights Reserved.*
-
--------------------------------------------------------------------------------
+<!-- steam link shortcuts -->
+[NikC-]: http://steamcommunity.com/profiles/76561198044316328
+[PooSH]: http://steamcommunity.com/profiles/76561197992537591
+[nmmblez]: http://steamcommunity.com/profiles/76561198075092161
+[Scuddles]: https://steamcommunity.com/profiles/76561197985454628
+[Vrana]: https://steamcommunity.com/profiles/76561198021913290
+[Joe]: http://steamcommunity.com/profiles/76561198005354377
+[Duckbuster]: http://steamcommunity.com/profiles/76561197986770985
+[Lost_Champ]: http://steamcommunity.com/profiles/76561198080088953
+[P-Jay]: http://steamcommunity.com/profiles/76561198052307800
 
 # Version History
 
-* _In this document all references to config file ScrnBalance.ini should be
-  treated as ScrnBalanceSrv.ini, if you're using server version of
-  ScrnBalance (ScrnBalanceSrv.ScrnBalance)._
+> In this document all references to config file **ScrnBalance.ini** should be
+  treated as **ScrnBalanceSrv.ini**, if you're using server version of
+  ScrnBalance (ScrnBalanceSrv.ScrnBalance).
 
 -------------------------------------------------------------------------------
 
@@ -46,7 +49,7 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 
 * Fixed a bug where an FTG game was considered won if players got killed by the boss.
 * The game is considered LOST if all players die together with the boss (e.g., blew Pat on their own pipebombs)
-* Doom mid-game boss name is hidden in the HL broadcast message to prevent early reveal (thanks *Duckbuster*)
+* Doom mid-game boss name is hidden in the HL broadcast message to prevent early reveal (thanks [Duckbuster])
 * Slightly adjusted per-game Hardcore Levels in *ScrnGames.ini*
   <https://docs.google.com/spreadsheets/d/1Jd5S5XrgrVjq8V8NvHiTG1y6JgE83yzzBYKBeZjRHsg/edit?usp=sharing>
 
@@ -56,7 +59,7 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 
 ### v9.69.07
 
-* Fixed a critical bug that prevented zed spawns in any door-related volumes (thanks *Joe*)
+* Fixed a critical bug that prevented zed spawns in any door-related volumes (thanks [Joe])
   For instance, this bug completely blocked spawns on KF-TheGreatPyramid-Arena.
 * Added map definitions for Clandestine and TheGreatPyramid-Arena.
 * Hardcore Level in `HardcoreGames` now gets multiplied by per-difficulty `HLMult_X`.
@@ -70,7 +73,7 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 
 #### ScrN SP
 
-* Fixed "PlayInfo" warnings (thanks *nmmblez*)
+* Fixed "PlayInfo" warnings (thanks [nmmblez])
 
 #### ScrN Weapon Pack
 
@@ -88,7 +91,7 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 * Fixed an issue where locked perks could stay locked after map restart
 * Restored default zed count in Doom3 Wave 10.
 * Fixed an issue where a regular Grittier Patriarch was spawned instead of Grittier HardPat in some game modes
-  (thanks *Duckbuster* and *Joe*)
+  (thanks [Duckbuster] and [Joe])
 
 #### FTG
 
@@ -108,7 +111,7 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 * Hardcore Mode: Reduced Demolition's explosive resistance to 35% (down from 50%)
 * Increased Husk Gun ammo to 250/400 base/lv6 (up from 200/320)
 * Fixed a bug where perk ammo bonus got applied twice on weapons that use the same ammo for both primary and secondary
-  fire (Husk Gun, Boomstick). Thanks to *Lost_Champ*
+  fire (Husk Gun, Boomstick). Thanks to [Lost_Champ]
 * Fixed an issue where wave count displayed 0 in XCM DUEL (e.g., "Wave 3/0").
 * "Sell Weapon" button in the Shop changes to "Donate to Charity" if the sell price is $0.
 * Minor map improvements in *ScrnMapInfo.ini*
@@ -141,17 +144,17 @@ ScrN Total Game Balance mutator for Killing Floor 1.
 
 * Increased **RPG7** undetonated rocket damage to 500 (up from 400)
 * Lowered **HRL** damage to 600 (down from 625)
-* Changed HK417 achievement requirement to kill 7 Fleshpounds (thanks *Joe*)
+* Changed HK417 achievement requirement to kill 7 Fleshpounds (thanks [Joe])
 
 ### v9.69.01
 
 * Slightly lowered Zed count in Doom3 Wave 10
 * When playing **Social Isolation** solo, the player always gets sick. Playing SocIso solo is not recommended.
-* Reduced achievement player count requirement from 5-6 down to 3-4 where Zed health does not matter (thanks *Joe*)
+* Reduced achievement player count requirement from 5-6 down to 3-4 where Zed health does not matter (thanks [Joe])
 * "Unassisted" can be earned only on HoE (Kill 6p HoE FP)
 * "Kenny" requires a game with at least 5 waves.
 * Fixed an issue where Speedrun achievements could be earned in shorter games.
-* Fixed "All Your Cookies Belong To Me" and "Eye for an Eye" achievements (thanks *Joe*)
+* Fixed "All Your Cookies Belong To Me" and "Eye for an Eye" achievements (thanks [Joe])
 * `b10Stars` is taken into account when granting perk-color achievements (Gold, Green, Blue, etc.)
 * Unlocking Blue perk achievement grants the Green one too. The same applies to Purple and Orange.
   That solves an issue where players may jump from Gold directly to Blue by winning a game with huge end-game bonuses.
@@ -172,8 +175,8 @@ ScrN Total Game Balance mutator for Killing Floor 1.
   * Radial Attack can be performed only on Hard+ difficulty
   * Damage delivery matches the animation: first, Pat attacks players on the left, then on the right.
     Players straightly in front and at the back are attacked twice.
-* Sui/HoE **HardPat**, when low on health, can perform Radial Attack against a single player (thanks *Vrana*)
-* Increased HardPat impale strike range from 0.9 to ~1.9m (thanks *#NikC-*)
+* Sui/HoE **HardPat**, when low on health, can perform Radial Attack against a single player (thanks [Vrana])
+* Increased HardPat impale strike range from 0.9 to ~1.9m [[NikC-]]
 
 ### v9.68
 
@@ -451,7 +454,7 @@ Added map definitions for the following maps:
 
 #### FTG
 
-* FTG: On The Clock game mode updated to v2.01 (by *nmmblez*)
+* FTG: On The Clock game mode updated to v2.01 (by [nmmblez])
 * Fixed a bug where Stinky Clot could teleport to the null point of the map (X=0,Y=0,Z=0)
 * Fixed an issue where Stinky Clot could spawn too close to the players
 * Log more telemetry data if Stinky Clot gets stuck
@@ -563,7 +566,7 @@ Work in progress. More info here:
 
 * Removed `bHardcore` from ScrnBalance.ini. Hardcore Mode can be enabled via game difficulty (6 or 8).
 * Non-hardcore perks are automatically disabled in Hardcore Mode
-* Fixed Difficulty=6 (Siu+Hardcore) and Difficulty=8 (HoE+Hardcore) in KFMapVote.ini  (thanks to *nmmblez*)
+* Fixed Difficulty=6 (Siu+Hardcore) and Difficulty=8 (HoE+Hardcore) in KFMapVote.ini  (thanks to [nmmblez])
 * Config option `HLMult_Hardcore` (default 15%) - extra Hardcore Level multiplier in Hardcore Mode
 * Field and Combat Medics receive 50% more damage from Siren Scream (and any damage that bypasses armor)
 * Support Spec. has 20% slower fire rate and receives 50% more damage from Gorefasts
@@ -660,7 +663,7 @@ Work in progress. More info here:
   numbers up to ~2147M. Some players have reached such an insane XP level, which caused perk progress to appear negative
   due to overflow. Now this case is properly handled, and perk progress is capped at ~2147M. However, reaching
   ~4294M will cause the unsigned int32 overflow, and the perk level gets reset back to 0.
-  *nmmblez*, time to think about lowering XP bonus levels ;)
+  [nmmblez], time to think about lowering XP bonus levels ;)
 * Added a hardcoded limitation for MaxPerksLevel <= 70. Higher levels could raise requirements beyond int32 capacity.
 * Adjusted level requirement numbers for all perks. Previously, getting from Lv4 to Lv6 was much harder than from Lv6
   to Lv10. It does not make sense since perk level rebalance in v9.50, when Lv5 and Lv6 stopped getting way higher
@@ -682,12 +685,12 @@ Work in progress. More info here:
 
 ### v9.64.09
 
-* FTG: Fixed an issue where a wrong player got blamed for putting the base in a glitch spot (thanks *Joe*)
+* FTG: Fixed an issue where a wrong player got blamed for putting the base in a glitch spot (thanks [Joe])
 * If the team is locked (`MVOTE LOCKTEAM`), newcomers are put into spectators rather than appearing as dead teammates.
 * Fixed an issue where Tourney Mode stayed active after loading a game config without the `?Tourney` option.
 * Game config's `?Difficulty` option has higher precedence than `MVOTE DIFF`. In other words, players cannot change
   difficulty for game configs that have hardcoded difficulty option in *KFMapVote.ini*
-* Fixed ScrN game hints (thanks *P-Jay*).
+* Fixed ScrN game hints (thanks [P-Jay]).
 * By the looks of it, any config (.ini) or localization (.int) line cannot exceed 4096 characters.
 * 4k limitation also applies on `GameConfig` lines in *KFMapVote.ini*. All GameConfig lines *together*
   cannot exceed 4k characters.
@@ -708,7 +711,7 @@ Work in progress. More info here:
 ### v9.64.06
 
 * Enabled **Tactical Reload** with full mag but initially empty chamber for all closed-bolt weapons, including
-  **ScrN Weapon Pack** (by *Duckbuster*)
+  **ScrN Weapon Pack** (by [Duckbuster])
 * Fixed player scream for medic on low health (it was in the vanilla code but never worked due to bugs)
 * Code optimization
 
@@ -797,7 +800,7 @@ Work in progress. More info here:
 #### ScrN Waves
 
 * New game mode: **42. TSC Tourney**
-* Game mode **51. FTG: On The Clock** replaced with the new version (by *nmmblez*)
+* Game mode **51. FTG: On The Clock** replaced with the new version (by [nmmblez])
 * Added `TraderSpeedBoost` to `ScrnGameLength` config (*ScrnWaves.ini*) to allow per-game trader speed boost control.
 * Fixed an issue when sometimes dead players might respawn despite `bRespawnDeadPlayers=false` for the current wave.
 * Fixed an issue where `RULE_GrabAmmo` did not spawn enough ammo boxes on the map with a low ammo box count.
@@ -931,7 +934,7 @@ Work in progress. More info here:
 
 ### v9.63.12
 
-* **Nailgun** primary fire shoots single nails while the secondary fire - 7-nail pack (thanks *Duckbuster*)
+* **Nailgun** primary fire shoots single nails while the secondary fire - 7-nail pack (thanks [Duckbuster])
 * Changed achievement progress display priority: achievements with lower goal value have higher priority to be displayed
 * Social Isolation: fixed penalty for coughing in shop  
 
@@ -950,7 +953,7 @@ Work in progress. More info here:
 * LAR and custom sniper rifles (perked weapons) still have 60% faster reload bonus
 * Zeds, nailed to a wall with **Nailgun**, receive additional damage on tearing away.
 * Player weapon lock applies on spawn invetory too.
-* Fixed a bug that allowed a player with full Machete-boost do up to 8K damage (thanks *Joe*)
+* Fixed a bug that allowed a player with full Machete-boost do up to 8K damage (thanks [Joe])
 
 #### Social Isolation
 
@@ -1069,7 +1072,7 @@ The current blame weapon list (applied only on the Boss wave - you can safely bu
 
 #### Console Commands
 
-* `WeaponSlot X` / `GunSlot X` moves weapon to slot X, where X is in [1..9] (thanks to *Scuddles*)
+* `WeaponSlot X` / `GunSlot X` moves weapon to slot X, where X is in [1..9] (thanks to [Scuddles])
 
   Players can bind extra slots like this:
 
@@ -1270,13 +1273,13 @@ set input NumPad6 WeaponSlot 6
 
 ### v9.61.04
 
-* New game mode: **FTG: Fight The Patriarchs** (by *nmm*)
-* **Mystery Mode v2** - remake by *nmm*. Now it is pure mystery.
+* New game mode: **FTG: Fight The Patriarchs** (by [nmmblez])
+* **Mystery Mode v2** - remake by [nmmblez]. Now it is pure mystery.
 * Fixed yet another bug that prevented teleporting the Guarding from a shop.
 
 ### v9.61.03
 
-* **Combat Shotgun** got laser sight and improved reload(by *Scuddles*)
+* **Combat Shotgun** got laser sight and improved reload(by [Scuddles])
 * Flares now always ignite zeds, even if damage < 10
 * `ColoredServerName` temporary removed due to bugs
 * "Team Budget" renamed to **Team Wallet** in UI
@@ -1295,7 +1298,7 @@ set input NumPad6 WeaponSlot 6
 
 ### v9.61.01
 
-#### Weapons (by *Scuddles*)
+#### Weapons (by [Scuddles])
 
 * Tactical reloads added for Incendinary Thompson, Steampunk Sniper, M14 EBR, KSG Shotgun.
 * Fixed Dual MK23 pistol firing order.
@@ -1327,21 +1330,26 @@ set input NumPad6 WeaponSlot 6
 * GameLength numbers reordered. See *KFMapVote.ini* and *ScrnWaves.ini* for details.
 * Added `bRandomSpawnLoc` - spawns zeds randomly on the entire map instead of spawning them close to players.
   Does not work in FTG.
-* Added `DOOR_Randomize` - randomly welds, unwelds, respawns or blows doors (thanks to *nmmblez*)
-* Fixed bug when DoorControl was incorrectly applied during door opening / closing (thanks to *nmmblez*)
+* Added `DOOR_Randomize` - randomly welds, unwelds, respawns or blows doors (thanks to [nmmblez])
+* Fixed bug when DoorControl was incorrectly applied during door opening / closing (thanks to [nmmblez])
 * Fixed bug when sometimes players respawned event if `bRespawnDeadPlayers=false`
 
 ##### New Game Modes (From the Contest)
 
-* **Ammo Hunt v3**  - by *nmm*
-* **On The Doom Clock**  - by *nmm*
-* **Fight the Patriarchs**  - by *nmm*
-* **Short & Dramatic**  - by *nmm*
-* **On The Clock**  - by *nmm*
-* **FTG: On The Clock**  - by *nmm*
-* **Late Pure Doom**  - by *nmm*
-* **Fight the Doom Bosses**  - by *nmm*
-* **Welding Floor**  - by *PooSH*
+By [nmmblez]:
+
+* **Ammo Hunt v3**
+* **On The Doom Clock**
+* **Fight the Patriarchs**
+* **Short & Dramatic**
+* **On The Clock**
+* **FTG: On The Clock**
+* **Late Pure Doom**
+* **Fight the Doom Bosses**
+
+By [PooSH]:
+
+* **Welding Floor**
 
 ##### Welding Floor
 
@@ -1375,7 +1383,7 @@ set input NumPad6 WeaponSlot 6
 * Disabled achievement popup on low texture detail modes
 * Adjusted weights in zed spawn volume pickup function
 
-#### ScrN Weapon Pack (by *Scuddles*)
+#### ScrN Weapon Pack (by [Scuddles])
 
 * **AK12**: Slightly tweaked firing animation, added ironsight idle animation.
 * **AK74**: Tweaked textures and resized firstperson model, now shares magazine model with AK12. Also tweaked firing
@@ -1445,9 +1453,9 @@ set input NumPad6 WeaponSlot 6
 * New animation package: **ScrnAnims.ukx**
 
 * Added bolt behavior for AA12, MKb42 and RS Tommy Gun
-* Added tactical reload for dual pistols (by *Scuddles*)
-* Added new animation for MP5M tactical reload (by *Scuddles*)
-* Added new animation for Boomstick single shell reload (by *Scuddles*)
+* Added tactical reload for dual pistols (by [Scuddles])
+* Added new animation for MP5M tactical reload (by [Scuddles])
+* Added new animation for Boomstick single shell reload (by [Scuddles])
 
 ### v9.60.19
 
@@ -1484,7 +1492,7 @@ And finally `ScrnGameLength.Mutators` are loaded.
 5. Mutators from the command line after ScrnBalance
 6. `ScrnGameLength.Mutators`
 
-#### Weapon Fixes and QoL Improvements (by Scuddles)
+#### Weapon Fixes and QoL Improvements (by [Scuddles])
 
 * Attempted fix for AA12 tactical reload faked shell display for golden skins
 * Added faked gas can to Chainsaw reload to highlight gas explosion mechanic
@@ -1520,15 +1528,15 @@ And finally `ScrnGameLength.Mutators` are loaded.
 * Players will be blamed for buying an RPG-7 before the Boss wave. However, it is fine
   to buy an RPG earlier (e.g., before wave 10) and keep it for Boss.
 * Fixed "teleporting" effect of medic nade due to lag
-* Fixed M32 thirdperson reload always playing one more time than it should  (by *Scuddles*)
-* Fixed winchester select animation  (by *Scuddles*)
-* Fixed idle delay after finishing full reload for single shell reload weapons  (by *Scuddles*)
-* Tweaked M79M projectile initial rotation  (by *Scuddles*)
+* Fixed M32 thirdperson reload always playing one more time than it should  (by [Scuddles])
+* Fixed winchester select animation  (by [Scuddles])
+* Fixed idle delay after finishing full reload for single shell reload weapons  (by [Scuddles])
+* Tweaked M79M projectile initial rotation  (by [Scuddles])
 
 ### v9.60.14
 
 * Fixed (again) medic nade replication
-* Fixed AA12 reloading animation (by *Duckbuster*)
+* Fixed AA12 reloading animation (by [Duckbuster])
 * `MyFakedShotgunShell` renamed to `ScrnFakedShell` and extends from `ScrnFakedProjectile`.
   From now on, the latter is the base class for all faked projectiles that are in use in weapon animations.
 
@@ -1568,14 +1576,14 @@ And finally `ScrnGameLength.Mutators` are loaded.
 
 ### v9.60.7
 
-* DoorControl: Doors are closed before being welded (thanks to *nmmblez*)
-* Fixed bug when Husk Gun charge was not applied on point-blank shots (thanks to *Scuddles*)
-* Reduced grenade trails (by *Scuddles*)
-* M32 thirdperson reload animation fix (by *Scuddles*)
-* AA-12 tactical reload faked shell fix (by *Scuddles*)
-* Fixed Benelli thirdperson weapon model (by *Scuddles*)
-* Added LAW rocket lights (by *Scuddles*)
-* Reload animation sync for single shell loading weapons like winchester, shotgun, trenchgun etc. (by *Scuddles*)
+* DoorControl: Doors are closed before being welded (thanks to [nmmblez])
+* Fixed bug when Husk Gun charge was not applied on point-blank shots (thanks to [Scuddles])
+* Reduced grenade trails (by [Scuddles])
+* M32 thirdperson reload animation fix (by [Scuddles])
+* AA-12 tactical reload faked shell fix (by [Scuddles])
+* Fixed Benelli thirdperson weapon model (by [Scuddles])
+* Added LAW rocket lights (by [Scuddles])
+* Reload animation sync for single shell loading weapons like winchester, shotgun, trenchgun etc. (by [Scuddles])
 
 ### v9.60.6
 
@@ -1608,14 +1616,14 @@ And finally `ScrnGameLength.Mutators` are loaded.
 
 ### v9.60.3
 
-* Added tactical reload for AA12 (by *Scuddles*)
-* Enhanced M32 reload (by *Scuddles*)
-* Fixed tactical reload for SCAR (by *Scuddles*)
-* Adjusted iron sights for MP5, M4, M4-203 and M4-203M (by *Scuddles*)
+* Added tactical reload for AA12 (by [Scuddles])
+* Enhanced M32 reload (by [Scuddles])
+* Fixed tactical reload for SCAR (by [Scuddles])
+* Adjusted iron sights for MP5, M4, M4-203 and M4-203M (by [Scuddles])
 * Buffed Combat Shotgun's penetration vs big zeds
 * Lowered spread Combat Shotgun's spread while aiming down the sights
 * Raised spread of Nailgun multi fire (1250 -> 1750)
-* Added Nailgun single fire sound (thanks to *Scuddles* for idea)
+* Added Nailgun single fire sound (thanks to [Scuddles] for idea)
 * Fixed issue in Support Spec. perk that prevented penetration damage reduction lowering below x0.60
 * Significantly nerfed nail over penetration (damage reduction: x0.75 -> x0.33)
 * Nails cannot penetrate big or medium zeds anymore (Bloat, Husk, SC, FP, etc.)
@@ -2174,7 +2182,7 @@ Configures games/waves/squads/zeds. A replacement for Zed Manager.
 
 #### Weapon Balance
 
-* SE version of MKb42 included (made by Duckbuster)
+* SE version of MKb42 included (made by [Duckbuster])
 * Fixed exploit when the same Buzzsaw Blade could be picked up multiple times.
 * Fixed point-blank hit detection for Crossbow, M99 and VSS (last requires latest version of ScrnWeaponPack)
 
@@ -2215,9 +2223,9 @@ Configures games/waves/squads/zeds. A replacement for Zed Manager.
 * [TSC] Fixed crash on map end (error related to RespawnDoors)
 * [Story Game] Fixed Remaining Time in Trader Menu
 * fixed Binary Search algorithm
-* Fixed pickup message for Crossbow arrow [thanks to NikC-]
+* Fixed pickup message for Crossbow arrow [[NikC-]]
 * Life span of Crossbow arrows raised to 60s (up from 10)
-* Fixed (maybe) weird hand nade behavior after picking up an ammo box [NikC-]
+* Fixed (maybe) weird hand nade behavior after picking up an ammo box [[NikC-]]
 * Fixed Husk Gun's charge update after getting hit by an enemy
 * Fixed M99 Bullet's sticking to doors / movers
 

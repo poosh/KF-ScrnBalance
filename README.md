@@ -1,6 +1,6 @@
 ![ScrN Balance](Docs/Logo/ScrNBalanceLogo256.jpg "ScrN Balance")
 
-# KF-ScrnBalance
+# KF Scrn Balance
 
 ScrN Total Game Balance mutator for Killing Floor 1.
 
