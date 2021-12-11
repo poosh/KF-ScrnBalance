@@ -44,7 +44,7 @@ Most features are configurable (turn on only what you like).
 
 ## Building
 
-Requirments:
+Requirements:
 
 * [Server Perks 7.50](https://forums.tripwireinteractive.com/index.php?threads/mut-per-server-stats.36898/).
 * [ScrN Shared](https://github.com/poosh/KF-ScrnShared).
@@ -68,6 +68,9 @@ EditPackages=ScrnSP
 EditPackages=ScrnVotingHandler
 EditPackages=ScrnBalanceSrv
 ```
+
+For other ScrN based packages you can check this dependency diagram.
+![img](Docs/img/ScrnDependency.png)
 
 ## Links
 
