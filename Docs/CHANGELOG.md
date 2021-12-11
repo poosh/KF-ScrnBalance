@@ -12,6 +12,7 @@
 [Duckbuster]: http://steamcommunity.com/profiles/76561197986770985
 [Lost_Champ]: http://steamcommunity.com/profiles/76561198080088953
 [P-Jay]: http://steamcommunity.com/profiles/76561198052307800
+<!-- add other peaople too!!! -->
 
 # Version History
 
