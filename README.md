@@ -70,6 +70,7 @@ EditPackages=ScrnBalanceSrv
 ```
 
 For other ScrN based packages you can check this dependency diagram.
+
 ![img](Docs/img/ScrnDependency.png)
 
 ## Links
