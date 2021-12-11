@@ -3,9 +3,9 @@
 <!-- some link shortcuts -->
 [ScrN Brutal KF Bundle]: https://steamcommunity.com/groups/ScrNBalance/discussions/2/483368526570475472/
 
-# KF Scrn Balance
+# KF ScrN Balance
 
-Total rebalance of the game. Added new guns, Gunslinger perk, and server-side achievements.
+Total rebalance/rework of Killing Floor 1. Added new guns, perk, game mods, server-side achievements, and more.
 
 ## Changelog
 
