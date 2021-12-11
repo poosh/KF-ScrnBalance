@@ -1,12 +1,11 @@
-![ScrN Balance](Docs/Logo/ScrNBalanceLogo256.jpg "ScrN Balance")
+[![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/donate/?token=eqGTBS8Bbv2Ic1RoE8JYnGsnsKNB119LTEUsW4VB_nHzwQoJPbfJgr7nhKLg7VEkz8JsePsyj5d6FHVr&locale.x=LV)
+
+<!-- some link shortcuts -->
+[ScrN Brutal KF Bundle]: https://steamcommunity.com/groups/ScrNBalance/discussions/2/483368526570475472/
 
 # KF Scrn Balance
 
 Total rebalance of the game. Added new guns, Gunslinger perk, and server-side achievements.
-
-* [OFFICIAL STEAM GROUP](http://steamcommunity.com/groups/ScrNBalance)
-* [DOWNLOAD](https://steamcommunity.com/groups/ScrNBalance/discussions/2/483368526570475472/)
-* [DONATE](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=VFARLRAL7CNJ4&lc=LV&item_name=Scrake%20Naders%20Community&item_number=ScrnBalance&currency_code=EUR&bn=PP%2dDonationsBF%3abtn_donateCC_LG%2egif%3aNonHosted)
 
 ## Changelog
 
@@ -26,7 +25,7 @@ You can view complete changelog [here](Docs/CHANGELOG.md).
 * **Quick Melee Bash**
 * **Chainsaw** consumes fuel and brings real massacre to the game.
 * Changing gun skins "on-the-fly", e.g., switch from the regular to golden AK-47 on a key press.
-* **30 game modes** (some require [ScrN Brutal KF Bundle](https://steamcommunity.com/groups/ScrNBalance/discussions/2/483368526570475472/))
+* **30 game modes** (some require [ScrN Brutal KF Bundle])
 * Enhanced server-side zed hitboxes (less wonky headshots)
 * More than **400 achievements**.
 
@@ -43,12 +42,6 @@ Most features are configurable (turn on only what you like).
 * Voting to end trader time, boost zed spawn, etc.
 * Configurable max zeds at once on the map. Now you can raise the previously hardcoded value of 32 zeds and fight against a 100-zed crowd!
 
-## Links
-
-* Detailed info on the [ScrN Balance News Page](http://steamcommunity.com/groups/ScrNBalance/discussions/2/).
-* A [guide](http://steamcommunity.com/sharedfiles/filedetails/?id=124250783) on how to use custom weapons with this mutator.
-* Any questions about this mod should be posted on [ScrN Balance Steam Group Forums](https://steamcommunity.com/groups/ScrNBalance/discussions/1/). Your feedback is more than welcome!
-
 ## Building
 
 Requirments:
@@ -56,7 +49,11 @@ Requirments:
 * [Server Perks 7.50](https://forums.tripwireinteractive.com/index.php?threads/mut-per-server-stats.36898/).
 * [ScrN Shared](https://github.com/poosh/KF-ScrnShared).
 * [ScrN SP](https://github.com/poosh/KF-ScrnSP).
-* [Scrn Voting Handler](https://github.com/poosh/KF-ScrnVotingHandler).
+* [ScrN Voting Handler](https://github.com/poosh/KF-ScrnVotingHandler).
+* ScrN packages:
+  * Animation/blabla.ukx
+  * Texture/blabla.utx
+  * StaticMeshes/blabla.usx
 
 **EditPackages**:
 
@@ -69,6 +66,13 @@ EditPackages=ScrnSP
 EditPackages=ScrnVotingHandlerV4
 EditPackages=ScrnBalanceSrv
 ```
+
+## Links
+
+* Download [ScrN Brutal KF Bundle].
+* Detailed info on the [ScrN Balance News Page](https://steamcommunity.com/groups/ScrNBalance/discussions/2/).
+* A [guide](http://steamcommunity.com/sharedfiles/filedetails/?id=124250783) on how to use custom weapons with this mutator.
+* Any questions about this mod should be posted on [ScrN Balance Steam Group Forums](https://steamcommunity.com/groups/ScrNBalance/discussions/1/). Your feedback is more than welcome!
 
 -------------------------------------------------------------------------------
 
