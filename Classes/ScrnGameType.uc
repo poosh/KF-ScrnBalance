@@ -2663,7 +2663,7 @@ function SetupWave()
     }
 
     if ( ScrnGameLength != none ) {
-        TotalMaxMonsters = ScrnGameLength.GetWaveZedCount() + NumMonsters;
+        TotalMaxMonsters = ScrnGameLength.GetWaveZedCount();
         WaveEndTime = ScrnGameLength.GetWaveEndTime();
         AdjustedDifficulty = GameDifficulty + lerp(float(WaveNum)/FinalWave, 0.1, 0.3);
     }
@@ -2678,6 +2678,7 @@ function SetupWave()
     MaxMonsters = min(TotalMaxMonsters + NumMonsters, MaxZombiesOnce); // max monsters that can be spawned
     ScrnGRI.MaxMonsters = TotalMaxMonsters + NumMonsters; // num monsters in wave replicated to clients
     ScrnGRI.MaxMonstersOn = true; // I've no idea what is this for
+    ScrnGRI.NetUpdateTime = Level.TimeSeconds - 1;
 
     //Now build the first squad to use
     SquadsToUse.Length = 0; // force BuildNextSquad() to rebuild squad list
