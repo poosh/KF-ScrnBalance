@@ -126,8 +126,8 @@ defaultproperties
     ReloadAnimRate=1.3
     MagCapacity=30
     FireModeClass(0)=Class'ScrnBalanceSrv.ScrnM4Fire'
-    Description="A compact assault rifle. Damage could be better, but accuracy, fast reload and a lot of ammo makes it a good choise in a battle."
+    Description="M4 carbine with M68 CCO reflex sight. Loaded with 5.56x45mm NATO Armor-Piercing rounds."
     PickupClass=Class'ScrnBalanceSrv.ScrnM4Pickup'
-    ItemName="M4 SE"
+    ItemName="M4 AP"
     PlayerViewPivot=(Pitch=28,Roll=0,Yaw=7) //fix to make sight centered
 }

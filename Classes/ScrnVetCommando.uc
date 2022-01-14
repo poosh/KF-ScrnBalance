@@ -175,7 +175,7 @@ defaultproperties
     DefaultDamageTypeNoBonus=Class'ScrnBalanceSrv.ScrnDamTypeCommandoBase'
     SamePerkAch="OP_Commando"
 
-    SkillInfo="PERK SKILLS:|25% larger Assaut Rifle clip|35% faster reload with all weapons|40% less recoil with all weapons|See cloaked enemies and health"
+    SkillInfo="PERK SKILLS:|50% larger Assaut Rifle clip|35% faster reload with all weapons|40% less recoil with all weapons|See cloaked enemies and health"
     CustomLevelInfo="PERK BONUSES (LEVEL %L):|%x more damage with Assaut Rifles|Up to %z Zed-Time Extensions|%$ discount on Assaut Rifles"
 
     NumRequirements=1  // v9.65: Stalker kills add XP to Commando damage perk progress

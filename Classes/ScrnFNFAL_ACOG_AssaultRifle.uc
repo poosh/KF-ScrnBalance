@@ -229,6 +229,6 @@ defaultproperties
     FireModeClass(0)=Class'ScrnBalanceSrv.ScrnFNFALFire'
     Description="Classic NATO battle rifle. Loaded with 7.62x51mm NATO Armor-Piercing rounds. Has 2-bullet fixed-burst mode."
     PickupClass=Class'ScrnBalanceSrv.ScrnFNFAL_ACOG_Pickup'
-    ItemName="FNFAL SE"
+    ItemName="FNFAL AP"
     BulletMoveOffset=(X=0,Y=0,Z=0.03) //for tactical reload
 }
