@@ -230,7 +230,7 @@ static event class<GameInfo> SetGameType( string MapName )
 
     prefix = Caps(Left(MapName, InStr(MapName, "-")));
     if ( prefix == "KFO")
-        return Class'ScrnBalanceSrv.ScrnStoryGameInfo';
+        return class'ScrnStoryGameInfo';
     else if ( prefix == "KF" )
         return default.class;
 
@@ -3431,9 +3431,9 @@ State MatchInProgress
                 ScrnGameLength.SetWaveInfo();
 
             if( WaveNum == FinalWave && bUseEndGameBoss )
-                BroadcastLocalizedMessage(class'ScrnBalanceSrv.ScrnWaitingMessage', 3);
+                BroadcastLocalizedMessage(class'ScrnWaitingMessage', 3);
             else
-                BroadcastLocalizedMessage(class'ScrnBalanceSrv.ScrnWaitingMessage', 1);
+                BroadcastLocalizedMessage(class'ScrnWaitingMessage', 1);
         }
         else if ( WaveCountDown <= 1 ) {
             SetupWave();
@@ -3639,7 +3639,7 @@ State MatchInProgress
             if ( ScrnGameLength == none && (ScrnBalanceMut.bRespawnDoors || ScrnBalanceMut.bTSCGame) ) {
                 ScrnBalanceMut.RespawnDoors();
             }
-            BroadcastLocalizedMessage(class'ScrnBalanceSrv.ScrnWaitingMessage', 2);
+            BroadcastLocalizedMessage(class'ScrnWaitingMessage', 2);
         }
     }
 
@@ -3743,7 +3743,7 @@ defaultproperties
     GameName="ScrN Floor"
     Description="ScrN Edition of Killing Floor game mode (KFGameType)."
 
-    GameReplicationInfoClass=Class'ScrnBalanceSrv.ScrnGameReplicationInfo'
+    GameReplicationInfoClass=class'ScrnGameReplicationInfo'
     VotingHandlerOverride="KFMapVoteV2.KFVotingHandler"
 
     PathWhisps(0)="KFMod.RedWhisp"
@@ -3751,7 +3751,7 @@ defaultproperties
     HUDType="ScrnBalanceSrv.ScrnHUD"
     ScoreBoardType="ScrnBalanceSrv.ScrnScoreBoard"
     LoginMenuClass="ScrnBalanceSrv.ScrnInvasionLoginMenu"
-    PlayerControllerClass=Class'ScrnBalanceSrv.ScrnPlayerController'
+    PlayerControllerClass=class'ScrnPlayerController'
     PlayerControllerClassName="ScrnBalanceSrv.ScrnPlayerController"
 
     bSingleTeamGame=true

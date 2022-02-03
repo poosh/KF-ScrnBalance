@@ -5,5 +5,5 @@ defaultproperties
     Cost=4000
     ItemName="M32 Grenade Launcher SE"
     ItemShortName="M32 Launcher SE"
-    InventoryType=Class'ScrnBalanceSrv.ScrnM32GrenadeLauncher'
+    InventoryType=class'ScrnM32GrenadeLauncher'
 }

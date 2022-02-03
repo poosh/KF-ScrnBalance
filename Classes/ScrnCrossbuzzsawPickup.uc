@@ -7,5 +7,5 @@ defaultproperties
      AmmoCost=80
      ItemName="Buzzsaw Bow SE"
      ItemShortName="Buzzsaw Bow SE"
-     InventoryType=Class'ScrnBalanceSrv.ScrnCrossbuzzsaw'
+     InventoryType=class'ScrnCrossbuzzsaw'
 }

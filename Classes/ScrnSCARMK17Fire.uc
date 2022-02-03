@@ -16,5 +16,5 @@ simulated function bool AllowFire()
 
 defaultproperties
 {
-     DamageType=Class'ScrnBalanceSrv.ScrnDamTypeSCARMK17AssaultRifle'
+     DamageType=class'ScrnDamTypeSCARMK17AssaultRifle'
 }

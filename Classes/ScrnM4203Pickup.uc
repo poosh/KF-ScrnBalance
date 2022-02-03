@@ -9,7 +9,7 @@ defaultproperties
      ItemName="M4 203 SE"
      ItemShortName="M4 203 SE"
      SecondaryAmmoShortName="-- M203 nades"
-     PrimaryWeaponPickup=Class'ScrnBalanceSrv.ScrnM4Pickup'
-     InventoryType=Class'ScrnBalanceSrv.ScrnM4203AssaultRifle'
+     PrimaryWeaponPickup=class'ScrnM4Pickup'
+     InventoryType=class'ScrnM4203AssaultRifle'
      VariantClasses(0)=none
 }

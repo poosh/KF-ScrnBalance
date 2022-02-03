@@ -7,5 +7,5 @@ defaultproperties
     ItemName="Dual MK23 SE"
     ItemShortName="Dual MK23 SE"
     CorrespondingPerkIndex=8
-    InventoryType=Class'ScrnBalanceSrv.ScrnDualMK23Pistol'
+    InventoryType=class'ScrnDualMK23Pistol'
 }

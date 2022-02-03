@@ -58,5 +58,5 @@ defaultproperties
     Damage=130.000000
     DamageRadius=200.000000
     ImpactDamage=32 //75
-    MyDamageType=Class'ScrnBalanceSrv.ScrnDamTypeSeekerSixRocket'
+    MyDamageType=class'ScrnDamTypeSeekerSixRocket'
 }

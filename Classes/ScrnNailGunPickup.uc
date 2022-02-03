@@ -9,5 +9,5 @@ defaultproperties
      Description="Designed for putting barns together. Or nailing Zeds to them."
      ItemName="Nailgun SE"
      ItemShortName="Nailgun SE"
-     InventoryType=Class'ScrnBalanceSrv.ScrnNailGun'
+     InventoryType=class'ScrnNailGun'
 }

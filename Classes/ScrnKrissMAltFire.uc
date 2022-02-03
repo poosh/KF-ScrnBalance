@@ -2,5 +2,5 @@ class ScrnKrissMAltFire extends KrissMAltFire;
 
 defaultproperties
 {
-     ProjectileClass=Class'ScrnBalanceSrv.ScrnKrissMHealingProjectile'
+     ProjectileClass=class'ScrnKrissMHealingProjectile'
 }

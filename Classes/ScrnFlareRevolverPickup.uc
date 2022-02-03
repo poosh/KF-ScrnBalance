@@ -66,9 +66,9 @@ function bool CheckCanCarry(KFHumanPawn Hm) {
 
 defaultproperties
 {
-     DualInventoryType=Class'ScrnBalanceSrv.ScrnDualFlareRevolver'
+     DualInventoryType=class'ScrnDualFlareRevolver'
      cost=625
      ItemName="Flare Revolver SE"
      ItemShortName="Flare Rev. SE"
-     InventoryType=Class'ScrnBalanceSrv.ScrnFlareRevolver'
+     InventoryType=class'ScrnFlareRevolver'
 }

@@ -36,7 +36,7 @@ function LoadGroups()
     local int i;
     GroupNames[0] = ''; // just in case modders will screw up the achievement groups
     GroupCaptions[0] = "ALL";
-    class'ScrnBalanceSrv.ScrnAchievements'.static.RetrieveGroups(Class'ScrnClientPerkRepLink'.Static.FindMe(PlayerOwner()), GroupNames, GroupCaptions);
+    class'ScrnAchievements'.static.RetrieveGroups(Class'ScrnClientPerkRepLink'.Static.FindMe(PlayerOwner()), GroupNames, GroupCaptions);
     
     co_Group.ResetComponent();
     for ( i = 0; i < GroupCaptions.length; ++i )
@@ -103,7 +103,7 @@ function LoadStats()
         GroupName = GroupNames[PC.AchGroupIndex]; 
 
     // Initialize Achievement Progress
-    class'ScrnBalanceSrv.ScrnAchievements'.static.GetGlobalAchievementStats(L, CompletedCount, TotalCount, 
+    class'ScrnAchievements'.static.GetGlobalAchievementStats(L, CompletedCount, TotalCount, 
         class'ScrnBalance'.default.Mut.AchievementFlags, GroupName);
     pb_AchievementProgress.Value = CompletedCount;
     pb_AchievementProgress.High = TotalCount;

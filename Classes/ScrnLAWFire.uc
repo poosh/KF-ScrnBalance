@@ -14,6 +14,6 @@ function PlayFiring()
 
 defaultproperties
 {
-     AmmoClass=Class'ScrnBalanceSrv.ScrnLAWAmmo'
-     ProjectileClass=Class'ScrnBalanceSrv.ScrnLAWProj'
+     AmmoClass=class'ScrnLAWAmmo'
+     ProjectileClass=class'ScrnLAWProj'
 }

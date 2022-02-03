@@ -11,7 +11,7 @@ defaultproperties
     ItemShortName="Toilet Paper"
     AmmoItemName="TP Rolls"
     EquipmentCategoryID=4
-    InventoryType=Class'ScrnBalanceSrv.ToiletPaper'
+    InventoryType=class'ToiletPaper'
     PickupMessage="You got Toilet Paper"
     CorrespondingPerkIndex=7
 

@@ -61,7 +61,7 @@ function PlayerDied(ScrnPlayerInfo DeadPlayerInfo, Controller Killer, class<Dama
     if ( DeadPlayerInfo.PlayerOwner.PlayerReplicationInfo.Score >= 1000
             && DeadPlayerInfo.PlayerOwner.PlayerReplicationInfo.Score > AverageScore() * 3 ) {
         Ach2Alive('LuxuryFuneral', 1, DeadPlayerInfo);
-        DeadPlayerInfo.PlayerOwner.ReceiveLocalizedMessage(class'ScrnBalanceSrv.ScrnFakedAchMsg', 2);
+        DeadPlayerInfo.PlayerOwner.ReceiveLocalizedMessage(class'ScrnFakedAchMsg', 2);
     }
 
 }
@@ -370,12 +370,12 @@ function int WKillsPerShot(ScrnPlayerInfo SPI, KFWeapon Weapon, class<KFWeaponDa
         }
         return 5; // need 5 kills for the achievement
     }
-    else if ( ClassIsChildOf(DamType, class'ScrnBalanceSrv.ScrnDamTypeHuskGun_Alt') ) {
+    else if ( ClassIsChildOf(DamType, class'ScrnDamTypeHuskGun_Alt') ) {
         if ( Count < 20)
             return 20;
         SPI.ProgressAchievement('NapalmStrike', 1);
     }
-    else if ( ClassIsChildOf(DamType, class'ScrnBalanceSrv.ScrnDamTypeDualies') ) {
+    else if ( ClassIsChildOf(DamType, class'ScrnDamTypeDualies') ) {
         if ( Count < 8 )
             return 8;
         SPI.ProgressAchievement('MadCowboy', 1);
@@ -386,7 +386,7 @@ function int WKillsPerShot(ScrnPlayerInfo SPI, KFWeapon Weapon, class<KFWeaponDa
 
 function int WDecapsPerShot(ScrnPlayerInfo SPI, KFWeapon Weapon, class<KFWeaponDamageType> DamType, int Count, float DeltaTime)
 {
-    if ( ClassIsChildOf(DamType, class'ScrnBalanceSrv.ScrnDamTypeDualies') ) {
+    if ( ClassIsChildOf(DamType, class'ScrnDamTypeDualies') ) {
         if ( Count < 8 )
             return 8;
         SPI.ProgressAchievement('MadCowboy', 1);
@@ -397,7 +397,7 @@ function int WDecapsPerShot(ScrnPlayerInfo SPI, KFWeapon Weapon, class<KFWeaponD
 
 function int WKillsPerMagazine(ScrnPlayerInfo SPI, KFWeapon Weapon, class<KFWeaponDamageType> DamType, int Count)
 {
-    if ( ClassIsChildOf(DamType, class'ScrnBalanceSrv.ScrnDamTypeM4203M') ) {
+    if ( ClassIsChildOf(DamType, class'ScrnDamTypeM4203M') ) {
         if ( Count < 15)
             return 15; // need 15 kills for the achievement
         // if achievement is earned - no need to track stat anymore, so return IGNORE_STAT
@@ -768,7 +768,7 @@ function MonsterKilled(KFMonster Victim, ScrnPlayerInfo KillerInfo, class<KFWeap
         if ( Victim.bCrispified )
             KillerInfo.ProgressAchievement('CarveRoast', 1);
         if ( ClassIsChildOf(DamType, class'KFMod.DamTypeScythe')
-                || ClassIsChildOf(DamType, class'ScrnBalanceSrv.ScrnDamTypeScythe') )
+                || ClassIsChildOf(DamType, class'ScrnDamTypeScythe') )
             KillerInfo.ProgressAchievement('GrimReaper', 1);
     }
     else if ( ClassIsChildOf(DamType, class'KFMod.DamTypeRocketImpact') ) {

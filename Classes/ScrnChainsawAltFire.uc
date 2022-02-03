@@ -45,7 +45,7 @@ defaultproperties
     MaxChargeAmmo=10
     MeleeDamage=330
     weaponRange=100.000000
-    hitDamageClass=Class'ScrnBalanceSrv.ScrnDamTypeChainsawAlt'
-    AmmoClass=Class'ScrnBalanceSrv.ScrnChainsawAmmo'
+    hitDamageClass=class'ScrnDamTypeChainsawAlt'
+    AmmoClass=class'ScrnChainsawAmmo'
     bWaitForRelease=True
 }

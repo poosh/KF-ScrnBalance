@@ -2,6 +2,6 @@ class ScrnFNFALAmmoPickup extends FNFALAmmoPickup;
 
 defaultproperties
 {
-     InventoryType=Class'ScrnBalanceSrv.ScrnFNFALAmmo'
+     InventoryType=class'ScrnFNFALAmmo'
      PickupMessage="7.62x51mm NATO AP"
 }

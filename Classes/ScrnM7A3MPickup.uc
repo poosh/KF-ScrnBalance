@@ -4,5 +4,5 @@ defaultproperties
 {
      ItemName="M7A3M Medic Gun SE"
      ItemShortName="M7A3M SE"
-     InventoryType=Class'ScrnBalanceSrv.ScrnM7A3MMedicGun'
+     InventoryType=class'ScrnM7A3MMedicGun'
 }

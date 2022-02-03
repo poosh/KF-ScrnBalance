@@ -170,7 +170,7 @@ state FireBurst
 defaultproperties
 {
      BurstSize=3
-     DamageType=Class'ScrnBalanceSrv.ScrnDamTypeM4203AssaultRifle'
+     DamageType=class'ScrnDamTypeM4203AssaultRifle'
      DamageMax=41
      FireAnimRate=0.75
      FireLoopAnimRate=1.4 //0.750000

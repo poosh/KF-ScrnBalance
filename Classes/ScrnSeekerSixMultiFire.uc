@@ -61,8 +61,8 @@ defaultproperties
 {
     FireRate=1.0
     FireAnimRate=0.33
-    AmmoClass=Class'ScrnBalanceSrv.ScrnSeekerSixAmmo'
+    AmmoClass=class'ScrnSeekerSixAmmo'
     // it will be changed in ScrnSeekerSixRocketLauncher.SpawnProjectile(). 
     // put different projectiles for preloading assets
-    ProjectileClass=Class'ScrnBalanceSrv.ScrnS6SeekingRocket' 
+    ProjectileClass=class'ScrnS6SeekingRocket' 
 }

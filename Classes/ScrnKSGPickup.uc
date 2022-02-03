@@ -15,5 +15,5 @@ defaultproperties
      Description="Kel-tec tactical shotgun. Features a large capacity ammo magazine and selectable tight/wide spread fire modes. Its pellets penetrate weak enemies almost without damage loss, but usually stuck inside big bodies. Has no healing attachment, but Medics like it anyway."
      ItemName="KSG SE"
      ItemShortName="KSG SE"
-     InventoryType=Class'ScrnBalanceSrv.ScrnKSGShotgun'
+     InventoryType=class'ScrnKSGShotgun'
 }

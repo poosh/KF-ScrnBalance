@@ -166,7 +166,7 @@ simulated function Tick(float dt)
 
 defaultproperties
 {
-     LaserDotClass=Class'ScrnBalanceSrv.ScrnLaserDot'
+     LaserDotClass=class'ScrnLaserDot'
      MyAttachmentBone="tip"
      Skins(0)=Texture'ScrnTex.Laser.Laser_Blue'
      //bAlwaysRelevant=True

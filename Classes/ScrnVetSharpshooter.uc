@@ -112,7 +112,7 @@ static function float GetReloadSpeedModifierStatic(KFPlayerReplicationInfo KFPRI
 static function float GetCostScaling(KFPlayerReplicationInfo KFPRI, class<Pickup> Item)
 {
     //reduced base price, so no discount on magnums
-    if ( Item == class'ScrnBalanceSrv.ScrnMagnum44Pickup' || Item == class'ScrnBalanceSrv.ScrnDual44MagnumPickup' )
+    if ( Item == class'ScrnMagnum44Pickup' || Item == class'ScrnDual44MagnumPickup' )
         return 1.0;
 
     //leave discount for Dual Pistols even if Gunslinger perk persists to reject possible
@@ -173,8 +173,8 @@ static function string GetCustomLevelInfo( byte Level )
 
 defaultproperties
 {
-    DefaultDamageType=Class'ScrnBalanceSrv.ScrnDamTypeSniper'
-    DefaultDamageTypeNoBonus=Class'ScrnBalanceSrv.ScrnDamTypeSniperBase'
+    DefaultDamageType=class'ScrnDamTypeSniper'
+    DefaultDamageTypeNoBonus=class'ScrnDamTypeSniperBase'
     SamePerkAch="OP_Sharpshooter"
 
     SkillInfo="PERK SKILLS:|50% headshot damage with any weapon|75% less recoil with Single Pistols/Sniper Rifles|30% faster reload with Single Pistols/M14/Musket|60% faster reload with LAR/Sniper Rifles"

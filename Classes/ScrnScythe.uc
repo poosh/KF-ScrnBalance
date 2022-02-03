@@ -6,8 +6,8 @@ class ScrnScythe extends Scythe;
 defaultproperties
 {
      Weight=5.000000
-     FireModeClass(0)=Class'ScrnBalanceSrv.ScrnScytheFire'
-     FireModeClass(1)=Class'ScrnBalanceSrv.ScrnScytheFireB'
-     PickupClass=Class'ScrnBalanceSrv.ScrnScythePickup'
+     FireModeClass(0)=class'ScrnScytheFire'
+     FireModeClass(1)=class'ScrnScytheFireB'
+     PickupClass=class'ScrnScythePickup'
      ItemName="Scythe SE"
 }

@@ -46,7 +46,7 @@ defaultproperties
      ProjPerFire=7
      bFireOnRelease=False
      FireRate=1.500000
-     ProjectileClass=Class'ScrnBalanceSrv.ScrnHuskGunProjectile_Alt'
+     ProjectileClass=class'ScrnHuskGunProjectile_Alt'
      Spread=750.000000
      SpreadStyle=SS_Random
 }

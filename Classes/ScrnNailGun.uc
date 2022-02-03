@@ -78,8 +78,8 @@ defaultproperties
      bReduceMagAmmoOnSecondaryFire=true
      Weight=6.000000
      bTorchEnabled=False
-     FireModeClass(0)=Class'ScrnBalanceSrv.ScrnNailGunFireSingle'
-     FireModeClass(1)=Class'ScrnBalanceSrv.ScrnNailGunFireMulti'
-     PickupClass=Class'ScrnBalanceSrv.ScrnNailGunPickup'
+     FireModeClass(0)=class'ScrnNailGunFireSingle'
+     FireModeClass(1)=class'ScrnNailGunFireMulti'
+     PickupClass=class'ScrnNailGunPickup'
      ItemName="Nailgun SE"
 }

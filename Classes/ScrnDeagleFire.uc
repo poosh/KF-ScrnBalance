@@ -177,6 +177,6 @@ defaultproperties
      PenDmgReduction=0.650000
      MaxPenetrations=4
      bCheck4Ach=True
-     DamageType=Class'ScrnBalanceSrv.ScrnDamTypeDeagle'
-     AmmoClass=Class'ScrnBalanceSrv.ScrnDeagleAmmo'
+     DamageType=class'ScrnDamTypeDeagle'
+     AmmoClass=class'ScrnDeagleAmmo'
 }

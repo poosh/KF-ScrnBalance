@@ -136,7 +136,7 @@ function DoBuyKevlar()
 function DoBuy()
 {
     if ( TheBuyable != none && KFPawn(PlayerOwner().Pawn) != none && TheBuyable.ItemPickupClass != none ) {
-        if ( ClassIsChildOf(TheBuyable.ItemPickupClass, class'ScrnBalanceSrv.ScrnVestPickup') ) {
+        if ( ClassIsChildOf(TheBuyable.ItemPickupClass, class'ScrnVestPickup') ) {
             if ( ScrnHumanPawn(PlayerOwner().Pawn) != none ) {
                 ScrnHumanPawn(PlayerOwner().Pawn).ServerBuyShield(class<ScrnVestPickup>(TheBuyable.ItemPickupClass));
                 MakeSomeBuyNoise(class'Vest');

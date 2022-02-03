@@ -29,7 +29,7 @@ static function float GetFireSpeedModStatic(KFPlayerReplicationInfo KFPRI, class
 static function float GetWeaponMovementSpeedBonus(KFPlayerReplicationInfo KFPRI, Weapon Weap)
 {
     if ( Syringe(Weap) != none )
-        return class'ScrnBalanceSrv.ScrnHumanPawn'.default.BaseMeleeIncrease;
+        return class'ScrnHumanPawn'.default.BaseMeleeIncrease;
     return 0.0;
 }
 
@@ -88,7 +88,7 @@ static function float GetAmmoPickupMod(KFPlayerReplicationInfo KFPRI, KFAmmuniti
 
 static function float AddExtraAmmoFor(KFPlayerReplicationInfo KFPRI, Class<Ammunition> AmmoType)
 {
-    if ( ClassIsChildOf(AmmoType, class'ScrnBalanceSrv.ScrnM79MAmmo') || ClassIsChildOf(AmmoType, class'ScrnBalanceSrv.ScrnM203MAmmo'))
+    if ( ClassIsChildOf(AmmoType, class'ScrnM79MAmmo') || ClassIsChildOf(AmmoType, class'ScrnM203MAmmo'))
         return 1.0 + (0.20 * GetClientVeteranSkillLevel(KFPRI)); // one extra medic nade per level
 
     if ( GetClientVeteranSkillLevel(KFPRI) > 6 &&
@@ -197,8 +197,8 @@ static function bool OverridePerkIndex( class<KFWeaponPickup> Pickup )
 
 defaultproperties
 {
-    DefaultDamageType=Class'ScrnBalanceSrv.ScrnDamTypeMedic'
-    DefaultDamageTypeNoBonus=Class'ScrnBalanceSrv.ScrnDamTypeMedicBase'
+    DefaultDamageType=class'ScrnDamTypeMedic'
+    DefaultDamageTypeNoBonus=class'ScrnDamTypeMedicBase'
     SamePerkAch="OP_Medic"
 
     SkillInfo="PERK SKILLS:|75% faster healing|75% less damage from Bloat Bile|20% faster movement speed|100% larger Medic Gun clip"

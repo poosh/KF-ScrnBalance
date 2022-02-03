@@ -6,5 +6,5 @@ defaultproperties
      cost=1375
      ItemName="MP5M Medic Gun SE"
      ItemShortName="MP5M SE"
-     InventoryType=Class'ScrnBalanceSrv.ScrnMP5MMedicGun'
+     InventoryType=class'ScrnMP5MMedicGun'
 }

@@ -23,5 +23,5 @@ defaultproperties
 {
     HeadShotDamageMult=1.30
     bSniperWeapon=False
-    WeaponClass=Class'ScrnBalanceSrv.ScrnDual44Magnum'
+    WeaponClass=class'ScrnDual44Magnum'
 }

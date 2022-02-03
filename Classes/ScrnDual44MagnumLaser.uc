@@ -436,15 +436,15 @@ function GiveTo( pawn Other, optional Pickup Pickup )
 defaultproperties
 {
     LaserRecoilReduction=0.3
-    LaserAttachmentClass=Class'ScrnBalanceSrv.ScrnLaserAttachmentFirstPerson'
-    LaserDotClass=Class'ScrnBalanceSrv.ScrnLocalLaserDot'
+    LaserAttachmentClass=class'ScrnLaserAttachmentFirstPerson'
+    LaserDotClass=class'ScrnLocalLaserDot'
     Weight=5.000000
     bIsTier3Weapon=True
     Description="Yeah! One in each hand! Now with laser attachment."
     DemoReplacement=None
     InventoryGroup=4
-    PickupClass=Class'ScrnBalanceSrv.ScrnDual44MagnumLaserPickup'
-    AttachmentClass=Class'ScrnBalanceSrv.ScrnDual44MagnumLaserAttachment'
+    PickupClass=class'ScrnDual44MagnumLaserPickup'
+    AttachmentClass=class'ScrnDual44MagnumLaserAttachment'
     ItemName="Laser Dual 44 Magnums"
     FireSpotRenrerTime=1.0
     MagAmmoRemaining=12

@@ -503,7 +503,7 @@ defaultproperties
      PenDamageReduction=0.33  // nerf from 0.75 in v9.60.3
      Damage=40.000000
      Speed=3500
-     MyDamageType=Class'ScrnBalanceSrv.ScrnDamTypeNailGun'
+     MyDamageType=class'ScrnDamTypeNailGun'
      ExplosionDecal=Class'KFMod.NailGunDecal'
      bNetTemporary=False
      LifeSpan=10.000000

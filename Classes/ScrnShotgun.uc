@@ -26,9 +26,9 @@ simulated function ClientFinishReloading()
 
 defaultproperties
 {
-    AttachmentClass=Class'ScrnBalanceSrv.ScrnShotgunAttachment'
-    FireModeClass(0)=Class'ScrnBalanceSrv.ScrnShotgunFire'
-    PickupClass=Class'ScrnBalanceSrv.ScrnShotgunPickup'
+    AttachmentClass=class'ScrnShotgunAttachment'
+    FireModeClass(0)=class'ScrnShotgunFire'
+    PickupClass=class'ScrnShotgunPickup'
     ItemName="Shotgun SE"
     ReloadAnimRate=0.94 //sync animation to reloadrate
 

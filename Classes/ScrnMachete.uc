@@ -84,9 +84,9 @@ simulated function float RateSelf()
 
 defaultproperties
 {
-     FireModeClass(0)=Class'ScrnBalanceSrv.ScrnMacheteFire'
-     FireModeClass(1)=Class'ScrnBalanceSrv.ScrnMacheteFireB'
-     PickupClass=Class'ScrnBalanceSrv.ScrnMachetePickup'
+     FireModeClass(0)=class'ScrnMacheteFire'
+     FireModeClass(1)=class'ScrnMacheteFireB'
+     PickupClass=class'ScrnMachetePickup'
      ItemName="Machete SE"
 
      QuickPutDownTime=0.01  // 0.15

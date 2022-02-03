@@ -29,7 +29,7 @@ simulated function DoToggle ()
         FireModeEx = 2 - FireModeEx; // toggle between 0 and 2
         if (FireModeEx >= FireModeExCount) FireModeEx = 0;
         FireMode[0].bWaitForRelease = FireModeEx == 1;
-        Player.ReceiveLocalizedMessage(class'ScrnBalanceSrv.ScrnFireModeSwitchMessage',FireModeEx);
+        Player.ReceiveLocalizedMessage(class'ScrnFireModeSwitchMessage',FireModeEx);
     }
 
     ServerChangeFireModeEx(FireModeEx);
@@ -226,9 +226,9 @@ defaultproperties
     ReloadShortRate=2.55
     FireModeExCount=3
     Weight=7.000000
-    FireModeClass(0)=Class'ScrnBalanceSrv.ScrnFNFALFire'
+    FireModeClass(0)=class'ScrnFNFALFire'
     Description="Classic NATO battle rifle. Loaded with 7.62x51mm NATO Armor-Piercing rounds. Has 2-bullet fixed-burst mode."
-    PickupClass=Class'ScrnBalanceSrv.ScrnFNFAL_ACOG_Pickup'
+    PickupClass=class'ScrnFNFAL_ACOG_Pickup'
     ItemName="FNFAL SE"
     BulletMoveOffset=(X=0,Y=0,Z=0.03) //for tactical reload
 }

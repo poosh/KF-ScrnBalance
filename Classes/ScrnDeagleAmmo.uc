@@ -5,6 +5,6 @@ defaultproperties
      AmmoPickupAmount=16
      MaxAmmo=96
      InitialAmount=40
-     PickupClass=Class'ScrnBalanceSrv.ScrnDeagleAmmoPickup'
+     PickupClass=class'ScrnDeagleAmmoPickup'
      ItemName="Deagle bullets"
 }

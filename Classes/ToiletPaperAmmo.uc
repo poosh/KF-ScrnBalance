@@ -28,7 +28,7 @@ defaultproperties
     AmmoPickupAmount=0
     MaxAmmo=200
     InitialAmount=1
-    PickupClass=Class'ScrnBalanceSrv.ToiletPaperAmmoPickup'
+    PickupClass=class'ToiletPaperAmmoPickup'
     IconMaterial=Texture'KillingFloorHUD.Generic.HUD'
     IconCoords=(X1=458,Y1=82,X2=491,Y2=133)
     ItemName="A Toilet Paper Roll"

@@ -2,7 +2,7 @@ class ScrnThompsonIncPickup extends ThompsonPickup;
 
 defaultproperties
 {
-     InventoryType=Class'ScrnBalanceSrv.ScrnThompsonInc'
+     InventoryType=class'ScrnThompsonInc'
 
      Weight=5
      cost=1100

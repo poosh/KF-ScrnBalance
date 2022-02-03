@@ -2,7 +2,7 @@ class ScrnZEDMKIIPickup extends ZEDMKIIPickup;
 
 defaultproperties
 {
-    InventoryType=Class'ScrnBalanceSrv.ScrnZEDMKIIWeapon'
+    InventoryType=class'ScrnZEDMKIIWeapon'
     
     Cost=1500
     AmmoCost=30 

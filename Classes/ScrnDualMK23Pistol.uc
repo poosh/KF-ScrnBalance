@@ -667,10 +667,10 @@ defaultproperties
     ReloadShortRate = 2.57 //no slides locked back
     ReloadHalfShortRate = 3.35 //left slide locked back
     PistolSlideOffset=(X=0,Y=-0.0235000,Z=0.0)
-    FireModeClass(0)=Class'ScrnBalanceSrv.ScrnDualMK23Fire'
-    DemoReplacement=Class'ScrnBalanceSrv.ScrnMK23Pistol'
+    FireModeClass(0)=class'ScrnDualMK23Fire'
+    DemoReplacement=class'ScrnMK23Pistol'
     InventoryGroup=3
-    PickupClass=Class'ScrnBalanceSrv.ScrnDualMK23Pickup'
+    PickupClass=class'ScrnDualMK23Pickup'
     ItemName="Dual MK23 SE"
     ShortReloadFrameSkip=75
     Priority=120

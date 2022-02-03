@@ -413,7 +413,7 @@ static event class<GameInfo> SetGameType( string MapName )
     if ( prefix == "KFO")
         return default.class;
     else if ( prefix == "KF" )
-        return Class'ScrnBalanceSrv.ScrnGameType';
+        return class'ScrnGameType';
 
     return super.SetGameType( MapName );
 }
@@ -471,6 +471,6 @@ defaultproperties
     HUDType="ScrnBalanceSrv.ScrnHUD"
     ScoreBoardType="ScrnBalanceSrv.ScrnScoreBoard"
     LoginMenuClass="ScrnBalanceSrv.ScrnInvasionLoginMenu"
-    PlayerControllerClass=Class'ScrnBalanceSrv.ScrnPlayerController'
+    PlayerControllerClass=class'ScrnPlayerController'
     PlayerControllerClassName="ScrnBalanceSrv.ScrnPlayerController"
 }

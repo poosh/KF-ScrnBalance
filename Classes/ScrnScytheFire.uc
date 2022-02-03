@@ -2,7 +2,7 @@ class ScrnScytheFire extends ScytheFire;
 
 defaultproperties
 {
-    hitDamageClass=Class'ScrnBalanceSrv.ScrnDamTypeScythe'
+    hitDamageClass=class'ScrnDamTypeScythe'
     bWaitForRelease=True
     FireAnims(0)="Fire1"
     FireAnims(1)="Fire2"

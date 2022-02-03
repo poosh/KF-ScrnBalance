@@ -87,8 +87,8 @@ simulated function HitWall( vector HitNormal, actor Wall )
 defaultproperties
 {
     AmbientSoundRef=""
-    DamageTypeHeadShot=Class'ScrnBalanceSrv.ScrnDamTypeM99HeadShot'
-    MyDamageType=Class'ScrnBalanceSrv.ScrnDamTypeM99SniperRifle'
+    DamageTypeHeadShot=class'ScrnDamTypeM99HeadShot'
+    MyDamageType=class'ScrnDamTypeM99SniperRifle'
     HeadShotDamageMult=3.000000
     Damage=800.000000
     DamageRadius=0

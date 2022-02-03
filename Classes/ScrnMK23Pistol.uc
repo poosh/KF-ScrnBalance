@@ -409,9 +409,9 @@ defaultproperties
      ReloadShortAnim="Reload"
      PistolSlideOffset=(X=0,Y=-0.0275000,Z=0.0)
      Weight=3.000000
-     FireModeClass(0)=Class'ScrnBalanceSrv.ScrnMK23Fire'
+     FireModeClass(0)=class'ScrnMK23Fire'
      Description="Match grade 45 caliber pistol. Good balance between power, ammo count and rate of fire. Damage is near to Magnum's, but has no bullet penetration."
-     PickupClass=Class'ScrnBalanceSrv.ScrnMK23Pickup'
+     PickupClass=class'ScrnMK23Pickup'
      ItemName="MK23 SE"
      Priority=80
 }

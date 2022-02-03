@@ -2,8 +2,8 @@ class ScrnKatana extends Katana;
 
 defaultproperties
 {
-     FireModeClass(0)=Class'ScrnBalanceSrv.ScrnKatanaFire'
+     FireModeClass(0)=class'ScrnKatanaFire'
      GroupOffset=5
-     PickupClass=Class'ScrnBalanceSrv.ScrnKatanaPickup'
+     PickupClass=class'ScrnKatanaPickup'
      ItemName="Katana SE"
 }

@@ -5,7 +5,7 @@ class ScrnThompsonDrumPickup extends ThompsonDrumPickup;
 
 defaultproperties
 {
-     InventoryType=Class'ScrnBalanceSrv.ScrnThompsonDrum'
+     InventoryType=class'ScrnThompsonDrum'
 
      Weight=6
      cost=2000

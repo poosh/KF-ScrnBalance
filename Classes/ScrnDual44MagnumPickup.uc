@@ -9,7 +9,7 @@ defaultproperties
      ItemName="Dual 44 Magnums SE"
      ItemShortName="Dual 44 SE"
      CorrespondingPerkIndex=8
-     InventoryType=Class'ScrnBalanceSrv.ScrnDual44Magnum'
+     InventoryType=class'ScrnDual44Magnum'
      Weight=4
      MagAmmoRemaining=12
 }

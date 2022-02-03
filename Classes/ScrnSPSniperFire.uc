@@ -2,7 +2,7 @@ class ScrnSPSniperFire extends SPSniperFire;
 
 defaultproperties
 {
-     DamageType=Class'ScrnBalanceSrv.ScrnDamTypeSPSniper'
+     DamageType=class'ScrnDamTypeSPSniper'
 
      DamageMin=90 //deprecated
      DamageMax=90 // 180

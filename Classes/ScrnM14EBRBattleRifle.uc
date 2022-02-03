@@ -346,12 +346,12 @@ function AddReloadedAmmo()
 defaultproperties
 {
     LaserAttachmentBone="LightBone"
-    LaserDotClass=Class'ScrnBalanceSrv.ScrnLocalLaserDot'
-    LaserAttachmentClass=Class'ScrnBalanceSrv.ScrnLaserAttachmentFirstPerson'
-    FireModeClass(0)=Class'ScrnBalanceSrv.ScrnM14EBRFire'
+    LaserDotClass=class'ScrnLocalLaserDot'
+    LaserAttachmentClass=class'ScrnLaserAttachmentFirstPerson'
+    FireModeClass(0)=class'ScrnM14EBRFire'
     Description="Updated M14 Enhanced Battle Rifle - Semi Auto variant. Equipped with a laser sight. A special lens allows to change laser's color on the fly."
-    PickupClass=Class'ScrnBalanceSrv.ScrnM14EBRPickup'
-    AttachmentClass=Class'ScrnBalanceSrv.ScrnM14EBRAttachment'
+    PickupClass=class'ScrnM14EBRPickup'
+    AttachmentClass=class'ScrnM14EBRAttachment'
     ItemName="M14EBR SE"
     ReloadShortAnim="Reload"
     ReloadShortRate=2.3

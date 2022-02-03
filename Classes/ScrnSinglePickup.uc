@@ -67,10 +67,10 @@ function bool CheckCanCarry(KFHumanPawn Hm) {
 
 defaultproperties
 {
-     DualInventoryType=Class'ScrnBalanceSrv.ScrnDualies'
+     DualInventoryType=class'ScrnDualies'
      ItemName="9mm Pistol SE"
      ItemShortName="9mm Pistol SE"
-     InventoryType=Class'ScrnBalanceSrv.ScrnSingle'
+     InventoryType=class'ScrnSingle'
      Weight=0
      Cost=75
 }

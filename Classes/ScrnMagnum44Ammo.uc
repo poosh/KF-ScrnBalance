@@ -5,5 +5,5 @@ defaultproperties
      AmmoPickupAmount=12
      MaxAmmo=60
      InitialAmount=30
-     PickupClass=Class'ScrnBalanceSrv.ScrnMagnum44AmmoPickup'
+     PickupClass=class'ScrnMagnum44AmmoPickup'
 }

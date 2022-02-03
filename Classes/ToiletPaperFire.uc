@@ -15,6 +15,6 @@ state LoadNext
 
 defaultproperties
 {
-    AmmoClass=Class'ScrnBalanceSrv.ToiletPaperAmmo'
-    ProjectileClass=Class'ScrnBalanceSrv.ToiletPaperProj'
+    AmmoClass=class'ToiletPaperAmmo'
+    ProjectileClass=class'ToiletPaperProj'
 }

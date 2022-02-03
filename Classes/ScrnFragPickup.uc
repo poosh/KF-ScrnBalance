@@ -9,5 +9,5 @@ defaultproperties
      ItemName="Grenades SE"
      ItemShortName="Grenades SE"
      AmmoItemName="Grenades SE"
-     InventoryType=Class'ScrnBalanceSrv.ScrnFrag'
+     InventoryType=class'ScrnFrag'
 }

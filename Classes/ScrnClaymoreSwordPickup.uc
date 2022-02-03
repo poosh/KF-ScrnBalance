@@ -8,5 +8,5 @@ defaultproperties
     Description="ScrN version of a medieval claymore sword. Swings faster, can chain ZED times."
     ItemName="Claymore Sword SE"
     ItemShortName="Claymore SE"
-    InventoryType=Class'ScrnBalanceSrv.ScrnClaymoreSword'
+    InventoryType=class'ScrnClaymoreSword'
 }

@@ -4,8 +4,8 @@ function InitTabs()
 {
     local SRKFTab_BuyMenu B;
     
-    B = ScrnTab_BuyMenu(c_Tabs.AddTab(PanelCaption[0], string(Class'ScrnBalanceSrv.ScrnTab_BuyMenu'),, PanelHint[0]));
-    c_Tabs.AddTab(PanelCaption[1], string(Class'ScrnBalanceSrv.ScrnKFTab_Perks'),, PanelHint[1]);
+    B = ScrnTab_BuyMenu(c_Tabs.AddTab(PanelCaption[0], string(class'ScrnTab_BuyMenu'),, PanelHint[0]));
+    c_Tabs.AddTab(PanelCaption[1], string(class'ScrnKFTab_Perks'),, PanelHint[1]);
     
     SRBuyMenuFilter(BuyMenuFilter).SaleListBox = SRBuyMenuSaleList(B.SaleSelect.List);
 }

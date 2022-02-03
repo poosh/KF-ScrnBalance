@@ -7,5 +7,5 @@ defaultproperties
      BuyClipSize=1
      ItemName="M99 AMR SE"
      ItemShortName="M99 SE"
-     InventoryType=Class'ScrnBalanceSrv.ScrnM99SniperRifle'
+     InventoryType=class'ScrnM99SniperRifle'
 }

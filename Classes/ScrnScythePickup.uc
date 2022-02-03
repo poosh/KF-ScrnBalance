@@ -9,5 +9,5 @@ defaultproperties
      cost=1750
      ItemName="Scythe SE"
      ItemShortName="Scythe SE"
-     InventoryType=Class'ScrnBalanceSrv.ScrnScythe'
+     InventoryType=class'ScrnScythe'
 }

@@ -211,8 +211,8 @@ defaultproperties
 {
      ReloadShortAnim="Reload"
      ReloadShortRate=2.13 //2.1
-     FireModeClass(0)=Class'ScrnBalanceSrv.ScrnMAC10Fire'
-     PickupClass=Class'ScrnBalanceSrv.ScrnMAC10Pickup'
+     FireModeClass(0)=class'ScrnMAC10Fire'
+     PickupClass=class'ScrnMAC10Pickup'
      ItemName="MAC10 SE"
      ChargingHandleOffset=(X=-0.035,Y=0.000,Z=0)
 }

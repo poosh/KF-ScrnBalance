@@ -288,8 +288,8 @@ defaultproperties
     ReloadShortAnim="Reload"
     PistolSlideOffset=(X=0.02330,Y=0.0,Z=0.0)
     PistolHammerRotation=(Pitch=145,Yaw=0,Roll=0) //tripwire why did you do this
-    FireModeClass(0)=Class'ScrnBalanceSrv.ScrnSingleFire'
-    PickupClass=Class'ScrnBalanceSrv.ScrnSinglePickup'
+    FireModeClass(0)=class'ScrnSingleFire'
+    PickupClass=class'ScrnSinglePickup'
     ItemName="9mm Tactical SE"
     Priority=4
     bKFNeverThrow=False

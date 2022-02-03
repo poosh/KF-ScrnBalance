@@ -10,5 +10,5 @@ static function AwardDamage(KFSteamStatsAndAchievements KFStatsAndAchievements, 
 
 defaultproperties
 {
-     WeaponClass=Class'ScrnBalanceSrv.ScrnTrenchgun'
+     WeaponClass=class'ScrnTrenchgun'
 }

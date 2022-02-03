@@ -2,7 +2,7 @@ class ScrnSeekerSixPickup extends SeekerSixPickup;
 
 defaultproperties
 {
-    InventoryType=Class'ScrnBalanceSrv.ScrnSeekerSixRocketLauncher'
+    InventoryType=class'ScrnSeekerSixRocketLauncher'
 
     //Weight=7.000000
     cost=2500

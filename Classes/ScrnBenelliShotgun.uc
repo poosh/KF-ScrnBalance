@@ -320,10 +320,10 @@ defaultproperties
 {
      ReloadRate=0.60
      ReloadAnimRate=1.3425
-     FireModeClass(0)=Class'ScrnBalanceSrv.ScrnBenelliFire'
+     FireModeClass(0)=class'ScrnBenelliFire'
      Description="A military tactical shotgun with semi automatic fire capability. Holds up to 6 shells. Special shell construction allow pellets to penetrate fat much easier."
-     PickupClass=Class'ScrnBalanceSrv.ScrnBenelliPickup'
-     AttachmentClass=Class'ScrnBalanceSrv.ScrnBenelliAttachment' //New attachment to fix broken BenelliAttachment class
+     PickupClass=class'ScrnBenelliPickup'
+     AttachmentClass=class'ScrnBenelliAttachment' //New attachment to fix broken BenelliAttachment class
      ItemName="Combat Shotgun SE"
      PlayerViewPivot=(Pitch=-47,Roll=0,Yaw=-5) //fix to make sight centered
      ReloadViewOffset=(X=0.000000,Y=0.000000,Z=0.000000) //reload offset to get the weapon away from the center of the screen while reloading
@@ -332,8 +332,8 @@ defaultproperties
 
      //laser stuff
      LaserAttachmentBone="LightBone"
-     LaserDotClass=Class'ScrnBalanceSrv.ScrnLocalLaserDot'
-     LaserAttachmentClass=Class'ScrnBalanceSrv.ScrnLaserAttachmentFirstPerson'
+     LaserDotClass=class'ScrnLocalLaserDot'
+     LaserAttachmentClass=class'ScrnLaserAttachmentFirstPerson'
      FireSpotRenrerTime=1.5
 
      ModeSwitchAnim="LightOn"

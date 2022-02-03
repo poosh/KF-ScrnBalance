@@ -89,7 +89,7 @@ simulated function PostBeginPlay()
 
 defaultproperties
 {
-    PickupClass=Class'ScrnBalanceSrv.ScrnKnifePickup'
+    PickupClass=class'ScrnKnifePickup'
     ItemName="Knife SE"
     Description="Military Combat Knife"
     Priority=2

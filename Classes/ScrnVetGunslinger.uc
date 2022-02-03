@@ -7,9 +7,9 @@ class ScrnVetGunslinger extends ScrnVeterancyTypes
 static function int GetStatValueInt(ClientPerkRepLink StatOther, byte ReqNum)
 {
   if (ReqNum == 1)
-    return StatOther.GetCustomValueInt(Class'ScrnBalanceSrv.ScrnPistolDamageProgress');
+    return StatOther.GetCustomValueInt(class'ScrnPistolDamageProgress');
   // 0 and default
-  return StatOther.GetCustomValueInt(Class'ScrnBalanceSrv.ScrnPistolKillProgress');
+  return StatOther.GetCustomValueInt(class'ScrnPistolKillProgress');
 }
 
 
@@ -17,8 +17,8 @@ static function AddCustomStats( ClientPerkRepLink Other )
 {
     super.AddCustomStats(Other); //init achievements
 
-    Other.AddCustomValue(Class'ScrnBalanceSrv.ScrnPistolKillProgress');
-    Other.AddCustomValue(Class'ScrnBalanceSrv.ScrnPistolDamageProgress');
+    Other.AddCustomValue(class'ScrnPistolKillProgress');
+    Other.AddCustomValue(class'ScrnPistolDamageProgress');
 }
 
 
@@ -177,7 +177,7 @@ static function float GetWeaponMovementSpeedBonus(KFPlayerReplicationInfo KFPRI,
 static function float GetCostScaling(KFPlayerReplicationInfo KFPRI, class<Pickup> Item)
 {
     //reduced base price, so no discount on magnums
-    if ( Item == class'ScrnBalanceSrv.ScrnMagnum44Pickup' || Item == class'ScrnBalanceSrv.ScrnDual44MagnumPickup' )
+    if ( Item == class'ScrnMagnum44Pickup' || Item == class'ScrnDual44MagnumPickup' )
         return 1.0;
 
     if ( ClassIsChildOf(Item,  class'DeaglePickup') || ClassIsChildOf(Item,  class'DualDeaglePickup')
@@ -214,8 +214,8 @@ static function string GetCustomLevelInfo( byte Level )
 
 defaultproperties
 {
-    DefaultDamageType=Class'ScrnBalanceSrv.ScrnDamTypeDefaultGunslinger'
-    DefaultDamageTypeNoBonus=Class'ScrnBalanceSrv.ScrnDamTypeDefaultGunslingerBase'
+    DefaultDamageType=class'ScrnDamTypeDefaultGunslinger'
+    DefaultDamageTypeNoBonus=class'ScrnDamTypeDefaultGunslingerBase'
     SamePerkAch="OP_Gunslinger"
 
     SkillInfo="PERK SKILLS:|100% faster reload with Revolvers|60% faster reload with Pistols|50% less recoil with Pistols|+50% damage to Bloats||COWBOY MODE:|20% increase in movement speed|9mm Machine-Pistols"

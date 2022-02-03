@@ -2,6 +2,6 @@ class ScrnM79IncFire extends M79Fire;
 
 defaultproperties
 {
-     AmmoClass=Class'ScrnBalanceSrv.ScrnM79IncAmmo'
-     ProjectileClass=Class'ScrnBalanceSrv.ScrnM79IncGrenadeProjectile'
+     AmmoClass=class'ScrnM79IncAmmo'
+     ProjectileClass=class'ScrnM79IncGrenadeProjectile'
 }

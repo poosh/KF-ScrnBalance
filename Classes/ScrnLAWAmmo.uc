@@ -4,6 +4,6 @@ defaultproperties
 {
      AmmoPickupAmount=3
      MaxAmmo=16
-     PickupClass=Class'ScrnBalanceSrv.ScrnLAWAmmoPickup'
+     PickupClass=class'ScrnLAWAmmoPickup'
      ItemName="L.A.W. Rockets"
 }

@@ -3051,16 +3051,16 @@ defaultproperties
 {
     bManualReload=True
     DamageAck=1  // make show the default value is the same as ScrnHUD.ShowDamages
-    DamageNumbersClass=class'ScrnBalanceSrv.ScrnDamageNumbers'
+    DamageNumbersClass=class'ScrnDamageNumbers'
     AchievementDisplayCooldown=5.000000
     bChangedPerkDuringGame=True
     Custom3DScopeSens=24
     ProfilePageClassString="ScrnBalanceSrv.ScrnProfilePage"
     LobbyMenuClassString="ScrnBalanceSrv.ScrnLobbyMenu"
     TSCLobbyMenuClassString="ScrnBalanceSrv.TSCLobbyMenu"
-    PawnClass=Class'ScrnBalanceSrv.ScrnHumanPawn'
-    CustomPlayerReplicationInfoClass=class'ScrnBalanceSrv.ScrnCustomPRI'
-    FlareCloudClass=Class'ScrnBalanceSrv.ScrnFlareCloud'
+    PawnClass=class'ScrnHumanPawn'
+    CustomPlayerReplicationInfoClass=class'ScrnCustomPRI'
+    FlareCloudClass=class'ScrnFlareCloud'
     bSpeechVote=true
     bAlwaysDisplayAchProgression=true
     MaxVoiceMsgIn10s=5

@@ -247,7 +247,7 @@ simulated state Disintegrating
 defaultproperties
 {
     Damage=13
-    MyDamageType=class'ScrnBalanceSrv.ToiletPaperDamType'
+    MyDamageType=class'ToiletPaperDamType'
 
     RotationRate=(pitch=5000,yaw=5000,roll=5000)
     Load=1
@@ -278,7 +278,7 @@ defaultproperties
     DrawType=DT_StaticMesh
     ImpactSound=none
     Mass=10
-    ExplodeEffectClass=class'ScrnBalanceSrv.ToiletPaperExplode'
+    ExplodeEffectClass=class'ToiletPaperExplode'
     PickupSound=Sound'KF_InventorySnd.Medkit_Pickup'
     AddAmmoSound=Sound'ScrnSnd.piece_of_candy'
 

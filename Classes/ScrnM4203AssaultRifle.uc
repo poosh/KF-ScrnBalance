@@ -240,11 +240,11 @@ defaultproperties
     ReloadShortRate=1.9
     ReloadRate=2.794846
     ReloadAnimRate=1.300000
-    FireModeClass(0)=Class'ScrnBalanceSrv.ScrnM4203BulletFire'
-    FireModeClass(1)=Class'ScrnBalanceSrv.ScrnM203Fire'
+    FireModeClass(0)=class'ScrnM4203BulletFire'
+    FireModeClass(1)=class'ScrnM203Fire'
     Description="An assault rifle with an attached grenade launcher. Shoots in 3-bullet fixed-burst mode."
     InventoryGroup=3
-    PickupClass=Class'ScrnBalanceSrv.ScrnM4203Pickup'
+    PickupClass=class'ScrnM4203Pickup'
     ItemName="M4 203 SE"
     //PrePivot=(Z=-0.35) //rotational fix for ironsight alignment
     ZoomedViewOffset=(X=0.000000,Y=0.000000,Z=-0.250000) //new sight alignment fix

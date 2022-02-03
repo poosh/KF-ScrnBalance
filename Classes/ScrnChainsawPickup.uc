@@ -10,5 +10,5 @@ defaultproperties
     ItemShortName="Ash's Chainsaw"
     PickupMessage="You got the Ash's Chainsaw."
     AmmoItemName="Gasoline"
-    InventoryType=Class'ScrnBalanceSrv.ScrnChainsaw'
+    InventoryType=class'ScrnChainsaw'
 }

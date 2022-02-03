@@ -482,10 +482,10 @@ defaultproperties
     SingleReloadRate=1.4375
     SingleReloadAnimRate=1.6
 
-    FireModeClass(0)=Class'ScrnBalanceSrv.ScrnBoomStickSingleFire'
-    FireModeClass(1)=Class'ScrnBalanceSrv.ScrnBoomStickDualFire'
+    FireModeClass(0)=class'ScrnBoomStickSingleFire'
+    FireModeClass(1)=class'ScrnBoomStickDualFire'
     Description="This is my BOOMstick (c) Ash, Evil Dead - Army of Darkness, 1992.|Has been used through the centuries to hunt down Demons, Aliens and Zombies. Now it's time for the ZEDs.|Can shoot from one or two barrels simultaneousely. Single shell reload is avaliable."
-    PickupClass=Class'ScrnBalanceSrv.ScrnBoomStickPickup'
+    PickupClass=class'ScrnBoomStickPickup'
     ItemName="Ash's Boomstick"
     //Priority=220 // 160 - switch before aa12
     NewAnimRef="ScrnAnims.boomstick_anim_new"

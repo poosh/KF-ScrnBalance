@@ -4,6 +4,6 @@ defaultproperties
 {
      ItemName="MKb42 SE"
      ItemShortName="MKb42 SE"
-     InventoryType=Class'ScrnBalanceSrv.ScrnMKb42AssaultRifle'
+     InventoryType=class'ScrnMKb42AssaultRifle'
 }
 

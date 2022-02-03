@@ -14,5 +14,5 @@ static function AwardKill(KFSteamStatsAndAchievements KFStatsAndAchievements, KF
 
 defaultproperties
 {
-    WeaponClass=Class'ScrnBalanceSrv.ScrnBullpup'
+    WeaponClass=class'ScrnBullpup'
 }

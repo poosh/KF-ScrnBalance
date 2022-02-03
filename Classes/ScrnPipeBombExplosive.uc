@@ -2,7 +2,7 @@ class ScrnPipeBombExplosive extends PipeBombExplosive;
 
 defaultproperties
 {
-     FireModeClass(0)=Class'ScrnBalanceSrv.ScrnPipeBombFire'
-     PickupClass=Class'ScrnBalanceSrv.ScrnPipeBombPickup'
+     FireModeClass(0)=class'ScrnPipeBombFire'
+     PickupClass=class'ScrnPipeBombPickup'
      ItemName="PipeBomb SE"
 }

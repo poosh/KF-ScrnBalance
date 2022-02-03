@@ -18,7 +18,7 @@ var float iDoT_MinBoostRatio;
 
 defaultproperties
 {
-     WeaponClass=Class'ScrnBalanceSrv.ScrnFlareRevolver'
+     WeaponClass=class'ScrnFlareRevolver'
      DeathString="%k burned %o."
      FemaleSuicide="%o burned down."
      MaleSuicide="%o burned down."

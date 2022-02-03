@@ -7,7 +7,7 @@ defaultproperties
      ItemName="Dual Handcannons SE"
      ItemShortName="Dual HC SE"
      CorrespondingPerkIndex=8
-     InventoryType=Class'ScrnBalanceSrv.ScrnDualDeagle'
+     InventoryType=class'ScrnDualDeagle'
      MagAmmoRemaining=16
      BuyClipSize=16
 }

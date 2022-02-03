@@ -7,7 +7,7 @@ class ScrnThompsonDrumAmmo extends ThompsonDrumAmmo;
 
 defaultproperties
 {
-    PickupClass=Class'ScrnBalanceSrv.ScrnThompsonDrumAmmoPickup'
+    PickupClass=class'ScrnThompsonDrumAmmoPickup'
 
      AmmoPickupAmount=50
      MaxAmmo=500

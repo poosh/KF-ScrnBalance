@@ -6,6 +6,6 @@ defaultproperties
     ItemName="Knife SE"
     ItemShortName="Knife SE"
     CorrespondingPerkIndex=4
-    InventoryType=Class'ScrnBalanceSrv.ScrnKnife'
+    InventoryType=class'ScrnKnife'
     PickupMessage="You got the Knife."
 }

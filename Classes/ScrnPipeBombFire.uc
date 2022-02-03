@@ -2,6 +2,6 @@ class ScrnPipeBombFire extends PipeBombFire;
 
 defaultproperties
 {
-     AmmoClass=Class'ScrnBalanceSrv.ScrnPipeBombAmmo'
-     ProjectileClass=Class'ScrnBalanceSrv.ScrnPipeBombProjectile'
+     AmmoClass=class'ScrnPipeBombAmmo'
+     ProjectileClass=class'ScrnPipeBombProjectile'
 }

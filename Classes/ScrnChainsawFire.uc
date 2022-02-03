@@ -49,7 +49,7 @@ defaultproperties
 {
      MeleeDamage=22
      weaponRange=80.000000
-     hitDamageClass=Class'ScrnBalanceSrv.ScrnDamTypeChainsawAlt'
-     AmmoClass=Class'ScrnBalanceSrv.ScrnChainsawAmmo'
+     hitDamageClass=class'ScrnDamTypeChainsawAlt'
+     AmmoClass=class'ScrnChainsawAmmo'
      AmmoPerFire=1
 }

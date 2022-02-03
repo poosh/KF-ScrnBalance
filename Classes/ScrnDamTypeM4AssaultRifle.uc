@@ -13,5 +13,5 @@ static function AwardKill(KFSteamStatsAndAchievements KFStatsAndAchievements, KF
 defaultproperties
 {
      HeadShotDamageMult=1.20
-     WeaponClass=Class'ScrnBalanceSrv.ScrnM4AssaultRifle'
+     WeaponClass=class'ScrnM4AssaultRifle'
 }

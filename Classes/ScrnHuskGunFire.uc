@@ -186,10 +186,10 @@ defaultproperties
     MaxHoldTime=0.0 // no auto fire
     MaxChargeTime=3.0 // 3s to full charge
     MaxChargeAmmo=10
-    WeakProjectileClass=Class'ScrnBalanceSrv.ScrnHuskGunProjectile_Weak'
-    StrongProjectileClass=Class'ScrnBalanceSrv.ScrnHuskGunProjectile_Strong'
-    AmmoClass=Class'ScrnBalanceSrv.ScrnHuskGunAmmo'
-    ProjectileClass=Class'ScrnBalanceSrv.ScrnHuskGunProjectile'
+    WeakProjectileClass=class'ScrnHuskGunProjectile_Weak'
+    StrongProjectileClass=class'ScrnHuskGunProjectile_Strong'
+    AmmoClass=class'ScrnHuskGunAmmo'
+    ProjectileClass=class'ScrnHuskGunProjectile'
     ProjSpawnOffset=(X=0,Y=0,Z=0)
 
     SpreadStyle=SS_None

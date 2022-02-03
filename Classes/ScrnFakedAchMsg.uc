@@ -40,7 +40,7 @@ static function RenderComplexMessage(
     Style = C.Style;
 
     //test max width 
-    C.Font = class'ScrnBalanceSrv.ScrnHUD'.static.LoadFontStatic(6);
+    C.Font = class'ScrnHUD'.static.LoadFontStatic(6);
     C.StrLen( default.Achievements[Switch].Title, TextWidth, TextHeight);
     
     MaxWidth = max(256, TextWidth + 104);
@@ -60,7 +60,7 @@ static function RenderComplexMessage(
     // achievement earnied title
     MessageString = default.EarnedString;
 
-    C.Font = class'ScrnBalanceSrv.ScrnHUD'.static.LoadFontStatic(7);
+    C.Font = class'ScrnHUD'.static.LoadFontStatic(7);
     C.SetDrawColor(127, 127, 127, c.DrawColor.A);
     C.StrLen(MessageString, TextWidth, TextHeight);
     C.SetPos((MaxWidth - TextWidth)/2, Y + 7);
@@ -84,7 +84,7 @@ static function RenderComplexMessage(
     // achievement name
     C.SetPos(0, TextY);
     C.SetDrawColor(50, 192, 50, c.DrawColor.A);
-    C.Font =class'ScrnBalanceSrv.ScrnHUD'.static.LoadFontStatic(6);
+    C.Font =class'ScrnHUD'.static.LoadFontStatic(6);
     C.StrLen(default.Achievements[Switch].Title, TextWidth, TextHeight);
     C.DrawTextClipped(default.Achievements[Switch].Title);
     
@@ -92,7 +92,7 @@ static function RenderComplexMessage(
     //description
     C.SetDrawColor(192, 192, 192, c.DrawColor.A);
     C.SetPos(0, TextY + TextHeight*1.1);
-    C.Font = class'ScrnBalanceSrv.ScrnHUD'.static.LoadFontStatic(8);
+    C.Font = class'ScrnHUD'.static.LoadFontStatic(8);
     //to do set positions
     C.DrawText(default.Achievements[Switch].Text);
     

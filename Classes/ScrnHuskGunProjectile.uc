@@ -196,7 +196,7 @@ simulated function ProcessTouch(Actor Other, Vector HitLocation)
 defaultproperties
 {
     ImpactDamage=65
-    ImpactDamageType=Class'ScrnBalanceSrv.ScrnDamTypeHuskGunProjectileImpact'
+    ImpactDamageType=class'ScrnDamTypeHuskGunProjectileImpact'
 
     Damage=30.000000
     DamageRadius=150.000000

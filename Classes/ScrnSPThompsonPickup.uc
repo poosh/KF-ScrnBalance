@@ -11,5 +11,5 @@ defaultproperties
      ItemShortName="Dr. T's L.D.S. SE"
      CorrespondingPerkIndex=3
      EquipmentCategoryID=3
-     InventoryType=Class'ScrnBalanceSrv.ScrnSPThompsonSMG'
+     InventoryType=class'ScrnSPThompsonSMG'
 }

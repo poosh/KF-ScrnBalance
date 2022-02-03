@@ -332,7 +332,7 @@ simulated function DrawCookingBar(Canvas C)
         return;
 
     MyBarPercentage = 1.0 - fclamp((aFrag.CookExplodeTimer - Level.TimeSeconds)
-        / class'ScrnBalanceSrv.ScrnNade'.default.ExplodeTimer, 0, 1);
+        / class'ScrnNade'.default.ExplodeTimer, 0, 1);
 
     MyBarLength = C.ClipX * 0.2;
     MyBarHeight = 12;

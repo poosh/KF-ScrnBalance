@@ -50,7 +50,7 @@ function PositionButtons(Canvas C)
 function bool OnFooterClick(GUIComponent Sender)
 {
     if ( Sender == b_Perks ) {
-        PlayerOwner().ClientOpenMenu(string(Class'ScrnBalanceSrv.ScrnInvasionLoginMenu'), false);
+        PlayerOwner().ClientOpenMenu(string(class'ScrnInvasionLoginMenu'), false);
         return false;
     }
     else if ( Sender == b_ViewMap ) {

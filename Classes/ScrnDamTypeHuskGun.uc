@@ -3,5 +3,5 @@ class ScrnDamTypeHuskGun extends DamTypeHuskGun
 
 defaultproperties
 {
-     WeaponClass=Class'ScrnBalanceSrv.ScrnHuskGun'
+     WeaponClass=class'ScrnHuskGun'
 }

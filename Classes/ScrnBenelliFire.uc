@@ -74,8 +74,8 @@ defaultproperties
 {
      maxVerticalRecoilAngle=1250
      maxHorizontalRecoilAngle=700
-     ProjectileClass=Class'ScrnBalanceSrv.ScrnBenelliBullet'
-     AmmoClass=Class'ScrnBalanceSrv.ScrnBenelliAmmo'
+     ProjectileClass=class'ScrnBenelliBullet'
+     AmmoClass=class'ScrnBenelliAmmo'
      AimedSpread=750
      Spread=750
 }

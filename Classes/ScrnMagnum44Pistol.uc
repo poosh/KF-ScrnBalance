@@ -322,8 +322,8 @@ function GiveTo( pawn Other, optional Pickup Pickup )
 
 defaultproperties
 {
-     FireModeClass(0)=Class'ScrnBalanceSrv.ScrnMagnum44Fire'
-     PickupClass=Class'ScrnBalanceSrv.ScrnMagnum44Pickup'
+     FireModeClass(0)=class'ScrnMagnum44Fire'
+     PickupClass=class'ScrnMagnum44Pickup'
      ItemName="44 Magnum SE"
      Weight=2
      Priority=70

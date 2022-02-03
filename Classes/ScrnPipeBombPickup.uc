@@ -6,5 +6,5 @@ defaultproperties
      ItemName="Pipe Bomb SE"
      ItemShortName="Pipe Bomb SE"
      AmmoItemName="Pipe Bomb SE"
-     InventoryType=Class'ScrnBalanceSrv.ScrnPipeBombExplosive'
+     InventoryType=class'ScrnPipeBombExplosive'
 }

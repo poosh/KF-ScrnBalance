@@ -620,7 +620,7 @@ defaultproperties
 
     HUDType="ScrnBalanceSrv.FtgHUD"
     ScoreBoardType="ScrnBalanceSrv.ScrnScoreBoard"
-    BaseGuardianClasses(0)=class'ScrnBalanceSrv.TheGuardianRed'
-    BaseGuardianClasses(1)=class'ScrnBalanceSrv.TheGuardianBlue'
-    StinkyClass=class'ScrnBalanceSrv.StinkyClot'
+    BaseGuardianClasses(0)=class'TheGuardianRed'
+    BaseGuardianClasses(1)=class'TheGuardianBlue'
+    StinkyClass=class'StinkyClot'
 }

@@ -27,8 +27,8 @@ simulated function InitEffects()
 
 defaultproperties
 {
-    DamageType=Class'ScrnBalanceSrv.ScrnDamTypeMP7M'
-    AmmoClass=Class'ScrnBalanceSrv.ScrnMP5MAmmo'
+    DamageType=class'ScrnDamTypeMP7M'
+    AmmoClass=class'ScrnMP5MAmmo'
     ShellEjectClass=class'ROEffects.KFShellEjectMP' //default KFShellEjectMP5M is missing
     DamageMin=32
     DamageMax=32     

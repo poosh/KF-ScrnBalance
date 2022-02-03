@@ -159,7 +159,7 @@ simulated function ShowTimeMsg(optional bool bForceDisplay)
 defaultproperties
 {
     bNetNotify = true;
-    RemainingTimeMsg=class'ScrnBalanceSrv.ScrnSuicideMsg'
+    RemainingTimeMsg=class'ScrnSuicideMsg'
     WaveEndRule=0 // RULE_KillEmAll
     bTraderArrow=True
 }

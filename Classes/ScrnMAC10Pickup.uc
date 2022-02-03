@@ -9,5 +9,5 @@ defaultproperties
 
      ItemName="MAC-10 SE"
      ItemShortName="MAC-10 SE"
-     InventoryType=Class'ScrnBalanceSrv.ScrnMAC10MP'
+     InventoryType=class'ScrnMAC10MP'
 }
