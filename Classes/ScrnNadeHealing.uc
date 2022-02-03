@@ -54,7 +54,7 @@ defaultproperties
          StartVelocityRange=(X=(Min=-750.000000,Max=750.000000),Y=(Min=-750.000000,Max=750.000000))
          VelocityLossRange=(X=(Min=10.000000,Max=10.000000),Y=(Min=10.000000,Max=10.000000),Z=(Min=10.000000,Max=10.000000))
      End Object
-     Emitters(0)=SpriteEmitter'ScrnBalanceSrv.ScrnNadeHealing.SpriteEmitter0'
+     Emitters(0)=SpriteEmitter0
 
      AutoDestroy=True
      bNoDelete=False

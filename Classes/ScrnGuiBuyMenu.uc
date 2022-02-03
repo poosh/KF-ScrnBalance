@@ -31,5 +31,5 @@ defaultproperties
          WinHeight=0.082460
          OnDraw=QS.MyOnDraw
      End Object
-     QuickPerkSelect=ScrnKFQuickPerkSelect'ScrnBalanceSrv.ScrnGuiBuyMenu.QS'
+     QuickPerkSelect=QS
 }

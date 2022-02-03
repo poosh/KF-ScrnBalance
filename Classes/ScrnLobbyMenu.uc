@@ -246,7 +246,7 @@ defaultproperties
          bScaleToParent=False
          OnPreDraw=BuyFooter.InternalOnPreDraw
      End Object
-     t_Footer=ScrnLobbyFooter'ScrnBalanceSrv.ScrnLobbyMenu.BuyFooter'
+     t_Footer=BuyFooter
 
      Begin Object Class=GUILabel Name=CurrentMapL
          Caption="This is a placeholder line (tm)"
@@ -257,5 +257,5 @@ defaultproperties
          WinHeight=0.035714
          RenderWeight=0.900000
      End Object
-     CurrentMapLabel=GUILabel'ScrnBalanceSrv.ScrnLobbyMenu.CurrentMapL'
+     CurrentMapLabel=CurrentMapL
 }

@@ -136,7 +136,7 @@ defaultproperties
          WinHeight=0.960000
          OnPreDraw=BGAchievements.InternalPreDraw
      End Object
-     i_BGAchievements=GUISectionBackground'ScrnBalanceSrv.ScrnTab_Achievements.BGAchievements'
+     i_BGAchievements=BGAchievements
 
      Begin Object Class=GUIProgressBar Name=AchievementProgressBar
          BarBack=Texture'KF_InterfaceArt_tex.Menu.Innerborder'
@@ -151,7 +151,7 @@ defaultproperties
          WinHeight=0.030000
          RenderWeight=1.200000
      End Object
-     pb_AchievementProgress=GUIProgressBar'ScrnBalanceSrv.ScrnTab_Achievements.AchievementProgressBar'
+     pb_AchievementProgress=AchievementProgressBar
 
      Begin Object Class=GUILabel Name=AchievementProgressLabel
          Caption="0 of 0 unlocked"
@@ -161,7 +161,7 @@ defaultproperties
          WinWidth=0.400000
          WinHeight=0.030000
      End Object
-     l_AchievementProgress=GUILabel'ScrnBalanceSrv.ScrnTab_Achievements.AchievementProgressLabel'
+     l_AchievementProgress=AchievementProgressLabel
 
      Begin Object Class=ScrnAchievementsListBox Name=AchievementsList
          OnCreateComponent=AchievementsList.InternalOnCreateComponent
@@ -170,7 +170,7 @@ defaultproperties
          WinWidth=0.960000
          WinHeight=0.777808
      End Object
-     lb_Achievements=ScrnAchievementsListBox'ScrnBalanceSrv.ScrnTab_Achievements.AchievementsList'
+     lb_Achievements=AchievementsList
 
      Begin Object Class=moComboBox Name=GroupCombo
          ComponentJustification=TXTA_Left
@@ -188,7 +188,7 @@ defaultproperties
          OnChange=ScrnTab_Achievements.InternalOnChange
          OnLoadINI=ScrnTab_Achievements.InternalOnLoadINI
      End Object
-     co_Group=moComboBox'ScrnBalanceSrv.ScrnTab_Achievements.GroupCombo'
+     co_Group=GroupCombo
 
 
      Begin Object Class=moCheckBox Name=OnlyLockedCheckBox
@@ -205,7 +205,7 @@ defaultproperties
          OnChange=ScrnTab_Achievements.InternalOnChange
          OnLoadINI=ScrnTab_Achievements.InternalOnLoadINI
      End Object
-     ch_OnlyLocked=moCheckBox'ScrnBalanceSrv.ScrnTab_Achievements.OnlyLockedCheckBox'
+     ch_OnlyLocked=OnlyLockedCheckBox
 
      bNeedRefresh=True
      OutOfString="of"

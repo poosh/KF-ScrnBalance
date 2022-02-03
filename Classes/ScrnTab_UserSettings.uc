@@ -853,7 +853,7 @@ defaultproperties
         bScaleToParent=True
         RenderWeight=0.9
     End Object
-    img_ScrnLogo=GUIImage'ScrnBalanceSrv.ScrnTab_UserSettings.LogoStandard'
+    img_ScrnLogo=LogoStandard
 
     Begin Object Class=GUILabel Name=VersionLabel
         TextAlign=TXTA_Center
@@ -867,7 +867,7 @@ defaultproperties
         WinWidth=0.800000
         WinHeight=0.05
     End Object
-    lbl_Version=GUILabel'ScrnBalanceSrv.ScrnTab_UserSettings.VersionLabel'
+    lbl_Version=VersionLabel
 
     Begin Object Class=GUILabel Name=CRLabel
         Caption=""
@@ -880,7 +880,7 @@ defaultproperties
         WinWidth=0.800000
         WinHeight=0.05
     End Object
-    lbl_CR=GUILabel'ScrnBalanceSrv.ScrnTab_UserSettings.CRLabel'
+    lbl_CR=CRLabel
 
     Begin Object Class=GUIButton Name=SteamGroupButton
         Caption="Group..."
@@ -901,7 +901,7 @@ defaultproperties
         OnClick=ScrnTab_UserSettings.ButtonClicked
         OnKeyEvent=SteamGroupButton.InternalOnKeyEvent
     End Object
-    b_ScrnGroup=GUIButton'ScrnBalanceSrv.ScrnTab_UserSettings.SteamGroupButton'
+    b_ScrnGroup=SteamGroupButton
 
     // TSC TOURNEY ---------------------------------------------------------------------
     Begin Object Class=GUIImage Name=LogoTourney
@@ -917,7 +917,7 @@ defaultproperties
         RenderWeight=0.9
         bVisible=False
     End Object
-    img_TourneyLogo=GUIImage'ScrnBalanceSrv.ScrnTab_UserSettings.LogoTourney'
+    img_TourneyLogo=LogoTourney
 
     Begin Object Class=GUILabel Name=TourneyLabel
         Caption="Congratulations on getting into TSC Tournament Playoffs!"

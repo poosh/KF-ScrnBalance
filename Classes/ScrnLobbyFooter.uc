@@ -82,11 +82,10 @@ defaultproperties
         TabOrder=0
         bBoundToParent=True
         ToolTip=None
-
         OnClick=LobbyFooter.OnFooterClick
         OnKeyEvent=Cancel.InternalOnKeyEvent
     End Object
-    b_Cancel=GUIButton'ScrnBalanceSrv.ScrnLobbyFooter.Cancel'
+    b_Cancel=Cancel
 
     Begin Object Class=GUIButton Name=ViewMap
         Caption="View Map"
@@ -103,5 +102,5 @@ defaultproperties
         OnClick=LobbyFooter.OnFooterClick
         OnKeyEvent=Cancel.InternalOnKeyEvent
     End Object
-    b_ViewMap=GUIButton'ScrnBalanceSrv.ScrnLobbyFooter.ViewMap'
+    b_ViewMap=ViewMap
 }
