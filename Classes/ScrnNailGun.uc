@@ -23,7 +23,7 @@ simulated function PostBeginPlay()
 
 simulated function bool CanZoomNow()
 {
-	return !FireMode[0].bIsFiring && !FireMode[1].bIsFiring;
+    return !FireMode[0].bIsFiring && !FireMode[1].bIsFiring;
 }
 
 simulated function bool ConsumeAmmo( int Mode, float Load, optional bool bAmountNeededIsMax )
