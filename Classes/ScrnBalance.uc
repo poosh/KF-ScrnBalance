@@ -2350,7 +2350,7 @@ function bool CheckReplacement(Actor Other, out byte bSuperRelevant)
     if ( Other.class == class'KFRandomItemSpawn' ) {
         if ( !bReplacePickups )
             return true;
-        ReplaceWith(Other, "ScrnBalanceSrv.ScrnRandomItemSpawn");
+        ReplaceWith(Other, string(class'ScrnRandomItemSpawn'));
         return false;
     }
     else if ( Other.class == class'KFAmmoPickup' ) {
@@ -2358,7 +2358,7 @@ function bool CheckReplacement(Actor Other, out byte bSuperRelevant)
         AmmoBoxMesh = Other.StaticMesh;
         AmmoBoxDrawScale = Other.DrawScale;
         AmmoBoxDrawScale3D = Other.DrawScale3D;
-        ReplaceWith(Other, "ScrnBalanceSrv.ScrnAmmoPickup");
+        ReplaceWith(Other, string(class'ScrnAmmoPickup'));
         return false;
     }
     else if ( bReplacePickups && Pickup(Other) != none && KF.IsInState('MatchInProgress') ) {

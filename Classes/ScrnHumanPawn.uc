@@ -1080,7 +1080,7 @@ function AddDefaultInventory()
 
     // make sure players have at least knife, when admin screwed up the config
     if ( Inventory == none && KFSPGameType(Level.Game) == none ) {
-        CreateInventory("ScrnBalanceSrv.ScrnKnife");
+        CreateInventory(string(class'ScrnKnife'));
         if ( Inventory != none ) {
             Inventory.OwnerEvent('LoadOut');
             Controller.ClientSwitchToBestWeapon();

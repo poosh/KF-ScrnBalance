@@ -931,7 +931,7 @@ defaultproperties
         WinHeight=0.045
         bVisible=False
     End Object
-    lbl_TourneyMember=GUILabel'ScrnBalanceSrv.ScrnTab_UserSettings.TourneyLabel'
+    lbl_TourneyMember=TourneyLabel
 
     Begin Object Class=GUIButton Name=PrizeButton
         Caption="Get Prize"
@@ -953,7 +953,7 @@ defaultproperties
         OnClick=ScrnTab_UserSettings.ButtonClicked
         OnKeyEvent=PrizeButton.InternalOnKeyEvent
     End Object
-    b_GetPrize=GUIButton'ScrnBalanceSrv.ScrnTab_UserSettings.PrizeButton'
+    b_GetPrize=PrizeButton
 
 
     // WEAPONS -------------------------------------------------------------------------
@@ -966,7 +966,7 @@ defaultproperties
         RenderWeight=0.100100
         OnPreDraw=WeaponsBG.InternalPreDraw
     End Object
-    bg_Weapons=GUISectionBackground'ScrnBalanceSrv.ScrnTab_UserSettings.WeaponsBG'
+    bg_Weapons=WeaponsBG
 
     Begin Object Class=moCheckBox Name=ManualReload
         Caption="Manual Reload"
@@ -984,7 +984,7 @@ defaultproperties
         OnChange=ScrnTab_UserSettings.InternalOnChange
         OnLoadINI=ScrnTab_UserSettings.InternalOnLoadINI
     End Object
-    ch_ManualReload=moCheckBox'ScrnBalanceSrv.ScrnTab_UserSettings.ManualReload'
+    ch_ManualReload=ManualReload
 
     Begin Object Class=moCheckBox Name=CookNade
         Caption="Enable Grenade 'Cooking'"
@@ -1002,7 +1002,7 @@ defaultproperties
         OnChange=ScrnTab_UserSettings.InternalOnChange
         OnLoadINI=ScrnTab_UserSettings.InternalOnLoadINI
     End Object
-    ch_CookNade=moCheckBox'ScrnBalanceSrv.ScrnTab_UserSettings.CookNade'
+    ch_CookNade=CookNade
     strBoundToCook="'%s' key bound to 'Cook' grenade"
     strBoundToThrow="'%s' key bound to Throw grenade"
     strCantFindNade="Can't find a key set for throwing grenades. Please assign it in Settings->Controls."
@@ -1023,7 +1023,7 @@ defaultproperties
         OnChange=ScrnTab_UserSettings.InternalOnChange
         OnLoadINI=ScrnTab_UserSettings.InternalOnLoadINI
     End Object
-    ch_PrioritizePerkedWeapons=moCheckBox'ScrnBalanceSrv.ScrnTab_UserSettings.PrioritizePerkedWeapons'
+    ch_PrioritizePerkedWeapons=PrioritizePerkedWeapons
 
     // Begin Object Class=moCheckBox Name=PrioritizeBoomstick
     //     Caption="Boomstick before AA12"
@@ -1041,7 +1041,7 @@ defaultproperties
     //     OnChange=ScrnTab_UserSettings.InternalOnChange
     //     OnLoadINI=ScrnTab_UserSettings.InternalOnLoadINI
     // End Object
-    // ch_PrioritizeBoomstick=moCheckBox'ScrnBalanceSrv.ScrnTab_UserSettings.PrioritizeBoomstick'
+    // ch_PrioritizeBoomstick=PrioritizeBoomstick
 
     Begin Object Class=moCheckBox Name=NeverSwitchOnPickup
         Caption="No Weapon Autoswitch"
@@ -1059,7 +1059,7 @@ defaultproperties
         OnChange=ScrnTab_UserSettings.InternalOnChange
         OnLoadINI=ScrnTab_UserSettings.InternalOnLoadINI
     End Object
-    ch_NeverSwitchOnPickup=moCheckBox'ScrnBalanceSrv.ScrnTab_UserSettings.NeverSwitchOnPickup'
+    ch_NeverSwitchOnPickup=NeverSwitchOnPickup
 
     Begin Object Class=moCheckBox Name=ShowLeftGunAmmo
         Caption="Left Pistol Ammo"
@@ -1077,7 +1077,7 @@ defaultproperties
         OnChange=ScrnTab_UserSettings.InternalOnChange
         OnLoadINI=ScrnTab_UserSettings.InternalOnLoadINI
     End Object
-    ch_ShowLeftGunAmmo=moCheckBox'ScrnBalanceSrv.ScrnTab_UserSettings.ShowLeftGunAmmo'
+    ch_ShowLeftGunAmmo=ShowLeftGunAmmo
 
     Begin Object Class=GUIButton Name=GunSkinButton
         Caption="Gun Skin"
@@ -1093,7 +1093,7 @@ defaultproperties
         bScaleToParent=True
         OnClick=ScrnTab_UserSettings.ButtonClicked
     End Object
-    b_GunSkin=GUIButton'ScrnBalanceSrv.ScrnTab_UserSettings.GunSkinButton'
+    b_GunSkin=GunSkinButton
 
     Begin Object Class=GUIButton Name=WeaponLockButton
         Caption="Lock Weapons"
@@ -1109,7 +1109,7 @@ defaultproperties
         bScaleToParent=True
         OnClick=ScrnTab_UserSettings.ButtonClicked
     End Object
-    b_WeaponLock=GUIButton'ScrnBalanceSrv.ScrnTab_UserSettings.WeaponLockButton'
+    b_WeaponLock=WeaponLockButton
     strLockWeapons="Lock Weapons"
     strUnlockWeapons="Unlock Weapons"
 
@@ -1127,7 +1127,7 @@ defaultproperties
         bScaleToParent=True
         OnClick=ScrnTab_UserSettings.ButtonClicked
     End Object
-    b_PerkProgress=GUIButton'ScrnBalanceSrv.ScrnTab_UserSettings.PerkProgressButton'
+    b_PerkProgress=PerkProgressButton
 
     Begin Object Class=GUIButton Name=AccuracyButton
         Caption="Show Accuracy"
@@ -1143,7 +1143,7 @@ defaultproperties
         TabOrder=23
         OnClick=ScrnTab_UserSettings.ButtonClicked
     End Object
-    b_Accuracy=GUIButton'ScrnBalanceSrv.ScrnTab_UserSettings.AccuracyButton'
+    b_Accuracy=AccuracyButton
 
     Begin Object Class=moSlider Name=Custom3DScopeSens
         MinValue=5
@@ -1165,7 +1165,7 @@ defaultproperties
         OnLoadINI=ScrnTab_UserSettings.InternalOnLoadINI
         OnCreateComponent=Custom3DScopeSens.InternalOnCreateComponent
     End Object
-    sl_3DScopeSensScale=moSlider'ScrnBalanceSrv.ScrnTab_UserSettings.Custom3DScopeSens'
+    sl_3DScopeSensScale=Custom3DScopeSens
 
 
     // HUD & INFO ----------------------------------------------------------------------
@@ -1178,7 +1178,7 @@ defaultproperties
         RenderWeight=0.100100
         OnPreDraw=WeaponsBG.InternalPreDraw
     End Object
-    bg_HUD=GUISectionBackground'ScrnBalanceSrv.ScrnTab_UserSettings.HUDBG'
+    bg_HUD=HUDBG
 
     Begin Object Class=moComboBox Name=ShowDamagesList
         bReadOnly=True
@@ -1195,7 +1195,7 @@ defaultproperties
         OnLoadINI=ScrnTab_UserSettings.InternalOnLoadINI
         OnCreateComponent=ShowDamagesList.InternalOnCreateComponent
     End Object
-    cbx_ShowDamages=moComboBox'ScrnBalanceSrv.ScrnTab_UserSettings.ShowDamagesList'
+    cbx_ShowDamages=ShowDamagesList
     ShowDamagesItems(0)="Hide damage numbers"
     ShowDamagesItems(1)="Show combined damage"
     ShowDamagesItems(2)="Show all numbers"
@@ -1216,7 +1216,7 @@ defaultproperties
         OnChange=ScrnTab_UserSettings.InternalOnChange
         OnLoadINI=ScrnTab_UserSettings.InternalOnLoadINI
     End Object
-    ch_ShowSpeed=moCheckBox'ScrnBalanceSrv.ScrnTab_UserSettings.ShowSpeed'
+    ch_ShowSpeed=ShowSpeed
 
     Begin Object Class=moCheckBox Name=ShowAchProgress
         Caption="Achievement Progress"
@@ -1234,8 +1234,7 @@ defaultproperties
         OnChange=ScrnTab_UserSettings.InternalOnChange
         OnLoadINI=ScrnTab_UserSettings.InternalOnLoadINI
     End Object
-    ch_ShowAchProgress=moCheckBox'ScrnBalanceSrv.ScrnTab_UserSettings.ShowAchProgress'
-
+    ch_ShowAchProgress=ShowAchProgress
 
     Begin Object Class=GUIButton Name=StatusButton
         Caption="Server Status"
@@ -1251,7 +1250,7 @@ defaultproperties
         bScaleToParent=True
         OnClick=ScrnTab_UserSettings.ButtonClicked
     End Object
-    b_Status=GUIButton'ScrnBalanceSrv.ScrnTab_UserSettings.StatusButton'
+    b_Status=StatusButton
 
     Begin Object Class=GUIButton Name=HLButton
         Caption="HL"
@@ -1267,7 +1266,7 @@ defaultproperties
         bScaleToParent=True
         OnClick=ScrnTab_UserSettings.ButtonClicked
     End Object
-    b_HL=GUIButton'ScrnBalanceSrv.ScrnTab_UserSettings.HLButton'
+    b_HL=HLButton
 
     Begin Object Class=GUIButton Name=ZedsButton
         Caption="Zeds"
@@ -1283,7 +1282,7 @@ defaultproperties
         bScaleToParent=True
         OnClick=ScrnTab_UserSettings.ButtonClicked
     End Object
-    b_Zeds=GUIButton'ScrnBalanceSrv.ScrnTab_UserSettings.ZedsButton'
+    b_Zeds=ZedsButton
 
     Begin Object Class=moComboBox Name=BarStyleList
         bReadOnly=True
@@ -1300,7 +1299,7 @@ defaultproperties
         OnLoadINI=ScrnTab_UserSettings.InternalOnLoadINI
         OnCreateComponent=BarStyleList.InternalOnCreateComponent
     End Object
-    cbx_BarStyle=moComboBox'ScrnBalanceSrv.ScrnTab_UserSettings.BarStyleList'
+    cbx_BarStyle=BarStyleList
 
     Begin Object Class=moSlider Name=BarScale
         MinValue=0.5
@@ -1320,7 +1319,7 @@ defaultproperties
         OnLoadINI=ScrnTab_UserSettings.InternalOnLoadINI
         OnCreateComponent=BarScale.InternalOnCreateComponent
     End Object
-    sl_BarScale=moSlider'ScrnBalanceSrv.ScrnTab_UserSettings.BarScale'
+    sl_BarScale=BarScale
 
     Begin Object Class=moSlider Name=BarOffset
         MinValue=-1.5
@@ -1340,7 +1339,7 @@ defaultproperties
         OnLoadINI=ScrnTab_UserSettings.InternalOnLoadINI
         OnCreateComponent=BarScale.InternalOnCreateComponent
     End Object
-    sl_BarOffset=moSlider'ScrnBalanceSrv.ScrnTab_UserSettings.BarOffset'
+    sl_BarOffset=BarOffset
 
     Begin Object Class=moComboBox Name=HudStyleList
         bReadOnly=True
@@ -1357,7 +1356,7 @@ defaultproperties
         OnLoadINI=ScrnTab_UserSettings.InternalOnLoadINI
         OnCreateComponent=HudStyleList.InternalOnCreateComponent
     End Object
-    cbx_HudStyle=moComboBox'ScrnBalanceSrv.ScrnTab_UserSettings.HudStyleList'
+    cbx_HudStyle=HudStyleList
 
 
     Begin Object Class=moSlider Name=HudScale
@@ -1378,7 +1377,7 @@ defaultproperties
         OnLoadINI=ScrnTab_UserSettings.InternalOnLoadINI
         OnCreateComponent=HudScale.InternalOnCreateComponent
     End Object
-    sl_HudScale=moSlider'ScrnBalanceSrv.ScrnTab_UserSettings.HudScale'
+    sl_HudScale=HudScale
 
     Begin Object Class=moSlider Name=HudAmmoScale
         MinValue=0.25
@@ -1398,7 +1397,7 @@ defaultproperties
         OnLoadINI=ScrnTab_UserSettings.InternalOnLoadINI
         OnCreateComponent=HudAmmoScale.InternalOnCreateComponent
     End Object
-    sl_HudAmmoScale=moSlider'ScrnBalanceSrv.ScrnTab_UserSettings.HudAmmoScale'
+    sl_HudAmmoScale=HudAmmoScale
 
     Begin Object Class=moSlider Name=HudY
         MinValue=0.2
@@ -1418,7 +1417,7 @@ defaultproperties
         OnLoadINI=ScrnTab_UserSettings.InternalOnLoadINI
         OnCreateComponent=HudY.InternalOnCreateComponent
     End Object
-    sl_HudY=moSlider'ScrnBalanceSrv.ScrnTab_UserSettings.HudY'
+    sl_HudY=HudY
 
     // MVOTE ---------------------------------------------------------------------------
     Begin Object Class=GUISectionBackground Name=PlayerBG
@@ -1430,7 +1429,7 @@ defaultproperties
         RenderWeight=0.100100
         OnPreDraw=WeaponsBG.InternalPreDraw
     End Object
-    bg_Players=GUISectionBackground'ScrnBalanceSrv.ScrnTab_UserSettings.PlayerBG'
+    bg_Players=PlayerBG
 
      Begin Object Class=moComboBox Name=PlayerList
          bReadOnly=True
@@ -1447,7 +1446,7 @@ defaultproperties
          OnLoadINI=ScrnTab_UserSettings.InternalOnLoadINI
          OnCreateComponent=PlayerList.InternalOnCreateComponent
      End Object
-     cbx_Player=moComboBox'ScrnBalanceSrv.ScrnTab_UserSettings.PlayerList'
+     cbx_Player=PlayerList
 
     Begin Object Class=GUILabel Name=PlayerLabel
         Caption=""
@@ -1461,7 +1460,7 @@ defaultproperties
         WinHeight=0.05
         RenderWeight=0.2
     End Object
-    lbl_PlayerID=GUILabel'ScrnBalanceSrv.ScrnTab_UserSettings.PlayerLabel'
+    lbl_PlayerID=PlayerLabel
 
     Begin Object Class=GUIButton Name=ProfileButton
         Caption="Profile..."
@@ -1478,7 +1477,7 @@ defaultproperties
         OnClick=ScrnTab_UserSettings.ButtonClicked
         OnKeyEvent=ProfileButton.InternalOnKeyEvent
     End Object
-    b_Profile=GUIButton'ScrnBalanceSrv.ScrnTab_UserSettings.ProfileButton'
+    b_Profile=ProfileButton
 
     Begin Object Class=GUIButton Name=PlayerListButton
         Caption="List"
@@ -1495,7 +1494,7 @@ defaultproperties
         OnClick=ScrnTab_UserSettings.ButtonClicked
         OnKeyEvent=PlayerListButton.InternalOnKeyEvent
     End Object
-    b_PlayerList=GUIButton'ScrnBalanceSrv.ScrnTab_UserSettings.PlayerListButton'
+    b_PlayerList=PlayerListButton
 
     Begin Object Class=moEditBox Name=ReasonTextBox
         ComponentWidth=0.82
@@ -1506,7 +1505,7 @@ defaultproperties
         WinWidth=0.46
         TabOrder=60
     End Object
-    txt_Reason=moEditBox'ScrnBalanceSrv.ScrnTab_UserSettings.ReasonTextBox'
+    txt_Reason=ReasonTextBox
     strBadReason="Write a good reason"
 
     Begin Object Class=GUIButton Name=BlameButton
@@ -1524,7 +1523,7 @@ defaultproperties
         OnClick=ScrnTab_UserSettings.PlayerVoteButtonClicked
         OnKeyEvent=BlameButton.InternalOnKeyEvent
     End Object
-    b_Blame=GUIButton'ScrnBalanceSrv.ScrnTab_UserSettings.BlameButton'
+    b_Blame=BlameButton
 
     Begin Object Class=GUIButton Name=SpecButton
         Caption="Spec"
@@ -1541,7 +1540,7 @@ defaultproperties
         OnClick=ScrnTab_UserSettings.PlayerVoteButtonClicked
         OnKeyEvent=SpecButton.InternalOnKeyEvent
     End Object
-    b_Spec=GUIButton'ScrnBalanceSrv.ScrnTab_UserSettings.SpecButton'
+    b_Spec=SpecButton
 
     Begin Object Class=GUIButton Name=KickButton
         Caption="Kick"
@@ -1558,7 +1557,7 @@ defaultproperties
         OnClick=ScrnTab_UserSettings.PlayerVoteButtonClicked
         OnKeyEvent=KickButton.InternalOnKeyEvent
     End Object
-    b_Kick=GUIButton'ScrnBalanceSrv.ScrnTab_UserSettings.KickButton'
+    b_Kick=KickButton
 
     Begin Object Class=GUIButton Name=TSC_C_Button
         Caption="Captain"
@@ -1576,7 +1575,7 @@ defaultproperties
         OnClick=ScrnTab_UserSettings.PlayerVoteButtonClicked
         OnKeyEvent=TSC_C_Button.InternalOnKeyEvent
     End Object
-    b_TSC_C=GUIButton'ScrnBalanceSrv.ScrnTab_UserSettings.TSC_C_Button'
+    b_TSC_C=TSC_C_Button
 
     Begin Object Class=GUIButton Name=TSC_A_Button
         Caption="Carrier"
@@ -1594,7 +1593,7 @@ defaultproperties
         OnClick=ScrnTab_UserSettings.PlayerVoteButtonClicked
         OnKeyEvent=TSC_A_Button.InternalOnKeyEvent
     End Object
-    b_TSC_A=GUIButton'ScrnBalanceSrv.ScrnTab_UserSettings.TSC_A_Button'
+    b_TSC_A=TSC_A_Button
 
     Begin Object Class=GUIButton Name=VoteYesButton
         Caption="Vote YES"
@@ -1612,7 +1611,7 @@ defaultproperties
         OnClick=ScrnTab_UserSettings.ButtonClicked
         OnKeyEvent=VoteYesButton.InternalOnKeyEvent
     End Object
-    b_MVOTE_Yes=GUIButton'ScrnBalanceSrv.ScrnTab_UserSettings.VoteYesButton'
+    b_MVOTE_Yes=VoteYesButton
 
     Begin Object Class=GUIButton Name=VoteNoButton
         Caption="Vote NO"
@@ -1630,7 +1629,7 @@ defaultproperties
         OnClick=ScrnTab_UserSettings.ButtonClicked
         OnKeyEvent=VoteNoButton.InternalOnKeyEvent
     End Object
-    b_MVOTE_No=GUIButton'ScrnBalanceSrv.ScrnTab_UserSettings.VoteNoButton'
+    b_MVOTE_No=VoteNoButton
 
     Begin Object Class=GUIButton Name=BoringButton
         Caption="Boring"
@@ -1648,7 +1647,7 @@ defaultproperties
         OnClick=ScrnTab_UserSettings.ButtonClicked
         OnKeyEvent=BoringButton.InternalOnKeyEvent
     End Object
-    b_MVOTE_Boring=GUIButton'ScrnBalanceSrv.ScrnTab_UserSettings.BoringButton'
+    b_MVOTE_Boring=BoringButton
 
     Begin Object Class=GUIButton Name=EndTradeButton
         Caption="End Trade"
@@ -1666,7 +1665,7 @@ defaultproperties
         OnClick=ScrnTab_UserSettings.ButtonClicked
         OnKeyEvent=EndTradeButton.InternalOnKeyEvent
     End Object
-    b_MVOTE_EndTrade=GUIButton'ScrnBalanceSrv.ScrnTab_UserSettings.EndTradeButton'
+    b_MVOTE_EndTrade=EndTradeButton
 
     Begin Object Class=GUIButton Name=TeamLockButton
         Caption="Lock Team"
@@ -1684,7 +1683,7 @@ defaultproperties
         OnClick=ScrnTab_UserSettings.ButtonClicked
         OnKeyEvent=TeamLockButton.InternalOnKeyEvent
     End Object
-    b_Team_Lock=GUIButton'ScrnBalanceSrv.ScrnTab_UserSettings.TeamLockButton'
+    b_Team_Lock=TeamLockButton
 
     Begin Object Class=GUIButton Name=TeamUnlockButton
         Caption="Unlock Team"
@@ -1702,7 +1701,7 @@ defaultproperties
         OnClick=ScrnTab_UserSettings.ButtonClicked
         OnKeyEvent=TeamUnlockButton.InternalOnKeyEvent
     End Object
-    b_Team_Unlock=GUIButton'ScrnBalanceSrv.ScrnTab_UserSettings.TeamUnlockButton'
+    b_Team_Unlock=TeamUnlockButton
 
     Begin Object Class=GUIButton Name=TeamInviteButton
         Caption="Invite"
@@ -1720,7 +1719,7 @@ defaultproperties
         OnClick=ScrnTab_UserSettings.PlayerVoteButtonClicked
         OnKeyEvent=TeamInviteButton.InternalOnKeyEvent
     End Object
-    b_Team_Invite=GUIButton'ScrnBalanceSrv.ScrnTab_UserSettings.TeamInviteButton'
+    b_Team_Invite=TeamInviteButton
 
 
     // SERVER INFO ---------------------------------------------------------------------
@@ -1736,7 +1735,8 @@ defaultproperties
         WinHeight=0.24
         bVisible=True
     End Object
-    lbl_ServerInfo=GUILabel'ScrnBalanceSrv.ScrnTab_UserSettings.ServerInfoLabel'
+    lbl_ServerInfo=ServerInfoLabel
+
     strServerInfoSeparator = "   "
     strPerkRange="Perk Bonus Range: "
     strPerkXPLevel="Your Perk Level = "
