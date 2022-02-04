@@ -3436,7 +3436,7 @@ final static function color PerkColor(int PerkLevel)
 
 final static function string ColoredPerkLevel(int PerkLevel)
 {
-    return class'ScrnBalance'.static.ColorStringC(string(PerkLevel), PerkColor(PerkLevel));
+    return class'ScrnUtility'.static.ColorStringC(string(PerkLevel), PerkColor(PerkLevel));
 }
 
 function static Font GetStaticFontSizeIndex(Canvas C, int FontSize)

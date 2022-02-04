@@ -48,7 +48,7 @@ static function string AssembleString(
         return "";
         
     c = GetConsoleColor(RelatedPRI_1);  
-    d = class'ScrnBalance'.static.ColorString("", c.R, c.G, c.B);
+    d = class'ScrnUtility'.static.ColorString("", c.R, c.G, c.B);
     
     s = class'ScrnBalance'.default.Mut.ColoredPlayerName(RelatedPRI_1) $ d; 
     LocationName = RelatedPRI_1.GetLocationName();

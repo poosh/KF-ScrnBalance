@@ -251,7 +251,7 @@ state Sick extends Infected
                             SPI.PlayerOwner.PlayerReplicationInfo.Score -= CoughedInShopPenalty; // allow go negative
                             s = strCoughedInShop;
                             s = Repl(s, "%$", string(CoughedInShopPenalty), true);
-                            SPI.PlayerOwner.ClientMessage(class'ScrnBalance'.static.ColorString(s,192,128,1));
+                            SPI.PlayerOwner.ClientMessage(class'ScrnUtility'.static.ColorString(s,192,128,1));
                             ShopBoot(Shop, P);
                             break;
                         }

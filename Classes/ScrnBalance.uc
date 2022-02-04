@@ -566,18 +566,10 @@ function SendFriendlyFireWarning(PlayerController Player)
         Player.ClientMessage(ColorString("FRIENDLY FIRE " $int(KF.FriendlyFireScale*100)$"% !!!", 255, 127, 1));
 }
 
-
-// copy-pasted from ScrnPlayerController for easy access
 static final function string ColorString(string s, byte R, byte G, byte B)
 {
-    return chr(27)$chr(max(R,1))$chr(max(G,1))$chr(max(B,1))$s;
+    return class'ScrnUtility'.static.ColorString(s, R, G, B);
 }
-
-static final function string ColorStringC(string s, color c)
-{
-    return chr(27)$chr(max(c.R,1))$chr(max(c.G,1))$chr(max(c.B,1))$s;
-}
-
 
 simulated function string PlainPlayerName(PlayerReplicationInfo PRI)
 {
