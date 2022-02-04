@@ -1446,7 +1446,7 @@ final function ScrnPlayerInfo CreatePlayerInfo(PlayerController PlayerOwner, opt
     // initial data
     SPI.PlayerOwner = PlayerOwner;
     SPI.GameRules = self;
-    SPI.PlayerName = Mut.StripColorTags(PlayerOwner.PlayerReplicationInfo.PlayerName);
+    SPI.PlayerName =class'ScrnUtility'.static.StripColorTags(PlayerOwner.PlayerReplicationInfo.PlayerName);
     SPI.SteamID32 = SteamID32;
     SPI.StartWave = Mut.KF.WaveNum;
     SPI.BackupStats(SPI.GameStartStats);

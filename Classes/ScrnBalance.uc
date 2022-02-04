@@ -547,7 +547,7 @@ function BroadcastMessage(string Msg, optional bool bSaveToLog)
     local name MsgType;
 
     if ( bSaveToLog) {
-        log(StripColorTags(Msg), 'ScrnBalance');
+        log(class'ScrnUtility'.static.StripColorTags(Msg), 'ScrnBalance');
         MsgType = 'Log';
     }
 
@@ -603,27 +603,13 @@ simulated function string ParseColorTags(string ColoredText, optional PlayerRepl
     return s;
 }
 
-simulated function string StripColorTags(string ColoredText)
-{
-    local int i;
-    local string s;
-
-    s = ColoredText;
-    s = Repl(s, "^p", "", true);
-    s = Repl(s, "^t", "", true);
-    for ( i=0; i<ColorTags.Length; ++i ) {
-        s = Repl(s, ColorTags[i].T, "", true);
-    }
-
-    return s;
-}
 
 simulated function string PlainPlayerName(PlayerReplicationInfo PRI)
 {
     if ( PRI == none )
         return "";
 
-    return StripColorTags(PRI.PlayerName);
+    return class'ScrnUtility'.static.StripColorTags(PRI.PlayerName);
 }
 
 simulated function string ColoredPlayerName(PlayerReplicationInfo PRI)

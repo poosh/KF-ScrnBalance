@@ -1018,7 +1018,7 @@ event ClientMessage( coerce string S, optional Name Type )
         return;
 
     if ( Type == 'Log' ) {
-        log(Mut.StripColorTags(S), 'ScrnBalance');
+        log(class'ScrnUtility'.static.StripColorTags(S), 'ScrnBalance');
         Type = '';
     }
 
@@ -1791,7 +1791,7 @@ exec function SetName(coerce string S)
         S = PlayerName;
 
     if ( S == "" || (class'ScrnSrvReplInfo'.static.Instance().bForceSteamNames && Player.GUIController !=none
-            && Player.GUIController.SteamGetUserName() != Mut.StripColorTags(S)) )
+            && Player.GUIController.SteamGetUserName() != class'ScrnUtility'.static.StripColorTags(S)) )
     {
         S = Player.GUIController.SteamGetUserName();
         if ( S == "" )
@@ -1813,7 +1813,7 @@ function ChangeName( coerce string S )
     S = Repl(S, "\"", "", true);
     S = Repl(S, "'", "", true);
 
-    PlainName = Mut.StripColorTags(S);
+    PlainName = class'ScrnUtility'.static.StripColorTags(S);
     if ( len(PlainName) > 20 )
         S = left(PlainName, 20);
 
@@ -2762,7 +2762,7 @@ exec function TestColorTags(coerce string ColorTagString, optional int i)
     local string c, s;
 
     c = class'ScrnBalance'.default.Mut.ParseColorTags(ColorTagString, PlayerReplicationInfo);
-    s = class'ScrnBalance'.default.Mut.StripColorTags(ColorTagString);
+    s = class'ScrnUtility'.static.StripColorTags(ColorTagString);
     if ( i > 0) {
         c = class'ScrnUtility'.static.LeftCol(c, i);
         s = left(s, i);

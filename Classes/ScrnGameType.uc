@@ -2475,8 +2475,8 @@ function ChangeName(Controller Other, string S, bool bNameChange)
     if (Other.PlayerReplicationInfo.playername~=S)
         return;
 
-    if ( len(ScrnBalanceMut.StripColorTags(S)) > 20 )
-        S = Left( ScrnBalanceMut.StripColorTags(S), 20 );
+    if ( len(class'ScrnUtility'.static.StripColorTags(S)) > 20 )
+        S = Left(class'ScrnUtility'.static.StripColorTags(S), 20 );
     S = Repl(S, " ", "_", true);
     S = Repl(S, "|", "I", true);
 

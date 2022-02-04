@@ -28,7 +28,7 @@ static function float DrawCountryNameSE( Canvas C, PlayerReplicationInfo PRI, fl
     OriginalColor = C.DrawColor;
     ScrnPRI = class'ScrnCustomPRI'.static.FindMe(PRI);
     if ( bNoColorTags )
-        S = class'ScrnBalance'.default.Mut.StripColorTags(PRI.PlayerName);
+        S = class'ScrnUtility'.static.StripColorTags(PRI.PlayerName);
     else
         S = class'ScrnBalance'.default.Mut.ColoredPlayerName(PRI);
 
@@ -244,7 +244,7 @@ simulated event UpdateScoreBoard(Canvas Canvas)
         }
         else if ( PRI.PlayerID != 0 || PRI.PlayerName != "WebAdmin" ) {
             ++SpecCount;
-            Spectators @= class'ScrnBalance'.default.Mut.StripColorTags(PRI.PlayerName) $ " |";
+            Spectators @= class'ScrnUtility'.static.StripColorTags(PRI.PlayerName) $ " |";
         }
     }
 

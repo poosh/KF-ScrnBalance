@@ -296,7 +296,7 @@ function string GetPlayerName(PlayerReplicationInfo PRI)
     if (PRI == none) {
         return "";
     }
-    return class'ScrnBalance'.default.Mut.StripColorTags(PRI.PlayerName);
+    return class'ScrnUtility'.static.StripColorTags(PRI.PlayerName);
 }
 
 function PlayerReplicationInfo FindPRI(string PlayerName)
@@ -304,7 +304,7 @@ function PlayerReplicationInfo FindPRI(string PlayerName)
     local int i;
     local GameReplicationInfo GRI;
 
-    PlayerName = class'ScrnBalance'.default.Mut.StripColorTags(PlayerName);
+    PlayerName = class'ScrnUtility'.static.StripColorTags(PlayerName);
     if ( PlayerName == "" )
         return none;
 
