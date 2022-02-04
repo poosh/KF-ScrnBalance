@@ -3039,7 +3039,6 @@ function ServerTraveling(string URL, bool bItems)
 
 simulated function Destroyed()
 {
-    Cleanup();
     log("ScrnBalance destroyed", 'ScrnBalance');
     super.Destroyed();
 }
