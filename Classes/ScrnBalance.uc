@@ -578,32 +578,6 @@ static final function string ColorStringC(string s, color c)
 }
 
 
-simulated function string ParseColorTags(string ColoredText, optional PlayerReplicationInfo PRI)
-{
-    local int i;
-    local string s;
-
-    s = ColoredText;
-    if ( PRI != none && PRI.Team != none )
-        s = Repl(s, "^t", ColorStringC("", class'ScrnHUD'.default.TextColors[PRI.Team.TeamIndex]), true);
-    else
-        s = Repl(s, "^t", "", true);
-
-    if ( KFPlayerReplicationInfo(PRI) != none )
-        s = Repl(s, "^p", ColorStringC("", class'ScrnHUD'.static.PerkColor(KFPlayerReplicationInfo(PRI).ClientVeteranSkillLevel)), true);
-    else
-        s = Repl(s, "^p", "", true);
-
-
-    for ( i=0; i<ColorTags.Length; ++i ) {
-        s = Repl(s, ColorTags[i].T, ColorString("",
-                ColorTags[i].R, ColorTags[i].G, ColorTags[i].B), true);
-    }
-
-    return s;
-}
-
-
 simulated function string PlainPlayerName(PlayerReplicationInfo PRI)
 {
     if ( PRI == none )
@@ -617,7 +591,7 @@ simulated function string ColoredPlayerName(PlayerReplicationInfo PRI)
     if ( PRI == none )
         return "";
 
-    return ParseColorTags(PRI.PlayerName, PRI);
+    return class'ScrnUtility'.static.ParseColorTags(PRI.PlayerName, PRI);
 }
 
 function StolenWeapon(Pawn NewOwner, KFWeaponPickup WP)
@@ -625,7 +599,7 @@ function StolenWeapon(Pawn NewOwner, KFWeaponPickup WP)
     local string str;
 
     str = BroadcastPickupText;
-    str = Repl(str, "%p", ColorString(ParseColorTags(NewOwner.GetHumanReadableName(), NewOwner.PlayerReplicationInfo), 192, 1, 1) $ ColorString("", 192, 192, 192), true);
+    str = Repl(str, "%p", ColorString(class'ScrnUtility'.static.ParseColorTags(NewOwner.GetHumanReadableName(), NewOwner.PlayerReplicationInfo), 192, 1, 1) $ ColorString("", 192, 192, 192), true);
     str = Repl(str, "%o", ColorString(ColoredPlayerName(WP.DroppedBy.PlayerReplicationInfo), 1, 192, 1) $ ColorString("", 192, 192, 192), true);
     str = Repl(str, "%w", ColorString(WP.ItemName, 1, 96, 192) $ ColorString("", 192, 192, 192), true);
     str = Repl(str, "%$", ColorString(String(WP.SellValue), 192, 192, 1) $ ColorString("", 192, 192, 192), true);
@@ -1151,7 +1125,7 @@ auto simulated state WaitingForTick
             }
         }
         if ( ColoredServerName != "" ) {
-            Level.GRI.ServerName = ParseColorTags(ColoredServerName);
+            Level.GRI.ServerName = class'ScrnUtility'.static.ParseColorTags(ColoredServerName);
         }
     }
 

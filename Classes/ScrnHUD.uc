@@ -3142,7 +3142,7 @@ simulated function LocalizedMessage( class<LocalMessage> Message, optional int S
     LocalMessages[i].OptionalObject = OptionalObject;
     LocalMessages[i].EndOfLife = Message.static.GetLifetime(Switch) + Level.TimeSeconds;
     if ( class'ScrnBalance'.default.Mut != none )
-        LocalMessages[i].StringMessage = class'ScrnBalance'.default.Mut.ParseColorTags(CriticalString, RelatedPRI_1);
+        LocalMessages[i].StringMessage = class'ScrnUtility'.static.ParseColorTags(CriticalString, RelatedPRI_1);
     else
         LocalMessages[i].StringMessage = CriticalString;
     LocalMessages[i].LifeTime = Message.static.GetLifetime(Switch);
@@ -3154,7 +3154,7 @@ function AddTextMessage(string M, class<LocalMessage> MessageClass, PlayerReplic
     local bool bSetPRI;
 
     if ( class'ScrnBalance'.default.Mut != none ) {
-        M = class'ScrnBalance'.default.Mut.ParseColorTags(M, PRI);
+        M = class'ScrnUtility'.static.ParseColorTags(M, PRI);
         if ( MessageClass==class'SayMessagePlus' ) {
             MessageClass = class'ScrnSayMessagePlus';
             bSetPRI = true;

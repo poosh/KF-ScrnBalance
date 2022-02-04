@@ -1788,7 +1788,7 @@ function GetServerInfo( out ServerResponseLine ServerState )
     super.GetServerInfo(ServerState);
     // Removed in v9.60.02
     // if ( ScrnBalanceMut.ColoredServerName != "" ) {
-    //     ServerState.ServerName = ScrnBalanceMut.ParseColorTags(ScrnBalanceMut.ColoredServerName);
+    //     ServerState.ServerName = class'ScrnUtility'.static.ParseColorTags(ScrnBalanceMut.ColoredServerName);
     // }
 }
 

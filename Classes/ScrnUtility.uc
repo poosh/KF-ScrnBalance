@@ -128,6 +128,47 @@ static function LongMessage(PlayerController Sender, string S, optional int MaxL
 //                           COLORS
 // ==============================================================
 
+// parse tags and color strings
+static final function string ParseColorTags(string ColoredText, optional PlayerReplicationInfo PRI)
+{
+    local int i;
+    local string s;
+
+    s = ColoredText;
+    if ( PRI != none && PRI.Team != none )
+        s = Repl(s, "^t", ColorStringC("", class'ScrnHUD'.default.TextColors[PRI.Team.TeamIndex]), true);
+    else
+        s = Repl(s, "^t", "", true);
+
+    if ( KFPlayerReplicationInfo(PRI) != none )
+        s = Repl(s, "^p", ColorStringC("", class'ScrnHUD'.static.PerkColor(KFPlayerReplicationInfo(PRI).ClientVeteranSkillLevel)), true);
+    else
+        s = Repl(s, "^p", "", true);
+
+
+    for (i = 0; i < default.ColorTags.Length; ++i)
+    {
+        s = Repl(s, default.ColorTags[i].T, ColorString("",
+                default.ColorTags[i].R, default.ColorTags[i].G, default.ColorTags[i].B), true);
+    }
+
+    return s;
+}
+
+
+// CHANGE ME!!!
+// copy-pasted from ScrnPlayerController for easy access
+static final function string ColorString(string s, byte R, byte G, byte B)
+{
+    return chr(27)$chr(max(R,1))$chr(max(G,1))$chr(max(B,1))$s;
+}
+
+static final function string ColorStringC(string s, color c)
+{
+    return chr(27)$chr(max(c.R,1))$chr(max(c.G,1))$chr(max(c.B,1))$s;
+}
+
+
 // remove color tags from string
 static final function string StripColorTags(string ColoredText)
 {

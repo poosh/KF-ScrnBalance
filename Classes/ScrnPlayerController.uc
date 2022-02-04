@@ -1023,7 +1023,7 @@ event ClientMessage( coerce string S, optional Name Type )
     }
 
     if ( Mut != none )
-        super.ClientMessage(Mut.ParseColorTags(S, PlayerReplicationInfo), Type);
+        super.ClientMessage(class'ScrnUtility'.static.ParseColorTags(S, PlayerReplicationInfo), Type);
     else
         super.ClientMessage(S, Type);
 }
@@ -1057,7 +1057,7 @@ event TeamMessage( PlayerReplicationInfo PRI, coerce string S, name Type  )
                 else if ( PRI.Team.TeamIndex == 1 )
                     c = chr(27)$chr(75)$chr(139)$chr(198);
             }
-            S = Mut.ColoredPlayerName(PRI) $ c $ ": " $ Mut.ParseColorTags(S, PRI);
+            S = Mut.ColoredPlayerName(PRI) $ c $ ": " $ class'ScrnUtility'.static.ParseColorTags(S, PRI);
         }
         Player.Console.Chat( c$s, 6.0, PRI );
     }
@@ -2761,7 +2761,7 @@ exec function TestColorTags(coerce string ColorTagString, optional int i)
 {
     local string c, s;
 
-    c = class'ScrnBalance'.default.Mut.ParseColorTags(ColorTagString, PlayerReplicationInfo);
+    c = class'ScrnUtility'.static.ParseColorTags(ColorTagString, PlayerReplicationInfo);
     s = class'ScrnUtility'.static.StripColorTags(ColorTagString);
     if ( i > 0) {
         c = class'ScrnUtility'.static.LeftCol(c, i);
