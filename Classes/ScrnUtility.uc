@@ -45,6 +45,47 @@ final static function int BinarySearchStr(out array<string> arr, string val)
     return -1;
 }
 
+// ==============================================================
+//                           STRINGS
+// ==============================================================
+
+//  Splits long message on short ones before sending it to client.
+//  @param   Sender     Player, who will receive message(-s).
+//  @param   S          String to send.
+//  @param   MaxLen     Max length of one string. Default: 80. If S is longer than this value,
+//                      then it will be splitted on serveral messages.
+//  @param  Divider     Character to be used as divider. Default: Space. String is splitted
+//                      at last divder's position before MaxLen is reached.
+static function LongMessage(PlayerController Sender, string S, optional int MaxLen, optional string Divider)
+{
+    local int pos;
+    local string part;
+
+    if ( Sender == none )
+        return;
+    if ( MaxLen == 0 )
+        MaxLen = 80;
+    if ( Divider == "" )
+        Divider = " ";
+
+    while ( len(part) + len(S) > MaxLen ) {
+        pos = InStr(S, Divider);
+        if ( pos == -1 )
+            break; // no more dividers
+
+        if ( part != "" && len(part) + pos + 1 > MaxLen) {
+            Sender.ClientMessage(part);
+            part = "";
+        }
+        part $= Left(S, pos + 1);
+        S = Mid(S, pos+1);
+    }
+
+    part $= S;
+    if ( part != "" )
+        Sender.ClientMessage(part);
+}
+
 
 // ==============================================================
 //                           COLORS

@@ -1030,7 +1030,7 @@ event ClientMessage( coerce string S, optional Name Type )
 
 function LongMessage(string S, optional int MaxLen, optional string Divider)
 {
-    class'ScrnBalance'.static.LongMessage(self, S, MaxLen, Divider);
+    class'ScrnUtility'.static.LongMessage(self, S, MaxLen, Divider);
 }
 
 event TeamMessage( PlayerReplicationInfo PRI, coerce string S, name Type  )

@@ -1257,8 +1257,8 @@ function MessagePerkStats(PlayerController Sender)
     if ( SPI == none )
         Sender.ClientMessage("No player info record found");
     else {
-        LongMessage(Sender, strXPInitial $ SPI.PerkStatStr(SPI.GameStartStats));
-        LongMessage(Sender, strXPProgress $ SPI.PerkProgressStr(SPI.GameStartStats));
+        class'ScrnUtility'.static.LongMessage(Sender, strXPInitial $ SPI.PerkStatStr(SPI.GameStartStats));
+        class'ScrnUtility'.static.LongMessage(Sender, strXPProgress $ SPI.PerkProgressStr(SPI.GameStartStats));
     }
 }
 
@@ -1303,43 +1303,6 @@ function MsgEnemies(PlayerController Sender)
     }
 }
 
-/** Splits long message on short ones before sending it to client.
- *  @param   Sender     Player, who will receive message(-s).
- *  @param   S          String to send.
- *  @param   MaxLen     Max length of one string. Default: 80. If S is longer than this value,
- *                      then it will be splitted on serveral messages.
- *  @param  Divider     Character to be used as divider. Default: Space. String is splitted
- *                      at last divder's position before MaxLen is reached.
- */
-static function LongMessage(PlayerController Sender, string S, optional int MaxLen, optional string Divider)
-{
-    local int pos;
-    local string part;
-
-    if ( Sender == none )
-        return;
-    if ( MaxLen == 0 )
-        MaxLen = 80;
-    if ( Divider == "" )
-        Divider = " ";
-
-    while ( len(part) + len(S) > MaxLen ) {
-        pos = InStr(S, Divider);
-        if ( pos == -1 )
-            break; // no more dividers
-
-        if ( part != "" && len(part) + pos + 1 > MaxLen) {
-            Sender.ClientMessage(part);
-            part = "";
-        }
-        part $= Left(S, pos + 1);
-        S = Mid(S, pos+1);
-    }
-
-    part $= S;
-    if ( part != "" )
-        Sender.ClientMessage(part);
-}
 
 function bool IsAdmin(PlayerController Sender)
 {
@@ -1400,7 +1363,7 @@ function Mutate(string MutateString, PlayerController Sender)
             break;
         case MUTATE_CMDLINE:
             if ( CheckAdmin(Sender) && CheckScrnGT(Sender) )
-                LongMessage(Sender, ScrnGT.GetCmdLine(), 80, "?");
+                class'ScrnUtility'.static.LongMessage(Sender, ScrnGT.GetCmdLine(), 80, "?");
             break;
         case MUTATE_DEBUGGAME:
             if ( CheckAdmin(Sender) )
