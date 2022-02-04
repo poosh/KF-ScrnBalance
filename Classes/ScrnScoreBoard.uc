@@ -33,7 +33,7 @@ static function float DrawCountryNameSE( Canvas C, PlayerReplicationInfo PRI, fl
         S = class'ScrnBalance'.default.Mut.ColoredPlayerName(PRI);
 
     if( MaxLen>0 )
-        S = class'ScrnBalance'.static.LeftCol(S, MaxLen);
+        S = class'ScrnUtility'.static.LeftCol(S, MaxLen);
 
     C.DrawColor = Class'HudBase'.Default.WhiteColor;
     C.DrawColor.A = OriginalColor.A;

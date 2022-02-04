@@ -50,6 +50,7 @@ final static function int BinarySearchStr(out array<string> arr, string val)
 //                           COLORS
 // ==============================================================
 
+// remove color characters from string
 static final function string StripColor(string s)
 {
     local int p;
@@ -62,4 +63,26 @@ static final function string StripColor(string s)
     }
 
     return s;
+}
+
+
+// returns first i amount of characters excluding escape color codes
+static final function string LeftCol(string ColoredString, int i)
+{
+    local string s;
+    local int p, c;
+
+    if ( Len(ColoredString) <= i )
+        return ColoredString;
+
+    c = i;
+    s = ColoredString;
+    p = InStr(s,chr(27));
+    while ( p >=0 && p < i ) {
+        c+=4; // add 4 more characters due to color code
+        s = left(s, p) $ mid(s, p+4);
+        p = InStr(s,Chr(27));
+    }
+
+    return Left(ColoredString, c);
 }

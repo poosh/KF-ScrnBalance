@@ -578,27 +578,6 @@ static final function string ColorStringC(string s, color c)
 }
 
 
-// returns first i amount of characters excluding escape color codes
-static final function string LeftCol(string ColoredString, int i)
-{
-    local string s;
-    local int p, c;
-
-    if ( Len(ColoredString) <= i )
-        return ColoredString;
-
-    c = i;
-    s = ColoredString;
-    p = InStr(s,chr(27));
-    while ( p >=0 && p < i ) {
-        c+=4; // add 4 more characters due to color code
-        s = left(s, p) $ mid(s, p+4);
-        p = InStr(s,Chr(27));
-    }
-
-    return Left(ColoredString, c);
-}
-
 simulated function string ParseColorTags(string ColoredText, optional PlayerReplicationInfo PRI)
 {
     local int i;

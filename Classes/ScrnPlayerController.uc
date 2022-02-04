@@ -2764,7 +2764,7 @@ exec function TestColorTags(coerce string ColorTagString, optional int i)
     c = class'ScrnBalance'.default.Mut.ParseColorTags(ColorTagString, PlayerReplicationInfo);
     s = class'ScrnBalance'.default.Mut.StripColorTags(ColorTagString);
     if ( i > 0) {
-        c = class'ScrnBalance'.static.LeftCol(c, i);
+        c = class'ScrnUtility'.static.LeftCol(c, i);
         s = left(s, i);
     }
     ConsoleMessage(c);
