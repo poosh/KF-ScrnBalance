@@ -220,11 +220,11 @@ simulated function Destroyed()
 
 defaultproperties
 {
-    FireModeClass(0)=Class'ScrnBalanceSrv.ScrnAA12Fire'
+    FireModeClass(0)=class'ScrnAA12Fire'
     ReloadShortRate=2.35 //tactical reload (added 0.25)
     ReloadShortAnim="Reload" //tactical reload
     ReloadAnimRate=1.000000
     Description="An advanced fully automatic shotgun. Delivers less per-bullet damage, but awesome penetration and fire rate make it the best choise to kill everything... while you have ammo remaining"
-    PickupClass=Class'ScrnBalanceSrv.ScrnAA12Pickup'
+    PickupClass=class'ScrnAA12Pickup'
     ItemName="AA12 SE"
 }

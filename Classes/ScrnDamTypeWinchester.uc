@@ -18,5 +18,5 @@ static function AwardKill(KFSteamStatsAndAchievements KFStatsAndAchievements, KF
 
 defaultproperties
 {
-     WeaponClass=Class'ScrnBalanceSrv.ScrnWinchester'
+     WeaponClass=class'ScrnWinchester'
 }

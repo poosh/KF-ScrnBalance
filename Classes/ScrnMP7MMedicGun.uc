@@ -120,9 +120,9 @@ defaultproperties
     ReloadAnimRate=1.4
 
     HealAmmoCharge=0
-    FireModeClass(0)=Class'ScrnBalanceSrv.ScrnMP7MFire'
-    FireModeClass(1)=Class'ScrnBalanceSrv.ScrnMP7MAltFire'
-    PickupClass=Class'ScrnBalanceSrv.ScrnMP7MPickup'
+    FireModeClass(0)=class'ScrnMP7MFire'
+    FireModeClass(1)=class'ScrnMP7MAltFire'
+    PickupClass=class'ScrnMP7MPickup'
     bReduceMagAmmoOnSecondaryFire=False
     ItemName="MP7M Medic Gun SE"
 }

@@ -1248,7 +1248,7 @@ defaultproperties
 
     PathWhisps(0)="KFMod.RedWhisp"
     PathWhisps(1)="ScrnBalanceSrv.BlueWhisp"
-    BaseWhisp=class'ScrnBalanceSrv.GreenWhisp'
+    BaseWhisp=class'GreenWhisp'
     BaseRadius=1250 // 25 m
     MinBaseZ=-60
     MaxBaseZ=200
@@ -1265,11 +1265,11 @@ defaultproperties
     SongBothWin="KF_Containment"
     SongBothWiped="KF_Hunger"
 
-    GameReplicationInfoClass=Class'ScrnBalanceSrv.TSCGameReplicationInfo'
+    GameReplicationInfoClass=class'TSCGameReplicationInfo'
     HUDType="ScrnBalanceSrv.TSCHUD"
     ScoreBoardType="ScrnBalanceSrv.TSCScoreBoard"
-    BaseGuardianClasses(0)=class'ScrnBalanceSrv.TSCGuardianRed'
-    BaseGuardianClasses(1)=class'ScrnBalanceSrv.TSCGuardianBlue'
+    BaseGuardianClasses(0)=class'TSCGuardianRed'
+    BaseGuardianClasses(1)=class'TSCGuardianBlue'
 
     ScreenShotName="TSC_T.Team.TSC"
 }

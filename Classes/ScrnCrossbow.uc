@@ -2,7 +2,7 @@ class ScrnCrossbow extends Crossbow;
 
 defaultproperties
 {
-    PickupClass=Class'ScrnBalanceSrv.ScrnCrossbowPickup'
-    FireModeClass(0)=Class'ScrnBalanceSrv.ScrnCrossbowFire'
+    PickupClass=class'ScrnCrossbowPickup'
+    FireModeClass(0)=class'ScrnCrossbowFire'
     ItemName="Compound Crossbow SE"
 }

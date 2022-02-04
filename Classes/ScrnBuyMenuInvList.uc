@@ -107,7 +107,7 @@ function UpdateMyAmmo()
 
     ScrnPawnClass = class<ScrnHumanPawn>(PlayerOwner().Pawn.class);
     if ( ScrnPawnClass == none )
-        ScrnPawnClass = class'ScrnBalanceSrv.ScrnHumanPawn';
+        ScrnPawnClass = class'ScrnHumanPawn';
 
     AutoFillCost = 0;
     for ( i = 0; i < MyBuyables.Length; i++ ) {
@@ -176,7 +176,7 @@ function UpdateMyBuyables()
     if ( ScrnPawn != none )
         ScrnPawnClass = ScrnPawn.class;
     else
-        ScrnPawnClass = class'ScrnBalanceSrv.ScrnHumanPawn';
+        ScrnPawnClass = class'ScrnHumanPawn';
 
     // Fill the Buyables
     for ( CurInv = PlayerOwner().Pawn.Inventory; CurInv != none; CurInv = CurInv.Inventory ) {
@@ -370,9 +370,9 @@ function UpdateMyBuyables()
         MyBuyable.ItemFillAmmoCost  = Cost;
     }
     else {
-        MyBuyable.ItemName        = class'ScrnBalanceSrv.ScrnVestPickup'.default.ItemShortName;
-        MyBuyable.ItemDescription = class'ScrnBalanceSrv.ScrnVestPickup'.default.Description;
-        MyBuyable.ItemWeight      = class'ScrnBalanceSrv.ScrnVestPickup'.default.Weight;
+        MyBuyable.ItemName        = class'ScrnVestPickup'.default.ItemShortName;
+        MyBuyable.ItemDescription = class'ScrnVestPickup'.default.Description;
+        MyBuyable.ItemWeight      = class'ScrnVestPickup'.default.Weight;
         MyBuyable.ItemImage       = class'BuyableVest'.default.ItemImage;
         MyBuyable.ItemPerkIndex   = class'BuyableVest'.default.CorrespondingPerkIndex;
 

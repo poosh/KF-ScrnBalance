@@ -4,5 +4,5 @@ defaultproperties
 {
      ItemName="AK-47 SE"
      ItemShortName="AK-47 SE"
-     InventoryType=Class'ScrnBalanceSrv.ScrnAK47AssaultRifle'
+     InventoryType=class'ScrnAK47AssaultRifle'
 }

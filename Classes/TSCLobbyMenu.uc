@@ -534,7 +534,7 @@ defaultproperties
         bScaleToParent=False
         OnPreDraw=BuyFooter.InternalOnPreDraw
     End Object
-    t_Footer=ScrnLobbyFooter'ScrnBalanceSrv.TSCLobbyMenu.BuyFooter'
+    t_Footer=BuyFooter
 
     label_TimeOutCounter=GUILabel'ScrnBalanceSrv.TSCLobbyFooter.TimeOutCounter'
 
@@ -549,7 +549,7 @@ defaultproperties
          WinHeight=0.68
          RenderWeight=0.10
      End Object
-     TSCLogo=GUIImage'ScrnBalanceSrv.TSCLobbyMenu.TSCLogoLeft'
+     TSCLogo=TSCLogoLeft
 
      Begin Object Class=GUIImage Name=RedLogo
          Image=Texture'TSC_T.Team.BritishLogo'
@@ -562,7 +562,7 @@ defaultproperties
          WinHeight=0.16
          RenderWeight=0.10
      End Object
-     TeamLogos[0]=GUIImage'ScrnBalanceSrv.TSCLobbyMenu.RedLogo'
+     TeamLogos[0]=RedLogo
 
      Begin Object Class=GUIImage Name=BlueLogo
          Image=Texture'TSC_T.Team.SteampunkLogo'
@@ -575,7 +575,7 @@ defaultproperties
          WinHeight=0.16
          RenderWeight=0.10
      End Object
-     TeamLogos[1]=GUIImage'ScrnBalanceSrv.TSCLobbyMenu.BlueLogo'
+     TeamLogos[1]=BlueLogo
 
      Begin Object Class=GUIImage Name=RedTitle
          Image=Texture'TSC_T.Team.BritishSquad'
@@ -588,7 +588,7 @@ defaultproperties
          WinHeight=0.06
          RenderWeight=0.15
      End Object
-     TeamTitles[0]=GUIImage'ScrnBalanceSrv.TSCLobbyMenu.RedTitle'
+     TeamTitles[0]=RedTitle
 
      Begin Object Class=GUIImage Name=BlueTitle
          Image=Texture'TSC_T.Team.SteampunkSquad'
@@ -601,7 +601,7 @@ defaultproperties
          WinHeight=0.06
          RenderWeight=0.15
      End Object
-     TeamTitles[1]=GUIImage'ScrnBalanceSrv.TSCLobbyMenu.BlueTitle'
+     TeamTitles[1]=BlueTitle
 
     Begin Object Class=GUIButton Name=RedButton
         Caption="Join"
@@ -617,7 +617,7 @@ defaultproperties
         OnClick=TSCLobbyMenu.OnTeamButtonClick
         OnKeyEvent=ReadyButton.InternalOnKeyEvent
     End Object
-    TeamButtons[0]=GUIButton'ScrnBalanceSrv.TSCLobbyMenu.RedButton'
+    TeamButtons[0]=RedButton
 
     Begin Object Class=GUIButton Name=BlueButton
         Caption="Join"
@@ -633,7 +633,7 @@ defaultproperties
         OnClick=TSCLobbyMenu.OnTeamButtonClick
         OnKeyEvent=ReadyButton.InternalOnKeyEvent
     End Object
-    TeamButtons[1]=GUIButton'ScrnBalanceSrv.TSCLobbyMenu.BlueButton'
+    TeamButtons[1]=BlueButton
 
 
      Begin Object Class=SRLobbyChat Name=ChatBox
@@ -650,7 +650,7 @@ defaultproperties
          OnMousePressed=ChatBox.FloatingMousePressed
          OnMouseRelease=ChatBox.FloatingMouseRelease
      End Object
-     t_ChatBox=SRLobbyChat'ScrnBalanceSrv.TSCLobbyMenu.ChatBox'
+     t_ChatBox=ChatBox
 
      Begin Object Class=GUISectionBackground Name=ADBG
         Caption="Server Info"
@@ -661,7 +661,7 @@ defaultproperties
          RenderWeight=0.300000
          OnPreDraw=ADBG.InternalPreDraw
      End Object
-     ADBackground=GUISectionBackground'ScrnBalanceSrv.TSCLobbyMenu.ADBG'
+     ADBackground=ADBG
 
 
      Begin Object Class=GUILabel Name=PerkClickArea
@@ -673,7 +673,7 @@ defaultproperties
          OnClickSound=CS_Click
          OnClick=LobbyMenu.ShowPerkMenu
      End Object
-     PerkClickLabel=GUILabel'ScrnBalanceSrv.TSCLobbyMenu.PerkClickArea'
+     PerkClickLabel=PerkClickArea
 
      Begin Object Class=GUISectionBackground Name=PlayerPortraitB
          WinTop=0.567412
@@ -682,7 +682,7 @@ defaultproperties
          WinHeight=0.332588
          OnPreDraw=PlayerPortraitB.InternalPreDraw
      End Object
-     PlayerPortraitBG=GUISectionBackground'ScrnBalanceSrv.TSCLobbyMenu.PlayerPortraitB'
+     PlayerPortraitBG=PlayerPortraitB
 
      Begin Object Class=GUIImage Name=PlayerPortrait
          Image=Texture'InterfaceArt_tex.Menu.changeme_texture'
@@ -695,7 +695,7 @@ defaultproperties
          WinHeight=0.286159
          RenderWeight=0.300000
      End Object
-     i_Portrait=GUIImage'ScrnBalanceSrv.TSCLobbyMenu.PlayerPortrait'
+     i_Portrait=PlayerPortrait
 
      Begin Object Class=GUISectionBackground Name=BGPerk
          bFillClient=True
@@ -706,7 +706,7 @@ defaultproperties
          WinHeight=0.14
          OnPreDraw=BGPerk.InternalPreDraw
      End Object
-     i_BGPerk=GUISectionBackground'ScrnBalanceSrv.TSCLobbyMenu.BGPerk'
+     i_BGPerk=BGPerk
 
      Begin Object Class=GUILabel Name=PlayerTeam
          Caption="Select a team"
@@ -720,7 +720,7 @@ defaultproperties
          WinHeight=0.035
          RenderWeight=0.95
      End Object
-     l_PlayerTeam=GUILabel'ScrnBalanceSrv.TSCLobbyMenu.PlayerTeam'
+     l_PlayerTeam=PlayerTeam
 
      Begin Object Class=GUISectionBackground Name=BGPerkEffects
          bFillClient=True
@@ -731,7 +731,7 @@ defaultproperties
          WinHeight=0.192588
          OnPreDraw=BGPerkEffects.InternalPreDraw
      End Object
-     i_BGPerkEffects=GUISectionBackground'ScrnBalanceSrv.TSCLobbyMenu.BGPerkEffects'
+     i_BGPerkEffects=BGPerkEffects
 
      Begin Object Class=GUILabel Name=CurrentMapL
          Caption="LAlalala Map"
@@ -743,7 +743,7 @@ defaultproperties
          WinHeight=0.035
          RenderWeight=0.900000
      End Object
-     CurrentMapLabel=GUILabel'ScrnBalanceSrv.TSCLobbyMenu.CurrentMapL'
+     CurrentMapLabel=CurrentMapL
 
      Begin Object Class=GUILabel Name=DifficultyL
          Caption="Difficulty"
@@ -755,7 +755,7 @@ defaultproperties
          WinHeight=0.035
          RenderWeight=0.900000
      End Object
-     DifficultyLabel=GUILabel'ScrnBalanceSrv.TSCLobbyMenu.DifficultyL'
+     DifficultyLabel=DifficultyL
 
      Begin Object Class=GUILabel Name=WaveL
          Caption="1/4"
@@ -769,7 +769,7 @@ defaultproperties
          WinHeight=0.035
          RenderWeight=0.95
      End Object
-     WaveLabel=GUILabel'ScrnBalanceSrv.TSCLobbyMenu.WaveL'
+     WaveLabel=WaveL
 
      Begin Object Class=GUILabel Name=HumanDamageL
          Caption="Human Damage: Normal"
@@ -783,7 +783,7 @@ defaultproperties
          WinHeight=0.035
          RenderWeight=0.95
      End Object
-     l_HDmgCaption=GUILabel'ScrnBalanceSrv.TSCLobbyMenu.HumanDamageL'
+     l_HDmgCaption=HumanDamageL
 
      Begin Object Class=GUILabel Name=HumanDamageInfoL
          Caption="Full protection within own Base."
@@ -798,7 +798,7 @@ defaultproperties
          WinHeight=0.070
          RenderWeight=0.95
      End Object
-     l_HDmgInfo=GUILabel'ScrnBalanceSrv.TSCLobbyMenu.HumanDamageInfoL'
+     l_HDmgInfo=HumanDamageInfoL
 
     strHDmg="Human Damage: "
 
@@ -822,25 +822,25 @@ defaultproperties
      Begin Object Class=GUIImage Name=WaveB
         bVisible=False
      End Object
-     WaveBG=GUIImage'ScrnBalanceSrv.TSCLobbyMenu.WaveB'
+     WaveBG=WaveB
 
      Begin Object Class=KFMapStoryLabel Name=LobbyMapStoryBox
          bVisible=False
     End Object
-    l_StoryBox=KFMapStoryLabel'ScrnBalanceSrv.TSCLobbyMenu.LobbyMapStoryBox'
+    l_StoryBox=LobbyMapStoryBox
 
      Begin Object Class=AltSectionBackground Name=StoryBoxBackground
         bVisible=False
      End Object
-     StoryBoxBG=AltSectionBackground'ScrnBalanceSrv.TSCLobbyMenu.StoryBoxBackground'
+     StoryBoxBG=StoryBoxBackground
 
      Begin Object Class=AltSectionBackground Name=GameInfoB
         bVisible=False
      End Object
-     GameInfoBG=AltSectionBackground'ScrnBalanceSrv.TSCLobbyMenu.GameInfoB'
+     GameInfoBG=GameInfoB
 
       Begin Object Class=GUIScrollTextBox Name=PerkEffectsScroll
          bVisible=False
      End Object
-     lb_PerkEffects=GUIScrollTextBox'ScrnBalanceSrv.TSCLobbyMenu.PerkEffectsScroll'
+     lb_PerkEffects=PerkEffectsScroll
 }

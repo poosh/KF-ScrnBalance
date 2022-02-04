@@ -294,7 +294,7 @@ simulated state Reloading
                 FuelInTank = AmmoAmount(0);
             if ( FuelInTank < 1 )
                 return;
-            nade = spawn(class'ScrnBalanceSrv.ScrnFlameNade');
+            nade = spawn(class'ScrnFlameNade');
             HideGasCan();
             AttachToBone(nade, 'Chainsaw'); //attempt to move explosion onto chainsaw to make it obvious that the gas can caused the explosion
             nade.SetRelativeLocation(vect(-3, 2, 3)); //move nade to exact gas can location
@@ -370,12 +370,12 @@ defaultproperties
     ReloadAnimRate=0.250000
     WeaponReloadAnim="Reload_Flamethrower"
     bAmmoHUDAsBar=True
-    FireModeClass(0)=Class'ScrnBalanceSrv.ScrnChainsawFire'
-    FireModeClass(1)=Class'ScrnBalanceSrv.ScrnChainsawAltFire'
+    FireModeClass(0)=class'ScrnChainsawFire'
+    FireModeClass(1)=class'ScrnChainsawAltFire'
     bMeleeWeapon=False
     bShowChargingBar=True
     Description="This legendary chainsaw is used through the centuries to fight evil forces"
-    PickupClass=Class'ScrnBalanceSrv.ScrnChainsawPickup'
+    PickupClass=class'ScrnChainsawPickup'
     ItemName="Ash's Chainsaw"
     AppID=0
 }

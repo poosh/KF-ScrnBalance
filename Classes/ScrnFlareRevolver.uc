@@ -2,7 +2,7 @@ class ScrnFlareRevolver extends FlareRevolver;
 
 simulated function bool PutDown()
 {
-    if ( Instigator.PendingWeapon.class == class'ScrnBalanceSrv.ScrnDualFlareRevolver' )
+    if ( Instigator.PendingWeapon.class == class'ScrnDualFlareRevolver' )
     {
         bIsReloading = false;
     }
@@ -31,7 +31,7 @@ function GiveTo( pawn Other, optional Pickup Pickup )
 
 defaultproperties
 {
-     FireModeClass(0)=Class'ScrnBalanceSrv.ScrnFlareRevolverFire'
-     PickupClass=Class'ScrnBalanceSrv.ScrnFlareRevolverPickup'
+     FireModeClass(0)=class'ScrnFlareRevolverFire'
+     PickupClass=class'ScrnFlareRevolverPickup'
      ItemName="Flare Revolver SE"
 }

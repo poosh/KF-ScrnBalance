@@ -12,6 +12,6 @@ defaultproperties
      ItemShortName="Medic GL"
      AmmoItemName="Healing Grenades"
      CorrespondingPerkIndex=0
-     InventoryType=Class'ScrnBalanceSrv.ScrnM79M'
+     InventoryType=class'ScrnM79M'
      PickupMessage="You got the Medic Grenade Launcher."
 }

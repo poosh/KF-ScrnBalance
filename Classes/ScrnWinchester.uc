@@ -45,7 +45,7 @@ defaultproperties
     SelectSoundRef="KF_RifleSnd.Rifle_Select"
     ReloadAnimRate=1.15000 //sync reload animation with reloadrate
 
-    FireModeClass(0)=Class'ScrnBalanceSrv.ScrnWinchesterFire'
-    PickupClass=Class'ScrnBalanceSrv.ScrnWinchesterPickup'
+    FireModeClass(0)=class'ScrnWinchesterFire'
+    PickupClass=class'ScrnWinchesterPickup'
     ItemName="Lever Action Rifle SE"
 }

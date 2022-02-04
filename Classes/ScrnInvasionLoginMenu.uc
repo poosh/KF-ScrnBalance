@@ -142,5 +142,5 @@ defaultproperties
         OnClick=ScrnInvasionLoginMenu.ButtonClicked
         OnKeyEvent=TeamSwitchButton.InternalOnKeyEvent
     End Object
-    b_TeamSwitch=GUIButton'ScrnBalanceSrv.ScrnInvasionLoginMenu.TeamSwitchButton'
+    b_TeamSwitch=TeamSwitchButton
 }

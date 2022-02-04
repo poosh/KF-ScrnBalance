@@ -56,11 +56,11 @@ defaultproperties
      SuccessfulHealMessage="You healed %c player(-s) with %ahp"
      bIsTier2Weapon=False
      bIsTier3Weapon=True
-     FireModeClass(0)=Class'ScrnBalanceSrv.ScrnM4203MBulletFire'
-     FireModeClass(1)=Class'ScrnBalanceSrv.ScrnM203MFire'
+     FireModeClass(0)=class'ScrnM4203MBulletFire'
+     FireModeClass(1)=class'ScrnM203MFire'
      Description="An assault rifle with an attached healing grenade launcher. Shoots in 3-bullet fixed-burst mode."
      InventoryGroup=4
-     PickupClass=Class'ScrnBalanceSrv.ScrnM4203MPickup'
+     PickupClass=class'ScrnM4203MPickup'
      ItemName="M4-203M Medic Rifle"
      SkinRefs(0)="ScrnTex.Weapons.M4203M"
      Priority=70 // to switch after MP5M

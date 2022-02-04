@@ -4,7 +4,7 @@ class ScrnFlameBurstFire extends FlameBurstFire ;
 
 defaultproperties
 {
-     ProjectileClass=Class'ScrnBalanceSrv.ScrnFlameTendril'
-     AmmoClass=Class'ScrnBalanceSrv.ScrnFlameAmmo'
+     ProjectileClass=class'ScrnFlameTendril'
+     AmmoClass=class'ScrnFlameAmmo'
      
 }

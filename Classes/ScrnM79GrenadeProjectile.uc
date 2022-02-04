@@ -89,5 +89,5 @@ simulated function ProcessTouch(Actor Other, Vector HitLocation)
 
 defaultproperties
 {
-    SmokeTrailClass=Class'ScrnBalanceSrv.ReducedGrenadeTrail'
+    SmokeTrailClass=class'ReducedGrenadeTrail'
 }

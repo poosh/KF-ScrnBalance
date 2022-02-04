@@ -4,6 +4,6 @@ class ScrnDamTypeSPSniper extends DamTypeSPSniper
     
 defaultproperties
 {
-     WeaponClass=Class'ScrnBalanceSrv.ScrnSPSniperRifle'
+     WeaponClass=class'ScrnSPSniperRifle'
      HeadShotDamageMult=4.0 
 }

@@ -14,9 +14,9 @@ simulated function PostBeginPlay()
 
 defaultproperties
 {
-     FireModeClass(0)=Class'ScrnBalanceSrv.ScrnSyringeFire'
-     FireModeClass(1)=Class'ScrnBalanceSrv.ScrnSyringeAltFire'
-     PickupClass=Class'ScrnBalanceSrv.ScrnSyringePickup'
+     FireModeClass(0)=class'ScrnSyringeFire'
+     FireModeClass(1)=class'ScrnSyringeAltFire'
+     PickupClass=class'ScrnSyringePickup'
      ItemName="Med-Syringe SE"
      TraderInfoTexture=Texture'KillingFloorHUD.WeaponSelect.Syringe'
 }

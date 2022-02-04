@@ -58,10 +58,10 @@ defaultproperties
 {
      SuccessfulHealMessage="You healed %c player(-s) with %ahp"
      Weight=3.000000
-     //AttachmentClass=Class'ScrnBalanceSrv.ScrnM79MAttachment'
-     FireModeClass(0)=Class'ScrnBalanceSrv.ScrnM79MFire'
+     //AttachmentClass=class'ScrnM79MAttachment'
+     FireModeClass(0)=class'ScrnM79MFire'
      Description="A classic Vietnam era grenade launcher. Modified to launch healing grenades."
-     PickupClass=Class'ScrnBalanceSrv.ScrnM79MPickup'
+     PickupClass=class'ScrnM79MPickup'
      ItemName="Medic Grenade Launcher"
      SkinRefs(0)="ScrnTex.Weapons.M79M"
      Priority=50

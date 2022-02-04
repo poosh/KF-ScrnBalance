@@ -14,6 +14,6 @@ static function AwardKill(KFSteamStatsAndAchievements KFStatsAndAchievements, KF
 
 defaultproperties
 {
-     WeaponClass=Class'ScrnBalanceSrv.ScrnMKb42AssaultRifle'
+     WeaponClass=class'ScrnMKb42AssaultRifle'
 }
 

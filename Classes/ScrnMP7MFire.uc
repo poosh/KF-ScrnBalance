@@ -130,6 +130,6 @@ function DoTrace(Vector Start, Rotator Dir)
 
 defaultproperties
 {
-    AmmoClass=Class'ScrnBalanceSrv.ScrnMP7MAmmo'
-    DamageType=Class'ScrnBalanceSrv.ScrnDamTypeMP7M'
+    AmmoClass=class'ScrnMP7MAmmo'
+    DamageType=class'ScrnDamTypeMP7M'
 }

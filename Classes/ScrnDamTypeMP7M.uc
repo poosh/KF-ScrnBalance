@@ -3,7 +3,7 @@ class ScrnDamTypeMP7M extends ScrnDamTypeMedic
 
 defaultproperties
 {
-     WeaponClass=Class'ScrnBalanceSrv.ScrnMP7MMedicGun'
+     WeaponClass=class'ScrnMP7MMedicGun'
      DeathString="%k killed %o (MP7M)."
      FemaleSuicide="%o shot herself in the foot."
      MaleSuicide="%o shot himself in the foot."

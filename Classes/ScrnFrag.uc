@@ -24,7 +24,7 @@ simulated function CookNade()
 
     ServerCookNade();
     if( Role < ROLE_Authority ) {
-        CookExplodeTimer = Level.TimeSeconds + class'ScrnBalanceSrv.ScrnNade'.default.ExplodeTimer;
+        CookExplodeTimer = Level.TimeSeconds + class'ScrnNade'.default.ExplodeTimer;
         bCooking = true;
         bThrowingCooked = false;
     }
@@ -41,7 +41,7 @@ simulated function bool CanCook()
 //server
 function ServerCookNade()
 {
-    CookExplodeTimer = Level.TimeSeconds + class'ScrnBalanceSrv.ScrnNade'.default.ExplodeTimer;
+    CookExplodeTimer = Level.TimeSeconds + class'ScrnNade'.default.ExplodeTimer;
     bCooking = true;
     bThrowingCooked = false;
     bBlewInHands = false;
@@ -128,10 +128,10 @@ function GiveAmmo(int m, WeaponPickup WP, bool bJustSpawned)
 defaultproperties
 {
      Weight=0.000000
-     FireModeClass(0)=Class'ScrnBalanceSrv.ScrnFragFire'
-     FireModeClass(1)=Class'ScrnBalanceSrv.ToiletPaperFire'
+     FireModeClass(0)=class'ScrnFragFire'
+     FireModeClass(1)=class'ToiletPaperFire'
      bHasSecondaryAmmo=false  // prevents buying TP ammo from frags
-     PickupClass=Class'ScrnBalanceSrv.ScrnFragPickup'
+     PickupClass=class'ScrnFragPickup'
      ItemName="Frag Grenade SE"
      bAlwaysRelevant=True
 }

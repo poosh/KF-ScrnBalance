@@ -4,5 +4,5 @@ class ScrnDamTypeM4203AssaultRifle extends ScrnDamTypeM4AssaultRifle
 defaultproperties
 {
      HeadShotDamageMult=1.100000
-     WeaponClass=Class'ScrnBalanceSrv.ScrnM4203AssaultRifle'
+     WeaponClass=class'ScrnM4203AssaultRifle'
 }

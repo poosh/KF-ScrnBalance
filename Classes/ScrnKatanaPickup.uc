@@ -6,5 +6,5 @@ defaultproperties
      SpeedValue=55
      ItemName="Katana SE"
      ItemShortName="Katana  SE"
-     InventoryType=Class'ScrnBalanceSrv.ScrnKatana'
+     InventoryType=class'ScrnKatana'
 }

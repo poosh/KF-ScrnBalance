@@ -208,8 +208,8 @@ defaultproperties
      ChargingHandleOffset=(X=-0.059,Y=0,Z=0)
      Priority=123
      GroupOffset=19
-     PickupClass=Class'ScrnBalanceSrv.ScrnSPThompsonPickup'
-     FireModeClass(0)=Class'ScrnBalanceSrv.ScrnSPThompsonFire'
-     AttachmentClass=Class'ScrnBalanceSrv.ScrnSPThompsonAttachment'
+     PickupClass=class'ScrnSPThompsonPickup'
+     FireModeClass(0)=class'ScrnSPThompsonFire'
+     AttachmentClass=class'ScrnSPThompsonAttachment'
      ItemName="Dr. T's Lead Delivery System SE"
 }

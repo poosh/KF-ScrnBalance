@@ -19,7 +19,7 @@ defaultproperties
         OnClick=TSCLobbyFooter.OnFooterClick
         OnKeyEvent=ReadyButton.InternalOnKeyEvent
     End Object
-    b_Ready=GUIButton'ScrnBalanceSrv.TSCLobbyFooter.ReadyButton'
+    b_Ready=ReadyButton
 
      Begin Object Class=GUILabel Name=TimeOutCounter
          Caption="Game will auto-commence in: "

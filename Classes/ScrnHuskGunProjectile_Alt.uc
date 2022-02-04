@@ -54,13 +54,13 @@ defaultproperties
 {
      HeadShotDamageMult=1.000000
      ExplosionSoundVolume=1.000000
-     ImpactDamageType=Class'ScrnBalanceSrv.ScrnDamTypeHuskGun_Alt'
+     ImpactDamageType=class'ScrnDamTypeHuskGun_Alt'
      ImpactDamage=0
      AmbientVolumeScale=1.000000
      Speed=750.000000
      MaxSpeed=1000.000000
      Damage=50.000000
      DamageRadius=500.000000
-     MyDamageType=Class'ScrnBalanceSrv.ScrnDamTypeHuskGun_Alt'
+     MyDamageType=class'ScrnDamTypeHuskGun_Alt'
      LifeSpan=5.000000
 }

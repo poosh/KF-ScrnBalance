@@ -152,8 +152,8 @@ defaultproperties
 {
     FireVeryLastRate=0.25
     FireRate=2.75
-    ProjectileClass=Class'ScrnBalanceSrv.ScrnBoomStickBullet'
-    AmmoClass=Class'ScrnBalanceSrv.ScrnBoomStickAmmo'
+    ProjectileClass=class'ScrnBoomStickBullet'
+    AmmoClass=class'ScrnBoomStickAmmo'
     AmmoPerFire=2
     ProjPerFire=10  // * Load, which is AmmoPerFire
 }

@@ -181,13 +181,13 @@ function ReplaceRequiredEquipment()
         StoryRules = KFStoryGameInfo(Level.Game).StoryRules;
         for ( i = 0; i < StoryRules.RequiredPlayerEquipment.Length; ++i ) {
             if ( StoryRules.RequiredPlayerEquipment[i] == Class'KFMod.Knife' )
-                StoryRules.RequiredPlayerEquipment[i] = class'ScrnBalanceSrv.ScrnKnife';
+                StoryRules.RequiredPlayerEquipment[i] = class'ScrnKnife';
             else if ( StoryRules.RequiredPlayerEquipment[i] == Class'KFMod.Single' )
-                StoryRules.RequiredPlayerEquipment[i] = class'ScrnBalanceSrv.ScrnSingle';
+                StoryRules.RequiredPlayerEquipment[i] = class'ScrnSingle';
             else if ( Mut.bReplaceNades && StoryRules.RequiredPlayerEquipment[i] == Class'KFMod.Frag' )
-                StoryRules.RequiredPlayerEquipment[i] = class'ScrnBalanceSrv.ScrnFrag';
+                StoryRules.RequiredPlayerEquipment[i] = class'ScrnFrag';
             else if ( StoryRules.RequiredPlayerEquipment[i] == Class'KFMod.Syringe' )
-                StoryRules.RequiredPlayerEquipment[i] = class'ScrnBalanceSrv.ScrnSyringe';
+                StoryRules.RequiredPlayerEquipment[i] = class'ScrnSyringe';
         }
     }
     else if ( Mut.bNoRequiredEquipment ) {
@@ -195,12 +195,12 @@ function ReplaceRequiredEquipment()
             RequiredEquipment[i] = "";
     }
     else {
-        RequiredEquipment[0] = String(class'ScrnBalanceSrv.ScrnKnife');
-        RequiredEquipment[1] = String(class'ScrnBalanceSrv.ScrnSingle');
+        RequiredEquipment[0] = String(class'ScrnKnife');
+        RequiredEquipment[1] = String(class'ScrnSingle');
         if ( Mut.bReplaceNades ) {
-            RequiredEquipment[2] = String(class'ScrnBalanceSrv.ScrnFrag');
+            RequiredEquipment[2] = String(class'ScrnFrag');
         }
-        RequiredEquipment[3] = String(class'ScrnBalanceSrv.ScrnSyringe');
+        RequiredEquipment[3] = String(class'ScrnSyringe');
     }
 }
 
@@ -1080,7 +1080,7 @@ function AddDefaultInventory()
 
     // make sure players have at least knife, when admin screwed up the config
     if ( Inventory == none && KFSPGameType(Level.Game) == none ) {
-        CreateInventory("ScrnBalanceSrv.ScrnKnife");
+        CreateInventory(string(class'ScrnKnife'));
         if ( Inventory != none ) {
             Inventory.OwnerEvent('LoadOut');
             Controller.ClientSwitchToBestWeapon();
@@ -2035,9 +2035,9 @@ simulated function Fire( optional float F )
             && !W.bIsReloading && !W.bHoldToReload
             && W.MagCapacity > 1 && W.MagAmmoRemaining < W.GetFireMode(0).AmmoPerFire ) {
         if ( W.AmmoAmount(0) == 0 )
-            ScrnPC.ReceiveLocalizedMessage(class'ScrnBalanceSrv.ScrnPlayerWarningMessage',1);
+            ScrnPC.ReceiveLocalizedMessage(class'ScrnPlayerWarningMessage',1);
         else
-            ScrnPC.ReceiveLocalizedMessage(class'ScrnBalanceSrv.ScrnPlayerWarningMessage',0);
+            ScrnPC.ReceiveLocalizedMessage(class'ScrnPlayerWarningMessage',0);
         W.PlayOwnedSound(W.GetFireMode(0).NoAmmoSound, SLOT_None,2.0,,,,false); //play weapon's no ammo sound
         W.GetFireMode(0).ModeDoFire(); //force weapon's mode do fire
         return;
@@ -2061,9 +2061,9 @@ simulated function AltFire( optional float F )
             && !W.bIsReloading && !W.bHoldToReload
             && W.MagCapacity > 2 && W.MagAmmoRemaining < W.GetFireMode(1).AmmoPerFire ) {
         if ( W.AmmoAmount(0) == 0 )
-            ScrnPC.ReceiveLocalizedMessage(class'ScrnBalanceSrv.ScrnPlayerWarningMessage',1);
+            ScrnPC.ReceiveLocalizedMessage(class'ScrnPlayerWarningMessage',1);
         else
-            ScrnPC.ReceiveLocalizedMessage(class'ScrnBalanceSrv.ScrnPlayerWarningMessage',0);
+            ScrnPC.ReceiveLocalizedMessage(class'ScrnPlayerWarningMessage',0);
         W.PlayOwnedSound(W.GetFireMode(0).NoAmmoSound, SLOT_None,2.0,,,,false);
         return;
     }
@@ -2894,10 +2894,10 @@ defaultproperties
 {
      HealthRestoreRate=7.0
      HealthSpeedModifier=0.15
-     NoVestClass=Class'ScrnBalanceSrv.ScrnNoVestPickup'
-     StandardVestClass=Class'ScrnBalanceSrv.ScrnCombatVestPickup'
-     LightVestClass=Class'ScrnBalanceSrv.ScrnLightVestPickup'
-     CurrentVestClass=Class'ScrnBalanceSrv.ScrnNoVestPickup'
+     NoVestClass=class'ScrnNoVestPickup'
+     StandardVestClass=class'ScrnCombatVestPickup'
+     LightVestClass=class'ScrnLightVestPickup'
+     CurrentVestClass=class'ScrnNoVestPickup'
      ShieldStrengthMax=0.000000
      bCheckHorzineArmorAch=true
      strNoSpawnCashToss="Can not drop starting cash"

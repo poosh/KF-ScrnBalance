@@ -87,5 +87,5 @@ defaultproperties
 {
      DamageRadius=450.000000
      Damage=400
-     SmokeTrailClass=Class'ScrnBalanceSrv.ReducedGrenadeTrail'
+     SmokeTrailClass=class'ReducedGrenadeTrail'
 }

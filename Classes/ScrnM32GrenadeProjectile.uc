@@ -83,5 +83,5 @@ simulated function PostBeginPlay()
 }
 defaultproperties
 {
-    SmokeTrailClass=Class'ScrnBalanceSrv.ReducedGrenadeTrail'
+    SmokeTrailClass=class'ReducedGrenadeTrail'
 }

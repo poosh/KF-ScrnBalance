@@ -273,7 +273,7 @@ function AddVoting()
         return;
     }
 
-    VO = ScrnZedVoting(VH.AddVotingOptions(class'ScrnBalanceSrv.ScrnZedVoting'));
+    VO = ScrnZedVoting(VH.AddVotingOptions(class'ScrnZedVoting'));
     if ( VO != none ) {
         VO.GL = self;
     }

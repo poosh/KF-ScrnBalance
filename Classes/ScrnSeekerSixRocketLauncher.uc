@@ -89,9 +89,9 @@ function Tick(float dt)
 
 defaultproperties
 {
-    PickupClass=Class'ScrnBalanceSrv.ScrnSeekerSixPickup'
-    FireModeClass(0)=Class'ScrnBalanceSrv.ScrnSeekerSixFire'
-    FireModeClass(1)=Class'ScrnBalanceSrv.ScrnSeekerSixMultiFire'
+    PickupClass=class'ScrnSeekerSixPickup'
+    FireModeClass(0)=class'ScrnSeekerSixFire'
+    FireModeClass(1)=class'ScrnSeekerSixMultiFire'
 
     MultiFireLoad=6
     MagCapacity=24 // 6
@@ -99,7 +99,7 @@ defaultproperties
     ReloadAnim="Reload"
     ReloadAnimRate=0.8 // 3.13 / 3.9125
     
-    NormalProjClass=class'ScrnBalanceSrv.ScrnS6Rocket'
-    SeekingProjClass=class'ScrnBalanceSrv.ScrnS6SeekingRocket'
+    NormalProjClass=class'ScrnS6Rocket'
+    SeekingProjClass=class'ScrnS6SeekingRocket'
     ItemName="SeekerSix Rocket Launcher SE"
 }

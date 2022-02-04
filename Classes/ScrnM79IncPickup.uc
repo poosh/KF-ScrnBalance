@@ -7,6 +7,6 @@ defaultproperties
      ItemName="M79 Incendiary"
      ItemShortName="M79 Inc"
      CorrespondingPerkIndex=5
-     InventoryType=Class'ScrnBalanceSrv.ScrnM79Inc'
+     InventoryType=class'ScrnM79Inc'
      PickupMessage="You got the M79 Incendiary Grenade Launcher."
 }

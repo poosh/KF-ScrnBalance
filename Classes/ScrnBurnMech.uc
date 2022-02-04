@@ -114,7 +114,7 @@ function MakeBurnDamage(KFMonster Victim, int Damage, Pawn InstigatedBy, Vector 
     local float AdjustedFlareCount;
 
     // ScrnDamTypeHuskGun_Alt required for achievement
-    bIncDamage = ClassIsChildOf(DamType, class'DamTypeMAC10MPInc') || DamType == class'ScrnBalanceSrv.ScrnDamTypeHuskGun_Alt';
+    bIncDamage = ClassIsChildOf(DamType, class'DamTypeMAC10MPInc') || DamType == class'ScrnDamTypeHuskGun_Alt';
     FlareDamType = class<ScrnDamTypeFlare>(DamType);
 
     // check if zed is already burning

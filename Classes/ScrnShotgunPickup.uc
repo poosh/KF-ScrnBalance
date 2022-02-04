@@ -6,5 +6,5 @@ defaultproperties
 
      ItemName="Shotgun SE"
      ItemShortName="Shotgun SE"
-     InventoryType=Class'ScrnBalanceSrv.ScrnShotgun'
+     InventoryType=class'ScrnShotgun'
 }

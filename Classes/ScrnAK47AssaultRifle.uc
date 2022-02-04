@@ -117,7 +117,7 @@ defaultproperties
     ReloadShortAnim="Reload"
     ReloadShortRate=2.07
 
-     FireModeClass(0)=Class'ScrnBalanceSrv.ScrnAK47Fire'
-     PickupClass=Class'ScrnBalanceSrv.ScrnAK47Pickup'
+     FireModeClass(0)=class'ScrnAK47Fire'
+     PickupClass=class'ScrnAK47Pickup'
      ItemName="AK-47 SE"
 }

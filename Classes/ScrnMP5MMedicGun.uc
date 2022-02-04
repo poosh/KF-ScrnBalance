@@ -220,11 +220,11 @@ defaultproperties
     Magcapacity=32
     HealAmmoCharge=0
     Weight=4.000000
-    FireModeClass(0)=Class'ScrnBalanceSrv.ScrnMP5MFire'
-    FireModeClass(1)=Class'ScrnBalanceSrv.ScrnMP5MAltFire'
+    FireModeClass(0)=class'ScrnMP5MFire'
+    FireModeClass(1)=class'ScrnMP5MAltFire'
     bReduceMagAmmoOnSecondaryFire=False
     InventoryGroup=4
-    PickupClass=Class'ScrnBalanceSrv.ScrnMP5MPickup'
+    PickupClass=class'ScrnMP5MPickup'
     ItemName="MP5M Medic Gun SE"
     PlayerViewPivot=(Pitch=45,Roll=0,Yaw=5) //fix to make sight centered
     NewAnimRef="ScrnAnims.mp5_anim_new"

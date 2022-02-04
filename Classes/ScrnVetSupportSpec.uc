@@ -21,7 +21,7 @@ static function float GetDoorHealthVisibilityScaling(KFPlayerReplicationInfo KFP
 static function float GetWeaponMovementSpeedBonus(KFPlayerReplicationInfo KFPRI, Weapon Weap)
 {
     if ( Welder(Weap) != none )
-        return class'ScrnBalanceSrv.ScrnHumanPawn'.default.BaseMeleeIncrease;
+        return class'ScrnHumanPawn'.default.BaseMeleeIncrease;
     return 0.0;
 }
 
@@ -116,7 +116,7 @@ static function float GetShotgunPenetrationDamageMulti(KFPlayerReplicationInfo K
 // Change the cost of particular items
 static function float GetCostScaling(KFPlayerReplicationInfo KFPRI, class<Pickup> Item)
 {
-    if ( Item == class'ScrnBalanceSrv.ScrnShotgunPickup' )
+    if ( Item == class'ScrnShotgunPickup' )
         return 1.0; // price lowered to $200, no discount needed
 
     if ( ClassIsChildOf(Item, class'ShotgunPickup')
@@ -157,7 +157,7 @@ static function bool OverridePerkIndex( class<KFWeaponPickup> Pickup )
 defaultproperties
 {
     DefaultDamageType=Class'KFMod.DamTypeShotgun'
-    DefaultDamageTypeNoBonus=Class'ScrnBalanceSrv.ScrnDamTypeDefaultSupportBase'
+    DefaultDamageTypeNoBonus=class'ScrnDamTypeDefaultSupportBase'
     SamePerkAch="OP_Support"
 
     SkillInfo="PERK SKILLS:|60% better Shotgun penetration|40% damage resistance while holding Chainsaw|+10 blocks in carry weight|150% faster welding/unwelding|Welder see door status from 30m"

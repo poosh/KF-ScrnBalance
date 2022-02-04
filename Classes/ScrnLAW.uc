@@ -50,13 +50,13 @@ simulated function ZoomIn(bool bAnimateTransition)
 defaultproperties
 {
      Weight=12.000000
-     FireModeClass(0)=Class'ScrnBalanceSrv.ScrnLAWFire'
+     FireModeClass(0)=class'ScrnLAWFire'
      ForceZoomOutOnFireTime=0.05
      PlayerIronSightFOV=65 //give some zoom when aiming
      RaiseAnimRate=2.7
      Description="Light Anti-tank Weapon. Designed to punch through armored vehicles... but can't kill even a Scrake! Maybe because he doesn't wear armor to punch through ^^"
-     PickupClass=Class'ScrnBalanceSrv.ScrnLAWPickup'
-     AttachmentClass=Class'ScrnBalanceSrv.ScrnLAWAttachment'
+     PickupClass=class'ScrnLAWPickup'
+     AttachmentClass=class'ScrnLAWAttachment'
      ItemName="L.A.W. SE"
      bHoldToReload=false // to show correct ammo amount on classic hud
 }

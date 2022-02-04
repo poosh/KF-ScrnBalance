@@ -5,5 +5,5 @@ defaultproperties
      Weight=6
      ItemName="Trenchgun SE"
      ItemShortName="Trenchgun SE"
-     InventoryType=Class'ScrnBalanceSrv.ScrnTrenchgun'
+     InventoryType=class'ScrnTrenchgun'
 }

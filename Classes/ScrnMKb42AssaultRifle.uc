@@ -208,8 +208,8 @@ defaultproperties
      bModeZeroCanDryFire = true
      ReloadShortAnim="Reload"
      ReloadShortRate=1.87
-     FireModeClass(0)=Class'ScrnBalanceSrv.ScrnMKb42Fire'
-     PickupClass=Class'ScrnBalanceSrv.ScrnMKb42Pickup'
+     FireModeClass(0)=class'ScrnMKb42Fire'
+     PickupClass=class'ScrnMKb42Pickup'
      ItemName="MKb42 SE"
      ChargingHandleOffset=(X=0.0,Y=0.057,Z=0)
  }

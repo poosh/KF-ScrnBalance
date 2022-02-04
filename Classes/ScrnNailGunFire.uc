@@ -68,7 +68,7 @@ function ModeDoFire()
 defaultproperties
 {
     ProjPerFire=1
-    AmmoClass=Class'ScrnBalanceSrv.ScrnNailGunAmmo'
-    ProjectileClass=Class'ScrnBalanceSrv.ScrnNailGunProjectile'
+    AmmoClass=class'ScrnNailGunAmmo'
+    ProjectileClass=class'ScrnNailGunProjectile'
     NoAmmoSoundRef="KF_NailShotgun.KF_NailShotgun_Dryfire"
 }

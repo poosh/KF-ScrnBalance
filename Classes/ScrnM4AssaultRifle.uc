@@ -125,9 +125,9 @@ defaultproperties
     ReloadRate=2.794846
     ReloadAnimRate=1.3
     MagCapacity=30
-    FireModeClass(0)=Class'ScrnBalanceSrv.ScrnM4Fire'
+    FireModeClass(0)=class'ScrnM4Fire'
     Description="A compact assault rifle. Damage could be better, but accuracy, fast reload and a lot of ammo makes it a good choise in a battle."
-    PickupClass=Class'ScrnBalanceSrv.ScrnM4Pickup'
+    PickupClass=class'ScrnM4Pickup'
     ItemName="M4 SE"
     PlayerViewPivot=(Pitch=28,Roll=0,Yaw=7) //fix to make sight centered
 }

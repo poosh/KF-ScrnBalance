@@ -15,5 +15,5 @@ defaultproperties
 {
     DamageMax=41
     FireLoopAnimRate=1.59
-    DamageType=Class'ScrnBalanceSrv.ScrnDamTypeM4AssaultRifle'
+    DamageType=class'ScrnDamTypeM4AssaultRifle'
 }

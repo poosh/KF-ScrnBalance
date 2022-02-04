@@ -14,7 +14,7 @@ defaultproperties
      cost=100
      ItemName="Machete SE"
      ItemShortName="Machete SE"
-     InventoryType=Class'ScrnBalanceSrv.ScrnMachete'
+     InventoryType=class'ScrnMachete'
      CorrespondingPerkIndex=7
 
      CollisionRadius=30

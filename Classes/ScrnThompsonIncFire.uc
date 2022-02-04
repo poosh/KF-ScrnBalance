@@ -169,7 +169,7 @@ function DoTrace(Vector Start, Rotator Dir)
 defaultproperties
 {
     DamageType=Class'KFMod.DamTypeMAC10MP'
-    AmmoClass=Class'ScrnBalanceSrv.ScrnThompsonIncAmmo'
+    AmmoClass=class'ScrnThompsonIncAmmo'
     BoltCloseSoundRef="KF_FNFALSnd.FNFAL_Bolt_Forward"
     DamageMin=40
     DamageMax=40

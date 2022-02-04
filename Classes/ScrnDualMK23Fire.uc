@@ -234,10 +234,10 @@ defaultproperties
 {
     MaxPenetrations=0
     PenDmgReduction=0.500000
-    DamageType=Class'ScrnBalanceSrv.ScrnDamTypeDualMK23Pistol'
+    DamageType=class'ScrnDamTypeDualMK23Pistol'
     FireAnim="FireLeft"
     FireAimedAnim2=FireRight_Iron
     FireAimedAnim=FireLeft_Iron
     FireAnim2="FireRight"
-    AmmoClass=Class'ScrnBalanceSrv.ScrnMK23Ammo'
+    AmmoClass=class'ScrnMK23Ammo'
 }

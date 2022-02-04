@@ -47,7 +47,7 @@ defaultproperties
          VelocityScale(1)=(RelativeTime=0.300000,RelativeVelocity=(X=0.200000,Y=1.000000,Z=1.000000))
          VelocityScale(2)=(RelativeTime=1.000000,RelativeVelocity=(Y=0.400000,Z=0.400000))
      End Object
-     Emitters(0)=SpriteEmitter'ScrnBalanceSrv.ScrnMedicNadeTrail.SpriteEmitter0'
+     Emitters(0)=SpriteEmitter0
 
      Begin Object Class=SpriteEmitter Name=SpriteEmitter1
          UseColorScale=True
@@ -83,6 +83,6 @@ defaultproperties
          VelocityScale(1)=(RelativeTime=0.400000,RelativeVelocity=(X=0.150000,Y=1.000000,Z=1.000000))
          VelocityScale(2)=(RelativeTime=1.000000,RelativeVelocity=(Y=0.400000,Z=0.400000))
      End Object
-     Emitters(1)=SpriteEmitter'ScrnBalanceSrv.ScrnMedicNadeTrail.SpriteEmitter1'
+     Emitters(1)=SpriteEmitter1
 
 }

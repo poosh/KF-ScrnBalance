@@ -317,8 +317,8 @@ function DoTrace(Vector Start, Rotator Dir)
 defaultproperties
 {
      BurstSize=2
-     DamageType=Class'ScrnBalanceSrv.ScrnDamTypeFNFALAssaultRifle'
-     AmmoClass=Class'ScrnBalanceSrv.ScrnFNFALAmmo'
+     DamageType=class'ScrnDamTypeFNFALAssaultRifle'
+     AmmoClass=class'ScrnFNFALAmmo'
      Spread=0.007500
      DamageMin=55  // unused
      DamageMax=55

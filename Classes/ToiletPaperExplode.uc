@@ -26,7 +26,7 @@ defaultproperties
          StartVelocityRange=(X=(Min=-200.000000,Max=200.000000),Y=(Min=-200.000000,Max=200.000000),Z=(Min=-200.000000,Max=200.000000))
          VelocityLossRange=(X=(Min=0.100000,Max=0.100000),Y=(Min=0.100000,Max=0.100000),Z=(Min=0.100000,Max=0.100000))
      End Object
-     Emitters(0)=SpriteEmitter'ScrnBalanceSrv.ToiletPaperExplode.SpriteEmitter0'
+     Emitters(0)=SpriteEmitter0
 
      Begin Object Class=SpriteEmitter Name=SpriteEmitter1
          UseColorScale=True
@@ -43,7 +43,7 @@ defaultproperties
          Texture=Texture'KFX.MetalHitKF'
          LifetimeRange=(Min=0.250000,Max=0.250000)
      End Object
-     Emitters(1)=SpriteEmitter'ScrnBalanceSrv.ToiletPaperExplode.SpriteEmitter1'
+     Emitters(1)=SpriteEmitter1
 
      Begin Object Class=SpriteEmitter Name=SpriteEmitter2
          UseDirectionAs=PTDU_UpAndNormal
@@ -77,7 +77,7 @@ defaultproperties
          LifetimeRange=(Min=1.500000,Max=1.500000)
          StartVelocityRange=(X=(Min=-200.000000,Max=200.000000),Y=(Min=-200.000000,Max=200.000000),Z=(Min=-200.000000,Max=200.000000))
      End Object
-     Emitters(2)=SpriteEmitter'ScrnBalanceSrv.ToiletPaperExplode.SpriteEmitter2'
+     Emitters(2)=SpriteEmitter2
 
      bNoDelete=False
      RemoteRole=ROLE_SimulatedProxy

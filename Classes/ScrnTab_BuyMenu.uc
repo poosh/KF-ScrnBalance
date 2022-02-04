@@ -136,7 +136,7 @@ function DoBuyKevlar()
 function DoBuy()
 {
     if ( TheBuyable != none && KFPawn(PlayerOwner().Pawn) != none && TheBuyable.ItemPickupClass != none ) {
-        if ( ClassIsChildOf(TheBuyable.ItemPickupClass, class'ScrnBalanceSrv.ScrnVestPickup') ) {
+        if ( ClassIsChildOf(TheBuyable.ItemPickupClass, class'ScrnVestPickup') ) {
             if ( ScrnHumanPawn(PlayerOwner().Pawn) != none ) {
                 ScrnHumanPawn(PlayerOwner().Pawn).ServerBuyShield(class<ScrnVestPickup>(TheBuyable.ItemPickupClass));
                 MakeSomeBuyNoise(class'Vest');
@@ -468,9 +468,8 @@ defaultproperties
          WinWidth=0.328204
          WinHeight=0.521856
         TabOrder=10
-
      End Object
-     InvSelect=ScrnBuyMenuInvListBox'ScrnBalanceSrv.ScrnTab_BuyMenu.InventoryBox'
+     InvSelect=InventoryBox
 
      Begin Object Class=ScrnBuyMenuSaleListBox Name=SaleBox
          OnCreateComponent=SaleBox.InternalOnCreateComponent
@@ -480,7 +479,7 @@ defaultproperties
          WinHeight=0.674039
         TabOrder=20
      End Object
-     SaleSelect=ScrnBuyMenuSaleListBox'ScrnBalanceSrv.ScrnTab_BuyMenu.SaleBox'
+     SaleSelect=SaleBox
 
      Begin Object Class=ScrnGUIBuyWeaponInfoPanel Name=ItemInf
          WinTop=0.193730
@@ -488,7 +487,7 @@ defaultproperties
          WinWidth=0.333947
          WinHeight=0.489407
      End Object
-     ItemInfo=ScrnGUIBuyWeaponInfoPanel'ScrnBalanceSrv.ScrnTab_BuyMenu.ItemInf'
+     ItemInfo=ItemInf
 
      Begin Object Class=ScrnTraderRequirementsListBox Name=ItemReq
          WinTop=0.183730
@@ -497,7 +496,7 @@ defaultproperties
          WinHeight=0.529407
          bVisible=False
      End Object
-     ItemRequirements=ScrnTraderRequirementsListBox'ScrnBalanceSrv.ScrnTab_BuyMenu.ItemReq'
+     ItemRequirements=ItemReq
     ForceInfoPageNum=255
 
      Begin Object Class=GUILabel Name=SelectedItemL
@@ -512,7 +511,7 @@ defaultproperties
          WinHeight=20.000000
          RenderWeight=0.510000
      End Object
-     SelectedItemLabel=GUILabel'ScrnBalanceSrv.ScrnTab_BuyMenu.SelectedItemL'
+     SelectedItemLabel=SelectedItemL
      strSelectedItemRequirements="Requirements for Unlocking Selected Item"
      strIntoScrnLocked="You have to meet the above requirements for unlocking the selected item. If multiple requirements have the same leading number in square brackets [X], then you need only one of those. Press F3 for item's description."
 
@@ -529,7 +528,7 @@ defaultproperties
          OnKeyEvent=SaleB.InternalOnKeyEvent
          bTabStop=False
      End Object
-     SaleButton=GUIButton'ScrnBalanceSrv.ScrnTab_BuyMenu.SaleB'
+     SaleButton=SaleB
      SaleButtonCaption="Sell Weapon"
      strSale0="Donate to Charity"
      strNoSale="Not Sellable"
@@ -546,7 +545,7 @@ defaultproperties
          OnKeyEvent=PurchaseB.InternalOnKeyEvent
          bTabStop=False
      End Object
-     PurchaseButton=GUIButton'ScrnBalanceSrv.ScrnTab_BuyMenu.PurchaseB'
+     PurchaseButton=PurchaseB
 
      Begin Object Class=GUIButton Name=AutoFill
          Caption="[F8] Auto Fill Ammo"
@@ -560,7 +559,7 @@ defaultproperties
          OnKeyEvent=AutoFill.InternalOnKeyEvent
          TabOrder=100
      End Object
-     AutoFillButton=GUIButton'ScrnBalanceSrv.ScrnTab_BuyMenu.AutoFill'
+     AutoFillButton=AutoFill
      AutoFillString="[F8] Fill All Ammo"
 
      Begin Object Class=GUIButton Name=Refresh
@@ -575,7 +574,7 @@ defaultproperties
          OnKeyEvent=Refresh.InternalOnKeyEvent
          TabOrder=101
      End Object
-     RefreshButton=GUIButton'ScrnBalanceSrv.ScrnTab_BuyMenu.Refresh'
+     RefreshButton=Refresh
 
      Begin Object Class=GUIButton Name=Exit
          Caption="[ESC] Exit Trader Menu"
@@ -589,7 +588,7 @@ defaultproperties
          OnKeyEvent=Exit.InternalOnKeyEvent
          TabOrder=102
      End Object
-     ExitButton=GUIButton'ScrnBalanceSrv.ScrnTab_BuyMenu.Exit'
+     ExitButton=Exit
 
      InfoText(0)="Welcome to my shop, powered by ScrN Balance!   HOTKEYS:|F1/F2: go to inventory/sale list|ENTER/BACKPACE: buy/sell item. F7/F8: autofill armor/ammo|0-9: Quick group selection / buy X clips.|PAGE UP/DOWN: Select previous/next group. LEFT/RIGHT: close/open current group.|UP/DOWN: select previous/next item in the same group."
 

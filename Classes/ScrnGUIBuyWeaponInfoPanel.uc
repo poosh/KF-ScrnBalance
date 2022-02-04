@@ -603,7 +603,7 @@ defaultproperties
          bScaleToParent=True
          RenderWeight=2.000000
      End Object
-     ItemImage=GUIImage'ScrnBalanceSrv.ScrnGUIBuyWeaponInfoPanel.IImage'
+     ItemImage=IImage
 
      Begin Object Class=GUIImage Name=ILogo
         Image=texture'ScrnTex.HUD.ScrNBalanceLogo256'
@@ -617,7 +617,7 @@ defaultproperties
          bScaleToParent=True
          RenderWeight=1.000000
      End Object
-     ScrnLogo=GUIImage'ScrnBalanceSrv.ScrnGUIBuyWeaponInfoPanel.ILogo'
+     ScrnLogo=ILogo
 
      Begin Object Class=GUIImage Name=TSCLogo
         Image=Texture'ScrnTex.Tourney.TourneyMember'
@@ -632,7 +632,7 @@ defaultproperties
          RenderWeight=2.000000
          bVisible=False
      End Object
-     TourneyLogo=GUIImage'ScrnBalanceSrv.ScrnGUIBuyWeaponInfoPanel.TSCLogo'
+     TourneyLogo=TSCLogo
 
      Begin Object Class=GUIImage Name=LWeightBG
          //Image=Texture'KF_InterfaceArt_tex.Menu.Innerborder_transparent'
@@ -644,7 +644,7 @@ defaultproperties
          WinHeight=0.00
          bVisible=False
      End Object
-     WeightLabelBG=GUIImage'ScrnBalanceSrv.ScrnGUIBuyWeaponInfoPanel.LWeightBG'
+     WeightLabelBG=LWeightBG
 
      Begin Object Class=GUILabel Name=LWeight
          TextAlign=TXTA_Right
@@ -661,7 +661,7 @@ defaultproperties
          bNeverFocus=True
          RenderWeight=3
      End Object
-     WeightLabel=GUILabel'ScrnBalanceSrv.ScrnGUIBuyWeaponInfoPanel.LWeight'
+     WeightLabel=LWeight
      Weight="%i blocks"
 
      Begin Object Class=moCheckBox Name=Mode0Check
@@ -682,7 +682,7 @@ defaultproperties
         bScaleToParent=True
         bVisible=False
      End Object
-     ch_FireMode0=moCheckBox'ScrnBalanceSrv.ScrnGUIBuyWeaponInfoPanel.Mode0Check'
+     ch_FireMode0=Mode0Check
 
      Begin Object Class=moCheckBox Name=Mode1Check
         CaptionWidth=0.95
@@ -702,8 +702,7 @@ defaultproperties
          bScaleToParent=True
         bVisible=False
      End Object
-     ch_FireMode1=moCheckBox'ScrnBalanceSrv.ScrnGUIBuyWeaponInfoPanel.Mode1Check'
-
+     ch_FireMode1=Mode1Check
 
     //adds checkbox next to damage bar
     Begin Object Class=moCheckBox Name=HSDmgCheck
@@ -724,7 +723,7 @@ defaultproperties
         bScaleToParent=True
         bVisible=False
      End Object
-     ch_HSDmgCheck=moCheckBox'ScrnBalanceSrv.ScrnGUIBuyWeaponInfoPanel.HSDmgCheck'
+     ch_HSDmgCheck=HSDmgCheck
 
     Begin Object Class=GUILabel Name=DamageCap
         Caption="Damage:"
@@ -742,7 +741,7 @@ defaultproperties
         bScaleToParent=True
         bVisible=False
     End Object
-    lblDamage=GUILabel'ScrnBalanceSrv.ScrnGUIBuyWeaponInfoPanel.DamageCap'
+    lblDamage=DamageCap
 
     Begin Object Class=ScrnGUIWeaponBar Name=DamageBar
         Hint="Weapon damage"
@@ -755,7 +754,7 @@ defaultproperties
         bScaleToParent=True
         bVisible=False
     End Object
-    barDamage=ScrnGUIWeaponBar'ScrnBalanceSrv.ScrnGUIBuyWeaponInfoPanel.DamageBar'
+    barDamage=DamageBar
 
 
     Begin Object Class=GUILabel Name=DPSCap
@@ -774,7 +773,7 @@ defaultproperties
         bScaleToParent=True
         bVisible=False
     End Object
-    lblDPS=GUILabel'ScrnBalanceSrv.ScrnGUIBuyWeaponInfoPanel.DPSCap'
+    lblDPS=DPSCap
 
     Begin Object Class=ScrnGUIWeaponBar Name=DPSBar
         Hint="Damage per second or magazine (if able to shoot whole magazine"
@@ -787,7 +786,7 @@ defaultproperties
         bScaleToParent=True
         bVisible=False
     End Object
-    barDPS=ScrnGUIWeaponBar'ScrnBalanceSrv.ScrnGUIBuyWeaponInfoPanel.DPSBar'
+    barDPS=DPSBar
     strSecondsPerShot="s/shot"
 
     Begin Object Class=GUILabel Name=DPMCap
@@ -806,7 +805,7 @@ defaultproperties
         bScaleToParent=True
         bVisible=False
     End Object
-    lblDPM=GUILabel'ScrnBalanceSrv.ScrnGUIBuyWeaponInfoPanel.DPMCap'
+    lblDPM=DPMCap
 
     Begin Object Class=ScrnGUIWeaponBar Name=DPMBar
         Hint="Damage per minute, including reloads"
@@ -819,7 +818,7 @@ defaultproperties
         bScaleToParent=True
         bVisible=False
     End Object
-    barDPM=ScrnGUIWeaponBar'ScrnBalanceSrv.ScrnGUIBuyWeaponInfoPanel.DPMBar'
+    barDPM=DPMBar
     StrReloadsInDPM=", incl. %r reloads"
 
 
@@ -839,7 +838,7 @@ defaultproperties
         bScaleToParent=True
         bVisible=False
     End Object
-    lblRange=GUILabel'ScrnBalanceSrv.ScrnGUIBuyWeaponInfoPanel.RangeCap'
+    lblRange=RangeCap
 
     Begin Object Class=ScrnGUIWeaponBar Name=RangeBar
         Hint="Weapon range (for melee weapons) or blast radius (for explosives and fire)"
@@ -852,7 +851,7 @@ defaultproperties
         bScaleToParent=True
         bVisible=False
     End Object
-    barRange=ScrnGUIWeaponBar'ScrnBalanceSrv.ScrnGUIBuyWeaponInfoPanel.RangeBar'
+    barRange=RangeBar
     strMeters="meters"
 
 
@@ -872,7 +871,7 @@ defaultproperties
         bScaleToParent=True
         bVisible=False
     End Object
-    lblMag=GUILabel'ScrnBalanceSrv.ScrnGUIBuyWeaponInfoPanel.MagCap'
+    lblMag=MagCap
 
     Begin Object Class=ScrnGUIWeaponBar Name=MagBar
         Hint="Ammo count in magazine"
@@ -885,8 +884,7 @@ defaultproperties
         bScaleToParent=True
         bVisible=False
     End Object
-    barMag=ScrnGUIWeaponBar'ScrnBalanceSrv.ScrnGUIBuyWeaponInfoPanel.MagBar'
-
+    barMag=MagBar
 
     Begin Object Class=GUILabel Name=AmmoCap
         Caption="Total Ammo:"
@@ -904,7 +902,7 @@ defaultproperties
         bScaleToParent=True
         bVisible=False
     End Object
-    lblAmmo=GUILabel'ScrnBalanceSrv.ScrnGUIBuyWeaponInfoPanel.AmmoCap'
+    lblAmmo=AmmoCap
 
     Begin Object Class=ScrnGUIWeaponBar Name=AmmoBar
         Hint="Total amount of ammo that can be carried for this weapon"
@@ -917,5 +915,5 @@ defaultproperties
         bScaleToParent=True
         bVisible=False
     End Object
-    barAmmo=ScrnGUIWeaponBar'ScrnBalanceSrv.ScrnGUIBuyWeaponInfoPanel.AmmoBar'
+    barAmmo=AmmoBar
 }

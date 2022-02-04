@@ -20,8 +20,8 @@ simulated function bool PutDown()
 defaultproperties
 {
     Weight=13
-    FireModeClass(0)=Class'ScrnBalanceSrv.ScrnM99Fire'
+    FireModeClass(0)=class'ScrnM99Fire'
     MinReloadPct=0.800000
-    PickupClass=Class'ScrnBalanceSrv.ScrnM99Pickup'
+    PickupClass=class'ScrnM99Pickup'
     ItemName="M99AMR 'The NoobGun'"
 }

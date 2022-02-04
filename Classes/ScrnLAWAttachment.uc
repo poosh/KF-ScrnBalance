@@ -15,6 +15,6 @@ simulated function DoFlashEmitter()
 
 defaultproperties
 {
-    mMuzFlashClass=Class'ScrnBalanceSrv.ScrnLAWBackblast'
+    mMuzFlashClass=class'ScrnLAWBackblast'
     AttachmentFlashBoneName="ShellPort"
 }

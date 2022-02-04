@@ -4,7 +4,7 @@ class ScrnDamTypeMedicGrenadeImpact extends ScrnDamTypeMedic
 defaultproperties
 {
     HeadShotDamageMult=2.000000
-    WeaponClass=Class'ScrnBalanceSrv.ScrnM79M'
+    WeaponClass=class'ScrnM79M'
     bBulletHit=True
     FlashFog=(X=600.000000)
     KDamageImpulse=2500

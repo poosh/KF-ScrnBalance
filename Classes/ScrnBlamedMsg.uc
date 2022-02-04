@@ -24,7 +24,7 @@ static function RenderComplexMessage(
     IconSize = C.ClipY * fmin(0.9, 0.25 + Switch*0.05);
     C.Style = ERenderStyle.STY_Alpha;
 
-    C.Font = class'ScrnBalanceSrv.ScrnHUD'.static.LoadSmallFontStatic(7);
+    C.Font = class'ScrnHUD'.static.LoadSmallFontStatic(7);
     C.StrLen(default.Messages[0], TextWidth, TextHeight);
     y = max( (C.ClipY - IconSize ) / 2, 0 );
     ty = max( y - TextHeight * default.Messages.Length, C.ClipY * 0.12 );

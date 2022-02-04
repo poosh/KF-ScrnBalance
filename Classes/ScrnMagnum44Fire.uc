@@ -144,7 +144,7 @@ defaultproperties
 {
      PenDmgReduction=0.500000
      MaxPenetrations=4
-     DamageType=Class'ScrnBalanceSrv.ScrnDamTypeMagnum44Pistol'
+     DamageType=class'ScrnDamTypeMagnum44Pistol'
      DamageMax=90
-     AmmoClass=Class'ScrnBalanceSrv.ScrnMagnum44Ammo'
+     AmmoClass=class'ScrnMagnum44Ammo'
 }

@@ -13,7 +13,7 @@ static function AwardKill(KFSteamStatsAndAchievements KFStatsAndAchievements, KF
 defaultproperties
 {
     HeadShotDamageMult=1.100000
-    WeaponClass=Class'ScrnBalanceSrv.ScrnM4203MMedicGun'
+    WeaponClass=class'ScrnM4203MMedicGun'
     DeathString="%k killed %o (M4 203)."
     FemaleSuicide="%o shot herself in the foot."
     MaleSuicide="%o shot himself in the foot."

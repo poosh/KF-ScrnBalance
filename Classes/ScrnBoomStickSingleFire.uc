@@ -156,7 +156,7 @@ function FlashMuzzleFlash()
 
 defaultproperties
 {
-     ProjectileClass=Class'ScrnBalanceSrv.ScrnBoomStickBullet'
-     AmmoClass=Class'ScrnBalanceSrv.ScrnBoomStickAmmo'
+     ProjectileClass=class'ScrnBoomStickBullet'
+     AmmoClass=class'ScrnBoomStickAmmo'
      AmmoPerFire=1
 }

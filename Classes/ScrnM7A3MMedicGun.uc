@@ -120,9 +120,9 @@ defaultproperties
     ZoomedDisplayFOV=55 //fix for cool hud
     
     HealAmmoCharge=0
-    FireModeClass(0)=Class'ScrnBalanceSrv.ScrnM7A3MFire'
-    FireModeClass(1)=Class'ScrnBalanceSrv.ScrnM7A3MAltFire'
+    FireModeClass(0)=class'ScrnM7A3MFire'
+    FireModeClass(1)=class'ScrnM7A3MAltFire'
     bReduceMagAmmoOnSecondaryFire=False
-    PickupClass=Class'ScrnBalanceSrv.ScrnM7A3MPickup'
+    PickupClass=class'ScrnM7A3MPickup'
     ItemName="M7A3M Medic Gun SE"
 }

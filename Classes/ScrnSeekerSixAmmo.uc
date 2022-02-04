@@ -5,5 +5,5 @@ defaultproperties
      AmmoPickupAmount=24
      MaxAmmo=192
      InitialAmount=72
-     PickupClass=Class'ScrnBalanceSrv.ScrnSeekerSixAmmoPickup'
+     PickupClass=class'ScrnSeekerSixAmmoPickup'
 }

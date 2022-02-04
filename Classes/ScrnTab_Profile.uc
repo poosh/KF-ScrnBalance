@@ -118,5 +118,5 @@ defaultproperties
         WinLeft=0.670121
         WinTop=0.439668
     End Object
-    lb_PerkProgress=ScrnPerkProgressListBox'ScrnBalanceSrv.ScrnTab_Profile.PerkProgressList'
+    lb_PerkProgress=PerkProgressList
 }

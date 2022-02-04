@@ -7,5 +7,5 @@ defaultproperties
      ItemName="L.A.W. SE"
      ItemShortName="L.A.W. SE"
      AmmoItemName="L.A.W. Rockets"
-     InventoryType=Class'ScrnBalanceSrv.ScrnLAW'
+     InventoryType=class'ScrnLAW'
 }

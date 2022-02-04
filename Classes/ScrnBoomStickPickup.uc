@@ -8,5 +8,5 @@ defaultproperties
      ItemName="Ash's Boomstick"
      ItemShortName="Ash's Boomstick"
      PickupMessage="You got the Ash's Boomstick."
-     InventoryType=Class'ScrnBalanceSrv.ScrnBoomStick'
+     InventoryType=class'ScrnBoomStick'
 }

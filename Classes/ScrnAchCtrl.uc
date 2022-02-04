@@ -327,8 +327,8 @@ static final function Cleanup()
     // local int i;
 
     default.AchClassList.Length = 2;
-    default.AchClassList[0] = class'ScrnBalanceSrv.Ach';
-    default.AchClassList[1] = class'ScrnBalanceSrv.AchMaps';
+    default.AchClassList[0] = class'Ach';
+    default.AchClassList[1] = class'AchMaps';
 
     // default.LastAch.Ach.AchHandler = none;
     // for ( i = 0; i < ArrayCount(default.AchCache); ++i ) {
@@ -339,6 +339,6 @@ static final function Cleanup()
 
 defaultproperties
 {
-    AchClassList(0)=Class'ScrnBalanceSrv.Ach'
-    AchClassList(1)=Class'ScrnBalanceSrv.AchMaps'
+    AchClassList(0)=class'Ach'
+    AchClassList(1)=class'AchMaps'
 }

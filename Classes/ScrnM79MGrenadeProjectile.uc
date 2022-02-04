@@ -405,7 +405,7 @@ defaultproperties
     HealTimer=0.5
     LifeSpan=15 // make sure the LifeSpan is longer than MaxHeals * HealTimer
     ImpactDamage=200
-    ImpactDamageType=Class'ScrnBalanceSrv.ScrnDamTypeMedicGrenadeImpact'
+    ImpactDamageType=class'ScrnDamTypeMedicGrenadeImpact'
     ArmDistSquared=0
     StraightFlightTime=1.0
     StaticMeshRef="KF_pickups5_Trip.nades.MedicNade_Pickup"
@@ -416,13 +416,13 @@ defaultproperties
     DampenFactor=0.25
     DampenFactorParallel=0.25  // 0.40
     MyDamageType=Class'KFMod.DamTypeMedicNade'
-    ExplosionDecal=Class'ScrnBalanceSrv.ScrnMedicNadeDecal'
+    ExplosionDecal=class'ScrnMedicNadeDecal'
     SoundVolume=150
     SoundRadius=100.000000
     TransientSoundRadius=200.000000
     bBounce=False
-    SmokeTrailClass=Class'ScrnBalanceSrv.ScrnMedicNadeTrail'
-    GreenCloudClass=Class'ScrnBalanceSrv.ScrnNadeHealing'
+    SmokeTrailClass=class'ScrnMedicNadeTrail'
+    GreenCloudClass=class'ScrnNadeHealing'
     HealingSound=Sound'Inf_WeaponsTwo.smoke_loop'
 
     RemoteRole=ROLE_SimulatedProxy

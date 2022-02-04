@@ -2350,7 +2350,7 @@ function bool CheckReplacement(Actor Other, out byte bSuperRelevant)
     if ( Other.class == class'KFRandomItemSpawn' ) {
         if ( !bReplacePickups )
             return true;
-        ReplaceWith(Other, "ScrnBalanceSrv.ScrnRandomItemSpawn");
+        ReplaceWith(Other, string(class'ScrnRandomItemSpawn'));
         return false;
     }
     else if ( Other.class == class'KFAmmoPickup' ) {
@@ -2358,7 +2358,7 @@ function bool CheckReplacement(Actor Other, out byte bSuperRelevant)
         AmmoBoxMesh = Other.StaticMesh;
         AmmoBoxDrawScale = Other.DrawScale;
         AmmoBoxDrawScale3D = Other.DrawScale3D;
-        ReplaceWith(Other, "ScrnBalanceSrv.ScrnAmmoPickup");
+        ReplaceWith(Other, string(class'ScrnAmmoPickup'));
         return false;
     }
     else if ( bReplacePickups && Pickup(Other) != none && KF.IsInState('MatchInProgress') ) {
@@ -3462,16 +3462,16 @@ defaultproperties
     strXPProgress="^G$Perk Progression:"
     strXPBonus="^G$XP Bonus for winning: ^c$"
 
-    Perks(0)=Class'ScrnBalanceSrv.ScrnVetFieldMedic'
-    Perks(1)=Class'ScrnBalanceSrv.ScrnVetSupportSpec'
-    Perks(2)=Class'ScrnBalanceSrv.ScrnVetSharpshooter'
-    Perks(3)=Class'ScrnBalanceSrv.ScrnVetCommando'
-    Perks(4)=Class'ScrnBalanceSrv.ScrnVetBerserker'
-    Perks(5)=Class'ScrnBalanceSrv.ScrnVetFirebug'
-    Perks(6)=Class'ScrnBalanceSrv.ScrnVetDemolitions'
-    Perks(7)=Class'ScrnBalanceSrv.ScrnVeterancyTypes' // off-perk
-    Perks(8)=Class'ScrnBalanceSrv.ScrnVetGunslinger'
-    Perks(9)=Class'ScrnBalanceSrv.ScrnVetCombatMedic'
+    Perks(0)=class'ScrnVetFieldMedic'
+    Perks(1)=class'ScrnVetSupportSpec'
+    Perks(2)=class'ScrnVetSharpshooter'
+    Perks(3)=class'ScrnVetCommando'
+    Perks(4)=class'ScrnVetBerserker'
+    Perks(5)=class'ScrnVetFirebug'
+    Perks(6)=class'ScrnVetDemolitions'
+    Perks(7)=class'ScrnVeterancyTypes' // off-perk
+    Perks(8)=class'ScrnVetGunslinger'
+    Perks(9)=class'ScrnVetCombatMedic'
 
     BonusLevelNormalMax=6
     BonusLevelHardMin=0
@@ -3526,55 +3526,55 @@ defaultproperties
     bAltBurnMech=true
     bReplaceNades=true
     bShieldWeight=true
-    pickupReplaceArray(0)=(oldClass=Class'KFMod.MP7MPickup',NewClass=Class'ScrnBalanceSrv.ScrnMP7MPickup')
-    pickupReplaceArray(1)=(oldClass=Class'KFMod.MP5MPickup',NewClass=Class'ScrnBalanceSrv.ScrnMP5MPickup')
-    pickupReplaceArray(2)=(oldClass=Class'KFMod.KrissMPickup',NewClass=Class'ScrnBalanceSrv.ScrnKrissMPickup')
-    pickupReplaceArray(3)=(oldClass=Class'KFMod.M7A3MPickup',NewClass=Class'ScrnBalanceSrv.ScrnM7A3MPickup')
-    pickupReplaceArray(4)=(oldClass=Class'KFMod.ShotgunPickup',NewClass=Class'ScrnBalanceSrv.ScrnShotgunPickup')
-    pickupReplaceArray(5)=(oldClass=Class'KFMod.BoomStickPickup',NewClass=Class'ScrnBalanceSrv.ScrnBoomStickPickup')
-    pickupReplaceArray(6)=(oldClass=Class'KFMod.NailGunPickup',NewClass=Class'ScrnBalanceSrv.ScrnNailGunPickup')
-    pickupReplaceArray(7)=(oldClass=Class'KFMod.KSGPickup',NewClass=Class'ScrnBalanceSrv.ScrnKSGPickup')
-    pickupReplaceArray(8)=(oldClass=Class'KFMod.BenelliPickup',NewClass=Class'ScrnBalanceSrv.ScrnBenelliPickup')
-    pickupReplaceArray(9)=(oldClass=Class'KFMod.AA12Pickup',NewClass=Class'ScrnBalanceSrv.ScrnAA12Pickup')
-    pickupReplaceArray(10)=(oldClass=Class'KFMod.SinglePickup',NewClass=Class'ScrnBalanceSrv.ScrnSinglePickup')
-    pickupReplaceArray(11)=(oldClass=Class'KFMod.Magnum44Pickup',NewClass=Class'ScrnBalanceSrv.ScrnMagnum44Pickup')
-    pickupReplaceArray(12)=(oldClass=Class'KFMod.MK23Pickup',NewClass=Class'ScrnBalanceSrv.ScrnMK23Pickup')
-    pickupReplaceArray(13)=(oldClass=Class'KFMod.DeaglePickup',NewClass=Class'ScrnBalanceSrv.ScrnDeaglePickup')
-    pickupReplaceArray(14)=(oldClass=Class'KFMod.WinchesterPickup',NewClass=Class'ScrnBalanceSrv.ScrnWinchesterPickup')
-    pickupReplaceArray(15)=(oldClass=Class'KFMod.SPSniperPickup',NewClass=Class'ScrnBalanceSrv.ScrnSPSniperPickup')
-    pickupReplaceArray(16)=(oldClass=Class'KFMod.M14EBRPickup',NewClass=Class'ScrnBalanceSrv.ScrnM14EBRPickup')
-    pickupReplaceArray(17)=(oldClass=Class'KFMod.M99Pickup',NewClass=Class'ScrnBalanceSrv.ScrnM99Pickup')
-    pickupReplaceArray(18)=(oldClass=Class'KFMod.BullpupPickup',NewClass=Class'ScrnBalanceSrv.ScrnBullpupPickup')
-    pickupReplaceArray(19)=(oldClass=Class'KFMod.AK47Pickup',NewClass=Class'ScrnBalanceSrv.ScrnAK47Pickup')
-    pickupReplaceArray(20)=(oldClass=Class'KFMod.M4Pickup',NewClass=Class'ScrnBalanceSrv.ScrnM4Pickup')
-    pickupReplaceArray(21)=(oldClass=Class'KFMod.SPThompsonPickup',NewClass=Class'ScrnBalanceSrv.ScrnSPThompsonPickup')
-    pickupReplaceArray(22)=(oldClass=Class'KFMod.ThompsonDrumPickup',NewClass=Class'ScrnBalanceSrv.ScrnThompsonDrumPickup')
-    pickupReplaceArray(23)=(oldClass=Class'KFMod.SCARMK17Pickup',NewClass=Class'ScrnBalanceSrv.ScrnSCARMK17Pickup')
-    pickupReplaceArray(24)=(oldClass=Class'KFMod.FNFAL_ACOG_Pickup',NewClass=Class'ScrnBalanceSrv.ScrnFNFAL_ACOG_Pickup')
-    pickupReplaceArray(25)=(oldClass=Class'KFMod.MachetePickup',NewClass=Class'ScrnBalanceSrv.ScrnMachetePickup')
-    pickupReplaceArray(26)=(oldClass=Class'KFMod.AxePickup',NewClass=Class'ScrnBalanceSrv.ScrnAxePickup')
-    pickupReplaceArray(27)=(oldClass=Class'KFMod.ChainsawPickup',NewClass=Class'ScrnBalanceSrv.ScrnChainsawPickup')
-    pickupReplaceArray(28)=(oldClass=Class'KFMod.KatanaPickup',NewClass=Class'ScrnBalanceSrv.ScrnKatanaPickup')
-    pickupReplaceArray(29)=(oldClass=Class'KFMod.ScythePickup',NewClass=Class'ScrnBalanceSrv.ScrnScythePickup')
-    pickupReplaceArray(30)=(oldClass=Class'KFMod.ClaymoreSwordPickup',NewClass=Class'ScrnBalanceSrv.ScrnClaymoreSwordPickup')
-    pickupReplaceArray(31)=(oldClass=Class'KFMod.CrossbuzzsawPickup',NewClass=Class'ScrnBalanceSrv.ScrnCrossbuzzsawPickup')
-    pickupReplaceArray(32)=(oldClass=Class'KFMod.MAC10Pickup',NewClass=Class'ScrnBalanceSrv.ScrnMAC10Pickup')
-    pickupReplaceArray(33)=(oldClass=Class'KFMod.FlareRevolverPickup',NewClass=Class'ScrnBalanceSrv.ScrnFlareRevolverPickup')
-    pickupReplaceArray(34)=(oldClass=Class'KFMod.DualFlareRevolverPickup',NewClass=Class'ScrnBalanceSrv.ScrnDualFlareRevolverPickup')
-    pickupReplaceArray(35)=(oldClass=Class'KFMod.FlameThrowerPickup',NewClass=Class'ScrnBalanceSrv.ScrnFlameThrowerPickup')
-    pickupReplaceArray(36)=(oldClass=Class'KFMod.HuskGunPickup',NewClass=Class'ScrnBalanceSrv.ScrnHuskGunPickup')
-    pickupReplaceArray(37)=(oldClass=Class'KFMod.PipeBombPickup',NewClass=Class'ScrnBalanceSrv.ScrnPipeBombPickup')
-    pickupReplaceArray(38)=(oldClass=Class'KFMod.M4203Pickup',NewClass=Class'ScrnBalanceSrv.ScrnM4203Pickup')
-    pickupReplaceArray(39)=(oldClass=Class'KFMod.M32Pickup',NewClass=Class'ScrnBalanceSrv.ScrnM32Pickup')
-    pickupReplaceArray(40)=(oldClass=Class'KFMod.LAWPickup',NewClass=Class'ScrnBalanceSrv.ScrnLAWPickup')
-    pickupReplaceArray(41)=(oldClass=Class'KFMod.Dual44MagnumPickup',NewClass=Class'ScrnBalanceSrv.ScrnDual44MagnumPickup')
-    pickupReplaceArray(42)=(oldClass=Class'KFMod.DualMK23Pickup',NewClass=Class'ScrnBalanceSrv.ScrnDualMK23Pickup')
-    pickupReplaceArray(43)=(oldClass=Class'KFMod.DualDeaglePickup',NewClass=Class'ScrnBalanceSrv.ScrnDualDeaglePickup')
-    pickupReplaceArray(44)=(oldClass=Class'KFMod.SyringePickup',NewClass=Class'ScrnBalanceSrv.ScrnSyringePickup')
-    pickupReplaceArray(45)=(oldClass=Class'KFMod.FragPickup',NewClass=Class'ScrnBalanceSrv.ScrnFragPickup')
-    pickupReplaceArray(46)=(oldClass=Class'KFMod.M79Pickup',NewClass=Class'ScrnBalanceSrv.ScrnM79Pickup')
-    pickupReplaceArray(47)=(oldClass=Class'KFMod.CrossbowPickup',NewClass=Class'ScrnBalanceSrv.ScrnCrossbowPickup')
-    pickupReplaceArray(48)=(oldClass=Class'KFMod.KnifePickup',NewClass=Class'ScrnBalanceSrv.ScrnKnifePickup')
+    pickupReplaceArray(0)=(oldClass=Class'KFMod.MP7MPickup',NewClass=class'ScrnMP7MPickup')
+    pickupReplaceArray(1)=(oldClass=Class'KFMod.MP5MPickup',NewClass=class'ScrnMP5MPickup')
+    pickupReplaceArray(2)=(oldClass=Class'KFMod.KrissMPickup',NewClass=class'ScrnKrissMPickup')
+    pickupReplaceArray(3)=(oldClass=Class'KFMod.M7A3MPickup',NewClass=class'ScrnM7A3MPickup')
+    pickupReplaceArray(4)=(oldClass=Class'KFMod.ShotgunPickup',NewClass=class'ScrnShotgunPickup')
+    pickupReplaceArray(5)=(oldClass=Class'KFMod.BoomStickPickup',NewClass=class'ScrnBoomStickPickup')
+    pickupReplaceArray(6)=(oldClass=Class'KFMod.NailGunPickup',NewClass=class'ScrnNailGunPickup')
+    pickupReplaceArray(7)=(oldClass=Class'KFMod.KSGPickup',NewClass=class'ScrnKSGPickup')
+    pickupReplaceArray(8)=(oldClass=Class'KFMod.BenelliPickup',NewClass=class'ScrnBenelliPickup')
+    pickupReplaceArray(9)=(oldClass=Class'KFMod.AA12Pickup',NewClass=class'ScrnAA12Pickup')
+    pickupReplaceArray(10)=(oldClass=Class'KFMod.SinglePickup',NewClass=class'ScrnSinglePickup')
+    pickupReplaceArray(11)=(oldClass=Class'KFMod.Magnum44Pickup',NewClass=class'ScrnMagnum44Pickup')
+    pickupReplaceArray(12)=(oldClass=Class'KFMod.MK23Pickup',NewClass=class'ScrnMK23Pickup')
+    pickupReplaceArray(13)=(oldClass=Class'KFMod.DeaglePickup',NewClass=class'ScrnDeaglePickup')
+    pickupReplaceArray(14)=(oldClass=Class'KFMod.WinchesterPickup',NewClass=class'ScrnWinchesterPickup')
+    pickupReplaceArray(15)=(oldClass=Class'KFMod.SPSniperPickup',NewClass=class'ScrnSPSniperPickup')
+    pickupReplaceArray(16)=(oldClass=Class'KFMod.M14EBRPickup',NewClass=class'ScrnM14EBRPickup')
+    pickupReplaceArray(17)=(oldClass=Class'KFMod.M99Pickup',NewClass=class'ScrnM99Pickup')
+    pickupReplaceArray(18)=(oldClass=Class'KFMod.BullpupPickup',NewClass=class'ScrnBullpupPickup')
+    pickupReplaceArray(19)=(oldClass=Class'KFMod.AK47Pickup',NewClass=class'ScrnAK47Pickup')
+    pickupReplaceArray(20)=(oldClass=Class'KFMod.M4Pickup',NewClass=class'ScrnM4Pickup')
+    pickupReplaceArray(21)=(oldClass=Class'KFMod.SPThompsonPickup',NewClass=class'ScrnSPThompsonPickup')
+    pickupReplaceArray(22)=(oldClass=Class'KFMod.ThompsonDrumPickup',NewClass=class'ScrnThompsonDrumPickup')
+    pickupReplaceArray(23)=(oldClass=Class'KFMod.SCARMK17Pickup',NewClass=class'ScrnSCARMK17Pickup')
+    pickupReplaceArray(24)=(oldClass=Class'KFMod.FNFAL_ACOG_Pickup',NewClass=class'ScrnFNFAL_ACOG_Pickup')
+    pickupReplaceArray(25)=(oldClass=Class'KFMod.MachetePickup',NewClass=class'ScrnMachetePickup')
+    pickupReplaceArray(26)=(oldClass=Class'KFMod.AxePickup',NewClass=class'ScrnAxePickup')
+    pickupReplaceArray(27)=(oldClass=Class'KFMod.ChainsawPickup',NewClass=class'ScrnChainsawPickup')
+    pickupReplaceArray(28)=(oldClass=Class'KFMod.KatanaPickup',NewClass=class'ScrnKatanaPickup')
+    pickupReplaceArray(29)=(oldClass=Class'KFMod.ScythePickup',NewClass=class'ScrnScythePickup')
+    pickupReplaceArray(30)=(oldClass=Class'KFMod.ClaymoreSwordPickup',NewClass=class'ScrnClaymoreSwordPickup')
+    pickupReplaceArray(31)=(oldClass=Class'KFMod.CrossbuzzsawPickup',NewClass=class'ScrnCrossbuzzsawPickup')
+    pickupReplaceArray(32)=(oldClass=Class'KFMod.MAC10Pickup',NewClass=class'ScrnMAC10Pickup')
+    pickupReplaceArray(33)=(oldClass=Class'KFMod.FlareRevolverPickup',NewClass=class'ScrnFlareRevolverPickup')
+    pickupReplaceArray(34)=(oldClass=Class'KFMod.DualFlareRevolverPickup',NewClass=class'ScrnDualFlareRevolverPickup')
+    pickupReplaceArray(35)=(oldClass=Class'KFMod.FlameThrowerPickup',NewClass=class'ScrnFlameThrowerPickup')
+    pickupReplaceArray(36)=(oldClass=Class'KFMod.HuskGunPickup',NewClass=class'ScrnHuskGunPickup')
+    pickupReplaceArray(37)=(oldClass=Class'KFMod.PipeBombPickup',NewClass=class'ScrnPipeBombPickup')
+    pickupReplaceArray(38)=(oldClass=Class'KFMod.M4203Pickup',NewClass=class'ScrnM4203Pickup')
+    pickupReplaceArray(39)=(oldClass=Class'KFMod.M32Pickup',NewClass=class'ScrnM32Pickup')
+    pickupReplaceArray(40)=(oldClass=Class'KFMod.LAWPickup',NewClass=class'ScrnLAWPickup')
+    pickupReplaceArray(41)=(oldClass=Class'KFMod.Dual44MagnumPickup',NewClass=class'ScrnDual44MagnumPickup')
+    pickupReplaceArray(42)=(oldClass=Class'KFMod.DualMK23Pickup',NewClass=class'ScrnDualMK23Pickup')
+    pickupReplaceArray(43)=(oldClass=Class'KFMod.DualDeaglePickup',NewClass=class'ScrnDualDeaglePickup')
+    pickupReplaceArray(44)=(oldClass=Class'KFMod.SyringePickup',NewClass=class'ScrnSyringePickup')
+    pickupReplaceArray(45)=(oldClass=Class'KFMod.FragPickup',NewClass=class'ScrnFragPickup')
+    pickupReplaceArray(46)=(oldClass=Class'KFMod.M79Pickup',NewClass=class'ScrnM79Pickup')
+    pickupReplaceArray(47)=(oldClass=Class'KFMod.CrossbowPickup',NewClass=class'ScrnCrossbowPickup')
+    pickupReplaceArray(48)=(oldClass=Class'KFMod.KnifePickup',NewClass=class'ScrnKnifePickup')
     FragReplacementIndex=45
 
     SpawnInventory(00)="*:ScrnBalanceSrv.ScrnKnifePickup:0-255::0"

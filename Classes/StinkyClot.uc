@@ -372,7 +372,7 @@ defaultproperties
 {
     MenuName="Stinky Clot"
     EventClasses(0)="ScrnBalanceSrv.StinkyClot"
-    ControllerClass=Class'ScrnBalanceSrv.StinkyController'
+    ControllerClass=class'StinkyController'
     bAlwaysRelevant=true
 
     bCollideActors=false

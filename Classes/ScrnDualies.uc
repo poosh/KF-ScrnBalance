@@ -85,13 +85,13 @@ function DropFrom(vector StartLocation)
     {
         OtherAmmo = AmmoThrown/2;
         AmmoThrown-=OtherAmmo;
-        I = Spawn(Class'ScrnBalanceSrv.ScrnSingle');
+        I = Spawn(class'ScrnSingle');
         I.GiveTo(Instigator);
         Weapon(I).Ammo[0].AmmoAmount = OtherAmmo;
         Single(I).MagAmmoRemaining = MagAmmoRemaining/2;
         MagAmmoRemaining = Max(MagAmmoRemaining-Single(I).MagAmmoRemaining,0);
     }
-    Pickup = Spawn(class'ScrnBalanceSrv.ScrnSinglePickup',,, StartLocation);
+    Pickup = Spawn(class'ScrnSinglePickup',,, StartLocation);
     if ( Pickup != None )
     {
         Pickup.InitDroppedPickupFor(self);
@@ -464,9 +464,9 @@ defaultproperties
      //ReloadRate=3.500000 //both
      Weight=1
      ModeSwitchAnim="LightOn"
-     FireModeClass(0)=Class'ScrnBalanceSrv.ScrnDualiesFire'
-     DemoReplacement=Class'ScrnBalanceSrv.ScrnSingle'
-     PickupClass=Class'ScrnBalanceSrv.ScrnDualiesPickup'
+     FireModeClass(0)=class'ScrnDualiesFire'
+     DemoReplacement=class'ScrnSingle'
+     PickupClass=class'ScrnDualiesPickup'
      ItemName="Dual 9mms SE"
      PistolSlideOffset=(X=0.02330,Y=0.0,Z=0.0)
      PistolHammerRotation=(Pitch=145,Yaw=0,Roll=0) //tripwire why did you do this

@@ -15,7 +15,7 @@ static function int AddDamage(KFPlayerReplicationInfo KFPRI, KFMonster Injured, 
             && KFGameReplicationInfo(KFPRI.Level.GRI).BaseDifficulty >= 5) )
     {
         // lower Buzzsaw damage vs humans and Scrakes on Sui+
-        if ( ClassIsChildOf(DmgType, class'ScrnBalanceSrv.ScrnDamTypeCrossbuzzsaw') )
+        if ( ClassIsChildOf(DmgType, class'ScrnDamTypeCrossbuzzsaw') )
             InDamage *= 0.8; // 800 * 0.8 = 640
         else if ( DmgType == class'DamTypeCrossbuzzsaw' )
             InDamage *= 0.64; // 100 * 0.64 = 640
@@ -163,7 +163,7 @@ static function string GetCustomLevelInfo( byte Level )
 defaultproperties
 {
     DefaultDamageType=Class'KFMod.DamTypeMelee'
-    DefaultDamageTypeNoBonus=Class'ScrnBalanceSrv.ScrnDamTypeZerkerBase'
+    DefaultDamageTypeNoBonus=class'ScrnDamTypeZerkerBase'
     SamePerkAch="OP_Berserker"
 
     SkillInfo="PERK SKILLS:|30% faster movement speed|80% less damage from Bloat Bile|60% less damage from Doom Demons|40% resistance to all damage|Can't be grabbed by Clots|Up to 4 Zed-Time Extensions"

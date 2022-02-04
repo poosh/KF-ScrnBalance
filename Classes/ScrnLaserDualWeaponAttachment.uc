@@ -90,7 +90,7 @@ simulated function SetLaserType(byte value)
 defaultproperties
 {
     LaserAttachmentBone="Tip"
-    BeamClass=class'ScrnBalanceSrv.ScrnLaserBeam3rd'
+    BeamClass=class'ScrnLaserBeam3rd'
     bNetNotify=True
     HitAnims(0)="HitF_Dual9mm"
 }

@@ -203,7 +203,7 @@ function UpdateForSaleBuyables()
             if ( ForSaleWeapon != none && ForSaleWeapon.default.bKFNeverThrow )
                 continue;
 
-            bVest = ClassIsChildOf(ForSalePickup, class'ScrnBalanceSrv.ScrnVestPickup');
+            bVest = ClassIsChildOf(ForSalePickup, class'ScrnVestPickup');
             if ( bVest ) {
                 //vest
                 if ( ScrnPawn == none || class<ScrnVestPickup>(ForSalePickup).default.ShieldCapacity <= 0
@@ -827,7 +827,7 @@ function int FindVestCategory() {
     CPRL = Class'ScrnClientPerkRepLink'.Static.FindMe(PlayerOwner());
     for ( i = 0; i < CPRL.ShopInventory.Length; ++i ) {
         ForSalePickup = class<KFWeaponPickup>(CPRL.ShopInventory[i].PC);
-        if ( ForSalePickup != none && ClassIsChildOf(ForSalePickup, class'ScrnBalanceSrv.ScrnVestPickup') ) {
+        if ( ForSalePickup != none && ClassIsChildOf(ForSalePickup, class'ScrnVestPickup') ) {
             ArmorCounts.length = max(ArmorCounts.length, CPRL.ShopInventory[i].CatNum + 1);
             ArmorCounts[CPRL.ShopInventory[i].CatNum]++;
         }

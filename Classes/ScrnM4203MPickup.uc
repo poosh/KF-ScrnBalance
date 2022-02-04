@@ -11,6 +11,6 @@ defaultproperties
      ItemShortName="M4-203M"
      SecondaryAmmoShortName="-- Healing nades"
      CorrespondingPerkIndex=0
-     InventoryType=Class'ScrnBalanceSrv.ScrnM4203MMedicGun'
+     InventoryType=class'ScrnM4203MMedicGun'
      PickupMessage="You got the M4-203M Medic Rifle"
 }

@@ -122,5 +122,5 @@ defaultproperties
      PenDamageReduction=0.700000
      HeadShotDamageMult=1.000000
      Damage=12.000000
-     MyDamageType=Class'ScrnBalanceSrv.ScrnDamTypeTrenchgun'
+     MyDamageType=class'ScrnDamTypeTrenchgun'
 }

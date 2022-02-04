@@ -2,5 +2,5 @@ class ScrnCrossbuzzsawAmmoPickup extends CrossbuzzsawAmmoPickup;
 
 defaultproperties
 {
-     InventoryType=Class'ScrnBalanceSrv.ScrnCrossbuzzsawAmmo'
+     InventoryType=class'ScrnCrossbuzzsawAmmo'
 }

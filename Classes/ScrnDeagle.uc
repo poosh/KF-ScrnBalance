@@ -568,8 +568,8 @@ defaultproperties
      ReloadRate=2.2
      PistolSlideOffset=(X=0.01970,Y=0.0,Z=0.0)
      PistolHammerRotation=(Pitch=120,Yaw=0,Roll=0) //tripwire why did you do this
-     FireModeClass(0)=Class'ScrnBalanceSrv.ScrnDeagleFire'
-     PickupClass=Class'ScrnBalanceSrv.ScrnDeaglePickup'
+     FireModeClass(0)=class'ScrnDeagleFire'
+     PickupClass=class'ScrnDeaglePickup'
      ItemName="Handcannon SE"
      Weight=4
      DefaultSlideMoveMult = 1.4

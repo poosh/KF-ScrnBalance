@@ -9,7 +9,7 @@ static function int GetStatValueInt(ClientPerkRepLink StatOther, byte ReqNum)
 
 static function float AddExtraAmmoFor(KFPlayerReplicationInfo KFPRI, Class<Ammunition> AmmoType)
 {
-    if ( ClassIsChildOf(AmmoType, class'ScrnBalanceSrv.ScrnM203MAmmo') )
+    if ( ClassIsChildOf(AmmoType, class'ScrnM203MAmmo') )
         return 1.0; // no extra medic grenades
 
     if ( ClassIsChildOf(AmmoType, class'FragAmmo') ) {
@@ -81,7 +81,7 @@ static function int ReduceDamage(KFPlayerReplicationInfo KFPRI, KFPawn Injured, 
 // Change the cost of particular items
 static function float GetCostScaling(KFPlayerReplicationInfo KFPRI, class<Pickup> Item)
 {
-    if ( ClassIsChildOf(Item, class'ScrnBalanceSrv.ScrnM4203MPickup') || ClassIsChildOf(Item, class'ScrnBalanceSrv.ScrnM79MPickup') )
+    if ( ClassIsChildOf(Item, class'ScrnM4203MPickup') || ClassIsChildOf(Item, class'ScrnM79MPickup') )
         return 1.0; //no discount on medic nade launchers
 
     if ( ClassIsChildOf(Item, class'PipeBombPickup')
@@ -107,7 +107,7 @@ static function float GetCostScaling(KFPlayerReplicationInfo KFPRI, class<Pickup
 // up to 30% discount on hand nades (c) PooSH, 2012
 static function float GetAmmoCostScaling(KFPlayerReplicationInfo KFPRI, class<Pickup> Item)
 {
-    if ( ClassIsChildOf(Item, class'ScrnBalanceSrv.ScrnM4203MPickup') || ClassIsChildOf(Item, class'ScrnBalanceSrv.ScrnM79MPickup') )
+    if ( ClassIsChildOf(Item, class'ScrnM4203MPickup') || ClassIsChildOf(Item, class'ScrnM79MPickup') )
         return 1.0; //no discount on medic nade launchers
 
     if ( ClassIsChildOf(Item, class'PipeBombPickup') )
@@ -146,7 +146,7 @@ static function string GetCustomLevelInfo( byte Level )
 defaultproperties
 {
     DefaultDamageType=Class'KFMod.DamTypeLAW'
-    DefaultDamageTypeNoBonus=Class'ScrnBalanceSrv.ScrnDamTypeDefaultDemoBase'
+    DefaultDamageTypeNoBonus=class'ScrnDamTypeDefaultDemoBase'
     SamePerkAch="OP_Demo"
 
     SkillInfo="PERK SKILLS:|70% resistance to explosions"

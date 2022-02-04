@@ -104,7 +104,8 @@ defaultproperties
         StartVelocityRange=(X=(Min=-30.000000,Max=30.000000),Y=(Min=-30.000000,Max=30.000000),Z=(Min=1.000000,Max=100.000000))
         MaxAbsVelocity=(X=150.000000,Y=150.000000,Z=150.000000)
     End Object
-    Emitters(0)=SpriteEmitter'ScrnBalanceSrv.ScrnFlareCloud.SpriteEmitter0'
+    Emitters(0)=SpriteEmitter0
+
     Begin Object Class=SpriteEmitter Name=SpriteEmitter2
         UseDirectionAs=PTDU_Up
         UseCollision=True
@@ -135,7 +136,8 @@ defaultproperties
         LifetimeRange=(Min=0.300000,Max=0.700000)
         StartVelocityRange=(X=(Min=-300.000000,Max=300.000000),Y=(Min=-300.000000,Max=300.000000),Z=(Max=500.000000))
     End Object
-    Emitters(1)=SpriteEmitter'SpriteEmitter2'
+    Emitters(1)=SpriteEmitter2
+
      AutoDestroy=True
      AutoReset=True
      bNoDelete=False

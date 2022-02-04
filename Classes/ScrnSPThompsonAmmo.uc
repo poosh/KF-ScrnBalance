@@ -6,5 +6,5 @@ defaultproperties
 {
      MaxAmmo=400
      InitialAmount=200
-     PickupClass=Class'ScrnBalanceSrv.ScrnSPThompsonAmmoPickup'
+     PickupClass=class'ScrnSPThompsonAmmoPickup'
 }

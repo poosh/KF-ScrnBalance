@@ -8,7 +8,7 @@ function projectile SpawnProjectile(Vector Start, Rotator Dir)
     gProj = Grenade(super.SpawnProjectile(Start, Dir));
     aFrag = ScrnFrag(Weapon);
     if ( aFrag != none && aFrag.bThrowingCooked ) {
-        gProj.ExplodeTimer = fclamp(aFrag.CookExplodeTimer - Level.TimeSeconds, 0.01, Class'ScrnBalanceSrv.ScrnNade'.default.ExplodeTimer);
+        gProj.ExplodeTimer = fclamp(aFrag.CookExplodeTimer - Level.TimeSeconds, 0.01, class'ScrnNade'.default.ExplodeTimer);
         gProj.SetTimer(gProj.ExplodeTimer, false);
         gProj.bTimerSet = true; //don't reset the time if hit the wall
         if ( ScrnNade(gProj) != none )
@@ -28,7 +28,7 @@ function DoFireEffect()
 
 defaultproperties
 {
-     ProjectileClass=Class'ScrnBalanceSrv.ScrnNade'
+     ProjectileClass=class'ScrnNade'
      FireSound=SoundGroup'KF_AxeSnd.Axe_Fire'
      FireRate=0.3
 }

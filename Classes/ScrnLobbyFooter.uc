@@ -50,7 +50,7 @@ function PositionButtons(Canvas C)
 function bool OnFooterClick(GUIComponent Sender)
 {
     if ( Sender == b_Perks ) {
-        PlayerOwner().ClientOpenMenu(string(Class'ScrnBalanceSrv.ScrnInvasionLoginMenu'), false);
+        PlayerOwner().ClientOpenMenu(string(class'ScrnInvasionLoginMenu'), false);
         return false;
     }
     else if ( Sender == b_ViewMap ) {
@@ -82,11 +82,10 @@ defaultproperties
         TabOrder=0
         bBoundToParent=True
         ToolTip=None
-
         OnClick=LobbyFooter.OnFooterClick
         OnKeyEvent=Cancel.InternalOnKeyEvent
     End Object
-    b_Cancel=GUIButton'ScrnBalanceSrv.ScrnLobbyFooter.Cancel'
+    b_Cancel=Cancel
 
     Begin Object Class=GUIButton Name=ViewMap
         Caption="View Map"
@@ -103,5 +102,5 @@ defaultproperties
         OnClick=LobbyFooter.OnFooterClick
         OnKeyEvent=Cancel.InternalOnKeyEvent
     End Object
-    b_ViewMap=GUIButton'ScrnBalanceSrv.ScrnLobbyFooter.ViewMap'
+    b_ViewMap=ViewMap
 }

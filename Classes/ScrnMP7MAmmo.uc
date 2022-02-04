@@ -4,5 +4,5 @@ defaultproperties
 {
     AmmoPickupAmount=40
     InitialAmount=100
-    PickupClass=Class'ScrnBalanceSrv.ScrnMP7MAmmoPickup'
+    PickupClass=class'ScrnMP7MAmmoPickup'
 }

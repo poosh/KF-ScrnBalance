@@ -3,5 +3,5 @@ class ScrnDamTypeNailGun extends DamTypeNailGun
     
 defaultproperties
 {
-     WeaponClass=Class'ScrnBalanceSrv.ScrnNailGun'
+     WeaponClass=class'ScrnNailGun'
 }     

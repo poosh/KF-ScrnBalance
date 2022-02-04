@@ -216,7 +216,7 @@ static function float GetPerkProgress( ClientPerkRepLink StatOther, byte CurLeve
 static function AddCustomStats( ClientPerkRepLink Other )
 {
     // v8: achievement init moved to ScrnBalance.SetupRepLink()
-    //class'ScrnBalanceSrv.ScrnAchievements'.static.InitAchievements(Other);
+    //class'ScrnAchievements'.static.InitAchievements(Other);
 }
 
 final static function byte GetBonusLevel(int level)
@@ -399,7 +399,7 @@ static function byte PreDrawPerk( Canvas C, byte Level, out Material PerkIcon, o
 static function class<Grenade> GetNadeType(KFPlayerReplicationInfo KFPRI)
 {
     if ( class'ScrnBalance'.default.Mut.bReplaceNades )
-        return class'ScrnBalanceSrv.ScrnNade';
+        return class'ScrnNade';
 
     return super.GetNadeType(KFPRI);
 }

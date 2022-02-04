@@ -121,8 +121,8 @@ function AddReloadedAmmo()
     
 defaultproperties
 {
-     PickupClass=Class'ScrnBalanceSrv.ScrnSPSniperPickup'
-     FireModeClass(0)=Class'ScrnBalanceSrv.ScrnSPSniperFire'
+     PickupClass=class'ScrnSPSniperPickup'
+     FireModeClass(0)=class'ScrnSPSniperFire'
      ReloadShortAnim="Reload"
      ReloadShortRate=1.8
      MagCapacity=10

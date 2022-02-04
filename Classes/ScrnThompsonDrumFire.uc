@@ -200,8 +200,8 @@ function PlayAmbientSound(Sound aSound)
 
 defaultproperties
 {
-     AmmoClass=Class'ScrnBalanceSrv.ScrnThompsonDrumAmmo'
-     DamageType=Class'ScrnBalanceSrv.ScrnDamTypeThompsonDrum'
+     AmmoClass=class'ScrnThompsonDrumAmmo'
+     DamageType=class'ScrnDamTypeThompsonDrum'
      BoltCloseSoundRef="KF_FNFALSnd.FNFAL_Bolt_Forward"
 
      RecoilRate=0.040000 //0.080000

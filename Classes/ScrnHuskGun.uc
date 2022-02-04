@@ -45,9 +45,9 @@ simulated function bool StartFire(int Mode)
 defaultproperties
 {
      Weight=9.000000
-     FireModeClass(0)=Class'ScrnBalanceSrv.ScrnHuskGunFire'
-     FireModeClass(1)=Class'ScrnBalanceSrv.ScrnHuskGunAltFire'
+     FireModeClass(0)=class'ScrnHuskGunFire'
+     FireModeClass(1)=class'ScrnHuskGunAltFire'
      Description="A fireball cannon ripped from the arm of a dead Husk. Does more damage when charged up. Fully-charged headshot stuns Scrake.|Alternate fire shoots Napalm, burning everything in 12m radius."
-     PickupClass=Class'ScrnBalanceSrv.ScrnHuskGunPickup'
+     PickupClass=class'ScrnHuskGunPickup'
      ItemName="Husk Gun / Napalm Launcher"
 }

@@ -22,5 +22,5 @@ static function AwardDamage(KFSteamStatsAndAchievements KFStatsAndAchievements, 
 defaultproperties
 {
      bSniperWeapon=False
-     WeaponClass=Class'ScrnBalanceSrv.ScrnDualMK23Pistol'
+     WeaponClass=class'ScrnDualMK23Pistol'
 }

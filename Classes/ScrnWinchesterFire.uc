@@ -36,5 +36,5 @@ event ModeDoFire()
 
 defaultproperties
 {
-    DamageType=Class'ScrnBalanceSrv.ScrnDamTypeWinchester'
+    DamageType=class'ScrnDamTypeWinchester'
 }

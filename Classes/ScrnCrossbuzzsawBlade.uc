@@ -213,7 +213,7 @@ defaultproperties
 {
     HeadShotDamageMult=2.500000
     Damage=400.000000
-    MyDamageType=Class'ScrnBalanceSrv.ScrnDamTypeCrossbuzzsaw'
+    MyDamageType=class'ScrnDamTypeCrossbuzzsaw'
     DamageRadius=0
     LifeSpan=60.0
     ShutMeUpTime=10.0 // be sure that ambient sound stops after this time

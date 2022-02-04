@@ -2,7 +2,7 @@ class ScrnDualFlareRevolver extends DualFlareRevolver;
 
 function bool HandlePickupQuery( pickup Item )
 {
-    if ( Item.InventoryType==Class'ScrnBalanceSrv.ScrnFlareRevolver' )
+    if ( Item.InventoryType==class'ScrnFlareRevolver' )
     {
         if( LastHasGunMsgTime < Level.TimeSeconds && PlayerController(Instigator.Controller) != none )
         {
@@ -42,7 +42,7 @@ function DropFrom(vector StartLocation)
     {
         OtherAmmo = AmmoThrown / 2;
         AmmoThrown -= OtherAmmo;
-        SinglePistol = Spawn(Class'ScrnBalanceSrv.ScrnFlareRevolver');
+        SinglePistol = Spawn(class'ScrnFlareRevolver');
         SinglePistol.SellValue = SellValue / 2;
         SinglePistol.GiveTo(Instigator);
         SinglePistol.Ammo[0].AmmoAmount = OtherAmmo;
@@ -50,7 +50,7 @@ function DropFrom(vector StartLocation)
         MagAmmoRemaining = Max(MagAmmoRemaining-SinglePistol.MagAmmoRemaining,0);
     }
 
-    Pickup = Spawn(class'ScrnBalanceSrv.ScrnFlareRevolverPickup',,, StartLocation);
+    Pickup = Spawn(class'ScrnFlareRevolverPickup',,, StartLocation);
 
     if ( Pickup != None )
     {
@@ -72,7 +72,7 @@ function DropFrom(vector StartLocation)
 
 simulated function bool PutDown()
 {
-    if ( Instigator.PendingWeapon == none || Instigator.PendingWeapon.class == class'ScrnBalanceSrv.ScrnFlareRevolver' )
+    if ( Instigator.PendingWeapon == none || Instigator.PendingWeapon.class == class'ScrnFlareRevolver' )
     {
         bIsReloading = false;
     }
@@ -82,8 +82,8 @@ simulated function bool PutDown()
 
 defaultproperties
 {
-     FireModeClass(0)=Class'ScrnBalanceSrv.ScrnDualFlareRevolverFire'
-     DemoReplacement=Class'ScrnBalanceSrv.ScrnFlareRevolver'
-     PickupClass=Class'ScrnBalanceSrv.ScrnDualFlareRevolverPickup'
+     FireModeClass(0)=class'ScrnDualFlareRevolverFire'
+     DemoReplacement=class'ScrnFlareRevolver'
+     PickupClass=class'ScrnDualFlareRevolverPickup'
      ItemName="Dual Flare revolvers SE"
 }

@@ -12,7 +12,7 @@ simulated function PostBeginPlay()
 
     if ( Level.NetMode != NM_DedicatedServer)
     {
-        SmokeTrail = Spawn(class'ScrnBalanceSrv.ScrnFlameNadeTrail',self);
+        SmokeTrail = Spawn(class'ScrnFlameNadeTrail',self);
         SmokeTrail.SetBase(self);
         SmokeRotation.Pitch = 32768;
         SmokeTrail.SetRelativeRotation(SmokeRotation);

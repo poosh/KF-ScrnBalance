@@ -20,6 +20,6 @@ static function AwardDamage(KFSteamStatsAndAchievements KFStatsAndAchievements, 
 
 defaultproperties
 {
-    WeaponClass=Class'ScrnBalanceSrv.ScrnMagnum44Pistol'
+    WeaponClass=class'ScrnMagnum44Pistol'
     HeadShotDamageMult=1.3
 }

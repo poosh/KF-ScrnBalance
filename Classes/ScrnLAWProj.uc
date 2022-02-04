@@ -284,7 +284,7 @@ function float ScaleMonsterDamage(KFMonster Victim)
 
 defaultproperties
 {
-     ExplosionClass=Class'ScrnBalanceSrv.ScrnLawExplosion'
+     ExplosionClass=class'ScrnLawExplosion'
      Damage=1000.000000
      ImpactDamage=350
      //adds light to projectile

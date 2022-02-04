@@ -8,5 +8,5 @@ defaultproperties
      ItemName="FNFAL ACOG SE"
      ItemShortName="FNFAL SE"
      AmmoItemName="7.62x51mm NATO AP"
-     InventoryType=Class'ScrnBalanceSrv.ScrnFNFAL_ACOG_AssaultRifle'
+     InventoryType=class'ScrnFNFAL_ACOG_AssaultRifle'
 }

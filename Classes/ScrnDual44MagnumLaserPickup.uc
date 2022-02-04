@@ -7,7 +7,7 @@ defaultproperties
      Description="Yeah! One in each hand! Now with laser attachment."
      ItemName="Laser Dual 44 Magnums"
      ItemShortName="Laser Dual 44"
-     InventoryType=Class'ScrnBalanceSrv.ScrnDual44MagnumLaser'
+     InventoryType=class'ScrnDual44MagnumLaser'
      PickupMessage="You found Dual 44 Magnums with Laser Sight"
      UV2Texture=FadeColor'ScrnTex.Laser.PickupOverlay'
 }

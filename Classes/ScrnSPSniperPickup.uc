@@ -2,7 +2,7 @@ class ScrnSPSniperPickup extends SPSniperPickup;
 
 defaultproperties
 {
-     InventoryType=Class'ScrnBalanceSrv.ScrnSPSniperRifle'
+     InventoryType=class'ScrnSPSniperRifle'
 
      Weight=6.000000
      cost=1500

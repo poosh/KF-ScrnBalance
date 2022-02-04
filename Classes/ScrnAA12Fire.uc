@@ -64,7 +64,7 @@ function ModeDoFire()
 defaultproperties
 {
     BoltCloseSoundRef="KF_FNFALSnd.FNFAL_Bolt_Forward"
-    ProjectileClass=Class'ScrnBalanceSrv.ScrnAA12Bullet'
-    AmmoClass=Class'ScrnBalanceSrv.ScrnAA12Ammo'
+    ProjectileClass=class'ScrnAA12Bullet'
+    AmmoClass=class'ScrnAA12Ammo'
     Spread=1125.000000
 }

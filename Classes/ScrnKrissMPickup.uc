@@ -7,5 +7,5 @@ defaultproperties
      AmmoCost=20
      ItemName="KrissM Medic Gun SE"
      ItemShortName="KrissM SE"
-     InventoryType=Class'ScrnBalanceSrv.ScrnKrissMMedicGun'
+     InventoryType=class'ScrnKrissMMedicGun'
 }

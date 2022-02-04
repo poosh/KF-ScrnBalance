@@ -920,10 +920,10 @@ defaultproperties
     DefaultHammerRotateRate = 0.04
     DefaultHammerRotateMult = 1.0
     Weight=6.000000
-    FireModeClass(0)=Class'ScrnBalanceSrv.ScrnDualDeagleFire'
-    DemoReplacement=Class'ScrnBalanceSrv.ScrnDeagle'
+    FireModeClass(0)=class'ScrnDualDeagleFire'
+    DemoReplacement=class'ScrnDeagle'
     InventoryGroup=3
-    PickupClass=Class'ScrnBalanceSrv.ScrnDualDeaglePickup'
+    PickupClass=class'ScrnDualDeaglePickup'
     ItemName="Dual Handcannons SE"
 
     HudImageRef="KillingFloorHUD.WeaponSelect.dual_handcannon_unselected"

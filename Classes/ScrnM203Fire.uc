@@ -69,7 +69,7 @@ simulated function bool AllowFire()
 
 defaultproperties
 {
-     ProjectileClass=Class'ScrnBalanceSrv.ScrnM203GrenadeProjectile'
+     ProjectileClass=class'ScrnM203GrenadeProjectile'
      FireRate=1.99
      FireAnimRate=1.666667
 }

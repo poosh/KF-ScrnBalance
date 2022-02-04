@@ -8,5 +8,5 @@ defaultproperties
          WinWidth=0.980000
          WinHeight=0.960000
      End Object
-     ProfilePanel=SRTab_Profile'ScrnBalanceSrv.ScrnProfilePage.Panel'
+     ProfilePanel=Panel
 }

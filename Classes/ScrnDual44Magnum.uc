@@ -564,11 +564,11 @@ defaultproperties
     ReloadShortAnim="Reload"
     ReloadShortRate=2.235
 
-    FireModeClass(0)=Class'ScrnBalanceSrv.ScrnDual44MagnumFire'
+    FireModeClass(0)=class'ScrnDual44MagnumFire'
     Description="A pair of 44 Magnum Pistols. Cowboy's best choise to clear Wild West for hordes of zeds!"
-    DemoReplacement=Class'ScrnBalanceSrv.ScrnMagnum44Pistol'
+    DemoReplacement=class'ScrnMagnum44Pistol'
     InventoryGroup=3
-    PickupClass=Class'ScrnBalanceSrv.ScrnDual44MagnumPickup'
+    PickupClass=class'ScrnDual44MagnumPickup'
     ItemName="Dual 44 Magnums SE"
     Weight=4.000000
     Priority=110

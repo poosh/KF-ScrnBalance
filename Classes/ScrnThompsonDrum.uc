@@ -201,9 +201,9 @@ function AddReloadedAmmo()
 
 defaultproperties
 {
-     FireModeClass(0)=Class'ScrnBalanceSrv.ScrnThompsonDrumFire'
-     PickupClass=Class'ScrnBalanceSrv.ScrnThompsonDrumPickup'
-     AttachmentClass=Class'ScrnBalanceSrv.ScrnThompsonDrumAttachment'
+     FireModeClass(0)=class'ScrnThompsonDrumFire'
+     PickupClass=class'ScrnThompsonDrumPickup'
+     AttachmentClass=class'ScrnThompsonDrumAttachment'
 
      Weight=6
      MagCapacity=50

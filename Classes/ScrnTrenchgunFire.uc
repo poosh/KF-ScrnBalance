@@ -36,5 +36,5 @@ event ModeDoFire()
 
 defaultproperties
 {
-     ProjectileClass=Class'ScrnBalanceSrv.ScrnTrenchgunBullet'
+     ProjectileClass=class'ScrnTrenchgunBullet'
 }

@@ -90,7 +90,7 @@ static function int ReduceDamage(KFPlayerReplicationInfo KFPRI, KFPawn Injured, 
 
 static function class<Grenade> GetNadeType(KFPlayerReplicationInfo KFPRI)
 {
-    return class'ScrnBalanceSrv.ScrnFlameNade'; // Alternate Burning Mechanism
+    return class'ScrnFlameNade'; // Alternate Burning Mechanism
 }
 
 //can't cook fire nades
@@ -115,7 +115,7 @@ static function float GetReloadSpeedModifierStatic(KFPlayerReplicationInfo KFPRI
 // Change the cost of particular items
 static function float GetCostScaling(KFPlayerReplicationInfo KFPRI, class<Pickup> Item)
 {
-    if ( Item == class'ScrnBalanceSrv.ScrnMAC10Pickup' )
+    if ( Item == class'ScrnMAC10Pickup' )
         return 1.0; // price lowered to $200, no discount needed
 
     //add discount on class descenders as well, e.g. ScrnHuskGun

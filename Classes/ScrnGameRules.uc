@@ -1724,13 +1724,13 @@ defaultproperties
     strPerkedWeaponsOnly="You can pickup perked weapons only"
     strWaveAccuracy="%p scored %a accuracy in this wave!"
 
-    AchClass=class'ScrnBalanceSrv.ScrnAchievements'
-    MapAchClass=class'ScrnBalanceSrv.ScrnMapAchievements'
+    AchClass=class'ScrnAchievements'
+    MapAchClass=class'ScrnMapAchievements'
 
     SovietDamageTypes(0)=class'KFMod.DamTypeKnife'
     SovietDamageTypes(1)=class'KFMod.DamTypeFrag'
     SovietDamageTypes(2)=class'KFMod.DamTypeAK47AssaultRifle'
-    SovietDamageTypes(3)=class'ScrnBalanceSrv.ScrnDamTypeAK47AssaultRifle'
+    SovietDamageTypes(3)=class'ScrnDamTypeAK47AssaultRifle'
 
     bBroadcastHL=true
     HL_Normal=0
