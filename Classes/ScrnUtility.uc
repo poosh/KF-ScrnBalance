@@ -44,3 +44,22 @@ final static function int BinarySearchStr(out array<string> arr, string val)
     }
     return -1;
 }
+
+
+// ==============================================================
+//                           COLORS
+// ==============================================================
+
+static final function string StripColor(string s)
+{
+    local int p;
+
+    p = InStr(s,chr(27));
+    while ( p>=0 )
+    {
+        s = left(s,p)$mid(S,p+4);
+        p = InStr(s,Chr(27));
+    }
+
+    return s;
+}

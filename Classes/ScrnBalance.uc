@@ -577,19 +577,6 @@ static final function string ColorStringC(string s, color c)
     return chr(27)$chr(max(c.R,1))$chr(max(c.G,1))$chr(max(c.B,1))$s;
 }
 
-static final function string StripColor(string s)
-{
-    local int p;
-
-    p = InStr(s,chr(27));
-    while ( p>=0 )
-    {
-        s = left(s,p)$mid(S,p+4);
-        p = InStr(s,Chr(27));
-    }
-
-    return s;
-}
 
 // returns first i amount of characters excluding escape color codes
 static final function string LeftCol(string ColoredString, int i)

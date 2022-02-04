@@ -39,7 +39,7 @@ static function float DrawCountryNameSE( Canvas C, PlayerReplicationInfo PRI, fl
     C.DrawColor.A = OriginalColor.A;
     C.TextSize(S,NameWidth,IconSize);
     Offset = DrawNamePrefixIcons(C, PRI, ScrnPRI, S, X, Y, IconSize);
-    C.TextSize(class'ScrnBalance'.static.StripColor(S),NameWidth,IconSize);
+    C.TextSize(class'ScrnUtility'.static.StripColor(S),NameWidth,IconSize);
 
     if ( ScrnPRI != none ) {
 
