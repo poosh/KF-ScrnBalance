@@ -11,24 +11,8 @@ var array<SColorTag> ColorTags;
 
 
 // ==============================================================
-//                           MUTATORS
+//                           STRINGS
 // ==============================================================
-
-// NOT USED!!! remove selected mutator, pass level's BaseMutator!
-final function GetRidOfMut(name MutatorName, Mutator BaseMutator)
-{
-    local Mutator M;
-
-    for (M = BaseMutator; M != None; M = M.NextMutator)
-    {
-        if (M.IsA(MutatorName))
-        {
-            M.Destroy();
-            return;
-        }
-    }
-}
-
 
 //  Performs binary search on sorted array.
 //  @param arr : array of sorted items (in ascending order). Array will not be modified.
@@ -74,9 +58,6 @@ final static function int BinarySearchStr(out array<string> arr, string val)
     return -1;
 }
 
-// ==============================================================
-//                           STRINGS
-// ==============================================================
 
 // fancy time formatting
 static final function String FormatTime(int Seconds)
