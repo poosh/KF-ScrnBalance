@@ -2995,7 +2995,6 @@ static function DestroyLinkedInfo( LinkedReplicationInfo EntryLink )
 
 function ServerTraveling(string URL, bool bItems)
 {
-    local int j;
     local string NewMapName, Options;
     local KFGameReplicationInfo KFGRI;
     local bool bMapRestart;
@@ -3035,51 +3034,84 @@ function ServerTraveling(string URL, bool bItems)
     if (NextMutator != None)
         NextMutator.ServerTraveling(URL,bItems);
 
-    if ( ScrnGT == none || ScrnGT.ScrnGameLength == none )
+    Cleanup();
+}
+
+simulated function Destroyed()
+{
+    Cleanup();
+    log("ScrnBalance destroyed", 'ScrnBalance');
+    super.Destroyed();
+}
+
+
+final protected simulated function Cleanup()
+{
+    local int j;
+
+    ScrnGT = none;
+    ServerPerksMut = none;
+    Persistence = none;
+
+    // monster collection reset
+    if (ScrnGT == none || ScrnGT.ScrnGameLength == none)
         class'ScrnGameRules'.static.ResetGameSquads(KF, CurrentEventNum);
+
+    // ach reset
     class'ScrnAchCtrl'.static.Cleanup();
 
-    if ( Level.NetMode == NM_DedicatedServer ) {
-        // break links to self
+    // break links to self
+    // btw, why only for dedicated servers???
+    if (Level.NetMode == NM_DedicatedServer)
+    {
         Mut = none;
         default.Mut = none;
         class'ScrnBalance'.default.Mut = none;
     }
 
-    for ( j=0; j<Perks.length; ++j ) {
-        if ( Perks[j] != none ) {
+    // remove linked repinfo
+    DestroyLinkedInfo(CustomWeaponLink);
+    CustomWeaponLink = none;
+
+    for (j=0; j<Perks.length; ++j)
+    {
+        if (Perks[j] != none)
+        {
             Perks[j].default.DefaultInventory.length = 0;
             Perks[j].default.bLocked = false;
         }
     }
 
-    DestroyLinkedInfo(CustomWeaponLink);
-    CustomWeaponLink = none;
-
     // destroy local objects
-    if ( MapInfo != none ) {
+    if (MapInfo != none)
+    {
         MapInfo.Mut = none;
         MapInfo = none;
     }
-    if ( BurnMech != none ) {
+    // destroy actors
+    if (BurnMech != none)
+    {
         BurnMech.Destroy();
         BurnMech = none;
     }
-    if ( SrvInfo != none ) {
+    if (SrvInfo != none)
+    {
         SrvInfo.Destroy();
         SrvInfo = none;
     }
-    if ( LockManager != none ) {
+    if (LockManager != none)
+    {
         LockManager.Destroy();
         LockManager = none;
     }
+    if (MyVotingOptions != none)
+    {
+        MyVotingOptions.Mut = none;
+        MyVotingOptions.Destroy();
+        MyVotingOptions = none;
+    }
 }
 
-simulated function Destroyed()
-{
-    super.Destroyed();
-    log("ScrnBalance destroyed", 'ScrnBalance');
-}
 
 // Limits placed pipebomb count to perk's capacity
 function DestroyExtraPipebombs()
