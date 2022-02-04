@@ -1634,35 +1634,7 @@ function SendAccuracy(PlayerController Sender)
 
 function simulated String GameTimeStr()
 {
-    return FormatTime(Level.Game.GameReplicationInfo.ElapsedTime);
-}
-
-static final function String FormatTime( int Seconds )
-{
-    local int Minutes, Hours;
-    local String Time;
-
-    if( Seconds > 3600 )
-    {
-        Hours = Seconds / 3600;
-        Seconds -= Hours * 3600;
-
-        Time = Hours$":";
-    }
-    Minutes = Seconds / 60;
-    Seconds -= Minutes * 60;
-
-    if( Minutes >= 10 || Hours == 0 )
-        Time = Time $ Minutes $ ":";
-    else
-        Time = Time $ "0" $ Minutes $ ":";
-
-    if( Seconds >= 10 )
-        Time = Time $ Seconds;
-    else
-        Time = Time $ "0" $ Seconds;
-
-    return Time;
+    return class'ScrnUtility'.static.FormatTime(Level.Game.GameReplicationInfo.ElapsedTime);
 }
 
 

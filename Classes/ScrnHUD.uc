@@ -364,33 +364,6 @@ simulated function DrawEndGameHUD(Canvas C, bool bVictory)
     DisplayLocalMessages(C);
 }
 
-final static function String FormatTime( int Seconds )
-{
-    local int Minutes, Hours;
-    local String Time;
-
-    if( Seconds > 3600 )
-    {
-        Hours = Seconds / 3600;
-        Seconds -= Hours * 3600;
-
-        Time = Hours$":";
-    }
-    Minutes = Seconds / 60;
-    Seconds -= Minutes * 60;
-
-    if( Minutes >= 10 )
-        Time = Time $ Minutes $ ":";
-    else
-        Time = Time $ "0" $ Minutes $ ":";
-
-    if( Seconds >= 10 )
-        Time = Time $ Seconds;
-    else
-        Time = Time $ "0" $ Seconds;
-
-    return Time;
-}
 
 simulated function DrawHudPassA (Canvas C)
 {
@@ -3043,7 +3016,7 @@ simulated function DrawSpecialSpectatingHUD(Canvas C)
     if ( KFGRI.EndGameType == 0 && KFGRI.ElapsedTime > 0 ) {
         // total time
         C.SetPos(0, 0);
-        C.DrawText(FormatTime(KFGRI.ElapsedTime));
+        C.DrawText(class'ScrnUtility'.static.FormatTime(KFGRI.ElapsedTime));
 
         // wave num
         S = WaveString @ string(KFGRI.WaveNumber + 1);
@@ -3055,7 +3028,7 @@ simulated function DrawSpecialSpectatingHUD(Canvas C)
         if ( KFGRI.bWaveInProgress )
             S = string(KFGRI.MaxMonsters);
         else
-            s = FormatTime(KFGRI.TimeToNextWave);
+            s = class'ScrnUtility'.static.FormatTime(KFGRI.TimeToNextWave);
         C.TextSize(S, XL, YL);
         C.SetPos(C.ClipX-XL, 0);
         C.DrawText(S);

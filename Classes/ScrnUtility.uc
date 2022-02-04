@@ -1,6 +1,35 @@
 class ScrnUtility extends object;
 
 
+static final function String FormatTime(int Seconds)
+{
+    local int Minutes, Hours;
+    local String Time;
+
+    if( Seconds > 3600 )
+    {
+        Hours = Seconds / 3600;
+        Seconds -= Hours * 3600;
+
+        Time = Hours$":";
+    }
+    Minutes = Seconds / 60;
+    Seconds -= Minutes * 60;
+
+    if( Minutes >= 10 || Hours == 0 )
+        Time = Time $ Minutes $ ":";
+    else
+        Time = Time $ "0" $ Minutes $ ":";
+
+    if( Seconds >= 10 )
+        Time = Time $ Seconds;
+    else
+        Time = Time $ "0" $ Seconds;
+
+    return Time;
+}
+
+
 //  Performs binary search on sorted array.
 //  @param arr : array of sorted items (in ascending order). Array will not be modified.
 //               out modifier is used just for performance purpose (pass by reference).
