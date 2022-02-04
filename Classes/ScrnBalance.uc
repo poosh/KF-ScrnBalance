@@ -212,11 +212,6 @@ var globalconfig int MinRespawnCashNormal, MinRespawnCashHard, MinRespawnCashSui
 var globalconfig int TraderTimeNormal, TraderTimeHard, TraderTimeSui, TraderTimeHoE;
 var globalconfig bool bLeaveCashOnDisconnect, bPlayerZEDTime;
 
-struct SColorTag {
-    var string T;
-    var byte R, G, B;
-};
-var array<SColorTag> ColorTags;
 var globalconfig string ColoredServerName;
 
 var float OriginalWaveSpawnPeriod;
@@ -3435,39 +3430,6 @@ defaultproperties
     MaxVoteFF=0
     MinVoteDifficulty=2
     MaxDifficulty=8
-
-    ColorTags( 0)=(T="^0",R=1,G=1,B=1)
-    ColorTags( 1)=(T="^1",R=200,G=1,B=1)
-    ColorTags( 2)=(T="^2",R=1,G=200,B=1)
-    ColorTags( 3)=(T="^3",R=200,G=200,B=1)
-    ColorTags( 4)=(T="^4",R=1,G=1,B=255)
-    ColorTags( 5)=(T="^5",R=1,G=255,B=255)
-    ColorTags( 6)=(T="^6",R=200,G=1,B=200)
-    ColorTags( 7)=(T="^7",R=200,G=200,B=200)
-    ColorTags( 8)=(T="^8",R=255,G=127,B=0)
-    ColorTags( 9)=(T="^9",R=128,G=128,B=128)
-
-    ColorTags(10)=(T="^w$",R=255,G=255,B=255)
-    ColorTags(11)=(T="^r$",R=255,G=1,B=1)
-    ColorTags(12)=(T="^g$",R=1,G=255,B=1)
-    ColorTags(13)=(T="^b$",R=1,G=1,B=255)
-    ColorTags(14)=(T="^y$",R=255,G=255,B=1)
-    ColorTags(15)=(T="^c$",R=1,G=255,B=255)
-    ColorTags(16)=(T="^o$",R=255,G=140,B=1)
-    ColorTags(17)=(T="^u$",R=255,G=20,B=147)
-    ColorTags(18)=(T="^s$",R=1,G=192,B=255)
-    ColorTags(19)=(T="^n$",R=139,G=69,B=19)
-
-    ColorTags(20)=(T="^W$",R=112,G=138,B=144)
-    ColorTags(21)=(T="^R$",R=132,G=1,B=1)
-    ColorTags(22)=(T="^G$",R=1,G=132,B=1)
-    ColorTags(23)=(T="^B$",R=1,G=1,B=132)
-    ColorTags(24)=(T="^Y$",R=255,G=192,B=1)
-    ColorTags(25)=(T="^C$",R=1,G=160,B=192)
-    ColorTags(26)=(T="^O$",R=255,G=69,B=1)
-    ColorTags(27)=(T="^U$",R=160,G=32,B=240)
-    ColorTags(28)=(T="^S$",R=65,G=105,B=225)
-    ColorTags(29)=(T="^N$",R=80,G=40,B=20)
 
     AmmoBoxMesh=StaticMesh'kf_generic_sm.pickups.Metal_Ammo_Box'
     AmmoBoxDrawScale=1.000000
