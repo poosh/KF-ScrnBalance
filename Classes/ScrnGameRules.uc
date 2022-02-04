@@ -1446,7 +1446,7 @@ final function ScrnPlayerInfo CreatePlayerInfo(PlayerController PlayerOwner, opt
     // initial data
     SPI.PlayerOwner = PlayerOwner;
     SPI.GameRules = self;
-    SPI.PlayerName =class'ScrnUtility'.static.StripColorTags(PlayerOwner.PlayerReplicationInfo.PlayerName);
+    SPI.PlayerName =class'ScrnFunctions'.static.StripColorTags(PlayerOwner.PlayerReplicationInfo.PlayerName);
     SPI.SteamID32 = SteamID32;
     SPI.StartWave = Mut.KF.WaveNum;
     SPI.BackupStats(SPI.GameStartStats);
@@ -1508,7 +1508,7 @@ function bool OverridePickupQuery(Pawn Other, Pickup item, out byte bAllowPickup
         && !ScrnPawn.ScrnPerk.static.OverridePerkIndex(WP.class) )
     {
         if ( PlayerController(Other.Controller) != none )
-            PlayerController(Other.Controller).ClientMessage(class'ScrnUtility'.static.ColorString(strPerkedWeaponsOnly,192,100,1));
+            PlayerController(Other.Controller).ClientMessage(class'ScrnFunctions'.static.ColorString(strPerkedWeaponsOnly,192,100,1));
         result = true;
         bAllowPickup = 0;
     }
@@ -1531,7 +1531,7 @@ function bool OverridePickupQuery(Pawn Other, Pickup item, out byte bAllowPickup
                         str = strWeaponLocked;
                         str = Repl(str, "%o",  Mut.ColoredPlayerName(WP.DroppedBy.PlayerReplicationInfo), true);
                         str = Repl(str, "%w", WP.ItemName, true);
-                        ScrnPlayerController(Other.Controller).ClientMessage(class'ScrnUtility'.static.ColorString(str,192,1,1));
+                        ScrnPlayerController(Other.Controller).ClientMessage(class'ScrnFunctions'.static.ColorString(str,192,1,1));
                         ScrnPlayerController(Other.Controller).LastLockMsgTime = Level.TimeSeconds;
                     }
                 }
@@ -1540,7 +1540,7 @@ function bool OverridePickupQuery(Pawn Other, Pickup item, out byte bAllowPickup
                     result = true;
                     bAllowPickup = 0;
                     if ( Level.TimeSeconds > ScrnPlayerController(Other.Controller).LastLockMsgTime + 1.0 ) {
-                        ScrnPlayerController(Other.Controller).ClientMessage(class'ScrnUtility'.static.ColorString(strWeaponLockedOwn,192,128,1));
+                        ScrnPlayerController(Other.Controller).ClientMessage(class'ScrnFunctions'.static.ColorString(strWeaponLockedOwn,192,128,1));
                         ScrnPlayerController(Other.Controller).LastLockMsgTime = Level.TimeSeconds;
                     }
                 }

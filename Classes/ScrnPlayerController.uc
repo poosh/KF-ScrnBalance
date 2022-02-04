@@ -1018,19 +1018,19 @@ event ClientMessage( coerce string S, optional Name Type )
         return;
 
     if ( Type == 'Log' ) {
-        log(class'ScrnUtility'.static.StripColorTags(S), 'ScrnBalance');
+        log(class'ScrnFunctions'.static.StripColorTags(S), 'ScrnBalance');
         Type = '';
     }
 
     if ( Mut != none )
-        super.ClientMessage(class'ScrnUtility'.static.ParseColorTags(S, PlayerReplicationInfo), Type);
+        super.ClientMessage(class'ScrnFunctions'.static.ParseColorTags(S, PlayerReplicationInfo), Type);
     else
         super.ClientMessage(S, Type);
 }
 
 function LongMessage(string S, optional int MaxLen, optional string Divider)
 {
-    class'ScrnUtility'.static.LongMessage(self, S, MaxLen, Divider);
+    class'ScrnFunctions'.static.LongMessage(self, S, MaxLen, Divider);
 }
 
 event TeamMessage( PlayerReplicationInfo PRI, coerce string S, name Type  )
@@ -1057,7 +1057,7 @@ event TeamMessage( PlayerReplicationInfo PRI, coerce string S, name Type  )
                 else if ( PRI.Team.TeamIndex == 1 )
                     c = chr(27)$chr(75)$chr(139)$chr(198);
             }
-            S = Mut.ColoredPlayerName(PRI) $ c $ ": " $ class'ScrnUtility'.static.ParseColorTags(S, PRI);
+            S = Mut.ColoredPlayerName(PRI) $ c $ ": " $ class'ScrnFunctions'.static.ParseColorTags(S, PRI);
         }
         Player.Console.Chat( c$s, 6.0, PRI );
     }
@@ -1791,7 +1791,7 @@ exec function SetName(coerce string S)
         S = PlayerName;
 
     if ( S == "" || (class'ScrnSrvReplInfo'.static.Instance().bForceSteamNames && Player.GUIController !=none
-            && Player.GUIController.SteamGetUserName() != class'ScrnUtility'.static.StripColorTags(S)) )
+            && Player.GUIController.SteamGetUserName() != class'ScrnFunctions'.static.StripColorTags(S)) )
     {
         S = Player.GUIController.SteamGetUserName();
         if ( S == "" )
@@ -1813,7 +1813,7 @@ function ChangeName( coerce string S )
     S = Repl(S, "\"", "", true);
     S = Repl(S, "'", "", true);
 
-    PlainName = class'ScrnUtility'.static.StripColorTags(S);
+    PlainName = class'ScrnFunctions'.static.StripColorTags(S);
     if ( len(PlainName) > 20 )
         S = left(PlainName, 20);
 
@@ -2761,10 +2761,10 @@ exec function TestColorTags(coerce string ColorTagString, optional int i)
 {
     local string c, s;
 
-    c = class'ScrnUtility'.static.ParseColorTags(ColorTagString, PlayerReplicationInfo);
-    s = class'ScrnUtility'.static.StripColorTags(ColorTagString);
+    c = class'ScrnFunctions'.static.ParseColorTags(ColorTagString, PlayerReplicationInfo);
+    s = class'ScrnFunctions'.static.StripColorTags(ColorTagString);
     if ( i > 0) {
-        c = class'ScrnUtility'.static.LeftCol(c, i);
+        c = class'ScrnFunctions'.static.LeftCol(c, i);
         s = left(s, i);
     }
     ConsoleMessage(c);

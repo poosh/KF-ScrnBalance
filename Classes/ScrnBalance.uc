@@ -543,7 +543,7 @@ function BroadcastMessage(string Msg, optional bool bSaveToLog)
     local name MsgType;
 
     if ( bSaveToLog) {
-        log(class'ScrnUtility'.static.StripColorTags(Msg), 'ScrnBalance');
+        log(class'ScrnFunctions'.static.StripColorTags(Msg), 'ScrnBalance');
         MsgType = 'Log';
     }
 
@@ -563,7 +563,7 @@ function SendFriendlyFireWarning(PlayerController Player)
 
 static final function string ColorString(string s, byte R, byte G, byte B)
 {
-    return class'ScrnUtility'.static.ColorString(s, R, G, B);
+    return class'ScrnFunctions'.static.ColorString(s, R, G, B);
 }
 
 simulated function string PlainPlayerName(PlayerReplicationInfo PRI)
@@ -571,7 +571,7 @@ simulated function string PlainPlayerName(PlayerReplicationInfo PRI)
     if ( PRI == none )
         return "";
 
-    return class'ScrnUtility'.static.StripColorTags(PRI.PlayerName);
+    return class'ScrnFunctions'.static.StripColorTags(PRI.PlayerName);
 }
 
 simulated function string ColoredPlayerName(PlayerReplicationInfo PRI)
@@ -579,7 +579,7 @@ simulated function string ColoredPlayerName(PlayerReplicationInfo PRI)
     if ( PRI == none )
         return "";
 
-    return class'ScrnUtility'.static.ParseColorTags(PRI.PlayerName, PRI);
+    return class'ScrnFunctions'.static.ParseColorTags(PRI.PlayerName, PRI);
 }
 
 function StolenWeapon(Pawn NewOwner, KFWeaponPickup WP)
@@ -587,7 +587,7 @@ function StolenWeapon(Pawn NewOwner, KFWeaponPickup WP)
     local string str;
 
     str = BroadcastPickupText;
-    str = Repl(str, "%p", ColorString(class'ScrnUtility'.static.ParseColorTags(NewOwner.GetHumanReadableName(), NewOwner.PlayerReplicationInfo), 192, 1, 1) $ ColorString("", 192, 192, 192), true);
+    str = Repl(str, "%p", ColorString(class'ScrnFunctions'.static.ParseColorTags(NewOwner.GetHumanReadableName(), NewOwner.PlayerReplicationInfo), 192, 1, 1) $ ColorString("", 192, 192, 192), true);
     str = Repl(str, "%o", ColorString(ColoredPlayerName(WP.DroppedBy.PlayerReplicationInfo), 1, 192, 1) $ ColorString("", 192, 192, 192), true);
     str = Repl(str, "%w", ColorString(WP.ItemName, 1, 96, 192) $ ColorString("", 192, 192, 192), true);
     str = Repl(str, "%$", ColorString(String(WP.SellValue), 192, 192, 1) $ ColorString("", 192, 192, 192), true);
@@ -1101,7 +1101,7 @@ auto simulated state WaitingForTick
             }
         }
         if ( ColoredServerName != "" ) {
-            Level.GRI.ServerName = class'ScrnUtility'.static.ParseColorTags(ColoredServerName);
+            Level.GRI.ServerName = class'ScrnFunctions'.static.ParseColorTags(ColoredServerName);
         }
     }
 
@@ -1193,8 +1193,8 @@ function MessagePerkStats(PlayerController Sender)
     if ( SPI == none )
         Sender.ClientMessage("No player info record found");
     else {
-        class'ScrnUtility'.static.LongMessage(Sender, strXPInitial $ SPI.PerkStatStr(SPI.GameStartStats));
-        class'ScrnUtility'.static.LongMessage(Sender, strXPProgress $ SPI.PerkProgressStr(SPI.GameStartStats));
+        class'ScrnFunctions'.static.LongMessage(Sender, strXPInitial $ SPI.PerkStatStr(SPI.GameStartStats));
+        class'ScrnFunctions'.static.LongMessage(Sender, strXPProgress $ SPI.PerkProgressStr(SPI.GameStartStats));
     }
 }
 
@@ -1284,7 +1284,7 @@ function Mutate(string MutateString, PlayerController Sender)
 
     Key = caps(MutateString);
     Divide(Key, " ", Key, Value);
-    cmd = class'ScrnUtility'.static.BinarySearchStr(MutateCommands, Key);
+    cmd = class'ScrnFunctions'.static.BinarySearchStr(MutateCommands, Key);
     if ( cmd == -1 ) {
         super(Mutator).Mutate(MutateString, Sender);
         return; //unknown command
@@ -1299,7 +1299,7 @@ function Mutate(string MutateString, PlayerController Sender)
             break;
         case MUTATE_CMDLINE:
             if ( CheckAdmin(Sender) && CheckScrnGT(Sender) )
-                class'ScrnUtility'.static.LongMessage(Sender, ScrnGT.GetCmdLine(), 80, "?");
+                class'ScrnFunctions'.static.LongMessage(Sender, ScrnGT.GetCmdLine(), 80, "?");
             break;
         case MUTATE_DEBUGGAME:
             if ( CheckAdmin(Sender) )
@@ -1570,7 +1570,7 @@ function SendAccuracy(PlayerController Sender)
 
 function simulated String GameTimeStr()
 {
-    return class'ScrnUtility'.static.FormatTime(Level.Game.GameReplicationInfo.ElapsedTime);
+    return class'ScrnFunctions'.static.FormatTime(Level.Game.GameReplicationInfo.ElapsedTime);
 }
 
 

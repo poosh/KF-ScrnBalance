@@ -3016,7 +3016,7 @@ simulated function DrawSpecialSpectatingHUD(Canvas C)
     if ( KFGRI.EndGameType == 0 && KFGRI.ElapsedTime > 0 ) {
         // total time
         C.SetPos(0, 0);
-        C.DrawText(class'ScrnUtility'.static.FormatTime(KFGRI.ElapsedTime));
+        C.DrawText(class'ScrnFunctions'.static.FormatTime(KFGRI.ElapsedTime));
 
         // wave num
         S = WaveString @ string(KFGRI.WaveNumber + 1);
@@ -3028,7 +3028,7 @@ simulated function DrawSpecialSpectatingHUD(Canvas C)
         if ( KFGRI.bWaveInProgress )
             S = string(KFGRI.MaxMonsters);
         else
-            s = class'ScrnUtility'.static.FormatTime(KFGRI.TimeToNextWave);
+            s = class'ScrnFunctions'.static.FormatTime(KFGRI.TimeToNextWave);
         C.TextSize(S, XL, YL);
         C.SetPos(C.ClipX-XL, 0);
         C.DrawText(S);
@@ -3142,7 +3142,7 @@ simulated function LocalizedMessage( class<LocalMessage> Message, optional int S
     LocalMessages[i].OptionalObject = OptionalObject;
     LocalMessages[i].EndOfLife = Message.static.GetLifetime(Switch) + Level.TimeSeconds;
     if ( class'ScrnBalance'.default.Mut != none )
-        LocalMessages[i].StringMessage = class'ScrnUtility'.static.ParseColorTags(CriticalString, RelatedPRI_1);
+        LocalMessages[i].StringMessage = class'ScrnFunctions'.static.ParseColorTags(CriticalString, RelatedPRI_1);
     else
         LocalMessages[i].StringMessage = CriticalString;
     LocalMessages[i].LifeTime = Message.static.GetLifetime(Switch);
@@ -3154,7 +3154,7 @@ function AddTextMessage(string M, class<LocalMessage> MessageClass, PlayerReplic
     local bool bSetPRI;
 
     if ( class'ScrnBalance'.default.Mut != none ) {
-        M = class'ScrnUtility'.static.ParseColorTags(M, PRI);
+        M = class'ScrnFunctions'.static.ParseColorTags(M, PRI);
         if ( MessageClass==class'SayMessagePlus' ) {
             MessageClass = class'ScrnSayMessagePlus';
             bSetPRI = true;
@@ -3436,7 +3436,7 @@ final static function color PerkColor(int PerkLevel)
 
 final static function string ColoredPerkLevel(int PerkLevel)
 {
-    return class'ScrnUtility'.static.ColorStringC(string(PerkLevel), PerkColor(PerkLevel));
+    return class'ScrnFunctions'.static.ColorStringC(string(PerkLevel), PerkColor(PerkLevel));
 }
 
 function static Font GetStaticFontSizeIndex(Canvas C, int FontSize)

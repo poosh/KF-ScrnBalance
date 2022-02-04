@@ -36,7 +36,7 @@ static function string AssembleString(
         
     c = GetConsoleColor(RelatedPRI_1);  
     return class'ScrnBalance'.default.Mut.ColoredPlayerName(RelatedPRI_1)
-        $ class'ScrnUtility'.static.ColorString(": ", c.R, c.G, c.B)
+        $ class'ScrnFunctions'.static.ColorString(": ", c.R, c.G, c.B)
         $ MessageString;
 }
 

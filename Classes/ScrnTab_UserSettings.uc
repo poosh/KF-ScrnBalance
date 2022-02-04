@@ -294,7 +294,7 @@ function ServerStatus()
 
 static final function string ColorStringC(String s, color c)
 {
-    return class'ScrnUtility'.static.ColorStringC(s, c);
+    return class'ScrnFunctions'.static.ColorStringC(s, c);
 }
 
 
@@ -303,7 +303,7 @@ function string GetPlayerName(PlayerReplicationInfo PRI)
     if (PRI == none) {
         return "";
     }
-    return class'ScrnUtility'.static.StripColorTags(PRI.PlayerName);
+    return class'ScrnFunctions'.static.StripColorTags(PRI.PlayerName);
 }
 
 function PlayerReplicationInfo FindPRI(string PlayerName)
@@ -311,7 +311,7 @@ function PlayerReplicationInfo FindPRI(string PlayerName)
     local int i;
     local GameReplicationInfo GRI;
 
-    PlayerName = class'ScrnUtility'.static.StripColorTags(PlayerName);
+    PlayerName = class'ScrnFunctions'.static.StripColorTags(PlayerName);
     if ( PlayerName == "" )
         return none;
 

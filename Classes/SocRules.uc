@@ -18,7 +18,7 @@ function bool TestInfectedItem(ScrnPlayerInfo SPI, PlayerController OwnerPC) {
         return false;
 
     if ( Level.TimeSeconds > NextMsgTime ) {
-        SPI.PlayerOwner.ClientMessage(class'ScrnUtility'.static.ColorString(strInfectedItems,192,128,1));
+        SPI.PlayerOwner.ClientMessage(class'ScrnFunctions'.static.ColorString(strInfectedItems,192,128,1));
         NextMsgTime = Level.TimeSeconds + 1;
     }
     return true;

@@ -343,7 +343,7 @@ simulated event UpdateScoreBoard(Canvas Canvas)
             }
             else if ( PRI.PlayerID != 0 || PRI.PlayerName != "WebAdmin" ) {
                 ++SpecCount;
-                Spectators @= class'ScrnUtility'.static.StripColorTags(PRI.PlayerName) $ " |";
+                Spectators @= class'ScrnFunctions'.static.StripColorTags(PRI.PlayerName) $ " |";
             }
         }
     }
