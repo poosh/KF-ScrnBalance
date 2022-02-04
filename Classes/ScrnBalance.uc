@@ -1,5 +1,6 @@
 /*****************************************************************************
  * ScrN Total Game Balance
+ * @GitHub: https://github.com/poosh/KF-ScrnBalance
  * @author [ScrN]PooSH, contact via Steam: http://steamcommunity.com/id/scrn-poosh/
  *                      or Discord: https://discord.gg/Y3W5crSXA5
  * Copyright (c) 2012-2021 PU Developing IK, All Rights Reserved.
