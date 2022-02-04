@@ -9,32 +9,23 @@ struct SColorTag
 var array<SColorTag> ColorTags;
 
 
-static final function String FormatTime(int Seconds)
+// ==============================================================
+//                           MUTATORS
+// ==============================================================
+
+// NOT USED!!! remove selected mutator, pass level's BaseMutator!
+final function GetRidOfMut(name MutatorName, Mutator BaseMutator)
 {
-    local int Minutes, Hours;
-    local String Time;
+    local Mutator M;
 
-    if( Seconds > 3600 )
+    for (M = BaseMutator; M != None; M = M.NextMutator)
     {
-        Hours = Seconds / 3600;
-        Seconds -= Hours * 3600;
-
-        Time = Hours$":";
+        if (M.IsA(MutatorName))
+        {
+            M.Destroy();
+            return;
+        }
     }
-    Minutes = Seconds / 60;
-    Seconds -= Minutes * 60;
-
-    if( Minutes >= 10 || Hours == 0 )
-        Time = Time $ Minutes $ ":";
-    else
-        Time = Time $ "0" $ Minutes $ ":";
-
-    if( Seconds >= 10 )
-        Time = Time $ Seconds;
-    else
-        Time = Time $ "0" $ Seconds;
-
-    return Time;
 }
 
 
@@ -85,6 +76,36 @@ final static function int BinarySearchStr(out array<string> arr, string val)
 // ==============================================================
 //                           STRINGS
 // ==============================================================
+
+// fancy time formatting
+static final function String FormatTime(int Seconds)
+{
+    local int Minutes, Hours;
+    local String Time;
+
+    if( Seconds > 3600 )
+    {
+        Hours = Seconds / 3600;
+        Seconds -= Hours * 3600;
+
+        Time = Hours$":";
+    }
+    Minutes = Seconds / 60;
+    Seconds -= Minutes * 60;
+
+    if( Minutes >= 10 || Hours == 0 )
+        Time = Time $ Minutes $ ":";
+    else
+        Time = Time $ "0" $ Minutes $ ":";
+
+    if( Seconds >= 10 )
+        Time = Time $ Seconds;
+    else
+        Time = Time $ "0" $ Seconds;
+
+    return Time;
+}
+
 
 //  Splits long message on short ones before sending it to client.
 //  @param   Sender     Player, who will receive message(-s).

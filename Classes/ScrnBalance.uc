@@ -857,18 +857,6 @@ static final function ScrnBalance Myself(LevelInfo Level)
     return none;
 }
 
-final function GetRidOfMut(name MutatorName)
-{
-    local Mutator M;
-
-    for ( M = KF.BaseMutator; M != None; M = M.NextMutator ) {
-
-        if ( M.IsA(MutatorName) ) {
-            M.Destroy();
-            return;
-        }
-    }
-}
 
 //can't statically link to ServerPerksMut, cuz it is server-side only
 function SaveStats()
