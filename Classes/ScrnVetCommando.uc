@@ -127,7 +127,7 @@ static function int ZedTimeExtensions(KFPlayerReplicationInfo KFPRI)
 // Change the cost of particular items
 static function float GetCostScaling(KFPlayerReplicationInfo KFPRI, class<Pickup> Item)
 {
-    if ( Item == class'ScrnBalanceSrv.ScrnBullpupPickup' )
+    if ( Item == class'ScrnBullpupPickup' )
         return 1.0; // price lowered to $200, no discount needed
 
     if ( ClassIsChildOf(Item, class'BullpupPickup')
@@ -168,8 +168,8 @@ static function bool OverridePerkIndex( class<KFWeaponPickup> Pickup )
 
 defaultproperties
 {
-    DefaultDamageType=Class'ScrnBalanceSrv.ScrnDamTypeCommando'
-    DefaultDamageTypeNoBonus=Class'ScrnBalanceSrv.ScrnDamTypeCommandoBase'
+    DefaultDamageType=Class'ScrnDamTypeCommando'
+    DefaultDamageTypeNoBonus=Class'ScrnDamTypeCommandoBase'
     SamePerkAch="OP_Commando"
 
     SkillInfo="PERK SKILLS:|50% larger Assaut Rifle clip|35% faster reload with all weapons|40% less recoil with all weapons|See cloaked enemies and health"

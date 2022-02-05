@@ -2995,6 +2995,7 @@ static function DestroyLinkedInfo( LinkedReplicationInfo EntryLink )
 
 function ServerTraveling(string URL, bool bItems)
 {
+    local int j;
     local string NewMapName, Options;
     local KFGameReplicationInfo KFGRI;
     local bool bMapRestart;
@@ -3034,83 +3035,45 @@ function ServerTraveling(string URL, bool bItems)
     if (NextMutator != None)
         NextMutator.ServerTraveling(URL,bItems);
 
-    Cleanup();
-}
-
-simulated function Destroyed()
-{
-    log("ScrnBalance destroyed", 'ScrnBalance');
-    super.Destroyed();
-}
-
-
-final protected simulated function Cleanup()
-{
-    local int j;
-
-    ScrnGT = none;
-    ServerPerksMut = none;
-    Persistence = none;
-
-    // monster collection reset
-    if (ScrnGT == none || ScrnGT.ScrnGameLength == none)
+    if ( ScrnGT == none || ScrnGT.ScrnGameLength == none )
         class'ScrnGameRules'.static.ResetGameSquads(KF, CurrentEventNum);
-
-    // ach reset
     class'ScrnAchCtrl'.static.Cleanup();
 
-    // break links to self
-    // btw, why only for dedicated servers???
-    if (Level.NetMode == NM_DedicatedServer)
-    {
+    if ( Level.NetMode == NM_DedicatedServer ) {
+        // break links to self
         Mut = none;
         default.Mut = none;
         class'ScrnBalance'.default.Mut = none;
     }
 
-    // remove linked repinfo
-    DestroyLinkedInfo(CustomWeaponLink);
-    CustomWeaponLink = none;
-
-    for (j=0; j<Perks.length; ++j)
-    {
-        if (Perks[j] != none)
-        {
+    for ( j=0; j<Perks.length; ++j ) {
+        if ( Perks[j] != none ) {
             Perks[j].default.DefaultInventory.length = 0;
             Perks[j].default.bLocked = false;
         }
     }
 
+    DestroyLinkedInfo(CustomWeaponLink);
+    CustomWeaponLink = none;
+
     // destroy local objects
-    if (MapInfo != none)
-    {
+    if ( MapInfo != none ) {
         MapInfo.Mut = none;
         MapInfo = none;
     }
-    // destroy actors
-    if (BurnMech != none)
-    {
+    if ( BurnMech != none ) {
         BurnMech.Destroy();
         BurnMech = none;
     }
-    if (SrvInfo != none)
-    {
+    if ( SrvInfo != none ) {
         SrvInfo.Destroy();
         SrvInfo = none;
     }
-    if (LockManager != none)
-    {
+    if ( LockManager != none ) {
         LockManager.Destroy();
         LockManager = none;
     }
-    if (MyVotingOptions != none)
-    {
-        MyVotingOptions.Mut = none;
-        MyVotingOptions.Destroy();
-        MyVotingOptions = none;
-    }
 }
-
 
 // Limits placed pipebomb count to perk's capacity
 function DestroyExtraPipebombs()
@@ -3216,7 +3179,7 @@ function RegisterVersion(string ItemName, int Version)
 
 defaultproperties
 {
-    VersionNumber=96910
+    VersionNumber=96911
     GroupName="KF-Scrn"
     FriendlyName="ScrN Balance"
     Description="Total rework of KF1 to make it modern and the best game in the world while sticking to the roots of the original."

@@ -27,7 +27,7 @@
 
 -------------------------------------------------------------------------------
 
-### v9.69.10 - POST-MORTEM UPDATE
+### v9.69.11 - POST-MORTEM UPDATE
 
 #### Balance
 - **Combat Medic** received 30% healing and 50% syringe recharge bonus. Still far worse healing than Field Medic but at least now it is better than off-perk.
@@ -68,7 +68,7 @@ PerkedWeapons=3:ScrnWeaponPack.VALDTAssaultRifle:$WP
 PerkedWeapons=3:ScrnWeaponPack.HK417AR:$WP
 ```
 - **AK-74** renamed to **AKS-74** to comply with the weapon model.
-- **AKS-74** made a Tier-1 weapon: lowered damage to 38 (down from 42), price to $600 (down from $1150), weight 4 (down from 4).
+- **AKS-74** made a Tier-1 weapon: lowered damage to 38 (down from 42), price to $600 (down from $1150), weight 4 (down from 5).
 
 #### ScrN Zed Pack
 - **Husk** cannot shoot while falling, dying, or evading other Husk's fireball (by [NikC-])
