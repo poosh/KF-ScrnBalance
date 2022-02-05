@@ -1,4 +1,4 @@
-[![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/donate/?token=eqGTBS8Bbv2Ic1RoE8JYnGsnsKNB119LTEUsW4VB_nHzwQoJPbfJgr7nhKLg7VEkz8JsePsyj5d6FHVr&locale.x=LV)
+[![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/donate/?token=8nM9T1g-6fLyYPVyjR5_h4FX_baXkopNmzy4-BpOP5DfqGc7QsQRuJshQMnK9ASApsnN4XBfnhEBRRy7&locale.x=LV)
 
 <!-- some link shortcuts -->
 [ScrN Brutal KF Bundle]: https://steamcommunity.com/groups/ScrNBalance/discussions/2/483368526570475472/
