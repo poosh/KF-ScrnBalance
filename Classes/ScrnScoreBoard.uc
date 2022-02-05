@@ -28,18 +28,18 @@ static function float DrawCountryNameSE( Canvas C, PlayerReplicationInfo PRI, fl
     OriginalColor = C.DrawColor;
     ScrnPRI = class'ScrnCustomPRI'.static.FindMe(PRI);
     if ( bNoColorTags )
-        S = class'ScrnBalance'.default.Mut.StripColorTags(PRI.PlayerName);
+        S = class'ScrnFunctions'.static.StripColorTags(PRI.PlayerName);
     else
         S = class'ScrnBalance'.default.Mut.ColoredPlayerName(PRI);
 
     if( MaxLen>0 )
-        S = class'ScrnBalance'.static.LeftCol(S, MaxLen);
+        S = class'ScrnFunctions'.static.LeftCol(S, MaxLen);
 
     C.DrawColor = Class'HudBase'.Default.WhiteColor;
     C.DrawColor.A = OriginalColor.A;
     C.TextSize(S,NameWidth,IconSize);
     Offset = DrawNamePrefixIcons(C, PRI, ScrnPRI, S, X, Y, IconSize);
-    C.TextSize(class'ScrnBalance'.static.StripColor(S),NameWidth,IconSize);
+    C.TextSize(class'ScrnFunctions'.static.StripColor(S),NameWidth,IconSize);
 
     if ( ScrnPRI != none ) {
 
@@ -244,7 +244,7 @@ simulated event UpdateScoreBoard(Canvas Canvas)
         }
         else if ( PRI.PlayerID != 0 || PRI.PlayerName != "WebAdmin" ) {
             ++SpecCount;
-            Spectators @= class'ScrnBalance'.default.Mut.StripColorTags(PRI.PlayerName) $ " |";
+            Spectators @= class'ScrnFunctions'.static.StripColorTags(PRI.PlayerName) $ " |";
         }
     }
 

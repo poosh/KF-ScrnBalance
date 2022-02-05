@@ -1,5 +1,6 @@
 /*****************************************************************************
  * ScrN Total Game Balance
+ * @GitHub: https://github.com/poosh/KF-ScrnBalance
  * @author [ScrN]PooSH, contact via Steam: http://steamcommunity.com/id/scrn-poosh/
  *                      or Discord: https://discord.gg/Y3W5crSXA5
  * Copyright (c) 2012-2021 PU Developing IK, All Rights Reserved.
@@ -211,11 +212,6 @@ var globalconfig int MinRespawnCashNormal, MinRespawnCashHard, MinRespawnCashSui
 var globalconfig int TraderTimeNormal, TraderTimeHard, TraderTimeSui, TraderTimeHoE;
 var globalconfig bool bLeaveCashOnDisconnect, bPlayerZEDTime;
 
-struct SColorTag {
-    var string T;
-    var byte R, G, B;
-};
-var array<SColorTag> ColorTags;
 var globalconfig string ColoredServerName;
 
 var float OriginalWaveSpawnPeriod;
@@ -230,14 +226,7 @@ var transient StaticMesh          AmmoBoxMesh;
 var transient float               AmmoBoxDrawScale;
 var transient vector              AmmoBoxDrawScale3D;
 
-struct SSpecialPlayers {
-    var int SteamID32;
-    var string AvatarRef, ClanIconRef, PreNameIconRef, PostNameIconRef;
-    var Material Avatar, ClanIcon, PreNameIcon, PostNameIcon;
-    var Color PrefixIconColor, PostfixIconColor;
-    var int Playoffs, TourneyWon;
-};
-var const private array<SSpecialPlayers> HighlyDecorated;
+
 var globalconfig string MySteamID64;
 
 enum ECustomLockType
@@ -554,7 +543,7 @@ function BroadcastMessage(string Msg, optional bool bSaveToLog)
     local name MsgType;
 
     if ( bSaveToLog) {
-        log(StripColorTags(Msg), 'ScrnBalance');
+        log(class'ScrnFunctions'.static.StripColorTags(Msg), 'ScrnBalance');
         MsgType = 'Log';
     }
 
@@ -572,91 +561,9 @@ function SendFriendlyFireWarning(PlayerController Player)
         Player.ClientMessage(ColorString("FRIENDLY FIRE " $int(KF.FriendlyFireScale*100)$"% !!!", 255, 127, 1));
 }
 
-
-// copy-pasted from ScrnPlayerController for easy access
 static final function string ColorString(string s, byte R, byte G, byte B)
 {
-    return chr(27)$chr(max(R,1))$chr(max(G,1))$chr(max(B,1))$s;
-}
-
-static final function string ColorStringC(string s, color c)
-{
-    return chr(27)$chr(max(c.R,1))$chr(max(c.G,1))$chr(max(c.B,1))$s;
-}
-
-static final function string StripColor(string s)
-{
-    local int p;
-
-    p = InStr(s,chr(27));
-    while ( p>=0 )
-    {
-        s = left(s,p)$mid(S,p+4);
-        p = InStr(s,Chr(27));
-    }
-
-    return s;
-}
-
-// returns first i amount of characters excluding escape color codes
-static final function string LeftCol(string ColoredString, int i)
-{
-    local string s;
-    local int p, c;
-
-    if ( Len(ColoredString) <= i )
-        return ColoredString;
-
-    c = i;
-    s = ColoredString;
-    p = InStr(s,chr(27));
-    while ( p >=0 && p < i ) {
-        c+=4; // add 4 more characters due to color code
-        s = left(s, p) $ mid(s, p+4);
-        p = InStr(s,Chr(27));
-    }
-
-    return Left(ColoredString, c);
-}
-
-simulated function string ParseColorTags(string ColoredText, optional PlayerReplicationInfo PRI)
-{
-    local int i;
-    local string s;
-
-    s = ColoredText;
-    if ( PRI != none && PRI.Team != none )
-        s = Repl(s, "^t", ColorStringC("", class'ScrnHUD'.default.TextColors[PRI.Team.TeamIndex]), true);
-    else
-        s = Repl(s, "^t", "", true);
-
-    if ( KFPlayerReplicationInfo(PRI) != none )
-        s = Repl(s, "^p", ColorStringC("", class'ScrnHUD'.static.PerkColor(KFPlayerReplicationInfo(PRI).ClientVeteranSkillLevel)), true);
-    else
-        s = Repl(s, "^p", "", true);
-
-
-    for ( i=0; i<ColorTags.Length; ++i ) {
-        s = Repl(s, ColorTags[i].T, ColorString("",
-                ColorTags[i].R, ColorTags[i].G, ColorTags[i].B), true);
-    }
-
-    return s;
-}
-
-simulated function string StripColorTags(string ColoredText)
-{
-    local int i;
-    local string s;
-
-    s = ColoredText;
-    s = Repl(s, "^p", "", true);
-    s = Repl(s, "^t", "", true);
-    for ( i=0; i<ColorTags.Length; ++i ) {
-        s = Repl(s, ColorTags[i].T, "", true);
-    }
-
-    return s;
+    return class'ScrnFunctions'.static.ColorString(s, R, G, B);
 }
 
 simulated function string PlainPlayerName(PlayerReplicationInfo PRI)
@@ -664,7 +571,7 @@ simulated function string PlainPlayerName(PlayerReplicationInfo PRI)
     if ( PRI == none )
         return "";
 
-    return StripColorTags(PRI.PlayerName);
+    return class'ScrnFunctions'.static.StripColorTags(PRI.PlayerName);
 }
 
 simulated function string ColoredPlayerName(PlayerReplicationInfo PRI)
@@ -672,7 +579,7 @@ simulated function string ColoredPlayerName(PlayerReplicationInfo PRI)
     if ( PRI == none )
         return "";
 
-    return ParseColorTags(PRI.PlayerName, PRI);
+    return class'ScrnFunctions'.static.ParseColorTags(PRI.PlayerName, PRI);
 }
 
 function StolenWeapon(Pawn NewOwner, KFWeaponPickup WP)
@@ -680,7 +587,7 @@ function StolenWeapon(Pawn NewOwner, KFWeaponPickup WP)
     local string str;
 
     str = BroadcastPickupText;
-    str = Repl(str, "%p", ColorString(ParseColorTags(NewOwner.GetHumanReadableName(), NewOwner.PlayerReplicationInfo), 192, 1, 1) $ ColorString("", 192, 192, 192), true);
+    str = Repl(str, "%p", ColorString(class'ScrnFunctions'.static.ParseColorTags(NewOwner.GetHumanReadableName(), NewOwner.PlayerReplicationInfo), 192, 1, 1) $ ColorString("", 192, 192, 192), true);
     str = Repl(str, "%o", ColorString(ColoredPlayerName(WP.DroppedBy.PlayerReplicationInfo), 1, 192, 1) $ ColorString("", 192, 192, 192), true);
     str = Repl(str, "%w", ColorString(WP.ItemName, 1, 96, 192) $ ColorString("", 192, 192, 192), true);
     str = Repl(str, "%$", ColorString(String(WP.SellValue), 192, 192, 1) $ ColorString("", 192, 192, 192), true);
@@ -938,18 +845,6 @@ static final function ScrnBalance Myself(LevelInfo Level)
     return none;
 }
 
-final function GetRidOfMut(name MutatorName)
-{
-    local Mutator M;
-
-    for ( M = KF.BaseMutator; M != None; M = M.NextMutator ) {
-
-        if ( M.IsA(MutatorName) ) {
-            M.Destroy();
-            return;
-        }
-    }
-}
 
 //can't statically link to ServerPerksMut, cuz it is server-side only
 function SaveStats()
@@ -1206,7 +1101,7 @@ auto simulated state WaitingForTick
             }
         }
         if ( ColoredServerName != "" ) {
-            Level.GRI.ServerName = ParseColorTags(ColoredServerName);
+            Level.GRI.ServerName = class'ScrnFunctions'.static.ParseColorTags(ColoredServerName);
         }
     }
 
@@ -1298,8 +1193,8 @@ function MessagePerkStats(PlayerController Sender)
     if ( SPI == none )
         Sender.ClientMessage("No player info record found");
     else {
-        LongMessage(Sender, strXPInitial $ SPI.PerkStatStr(SPI.GameStartStats));
-        LongMessage(Sender, strXPProgress $ SPI.PerkProgressStr(SPI.GameStartStats));
+        class'ScrnFunctions'.static.LongMessage(Sender, strXPInitial $ SPI.PerkStatStr(SPI.GameStartStats));
+        class'ScrnFunctions'.static.LongMessage(Sender, strXPProgress $ SPI.PerkProgressStr(SPI.GameStartStats));
     }
 }
 
@@ -1344,43 +1239,6 @@ function MsgEnemies(PlayerController Sender)
     }
 }
 
-/** Splits long message on short ones before sending it to client.
- *  @param   Sender     Player, who will receive message(-s).
- *  @param   S          String to send.
- *  @param   MaxLen     Max length of one string. Default: 80. If S is longer than this value,
- *                      then it will be splitted on serveral messages.
- *  @param  Divider     Character to be used as divider. Default: Space. String is splitted
- *                      at last divder's position before MaxLen is reached.
- */
-static function LongMessage(PlayerController Sender, string S, optional int MaxLen, optional string Divider)
-{
-    local int pos;
-    local string part;
-
-    if ( Sender == none )
-        return;
-    if ( MaxLen == 0 )
-        MaxLen = 80;
-    if ( Divider == "" )
-        Divider = " ";
-
-    while ( len(part) + len(S) > MaxLen ) {
-        pos = InStr(S, Divider);
-        if ( pos == -1 )
-            break; // no more dividers
-
-        if ( part != "" && len(part) + pos + 1 > MaxLen) {
-            Sender.ClientMessage(part);
-            part = "";
-        }
-        part $= Left(S, pos + 1);
-        S = Mid(S, pos+1);
-    }
-
-    part $= S;
-    if ( part != "" )
-        Sender.ClientMessage(part);
-}
 
 function bool IsAdmin(PlayerController Sender)
 {
@@ -1426,7 +1284,7 @@ function Mutate(string MutateString, PlayerController Sender)
 
     Key = caps(MutateString);
     Divide(Key, " ", Key, Value);
-    cmd = BinarySearchStr(MutateCommands, Key);
+    cmd = class'ScrnFunctions'.static.BinarySearchStr(MutateCommands, Key);
     if ( cmd == -1 ) {
         super(Mutator).Mutate(MutateString, Sender);
         return; //unknown command
@@ -1441,7 +1299,7 @@ function Mutate(string MutateString, PlayerController Sender)
             break;
         case MUTATE_CMDLINE:
             if ( CheckAdmin(Sender) && CheckScrnGT(Sender) )
-                LongMessage(Sender, ScrnGT.GetCmdLine(), 80, "?");
+                class'ScrnFunctions'.static.LongMessage(Sender, ScrnGT.GetCmdLine(), 80, "?");
             break;
         case MUTATE_DEBUGGAME:
             if ( CheckAdmin(Sender) )
@@ -1712,35 +1570,7 @@ function SendAccuracy(PlayerController Sender)
 
 function simulated String GameTimeStr()
 {
-    return FormatTime(Level.Game.GameReplicationInfo.ElapsedTime);
-}
-
-static final function String FormatTime( int Seconds )
-{
-    local int Minutes, Hours;
-    local String Time;
-
-    if( Seconds > 3600 )
-    {
-        Hours = Seconds / 3600;
-        Seconds -= Hours * 3600;
-
-        Time = Hours$":";
-    }
-    Minutes = Seconds / 60;
-    Seconds -= Minutes * 60;
-
-    if( Minutes >= 10 || Hours == 0 )
-        Time = Time $ Minutes $ ":";
-    else
-        Time = Time $ "0" $ Minutes $ ":";
-
-    if( Seconds >= 10 )
-        Time = Time $ Seconds;
-    else
-        Time = Time $ "0" $ Seconds;
-
-    return Time;
+    return class'ScrnFunctions'.static.FormatTime(Level.Game.GameReplicationInfo.ElapsedTime);
 }
 
 
@@ -3165,7 +2995,6 @@ static function DestroyLinkedInfo( LinkedReplicationInfo EntryLink )
 
 function ServerTraveling(string URL, bool bItems)
 {
-    local int j;
     local string NewMapName, Options;
     local KFGameReplicationInfo KFGRI;
     local bool bMapRestart;
@@ -3205,51 +3034,83 @@ function ServerTraveling(string URL, bool bItems)
     if (NextMutator != None)
         NextMutator.ServerTraveling(URL,bItems);
 
-    if ( ScrnGT == none || ScrnGT.ScrnGameLength == none )
+    Cleanup();
+}
+
+simulated function Destroyed()
+{
+    log("ScrnBalance destroyed", 'ScrnBalance');
+    super.Destroyed();
+}
+
+
+final protected simulated function Cleanup()
+{
+    local int j;
+
+    ScrnGT = none;
+    ServerPerksMut = none;
+    Persistence = none;
+
+    // monster collection reset
+    if (ScrnGT == none || ScrnGT.ScrnGameLength == none)
         class'ScrnGameRules'.static.ResetGameSquads(KF, CurrentEventNum);
+
+    // ach reset
     class'ScrnAchCtrl'.static.Cleanup();
 
-    if ( Level.NetMode == NM_DedicatedServer ) {
-        // break links to self
+    // break links to self
+    // btw, why only for dedicated servers???
+    if (Level.NetMode == NM_DedicatedServer)
+    {
         Mut = none;
         default.Mut = none;
         class'ScrnBalance'.default.Mut = none;
     }
 
-    for ( j=0; j<Perks.length; ++j ) {
-        if ( Perks[j] != none ) {
+    // remove linked repinfo
+    DestroyLinkedInfo(CustomWeaponLink);
+    CustomWeaponLink = none;
+
+    for (j=0; j<Perks.length; ++j)
+    {
+        if (Perks[j] != none)
+        {
             Perks[j].default.DefaultInventory.length = 0;
             Perks[j].default.bLocked = false;
         }
     }
 
-    DestroyLinkedInfo(CustomWeaponLink);
-    CustomWeaponLink = none;
-
     // destroy local objects
-    if ( MapInfo != none ) {
+    if (MapInfo != none)
+    {
         MapInfo.Mut = none;
         MapInfo = none;
     }
-    if ( BurnMech != none ) {
+    // destroy actors
+    if (BurnMech != none)
+    {
         BurnMech.Destroy();
         BurnMech = none;
     }
-    if ( SrvInfo != none ) {
+    if (SrvInfo != none)
+    {
         SrvInfo.Destroy();
         SrvInfo = none;
     }
-    if ( LockManager != none ) {
+    if (LockManager != none)
+    {
         LockManager.Destroy();
         LockManager = none;
     }
+    if (MyVotingOptions != none)
+    {
+        MyVotingOptions.Mut = none;
+        MyVotingOptions.Destroy();
+        MyVotingOptions = none;
+    }
 }
 
-simulated function Destroyed()
-{
-    super.Destroyed();
-    log("ScrnBalance destroyed", 'ScrnBalance');
-}
 
 // Limits placed pipebomb count to perk's capacity
 function DestroyExtraPipebombs()
@@ -3321,92 +3182,6 @@ function BlamePlayer(ScrnPlayerController PC, string Reason, optional int BlameI
     PC.LastBlamedTime = Level.TimeSeconds;
 }
 
-final static function bool GetHighlyDecorated(int SteamID32,
-    out material Avatar, out material ClanIcon,
-    out material PreNameIcon, out Color PrefixIconColor, out material PostNameIcon, out Color PostfixIconColor,
-    out int Playoffs, out int TourneyWon)
-{
-    local int start, end, i;
-
-    start = 0;
-    end = default.HighlyDecorated.length;
-
-    while ( start < end ) {
-        i = start + ((end - start)>>1);
-        if ( SteamID32 == default.HighlyDecorated[i].SteamID32 ) {
-            if ( default.HighlyDecorated[i].Avatar == none && default.HighlyDecorated[i].AvatarRef != "" )
-                default.HighlyDecorated[i].Avatar = Material(DynamicLoadObject(default.HighlyDecorated[i].AvatarRef, class'Material'));
-            if ( default.HighlyDecorated[i].ClanIcon == none && default.HighlyDecorated[i].ClanIconRef != "" )
-                default.HighlyDecorated[i].ClanIcon = Material(DynamicLoadObject(default.HighlyDecorated[i].ClanIconRef, class'Material'));
-            if ( default.HighlyDecorated[i].PreNameIcon == none && default.HighlyDecorated[i].PreNameIconRef != "" )
-                default.HighlyDecorated[i].PreNameIcon = Material(DynamicLoadObject(default.HighlyDecorated[i].PreNameIconRef, class'Material'));
-            if ( default.HighlyDecorated[i].PostNameIcon == none && default.HighlyDecorated[i].PostNameIconRef != "" )
-                default.HighlyDecorated[i].PostNameIcon = Material(DynamicLoadObject(default.HighlyDecorated[i].PostNameIconRef, class'Material'));
-            Avatar = default.HighlyDecorated[i].Avatar;
-            ClanIcon = default.HighlyDecorated[i].ClanIcon;
-            PreNameIcon = default.HighlyDecorated[i].PreNameIcon;
-            PrefixIconColor = default.HighlyDecorated[i].PrefixIconColor;
-            PostNameIcon = default.HighlyDecorated[i].PostNameIcon;
-            PostfixIconColor = default.HighlyDecorated[i].PostfixIconColor;
-            Playoffs = default.HighlyDecorated[i].Playoffs;
-            TourneyWon = default.HighlyDecorated[i].TourneyWon;
-            return true;
-        }
-        else if ( SteamID32 < default.HighlyDecorated[i].SteamID32 )
-            end = i;
-        else
-            start = i + 1;
-    }
-    Avatar = none;
-    ClanIcon = none;
-    PreNameIcon = none;
-    PostNameIcon = none;
-    Playoffs = 0;
-    TourneyWon = 0;
-    return false;
-}
-
-/** Performs binary search on sorted array.
- * @param arr : array of sorted items (in ascending order). Array will not be modified.
- *              out modifier is used just for performance purpose (pass by reference).
- * @param val : value to search
- * @return array index or -1, if value not found.
- */
-final static function int BinarySearch(out array<int> arr, int val)
-{
-    local int start, end, i;
-
-    start = 0;
-    end = arr.length;
-    while ( start < end ) {
-        i = start + ((end - start)>>1);
-        if ( arr[i] == val )
-            return i;
-        else if ( val < arr[i] )
-            end = i;
-        else
-            start = i + 1;
-    }
-    return -1;
-}
-
-final static function int BinarySearchStr(out array<string> arr, string val)
-{
-    local int start, end, i;
-
-    start = 0;
-    end = arr.length;
-    while ( start < end ) {
-        i = start + ((end - start)>>1);
-        if ( arr[i] == val )
-            return i;
-        else if ( val < arr[i] )
-            end = i;
-        else
-            start = i + 1;
-    }
-    return -1;
-}
 
 function bool IsScrnAuthority()
 {
@@ -3687,39 +3462,6 @@ defaultproperties
     MinVoteDifficulty=2
     MaxDifficulty=8
 
-    ColorTags( 0)=(T="^0",R=1,G=1,B=1)
-    ColorTags( 1)=(T="^1",R=200,G=1,B=1)
-    ColorTags( 2)=(T="^2",R=1,G=200,B=1)
-    ColorTags( 3)=(T="^3",R=200,G=200,B=1)
-    ColorTags( 4)=(T="^4",R=1,G=1,B=255)
-    ColorTags( 5)=(T="^5",R=1,G=255,B=255)
-    ColorTags( 6)=(T="^6",R=200,G=1,B=200)
-    ColorTags( 7)=(T="^7",R=200,G=200,B=200)
-    ColorTags( 8)=(T="^8",R=255,G=127,B=0)
-    ColorTags( 9)=(T="^9",R=128,G=128,B=128)
-
-    ColorTags(10)=(T="^w$",R=255,G=255,B=255)
-    ColorTags(11)=(T="^r$",R=255,G=1,B=1)
-    ColorTags(12)=(T="^g$",R=1,G=255,B=1)
-    ColorTags(13)=(T="^b$",R=1,G=1,B=255)
-    ColorTags(14)=(T="^y$",R=255,G=255,B=1)
-    ColorTags(15)=(T="^c$",R=1,G=255,B=255)
-    ColorTags(16)=(T="^o$",R=255,G=140,B=1)
-    ColorTags(17)=(T="^u$",R=255,G=20,B=147)
-    ColorTags(18)=(T="^s$",R=1,G=192,B=255)
-    ColorTags(19)=(T="^n$",R=139,G=69,B=19)
-
-    ColorTags(20)=(T="^W$",R=112,G=138,B=144)
-    ColorTags(21)=(T="^R$",R=132,G=1,B=1)
-    ColorTags(22)=(T="^G$",R=1,G=132,B=1)
-    ColorTags(23)=(T="^B$",R=1,G=1,B=132)
-    ColorTags(24)=(T="^Y$",R=255,G=192,B=1)
-    ColorTags(25)=(T="^C$",R=1,G=160,B=192)
-    ColorTags(26)=(T="^O$",R=255,G=69,B=1)
-    ColorTags(27)=(T="^U$",R=160,G=32,B=240)
-    ColorTags(28)=(T="^S$",R=65,G=105,B=225)
-    ColorTags(29)=(T="^N$",R=80,G=40,B=20)
-
     AmmoBoxMesh=StaticMesh'kf_generic_sm.pickups.Metal_Ammo_Box'
     AmmoBoxDrawScale=1.000000
     AmmoBoxDrawScale3D=(X=1.000000,Y=1.000000,Z=1.000000)
@@ -3746,112 +3488,4 @@ defaultproperties
     MutateCommands(17)="VERSION"
     MutateCommands(18)="ZED"
     MutateCommands(19)="ZEDLIST"
-
-    HighlyDecorated(0)=(SteamID32=3907835,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(1)=(SteamID32=4787302,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(2)=(SteamID32=15243342,ClanIconRef="ScrnTex.Players.Code",PreNameIconRef="KillingFloor2HUD.PerkReset.PReset_Medic_Grey",PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(3)=(SteamID32=18524053,AvatarRef="ScrnTex.Players.FabZen",ClanIconRef="ScrnTex.Players.SALTY",PreNameIconRef="KillingFloor2HUD.PerkReset.PReset_Commander_Grey",PostNameIconRef="KillingFloor2HUD.PerkReset.PReset_Commander_Grey",PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(4)=(SteamID32=18871148,ClanIconRef="ScrnTex.Players.SALTY",PreNameIconRef="KillingFloor2HUD.PerkReset.PReset_Berserker_Grey",PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(5)=(SteamID32=20530727,AvatarRef="ScrnTex.Players.LazyBunta",PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(6)=(SteamID32=21825964,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(7)=(SteamID32=25188900,AvatarRef="ScrnTex.Players.Scuddles",PreNameIconRef="ScrnTex.Perks.Hud_Perk_Star_Gray",PostNameIconRef="ScrnTex.Perks.Hud_Perk_Star_Gray",PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(8)=(SteamID32=26505257,Playoffs=1,AvatarRef="ScrnTex.Players.Duckbuster",ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PreNameIconRef="KillingFloor2HUD.PerkReset.PReset_Support_Grey",PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(9)=(SteamID32=27263782,Playoffs=1,AvatarRef="ScrnTex.Players.Termcat",ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(10)=(SteamID32=27784497,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(11)=(SteamID32=32271863,AvatarRef="ScrnTex.Players.PooSH",PreNameIconRef="ScrnTex.Perks.Hud_Perk_Star_Gray",PostNameIconRef="ScrnTex.Perks.Hud_Perk_Star_Gray",PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(12)=(SteamID32=32279441,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(13)=(SteamID32=32708029,ClanIconRef="ScrnTex.Players.Dosh",PreNameIconRef="KillingFloor2HUD.PerkReset.PReset_Firebug_Grey",PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(14)=(SteamID32=32779545,ClanIconRef="ScrnTex.Players.SALTY",PreNameIconRef="KillingFloor2HUD.PerkReset.PReset_Support_Grey",PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(15)=(SteamID32=32976519,Playoffs=1,ClanIconRef="ScrnTex.Players.Dosh",PreNameIconRef="KillingFloor2HUD.PerkReset.PReset_Sharpshooter_Grey",PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(16)=(SteamID32=34308728,AvatarRef="ScrnTex.Players.Janitor",PreNameIconRef="KillingFloor2HUD.PerkReset.PReset_Firebug_Grey",PostNameIconRef="KillingFloor2HUD.PerkReset.PReset_Firebug_Grey",PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(17)=(SteamID32=37444251,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(18)=(SteamID32=41734606,Playoffs=1,TourneyWon=1,ClanIconRef="ScrnTex.Tourney.TBN",PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(19)=(SteamID32=43087787,Playoffs=1,AvatarRef="ScrnTex.Players.Chaos",ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PreNameIconRef="KillingFloor2HUD.PerkReset.PReset_Sharpshooter_Grey",PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(20)=(SteamID32=43944237,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(21)=(SteamID32=44141219,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(22)=(SteamID32=44328745,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(23)=(SteamID32=44388687,AvatarRef="ScrnTex.Players.Aze",PreNameIconRef="KillingFloor2HUD.PerkReset.PReset_Commander_Grey",PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(24)=(SteamID32=45006648,ClanIconRef="ScrnTex.Players.SALTY",PreNameIconRef="KillingFloor2HUD.PerkReset.PReset_Sharpshooter_Grey",PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(25)=(SteamID32=45088649,Playoffs=1,AvatarRef="ScrnTex.Players.Joe",ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PreNameIconRef="KillingFloor2HUD.PerkReset.PReset_Berserker_Grey",PrefixIconColor=(R=255,G=255,B=255,A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(26)=(SteamID32=45352894,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(27)=(SteamID32=45594574,AvatarRef="ScrnTex.Players.CodeReaper",PreNameIconRef="ScrnTex.Players.BowieKnifeLeft",PostNameIconRef="ScrnTex.Players.BowieKnifeRight",PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(28)=(SteamID32=46023864,AvatarRef="ScrnTex.Players.Baron",PreNameIconRef="KillingFloor2HUD.PerkReset.PReset_Medic_Grey",PostNameIconRef="ScrnAch_T.Achievements.Baron",PrefixIconColor=(A=0),PostfixIconColor=(R=255,G=255,B=255,A=255))
-    HighlyDecorated(29)=(SteamID32=47199674,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(30)=(SteamID32=47820768,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(31)=(SteamID32=49361376,Playoffs=1,TourneyWon=1,ClanIconRef="ScrnTex.Tourney.TBN",PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(32)=(SteamID32=51667940,Playoffs=1,TourneyWon=1,ClanIconRef="ScrnTex.Tourney.TBN",PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(33)=(SteamID32=52109233,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PreNameIconRef="KillingFloor2HUD.PerkReset.PReset_Support_Grey",PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(34)=(SteamID32=53781980,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(35)=(SteamID32=54179805,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(36)=(SteamID32=54471316,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(37)=(SteamID32=57193815,ClanIconRef="ScrnTex.Players.Dosh",PreNameIconRef="KillingFloor2HUD.PerkReset.PReset_Sharpshooter_Grey",PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(38)=(SteamID32=58813412,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(39)=(SteamID32=59018230,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(40)=(SteamID32=59344954,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PreNameIconRef="KillingFloor2HUD.PerkReset.PReset_Support_Grey",PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(41)=(SteamID32=59865355,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(42)=(SteamID32=61480134,Playoffs=1,TourneyWon=1,ClanIconRef="ScrnTex.Tourney.TBN",PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(43)=(SteamID32=61647562,ClanIconRef="ScrnTex.Players.Dosh",PreNameIconRef="KillingFloor2HUD.PerkReset.PReset_Demolition_Grey",PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(44)=(SteamID32=63934831,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(45)=(SteamID32=64861994,Playoffs=1,AvatarRef="ScrnTex.Players.dkanus",ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PreNameIconRef="KillingFloor2HUD.PerkReset.PReset_Sharpshooter_Grey",PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(46)=(SteamID32=66725591,ClanIconRef="ScrnTex.Players.SALTY",PreNameIconRef="KillingFloor2HUD.PerkReset.PReset_Medic_Grey",PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(47)=(SteamID32=66767874,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(48)=(SteamID32=67141366,Playoffs=1,TourneyWon=1,ClanIconRef="ScrnTex.Tourney.TBN",PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(49)=(SteamID32=68703215,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(50)=(SteamID32=68932148,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(51)=(SteamID32=70606615,AvatarRef="ScrnTex.Players.aaa",PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(52)=(SteamID32=71427768,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(53)=(SteamID32=71462150,ClanIconRef="ScrnTex.Players.VP",PreNameIconRef="ScrnTex.Players.Medal_VP",PostNameIconRef="KillingFloor2HUD.PerkReset.PReset_Sharpshooter_Grey",PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(54)=(SteamID32=72523409,AvatarRef="ScrnTex.Players.Candybee",PreNameIconRef="ScrnTex.Players.Mudflapgirl_left",PostNameIconRef="ScrnTex.Players.Mudflapgirl_right",PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(55)=(SteamID32=75600845,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(56)=(SteamID32=76661591,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(57)=(SteamID32=77967745,ClanIconRef="ScrnTex.Players.SALTY",PreNameIconRef="KillingFloor2HUD.PerkReset.PReset_Demolition_Grey",PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(58)=(SteamID32=81279347,ClanIconRef="ScrnTex.Players.Dosh",PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(59)=(SteamID32=81947447,Playoffs=1,TourneyWon=1,ClanIconRef="ScrnTex.Tourney.TBN",PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(60)=(SteamID32=82239578,AvatarRef="ScrnTex.Players.Toaste",PreNameIconRef="ScrnTex.Players.Yinyang",PostNameIconRef="ScrnTex.Players.Yinyang",PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(61)=(SteamID32=83417929,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(62)=(SteamID32=84050600,AvatarRef="ScrnTex.Players.NikC",PreNameIconRef="KillingFloor2HUD.PerkReset.PReset_Demolition_Grey",PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(63)=(SteamID32=84652399,AvatarRef="ScrnTex.Players.Droop",PreNameIconRef="ScrnTex.Players.Batman",PostNameIconRef="ScrnTex.Players.Batman",PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(64)=(SteamID32=85142081,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(65)=(SteamID32=87647886,ClanIconRef="ScrnTex.Players.Dosh",PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(66)=(SteamID32=89323130,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(67)=(SteamID32=93919492,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(68)=(SteamID32=95752287,AvatarRef="ScrnTex.Players.FosterKF2",PreNameIconRef="KillingFloor2HUD.PerkReset.PReset_Sharpshooter_Grey",PostNameIconRef="KillingFloor2HUD.PerkReset.PReset_Sharpshooter_Grey",PrefixIconColor=(A=1),PostfixIconColor=(A=0))
-    HighlyDecorated(69)=(SteamID32=99293732,Playoffs=1,TourneyWon=1,ClanIconRef="ScrnTex.Tourney.TBN",PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(70)=(SteamID32=102203653,ClanIconRef="ScrnTex.Players.VP",PreNameIconRef="ScrnTex.Players.Medal_VP",PostNameIconRef="ScrnTex.Players.Medal_chicken",PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(71)=(SteamID32=102496714,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(72)=(SteamID32=106835439,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(73)=(SteamID32=107039826,Playoffs=1,AvatarRef="ScrnTex.Players.Seely",ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(74)=(SteamID32=109654784,AvatarRef="ScrnTex.Players.BertieDastard",PreNameIconRef="KillingFloor2HUD.PerkReset.PReset_Support_Grey",PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(75)=(SteamID32=110496233,AvatarRef="ScrnTex.Players.VP",ClanIconRef="ScrnTex.Players.VP",PreNameIconRef="ScrnTex.Players.Medal_VP",PostNameIconRef="ScrnTex.Players.Medal_dragon",PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(76)=(SteamID32=112564543,ClanIconRef="ScrnTex.Players.Dosh",PreNameIconRef="ScrnTex.Perks.Hud_Perk_Star_Gray",PostNameIconRef="ScrnTex.Perks.Hud_Perk_Star_Gray",PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(77)=(SteamID32=113961551,Playoffs=1,AvatarRef="ScrnTex.Players.Baffi",ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PreNameIconRef="KillingFloor2HUD.PerkReset.PReset_Demolition_Grey",PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(78)=(SteamID32=114826433,Playoffs=1,AvatarRef="ScrnTex.Players.nmm",ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PreNameIconRef="KillingFloor2HUD.PerkReset.PReset_Sharpshooter_Grey",PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(79)=(SteamID32=121550025,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(80)=(SteamID32=124874371,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(81)=(SteamID32=127624729,AvatarRef="ScrnTex.Players.Scrublord",PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(82)=(SteamID32=128107383,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(83)=(SteamID32=128199891,Playoffs=1,TourneyWon=1,ClanIconRef="ScrnTex.Tourney.TBN",PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(84)=(SteamID32=134825301,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(85)=(SteamID32=136078273,ClanIconRef="ScrnTex.Players.SALTY",PreNameIconRef="KillingFloor2HUD.PerkReset.PReset_Firebug_Grey",PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(86)=(SteamID32=139723798,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(87)=(SteamID32=143999622,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(88)=(SteamID32=150832205,AvatarRef="ScrnTex.Players.Taloril",PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(89)=(SteamID32=152138369,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(90)=(SteamID32=152983683,Playoffs=1,TourneyWon=1,ClanIconRef="ScrnTex.Tourney.TBN",PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(91)=(SteamID32=153788974,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(92)=(SteamID32=160715546,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(93)=(SteamID32=162712343,Playoffs=1,ClanIcon=Texture'ScrnTex.Tourney.TourneyMember',PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(94)=(SteamID32=173722095,AvatarRef="ScrnTex.Players.catcat",PreNameIconRef="ScrnTex.Players.RadioActive",PostNameIconRef="ScrnTex.Players.RadioActive",PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(95)=(SteamID32=182247922,ClanIconRef="ScrnTex.Players.VP",PreNameIconRef="ScrnTex.Players.Medal_VP",PostNameIconRef="ScrnTex.Players.Medal_kom",PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(96)=(SteamID32=190669364,ClanIconRef="ScrnTex.Players.VP",PreNameIconRef="ScrnTex.Players.Medal_VP",PostNameIconRef="ScrnTex.Players.Medal_doll",PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(97)=(SteamID32=192070782,Playoffs=1,TourneyWon=1,ClanIconRef="ScrnTex.Tourney.TBN",PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(98)=(SteamID32=319278244,ClanIconRef="ScrnTex.Players.VP",PreNameIconRef="ScrnTex.Players.Medal_VP",PostNameIconRef="ScrnTex.Players.Medal_doll",PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(99)=(SteamID32=359866000,ClanIconRef="ScrnTex.Players.VP",PreNameIconRef="ScrnTex.Players.Medal_VP",PostNameIconRef="ScrnTex.Players.Medal_kom",PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(100)=(SteamID32=374934166,AvatarRef="ScrnTex.Players.Bligiet",PreNameIconRef="ScrnTex.Players.BowieKnifeLeft",PostNameIconRef="ScrnTex.Players.BowieKnifeRight",PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(101)=(SteamID32=378534555,AvatarRef="ScrnTex.Players.BossRoss",PreNameIconRef="ScrnTex.Players.BossRossNameIcon",PostNameIconRef="ScrnTex.Players.BossRossNameIcon",PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(102)=(SteamID32=389474897,ClanIconRef="ScrnTex.Players.VP",PreNameIconRef="ScrnTex.Players.Medal_VP",PostNameIconRef="ScrnTex.Players.Medal_homer",PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(103)=(SteamID32=391528064,ClanIconRef="ScrnTex.Players.VP",PreNameIconRef="ScrnTex.Players.Medal_VP",PostNameIconRef="ScrnTex.Players.Medal_doll",PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(104)=(SteamID32=397272710,ClanIconRef="ScrnTex.Players.VP",PreNameIconRef="ScrnTex.Players.Medal_VP",PostNameIconRef="ScrnTex.Players.Medal_doll",PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(105)=(SteamID32=403136595,ClanIconRef="ScrnTex.Players.VP",PreNameIconRef="ScrnTex.Players.Medal_VP",PostNameIconRef="ScrnTex.Players.Medal_f",PrefixIconColor=(A=0),PostfixIconColor=(A=0))
-    HighlyDecorated(106)=(SteamID32=405312393,ClanIconRef="ScrnTex.Players.VP",PreNameIconRef="ScrnTex.Players.Medal_VP",PostNameIconRef="KillingFloor2HUD.PerkReset.PReset_Sharpshooter_Grey",PrefixIconColor=(A=0),PostfixIconColor=(A=0))
 }

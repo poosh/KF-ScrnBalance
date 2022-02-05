@@ -226,7 +226,7 @@ function string ClanName(string PlayerName)
     if ( PlayerName == "" )
         return "";
 
-    PlayerName = ScrnBalanceMut.StripColorTags(PlayerName);
+    PlayerName = class'ScrnFunctions'.static.StripColorTags(PlayerName);
     if ( bCtryTags && Mid(PlayerName,0,1)=="[" ) {
         // do not use country tags as clan names
         if( Mid(PlayerName,4,1)=="]" )

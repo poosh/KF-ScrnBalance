@@ -246,7 +246,7 @@ function ServerStatus()
     if ( m == none )
         return; // wtf?
 
-    s = m.ColorStringC(strServerInfoSeparator, lbl_ServerInfo.TextColor);
+    s = ColorStringC(strServerInfoSeparator, lbl_ServerInfo.TextColor);
     if ( m.bNoStartCashToss && m.bMedicRewardFromTeam && m.bSpawn0 )
         cSpawnBalance = StatusColor[1];
     else if ( m.bMedicRewardFromTeam ) {
@@ -269,9 +269,9 @@ function ServerStatus()
     lbl_ServerInfo.Caption =
         strPerkRange$"["
             $ class'ScrnHUD'.static.ColoredPerkLevel(m.SrvMinLevel)
-            $ m.ColorStringC("..", lbl_ServerInfo.TextColor)
+            $ ColorStringC("..", lbl_ServerInfo.TextColor)
             $ class'ScrnHUD'.static.ColoredPerkLevel(m.SrvMaxLevel)
-            $ m.ColorStringC("]", lbl_ServerInfo.TextColor);
+            $ ColorStringC("]", lbl_ServerInfo.TextColor);
 
     KFPRI = KFPlayerReplicationInfo(PlayerOwner().PlayerReplicationInfo);
     if ( KFPRI != none && KFPRI.ClientVeteranSkill != none ) {
@@ -283,20 +283,27 @@ function ServerStatus()
                     class'ScrnVeterancyTypes'.static.GetBonusLevel(KFPRI.ClientVeteranSkillLevel));
     }
 
-    lbl_ServerInfo.Caption $= "|" $ m.ColorStringC(strSpawnBalance, cSpawnBalance)
-        $ s $ m.ColorStringC(strWeaponFix, StatusColor[1])
-        $ s $ m.ColorStringC(strAltBurnMech, StatusColor[byte(m.bAltBurnMech)])
-        $ s $ m.ColorStringC(strBeta, StatusColor[byte(m.bBeta)])
-        $ s $ m.ColorStringC(strHardcore, StatusColor[byte(m.bHardcore)])
-        $ s $ m.ColorStringC(strNoPerkChanges, cNoPerkChanges);
+    lbl_ServerInfo.Caption $= "|" $ ColorStringC(strSpawnBalance, cSpawnBalance)
+        $ s $ ColorStringC(strWeaponFix, StatusColor[1])
+        $ s $ ColorStringC(strAltBurnMech, StatusColor[byte(m.bAltBurnMech)])
+        $ s $ ColorStringC(strBeta, StatusColor[byte(m.bBeta)])
+        $ s $ ColorStringC(strHardcore, StatusColor[byte(m.bHardcore)])
+        $ s $ ColorStringC(strNoPerkChanges, cNoPerkChanges);
 }
+
+
+static final function string ColorStringC(String s, color c)
+{
+    return class'ScrnFunctions'.static.ColorStringC(s, c);
+}
+
 
 function string GetPlayerName(PlayerReplicationInfo PRI)
 {
     if (PRI == none) {
         return "";
     }
-    return class'ScrnBalance'.default.Mut.StripColorTags(PRI.PlayerName);
+    return class'ScrnFunctions'.static.StripColorTags(PRI.PlayerName);
 }
 
 function PlayerReplicationInfo FindPRI(string PlayerName)
@@ -304,7 +311,7 @@ function PlayerReplicationInfo FindPRI(string PlayerName)
     local int i;
     local GameReplicationInfo GRI;
 
-    PlayerName = class'ScrnBalance'.default.Mut.StripColorTags(PlayerName);
+    PlayerName = class'ScrnFunctions'.static.StripColorTags(PlayerName);
     if ( PlayerName == "" )
         return none;
 

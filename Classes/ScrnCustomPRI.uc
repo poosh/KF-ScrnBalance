@@ -138,7 +138,7 @@ function simulated int GetSteamID32()
 
 final simulated function LoadHighlyDecorated()
 {
-    class'ScrnBalance'.static.GetHighlyDecorated(
+    class'ScrnHighlyDecorated'.static.GetHighlyDecorated(
         SteamID32, Avatar, ClanIcon, 
         PreNameIcon, PrefixIconColor, PostNameIcon, PostfixIconColor, 
         TourneyPlayoffs, TourneyWins);

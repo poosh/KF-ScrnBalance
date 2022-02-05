@@ -71,7 +71,7 @@ function AddPlayer( KFPlayerReplicationInfo PRI, int Index, Canvas C )
 
     Mut = class'ScrnBalance'.default.Mut;
     if ( Mut != none ) {
-        PlayerName = Mut.LeftCol(Mut.ColoredPlayerName(PRI), 20);
+        PlayerName = class'ScrnFunctions'.static.LeftCol(Mut.ColoredPlayerName(PRI), 20);
     }
     else {
         PlayerName = Left(PRI.PlayerName, 20);

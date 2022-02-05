@@ -1788,7 +1788,7 @@ function GetServerInfo( out ServerResponseLine ServerState )
     super.GetServerInfo(ServerState);
     // Removed in v9.60.02
     // if ( ScrnBalanceMut.ColoredServerName != "" ) {
-    //     ServerState.ServerName = ScrnBalanceMut.ParseColorTags(ScrnBalanceMut.ColoredServerName);
+    //     ServerState.ServerName = class'ScrnFunctions'.static.ParseColorTags(ScrnBalanceMut.ColoredServerName);
     // }
 }
 
@@ -2475,8 +2475,8 @@ function ChangeName(Controller Other, string S, bool bNameChange)
     if (Other.PlayerReplicationInfo.playername~=S)
         return;
 
-    if ( len(ScrnBalanceMut.StripColorTags(S)) > 20 )
-        S = Left( ScrnBalanceMut.StripColorTags(S), 20 );
+    if ( len(class'ScrnFunctions'.static.StripColorTags(S)) > 20 )
+        S = Left(class'ScrnFunctions'.static.StripColorTags(S), 20 );
     S = Repl(S, " ", "_", true);
     S = Repl(S, "|", "I", true);
 

@@ -136,7 +136,7 @@ function GameEnded()
         s = SPI.PlayerName @ Virus.GetStateName();
         if ( Virus.bInfected || Virus.bCured ) {
             if ( Virus.InfectedBy != none ) {
-                s $= ". Infected at " $ GameRules.Mut.FormatTime(Virus.InfectGameTime);
+                s $= ". Infected at " $ class'ScrnFunctions'.static.FormatTime(Virus.InfectGameTime);
                 s $= " by " $ Virus.InfectedBy.SPI.PlayerName;
             }
         }

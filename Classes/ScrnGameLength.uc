@@ -392,7 +392,7 @@ function ZedCmd(PlayerController Sender, string cmd)
                     c.R = 255;
                     c.G = 255;
                 }
-                Sender.ClientMessage(class'ScrnBalance'.static.ColorStringC(
+                Sender.ClientMessage(class'ScrnFunctions'.static.ColorStringC(
                     class'ScrnF'.static.LPad(string(cur_idx), 3)
                         @ class'ScrnF'.static.RPad(eval(ZedInfos[i].Zeds[j].bDisabled, "OFF", "ON"), 5)
                         @ class'ScrnF'.static.LPad(eval(ZedInfos[i].Zeds[j].Pct == 0, "AUTO", string(ZedInfos[i].Zeds[j].Pct)), 7)
@@ -604,7 +604,7 @@ function RunWave()
 
     if ( Game.ScrnGRI.WaveTitle != "" || Game.ScrnGRI.WaveMessage != "" ) {
         if ( Game.ScrnGRI.WaveTitle != "" ) {
-            s = Mut.ColorString(Game.ScrnGRI.WaveTitle, 255, 204, 1);
+            s = class'ScrnFunctions'.static.ColorString(Game.ScrnGRI.WaveTitle, 255, 204, 1);
         }
         if ( Game.ScrnGRI.WaveMessage != "" ) {
             if ( s != "" )

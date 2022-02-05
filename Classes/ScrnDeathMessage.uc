@@ -33,7 +33,7 @@ static function string GetString(
     if (RelatedPRI_2 == None)
         VictimName = Default.SomeoneString;
     else
-        VictimName = class'ScrnBalance'.default.Mut.StripColorTags(RelatedPRI_2.PlayerName);
+        VictimName = class'ScrnFunctions'.static.StripColorTags(RelatedPRI_2.PlayerName);
 
     if ( Switch == 1 )
     {
@@ -47,7 +47,7 @@ static function string GetString(
     if (RelatedPRI_1 == None)
         KillerName = Default.SomeoneString;
     else 
-        KillerName =  class'ScrnBalance'.default.Mut.StripColorTags(RelatedPRI_1.PlayerName);
+        KillerName =  class'ScrnFunctions'.static.StripColorTags(RelatedPRI_1.PlayerName);
 
     return class'GameInfo'.Static.ParseKillMessage(
         KillerName,

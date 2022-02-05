@@ -364,33 +364,6 @@ simulated function DrawEndGameHUD(Canvas C, bool bVictory)
     DisplayLocalMessages(C);
 }
 
-final static function String FormatTime( int Seconds )
-{
-    local int Minutes, Hours;
-    local String Time;
-
-    if( Seconds > 3600 )
-    {
-        Hours = Seconds / 3600;
-        Seconds -= Hours * 3600;
-
-        Time = Hours$":";
-    }
-    Minutes = Seconds / 60;
-    Seconds -= Minutes * 60;
-
-    if( Minutes >= 10 )
-        Time = Time $ Minutes $ ":";
-    else
-        Time = Time $ "0" $ Minutes $ ":";
-
-    if( Seconds >= 10 )
-        Time = Time $ Seconds;
-    else
-        Time = Time $ "0" $ Seconds;
-
-    return Time;
-}
 
 simulated function DrawHudPassA (Canvas C)
 {
@@ -3043,7 +3016,7 @@ simulated function DrawSpecialSpectatingHUD(Canvas C)
     if ( KFGRI.EndGameType == 0 && KFGRI.ElapsedTime > 0 ) {
         // total time
         C.SetPos(0, 0);
-        C.DrawText(FormatTime(KFGRI.ElapsedTime));
+        C.DrawText(class'ScrnFunctions'.static.FormatTime(KFGRI.ElapsedTime));
 
         // wave num
         S = WaveString @ string(KFGRI.WaveNumber + 1);
@@ -3055,7 +3028,7 @@ simulated function DrawSpecialSpectatingHUD(Canvas C)
         if ( KFGRI.bWaveInProgress )
             S = string(KFGRI.MaxMonsters);
         else
-            s = FormatTime(KFGRI.TimeToNextWave);
+            s = class'ScrnFunctions'.static.FormatTime(KFGRI.TimeToNextWave);
         C.TextSize(S, XL, YL);
         C.SetPos(C.ClipX-XL, 0);
         C.DrawText(S);
@@ -3169,7 +3142,7 @@ simulated function LocalizedMessage( class<LocalMessage> Message, optional int S
     LocalMessages[i].OptionalObject = OptionalObject;
     LocalMessages[i].EndOfLife = Message.static.GetLifetime(Switch) + Level.TimeSeconds;
     if ( class'ScrnBalance'.default.Mut != none )
-        LocalMessages[i].StringMessage = class'ScrnBalance'.default.Mut.ParseColorTags(CriticalString, RelatedPRI_1);
+        LocalMessages[i].StringMessage = class'ScrnFunctions'.static.ParseColorTags(CriticalString, RelatedPRI_1);
     else
         LocalMessages[i].StringMessage = CriticalString;
     LocalMessages[i].LifeTime = Message.static.GetLifetime(Switch);
@@ -3181,7 +3154,7 @@ function AddTextMessage(string M, class<LocalMessage> MessageClass, PlayerReplic
     local bool bSetPRI;
 
     if ( class'ScrnBalance'.default.Mut != none ) {
-        M = class'ScrnBalance'.default.Mut.ParseColorTags(M, PRI);
+        M = class'ScrnFunctions'.static.ParseColorTags(M, PRI);
         if ( MessageClass==class'SayMessagePlus' ) {
             MessageClass = class'ScrnSayMessagePlus';
             bSetPRI = true;
@@ -3463,7 +3436,7 @@ final static function color PerkColor(int PerkLevel)
 
 final static function string ColoredPerkLevel(int PerkLevel)
 {
-    return class'ScrnBalance'.static.ColorStringC(string(PerkLevel), PerkColor(PerkLevel));
+    return class'ScrnFunctions'.static.ColorStringC(string(PerkLevel), PerkColor(PerkLevel));
 }
 
 function static Font GetStaticFontSizeIndex(Canvas C, int FontSize)
