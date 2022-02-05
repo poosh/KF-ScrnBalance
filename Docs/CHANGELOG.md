@@ -12,6 +12,7 @@
 [Duckbuster]: http://steamcommunity.com/profiles/76561197986770985
 [Lost_Champ]: http://steamcommunity.com/profiles/76561198080088953
 [P-Jay]: http://steamcommunity.com/profiles/76561198052307800
+[ImmortalNub]: https://steamcommunity.com/id/ImmortalNub
 <!-- add other peaople too!!! -->
 
 # Version History
@@ -25,6 +26,65 @@
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+
+### v9.69.10 - POST-MORTEM UPDATE
+
+#### Balance
+- **Combat Medic** received 30% healing and 50% syringe recharge bonus. Still far worse healing than Field Medic but at least now it is better than off-perk.
+- **Katana** restored the vanilla attack speed. Previously, ScrN Katana's Primary Attack was slightly slower.
+- **Commando** lost 25% ammo bonus. Base ammo pools readjusted to compensate for the bonus loss.
+- **M4-203** marked as a cross-perk weapon (Demo/Commando)
+- **M4** received Armor-Piercing rounds.
+- All assault rifles with Armor-Piercing rounds received "AP" prefix in their names: "M4 AP", "FN FAL AP", "HK417 AP".
+- **FN FAL** price raised to $4000 (up from $2750)
+- Significantly raised Armor-Piercing ammo price: $30/mag for M4, $35/mag for FN FAL and HK417.
+- Removed **Combat Shotgun** weird "feature" that sometimes dealt 10x damage when shot through Siren Scream.
+- Reduced **Flare iDoT** damage progression. Previously, each subsequent flare dealt -25% damage. Now: -33%.
+
+#### Games
+- **FTG OTC** v2.41
+- Fixed a bug where the remaining zed count got doubled at the wave begin if `bOpenTrader=false`
+- Added map info for Transit, HillBillyHorror, SteamLand, Forgotten, Filthscross, and HellRide (by [nmmblez])
+
+#### Code Changes
+- Moved utility functions from `ScrnBalance` to `ScrnFunctions` class (by [NikC-])
+- Removed hardcoded package names everywhere in the code (by [NikC-])
+
+#### Other Changes
+- Voice Messages are not sent to the enemy team in TSC
+- Support/Medic! voice message (v11) displays health % of the sender.
+- Hidden achievements do not show unless unlocked (e.g., "TSC Tourney Member"). Now hidden achievements do not prevent 100% achievement earn.
+- Fixed HUD-related log warnings in Objective Mode.
+- Temporarily removed auto-blame for buying OP weapons before the Boss Wave. The feature wasn't intuitive as the players didn't know they shouldn't buy those weapons beforehand.
+- Added health bar to spectated player (thanks [ImmortalNub])
+
+#### ScrN Weapon Pack
+- Adjusted assault rifle ammo count to compensate for Commando's ammo bonus removal. Keep in mind that "A" custom weapon bonus still adds bonus ammo, so that's should be removed:
+```
+PerkedWeapons=3:ScrnWeaponPack.CZ805M:$WP
+PerkedWeapons=3:ScrnWeaponPack.AKC74AssaultRifle:$WP
+PerkedWeapons=3:ScrnWeaponPack.AK12AssaultRifle:$WP
+PerkedWeapons=3:ScrnWeaponPack.VALDTAssaultRifle:$WP
+PerkedWeapons=3:ScrnWeaponPack.HK417AR:$WP
+```
+- **AK-74** renamed to **AKS-74** to comply with the weapon model.
+- **AKS-74** made a Tier-1 weapon: lowered damage to 38 (down from 42), price to $600 (down from $1150), weight 4 (down from 4).
+
+#### ScrN Zed Pack
+- **Husk** cannot shoot while falling, dying, or evading other Husk's fireball (by [NikC-])
+- **Siren** stops screaming immediately after dying (by [NikC-])
+- **Crawler** cannot attack more than once per second. That fixes instant-kill issues where Crawlers were hitting
+  again and again by jumping off each other's back.
+- **HardPat** gets 33% damage resistance from Flare iDoT
+- **HardPat** gets 25% damage resistance from melee body hits (no resistance to head hits)
+- Fixed **FleshPound** dealing insane amount of damage when enraged while performing a hit (thanks [Joe])
+- **TeslaHusk** now uses energy on repairing FP/FFP/TH head too. Previously, TH used energy to repair body health only,
+  while the head was repaired for "free". On HoE, a fully charged TH can repair up to 3500hp, or 1750 body + 1750 head
+  if the head is severely damaged. In previous versions, TH could repair 3500hp body + 3500hp head.
+- **TeslaHusk** energy restore rate lowered by 25%. Previously, it took 10s to restore full energy up from 0. Now, it
+  takes 12.5s.
+- Fixed an issue where sometimes **TeslaHusk** could repair multiple targets in a raw, bypassing the cooldown timer.  
+
 
 ### v9.69.09 - FINAL
 

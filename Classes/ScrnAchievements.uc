@@ -506,8 +506,10 @@ simulated function SetVisibility(optional int AchievementFlags, optional name Gr
     for ( i = 0; i < AchDefs.length; ++i ) {
 
         AchDefs[i].bDisplayFlag = (!bOnlyLocked || !IsUnlocked(i) )
+                && (AchDefs[i].Group != 'Hidden' || IsUnlocked(i))
                 && (Group == '' || Group == AchDefs[i].Group)
-                && FilterMached(AchievementFlags, AchDefs[i].FilterMaskAll, AchDefs[i].FilterMaskAny);
+                && (AchievementFlags == 0 || FilterMached(AchievementFlags, AchDefs[i].FilterMaskAll,
+                        AchDefs[i].FilterMaskAny));
 
         if ( AchDefs[i].bDisplayFlag )
             VisibleAchCount++;

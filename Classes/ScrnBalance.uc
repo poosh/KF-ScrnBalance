@@ -2,7 +2,7 @@
  * ScrN Total Game Balance
  * @author [ScrN]PooSH, contact via Steam: http://steamcommunity.com/id/scrn-poosh/
  *                      or Discord: https://discord.gg/Y3W5crSXA5
- * Copyright (c) 2012-2021 PU Developing IK, All Rights Reserved.
+ * Copyright (c) 2012-2022 PU Developing IK, All Rights Reserved.
  *****************************************************************************/
 
 class ScrnBalance extends ScrnMutator

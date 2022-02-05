@@ -44,7 +44,7 @@ static function float GetMagCapacityModStatic(KFPlayerReplicationInfo KFPRI, cla
             || ClassIsChildOf(Other, class'M4AssaultRifle')
             || ClassIsChildOf(Other, class'SCARMK17AssaultRifle') || ClassIsChildOf(Other, class'FNFAL_ACOG_AssaultRifle')
             || ClassIsChildOf(Other, class'ThompsonSMG')
-            || ClassIsInArray(default.PerkedAmmo, Other.default.FiremodeClass[0].default.AmmoClass)  //v3 - custom weapon support
+            || ClassIsInArray(default.PerkedWeapons, Other)  //v3 - custom weapon support
         )
     {
         return 1.5001; // 50% bigger assault rifle magazine
@@ -54,32 +54,23 @@ static function float GetMagCapacityModStatic(KFPlayerReplicationInfo KFPRI, cla
 
 static function float GetAmmoPickupMod(KFPlayerReplicationInfo KFPRI, KFAmmunition Other)
 {
-    return AddExtraAmmoFor(KFPRI, Other.class);
+    return 1.5001;
 }
 
 static function float AddExtraAmmoFor(KFPlayerReplicationInfo KFPRI, Class<Ammunition> AmmoType)
 {
+    local byte lv;
+
     if ( class'ScrnBalance'.default.Mut.bHardcore )
         return 1.0; // no extra ammo in Hardcore Mode
 
-    if ( ClassIsChildOf(AmmoType, class'ScrnBalanceSrv.ScrnM203MAmmo') )
-        return 1.0; // no extra medic grenades
+    lv = GetClientVeteranSkillLevel(KFPRI);
 
-    if ( GetClientVeteranSkillLevel(KFPRI) > 0 ) {
-        if ( ClassIsChildOf(AmmoType, class'BullpupAmmo')
-                || ClassIsChildOf(AmmoType, class'AK47Ammo')
-                || ClassIsChildOf(AmmoType, class'SCARMK17Ammo' )
-                || ClassIsChildOf(AmmoType, class'M4Ammo')
-                || ClassIsChildOf(AmmoType, class'FNFALAmmo')
-                || ClassIsChildOf(AmmoType, class'MKb42Ammo')
-                || ClassIsChildOf(AmmoType, class'ThompsonAmmo')
-                || ClassIsChildOf(AmmoType, class'ThompsonDrumAmmo')
-                || ClassIsChildOf(AmmoType, class'SPThompsonAmmo')
-                || ClassIsInArray(default.PerkedAmmo, AmmoType)  //v3 - custom weapon support
-            )
-        {
-            return 1.2501 + fmax(0.00, 0.05 * float(GetClientVeteranSkillLevel(KFPRI)-6)); // +5% per level above 6
-        }
+    if ( ClassIsInArray(default.PerkedAmmo, AmmoType) ) {
+        return 1.2501 + 0.05 * lv;
+    }
+    else if ( lv > 6 ) {
+        return 1.0001 + 0.05 * (lv - 6);
     }
     return 1.0;
 }
@@ -168,6 +159,12 @@ static function string GetCustomLevelInfo( byte Level )
     S = Repl(S, "%$", GetPercentStr(fmin(0.90, 0.30 + 0.05*Level)), true);
     return S;
 }
+
+static function bool OverridePerkIndex( class<KFWeaponPickup> Pickup )
+{
+    return Pickup == class'ScrnM4203Pickup' || super.OverridePerkIndex(Pickup);
+}
+
 
 defaultproperties
 {

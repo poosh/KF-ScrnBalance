@@ -2,6 +2,7 @@ class ScrnSPThompsonAmmoPickup extends SPThompsonAmmoPickup;
 
 defaultproperties
 {
-     AmmoAmount=50
-     InventoryType=Class'ScrnBalanceSrv.ScrnSPThompsonAmmo'
+    AmmoAmount=40
+    PickupMessage=".45 ACP"
+    InventoryType=class'ScrnSPThompsonAmmo'
 }

@@ -58,5 +58,6 @@ function ModeDoFire()
 defaultproperties
 {
      BoltCloseSoundRef="KF_FNFALSnd.FNFAL_Bolt_Forward"
-     DamageType=Class'ScrnBalanceSrv.ScrnDamTypeMKb42AssaultRifle'
+     DamageType=class'ScrnDamTypeMKb42AssaultRifle'
+     AmmoClass=class'ScrnMKb42Ammo'
 }

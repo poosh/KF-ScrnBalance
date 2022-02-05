@@ -5,7 +5,7 @@ class ScrnSCARMK17Fire extends SCARMK17Fire;
 
 //lock charging handle after firing last shot
 simulated function bool AllowFire()
-{   
+{
     if (Super.AllowFire() && KFWeapon(Weapon).MagAmmoRemaining <= 1 && !ScrnSCARMK17AssaultRifle(Weapon).bBoltLockQueued )
     {
         ScrnSCARMK17AssaultRifle(Weapon).bBoltLockQueued = true; //make sure it only gets set once
@@ -16,5 +16,6 @@ simulated function bool AllowFire()
 
 defaultproperties
 {
-     DamageType=Class'ScrnBalanceSrv.ScrnDamTypeSCARMK17AssaultRifle'
+    DamageType=class'ScrnDamTypeSCARMK17AssaultRifle'
+    AmmoClass=class'ScrnSCARMK17Ammo'
 }

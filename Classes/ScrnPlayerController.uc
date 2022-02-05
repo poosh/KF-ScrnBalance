@@ -1083,6 +1083,109 @@ simulated function ReceiveLocalizedMessage( class<LocalMessage> Message, optiona
     super.ReceiveLocalizedMessage(Message, Switch, RelatedPRI_1, RelatedPRI_2, OptionalObject);
 }
 
+function SendVoiceMessage(PlayerReplicationInfo Sender,
+        PlayerReplicationInfo Recipient,
+        name messagetype,
+        byte messageID,
+        name broadcasttype,
+        optional Pawn soundSender,
+        optional vector senderLocation)
+{
+    local Controller C;
+    local KFPlayerController PC;
+
+    if (Sender.bOnlySpectator)
+        return;
+
+    if ( !AllowVoiceMessage(MessageType) )
+        return;
+
+    for ( C = Level.ControllerList; C != none; C = C.NextController ) {
+        PC = KFPlayerController(C);
+        if ( PC == none )
+            continue;
+
+        if ( Level.Game.bTeamGame && !SameTeamAs(PC) )
+            continue;
+
+        PC.ClientLocationalVoiceMessage(Sender, Recipient, messagetype, messageID, soundSender, senderLocation);
+    }
+}
+
+function ClientLocationalVoiceMessage(PlayerReplicationInfo Sender,
+                                      PlayerReplicationInfo Recipient,
+                                      name MessageType, byte MessageID,
+                                      optional Pawn SenderPawn, optional vector SenderLocation)
+{
+    local VoicePack Voice;
+    local KFVoicePack KFVoice;
+    local ShopVolume Shop;
+    local name MsgTag;
+    local string Msg;
+
+    if (Sender == none || Sender.VoiceType == none || Player.Console == none || Level.NetMode == NM_DedicatedServer)
+        return;
+
+    MsgTag = 'Voice';
+    Voice = Spawn(Sender.VoiceType, self);
+    KFVoice = KFVoicePack(Voice);
+
+    if (KFVoice == none) {
+        // should not happen
+        Voice.ClientInitialize(Sender, Recipient, MessageType, MessageID);
+        return;
+    }
+
+    if (MessageType == 'TRADER') {
+        MsgTag = 'Trader';
+        if ( Pawn != none && MessageID >= 4 ) {
+            foreach Pawn.TouchingActors(Class'ShopVolume', Shop) {
+                SenderLocation = Shop.MyTrader.Location;
+                // Only play the 30 Seconds remaining messages come across as Locational Speech if we're in the Shop
+                if ( MessageID == 4 )
+                    return;
+
+                if ( MessageID == 5 )
+                    MessageID = 555;
+                break;
+            }
+        }
+
+        // Only play the 10 Seconds remaining message if we are in the Shop
+        // and only play the 30 seconds remaning message if we haven't been to the Shop
+        if (MessageID == 5 || (MessageID == 4 && bHasHeardTraderWelcomeMessage))
+            return;
+
+        if ( MessageID == 555 ) {
+            MessageID = 5;
+        }
+        else if ( MessageID == 7 ) {
+            // Store the fact that we've heard the Trader's Welcome message on the client
+            bHasHeardTraderWelcomeMessage = true;
+        }
+        else if ( MessageID == 6 ) {
+            // If we're hearing the Shop's Closed Message, reset the Trader's Welcome message flag
+            bHasHeardTraderWelcomeMessage = false;
+        }
+
+        if ( MessageID > 6 /*&& bBuyMenuIsOpen*/ ) {
+            // TODO: Show KFVoicePack(Voice).GetClientParsedMessage() in the Buy Menu
+            return;
+        }
+    }
+
+    KFVoice.ClientInitializeLocational(Sender, Recipient, MessageType, MessageID, SenderPawn, SenderLocation);
+    Msg = KFVoice.GetClientParsedMessage();
+    if (Msg == "")
+        return;
+
+    if (MessageType == 'SUPPORT' && MessageID == 0 && KFPlayerReplicationInfo(Sender) != none) {
+        // Medic! (25%)
+        Msg $= " (" $ KFPlayerReplicationInfo(Sender).PlayerHealth $ "%)";
+    }
+    TeamMessage(Sender, Msg, MsgTag);
+}
+
 function ResetWaveStats()
 {
     local KFPlayerReplicationInfo KFPRI;

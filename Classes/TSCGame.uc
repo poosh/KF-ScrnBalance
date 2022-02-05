@@ -118,6 +118,8 @@ event InitGame( string Options, out string Error )
     local ScrnVotingHandlerMut VH;
     local Mutator M;
 
+    bTeamGame = !bSingleTeamGame;
+
     super.InitGame(Options, Error);
 
     // check loaded mutators

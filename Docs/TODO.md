@@ -3,6 +3,10 @@
 ## Ready for testing  
 - Get Prize Button for TSC members
 - Flare and Husk Gun HDMG
+- Do not display Hidden achievements in under ALL group unless unlocked.
+- `Warning: ScrnHUD KFO-Foundry-SE.ScrnHUD (Function ScrnBalanceSrv.ScrnHUD.DrawHUD:020B) Accessed None 'KFPRI'`
+- `Warning: ScrnHUD KFO-Foundry-SE.ScrnHUD (Function ScrnBalanceSrv.ScrnHUD.DrawHUD:00AC) Accessed None 'KFPRI'`
+- `Warning: ScrnHUD KFO-Foundry-SE.ScrnHUD (Function ScrnBalanceSrv.ScrnHUD.DrawOldHudItems:0B9B) Accessed None 'KFPRI'`
 
 ## Features
 - **ScrN SQL Server**
@@ -16,10 +20,6 @@
 - HMG cheevos
 
 ## QoL
-- Do not display Hidden achievements in under ALL group unless unlocked.
 - Move localized string parsing client-side to use client's localization instead of server's.
 
 ## Bugs
-- `Warning: ScrnHUD KFO-Foundry-SE.ScrnHUD (Function ScrnBalanceSrv.ScrnHUD.DrawHUD:020B) Accessed None 'KFPRI'`
-- `Warning: ScrnHUD KFO-Foundry-SE.ScrnHUD (Function ScrnBalanceSrv.ScrnHUD.DrawHUD:00AC) Accessed None 'KFPRI'`
-- `Warning: ScrnHUD KFO-Foundry-SE.ScrnHUD (Function ScrnBalanceSrv.ScrnHUD.DrawOldHudItems:0B9B) Accessed None 'KFPRI'`

@@ -1,10 +1,10 @@
-class ScrnM4203Pickup extends M4203Pickup;
+class ScrnM4203PrimaryPickup extends ScrnM4Pickup;
 
 defaultproperties
 {
      cost=1750
-     BuyClipSize=1
-     AmmoCost=10
+     BuyClipSize=30
+     AmmoCost=15
      Description="An assault rifle with an attached grenade launcher. Shoots in 3-bullet fixed-burst mode."
      ItemName="M4 203 SE"
      ItemShortName="M4 203 SE"
