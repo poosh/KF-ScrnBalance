@@ -13,12 +13,12 @@ static function class<Grenade> GetNadeType(KFPlayerReplicationInfo KFPRI)
 
 static function float GetSyringeChargeRate(KFPlayerReplicationInfo KFPRI)
 {
-    return 1.00;  // no better healing
+    return 1.50;  // Recharges 50% faster
 }
 
 static function float GetHealPotency(KFPlayerReplicationInfo KFPRI)
 {
-    return 1.05; // added 5% to pass IsMedic() check
+    return 1.30;  // Heals for 30% more
 }
 
 static function float GetFireSpeedModStatic(KFPlayerReplicationInfo KFPRI, class<Weapon> Other)
@@ -127,7 +127,7 @@ static function bool ShowEnemyHealthBars(KFPlayerReplicationInfo KFPRI, KFPlayer
 
 defaultproperties
 {
-    SkillInfo="PERK SKILLS:|20% faster movement speed|100% larger Medic Gun clip|75% faster attacks with Machete/Katana|Moves faster in Zed Time"
+    SkillInfo="PERK SKILLS:|30% faster healing|50% faster Syringe recharge|20% faster movement speed|100% larger Medic Gun clip|75% faster attacks with Machete/Katana|Moves faster in Zed Time"
     CustomLevelInfo="PERK BONUSES (LEVEL %L):|%x more damage with Medic Guns|%a extra Medic ammo|%v better Armor|Up to %z Zed-Time Extensions|%$ discount on Medic Guns/Armor/Katana"
 
     PerkIndex=9

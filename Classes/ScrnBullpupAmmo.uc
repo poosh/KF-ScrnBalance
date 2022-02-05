@@ -2,6 +2,9 @@ class ScrnBullpupAmmo extends BullpupAmmo;
 
 defaultproperties
 {
-     InitialAmount=200
-     PickupClass=class'ScrnBullpupAmmoPickup'
+    ItemName="5.56x45mm NATO"
+    MaxAmmo=480
+    InitialAmount=240
+    AmmoPickupAmount=40
+    PickupClass=Class'ScrnBullpupAmmoPickup'
 }

@@ -2,8 +2,9 @@ class ScrnFNFALAmmo extends FNFALAmmo;
 
 defaultproperties
 {
-     MaxAmmo=240
-     InitialAmount=80
-     PickupClass=class'ScrnFNFALAmmoPickup'
-     ItemName="7.62x51mm NATO AP"
+    ItemName="7.62x51mm NATO AP"
+    MaxAmmo=300
+    InitialAmount=100
+    AmmoPickupAmount=20
+    PickupClass=Class'ScrnFNFALAmmoPickup'
 }

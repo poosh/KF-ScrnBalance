@@ -59,4 +59,5 @@ defaultproperties
 {
      BoltCloseSoundRef="KF_FNFALSnd.FNFAL_Bolt_Forward"
      DamageType=class'ScrnDamTypeMKb42AssaultRifle'
+     AmmoClass=class'ScrnMKb42Ammo'
 }

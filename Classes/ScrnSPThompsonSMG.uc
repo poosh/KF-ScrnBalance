@@ -211,5 +211,5 @@ defaultproperties
      PickupClass=class'ScrnSPThompsonPickup'
      FireModeClass(0)=class'ScrnSPThompsonFire'
      AttachmentClass=class'ScrnSPThompsonAttachment'
-     ItemName="Dr. T's Lead Delivery System SE"
+     ItemName="Steampunk Tommy Gun SE"
 }

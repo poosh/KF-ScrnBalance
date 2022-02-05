@@ -4,7 +4,9 @@ class ScrnSPThompsonAmmo extends SPThompsonAmmo;
 
 defaultproperties
 {
-     MaxAmmo=400
-     InitialAmount=200
-     PickupClass=class'ScrnSPThompsonAmmoPickup'
+    ItemName=".45 ACP"
+    MaxAmmo=420
+    InitialAmount=160
+    AmmoPickupAmount=40
+    PickupClass=class'ScrnSPThompsonAmmoPickup'
 }

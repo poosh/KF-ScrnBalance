@@ -27,6 +27,6 @@ defaultproperties
      MaxBurnTime=12
      BurnTimeInc=0.5
      BurnTimeBoost=2
-     iDoT_FadeFactor=0.25
-     iDoT_MinBoostRatio=0.20
+     iDoT_FadeFactor=0.33
+     iDoT_MinBoostRatio=0.10
 }

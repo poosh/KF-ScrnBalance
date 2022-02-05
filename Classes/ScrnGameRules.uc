@@ -1619,25 +1619,28 @@ function bool CanBuyWeapon(ScrnHumanPawn P, class<KFWeaponPickup> WP)
 
 function DefaultOverrideWeaponBuy(ScrnPlayerController PC, class<KFWeaponPickup> WP, out byte BuyRules)
 {
-    local class<KFWeapon> WC;
-    local bool bBossWave;
+    // removed as being stupid - new players don't know to avoid buying certain weapons
+    // TODO: replicate poop to client trader
 
-    bBossWave = Mut.ScrnGT != none && Mut.ScrnGT.bUseEndGameBoss && Mut.ScrnGT.WaveNum >= Mut.ScrnGT.FinalWave;
-    WC = class<KFWeapon>(WP.default.InventoryType);
-    if ( WC == none )
-        return;
-
-    if ( bBossWave ) {
-        if ( class<M99SniperRifle>(WC) != none ) {
-            BuyRules = BUY_ALLOW | BUY_BLAME | BUY_SLIGHTLY_OP;
-        }
-        else if ( WC.name == 'RPG' ) {
-            BuyRules = BUY_ALLOW | BUY_BLAME | BUY_MEGA_OP;
-        }
-        else if ( WC.name == 'M41AAssaultRifle' ) {
-            BuyRules = BUY_ALLOW | BUY_BLAME | BUY_OP;
-        }
-    }
+    // local class<KFWeapon> WC;
+    // local bool bBossWave;
+    //
+    // bBossWave = Mut.ScrnGT != none && Mut.ScrnGT.bUseEndGameBoss && Mut.ScrnGT.WaveNum >= Mut.ScrnGT.FinalWave;
+    // WC = class<KFWeapon>(WP.default.InventoryType);
+    // if ( WC == none )
+    //     return;
+    //
+    // if ( bBossWave ) {
+    //     if ( class<M99SniperRifle>(WC) != none ) {
+    //         BuyRules = BUY_ALLOW | BUY_BLAME | BUY_SLIGHTLY_OP;
+    //     }
+    //     else if ( WC.name == 'RPG' ) {
+    //         BuyRules = BUY_ALLOW | BUY_BLAME | BUY_MEGA_OP;
+    //     }
+    //     else if ( WC.name == 'M41AAssaultRifle' ) {
+    //         BuyRules = BUY_ALLOW | BUY_BLAME | BUY_OP;
+    //     }
+    // }
 }
 
 function bool HasInventoryClass( Pawn P, class<Inventory> IC )

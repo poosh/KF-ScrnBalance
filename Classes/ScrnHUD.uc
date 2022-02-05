@@ -2186,6 +2186,14 @@ simulated function LinkActors()
             }
         }
     }
+    else {
+        ScrnPRI = none;
+        ScrnPerk = none;
+        if ( PrevPerk != none ) {
+            MyPerkChanged(PrevPerk);
+            PrevPerk = none;
+        }
+    }
 }
 
 simulated function Tick(float deltaTime)
@@ -2605,7 +2613,8 @@ simulated function DrawPlayerInfos(Canvas C)
     // Draw the Name, Health, Armor, and Veterancy above other players (using this way to fix portal's beacon errors).
     foreach VisibleCollidingActors(class'KFPawn', KFBuddy, 1000.f, CamPos) {
         KFBuddy.bNoTeamBeacon = true;
-        if ( KFBuddy!=PawnOwner && KFBuddy.PlayerReplicationInfo != none && KFBuddy.Health > 0
+        if ( KFBuddy.PlayerReplicationInfo != none && KFBuddy.Health > 0
+                && (KFBuddy != PawnOwner || PlayerOwner.PlayerReplicationInfo.bIsSpectator)
                 && ((KFBuddy.Location - CamPos) Dot ViewDir) > 0.8 )
         {
             ScreenPos = C.WorldToScreen(KFBuddy.Location + vect(0,0,1) * KFBuddy.CollisionHeight * PlayerInfoOffset);
@@ -2638,7 +2647,11 @@ simulated function DrawHud(Canvas C)
         return;
     }
 
-    if ( !KFPRI.bViewingMatineeCinematic ) {
+    if ( KFPRI != none && KFPRI.bViewingMatineeCinematic ) {
+        PassStyle = STY_Alpha;
+        DrawCinematicHUD(C);
+    }
+    else {
         if ( bShowTargeting )
             DrawTargeting(C);
 
@@ -2673,10 +2686,7 @@ simulated function DrawHud(Canvas C)
         C.Style = PassStyle;
         DrawKFHUDTextElements(C);
     }
-    if ( KFPRI.bViewingMatineeCinematic ) {
-        PassStyle = STY_Alpha;
-        DrawCinematicHUD(C);
-    }
+
     if ( bShowNotification )
         DrawPopupNotification(C);
 }

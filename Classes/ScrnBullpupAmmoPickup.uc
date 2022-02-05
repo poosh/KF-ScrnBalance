@@ -2,5 +2,6 @@ class ScrnBullpupAmmoPickup extends BullpupAmmoPickup;
 
 defaultproperties
 {
-     InventoryType=class'ScrnBullpupAmmo'
+    InventoryType=Class'ScrnBullpupAmmo'
+    PickupMessage="5.56x45mm NATO"
 }

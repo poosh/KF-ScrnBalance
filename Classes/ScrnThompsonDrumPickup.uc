@@ -9,7 +9,7 @@ defaultproperties
 
      Weight=6
      cost=2000
-     AmmoCost=15
+     AmmoCost=24
      BuyClipSize=50
      PowerValue=35
      SpeedValue=80
@@ -17,7 +17,7 @@ defaultproperties
      Description="This Tommy gun with a drum magazine was used heavily during the WWII pacific battles as seen in Rising Storm."
      ItemName="RS Tommy Gun SE"
      ItemShortName="RS Tommy Gun SE"
-     AmmoItemName="45. ACP Ammo"
+     AmmoItemName=".45 ACP"
      EquipmentCategoryID=3
      PickupMessage="You got the RS Thompson with Drum Mag"
 }

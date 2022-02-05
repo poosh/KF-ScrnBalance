@@ -7,9 +7,9 @@ class ScrnThompsonDrumAmmo extends ThompsonDrumAmmo;
 
 defaultproperties
 {
+    ItemName=".45 ACP"
+    MaxAmmo=600
+    InitialAmount=200
+    AmmoPickupAmount=50
     PickupClass=class'ScrnThompsonDrumAmmoPickup'
-
-     AmmoPickupAmount=50
-     MaxAmmo=500
-     InitialAmount=200
 }
