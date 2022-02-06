@@ -1094,18 +1094,29 @@ function SendVoiceMessage(PlayerReplicationInfo Sender,
     local Controller C;
     local KFPlayerController PC;
 
-    if (Sender.bOnlySpectator)
+    if (Pawn == none || Pawn.Health <= 0)
         return;
 
-    if ( !AllowVoiceMessage(MessageType) )
+    if (!AllowVoiceMessage(MessageType))
         return;
 
-    for ( C = Level.ControllerList; C != none; C = C.NextController ) {
+    if (MessageType == 'SUPPORT' && messageID == 0) {
+        if (Pawn.Health >= 100)
+            return;  // you don't need a medic, buddy
+        // replicate player health ASAP
+        Sender.Timer();
+        Sender.NetUpdateTime = Level.TimeSeconds - 1.0;
+        // encode player health into message ID
+        MessageType = 'MEDIC';
+        messageID = Pawn.Health;
+    }
+
+    for (C = Level.ControllerList; C != none; C = C.NextController) {
         PC = KFPlayerController(C);
-        if ( PC == none )
+        if (PC == none)
             continue;
 
-        if ( Level.Game.bTeamGame && !SameTeamAs(PC) )
+        if (Level.Game.bTeamGame && !SameTeamAs(PC))
             continue;
 
         PC.ClientLocationalVoiceMessage(Sender, Recipient, messagetype, messageID, soundSender, senderLocation);
@@ -1121,7 +1132,7 @@ function ClientLocationalVoiceMessage(PlayerReplicationInfo Sender,
     local KFVoicePack KFVoice;
     local ShopVolume Shop;
     local name MsgTag;
-    local string Msg;
+    local string Msg, Msg2;
 
     if (Sender == none || Sender.VoiceType == none || Player.Console == none || Level.NetMode == NM_DedicatedServer)
         return;
@@ -1173,16 +1184,17 @@ function ClientLocationalVoiceMessage(PlayerReplicationInfo Sender,
             return;
         }
     }
+    else if (MessageType == 'MEDIC') {
+        // decode player health and switch back to v11
+        Msg2 = " (" $ MessageID $ "%)";
+        MessageType = 'SUPPORT';
+        MessageID = 0;
+    }
 
     KFVoice.ClientInitializeLocational(Sender, Recipient, MessageType, MessageID, SenderPawn, SenderLocation);
-    Msg = KFVoice.GetClientParsedMessage();
+    Msg = KFVoice.GetClientParsedMessage() $ Msg2;
     if (Msg == "")
         return;
-
-    if (MessageType == 'SUPPORT' && MessageID == 0 && KFPlayerReplicationInfo(Sender) != none) {
-        // Medic! (25%)
-        Msg $= " (" $ KFPlayerReplicationInfo(Sender).PlayerHealth $ "%)";
-    }
     TeamMessage(Sender, Msg, MsgTag);
 }
 

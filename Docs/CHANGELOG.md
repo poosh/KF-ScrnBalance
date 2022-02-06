@@ -27,6 +27,11 @@
 
 -------------------------------------------------------------------------------
 
+### v9.69.12
+- Fixed network sync issue to display the actual health level in the "Medic! (x%)" voice message (v11)
+- Fixed health bar display of the spectated player
+
+
 ### v9.69.11 - POST-MORTEM UPDATE
 
 #### Balance

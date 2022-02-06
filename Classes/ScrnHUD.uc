@@ -2613,8 +2613,7 @@ simulated function DrawPlayerInfos(Canvas C)
     // Draw the Name, Health, Armor, and Veterancy above other players (using this way to fix portal's beacon errors).
     foreach VisibleCollidingActors(class'KFPawn', KFBuddy, 1000.f, CamPos) {
         KFBuddy.bNoTeamBeacon = true;
-        if ( KFBuddy.PlayerReplicationInfo != none && KFBuddy.Health > 0
-                && (KFBuddy != PawnOwner || PlayerOwner.PlayerReplicationInfo.bIsSpectator)
+        if ( KFBuddy.PlayerReplicationInfo != none && KFBuddy.Health > 0 && KFBuddy != PlayerOwner.Pawn
                 && ((KFBuddy.Location - CamPos) Dot ViewDir) > 0.8 )
         {
             ScreenPos = C.WorldToScreen(KFBuddy.Location + vect(0,0,1) * KFBuddy.CollisionHeight * PlayerInfoOffset);
