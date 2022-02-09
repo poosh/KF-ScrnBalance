@@ -27,6 +27,18 @@
 
 -------------------------------------------------------------------------------
 
+### v9.69.15
+- **WARNING!** `ServerPerks.ini` renamed to `ScrnServerPerks.ini`
+- Added game type `GT` - a duplicate of `ScrnGameType`. Using GT saves 10 characters per `GameConfig` entry in *KFMapVote.ini* (300 per 30 configs), allowing more entries withing the 4095 character cap.
+- New game type `ScrnTestGame` - exclusively for test maps
+- Added MapAliases from KF-ScrnTestGrounds to KFT-ScrnTestGrounds and SE versions.
+- KF-ScrnTestGrounds-SE should be renamed to **KFT-ScrnTestGrounds-SE**. Any other test maps should have "KFT-" prefix.
+- Added `DefaultGameLength` config option to `ScrnGameType`. It allows setting the default game length if there is no `GameLength=` option in the cmd line.
+  - ScrnTestGame has `DefaultGameLength=8`
+  - TSC and FSC have `DefaultGameLength=40`
+  - FTG has `DefaultGameLength=51`
+
+
 ### v9.69.12
 - Fixed network sync issue to display the actual health level in the "Medic! (x%)" voice message (v11)
 - Fixed health bar display of the spectated player

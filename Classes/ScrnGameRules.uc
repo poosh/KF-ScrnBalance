@@ -1825,4 +1825,6 @@ defaultproperties
     MapAliases(20)=(FileName="KF-Train-fix",AchName="KF-Train")
     MapAliases(21)=(FileName="KF-ZedDiscoThe1stFloor",AchName="KF-ZedDisco",OriginalMap="KF-ZedDiscoThe1stFloor")
     MapAliases(22)=(FileName="KF-ZedDiscoThe2ndFloor",AchName="KF-ZedDisco",OriginalMap="KF-ZedDiscoThe2ndFloor")
+    MapAliases(23)=(FileName="KFT-ScrnTestGrounds",OriginalMap="KF-ScrnTestGrounds")
+    MapAliases(24)=(FileName="KFT-ScrnTestGrounds-SE",OriginalMap="KF-ScrnTestGrounds-SE")
 }

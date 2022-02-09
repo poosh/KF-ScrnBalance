@@ -410,12 +410,9 @@ static event class<GameInfo> SetGameType( string MapName )
     local string prefix;
 
     prefix = Caps(Left(MapName, InStr(MapName, "-")));
-    if ( prefix == "KFO")
+    if ( prefix == default.MapPrefix )
         return default.class;
-    else if ( prefix == "KF" )
-        return class'ScrnGameType';
-
-    return super.SetGameType( MapName );
+    return class'ScrnBalance'.static.GameByMapPrefix(prefix, default.class);
 }
 
 // overrided to set bWaveInProgress

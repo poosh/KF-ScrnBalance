@@ -324,6 +324,18 @@ replication
 }
 
 // ======================================= FUNCTIONS =======================================
+static function class<GameInfo> GameByMapPrefix( string MapPrefix, class<GameInfo> DefaultGame )
+{
+    if ( MapPrefix == "KF" )
+        return class'ScrnGameType';
+    else if ( MapPrefix == "KFO")
+        return class'ScrnStoryGameInfo';
+    else if ( MapPrefix == "KFT")
+        return class'ScrnTestGame';
+
+    return DefaultGame;
+}
+
 simulated function PostNetReceive()
 {
     super.PostNetReceive();
@@ -3179,7 +3191,7 @@ function RegisterVersion(string ItemName, int Version)
 
 defaultproperties
 {
-    VersionNumber=96912
+    VersionNumber=96915
     GroupName="KF-Scrn"
     FriendlyName="ScrN Balance"
     Description="Total rework of KF1 to make it modern and the best game in the world while sticking to the roots of the original."

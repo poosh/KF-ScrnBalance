@@ -1235,6 +1235,7 @@ defaultproperties
     WaveEndingCountDown=30 // 30 seconds until auto killing zeds at the ending of the wave ( <10 zeds remaining)
     bLockTeamsOnSuddenDeath=true
     bAntiBlocker=True
+    DefaultGameLength=40
 
     bClanCheck=True
     ClanTags(0)=(Prefix="[",Postfix="]")

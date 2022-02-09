@@ -612,6 +612,7 @@ defaultproperties
     Description="Non-competitive TSC version for single team."
     ScreenShotName="TSC_T.Team.SteampunkLogo"
 
+    DefaultGameLength=51
     bSingleTeamGame=true
     bUseEndGameBoss=true
     MinBaseZ = -500

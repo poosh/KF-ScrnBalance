@@ -1,4 +1,4 @@
-// made to fix KFStoryGameInfo loading for KFO maps
+// the core GameInfo class for ScrN gameplay
 class ScrnGameType extends KFGameType;
 
 var ScrnBalance ScrnBalanceMut;
@@ -9,6 +9,7 @@ var ScrnGameLength ScrnGameLength;
 // Those values are for configurations only. Set ScrnGRI.FakedPlayers to make in-game effect
 var globalconfig protected byte FakedPlayers, FakedAlivePlayers;
 var globalconfig string VotingHandlerOverride;  // override VotingHandlerType with this one
+var config int DefaultGameLength;
 var config bool bAntiBlocker;
 var globalconfig byte LogZedSpawnLevel;
 const LOG_ERROR     = 1;
@@ -128,6 +129,9 @@ event InitGame( string Options, out string Error )
     local string InOpt;
 
     CmdLine = Options;
+    if (DefaultGameLength >= 0) {
+        KFGameLength = DefaultGameLength;
+    }
     KFGameLength = GetIntOption(Options, "GameLength", KFGameLength);
     ConfigMaxPlayers = default.MaxPlayers;
 
@@ -229,12 +233,9 @@ static event class<GameInfo> SetGameType( string MapName )
     local string prefix;
 
     prefix = Caps(Left(MapName, InStr(MapName, "-")));
-    if ( prefix == "KFO")
-        return class'ScrnStoryGameInfo';
-    else if ( prefix == "KF" )
+    if ( prefix == default.MapPrefix )
         return default.class;
-
-    return super.SetGameType( MapName );
+    return class'ScrnBalance'.static.GameByMapPrefix(prefix, default.class);
 }
 
 function bool IsTestMap()
@@ -3755,6 +3756,7 @@ defaultproperties
     PlayerControllerClass=class'ScrnPlayerController'
     PlayerControllerClassName="ScrnBalanceSrv.ScrnPlayerController"
 
+    DefaultGameLength=-1
     bSingleTeamGame=true
     bUseEndGameBoss=true
     bUseZEDThreatAssessment=true
