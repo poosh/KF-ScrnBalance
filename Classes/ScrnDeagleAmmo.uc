@@ -6,5 +6,5 @@ defaultproperties
      MaxAmmo=96
      InitialAmount=40
      PickupClass=class'ScrnDeagleAmmoPickup'
-     ItemName="Deagle bullets"
+     ItemName=".50 AE"
 }

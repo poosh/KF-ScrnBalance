@@ -306,7 +306,7 @@ function bool ChangeTeam(Controller Other, int num, bool bNewTeam)
 
     if ( bTeamChanging && num < 2 )
         NewTeam = Teams[num];
-    else if ( bClanCheck && !bNewTeam
+    else if ( bClanCheck && !bNewTeam && !bSingleTeamGame
             && !GameReplicationInfo.bMatchHasBegun && Other.PlayerReplicationInfo != none )
         NewTeam = MyClanTeam(Other.PlayerReplicationInfo);
 
@@ -355,7 +355,7 @@ function byte PickTeam(byte num, Controller C)
     //local Controller B;
     //local int BigTeamBots, SmallTeamBots;
 
-    if ( bSingleTeamGame && PlayerController(C) != None )
+    if ( bSingleTeamGame )
         return 1; // all players go to Steampunk Team
 
     if ( bPlayersVsBots && (Level.NetMode != NM_Standalone) )
@@ -676,6 +676,7 @@ function TSCBaseGuardian SpawnBaseGuardian(byte TeamIndex)
 {
     local NavigationPoint N;
     local TSCBaseGuardian gnome;
+    local byte CustomHue;
 
     if ( TeamIndex >= 2 )
         return none;
@@ -711,6 +712,19 @@ function TSCBaseGuardian SpawnBaseGuardian(byte TeamIndex)
     if ( ScrnBalanceMut.MapInfo.GuardianLight > 0 ) {
         gnome.GuardianBrightness = ScrnBalanceMut.MapInfo.GuardianLight;
         gnome.LightBrightness = gnome.GuardianBrightness;
+    }
+
+    switch (TeamIndex) {
+        case 0:
+            CustomHue = ScrnBalanceMut.MapInfo.GuardianHueRed;
+            break;
+        case 1:
+            CustomHue = ScrnBalanceMut.MapInfo.GuardianHueBlue;
+            break;
+    }
+    if (CustomHue != 0) {
+        gnome.GuardianHue = CustomHue;
+        gnome.LightHue = CustomHue;
     }
 
     return gnome;

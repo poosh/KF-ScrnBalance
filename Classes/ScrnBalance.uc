@@ -180,6 +180,7 @@ var globalconfig int   StatBonusMinHL;
 var globalconfig bool bBroadcastPickups; // broadcast weapon pickups
 var globalconfig String BroadcastPickupText; // broadcast weapon pickups
 
+const ZEDEVENT_RANDOM = 254;
 var protected globalconfig byte EventNum;
 var transient byte CurrentEventNum;
 var globalconfig bool bForceEvent;
@@ -293,7 +294,7 @@ enum EMutateCommand
     MUTATE_ZEDLIST
 };
 
-var globalconfig bool bScrnWaves;
+var globalconfig bool bScrnWaves, bUserGames;
 
 struct SVersionedItem {
     var string item;
@@ -1609,7 +1610,7 @@ static function FillPlayInfo(PlayInfo PlayInfo)
     PlayInfo.AddSetting(default.BonusCapGroup,"bReplaceHUD","Replace HUD",1,0, "Check");
     PlayInfo.AddSetting(default.BonusCapGroup,"bNoPerkChanges","No Perk Changes",1,0, "Check");
 
-    PlayInfo.AddSetting(default.BonusCapGroup,"EventNum","Event", 0, 1, "Select", "0;Autodetect;255;Normal;1;Summer;2;Halloween;3;Xmas;254;Random",,,True);
+    PlayInfo.AddSetting(default.BonusCapGroup,"EventNum","Event", 0, 1, "Select", "0;Autodetect;4;Normal;1;Summer;2;Halloween;3;Xmas;254;Random",,,True);
     PlayInfo.AddSetting(default.BonusCapGroup,"bForceEvent","Force Event",1,0, "Check");
 
     PlayInfo.AddSetting(default.BonusCapGroup,"bUseDLCLocks","Trader Requirements",1,0, "Check");
@@ -2333,24 +2334,27 @@ function ForceEvent()
 {
     local class<KFMonstersCollection> MC;
 
-    CurrentEventNum = EventNum;
-    if ( EventNum == 0 &&  MapInfo.ZedEventNum > 0 ) {
-        CurrentEventNum = MapInfo.ZedEventNum;
+    if (ScrnGT != none && ScrnGT.ZedEventNum > 0) {
+        CurrentEventNum = ScrnGT.ZedEventNum;
+    }
+    else {
+        CurrentEventNum = EventNum;
+        if ( EventNum == 0 && MapInfo.ZedEventNum > 0 ) {
+            CurrentEventNum = MapInfo.ZedEventNum;
+        }
+    }
+
+    if (bScrnWaves) {
+        return;  // all we need for ScrnWaves is to load CurrentEventNum. ScrnGameLength will handle everything else.
     }
 
     switch ( CurrentEventNum ) {
-        case 254:  // random event
+        case ZEDEVENT_RANDOM:  // random event
             CurrentEventNum = 1 + rand(4);
             break;
         case 255:
             CurrentEventNum = 4;  // force regular zeds
             break;
-    }
-
-    if (bScrnWaves) {
-        if ( CurrentEventNum != 0 )
-            log("ZED Event " $ CurrentEventNum, 'ScrnBalance');
-        return;  // all we need for ScrnWaves is to load CurrentEventNum. ScrnGameLength will handle everything else.
     }
 
     if ( MC == none ) {
@@ -2474,12 +2478,12 @@ function PostBeginPlay()
     MapInfo = new(none, OriginalMapName) class'ScrnMapInfo';
     MapInfo.Mut = self;
 
-    if ( bForceEvent )
+    if ( bForceEvent || (ScrnGT != none && ScrnGT.ZedEventNum > 0) )
         ForceEvent();
     else
         CurrentEventNum = int(KF.GetSpecialEventType()); // autodetect event
 
-    if ( bResetSquadsAtStart || EventNum == 254 ) {
+    if ( bResetSquadsAtStart || (EventNum == ZEDEVENT_RANDOM && !bScrnWaves) ) {
         GameRules.ResetGameSquads(KF, CurrentEventNum);
     }
 
@@ -3191,7 +3195,7 @@ function RegisterVersion(string ItemName, int Version)
 
 defaultproperties
 {
-    VersionNumber=96915
+    VersionNumber=96916
     GroupName="KF-Scrn"
     FriendlyName="ScrN Balance"
     Description="Total rework of KF1 to make it modern and the best game in the world while sticking to the roots of the original."

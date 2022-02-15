@@ -378,7 +378,6 @@ function EmptyBluePlayers( int Index )
 function bool InternalOnPreDraw(Canvas C)
 {
     local int i, r, b;
-    //local string StoryString;
     local String SkillString;
     local TSCGameReplicationInfo GRI;
     local KFPlayerReplicationInfo KFPRI;
@@ -470,14 +469,7 @@ function bool InternalOnPreDraw(Canvas C)
         EmptyBluePlayers(b);
 
 DoneIt:
-    //StoryString = PC.Level.Description;
-
-    if ( !bStoryBoxFilled )
-    {
-        l_StoryBox.LoadStoryText();
-        bStoryBoxFilled = true;
-    }
-
+    CheckStoryText();
     CheckBotButtonAccess();
 
     if ( GRI.BaseDifficulty <= 1 )

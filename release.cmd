@@ -28,6 +28,7 @@ echo Exporting .int file...
 echo.
 echo Copying release files...
 xcopy /F /I /Y Configs\*.ini %RELEASEDIR%
+xcopy /F /I /Y Configs\*.sample %RELEASEDIR%
 xcopy /F /I /Y Docs\Release\* %RELEASEDIR%
 
 mkdir %RELEASEDIR%\System 2>nul
@@ -58,10 +59,6 @@ if not exist %RELEASEDIR%\System\%KFPACKAGE%.u (
     goto :error
 )
 
-REM echo.
-REM echo Update public release notes
-REM xcopy /F /I /Y README.md %WEBDIR%\ScrnBalanceVersionHistory.md
-
 echo.
 echo Updating the bundle...
 xcopy /F /I /Y %RELEASEDIR%\Animations\*            %BUNDLEDIR%\Animations\
@@ -76,6 +73,7 @@ xcopy /F /I /Y %RELEASEDIR%\ScrnVoting.ini          %BUNDLEDIR%\System\
 xcopy /F /I /Y %RELEASEDIR%\ScrnGames.ini           %BUNDLEDIR%\System\
 xcopy /F /I /Y %RELEASEDIR%\ScrnWaves.ini           %BUNDLEDIR%\System\
 xcopy /F /I /Y %RELEASEDIR%\ScrnZeds.ini            %BUNDLEDIR%\System\
+xcopy /F /I /Y %RELEASEDIR%\*.sample                %BUNDLEDIR%\System\
 
 echo.
 echo Compressing uz2...

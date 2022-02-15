@@ -1,0 +1,12 @@
+########################################################################################################################
+# A sample of user ZED definition file
+# ScrnUserZeds.ini is loaded if ALL requirements below are met:
+#   1. bUserGames=true in ScrnBalanceSrv.ini
+#   2. Game length is between 100 and 199 (a user game)
+#   3. bUserZeds=true in the respective ScrnUserGameLength object (ScrnUserGames.ini)
+# ScrnUserZedInfo and ScrnZedInfo objects are identical.
+# See ScrnZeds.ini for more info.
+########################################################################################################################
+
+[UserZeds ScrnUserZedInfo]
+Zeds=(Alias="CL",ZedClass="ScrnZedPack.Clot")

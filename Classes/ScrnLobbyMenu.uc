@@ -100,12 +100,23 @@ function AddPlayer( KFPlayerReplicationInfo PRI, int Index, Canvas C )
     PlayerBoxes[Index].bIsEmpty = false;
 }
 
+function CheckStoryText()
+{
+    if (bStoryBoxFilled)
+        return;
+
+    l_StoryBox.LoadStoryText();
+    if (l_StoryBox.StoryString == "") {
+        l_StoryBox.StoryString = PlayerOwner().Level.Description;
+        l_StoryBox.SetContent(l_StoryBox.StoryString);
+    }
+    bStoryBoxFilled = l_StoryBox.StoryString != "";
+}
 
 // copy-pasted to add Hell On Earth difdiculty  -- PooSH
 function bool InternalOnPreDraw(Canvas C)
 {
     local int i, j;
-    local string StoryString;
     local String SkillString;
     local String s;
     local KFGameReplicationInfo KFGRI;
@@ -174,14 +185,7 @@ function bool InternalOnPreDraw(Canvas C)
         EmptyPlayers(j);
 
 DoneIt:
-    StoryString = PC.Level.Description;
-
-    if ( !bStoryBoxFilled )
-    {
-        l_StoryBox.LoadStoryText();
-        bStoryBoxFilled = true;
-    }
-
+    CheckStoryText();
     CheckBotButtonAccess();
 
     if ( KFGRI.BaseDifficulty <= 1 )

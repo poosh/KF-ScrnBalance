@@ -22,7 +22,8 @@ var config float XPBonusMult;
 var config byte ZedEventNum; // use event zeds for this map. 0 - don't force
 var config bool bTestMap;
 
-var config float ZVolDisableTime;
+var config float ZVolDisableTime, ZVolDisableTimeMax;
+var config bool bVanillaVisibilityCheck;
 var config float ZedSpawnMaxDist;
 var config float FloorHeight, BasementZ;
 var config float FloorPenalty;
@@ -31,11 +32,13 @@ var config bool bHighGround;
 var config bool bResetSpawnDesirability;
 var config array<name> ZVolBad;
 var config array<name> ZVolHidden;
+var config array<name> ZVolClose;
 var config array<name> ZVolElevated;
 var config array<name> ZVolJumpable;
 var config array<SZVolDoor> ZVolDoors;
 
 var config byte GuardianLight;
+var config byte GuardianHueRed, GuardianHueBlue;
 var config byte FTGTargetsPerWave;
 var config array<name> FTGBadAmmo;
 var config array<name> FTGTargets;
@@ -91,6 +94,10 @@ function ProcessZombieVolumes(out array<ZombieVolume> ZList)
             log(n $ " marked hidden", class.name);
             ZVol.bAllowPlainSightSpawns = true;
         }
+        if ( FindNameInArray(ZVolClose, n) != -1 ) {
+            log(n $ " marked close", class.name);
+            ZVol.MinDistanceToPlayer = 1;
+        }
         ZVol.bHasInitSpawnPoints = false;  // reuse this flag for elevation mark
         if ( FindNameInArray(ZVolElevated, n) != -1 ) {
             log(n $ " marked elevated", class.name);
@@ -123,6 +130,7 @@ function ProcessZombieVolumes(out array<ZombieVolume> ZList)
 defaultproperties
 {
     ZVolDisableTime=10
+    ZVolDisableTimeMax=60
     ZedSpawnMaxDist=2000
     FloorPenalty=0.3
     FloorHeight=256

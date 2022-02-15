@@ -27,6 +27,44 @@
 
 -------------------------------------------------------------------------------
 
+### v9.69.16
+- Enhanced *ScrnMapInfo.ini* with `ZVolDisableTimeMax`, `bVanillaVisibilityCheck`, `ZVolClose` options.
+- Added `GuardianHueRed` and `GuardianHueBlue` config options to *ScrnMapInfo.ini* (thanks [nmmblez])
+- Added map info for CountyJail
+- Fixed map list for **ScrnTestGame**
+- Fixed a rare bug where players sometimes could join the Red team in **FTG**
+- In TSC/FTG, the base direction arrow starts pulsing when the player is outside the base.
+- Renamed some ammo to match real counterparts
+- new console command `PERK <perkname>` allows changing perk from console. Values for `<perkname>` are the same as for
+  `MVOTE LOCKPERK <perkname>`, e.g. `perk commando`, `perk cmd`, or `perk 4``
+
+#### User-Defined Games/Waves/Zeds
+- Controlled by `bUserGames` in *ScrnBalanceSrv.ini*. By default, `bUserGames=false` meaning the legacy behavior - load everything from *ScrnGames.ini* regardless of GameLength.
+- If `bUserGames=true`, user-defined games (GameLength from **100** to **199**) use `ScrnUserGameLength` objects from *ScrnUserGames.ini* instead of ScrnGames.ini (see *ScrnUserGames.sample*)
+- If `ScrnUserGameLength.bUserWaves=true`, waves are loaded from *ScrnUserWaves.ini* (see *ScrnUserWaves.sample*)
+- If `ScrnUserGameLength.bUserZeds=true`, zeds are loaded from *ScrnUserZeds.ini* (see *ScrnUserZeds.sample*)
+- Allows users to define custom games/waves/zeds without worrying about them being overwritten by future ScrN releases.
+- It is not recommended to modify the default ScrnGames/Waves/Zeds.ini anymore. Make your customizations in ScrnUserGames/Waves/Zeds.ini instead.
+
+#### Zed Events
+- Changed random zed event behavior in ScrN Games (`bScrnWaves=true`). When `EventNum=254` (random), it picks a random
+  EventNum from all loaded `ScrnZedInfo` objects in the current game.
+  User-created zed events (e.g., `EvenNum=100` in *ScrnZeds.ini*) now participate in random selection too.
+- Added `?ZedEvent=` option to command line / *KFMapVote.ini* to allow chooseng a zed event via map voting menu.
+- Added `ForceZedEvent` and `FallbackZedEvent` config options to *ScrnGames.ini*
+
+##### Zed Event Priority (from highest to lowest)
+1. `ScrnGameLength.bAllowZedEvents`. If false, zed events are disabled; end of story. Otherwise:
+2. `ScrnGameLength.ForceZedEvent` if set (>0)
+3. `?ZedEvent=` if set (>0)
+4. `ScrnBalance.EventNum` if set (>0) and `ScrnBalance.bForceEvent=true`
+5. `ScrnMapInfo.ZedEventNum` if set (>0) and `ScrnBalance.bForceEvent=true`
+6. `ScrnGameLength.FallbackZedEvent`
+
+#### ScrN Weapon Pack
+- **AK12** single fire more replaced with two-shot burst. Headshot multiplier reset back to x1.1 (down from 1.2)
+
+
 ### v9.69.15
 - **WARNING!** `ServerPerks.ini` renamed to `ScrnServerPerks.ini`
 - Added game type `GT` - a duplicate of `ScrnGameType`. Using GT saves 10 characters per `GameConfig` entry in *KFMapVote.ini* (300 per 30 configs), allowing more entries withing the 4095 character cap.
@@ -100,7 +138,7 @@ PerkedWeapons=3:ScrnWeaponPack.HK417AR:$WP
   if the head is severely damaged. In previous versions, TH could repair 3500hp body + 3500hp head.
 - **TeslaHusk** energy restore rate lowered by 25%. Previously, it took 10s to restore full energy up from 0. Now, it
   takes 12.5s.
-- Fixed an issue where sometimes **TeslaHusk** could repair multiple targets in a raw, bypassing the cooldown timer.  
+- Fixed an issue where sometimes **TeslaHusk** could repair multiple targets in a raw, bypassing the cooldown timer.
 
 
 ### v9.69.09 - FINAL
@@ -611,7 +649,7 @@ Squads=FP
 Squads=^ BL
 Squads=^ 2*SI
 Squads=SC
-Squads=^ 2*HU  
+Squads=^ 2*HU
 ```
 
 #### ScrN Brutal KF Bundle
@@ -1014,7 +1052,7 @@ Work in progress. More info here:
 
 * **Nailgun** primary fire shoots single nails while the secondary fire - 7-nail pack (thanks [Duckbuster])
 * Changed achievement progress display priority: achievements with lower goal value have higher priority to be displayed
-* Social Isolation: fixed penalty for coughing in shop  
+* Social Isolation: fixed penalty for coughing in shop
 
 ### v9.63.11
 
@@ -1307,7 +1345,7 @@ set input NumPad6 WeaponSlot 6
   Only zeds that are enabled for the current game can be spawned.
   Example: `MUTATE ZED FP 1 SPAWN 5` - spawns 5 Fleshpounds.
 * `MUTATE ZED <alias> <index> SUMMON` - similar to spawn, but instead of spawning zed in a *ZombieVolume*, summons it
-  in front of the player. Player needs to look at the ground where he wants to summon a zed.  
+  in front of the player. Player needs to look at the ground where he wants to summon a zed.
   **WARNING!** Be extremely cautious when summoning a zed. If you miss the ground, you can summon it outside of the
   map and screw up the entire game. Use summon for debug/test purpose only. `SPAWN` is much safer than `SUMMON`.
 

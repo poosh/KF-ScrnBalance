@@ -227,6 +227,66 @@ static final function string LeftCol(string ColoredString, int i)
     return Left(ColoredString, c);
 }
 
+static function class<ScrnVeterancyTypes> FindPerkByName(ClientPerkRepLink L, string VeterancyNameOrIndex)
+{
+    local int i;
+    local class<ScrnVeterancyTypes> Perk;
+    local string s1, s2;
+
+    if ( L == none )
+        return none;
+
+    i = int(VeterancyNameOrIndex);
+    if ( i > 0 && i <= L.CachePerks.Length )
+        return class<ScrnVeterancyTypes>(L.CachePerks[i-1].PerkClass);
+    // log("CachePerks.Length="$L.CachePerks.Length, 'ScrnBalance');
+    for ( i = 0; i < L.CachePerks.Length; ++i ) {
+        Perk = class<ScrnVeterancyTypes>(L.CachePerks[i].PerkClass);
+        if ( Perk != none ) {
+            // log(GetItemName(String(Perk.class)) @ Perk.default.VeterancyNameOrIndex, 'ScrnBalance');
+            if ( Perk.default.ShortName ~= VeterancyNameOrIndex || Perk.default.VeterancyName ~= VeterancyNameOrIndex
+                    || (Divide(Perk.default.VeterancyName, " ", s1, s2)
+                        && (VeterancyNameOrIndex ~= s1 || VeterancyNameOrIndex ~= s2)) )
+                return Perk;
+        }
+    }
+    return none;
+}
+
+static function SendPerkList(PlayerController PC)
+{
+    local ScrnClientPerkRepLink L;
+    local class<ScrnVeterancyTypes> Perk;
+    local KFPlayerReplicationInfo KFPRI;
+    local int i;
+    local string s;
+
+    L = class'ScrnClientPerkRepLink'.Static.FindMe(PC);
+    if ( L == none )
+        return;
+    KFPRI = KFPlayerReplicationInfo(PC.PlayerReplicationInfo);
+    if ( KFPRI == none )
+        return;
+
+    for ( i = 0; i < L.CachePerks.Length; ++i ) {
+        Perk = class<ScrnVeterancyTypes>(L.CachePerks[i].PerkClass);
+        if ( Perk == none )
+            continue;
+
+        if ( Perk.default.bLocked ) {
+            s = "[LOCKED] ";
+        }
+        else if (KFPRI.ClientVeteranSkill == Perk) {
+            s = "*** ";
+        }
+        else {
+            s = "";
+        }
+        s $= string(i + 1) $ ". " $ Perk.default.ShortName $ " - " $ Perk.default.VeterancyName;
+        PC.ClientMessage(s);
+    }
+}
+
 
 defaultproperties
 {

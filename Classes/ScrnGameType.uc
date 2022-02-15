@@ -39,7 +39,8 @@ var EZedSpawnLocation ZedSpawnLoc;
 var protected int ZVolVisibleCount;  // number of ZombieVolumes in ZedSpawnList that require player visibility checks
 var transient int ZVolCheckIndex; // the index of ZedSpawnList to start visibility check at
 var float ZVolVisibilityCheckPeriod;  // Time to check all zombie volumes.
-var float ZVolDisableTime;
+var float ZVolDisableTime, ZVolDisableTimeMax;
+var bool bVanillaVisibilityCheck;
 var transient float ZVolVisibilityCheckStart;
 var float ZedSpawnMinDist, ZedSpawnMaxDist, BossSpawnRecDist;
 var float FloorHeight, BasementZ;
@@ -86,6 +87,7 @@ var int MaxSpawnAttempts, MaxSpecialSpawnAttempts; // maximum spawn attempts bef
 var float SpawnRatePlayerMod;  // per-player zed spawn rate increase
 var int WavePct;  // Current wave's percentage to the final wave.
 var string EngGameSong;
+var byte ZedEventNum;
 
 struct SBoringStage {
     var float SpawnPeriod;
@@ -127,12 +129,14 @@ event InitGame( string Options, out string Error )
     local int ConfigMaxPlayers;
     local GameRules g;
     local string InOpt;
+    local class<ScrnGameLength> GameLengthClass;
 
     CmdLine = Options;
     if (DefaultGameLength >= 0) {
         KFGameLength = DefaultGameLength;
     }
     KFGameLength = GetIntOption(Options, "GameLength", KFGameLength);
+    ZedEventNum = GetIntOption(Options, "ZedEvent", ZedEventNum);
     ConfigMaxPlayers = default.MaxPlayers;
 
     InOpt = ParseOption( Options, "VotingHandler");
@@ -158,8 +162,15 @@ event InitGame( string Options, out string Error )
 
     CheckScrnBalance();
     if ( ScrnBalanceMut.bScrnWaves ) {
-        if (ScrnGameLength == none ) // mutators might already load this
-            ScrnGameLength = new(none, string(KFGameLength)) class'ScrnGameLength';
+        if (ScrnGameLength == none ) {  // mutators might already load this
+            if (ScrnBalanceMut.bUserGames && KFGameLength >= 100 && KFGameLength < 200) {
+                GameLengthClass = class'ScrnUserGameLength';
+            }
+            else {
+                GameLengthClass = class'ScrnGameLength';
+            }
+            ScrnGameLength = new(none, string(KFGameLength)) GameLengthClass;
+        }
         ScrnGameLength.LoadGame(self);
     }
     else {
@@ -305,6 +316,8 @@ function CheckZedSpawnList()
     ZedSpawnMaxDist = fmax(MapInfo.ZedSpawnMaxDist, ZedSpawnMinDist);
     bHighGround = MapInfo.bHighGround;
     ZVolDisableTime = MapInfo.ZVolDisableTime;
+    ZVolDisableTimeMax = MapInfo.ZVolDisableTimeMax;
+    bVanillaVisibilityCheck = MapInfo.bVanillaVisibilityCheck;
     MapInfo.ProcessZombieVolumes(ZedSpawnList);
 
     // third pass: precalc stuff
@@ -339,7 +352,6 @@ function CheckZedSpawnList()
             // stupid L.D. put PathNode inside the volume, screwing up navigation.
             InvalidatePathTarget(N);
             N = FindClosestPathNode(ZVol);
-
         }
         if ( N != none ) {
             rot = rotator(N.Location - ZVol.Location);
@@ -370,6 +382,8 @@ function CheckZedSpawnList()
     LogZedSpawn(LOG_INFO,   "MaxZombiesOnce=" $ MaxZombiesOnce);
     LogZedSpawn(LOG_INFO,   "WaveSpawnPeriod=" $ KFLRules.WaveSpawnPeriod);
     LogZedSpawn(LOG_INFO,   "ZVolDisableTime=" $ ZVolDisableTime);
+    LogZedSpawn(LOG_INFO,   "ZVolDisableTimeMax=" $ ZVolDisableTimeMax);
+    LogZedSpawn(LOG_INFO,   "bVanillaVisibilityCheck=" $ bVanillaVisibilityCheck);
     LogZedSpawn(LOG_INFO,   "ZedSpawnMaxDist=" $ ZedSpawnMaxDist);
     LogZedSpawn(LOG_INFO,   "FloorHeight=" $ FloorHeight);
     if ( BasementZ != 0 )
@@ -558,12 +572,19 @@ function ZVolCheckPlayers(int count)
                     break;
                 }
 
-                if ( !ZVolCheckTrace(ZVol, EyeLoc, ZVol.SpawnPos[0], MinDistSq, MaxDistSq)
+                if ( bVanillaVisibilityCheck ) {
+                    if (!ZVolCheckTrace(ZVol, EyeLoc, ZVol.Location, MinDistSq, MaxDistSq)) {
+                        // player sees the volume
+                        DisableZombieVolume(ZVol);
+                        break;
+                    }
+                }
+                else if ( !ZVolCheckTrace(ZVol, EyeLoc, ZVol.SpawnPos[0], MinDistSq, MaxDistSq)
                         || (x > 1 && !ZVolCheckTrace(ZVol, EyeLoc, ZVol.SpawnPos[x-1], MinDistSq, MaxDistSq))
                         || (x > 7 && !ZVolCheckTrace(ZVol, EyeLoc, ZVol.SpawnPos[x>>1], MinDistSq, MaxDistSq)
-                        || !ZVolCheckTrace(ZVol, EyeLoc, ZVol.SpawnPos[x>>2], MinDistSq, MaxDistSq)) )
+                            || !ZVolCheckTrace(ZVol, EyeLoc, ZVol.SpawnPos[x>>2], MinDistSq, MaxDistSq)) )
                 {
-                    // player sees the volume
+                    // player sees the spawn points in the volume
                     DisableZombieVolume(ZVol);
                     break;
                 }
@@ -1180,7 +1201,7 @@ function DoBossDeath()
 function DisableZombieVolume(ZombieVolume ZVol)
 {
     // LastCheckTime = DisabledUntilTime
-    ZVol.LastCheckTime = Level.TimeSeconds + fmax(ZVolDisableTime, ZVol.TouchDisableTime);
+    ZVol.LastCheckTime = Level.TimeSeconds + fclamp(ZVol.TouchDisableTime, ZVolDisableTime, ZVolDisableTimeMax);
 }
 
 function bool IsZombieVolumeDisabled(ZombieVolume ZVol)
@@ -1317,15 +1338,24 @@ function Controller FindSquadTarget()
 function bool CanSpawnInVolume(class<KFMonster> M, ZombieVolume ZVol)
 {
     local int i;
-    local byte ZombieFlag;
 
-    ZombieFlag = M.default.ZombieFlag;
-    if( (!ZVol.bNormalZeds && ZombieFlag==0)
-        || (!ZVol.bRangedZeds && ZombieFlag==1)
-        || (!ZVol.bLeapingZeds && ZombieFlag==2)
-        || (!ZVol.bMassiveZeds && ZombieFlag==3) )
-    {
-        return false;
+    switch (M.default.ZombieFlag) {
+        case 0:
+            if (!ZVol.bNormalZeds)
+                return false;
+            break;
+        case 1:
+            if (!ZVol.bRangedZeds)
+                return false;
+            break;
+        case 2:
+            if (!ZVol.bLeapingZeds)
+                return false;
+            break;
+        case 3:
+            if (!ZVol.bMassiveZeds)
+                return false;
+        break;
     }
 
     for ( i = 0; i < ZVol.DisallowedZeds.length; ++i ) {
@@ -2923,7 +2953,7 @@ function int SpawnSquadLog(ZombieVolume ZVol, out array< class<KFMonster> > Squa
 // Checks (zombies flags etc.) removed because they already have been made in FindSpawningVolume().
 function int SpawnSquad(ZombieVolume ZVol, out array< class<KFMonster> > Squad)
 {
-    local int i, j, numspawned;
+    local int i, j, t, numspawned;
     local KFMonster M;
     local string s;
 
@@ -2939,7 +2969,12 @@ function int SpawnSquad(ZombieVolume ZVol, out array< class<KFMonster> > Squad)
         if ( !CanSpawnInVolume(Squad[i], ZVol) )
             continue;
         for ( M = none; j < ZVol.SpawnPos.length; ++j ) {
-            if ( !ZVol.bAllowPlainSightSpawns && PlayerCanSeeSpawnPoint(ZVol.SpawnPos[j], Squad[i]) ) {
+            if ( !ZVol.bAllowPlainSightSpawns && PlayerCanSeeSpawnPoint(ZVol.SpawnPos[j], Squad[i], t) ) {
+                if ( LogZedSpawnLevel >= LOG_DEBUG ) {
+                    LogZedSpawn(LOG_DEBUG, "Player " $ Telemetry[i].Pawn.GetHumanReadableName()
+                            $ " @ " $ Telemetry[i].Pawn.Location $ " can see " $ ZVol.name $ ".SpawnPos["$j$"] @ "
+                            $ ZVol.SpawnPos[j]);
+                }
                 DisableZombieVolume(ZVol);
                 continue;  // invalidate for later but keep using it now for this squad
             }
@@ -3036,11 +3071,18 @@ function OverrideMonsterHealth(KFMonster M)
     }
 }
 
-function bool PlayerCanSeeSpawnPoint(vector SpawnLoc, class <KFMonster> TestMonster)
+function bool PlayerCanSeeSpawnPoint(vector SpawnLoc, class <KFMonster> TestMonster, optional out int t)
 {
     local int i;
     local vector Right, Test, PlayerLoc;
+    local float ColRadius;
     local Pawn P;
+
+    ColRadius = TestMonster.Default.CollisionRadius * 1.1;
+    if (!bVanillaVisibilityCheck) {
+        // use the radius of ExtendedZCollision
+        ColRadius = fmax(ColRadius, TestMonster.Default.ColRadius);
+    }
 
     // Now make sure no player sees the spawn point.
     for ( i = 0; i < Telemetry.length; ++i ) {
@@ -3050,7 +3092,7 @@ function bool PlayerCanSeeSpawnPoint(vector SpawnLoc, class <KFMonster> TestMons
             continue;
 
         Right = (SpawnLoc - PlayerLoc) cross vect(0.f,0.f,1.f);
-        Right = Normal(Right) * (fmax(TestMonster.Default.CollisionRadius, TestMonster.Default.ColRadius) * 1.1);
+        Right = Normal(Right) * ColRadius;
         Test = SpawnLoc;
         Test.Z += TestMonster.Default.CollisionHeight * 1.25;
 
@@ -3060,6 +3102,7 @@ function bool PlayerCanSeeSpawnPoint(vector SpawnLoc, class <KFMonster> TestMons
             || FastTrace(Test + Right, PlayerLoc)
             || FastTrace(Test - Right, PlayerLoc) )
         {
+            t = i;
             return true;
         }
     }

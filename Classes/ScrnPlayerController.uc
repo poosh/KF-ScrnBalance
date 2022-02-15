@@ -85,7 +85,7 @@ var ScrnDamageNumbers DamageNumbers;
 var class<ScrnDamageNumbers> DamageNumbersClass;
 
 var transient byte PerkChangeWave; // wave num, when perk was changed last time
-var localized string strNoPerkChanges, strPerkLocked;
+var localized string strNoPerkChanges, strPerkLocked, strPerkNotAvailable;
 
 var transient Controller FavoriteSpecs[2];
 var localized string strSpecFavoriteAssigned, strSpecNoFavorites;
@@ -2152,17 +2152,37 @@ function SendSelectedVeterancyToServer(optional bool bForceChange)
 
 function SelectVeterancy(class<KFVeterancyTypes> VetSkill, optional bool bForceChange)
 {
-    local ClientPerkRepLink L;
+    local ScrnClientPerkRepLink L;
 
-    if( SRStatsBase(SteamStatsAndAchievements)!=none )
-        L = Class'ScrnClientPerkRepLink'.Static.FindMe(self);
+    L = class'ScrnClientPerkRepLink'.Static.FindMe(self);
 
     if ( L != none ) {
-        if ( ScrnClientPerkRepLink(L) != none )
-            ScrnClientPerkRepLink(L).ServerSelectPerkSE(Class<ScrnVeterancyTypes>(VetSkill));
-        else
-            L.ServerSelectPerk(Class<SRVeterancyTypes>(VetSkill));
+        L.ServerSelectPerkSE(Class<ScrnVeterancyTypes>(VetSkill));
     }
+}
+
+exec function Perk(coerce string PerkName)
+{
+    local class<ScrnVeterancyTypes> newPerk;
+    local KFPlayerReplicationInfo KFPRI;
+    local class<ScrnVeterancyTypes> myPerk;
+
+    if (PerkName == "") {
+        class'ScrnFunctions'.static.SendPerkList(self);
+        return;
+    }
+
+    KFPRI = KFPlayerReplicationInfo(PlayerReplicationInfo);
+    if (KFPRI == none)
+        return;
+    myPerk = class<ScrnVeterancyTypes>(KFPRI.ClientVeteranSkill);
+
+    newPerk = class'ScrnFunctions'.static.FindPerkByName(class'ScrnClientPerkRepLink'.Static.FindMe(self), PerkName);
+    if (newPerk == none) {
+        ConsoleMessage(strPerkNotAvailable);
+        return;
+    }
+    SelectVeterancy(newPerk);
 }
 
 exec final function TourneyCheck()
@@ -3185,6 +3205,7 @@ defaultproperties
     strAlreadySpectating="Already spectating. Type READY, if you want to join the game."
     strNoPerkChanges="Mid-game perk changes disabled"
     strPerkLocked="Perk is locked"
+    strPerkNotAvailable="Perk is not available"
     strMutateProtection="Cannot mutate too often. Wait a bit."
     bWaveGarbageCollection=False
     bOtherPlayerLasersBlue=true

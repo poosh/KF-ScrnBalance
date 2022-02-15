@@ -1,0 +1,19 @@
+########################################################################################################################
+# A sample of user GAME definition file
+# ScrnUserGames.ini is loaded if ALL requirements below are met:
+#   1. bUserGames=true in ScrnBalanceSrv.ini
+#   2. Game length is between 100 and 199 (a user game)
+# Otherwise, ScrnGameLength object is loaded from ScrnGames.ini.
+#
+# ScrnUserGameLength has the following fields in addition to ScrnGameLength:
+# bUserWaves (default = false) - load wave definitions from ScrnUserWaves.ini instead of ScrnWaves.ini
+# bUserZeds (default = false) - load zed definitions from ScrnUserZeds.ini instead of ScrnZeds.ini
+#
+# See ScrnGames.ini for more info.
+########################################################################################################################
+
+[100 ScrnUserGameLength]
+bUserWaves=true
+bUserZeds=true
+Waves=UserWave1
+Zeds=UserZeds

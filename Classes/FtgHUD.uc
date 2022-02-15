@@ -30,6 +30,7 @@ simulated function DrawTSCHUDTextElements(Canvas C)
     local string    aHint, aTitle;
     local bool      bCriticalHint;
     local string    s;
+    local bool bPulse;
     local int       row;
 
     // enemy base
@@ -45,11 +46,14 @@ simulated function DrawTSCHUDTextElements(Canvas C)
         else
             EnemyBaseDirPointer.UV2Texture = none;
 
-        if ( bAtEnemyBase )
-            C.SetDrawColor(196, 206, 0, KFHUDAlpha);
-        else
+        if ( bAtEnemyBase ) {
+            bPulse = true;
+            C.SetDrawColor(200, 128, 0, KFHUDAlpha);
+        }
+        else {
             C.DrawColor = TextColors[1-TeamIndex];
-        DrawDirPointer(C, EnemyBaseDirPointer, TeamBase.Location, 1, 0, false, strEnemyBase);
+        }
+        DrawDirPointer(C, EnemyBaseDirPointer, TeamBase.Location, 2, 0, false, strEnemyBase, false, bPulse);
     }
 
     // own base
@@ -60,17 +64,21 @@ simulated function DrawTSCHUDTextElements(Canvas C)
     if ( !TeamBase.bHidden && !(TeamBase.bHeld && TeamBase.HolderPRI == KFPRI) ) {
         if ( BaseDirPointer == None ) {
             BaseDirPointer = Spawn(Class'KFShopDirectionPointer');
-            BaseDirPointer.UV2Texture = ConstantColor'TSC_T.HUD.GreenCol';
+            OutOfTheBaseMaterial = new class'ConstantColor';
+            OutOfTheBaseMaterial.Color = OutOfTheBaseColor;
         }
 
         bDrawShopDirPointer = !KFGRI.bWaveInProgress && (ScrnGRI == none || ScrnGRI.bTraderArrow); // always draw Trader Arrow during the Trader Time
         bAtOwnBase = TSCGRI.AtBase(PawnOwner.Location, TeamBase);
         if ( TeamBase.bActive ) {
             s = strOurBase;
-            if ( bAtOwnBase)
+            if ( bAtOwnBase) {
                 C.SetDrawColor(32, 255, 32, KFHUDAlpha);
-            else
-                C.SetDrawColor(196, 206, 0, KFHUDAlpha);
+            }
+            else {
+                C.SetDrawColor(200, 128, 0, KFHUDAlpha);
+                bPulse = TSCGRI.bWaveInProgress && TSCGRI.MaxMonsters >= 10;
+            }
         }
         else if ( TeamBase.bHeld ) {
             s = strCarrier;
@@ -80,12 +88,23 @@ simulated function DrawTSCHUDTextElements(Canvas C)
             s = strGnome;
             C.SetDrawColor(200, 0, 0, KFHUDAlpha); // dropped somewhere
         }
-        if ( bDrawShopDirPointer )
+
+        if (bPulse) {
+            BaseDirPointer.UV2Texture = OutOfTheBaseMaterial;
+        }
+        else {
+            BaseDirPointer.UV2Texture = OwnBaseMaterial;
+        }
+
+        if ( bDrawShopDirPointer ) {
             row = 1; // shift team base arrow to fit trader pointer
-        DrawDirPointer(C, BaseDirPointer, TeamBase.GetLocation(), row, 0, false, s);
+        }
+
+        DrawDirPointer(C, BaseDirPointer, TeamBase.GetLocation(), row, 0, false, s, false, bPulse);
     }
-    else
+    else {
         bDrawShopDirPointer = (ScrnGRI == none || ScrnGRI.bTraderArrow); // no gnome = draw shop arrow
+    }
 
     // hints
     if ( bHideTSCHints || KFGRI.EndGameType > 0 )

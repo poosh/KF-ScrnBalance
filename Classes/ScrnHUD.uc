@@ -2368,7 +2368,8 @@ function DrawBlameIcons(Canvas C)
 
 
 simulated function DrawDirPointer(Canvas C, KFShopDirectionPointer DirPointer, Vector PointAt,
-    int Row, int Col, optional bool bHideText, optional string TextPrefix, optional bool bRightSide)
+    int Row, int Col, optional bool bHideText, optional string TextPrefix, optional bool bRightSide,
+    optional bool bPulse)
 {
     local color TextColor;
     local float size;
@@ -2383,6 +2384,13 @@ simulated function DrawDirPointer(Canvas C, KFShopDirectionPointer DirPointer, V
     if ( bHideHud ) {
         DirPointer.bHidden = true;
         return;
+    }
+
+    if (bPulse) {
+        DirPointer.SetDrawScale(DirPointer.default.DrawScale * PulseAlpha / 255.0);
+    }
+    else {
+        DirPointer.SetDrawScale(DirPointer.default.DrawScale);
     }
 
     TextColor = C.DrawColor;
@@ -2421,11 +2429,15 @@ simulated function DrawDirPointer(Canvas C, KFShopDirectionPointer DirPointer, V
     DirPointer.bHidden = true;
 
     C.DrawColor = TextColor;
+    if (bPulse) {
+        C.DrawColor.A = PulseAlpha;
+    }
+
     if ( !bHideText ) {
         C.SetPos(ScreenPos.X, ScreenPos.Y + size * 0.5);
         DrawPointerDistance(C, PointAt, TextPrefix, MyLocation);
     }
-
+    C.DrawColor = TextColor;
 }
 
 // must be called only from DrawDirPointer!

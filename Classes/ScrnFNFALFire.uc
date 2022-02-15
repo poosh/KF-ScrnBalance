@@ -55,7 +55,7 @@ state FireBurst
         else if ( Level.TimeSeconds > FireBurstEndTime )
         {
             GotoState('');
-            log("ScrnM4203BulletFire stuck inside FireBurst state after making "$BurstShotCount$" shots! Getting us out of it.", 'ScrnBalance');
+            log("stuck inside FireBurst state after making "$BurstShotCount$" shots! Getting us out of it.", class.name);
         }
     }
 

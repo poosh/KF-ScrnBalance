@@ -18,5 +18,6 @@ defaultproperties
     Description="ScrN Floor's modification for test maps"
     Acronym="KFT"
     MapPrefix="KFT"
+    MapListType="ScrnBalanceSrv.ScrnTestMapList"
     DefaultGameLength=8
 }

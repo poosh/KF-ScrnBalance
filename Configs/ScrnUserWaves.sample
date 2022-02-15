@@ -1,0 +1,13 @@
+########################################################################################################################
+# A sample of user WAVE definition file
+# ScrnUserWaves.ini is loaded if ALL requirements below are met:
+#   1. bUserGames=true in ScrnBalanceSrv.ini
+#   2. Game length is between 100 and 199 (a user game)
+#   3. bUserWaves=true in the respective ScrnUserGameLength object (ScrnUserGames.ini)
+# ScrnUserWaveInfo and ScrnWaveInfo objects are identical.
+# See ScrnWaves.ini for more info.
+########################################################################################################################
+
+[UserWave1 ScrnUserWaveInfo]
+Message=User wave example
+Squads=4*CL

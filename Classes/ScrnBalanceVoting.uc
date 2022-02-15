@@ -58,44 +58,18 @@ function string GetPlayerName(PlayerReplicationInfo PRI)
     return Mut.PlainPlayerName(PRI);
 }
 
-static function ClientPerkRepLink GetPlayerLink(PlayerController Sender)
+    static function ClientPerkRepLink GetPlayerLink(PlayerController Sender)
 {
     if ( Sender == none || SRStatsBase(Sender.SteamStatsAndAchievements) == none )
         return none;
     return SRStatsBase(Sender.SteamStatsAndAchievements).Rep;
 }
 
-function class<ScrnVeterancyTypes> FindPerkByNameL(ClientPerkRepLink L, string VeterancyNameOrIndex)
-{
-    local int i;
-    local class<ScrnVeterancyTypes> Perk;
-    local string s1, s2;
-
-    if ( L == none )
-        return none;
-
-    i = int(VeterancyNameOrIndex);
-    if ( i > 0 && i <= L.CachePerks.Length )
-        return class<ScrnVeterancyTypes>(L.CachePerks[i-1].PerkClass);
-    // log("CachePerks.Length="$L.CachePerks.Length, 'ScrnBalance');
-    for ( i = 0; i < L.CachePerks.Length; ++i ) {
-        Perk = class<ScrnVeterancyTypes>(L.CachePerks[i].PerkClass);
-        if ( Perk != none ) {
-            // log(GetItemName(String(Perk.class)) @ Perk.default.VeterancyNameOrIndex, 'ScrnBalance');
-            if ( Perk.default.ShortName ~= VeterancyNameOrIndex || Perk.default.VeterancyName ~= VeterancyNameOrIndex
-                    || (Divide(Perk.default.VeterancyName, " ", s1, s2)
-                        && (VeterancyNameOrIndex ~= s1 || VeterancyNameOrIndex ~= s2)) )
-                return Perk;
-        }
-    }
-    return none;
-}
-
 function class<ScrnVeterancyTypes> FindPerkByName(PlayerController Sender, string VeterancyNameOrIndex)
 {
     if ( VeterancyNameOrIndex == "" )
         return none;
-    return FindPerkByNameL( GetPlayerLink(Sender), VeterancyNameOrIndex);
+    return class'ScrnFunctions'.static.FindPerkByName(GetPlayerLink(Sender), VeterancyNameOrIndex);
 }
 
 function bool StrToPerks(PlayerController Sender, string str, out array< class<ScrnVeterancyTypes> > Perks,
@@ -125,7 +99,7 @@ function bool StrToPerks(PlayerController Sender, string str, out array< class<S
         ++i;
     }
     while ( i < args.length ) {
-        Perk = FindPerkByNameL(L, args[i]);
+        Perk = class'ScrnFunctions'.static.FindPerkByName(L, args[i]);
         if ( Perk == none ) {
             ErrorStr = args[i];
             return false;

@@ -2,8 +2,8 @@ class ScrnFNFAL_ACOG_AssaultRifle extends FNFAL_ACOG_AssaultRifle
     config(user);
 
 
-var int FireModeEx; // 0 - F/A, 1 - S/A, 2 - 2 bullet fire
-var int FireModeExCount;
+var byte FireModeEx; // 0 - F/A, 1 - S/A, 2 - 2 bullet fire
+var byte FireModeExCount;
 
 var         name             ReloadShortAnim;
 var         float             ReloadShortRate;
@@ -36,7 +36,7 @@ simulated function DoToggle ()
 }
 
 // Set the new fire mode on the server
-function ServerChangeFireModeEx(int NewFireModeEx)
+function ServerChangeFireModeEx(byte NewFireModeEx)
 {
     FireModeEx = NewFireModeEx;
     FireMode[0].bWaitForRelease = NewFireModeEx == 1;
@@ -44,7 +44,8 @@ function ServerChangeFireModeEx(int NewFireModeEx)
 
 simulated function bool StartFire(int Mode)
 {
-    if ( FireModeEx <= 1 ) return super.StartFire(Mode);
+    if ( FireModeEx <= 1 || Mode != 0 )
+        return super.StartFire(Mode);
 
     if (FireMode[Mode].IsInState('WaitingForFireButtonRelease'))
         return false;
@@ -58,7 +59,6 @@ simulated function bool StartFire(int Mode)
     AnimStopLooping();
 
     if( !FireMode[Mode].IsInState('FireBurst') && (AmmoAmount(0) > 0) ) {
-        ScrnFNFALFire(FireMode[Mode]).BurstSize = FireModeEx;
         FireMode[Mode].GotoState('FireBurst');
         return true;
     }

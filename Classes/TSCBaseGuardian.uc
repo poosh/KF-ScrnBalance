@@ -25,7 +25,7 @@ var float InvulTime;
 var ShopVolume MyShop;
 var transient ScrnPlayerController LastHolder;
 
-var byte GuardianBrightness;
+var byte GuardianBrightness, GuardianHue;
 
 var enum EClientState {
     CS_Home,
@@ -43,7 +43,7 @@ replication
         Team, ClientState;
 
     reliable if (bNetInitial && Role == ROLE_Authority)
-        GuardianBrightness;
+        GuardianBrightness, GuardianHue;
 }
 
 simulated function PostBeginPlay()
@@ -299,6 +299,7 @@ simulated function ApplyClientState()
 {
     LightRadius = default.LightRadius;
     LightBrightness = GuardianBrightness;
+    LightHue = GuardianHue;
     switch (ClientState) {
         case CS_Home:
             LightType = LT_None;

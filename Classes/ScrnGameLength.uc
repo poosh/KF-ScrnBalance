@@ -7,6 +7,9 @@ var ScrnGameType Game;
 var FtgGame FTG;
 var ScrnBalance Mut;
 
+var class<ScrnWaveInfo> WaveInfoClass;
+var class<ScrnZedInfo> ZedInfoClass;
+
 var config int GameVersion;
 var config string GameTitle;
 var config string Author;
@@ -17,6 +20,7 @@ var config array<string> Mutators;
 var config array<string> Waves;
 var config array<string> Zeds;
 var config bool bAllowZedEvents;
+var config byte ForceZedEvent, FallbackZedEvent;
 var config bool bLogStats;
 var config bool bDebug, bTest;
 var config bool bRandomTrader;
@@ -148,9 +152,32 @@ function LoadGame(ScrnGameType MyGame)
         Mut.SetReplicationData();
     }
 
+    log("WaveInfoClass=" $ WaveInfoClass, class.name);
+    log("ZedInfoClass=" $ ZedInfoClass, class.name);
+
+    if (bAllowZedEvents) {
+        if (ForceZedEvent > 0) {
+            Mut.CurrentEventNum = ForceZedEvent;
+        }
+        if (Mut.CurrentEventNum == Mut.ZEDEVENT_RANDOM) {
+            PickRandomZedEvent();
+        }
+        else if (Mut.CurrentEventNum > 0) {
+            log("ZED Event " $ Mut.CurrentEventNum, class.name);
+        }
+        else if (FallbackZedEvent > 0) {
+            Mut.CurrentEventNum = FallbackZedEvent;
+            log("ZED Event " $ Mut.CurrentEventNum $ " (fallback)", class.name);
+        }
+    }
+    else if (Mut.CurrentEventNum > 0) {
+        Mut.CurrentEventNum = 0;
+        log("ZED Events disabled", class.name);
+    }
+
     ZedInfos.length = Zeds.length;
     for ( i = 0; i < Zeds.length; ++i ) {
-        zi = new(none, Zeds[i]) class'ScrnZedInfo';
+        zi = new(none, Zeds[i]) ZedInfoClass;
 
         if ( bAllowZedEvents && zi.EventNum != Mut.CurrentEventNum
                 && zi.EventNum != 0 && Mut.CurrentEventNum != 0 ) {
@@ -183,16 +210,22 @@ function LoadGame(ScrnGameType MyGame)
         // store zed info for config save after voting
         ZedInfos[i] = zi;
     }
+    for ( i = 0; i < ZedInfos.length; ++i ) {
+        if (ZedInfos[i] == none) {
+            ZedInfos.remove(i--, 1);
+        }
+    }
+
     if ( ActiveZeds.length == 0 ) {
         Game.LogZedSpawn(Game.LOG_ERROR, "No active zeds! Loading fallback zeds");
-        for ( j = 0; j < class'ScrnZedInfo'.default.Zeds.length; ++j ) {
-            zedc = class<KFMonster>(DynamicLoadObject(class'ScrnZedInfo'.default.Zeds[j].ZedClass, class'Class'));
+        for ( j = 0; j < ZedInfoClass.default.Zeds.length; ++j ) {
+            zedc = class<KFMonster>(DynamicLoadObject(ZedInfoClass.default.Zeds[j].ZedClass, class'Class'));
             if ( zedc == none ) {
                 Game.LogZedSpawn(Game.LOG_ERROR, "Unable to load a fallback zed class '"
-                        $ class'ScrnZedInfo'.default.Zeds[j].ZedClass);
+                        $ ZedInfoClass.default.Zeds[j].ZedClass);
                 continue;
             }
-            AddActiveZed(class'ScrnZedInfo'.default.Zeds[j].Alias, zedc, 0.f);
+            AddActiveZed(ZedInfoClass.default.Zeds[j].Alias, zedc, 0.f);
         }
     }
     RecalculateSpawnChances();
@@ -210,7 +243,7 @@ function LoadGame(ScrnGameType MyGame)
     // this makes sure the Wave is never none
     if ( Waves.length == 0 ) {
         warn("ScrnGameLength: NO WAVES DEFINED!");
-        Wave = new(none, "Wave1") class'ScrnWaveInfo';
+        Wave = new(none, "Wave1") WaveInfoClass;
         Game.bUseEndGameBoss = false;
     }
     else {
@@ -225,6 +258,44 @@ function LoadGame(ScrnGameType MyGame)
     if ( Game.bUseEndGameBoss ) {
         Game.FinalWave--;  // the boss wave is after the final wave, e.g., wave 11/10
     }
+}
+
+function PickRandomZedEvent()
+{
+    local array<byte> EventNums;
+    local int i, j;
+    local ScrnZedInfo zi;
+    local string s;
+
+    // load all possible events and chose the random one
+    for ( i = 0; i < Zeds.length; ++i ) {
+        zi = new(none, Zeds[i]) ZedInfoClass;
+        if (zi.EventNum == 0)
+            continue;
+
+        for (j = 0; j < EventNums.length; ++j) {
+            if (zi.EventNum <= EventNums[j]) {
+                break;
+            }
+        }
+        if (j == EventNums.length || EventNums[j] != zi.EventNum) {
+            EventNums.insert(j, 1);
+            EventNums[j] = zi.EventNum;
+        }
+    }
+
+    if (EventNums.Length == 0) {
+        log("No zed events available", class.name);
+        Mut.CurrentEventNum = 0;
+        return;
+    }
+
+    Mut.CurrentEventNum = EventNums[rand(EventNums.Length)];
+    s = "";
+    for (j = 0; j < EventNums.length; ++j) {
+        s @= EventNums[j];
+    }
+    log("ZED Event " $ Mut.CurrentEventNum $ " is randomly chosen from {" $ s $" }", class.name);
 }
 
 function bool ApplyGameDifficulty(byte HardcoreDifficulty)
@@ -586,7 +657,7 @@ function ScrnWaveInfo CreateWave(string WaveDefinition)
         WaveName = Parts[rand(Parts.length)];
     }
     log("Creating wave " $ WaveName, class.name);
-    return new(none, WaveName) class'ScrnWaveInfo';
+    return new(none, WaveName) WaveInfoClass;
 }
 
 // Called by Game.SetupWave() when Battle Time starts (Trader/Cooldown Time ends)
@@ -1239,6 +1310,8 @@ function byte SpawnZed(string Alias, string ZedClassStr, byte count, out string 
 
 defaultproperties
 {
+    WaveInfoClass=class'ScrnWaveInfo'
+    ZedInfoClass=class'ScrnZedInfo'
     Waves(0)="Wave1"
     Zeds(0)="NormalZeds"
     FallbackZed=class'KFChar.ZombieClot_STANDARD'

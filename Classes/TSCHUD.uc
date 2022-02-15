@@ -14,6 +14,9 @@ var Material WaveGB[4];
 var     TSCGameReplicationInfo   TSCGRI;
 
 var     KFShopDirectionPointer  BaseDirPointer, EnemyBaseDirPointer, EnemyShopDirPointer;
+var Color OutOfTheBaseColor;
+var ConstantColor OutOfTheBaseMaterial;
+var ConstantColor OwnBaseMaterial;
 
 var localized string strBase;
 var localized string strOurBase;
@@ -347,6 +350,7 @@ simulated function DrawTSCHUDTextElements(Canvas C)
     local string    aHint, aTitle;
     local bool      bCriticalHint;
     local string    s;
+    local bool bPulse;
 
     // enemy base
     TeamBase = TSCTeamBase(KFGRI.Teams[1-TeamIndex].HomeBase);
@@ -361,11 +365,14 @@ simulated function DrawTSCHUDTextElements(Canvas C)
         else
             EnemyBaseDirPointer.UV2Texture = none;
 
-        if ( bAtEnemyBase )
-            C.SetDrawColor(196, 206, 0, KFHUDAlpha);
-        else
+        if ( bAtEnemyBase ) {
+            bPulse = true;
+            C.SetDrawColor(200, 128, 0, KFHUDAlpha);
+        }
+        else {
             C.DrawColor = TextColors[1-TeamIndex];
-        DrawDirPointer(C, EnemyBaseDirPointer, TeamBase.Location, 2, 0, false, strEnemyBase);
+        }
+        DrawDirPointer(C, EnemyBaseDirPointer, TeamBase.Location, 2, 0, false, strEnemyBase, false, bPulse);
     }
 
     // own base
@@ -376,16 +383,20 @@ simulated function DrawTSCHUDTextElements(Canvas C)
     if ( !TeamBase.bHidden && !(TeamBase.bHeld && TeamBase.HolderPRI == KFPRI) ) {
         if ( BaseDirPointer == None ) {
             BaseDirPointer = Spawn(Class'KFShopDirectionPointer');
-            BaseDirPointer.UV2Texture = ConstantColor'TSC_T.HUD.GreenCol';
+            OutOfTheBaseMaterial = new class'ConstantColor';
+            OutOfTheBaseMaterial.Color = OutOfTheBaseColor;
         }
 
         bAtOwnBase = TSCGRI.AtBase(PawnOwner.Location, TeamBase);
         if ( TeamBase.bActive ) {
             s = strOurBase;
-            if ( bAtOwnBase)
+            if ( bAtOwnBase) {
                 C.SetDrawColor(32, 255, 32, KFHUDAlpha);
-            else
-                C.SetDrawColor(196, 206, 0, KFHUDAlpha);
+            }
+            else {
+                C.SetDrawColor(200, 128, 0, KFHUDAlpha);
+                bPulse = TSCGRI.bWaveInProgress && TSCGRI.MaxMonsters >= 10;
+            }
         }
         else if ( TeamBase.bHeld ) {
             s = strCarrier;
@@ -395,7 +406,14 @@ simulated function DrawTSCHUDTextElements(Canvas C)
             s = strGnome;
             C.SetDrawColor(200, 0, 0, KFHUDAlpha); // dropped somewhere
         }
-        DrawDirPointer(C, BaseDirPointer, TeamBase.GetLocation(), 1, 0, false, s);
+
+        if (bPulse) {
+            BaseDirPointer.UV2Texture = OutOfTheBaseMaterial;
+        }
+        else {
+            BaseDirPointer.UV2Texture = OwnBaseMaterial;
+        }
+        DrawDirPointer(C, BaseDirPointer, TeamBase.GetLocation(), 1, 0, false, s, false, bPulse);
     }
 
     // hints
@@ -988,4 +1006,7 @@ defaultproperties
 
     bCoolHud=False
     bCoolHudTeamColor=True
+
+    OutOfTheBaseColor=(R=200,G=200,B=32)
+    OwnBaseMaterial=ConstantColor'TSC_T.HUD.GreenCol'
 }
