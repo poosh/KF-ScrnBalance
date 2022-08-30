@@ -36,7 +36,7 @@
 - In TSC/FTG, the base direction arrow starts pulsing when the player is outside the base.
 - Renamed some ammo to match real counterparts
 - new console command `PERK <perkname>` allows changing perk from console. Values for `<perkname>` are the same as for
-  `MVOTE LOCKPERK <perkname>`, e.g. `perk commando`, `perk cmd`, or `perk 4``
+  `MVOTE LOCKPERK <perkname>`, e.g. `perk commando`, `perk cmd`, or `perk 4`
 
 #### User-Defined Games/Waves/Zeds
 - Controlled by `bUserGames` in *ScrnBalanceSrv.ini*. By default, `bUserGames=false` meaning the legacy behavior - load everything from *ScrnGames.ini* regardless of GameLength.
@@ -44,13 +44,13 @@
 - If `ScrnUserGameLength.bUserWaves=true`, waves are loaded from *ScrnUserWaves.ini* (see *ScrnUserWaves.sample*)
 - If `ScrnUserGameLength.bUserZeds=true`, zeds are loaded from *ScrnUserZeds.ini* (see *ScrnUserZeds.sample*)
 - Allows users to define custom games/waves/zeds without worrying about them being overwritten by future ScrN releases.
-- It is not recommended to modify the default ScrnGames/Waves/Zeds.ini anymore. Make your customizations in ScrnUserGames/Waves/Zeds.ini instead.
+- It is not recommended to modify the default ScrnGames/Waves/Zeds.ini anymore. Make your customizations in ScrnUser*.ini instead.
 
 #### Zed Events
 - Changed random zed event behavior in ScrN Games (`bScrnWaves=true`). When `EventNum=254` (random), it picks a random
   EventNum from all loaded `ScrnZedInfo` objects in the current game.
   User-created zed events (e.g., `EvenNum=100` in *ScrnZeds.ini*) now participate in random selection too.
-- Added `?ZedEvent=` option to command line / *KFMapVote.ini* to allow chooseng a zed event via map voting menu.
+- Added `?ZedEvent=` option to command line / *KFMapVote.ini* to allow choosing a zed event via map voting menu.
 - Added `ForceZedEvent` and `FallbackZedEvent` config options to *ScrnGames.ini*
 
 ##### Zed Event Priority (from highest to lowest)
