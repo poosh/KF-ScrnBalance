@@ -299,7 +299,9 @@ simulated function ApplyClientState()
 {
     LightRadius = default.LightRadius;
     LightBrightness = GuardianBrightness;
-    LightHue = GuardianHue;
+    if (GuardianHue != 0) {
+        LightHue = GuardianHue;
+    }
     switch (ClientState) {
         case CS_Home:
             LightType = LT_None;

@@ -13,7 +13,7 @@ function PawnBaseDied()
         SetBase(none);
         SetLocation( base_loc + vect(0, 0, 20) );
         Velocity = PhysicsVolume.Gravity;
-        if ( KFGameType(Level.Game).bWaveBossInProgress )
+        if ( TSCGRI.MaxMonsters > 10 || KFGameType(Level.Game).bWaveBossInProgress )
             GotoState('SettingUp');
         else
             GotoState('Dropped');

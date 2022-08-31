@@ -773,7 +773,7 @@ function int NetDamage( int OriginalDamage, int Damage, pawn injured, pawn insti
     else if ( ZedVictim != none ) {
         if ( Damage > 1 && KFMonster(instigatedBy) != none ) {
             // Monster2Monster damage
-            if ( !Mut.bStoryMode && DamageType != class'SirenScreamDamage'
+            if ( Mut.bZedFights && !Mut.bStoryMode && DamageType != class'SirenScreamDamage'
                     && KFMonsterController(ZedVictim.Controller) != none ) {
                 // allow monsters fighting each other
                 KFMonsterController(ZedVictim.Controller).bUseThreatAssessment = false;

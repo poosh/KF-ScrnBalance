@@ -77,7 +77,7 @@ simulated function DrawTSCHUDTextElements(Canvas C)
             }
             else {
                 C.SetDrawColor(200, 128, 0, KFHUDAlpha);
-                bPulse = TSCGRI.bWaveInProgress && TSCGRI.MaxMonsters >= 10;
+                bPulse = TSCGRI.bWaveInProgress && (TSCGRI.MaxMonsters >= 10 || TSCGRI.WaveEndRule == 4 /*RULE_KillBoss*/);
             }
         }
         else if ( TeamBase.bHeld ) {
@@ -239,8 +239,8 @@ defaultproperties
 
     hintWelcome=" Welcome to FTG! Watch this place for useful hints. "
     hintFirstWave="First wave is a usual KF wave. Kill all zeds and dont die :)"
-    hintGotoBase="Get to your Base and protect The Guardian!"
-    hintGetGnome="Take the Guardian from your trader to set up a Base"
+    hintGotoBase="Get to your Base and protect the Guardian!"
+    hintGetGnome="Take the Guardian from your Trader to set up the Base"
     hintBaseLostTrader="You lost your Guardian and now you are dead!"
     hintStinkyClot="OMG it is a Stinky Clot! You cannot kill them but those things are really nasty."
 }

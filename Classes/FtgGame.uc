@@ -474,7 +474,6 @@ function StinkyControllerCompeledAction(StinkyController SC, int CompletedAction
     }
 
     if ( SC.ActionNum >= SC.MoveTargets.length ) {
-        gnome.MoveToShop(TeamShops[SC.TeamIndex]);
         SC.Pawn.Suicide(); // nothing else to do = die!
     }
     else {

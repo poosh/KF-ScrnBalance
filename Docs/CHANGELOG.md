@@ -27,6 +27,16 @@
 
 -------------------------------------------------------------------------------
 
+### v9.69.17
+- **FTG On The Clock** v2.50 - now, timer waves last 5 minutes regardless of player count.
+- If Stinky Clot prematurely dies (e.g., due to getting stuck or finishing the entire route), the base is automatically set instead of simply dropping the Guardian. Previously, the base was autosetting only during the boss wave.
+- Fixed the issue where Guardian Hue was reset to 0 (red color) if not set in ScrnMapInfo.ini
+- New config option `bZedFights` in *ScrnBalanceSrv.ini* to prevent zeds from fighting each other.
+
+#### ScrN Weapon Pack
+- Fixed an expoit where some zeds could not attack a player standing on elevated surface next to them (thanks [Joe])
+- https://youtu.be/tTItl1_4834
+
 ### v9.69.16
 - Enhanced *ScrnMapInfo.ini* with `ZVolDisableTimeMax`, `bVanillaVisibilityCheck`, `ZVolClose` options.
 - Added `GuardianHueRed` and `GuardianHueBlue` config options to *ScrnMapInfo.ini* (thanks [nmmblez])
