@@ -33,7 +33,7 @@
 - Fixed the issue where Guardian Hue was reset to 0 (red color) if not set in ScrnMapInfo.ini
 - New config option `bZedFights` in *ScrnBalanceSrv.ini* to prevent zeds from fighting each other.
 
-#### ScrN Weapon Pack
+#### ScrN Zed Pack
 - Fixed an expoit where some zeds could not attack a player standing on elevated surface next to them (thanks [Joe])
 - https://youtu.be/tTItl1_4834
 
