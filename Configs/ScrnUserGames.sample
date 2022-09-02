@@ -5,6 +5,10 @@
 #   2. Game length is between 100 and 199 (a user game)
 # Otherwise, ScrnGameLength object is loaded from ScrnGames.ini.
 #
+# NB!
+# - ScrnGames.ini stores ScrnGameLength objects
+# - ScrnUserGames.ini stores ScrnUserGameLength objects
+#
 # ScrnUserGameLength has the following fields in addition to ScrnGameLength:
 # bUserWaves (default = false) - load wave definitions from ScrnUserWaves.ini instead of ScrnWaves.ini
 # bUserZeds (default = false) - load zed definitions from ScrnUserZeds.ini instead of ScrnZeds.ini

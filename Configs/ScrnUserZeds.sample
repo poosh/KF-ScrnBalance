@@ -4,6 +4,11 @@
 #   1. bUserGames=true in ScrnBalanceSrv.ini
 #   2. Game length is between 100 and 199 (a user game)
 #   3. bUserZeds=true in the respective ScrnUserGameLength object (ScrnUserGames.ini)
+#
+# NB!
+# - ScrnZeds.ini stores ScrnZedInfo objects
+# - ScrnUserZeds.ini stores ScrnUserZedInfo objects
+#
 # ScrnUserZedInfo and ScrnZedInfo objects are identical.
 # See ScrnZeds.ini for more info.
 ########################################################################################################################

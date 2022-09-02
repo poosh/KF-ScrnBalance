@@ -4,6 +4,11 @@
 #   1. bUserGames=true in ScrnBalanceSrv.ini
 #   2. Game length is between 100 and 199 (a user game)
 #   3. bUserWaves=true in the respective ScrnUserGameLength object (ScrnUserGames.ini)
+#
+# NB!
+# - ScrnWaves.ini stores ScrnWaveInfo objects
+# - ScrnUserWaves.ini stores ScrnUserWaveInfo objects
+#
 # ScrnUserWaveInfo and ScrnWaveInfo objects are identical.
 # See ScrnWaves.ini for more info.
 ########################################################################################################################
