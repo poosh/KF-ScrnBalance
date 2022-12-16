@@ -332,6 +332,10 @@ function CalcCarriedInventorySpeed()
     // if reached here, then no story inventory forces our speed
     CarriedInventorySpeed = SpeedMod;
     bForceCarriedInventorySpeed = false;
+
+    if (ScrnGameType(Level.Game) != none) {
+        ScrnGameType(Level.Game).InventoryUpdate(self);
+    }
 }
 
 function bool AddInventory( inventory NewItem )
@@ -1304,6 +1308,45 @@ static function ForceAmmoAmount(KFWeapon W, int AmmoAmount, optional int mode)
     }
 }
 
+simulated function int CalcSellValue(KFWeapon W)
+{
+    local int SellValue;
+
+    if (W == none || W.bKFNeverThrow)
+        return 0;
+
+    if (W.SellValue >= 0) {
+        SellValue = W.SellValue;
+    }
+    else {
+        SellValue = ceil(class<KFWeaponPickup>(W.PickupClass).default.Cost * 0.75);
+        if (SellValue != 0 && KFPRI != none && KFPRI.ClientVeteranSkill != none)
+            SellValue = ceil(SellValue * KFPRI.ClientVeteranSkill.static.GetCostScaling(KFPRI, W.PickupClass));
+    }
+
+    if (W.IsA('PipeBombExplosive')) {
+        //give 75% of all pipes, not 2 (even if there is only 1 left)
+        SellValue /= W.default.FireModeClass[0].default.AmmoClass.default.InitialAmount;
+        SellValue *= W.AmmoAmount(0);
+    }
+
+    return SellValue;
+}
+
+// return total sell value of all items in the inventory
+simulated function int CalcTotalSellValue()
+{
+    local int result;
+    local Inventory I;
+    local int c;
+
+    I = Inventory;
+    for (I = Inventory; I != none && ++c < 1000; I = I.Inventory) {
+        result += CalcSellValue(KFWeapon(I));
+    }
+    return result;
+}
+
 //fixed an exploit when player buy perked dualies with discount,
 //then change the perk and sell 2-nd pistol as an off-perk weapon for a full price
 // (c) PooSH, 2012
@@ -1312,83 +1355,66 @@ function ServerSellWeapon( Class<Weapon> WClass )
     local Inventory I;
     local int c;
     local KFWeapon W, SinglePistol;
-    local float SellValue;
+    local int SellValue;
     local int AmmoAmount;
 
     if ( !CanBuyNow() || Class<KFWeapon>(WClass) == none || Class<KFWeaponPickup>(WClass.Default.PickupClass)==none
         || Class<KFWeapon>(WClass).Default.bKFNeverThrow )
     {
         SetTraderUpdate();
-        Return;
+        return;
     }
 
     I = Inventory;
-    while ( I != none && I.Class != WClass && ++c < 1000 )
+    while ( I != none && I.Class != WClass && ++c < 1000 ) {
         I = I.Inventory;
+    }
 
     if ( I == none || I.Class != WClass )
         return; //no instances of specified class found in inventory
 
     W = KFWeapon(I);
+    SellValue = CalcSellValue(W);
 
-    //Changed from "!= -1" to ">= 0" to reject negative value possibility (c) PooSH
-    if ( W != none && W.SellValue >= 0 ) {
-        SellValue = W.SellValue;
-    }
-    else {
-        SellValue = class<KFWeaponPickup>(WClass.default.PickupClass).default.Cost * 0.75;
-        if ( KFPRI != none && KFPRI.ClientVeteranSkill != none )
-            SellValue *= KFPRI.ClientVeteranSkill.static.GetCostScaling(KFPRI, WClass.Default.PickupClass);
-    }
-
-    if ( W != none ) {
+    if ( Dualies(W) != none ) {
         AmmoAmount = W.AmmoAmount(0);
-        if ( PipeBombExplosive(W) != none ) {
-            //give 75% of all pipes, not 2 (even if there is only 1 left)
-            // calc price per ammo and multiply by ammo count
-            SellValue /= W.default.FireModeClass[0].default.AmmoClass.default.InitialAmount;
-            SellValue *= W.AmmoAmount(0);
+        if( W.DemoReplacement != none ) {
+            // ScrN dualies
+            if ( ScrnDualDeagle(W) != none ) {
+                SinglePistol = ScrnDualDeagle(W).DetachSingle();
+            }
+            else if ( ScrnDualMK23Pistol(W) != none ) {
+                SinglePistol = ScrnDualMK23Pistol(W).DetachSingle();
+            }
+            else if ( ScrnDual44Magnum(W) != none ) {
+                SinglePistol = ScrnDual44Magnum(W).DetachSingle();
+            }
+
+            if ( SinglePistol != none) {
+                // Single Pistol already exists in the inventory
+                SellValue -= SinglePistol.SellValue;
+                //restore ammo count to it previous value
+                ForceAmmoAmount(SinglePistol, AmmoAmount);
+                SinglePistol = none;  // no further processing needed
+            }
+            else {
+                SinglePistol = KFWeapon(Spawn(W.DemoReplacement, self));
+            }
         }
-        else if ( Dualies(W) != none ) {
-            if( W.DemoReplacement != none ) {
-                // ScrN dualies
-                if ( ScrnDualDeagle(W) != none ) {
-                    SinglePistol = ScrnDualDeagle(W).DetachSingle();
-                }
-                else if ( ScrnDualMK23Pistol(W) != none ) {
-                    SinglePistol = ScrnDualMK23Pistol(W).DetachSingle();
-                }
-                else if ( ScrnDual44Magnum(W) != none ) {
-                    SinglePistol = ScrnDual44Magnum(W).DetachSingle();
-                }
-
-
-                if ( SinglePistol != none) {
-                    // Single Pistol already exists in the inventory
-                    SellValue -= SinglePistol.SellValue;
-                    //restore ammo count to it previous value
-                    ForceAmmoAmount(SinglePistol, AmmoAmount);
-                    SinglePistol = none;  // no further processing needed
-                }
-                else {
-                    SinglePistol = KFWeapon(Spawn(W.DemoReplacement, self));
-                }
+        else if ( W.class.outer.name == 'KFMod' ) {
+            //legacy guns
+            if ( W.class==Class'Dualies' ) {
+                SinglePistol = Spawn(class'Single', self);
+                SellValue *= 2; //cuz we can't sell 9mm
             }
-            else if ( W.class.outer.name == 'KFMod' ) {
-                //legacy guns
-                if ( W.class==Class'Dualies' ) {
-                    SinglePistol = Spawn(class'Single', self);
-                    SellValue *= 2; //cuz we can't sell 9mm
-                }
-                else if ( W.class==Class'DualDeagle' )
-                    SinglePistol = Spawn(class'Deagle', self);
-                else if ( W.class==Class'Dual44Magnum' )
-                    SinglePistol = Spawn(class'Magnum44Pistol', self);
-                else if ( W.class==Class'DualMK23Pistol' )
-                    SinglePistol = Spawn(class'MK23Pistol', self);
-                else if ( W.class==Class'DualFlareRevolver' )
-                    SinglePistol = Spawn(class'FlareRevolver', self);
-            }
+            else if ( W.class==Class'DualDeagle' )
+                SinglePistol = Spawn(class'Deagle', self);
+            else if ( W.class==Class'Dual44Magnum' )
+                SinglePistol = Spawn(class'Magnum44Pistol', self);
+            else if ( W.class==Class'DualMK23Pistol' )
+                SinglePistol = Spawn(class'MK23Pistol', self);
+            else if ( W.class==Class'DualFlareRevolver' )
+                SinglePistol = Spawn(class'FlareRevolver', self);
         }
 
         if( SinglePistol != none ) {
@@ -1396,7 +1422,7 @@ function ServerSellWeapon( Class<Weapon> WClass )
             //fixed an exploit when player buys perked dualies with discount,
             //then changes the perk and sells 2-nd pistol as an off-perk weapon for a full SellValue
             // (c) PooSH, 2012
-            SinglePistol.SellValue = ceil(SellValue);
+            SinglePistol.SellValue = SellValue;
 
             SinglePistol.GiveTo(self);
             //restore ammo count to it previous value
@@ -1404,12 +1430,11 @@ function ServerSellWeapon( Class<Weapon> WClass )
         }
     }
 
-    if ( I==Weapon || I==PendingWeapon )
-    {
+    if ( I==Weapon || I==PendingWeapon ) {
         ClientCurrentWeaponSold();
     }
 
-    PlayerReplicationInfo.Score += ceil(SellValue);
+    PlayerReplicationInfo.Score += SellValue;
 
     I.Destroy();
 
@@ -1419,7 +1444,7 @@ function ServerSellWeapon( Class<Weapon> WClass )
         KFGameType(Level.Game).WeaponDestroyed(WClass);
 }
 
-// Searches for a weapon in the player's invenotry. If finds - sets outputs and returns true
+// Searches for a weapon in the player's inventory. If finds - sets outputs and returns true
 final function bool HasWeaponClassToSell( class<KFWeapon> Weap, out float SellValue, out float Weight )
 {
     local Inventory I;
@@ -1858,7 +1883,7 @@ function CookGrenade()
     local ScrnFrag aFrag;
     local KFWeapon KFW;
 
-    if (SecondaryItem != none)
+    if (Level.Pauser != none || SecondaryItem != none)
         return;
 
     KFW = KFWeapon(Weapon);

@@ -1,12 +1,12 @@
 class TSCTeamBase extends GameObject
 abstract;
 
-var bool bActive;
+var bool bActive, bStunned;
 
 replication
 {
     reliable if (bNetDirty && Role == ROLE_Authority)
-        bActive;
+        bActive, bStunned;
 }
 
 simulated function vector GetLocation()

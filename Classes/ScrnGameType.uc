@@ -1874,11 +1874,13 @@ protected function PreStartTourney(out int TourneyMode)
     }
 }
 
+function InventoryUpdate(Pawn P)
+{
+}
+
 // called at the end of InitGame(), when mutators have been spawned already
 protected function StartTourney()
 {
-    local bool bNoStartCash;
-
     log("Starting TOURNEY MODE " $ TourneyMode, 'ScrnBalance');
 
     TurboScale = 1.0;
@@ -1895,22 +1897,12 @@ protected function StartTourney()
     ScrnBalanceMut.bSpawn0 = true;
     ScrnBalanceMut.bNoStartCashToss = true;
     ScrnBalanceMut.bMedicRewardFromTeam = true;
-    if ( bNoStartCash ) {
-        ScrnBalanceMut.StartCashHard = 0;
-        ScrnBalanceMut.StartCashSui = 0;
-        ScrnBalanceMut.StartCashHoE = 0;
-        ScrnBalanceMut.MinRespawnCashHard = 0;
-        ScrnBalanceMut.MinRespawnCashSui = 0;
-        ScrnBalanceMut.MinRespawnCashHoE = 0;
-    }
-    else {
-        ScrnBalanceMut.StartCashHard = 200;
-        ScrnBalanceMut.StartCashSui = 200;
-        ScrnBalanceMut.StartCashHoE = 200;
-        ScrnBalanceMut.MinRespawnCashHard = 100;
-        ScrnBalanceMut.MinRespawnCashSui = 100;
-        ScrnBalanceMut.MinRespawnCashHoE = 100;
-    }
+    ScrnBalanceMut.StartCashHard = 200;
+    ScrnBalanceMut.StartCashSui = 200;
+    ScrnBalanceMut.StartCashHoE = 200;
+    ScrnBalanceMut.MinRespawnCashHard = 100;
+    ScrnBalanceMut.MinRespawnCashSui = 100;
+    ScrnBalanceMut.MinRespawnCashHoE = 100;
 
     ScrnBalanceMut.InitSettings();
     ScrnBalanceMut.SetReplicationData();
@@ -2091,51 +2083,29 @@ static function string GetPlayerID(PlayerController PC)
 
 function bool IsInvited(PlayerController PC)
 {
-    local int i;
-    local string ID;
-
-    if ( InviteList.length == 0 )
-        return false;
-
-    ID = GetPlayerID(PC);
-    if ( ID == "" )
-        return false;
-
-    for ( i=0; i<InviteList.length; ++i ) {
-        if ( InviteList[i] == ID )
-            return true;
-    }
-    return false;
+    return class'ScrnFunctions'.static.SearchStr(InviteList, GetPlayerID(PC)) != -1;
 }
 
 function InvitePlayer(PlayerController PC)
 {
     local string ID;
-    local int i;
 
     ID = GetPlayerID(PC);
     if ( ID == "" )
         return;
-    for ( i=0; i<InviteList.length; ++i ) {
-        if ( InviteList[i] == ID )
-            return; // already invited
+
+    if (class'ScrnFunctions'.static.SearchStr(InviteList, GetPlayerID(PC)) == -1) {
+        InviteList[InviteList.length] = ID;
     }
-    InviteList[InviteList.length] = ID;
 }
 
 function UninvitePlayer(PlayerController PC)
 {
-    local string ID;
     local int i;
 
-    ID = GetPlayerID(PC);
-    if ( ID == "" )
-        return;
-    for ( i=0; i<InviteList.length; ++i ) {
-        if ( InviteList[i] == ID ) {
-            InviteList.remove(i, 1);
-            return;
-        }
+    i = class'ScrnFunctions'.static.SearchStr(InviteList, GetPlayerID(PC));
+    if (i != -1) {
+        InviteList.remove(i, 1);
     }
 }
 
@@ -2289,6 +2259,7 @@ function RestartPlayer( Controller aPlayer )
                 ScrnBalanceMut.SendFriendlyFireWarning(PC);
         }
         bRestartPlayersTriggered = false;
+        InventoryUpdate(aPlayer.Pawn);
     }
 }
 
@@ -2401,9 +2372,18 @@ function SuicideTimer()
 
 function GiveStartingCash(PlayerController PC)
 {
-    PC.PlayerReplicationInfo.Score = max(0, StartingCash + CalcStartingCashBonus(PC));
+    local int cash;
+
+    if (ScrnGameLength != none) {
+        cash = ScrnGameLength.CalcStartingCash(PC);
+    }
+    else {
+        cash = StartingCash;
+    }
+
+    PC.PlayerReplicationInfo.Score = max(0, cash);
     if ( ScrnPlayerController(PC) != none )
-        ScrnPlayerController(PC).StartCash = PC.PlayerReplicationInfo.Score; // prevent tossing bonus too
+        ScrnPlayerController(PC).StartCash = PC.PlayerReplicationInfo.Score;
 }
 
 function bool AllowGameEnd(PlayerReplicationInfo Winner, string Reason)
@@ -2571,19 +2551,6 @@ function ChangeName(Controller Other, string S, bool bNameChange)
         for ( C=Level.ControllerList; C!=None; C=C.NextController )
             if ( (PlayerController(C) != None) && (Viewport(PlayerController(C).Player) != None) )
                 PlayerController(C).ReceiveLocalizedMessage( class'GameMessage', 2, Other.PlayerReplicationInfo );
-}
-
-function int CalcStartingCashBonus(PlayerController PC)
-{
-    local int result;
-
-    if ( ScrnGameLength != none ) {
-        result = ScrnGameLength.StartingCashBonus;
-        if ( ScrnGameLength.bStartingCashRelative ) {
-            result *= RelativeWaveNum(WaveNum);
-        }
-    }
-    return result;
 }
 
 // returns wave number relative to the current game length
@@ -3663,7 +3630,9 @@ State MatchInProgress
 
                 if ( bRespawnDeadPlayers && KFPC.Pawn == none && !KFPRI.bOnlySpectator )
                 {
-                    KFPRI.Score = Max(MinRespawnCash, KFPRI.Score);
+                    if (ScrnGameLength == none || !ScrnGameLength.bStartingCashReset) {
+                        KFPRI.Score = Max(MinRespawnCash, KFPRI.Score);
+                    }
                     KFPC.GotoState('PlayerWaiting');
                     KFPC.SetViewTarget(C);
                     KFPC.ClientSetBehindView(false);

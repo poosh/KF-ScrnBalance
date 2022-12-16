@@ -3,6 +3,11 @@ class TSCLobbyMenu extends ScrnLobbyMenu
 
 #exec OBJ LOAD FILE=TSC_T.utx
 
+// WARNING! Do not store any global actor pointers in GUI classes!
+// GUI objects are not actors, and, therefore, they don't get actor destruction notifications.
+// If you store an actor pointer in an object, and the actor gets destroyed, the object does not get notified,
+// and ends up with dangling pointer.
+
 var automated   GUIImage            TSCLogo;
 
 var    automated    GUIButton            TeamButtons[2];
@@ -21,7 +26,8 @@ var    localized string    strNotTeamMember;
 
 var    localized string    WaitingForMorePlayers;
 var    localized string    strPlayerIsSpectator;
-var    localized string    TeamNames[2];
+
+var deprecated string    TeamNames[2];
 
 var    localized string    strHDmg;
 var array<localized string> HDmgNames, HDmgInfo;
@@ -30,7 +36,7 @@ var array<localized string> HDmgNames, HDmgInfo;
 var array<FPlayerBoxEntry>        BluePlayerBoxes;
 
 
-var TeamInfo MyTeam;
+var int MyTeamIndex;
 
 // stats
 var int RedPlayers, BluePlayers;
@@ -49,8 +55,6 @@ event Timer()
             Return;
         }
     }
-
-
 
     GRI = TSCGameReplicationInfo(PlayerOwner().GameReplicationInfo);
     if ( GRI==None )
@@ -378,10 +382,12 @@ function EmptyBluePlayers( int Index )
 function bool InternalOnPreDraw(Canvas C)
 {
     local int i, r, b;
-    local String SkillString;
+    local String SkillString, WavesString, GameString;
     local TSCGameReplicationInfo GRI;
     local KFPlayerReplicationInfo KFPRI;
     local PlayerController PC;
+    local byte t;
+    local TSCTeam TSCTeams[2];
 
     PC = PlayerOwner();
 
@@ -395,8 +401,9 @@ function bool InternalOnPreDraw(Canvas C)
         return false;
     }
 
-    if (  PC.PlayerReplicationInfo != none && PC.PlayerReplicationInfo.Team != MyTeam ) {
-        MyTeam = PC.PlayerReplicationInfo.Team;
+    if (  PC.PlayerReplicationInfo != none && PC.PlayerReplicationInfo.Team != none
+            && PC.PlayerReplicationInfo.Team.TeamIndex != MyTeamIndex ) {
+        MyTeamIndex = PC.PlayerReplicationInfo.Team.TeamIndex;
         TeamChanged();
     }
 
@@ -405,14 +412,41 @@ function bool InternalOnPreDraw(Canvas C)
     GRI = TSCGameReplicationInfo(PC.GameReplicationInfo);
 
     if ( GRI != none ) {
-        if ( GRI.bMatchHasBegun )
-            WaveLabel.Caption = strCurrentWave @ string(GRI.WaveNumber + 1) $ "/" $ string(GRI.FinalWave)$"+"$ string(GRI.OvertimeWaves) $"OT+"$ string(GRI.SudDeathWaves)$"SD";
-        else
-            WaveLabel.Caption = string(GRI.FinalWave) @ strWaves @ "+" @ string(GRI.OvertimeWaves)$"OT"
-                @ "+" @ string(GRI.SudDeathWaves)$"SD";
+        TSCTeams[0] = TSCTeam(GRI.Teams[0]);
+        TSCTeams[1] = TSCTeam(GRI.Teams[1]);
+
+        if ( GRI.bMatchHasBegun ) {
+            WavesString = strCurrentWave @ string(GRI.WaveNumber + 1) $ "/"
+                $ string(GRI.FinalWave)$"+"$ string(GRI.OvertimeWaves) $"OT+"$ string(GRI.SudDeathWaves)$"SD";
+        }
+        else {
+            WavesString = string(GRI.FinalWave) @ strWaves @ "+" @ string(GRI.OvertimeWaves)$"OT"
+                    @ "+" @ string(GRI.SudDeathWaves)$"SD";
+        }
+
+        if (GRI.GameTitle != "") {
+            GameString = GRI.GameTitle;
+            if ( GRI.GameVersion > 0 ) {
+                GameString @= class'ScrnF'.static.VersionStr(GRI.GameVersion);
+            }
+        }
+        else {
+            GameString = GRI.GameName;
+        }
+
+        if (TSCTeams[0] != none && TSCTeams[1] != none) {
+            if (TSCTeams[0].ClanRep != none && TSCTeams[1].ClanRep != none) {
+                GameString = TSCTeams[0].ClanRep.ClanName $ " vs. " $ TSCTeams[1].ClanRep.ClanName
+                        $ " | " $ GameString;
+            }
+
+            for (t = 0; t < 2; ++t) {
+                TeamLogos[t].Image = TSCTeams[t].GetLogo();
+            }
+        }
     }
     else {
-        WaveLabel.Caption = "Wrong Game Type!"; // shouldn't happen
+        GameString = "Wrong Game Type!"; // shouldn't happen
         return false;
     }
     C.DrawColor.A = 255;
@@ -468,7 +502,6 @@ function bool InternalOnPreDraw(Canvas C)
     if( b < MaxPlayersOnList )
         EmptyBluePlayers(b);
 
-DoneIt:
     CheckStoryText();
     CheckBotButtonAccess();
 
@@ -483,12 +516,14 @@ DoneIt:
     else
         SkillString = HellOnEarthString;
 
-    CurrentMapLabel.Caption = PC.Level.Title;
-    DifficultyLabel.Caption = SkillString;
+    // move difficulty to map, reuse DifficultyLabel for game name
+    CurrentMapLabel.Caption = PC.Level.Title $ " | " $ SkillString;
+    DifficultyLabel.Caption = GameString;
+    WaveLabel.Caption = WavesString;
 
-    if ( MyTeam != none ) {
-        l_PlayerTeam.Caption = strTeam @ TeamNames[MyTeam.TeamIndex];
-        l_PlayerTeam.TextColor = MyTeam.TeamColor;
+    if ( PC.PlayerReplicationInfo.Team != none ) {
+        l_PlayerTeam.Caption = strTeam @ PC.PlayerReplicationInfo.Team.GetHumanReadableName();
+        l_PlayerTeam.TextColor = PC.PlayerReplicationInfo.Team.TeamColor;
     }
     else {
         l_PlayerTeam.Caption = strNotTeamMember;
@@ -499,13 +534,8 @@ DoneIt:
 }
 
 
-
-
-
 defaultproperties
 {
-    TeamNames[0]="British"
-    TeamNames[1]="Steampunk"
     WaitingForMorePlayers="Waiting for more players to join in..."
     strJoin="Join"
     strJoined="Joined"
@@ -518,6 +548,7 @@ defaultproperties
     strNotTeamMember="Select team..."
     strPlayerIsSpectator="You are a spectator."
     MaxPlayersOnList=11
+    MyTeamIndex=255
 
     Begin Object Class=TSCLobbyFooter Name=BuyFooter
         RenderWeight=0.300000

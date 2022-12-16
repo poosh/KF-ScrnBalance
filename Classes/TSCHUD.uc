@@ -11,7 +11,9 @@ var Texture Boxes[2];
 var Material EndGameMaterials[4];
 var Material WaveGB[4];
 
-var     TSCGameReplicationInfo   TSCGRI;
+var TSCGameReplicationInfo   TSCGRI;
+var TSCTeam TSCTeams[2];
+var TSCTeam MyTeam, EnemyTeam;
 
 var     KFShopDirectionPointer  BaseDirPointer, EnemyBaseDirPointer, EnemyShopDirPointer;
 var Color OutOfTheBaseColor;
@@ -23,6 +25,7 @@ var localized string strOurBase;
 var localized string strGnome;
 var localized string strCarrier;
 var localized string strEnemyBase;
+var localized string strStunned;
 
 
 // TSC hints
@@ -58,7 +61,9 @@ var()   SpriteWidget            SpecKillsBG[2];
 var()   SpriteWidget            SpecKillsIcon[2];
 var()   NumericWidget           SpecKillsDigits[2];
 var()   SpriteWidget            SpecWaveKillsBG[2];
+var()   SpriteWidget            SpecWaveKillsIcon[2];
 var()   NumericWidget           SpecWaveKillsDigits[2];
+// not used
 var()   SpriteWidget            SpecMinKillsBG[2];
 var()   NumericWidget           SpecMinKillsDigits[2];
 
@@ -66,15 +71,24 @@ var()   SpriteWidget            SpecDeathsBG[2];
 var()   SpriteWidget            SpecDeathsIcon[2];
 var()   NumericWidget           SpecDeathsDigits[2];
 
+var()   SpriteWidget            SpecInvDoshBG[2];
+var()   SpriteWidget            SpecInvDoshIcon[2];
+var()   NumericWidget           SpecInvDoshDigits[2];
+
 var()   SpriteWidget            SpecDoshBG[2];
 var()   SpriteWidget            SpecDoshIcon[2];
 var()   NumericWidget           SpecDoshDigits[2];
 
-var     material                SpecBarBG;
+var     config bool             bDrawSpecBar;
+var     material                SpecBarBG, SpecBarRed, SpecBarBlue;
 var     config float            SpecBarY, SpecBarWidth, SpecBarHeight;
 
-var protected transient int TeamDosh[2], TeamHealth[2];
-var protected transient float RedTeamHealthRatio;
+var     config bool             bSpecDrawClan;
+var     config float            SpecClanNameX, SpecClanNameY;
+var     config float            SpecClanBannerX, SpecClanBannerY, SpecClanBannerHeight;
+
+var protected transient int TeamDosh[2], TeamHealth[2], TeamWaveKills[2];
+var protected transient float RedTeamHealthRatio, RedTeamDoshRatio, RedTeamWaveKillRatio;
 var protected transient float NextStatUpdateTime;
 
 var bool bDrawShopDirPointer;
@@ -102,6 +116,19 @@ simulated function LinkActors()
     super.LinkActors();
 
     TSCGRI = TSCGameReplicationInfo(PlayerOwner.GameReplicationInfo);
+    if (TSCGRI == none)
+        return;
+
+    TSCTeams[0] = TSCTeam(TSCGRI.Teams[0]);
+    TSCTeams[1] = TSCTeam(TSCGRI.Teams[1]);
+    if (TeamIndex >= 0 && TeamIndex <= 1) {
+        MyTeam = TSCTeams[TeamIndex];
+        EnemyTeam = TSCTeams[1-TeamIndex];
+    }
+    else {
+        MyTeam = none;
+        EnemyTeam = none;
+    }
 }
 
 
@@ -117,6 +144,7 @@ simulated function UpdateHud()
 simulated function UpdateTeamHud()
 {
     TeamIndex = KFPRI.Team.TeamIndex;
+    LinkActors();
 
     HealthDigits.Tints[0] = TeamColors[TeamIndex];
     HealthDigits.Tints[1] = TeamColors[TeamIndex];
@@ -280,16 +308,24 @@ simulated function DrawKFHUDTextElements(Canvas C)
         C.SetPos(C.ClipX - CircleSize, 2);
         C.DrawTile(WaveGB[2+TeamIndex], CircleSize, CircleSize, 0, 0, 256, 256);
 
-        // TODO: Add support for ScrnGRI.WaveEndRule
-
-        S = string(KFGRI.MaxMonsters);
-        C.Font = LoadFont(1);
+        if ( MyTeam != none && MyTeam.GetCurWaveKills() < TSCGRI.WaveKillReq ) {
+            NumZombies = TSCGRI.WaveKillReq - MyTeam.GetCurWaveKills();
+            S = NumZombies $ "/" $ KFGRI.MaxMonsters;
+            C.Font = LoadFont(2);
+            C.DrawColor = LowAmmoColor;
+            PulseColorIf(C.DrawColor, KFGRI.MaxMonsters < NumZombies*2);
+        }
+        else {
+            S = string(KFGRI.MaxMonsters);
+            C.Font = LoadFont(1);
+            C.DrawColor = TextColors[TeamIndex];
+        }
         C.Strlen(S, XL, YL);
-        C.DrawColor = TextColors[TeamIndex];
         C.SetPos(C.ClipX - CircleSize/2 - (XL / 2), CircleSize/2 - (YL / 1.5));
         C.DrawText(S);
     }
 
+    C.DrawColor = TextColors[TeamIndex];
     if ( KFGRI.bWaveInProgress ) {
         // Show the number of waves
         S = WaveString @ string(KFGRI.WaveNumber + 1) $ "/" $ string(KFGRI.FinalWave);
@@ -350,11 +386,11 @@ simulated function DrawTSCHUDTextElements(Canvas C)
     local string    aHint, aTitle;
     local bool      bCriticalHint;
     local string    s;
-    local bool bPulse;
+    local EScrnEffect Effect;
 
     // enemy base
     TeamBase = TSCTeamBase(KFGRI.Teams[1-TeamIndex].HomeBase);
-    if ( TeamBase != none && TeamBase.bActive ) {
+    if ( TeamBase != none && (TeamBase.bActive || TeamBase.bStunned) ) {
         bAtEnemyBase = TSCGRI.AtBase(PawnOwner.Location, TeamBase);
         if ( EnemyBaseDirPointer == None ) {
             EnemyBaseDirPointer = Spawn(Class'KFShopDirectionPointer');
@@ -365,14 +401,22 @@ simulated function DrawTSCHUDTextElements(Canvas C)
         else
             EnemyBaseDirPointer.UV2Texture = none;
 
-        if ( bAtEnemyBase ) {
-            bPulse = true;
+        if (TeamBase.bStunned) {
+            s = strStunned;
+            C.DrawColor = LowAmmoColor;
+            Effect = EFF_NONE;
+        }
+        else if ( bAtEnemyBase ) {
+            s = strEnemyBase;
             C.SetDrawColor(200, 128, 0, KFHUDAlpha);
+            Effect = EFF_PULSE;
         }
         else {
+            s = strEnemyBase;
             C.DrawColor = TextColors[1-TeamIndex];
+            Effect = EFF_NONE;
         }
-        DrawDirPointer(C, EnemyBaseDirPointer, TeamBase.Location, 2, 0, false, strEnemyBase, false, bPulse);
+        DrawDirPointer(C, EnemyBaseDirPointer, TeamBase.Location, 2, 0, false, s, false, Effect);
     }
 
     // own base
@@ -381,6 +425,7 @@ simulated function DrawTSCHUDTextElements(Canvas C)
         return; // just in case
 
     if ( !TeamBase.bHidden && !(TeamBase.bHeld && TeamBase.HolderPRI == KFPRI) ) {
+        Effect = EFF_NONE;
         if ( BaseDirPointer == None ) {
             BaseDirPointer = Spawn(Class'KFShopDirectionPointer');
             OutOfTheBaseMaterial = new class'ConstantColor';
@@ -388,14 +433,21 @@ simulated function DrawTSCHUDTextElements(Canvas C)
         }
 
         bAtOwnBase = TSCGRI.AtBase(PawnOwner.Location, TeamBase);
-        if ( TeamBase.bActive ) {
+        if ( TeamBase.bStunned ) {
+            s = strStunned;
+            C.SetDrawColor(200, 0, 0, KFHUDAlpha);
+            Effect = EFF_BLINK;
+        }
+        else if ( TeamBase.bActive ) {
             s = strOurBase;
             if ( bAtOwnBase) {
                 C.SetDrawColor(32, 255, 32, KFHUDAlpha);
             }
             else {
                 C.SetDrawColor(200, 128, 0, KFHUDAlpha);
-                bPulse = TSCGRI.bWaveInProgress && TSCGRI.MaxMonsters >= 10;
+                if( TSCGRI.bWaveInProgress && TSCGRI.MaxMonsters >= 10 ) {
+                    Effect = EFF_PULSE;
+                }
             }
         }
         else if ( TeamBase.bHeld ) {
@@ -407,13 +459,13 @@ simulated function DrawTSCHUDTextElements(Canvas C)
             C.SetDrawColor(200, 0, 0, KFHUDAlpha); // dropped somewhere
         }
 
-        if (bPulse) {
+        if (Effect == EFF_Pulse) {
             BaseDirPointer.UV2Texture = OutOfTheBaseMaterial;
         }
         else {
             BaseDirPointer.UV2Texture = OwnBaseMaterial;
         }
-        DrawDirPointer(C, BaseDirPointer, TeamBase.GetLocation(), 1, 0, false, s, false, bPulse);
+        DrawDirPointer(C, BaseDirPointer, TeamBase.GetLocation(), 1, 0, false, s, false, Effect);
     }
 
     // hints
@@ -437,7 +489,7 @@ simulated function DrawTSCHUDTextElements(Canvas C)
             aTitle = titleSuddenDeath;
         }
         else if ( TSCGRI.MaxMonsters >= 10 ) {
-            if ( !TeamBase.bActive && !TeamBase.bHidden ) {
+            if ( TeamBase.bStunned ) {
                 aTitle = titleStunned;
                 aHint = hintStunned;
                 bCriticalHint = true;
@@ -463,7 +515,7 @@ simulated function DrawTSCHUDTextElements(Canvas C)
                 aHint = hintEnemyBase;
             bCriticalHint = true;
         }
-        else if ( TeamBase.bActive ) {
+        else if ( TeamBase.bActive || TeamBase.bStunned ) {
             if ( TSCGRI.TimeToNextWave < 30 && !bAtOwnBase )
                 aHint = hintGotoBase;
             else if ( TSCGRI.TimeToNextWave < 10 )
@@ -482,6 +534,8 @@ simulated function DrawTSCHUDTextElements(Canvas C)
                     s = PlayerOwner.ConsoleCommand("BINDINGTOKEY ToggleDuck");
                 if ( s == "" )
                     s = PlayerOwner.ConsoleCommand("BINDINGTOKEY Crouch");
+                if ( s == "" )
+                    s = "SetupBase";
                 aHint = Repl(aHint, "%KEY%", s, true);
             }
             else if ( TSCGRI.TimeToNextWave < 30 )
@@ -633,6 +687,13 @@ simulated function DrawEndGameHUD(Canvas C, bool bVictory)
     DisplayLocalMessages(C);
 }
 
+simulated function float CalcTeamRatio(float RedTeamStat, float BlueTeamStat)
+{
+    if (RedTeamStat + BlueTeamStat < 0.0001)
+        return 0.5;  // avoid div by 0
+    return RedTeamStat / (RedTeamStat + BlueTeamStat);
+}
+
 simulated function CalsTeamStats()
 {
     local int i;
@@ -642,6 +703,8 @@ simulated function CalsTeamStats()
     TeamDosh[1] = 0;
     TeamHealth[0] = 0;
     TeamHealth[1] = 0;
+    TeamWaveKills[0] = TSCTeams[0].GetCurWaveKills();
+    TeamWaveKills[1] = TSCTeams[1].GetCurWaveKills();
 
     for ( i = 0; i < KFGRI.PRIArray.Length; i++) {
         OtherPRI = KFPlayerReplicationInfo(KFGRI.PRIArray[i]);
@@ -651,35 +714,39 @@ simulated function CalsTeamStats()
         }
     }
 
-    SpecKillsDigits[0].Value = TSCTeam(KFGRI.Teams[0]).ZedKills;
-    SpecKillsDigits[1].Value = TSCTeam(KFGRI.Teams[1]).ZedKills;
-    SpecDeathsDigits[0].Value = TSCTeam(KFGRI.Teams[0]).Deaths;
-    SpecDeathsDigits[1].Value = TSCTeam(KFGRI.Teams[1]).Deaths;
+    SpecKillsDigits[0].Value = TSCTeams[0].ZedKills;
+    SpecKillsDigits[1].Value = TSCTeams[1].ZedKills;
+    SpecDeathsDigits[0].Value = TSCTeams[0].Deaths;
+    SpecDeathsDigits[1].Value = TSCTeams[1].Deaths;
     SpecDoshDigits[0].Value = TeamDosh[0] + KFGRI.Teams[0].Score;
     SpecDoshDigits[1].Value = TeamDosh[1] + KFGRI.Teams[1].Score;
-    RedTeamHealthRatio = float(TeamHealth[0]) / (TeamHealth[0]+TeamHealth[1]);
+    SpecInvDoshDigits[0].Value = TSCTeams[0].InventorySellValue;
+    SpecInvDoshDigits[1].Value = TSCTeams[1].InventorySellValue;
+    SpecWaveKillsDigits[0].Value = TeamWaveKills[0];
+    SpecWaveKillsDigits[1].Value = TeamWaveKills[1];
+    // SpecMinKillsDigits[0].Value = TSCTeams[0].GetPrevMinuteKills();
+    // SpecMinKillsDigits[1].Value = TSCTeams[1].GetPrevMinuteKills();
 
-    // v2.00
-    SpecWaveKillsDigits[0].Value = max(TSCTeam(KFGRI.Teams[0]).ZedKills - TSCTeam(KFGRI.Teams[0]).WaveKills, 0);
-    SpecWaveKillsDigits[1].Value = max(TSCTeam(KFGRI.Teams[1]).ZedKills - TSCTeam(KFGRI.Teams[1]).WaveKills, 0);
-    SpecMinKillsDigits[0].Value = max(TSCTeam(KFGRI.Teams[0]).ZedKills - TSCTeam(KFGRI.Teams[0]).PrevMinKills, 0);
-    SpecMinKillsDigits[1].Value = max(TSCTeam(KFGRI.Teams[1]).ZedKills - TSCTeam(KFGRI.Teams[1]).PrevMinKills, 0);
+    RedTeamDoshRatio = CalcTeamRatio(SpecDoshDigits[0].Value + SpecInvDoshDigits[0].Value,
+            SpecDoshDigits[1].Value + SpecInvDoshDigits[1].Value);
+    RedTeamHealthRatio = CalcTeamRatio(TeamHealth[0], TeamHealth[1]);
+    RedTeamWaveKillRatio = CalcTeamRatio(TeamWaveKills[0], TeamWaveKills[1]);
 
-    if ( SpecMinKillsDigits[0].Value < 15 ) {
-        SpecWaveKillsDigits[0].Tints[0].R = 196;
-        SpecWaveKillsDigits[0].Tints[0].G = 206;
-        SpecWaveKillsDigits[0].Tints[0].B = 0;
+    if ( SpecWaveKillsDigits[0].Value < TSCGRI.WaveKillReq ) {
+        SpecWaveKillsDigits[0].Tints[0] = LowAmmoColor;
+        PulseColorIf(SpecWaveKillsDigits[0].Tints[0], SpecWaveKillsDigits[1].Value >= TSCGRI.WaveKillReq);
     }
-    else
+    else {
         SpecWaveKillsDigits[0].Tints[0] = default.SpecWaveKillsDigits[0].Tints[0];
-
-    if ( SpecMinKillsDigits[1].Value < 15 ) {
-        SpecWaveKillsDigits[1].Tints[0].R = 196;
-        SpecWaveKillsDigits[1].Tints[0].G = 206;
-        SpecWaveKillsDigits[1].Tints[0].B = 0;
     }
-    else
+
+    if ( SpecWaveKillsDigits[1].Value < TSCGRI.WaveKillReq ) {
+        SpecWaveKillsDigits[1].Tints[0] = LowAmmoColor;
+        PulseColorIf(SpecWaveKillsDigits[1].Tints[0], SpecWaveKillsDigits[0].Value >= TSCGRI.WaveKillReq);
+    }
+    else {
         SpecWaveKillsDigits[1].Tints[0] = default.SpecWaveKillsDigits[1].Tints[0];
+    }
 
     SpecWaveKillsDigits[0].Tints[1] = SpecWaveKillsDigits[0].Tints[0];
     SpecWaveKillsDigits[1].Tints[1] = SpecWaveKillsDigits[1].Tints[0];
@@ -692,12 +759,15 @@ simulated function CalsTeamStats()
     SpecKillsDigits[0].Tints[1].A = KFHUDAlpha;
     SpecWaveKillsBG[0].Tints[0].A = KFHUDAlpha;
     SpecWaveKillsBG[0].Tints[1].A = KFHUDAlpha;
+    SpecWaveKillsIcon[0].Tints[0].A = KFHUDAlpha;
+    SpecWaveKillsIcon[0].Tints[1].A = KFHUDAlpha;
     SpecWaveKillsDigits[0].Tints[0].A = KFHUDAlpha;
     SpecWaveKillsDigits[0].Tints[1].A = KFHUDAlpha;
-    SpecMinKillsBG[0].Tints[0].A = KFHUDAlpha;
-    SpecMinKillsBG[0].Tints[1].A = KFHUDAlpha;
-    SpecMinKillsDigits[0].Tints[0].A = KFHUDAlpha;
-    SpecMinKillsDigits[0].Tints[1].A = KFHUDAlpha;
+
+    // SpecMinKillsBG[0].Tints[0].A = KFHUDAlpha;
+    // SpecMinKillsBG[0].Tints[1].A = KFHUDAlpha;
+    // SpecMinKillsDigits[0].Tints[0].A = KFHUDAlpha;
+    // SpecMinKillsDigits[0].Tints[1].A = KFHUDAlpha;
 
     SpecKillsBG[1].Tints[0].A = KFHUDAlpha;
     SpecKillsBG[1].Tints[1].A = KFHUDAlpha;
@@ -707,12 +777,15 @@ simulated function CalsTeamStats()
     SpecKillsDigits[1].Tints[1].A = KFHUDAlpha;
     SpecWaveKillsBG[1].Tints[0].A = KFHUDAlpha;
     SpecWaveKillsBG[1].Tints[1].A = KFHUDAlpha;
+    SpecWaveKillsIcon[1].Tints[0].A = KFHUDAlpha;
+    SpecWaveKillsIcon[1].Tints[1].A = KFHUDAlpha;
     SpecWaveKillsDigits[1].Tints[0].A = KFHUDAlpha;
     SpecWaveKillsDigits[1].Tints[1].A = KFHUDAlpha;
-    SpecMinKillsBG[1].Tints[0].A = KFHUDAlpha;
-    SpecMinKillsBG[1].Tints[1].A = KFHUDAlpha;
-    SpecMinKillsDigits[1].Tints[0].A = KFHUDAlpha;
-    SpecMinKillsDigits[1].Tints[1].A = KFHUDAlpha;
+
+    // SpecMinKillsBG[1].Tints[0].A = KFHUDAlpha;
+    // SpecMinKillsBG[1].Tints[1].A = KFHUDAlpha;
+    // SpecMinKillsDigits[1].Tints[0].A = KFHUDAlpha;
+    // SpecMinKillsDigits[1].Tints[1].A = KFHUDAlpha;
 
     SpecDeathsBG[0].Tints[0].A = KFHUDAlpha;
     SpecDeathsBG[0].Tints[1].A = KFHUDAlpha;
@@ -739,14 +812,136 @@ simulated function CalsTeamStats()
     SpecDoshIcon[1].Tints[1].A = KFHUDAlpha;
     SpecDoshDigits[1].Tints[0].A = KFHUDAlpha;
     SpecDoshDigits[1].Tints[1].A = KFHUDAlpha;
+
+    SpecInvDoshBG[0].Tints[0].A = KFHUDAlpha;
+    SpecInvDoshBG[0].Tints[1].A = KFHUDAlpha;
+    SpecInvDoshIcon[0].Tints[0].A = KFHUDAlpha;
+    SpecInvDoshIcon[0].Tints[1].A = KFHUDAlpha;
+    SpecInvDoshDigits[0].Tints[0].A = KFHUDAlpha;
+    SpecInvDoshDigits[0].Tints[1].A = KFHUDAlpha;
+    SpecInvDoshBG[1].Tints[0].A = KFHUDAlpha;
+    SpecInvDoshBG[1].Tints[1].A = KFHUDAlpha;
+    SpecInvDoshIcon[1].Tints[0].A = KFHUDAlpha;
+    SpecInvDoshIcon[1].Tints[1].A = KFHUDAlpha;
+    SpecInvDoshDigits[1].Tints[0].A = KFHUDAlpha;
+    SpecInvDoshDigits[1].Tints[1].A = KFHUDAlpha;
 }
 
+simulated function DrawSpecBar(Canvas C, float Ratio, float x, float y, float w, float h,
+    optional Texture RedIcon, optional Texture BlueIcon,
+    optional Texture CenterIcon, optional Color CenterIconColor)
+{
+    local float redw;
+    local float IconSize, IconSizeX;
+    local Color OldColor;
+
+    if (Ratio < 0)
+        return;
+
+    OldColor = C.DrawColor;
+    SetAlphaColor(C.DrawColor, WhiteColor);
+
+    IconSize = C.ClipY * h * 0.70;
+    IconSizeX = IconSize / C.ClipX;
+    if (RedIcon != none) {
+        x += IconSizeX;
+        w -= IconSizeX;
+    }
+    if (BlueIcon != none) {
+        w -= IconSizeX;
+    }
+
+    redw = w * fclamp(Ratio, 0.025, 0.975);
+    C.SetPos(C.ClipX * x, C.ClipY * y);
+    C.DrawTileStretched(SpecBarRed, C.ClipX * redw, C.ClipY * h);
+
+    C.SetPos(C.ClipX * (x + redw), C.ClipY * y);
+    redw = w - redw;
+    C.DrawTileStretched(SpecBarBlue, C.ClipX * redw + 1, C.ClipY * h);
+
+    C.SetPos(C.ClipX * x, C.ClipY * y);
+    C.DrawTileStretched(SpecBarBG, C.ClipX * w, C.ClipY * h);
+
+    if (RedIcon != none) {
+        C.SetPos(C.ClipX * x - IconSize, (C.ClipY * (y + h/2)) - IconSize/2);
+        C.DrawIcon(RedIcon, IconSize / RedIcon.VSize);
+    }
+    if (BlueIcon != none) {
+        C.SetPos(C.ClipX * (x + w), (C.ClipY * (y + h/2)) - IconSize/2);
+        C.DrawIcon(BlueIcon, IconSize / BlueIcon.VSize);
+    }
+
+    if (CenterIcon != none) {
+        SetAlphaColor(C.DrawColor, CenterIconColor);
+        C.SetPos(C.ClipX * (x + w/2) - IconSize/2, (C.ClipY * (y + h/2)) - IconSize/2);
+        C.DrawIcon(CenterIcon, IconSize / CenterIcon.VSize);
+    }
+
+    C.DrawColor = OldColor;
+}
+
+simulated function DrawClan(Canvas C, byte TeamIndex, float x, float y, float h)
+{
+    local TSCClanReplicationInfo ClanRep;
+    local array<string> Lines;
+    local float w, XL, YL, XLMax, YLMax;
+    local int i, j;
+
+    if (TeamIndex > 1 || TSCTeams[TeamIndex] == none)
+        return;
+    ClanRep = TSCTeams[TeamIndex].ClanRep;
+    if (ClanRep == none)
+        return;
+
+    SetAlphaColor(C.DrawColor, WhiteColor);
+    w = 2*h;
+
+    if (!bLightHud) {
+        C.SetPos(x, y);
+        C.DrawTileStretched(Boxes[TeamIndex], w, h);
+    }
+
+    if (ClanRep.Banner != none) {
+        C.SetPos(x, y);
+        C.DrawTile(ClanRep.Banner, w, h,  0, 0, ClanRep.Banner.MaterialUSize(), ClanRep.Banner.MaterialVSize());
+        return;
+    }
+
+    if (ClanRep.DecoName != "") {
+        Split(ClanRep.DecoName, "|", Lines);
+    }
+    else {
+        Lines[0] = ClanRep.ClanName;
+    }
+
+    // find the biggest font of the clan name that fits into the banner
+    for (i = 1; i < 9; ++i) {
+        C.Font = LoadFont(i);
+        for (j = 0; j < Lines.Length; ++j) {
+            C.TextSize(Lines[j], XL, YL);
+            XLMax = fmax(XLMax, XL);
+            YLMax = fmax(YLMax, YL);
+        }
+        if (XLMax < w && YLMax * Lines.Length < h)
+            break;
+    }
+    SetAlphaColor(C.DrawColor, TextColors[TeamIndex]);
+    XL = x + h;
+    YL = y + (h - YLMax*Lines.Length)/2 + YLMax/2;  // V middle of the first line
+    XL /= C.SizeX;
+    YL /= C.SizeY; // line height
+    YLMax /= C.SizeY; // line height
+
+    for (j = 0; j < Lines.Length; ++j) {
+        C.DrawScreenText(Lines[j], XL, YL + j * YLMax, DP_MiddleMiddle);
+    }
+}
 
 simulated function DrawSpecialSpectatingHUD(Canvas C)
 {
-    local float x, w;
     local string s;
     local TSCTeamBase TeamBase;
+    local EScrnEffect Effect;
 
     if ( KFGRI == none || !KFGRI.bMatchHasBegun)
         return;
@@ -760,52 +955,75 @@ simulated function DrawSpecialSpectatingHUD(Canvas C)
         CalsTeamStats();
     }
 
+    if (bSpecDrawClan) {
+        DrawClan(C, 0, SpecClanBannerX * C.ClipX, SpecClanBannerY * C.ClipY, SpecClanBannerHeight * C.ClipY);
+        DrawClan(C, 1, (1.0 - SpecClanBannerX) * C.ClipX - (2 * SpecClanBannerHeight * C.ClipY),
+                SpecClanBannerY * C.ClipY, SpecClanBannerHeight * C.ClipY);
+
+        // clan names
+        C.Font = GetStaticFontSizeIndex(C, 2);
+        if (TSCTeams[0] != none && TSCTeams[0].ClanRep != none) {
+            SetAlphaColor(C.DrawColor, TextColors[0]);
+            C.DrawScreenText(TSCTeams[0].ClanRep.Acronym, SpecClanNameX,  SpecClanNameY,
+                    DP_UpperLeft);
+        }
+        if (TSCTeams[1] != none && TSCTeams[1].ClanRep != none) {
+            SetAlphaColor(C.DrawColor, TextColors[1]);
+            C.DrawScreenText(TSCTeams[1].ClanRep.Acronym, 1.0 - SpecClanNameX,  SpecClanNameY,
+                    DP_UpperRight);
+        }
+        SetAlphaColor(C.DrawColor, WhiteColor);
+    }
+
+    if (bDrawSpecBar) {
+        DrawSpecBar(C, RedTeamDoshRatio, (1.0 - SpecBarWidth) * 0.5, SpecBarY, SpecBarWidth, SpecBarHeight,
+                texture'KillingFloorHUD.HUD.Hud_Pound_Symbol', texture'TSC_T.HUD.Hud_Pound_Symbol');
+        DrawSpecBar(C, RedTeamHealthRatio, (1.0 - SpecBarWidth) * 0.5, SpecBarY + SpecBarHeight + 0.0005,
+                SpecBarWidth, SpecBarHeight,
+                texture'KillingFloorHUD.HUD.Hud_Medical_Cross', texture'TSC_T.HUD.Hud_Medical_Cross');
+        DrawSpecBar(C, RedTeamWaveKillRatio, (1.0 - SpecBarWidth) * 0.5, SpecBarY + 2*(SpecBarHeight + 0.0005),
+                SpecBarWidth, SpecBarHeight,
+                texture'TSC_T.SpecHUD.ClotEmoRed', texture'TSC_T.SpecHUD.ClotEmoBlue');
+    }
+
     if ( !bLightHud ) {
         DrawSpriteWidget(C, SpecKillsBG[0]);
         DrawSpriteWidget(C, SpecWaveKillsBG[0]);
-        //DrawSpriteWidget(C, SpecMinKillsBG[0]);
+        // DrawSpriteWidget(C, SpecMinKillsBG[0]);
         DrawSpriteWidget(C, SpecDeathsBG[0]);
         DrawSpriteWidget(C, SpecDoshBG[0]);
+        DrawSpriteWidget(C, SpecInvDoshBG[0]);
 
         DrawSpriteWidget(C, SpecKillsBG[1]);
         DrawSpriteWidget(C, SpecWaveKillsBG[1]);
-        //DrawSpriteWidget(C, SpecMinKillsBG[1]);
+        // DrawSpriteWidget(C, SpecMinKillsBG[1]);
         DrawSpriteWidget(C, SpecDeathsBG[1]);
         DrawSpriteWidget(C, SpecDoshBG[1]);
+        DrawSpriteWidget(C, SpecInvDoshBG[1]);
     }
+    DrawSpriteWidget(C, SpecInvDoshIcon[0]);
+    DrawNumericWidget(C, SpecInvDoshDigits[0], DigitsSmall);
     DrawSpriteWidget(C, SpecDoshIcon[0]);
     DrawNumericWidget(C, SpecDoshDigits[0], DigitsSmall);
     DrawSpriteWidget(C, SpecDeathsIcon[0]);
     DrawNumericWidget(C, SpecDeathsDigits[0], DigitsSmall);
     DrawSpriteWidget(C, SpecKillsIcon[0]);
     DrawNumericWidget(C, SpecKillsDigits[0], DigitsSmall);
+    DrawSpriteWidget(C, SpecWaveKillsIcon[0]);
     DrawNumericWidget(C, SpecWaveKillsDigits[0], DigitsSmall);
-    //DrawNumericWidget(C, SpecMinKillsDigits[0], DigitsSmall);
+    // DrawNumericWidget(C, SpecMinKillsDigits[0], DigitsSmall);
 
+    DrawSpriteWidget(C, SpecInvDoshIcon[1]);
+    DrawNumericWidget(C, SpecInvDoshDigits[1], DigitsSmall);
     DrawSpriteWidget(C, SpecDoshIcon[1]);
     DrawNumericWidget(C, SpecDoshDigits[1], DigitsSmall);
     DrawSpriteWidget(C, SpecDeathsIcon[1]);
     DrawNumericWidget(C, SpecDeathsDigits[1], DigitsSmall);
     DrawSpriteWidget(C, SpecKillsIcon[1]);
     DrawNumericWidget(C, SpecKillsDigits[1], DigitsSmall);
+    DrawSpriteWidget(C, SpecWaveKillsIcon[1]);
     DrawNumericWidget(C, SpecWaveKillsDigits[1], DigitsSmall);
-    //DrawNumericWidget(C, SpecMinKillsDigits[1], DigitsSmall);
-
-    C.DrawColor = WhiteColor;
-    C.DrawColor.A = KFHUDAlpha;
-
-    // manpower
-    if ( TeamHealth[0]+TeamHealth[1] > 0 ) {
-        w = SpecBarWidth * fclamp(RedTeamHealthRatio, 0.025, 0.975);
-        x = (1.0 - SpecBarWidth) * 0.5;
-        C.SetPos(C.ClipX * x, C.ClipY * SpecBarY);
-        C.DrawTileStretched(texture'TSC_T.SpecHUD.BarFill_Red', C.ClipX * w, C.ClipY*SpecBarHeight);
-        C.SetPos(C.ClipX * (x + w), C.ClipY * SpecBarY);
-        w = SpecBarWidth - w;
-        C.DrawTileStretched(texture'TSC_T.SpecHUD.BarFill_Blue', C.ClipX*w + 1, C.ClipY*SpecBarHeight);
-        C.SetPos(C.ClipX * x, C.ClipY * SpecBarY);
-        C.DrawTileStretched(SpecBarBG, C.ClipX*SpecBarWidth, C.ClipY*SpecBarHeight);
-    }
+    // DrawNumericWidget(C, SpecMinKillsDigits[1], DigitsSmall);
 
     // ARROWS
     if ( TSCGRI == none || KFGRI.ElapsedTime < 15 )
@@ -817,11 +1035,16 @@ simulated function DrawSpecialSpectatingHUD(Canvas C)
         if ( BaseDirPointer == None )
             BaseDirPointer = Spawn(Class'KFShopDirectionPointer');
 
+        Effect = EFF_NONE;
         BaseDirPointer.UV2Texture = none;
-        if ( TeamBase.bActive ) {
+        if ( TeamBase.bStunned ) {
+            s = strStunned;
+            C.DrawColor = LowAmmoColor;
+            Effect = EFF_BLINK;
+        }
+        else if ( TeamBase.bActive ) {
             s = strBase;
-            C.DrawColor = TextColors[0];
-            C.DrawColor.A = KFHUDAlpha;
+            SetAlphaColor(C.DrawColor, TextColors[0]);
         }
         else if ( TeamBase.bHeld ) {
             s = strCarrier;
@@ -831,7 +1054,7 @@ simulated function DrawSpecialSpectatingHUD(Canvas C)
             s = strGnome;
             C.SetDrawColor(196, 206, 0, KFHUDAlpha);
         }
-        DrawDirPointer(C, BaseDirPointer, TeamBase.GetLocation(), 0, 0, false, s, false);
+        DrawDirPointer(C, BaseDirPointer, TeamBase.GetLocation(), 0, 0, false, s, false, Effect);
     }
     else {
         if ( BaseDirPointer != none )
@@ -844,11 +1067,16 @@ simulated function DrawSpecialSpectatingHUD(Canvas C)
         if ( EnemyBaseDirPointer == None )
             EnemyBaseDirPointer = Spawn(Class'KFShopDirectionPointer');
 
+        Effect = EFF_NONE;
         EnemyBaseDirPointer.UV2Texture = ConstantColor'TSC_T.HUD.BlueCol';
-        if ( TeamBase.bActive ) {
+        if ( TeamBase.bStunned ) {
+            s = strStunned;
+            C.DrawColor = LowAmmoColor;
+            Effect = EFF_BLINK;
+        }
+        else if ( TeamBase.bActive ) {
             s = strBase;
-            C.DrawColor = TextColors[1];
-            C.DrawColor.A = KFHUDAlpha;
+            SetAlphaColor(C.DrawColor, TextColors[1]);
         }
         else if ( TeamBase.bHeld ) {
             s = strCarrier;
@@ -858,7 +1086,7 @@ simulated function DrawSpecialSpectatingHUD(Canvas C)
             s = strGnome;
             C.SetDrawColor(196, 206, 0, KFHUDAlpha);
         }
-        DrawDirPointer(C, EnemyBaseDirPointer, TeamBase.GetLocation(), 0, 0, false, s, true);
+        DrawDirPointer(C, EnemyBaseDirPointer, TeamBase.GetLocation(), 0, 0, false, s, true, Effect);
     }
     else {
         if ( EnemyBaseDirPointer != none )
@@ -879,45 +1107,101 @@ simulated function DrawSpecialSpectatingHUD(Canvas C)
         if ( ShopDirPointer == None )
              ShopDirPointer = Spawn(Class'KFShopDirectionPointer');
         ShopDirPointer.UV2Texture = none;
-        C.DrawColor = TextColors[0];
+        SetAlphaColor(C.DrawColor, TextColors[0]);
         DrawDirPointer(C, ShopDirPointer, TSCGRI.CurrentShop.Location, 0, 1, false, strTrader, false);
 
         // blue shop
         if ( EnemyShopDirPointer == None )
              EnemyShopDirPointer = Spawn(Class'KFShopDirectionPointer');
         EnemyShopDirPointer.UV2Texture = ConstantColor'TSC_T.HUD.BlueCol';
-        C.DrawColor = TextColors[1];
+        SetAlphaColor(C.DrawColor, TextColors[1]);
         DrawDirPointer(C, EnemyShopDirPointer, TSCGRI.BlueShop.Location, 0, 1, false, strTrader, true);
     }
 }
 
-exec function SpecHPBarY(float value)
+exec function ToggleSpecBar()
 {
-    SpecBarY = value;
+    bDrawSpecBar = !bDrawSpecBar;
+}
+
+exec function SpecBar(bool bEnabled)
+{
+    bDrawSpecBar = bEnabled;
+}
+
+exec function ToggleSpecClanBanner()
+{
+    bSpecDrawClan = !bSpecDrawClan;
+}
+
+exec function SpecClanBanner(bool bEnabled)
+{
+    bSpecDrawClan = bEnabled;
+}
+
+exec function HudSpecBarY(float y)
+{
+    SpecBarY = y;
     SaveConfig();
 }
 
-exec function SpecHPBarW(float value)
+exec function HudSpecBarW(float w)
 {
-    if ( value < 0 || value > 1) {
-        PlayerOwner.ClientMessage("Value must be between 0 and 1, where 1 - full screen, 0.5 - half screen etc.");
-        return;
+    SpecBarWidth = w;
+    SaveConfig();
+}
+
+exec function HudSpecBarH(float h)
+{
+    SpecBarHeight = h;
+    SaveConfig();
+}
+
+exec function HudSpecClanX(float x)
+{
+    SpecClanBannerX = x;
+    SaveConfig();
+}
+
+exec function HudSpecClanY(float y)
+{
+    SpecClanBannerY = y;
+    SaveConfig();
+}
+
+exec function HudSpecClanH(float h)
+{
+    SpecClanBannerHeight = h;
+    SaveConfig();
+}
+
+exec function HudSpecClanNameX(float x)
+{
+    SpecClanNameX = x;
+    SaveConfig();
+}
+
+exec function HudSpecClanNameY(float y)
+{
+    SpecClanNameY = y;
+    SaveConfig();
+}
+
+exec function TeamStats()
+{
+    local byte t;
+
+    for (t = 0; t < 2; ++t) {
+        PlayerOwner.ClientMessage(TSCTeams[t].GetHumanReadableName() $ ": Kills={"
+            $ " Total=" $ TSCTeams[t].ZedKills
+            $ " Wave=" $ TSCTeams[t].GetCurWaveKills()
+            $ " KPM=" $ TSCTeams[t].GetPrevMinuteKills()
+            $ " ThisMinute=" $ TSCTeams[t].GetCurMinuteKills()
+            $ "} Deaths=" $ TSCTeams[t].Deaths
+            $ " Dosh=" $ int(TSCTeams[t].Score)
+            , 'log');
     }
-    SpecBarWidth = value;
-    SaveConfig();
 }
-
-exec function SpecHPBarH(float value)
-{
-    if ( value < 0 || value > 1) {
-        PlayerOwner.ClientMessage("Value must be between 0 and 1, where 1 - full screen, 0.5 - half screen etc.");
-        return;
-    }
-    SpecBarHeight = value;
-    SaveConfig();
-}
-
-
 
 
 defaultproperties
@@ -938,6 +1222,7 @@ defaultproperties
     strGnome="Guardian: "
     strCarrier="Carrier: "
     strEnemyBase="Enemy Base: "
+    strStunned="STUNNED: "
 
     titleWelcome="TEAM SURVIVAL COMPETITION"
     titleSuddenDeath="SUDDEN DEATH"
@@ -963,43 +1248,67 @@ defaultproperties
     hintStunned="Base Guardian is stunned and cannot protect you from Human Damage"
 
     // RED
-    SpecDoshBG(0)=(WidgetTexture=Texture'KillingFloorHUD.HUD.Hud_Box_256x64',RenderStyle=STY_Alpha,TextureCoords=(X2=256,Y2=64),TextureScale=0.350000,PosX=-0.04,PosY=0.835000,ScaleMode=SM_Right,Scale=1.000000,Tints[0]=(B=255,G=255,R=255,A=128),Tints[1]=(B=255,G=255,R=255,A=128))
-    SpecDoshIcon(0)=(WidgetTexture=Texture'KillingFloorHUD.HUD.Hud_Pound_Symbol',RenderStyle=STY_Alpha,TextureCoords=(X2=64,Y2=64),TextureScale=0.160000,PosX=0.001000,PosY=0.847000,ScaleMode=SM_Right,Scale=1.000000,Tints[0]=(B=255,G=255,R=255,A=255),Tints[1]=(B=255,G=255,R=255,A=255))
-    SpecDoshDigits(0)=(RenderStyle=STY_Alpha,TextureScale=0.300000,PosX=0.022500,PosY=0.850000,Tints[0]=(B=64,G=64,R=255,A=255),Tints[1]=(B=64,G=64,R=255,A=255))
+    SpecInvDoshBG(0)=(WidgetTexture=Texture'KillingFloorHUD.HUD.Hud_Box_256x64',RenderStyle=STY_Alpha,TextureCoords=(X2=256,Y2=64),TextureScale=0.350,PosX=-0.04,PosY=0.785,ScaleMode=SM_Right,Scale=1.0,Tints[0]=(B=255,G=255,R=255,A=128),Tints[1]=(B=255,G=255,R=255,A=128))
+    SpecInvDoshIcon(0)=(WidgetTexture=Texture'KillingFloorHUD.HUD.Hud_Weight',RenderStyle=STY_Alpha,TextureCoords=(X2=64,Y2=64),TextureScale=0.160,PosX=0.001,PosY=0.797,ScaleMode=SM_Right,Scale=1.0,Tints[0]=(B=255,G=255,R=255,A=255),Tints[1]=(B=255,G=255,R=255,A=255))
+    SpecInvDoshDigits(0)=(RenderStyle=STY_Alpha,TextureScale=0.3,PosX=0.0225,PosY=0.80,Tints[0]=(B=64,G=64,R=255,A=255),Tints[1]=(B=64,G=64,R=255,A=255))
 
-    SpecKillsBG(0)=(WidgetTexture=Texture'KillingFloorHUD.HUD.Hud_Box_256x64',RenderStyle=STY_Alpha,TextureCoords=(X2=256,Y2=64),TextureScale=0.35,PosX=-0.04,PosY=0.935000,ScaleMode=SM_Right,Scale=1.000000,Tints[0]=(B=255,G=255,R=255,A=128),Tints[1]=(B=255,G=255,R=255,A=128))
-    SpecKillsIcon(0)=(WidgetTexture=Texture'TSC_T.SpecHUD.ClotEmoRed',RenderStyle=STY_Alpha,TextureCoords=(X2=64,Y2=64),TextureScale=0.16,PosX=0.001000,PosY=0.947000,ScaleMode=SM_Right,Scale=1.000000,Tints[0]=(B=255,G=255,R=255,A=255),Tints[1]=(B=255,G=255,R=255,A=255))
-    SpecKillsDigits(0)=(RenderStyle=STY_Alpha,TextureScale=0.300000,PosX=0.022500,PosY=0.950000,Tints[0]=(B=64,G=64,R=255,A=255),Tints[1]=(B=64,G=64,R=255,A=255))
-    SpecWaveKillsBG(0)=(WidgetTexture=Texture'KillingFloorHUD.HUD.Hud_Box_128x64',RenderStyle=STY_Alpha,TextureCoords=(X1=32,Y1=0,X2=128,Y2=64),TextureScale=0.35,PosX=0.10,PosY=0.935000,ScaleMode=SM_Right,Scale=1.000000,Tints[0]=(B=255,G=255,R=255,A=128),Tints[1]=(B=255,G=255,R=255,A=128))
-    SpecWaveKillsDigits(0)=(RenderStyle=STY_Alpha,TextureScale=0.300000,PosX=0.105,PosY=0.950000,Tints[0]=(B=64,G=64,R=255,A=255),Tints[1]=(B=64,G=64,R=255,A=255))
-    SpecMinKillsBG(0)=(WidgetTexture=Texture'KillingFloorHUD.HUD.Hud_Box_128x64',RenderStyle=STY_Alpha,TextureCoords=(X1=32,Y1=0,X2=128,Y2=64),TextureScale=0.35,PosX=0.1525,PosY=0.935000,ScaleMode=SM_Right,Scale=1.000000,Tints[0]=(B=255,G=255,R=255,A=128),Tints[1]=(B=255,G=255,R=255,A=128))
-    SpecMinKillsDigits(0)=(RenderStyle=STY_Alpha,TextureScale=0.300000,PosX=0.158,PosY=0.95,Tints[0]=(B=64,G=64,R=255,A=255),Tints[1]=(B=64,G=64,R=255,A=255))
+    SpecDoshBG(0)=(WidgetTexture=Texture'KillingFloorHUD.HUD.Hud_Box_256x64',RenderStyle=STY_Alpha,TextureCoords=(X2=256,Y2=64),TextureScale=0.350,PosX=-0.04,PosY=0.835,ScaleMode=SM_Right,Scale=1.0,Tints[0]=(B=255,G=255,R=255,A=128),Tints[1]=(B=255,G=255,R=255,A=128))
+    SpecDoshIcon(0)=(WidgetTexture=Texture'KillingFloorHUD.HUD.Hud_Pound_Symbol',RenderStyle=STY_Alpha,TextureCoords=(X2=64,Y2=64),TextureScale=0.160,PosX=0.001,PosY=0.847,ScaleMode=SM_Right,Scale=1.0,Tints[0]=(B=255,G=255,R=255,A=255),Tints[1]=(B=255,G=255,R=255,A=255))
+    SpecDoshDigits(0)=(RenderStyle=STY_Alpha,TextureScale=0.3,PosX=0.0225,PosY=0.850,Tints[0]=(B=64,G=64,R=255,A=255),Tints[1]=(B=64,G=64,R=255,A=255))
 
-    SpecDeathsBG(0)=(WidgetTexture=Texture'KillingFloorHUD.HUD.Hud_Box_256x64',RenderStyle=STY_Alpha,TextureCoords=(X2=256,Y2=64),TextureScale=0.350000,PosX=-0.04,PosY=0.885000,ScaleMode=SM_Right,Scale=1.000000,Tints[0]=(B=255,G=255,R=255,A=128),Tints[1]=(B=255,G=255,R=255,A=128))
-    SpecDeathsIcon(0)=(WidgetTexture=Texture'TSC_T.SpecHUD.Skull64',RenderStyle=STY_Alpha,TextureCoords=(X2=64,Y2=64),TextureScale=0.16,PosX=0.001000,PosY=0.897000,ScaleMode=SM_Right,Scale=1.000000,Tints[0]=(B=64,G=64,R=200,A=255),Tints[1]=(B=64,G=64,R=200,A=255))
-    SpecDeathsDigits(0)=(RenderStyle=STY_Alpha,TextureScale=0.300000,PosX=0.022500,PosY=0.900000,Tints[0]=(B=64,G=64,R=255,A=255),Tints[1]=(B=64,G=64,R=255,A=255))
+    SpecDeathsBG(0)=(WidgetTexture=Texture'KillingFloorHUD.HUD.Hud_Box_256x64',RenderStyle=STY_Alpha,TextureCoords=(X2=256,Y2=64),TextureScale=0.350,PosX=-0.04,PosY=0.885,ScaleMode=SM_Right,Scale=1.0,Tints[0]=(B=255,G=255,R=255,A=128),Tints[1]=(B=255,G=255,R=255,A=128))
+    SpecDeathsIcon(0)=(WidgetTexture=Texture'TSC_T.SpecHUD.Skull64',RenderStyle=STY_Alpha,TextureCoords=(X2=64,Y2=64),TextureScale=0.16,PosX=0.001,PosY=0.897,ScaleMode=SM_Right,Scale=1.0,Tints[0]=(B=64,G=64,R=200,A=255),Tints[1]=(B=64,G=64,R=2,A=255))
+    SpecDeathsDigits(0)=(RenderStyle=STY_Alpha,TextureScale=0.3,PosX=0.0225,PosY=0.9,Tints[0]=(B=64,G=64,R=255,A=255),Tints[1]=(B=64,G=64,R=255,A=255))
+
+    SpecKillsBG(0)=(WidgetTexture=Texture'KillingFloorHUD.HUD.Hud_Box_256x64',RenderStyle=STY_Alpha,TextureCoords=(X2=256,Y2=64),TextureScale=0.35,PosX=-0.040,PosY=0.935,ScaleMode=SM_Right,Scale=1.0,Tints[0]=(B=255,G=255,R=255,A=128),Tints[1]=(B=255,G=255,R=255,A=128))
+    SpecKillsIcon(0)=(WidgetTexture=Texture'TSC_T.SpecHUD.ClotEmoRed',RenderStyle=STY_Alpha,TextureCoords=(X2=64,Y2=64),TextureScale=0.16,PosX=0.001,PosY=0.947,ScaleMode=SM_Right,Scale=1.0,Tints[0]=(B=255,G=255,R=255,A=255),Tints[1]=(B=255,G=255,R=255,A=255))
+    SpecKillsDigits(0)=(RenderStyle=STY_Alpha,TextureScale=0.3,PosX=0.0225,PosY=0.950,Tints[0]=(B=64,G=64,R=255,A=255),Tints[1]=(B=64,G=64,R=255,A=255))
+
+    SpecWaveKillsBG(0)=(WidgetTexture=Texture'KillingFloorHUD.HUD.Hud_Box_128x64',RenderStyle=STY_Alpha,TextureCoords=(X1=0,Y1=0,X2=128,Y2=64),TextureScale=0.35,PosX=0.102,PosY=0.935,ScaleMode=SM_Right,Scale=1.0,Tints[0]=(B=255,G=255,R=255,A=128),Tints[1]=(B=255,G=255,R=255,A=128))
+    SpecWaveKillsIcon(0)=(WidgetTexture=Texture'KillingFloorHUD.HUD.Hud_Bio_Circle',RenderStyle=STY_Alpha,TextureCoords=(X2=256,Y2=256),TextureScale=0.04,PosX=0.104,PosY=0.947,ScaleMode=SM_Right,Scale=1.0,Tints[0]=(B=255,G=255,R=255,A=255),Tints[1]=(B=255,G=255,R=255,A=255))
+    SpecWaveKillsDigits(0)=(RenderStyle=STY_Alpha,TextureScale=0.3,PosX=0.123,PosY=0.950,Tints[0]=(B=64,G=64,R=255,A=255),Tints[1]=(B=64,G=64,R=255,A=255))
+
+    // SpecMinKillsBG(0)=(WidgetTexture=Texture'KillingFloorHUD.HUD.Hud_Box_128x64',RenderStyle=STY_Alpha,TextureCoords=(X1=32,Y1=0,X2=128,Y2=64),TextureScale=0.35,PosX=0.1525,PosY=0.935,ScaleMode=SM_Right,Scale=1.0,Tints[0]=(B=255,G=255,R=255,A=128),Tints[1]=(B=255,G=255,R=255,A=128))
+    // SpecMinKillsDigits(0)=(RenderStyle=STY_Alpha,TextureScale=0.3,PosX=0.158,PosY=0.95,Tints[0]=(B=64,G=64,R=255,A=255),Tints[1]=(B=64,G=64,R=255,A=255))
 
     // BLUE
-    SpecDoshBG(1)=(WidgetTexture=Texture'TSC_T.HUD.Hud_Box_256x64',RenderStyle=STY_Alpha,TextureCoords=(X2=256,Y2=64),TextureScale=0.350000,PosX=0.895000,PosY=0.835000,ScaleMode=SM_Right,Scale=1.000000,Tints[0]=(B=255,G=255,R=255,A=128),Tints[1]=(B=255,G=255,R=255,A=128))
-    SpecDoshIcon(1)=(WidgetTexture=Texture'TSC_T.SpecHUD.Hud_Pound_Symbol',RenderStyle=STY_Alpha,TextureCoords=(X2=64,Y2=64),TextureScale=0.160000,PosX=0.901000,PosY=0.847000,ScaleMode=SM_Right,Scale=1.000000,Tints[0]=(B=255,G=255,R=255,A=255),Tints[1]=(B=255,G=255,R=255,A=255))
-    SpecDoshDigits(1)=(RenderStyle=STY_Alpha,TextureScale=0.300000,PosX=0.922500,PosY=0.850000,Tints[0]=(B=198,G=153,R=90,A=255),Tints[1]=(B=198,G=153,R=90,A=255))
+    SpecInvDoshBG(1)=(WidgetTexture=Texture'TSC_T.HUD.Hud_Box_256x64',RenderStyle=STY_Alpha,TextureCoords=(X2=256,Y2=64),TextureScale=0.350,PosX=0.895,PosY=0.785,ScaleMode=SM_Right,Scale=1.0,Tints[0]=(B=255,G=255,R=255,A=128),Tints[1]=(B=255,G=255,R=255,A=128))
+    SpecInvDoshIcon(1)=(WidgetTexture=Texture'TSC_T.SpecHUD.Hud_Weight',RenderStyle=STY_Alpha,TextureCoords=(X2=64,Y2=64),TextureScale=0.160,PosX=0.901,PosY=0.797,ScaleMode=SM_Right,Scale=1.0,Tints[0]=(B=255,G=255,R=255,A=255),Tints[1]=(B=255,G=255,R=255,A=255))
+    SpecInvDoshDigits(1)=(RenderStyle=STY_Alpha,TextureScale=0.3,PosX=0.9225,PosY=0.8,Tints[0]=(B=198,G=153,R=90,A=255),Tints[1]=(B=198,G=153,R=90,A=255))
 
-    SpecDeathsBG(1)=(WidgetTexture=Texture'TSC_T.HUD.Hud_Box_256x64',RenderStyle=STY_Alpha,TextureCoords=(X2=256,Y2=64),TextureScale=0.350000,PosX=0.895000,PosY=0.885000,ScaleMode=SM_Right,Scale=1.000000,Tints[0]=(B=255,G=255,R=255,A=128),Tints[1]=(B=255,G=255,R=255,A=128))
-    SpecDeathsIcon(1)=(WidgetTexture=Texture'TSC_T.SpecHUD.Skull64',RenderStyle=STY_Alpha,TextureCoords=(X2=64,Y2=64),TextureScale=0.16,PosX=0.901000,PosY=0.897000,ScaleMode=SM_Right,Scale=1.000000,Tints[0]=(B=198,G=153,R=90,A=255),Tints[1]=(B=198,G=153,R=90,A=255))
-    SpecDeathsDigits(1)=(RenderStyle=STY_Alpha,TextureScale=0.300000,PosX=0.922500,PosY=0.900000,Tints[0]=(B=198,G=153,R=90,A=255),Tints[1]=(B=198,G=153,R=90,A=255))
+    SpecDoshBG(1)=(WidgetTexture=Texture'TSC_T.HUD.Hud_Box_256x64',RenderStyle=STY_Alpha,TextureCoords=(X2=256,Y2=64),TextureScale=0.350,PosX=0.895,PosY=0.835,ScaleMode=SM_Right,Scale=1.0,Tints[0]=(B=255,G=255,R=255,A=128),Tints[1]=(B=255,G=255,R=255,A=128))
+    SpecDoshIcon(1)=(WidgetTexture=Texture'TSC_T.SpecHUD.Hud_Pound_Symbol',RenderStyle=STY_Alpha,TextureCoords=(X2=64,Y2=64),TextureScale=0.160,PosX=0.901,PosY=0.847,ScaleMode=SM_Right,Scale=1.0,Tints[0]=(B=255,G=255,R=255,A=255),Tints[1]=(B=255,G=255,R=255,A=255))
+    SpecDoshDigits(1)=(RenderStyle=STY_Alpha,TextureScale=0.3,PosX=0.9225,PosY=0.850,Tints[0]=(B=198,G=153,R=90,A=255),Tints[1]=(B=198,G=153,R=90,A=255))
 
-    SpecKillsBG(1)=(WidgetTexture=Texture'TSC_T.HUD.Hud_Box_256x64',RenderStyle=STY_Alpha,TextureCoords=(X2=256,Y2=64),TextureScale=0.35,PosX=0.895000,PosY=0.935000,ScaleMode=SM_Right,Scale=1.000000,Tints[0]=(B=255,G=255,R=255,A=128),Tints[1]=(B=255,G=255,R=255,A=128))
-    SpecKillsIcon(1)=(WidgetTexture=Texture'TSC_T.SpecHUD.ClotEmoBlue',RenderStyle=STY_Alpha,TextureCoords=(X2=64,Y2=64),TextureScale=0.16,PosX=0.901000,PosY=0.947000,ScaleMode=SM_Right,Scale=1.000000,Tints[0]=(B=255,G=255,R=255,A=255),Tints[1]=(B=255,G=255,R=255,A=255))
-    SpecKillsDigits(1)=(RenderStyle=STY_Alpha,TextureScale=0.300000,PosX=0.922500,PosY=0.950000,Tints[0]=(B=198,G=153,R=90,A=255),Tints[1]=(B=198,G=153,R=90,A=255))
-    SpecWaveKillsBG(1)=(WidgetTexture=Texture'TSC_T.HUD.Hud_Box_128x64',RenderStyle=STY_Alpha,TextureCoords=(X1=0,Y1=0,X2=96,Y2=64),TextureScale=0.35,PosX=0.842000,PosY=0.935000,ScaleMode=SM_Right,Scale=1.000000,Tints[0]=(B=255,G=255,R=255,A=128),Tints[1]=(B=255,G=255,R=255,A=128))
-    SpecWaveKillsDigits(1)=(RenderStyle=STY_Alpha,TextureScale=0.300000,PosX=0.849,PosY=0.950000,Tints[0]=(B=198,G=153,R=90,A=255),Tints[1]=(B=198,G=153,R=90,A=255))
-    SpecMinKillsBG(1)=(WidgetTexture=Texture'TSC_T.HUD.Hud_Box_128x64',RenderStyle=STY_Alpha,TextureCoords=(X1=0,Y1=0,X2=96,Y2=64),TextureScale=0.35,PosX=0.789,PosY=0.935000,ScaleMode=SM_Right,Scale=1.000000,Tints[0]=(B=255,G=255,R=255,A=128),Tints[1]=(B=255,G=255,R=255,A=128))
-    SpecMinKillsDigits(1)=(RenderStyle=STY_Alpha,TextureScale=0.300000,PosX=0.796,PosY=0.950000,Tints[0]=(B=198,G=153,R=90,A=255),Tints[1]=(B=198,G=153,R=90,A=255))
+    SpecDeathsBG(1)=(WidgetTexture=Texture'TSC_T.HUD.Hud_Box_256x64',RenderStyle=STY_Alpha,TextureCoords=(X2=256,Y2=64),TextureScale=0.350,PosX=0.895,PosY=0.885,ScaleMode=SM_Right,Scale=1.0,Tints[0]=(B=255,G=255,R=255,A=128),Tints[1]=(B=255,G=255,R=255,A=128))
+    SpecDeathsIcon(1)=(WidgetTexture=Texture'TSC_T.SpecHUD.Skull64',RenderStyle=STY_Alpha,TextureCoords=(X2=64,Y2=64),TextureScale=0.16,PosX=0.901,PosY=0.897,ScaleMode=SM_Right,Scale=1.0,Tints[0]=(B=198,G=153,R=90,A=255),Tints[1]=(B=198,G=153,R=90,A=255))
+    SpecDeathsDigits(1)=(RenderStyle=STY_Alpha,TextureScale=0.3,PosX=0.9225,PosY=0.9,Tints[0]=(B=198,G=153,R=90,A=255),Tints[1]=(B=198,G=153,R=90,A=255))
+
+    SpecKillsBG(1)=(WidgetTexture=Texture'TSC_T.HUD.Hud_Box_256x64',RenderStyle=STY_Alpha,TextureCoords=(X2=256,Y2=64),TextureScale=0.35,PosX=0.895,PosY=0.935,ScaleMode=SM_Right,Scale=1.0,Tints[0]=(B=255,G=255,R=255,A=128),Tints[1]=(B=255,G=255,R=255,A=128))
+    SpecKillsIcon(1)=(WidgetTexture=Texture'TSC_T.SpecHUD.ClotEmoBlue',RenderStyle=STY_Alpha,TextureCoords=(X2=64,Y2=64),TextureScale=0.16,PosX=0.901,PosY=0.947,ScaleMode=SM_Right,Scale=1.0,Tints[0]=(B=255,G=255,R=255,A=255),Tints[1]=(B=255,G=255,R=255,A=255))
+    SpecKillsDigits(1)=(RenderStyle=STY_Alpha,TextureScale=0.3,PosX=0.9225,PosY=0.950,Tints[0]=(B=198,G=153,R=90,A=255),Tints[1]=(B=198,G=153,R=90,A=255))
+
+    SpecWaveKillsBG(1)=(WidgetTexture=Texture'TSC_T.HUD.Hud_Box_128x64',RenderStyle=STY_Alpha,TextureCoords=(X1=0,Y1=0,X2=128,Y2=64),TextureScale=0.35,PosX=0.823,PosY=0.935,ScaleMode=SM_Right,Scale=1.0,Tints[0]=(B=255,G=255,R=255,A=128),Tints[1]=(B=255,G=255,R=255,A=128))
+    SpecWaveKillsIcon(1)=(WidgetTexture=Texture'TSC_T.SpecHUD.Hud_Bio_Circle',RenderStyle=STY_Alpha,TextureCoords=(X2=256,Y2=256),TextureScale=0.04,PosX=0.828,PosY=0.947,ScaleMode=SM_Right,Scale=1.0,Tints[0]=(B=255,G=255,R=255,A=255),Tints[1]=(B=255,G=255,R=255,A=255))
+    SpecWaveKillsDigits(1)=(RenderStyle=STY_Alpha,TextureScale=0.3,PosX=0.848,PosY=0.950,Tints[0]=(B=198,G=153,R=90,A=255),Tints[1]=(B=198,G=153,R=90,A=255))
+
+    // SpecMinKillsBG(1)=(WidgetTexture=Texture'TSC_T.HUD.Hud_Box_128x64',RenderStyle=STY_Alpha,TextureCoords=(X1=0,Y1=0,X2=96,Y2=64),TextureScale=0.35,PosX=0.789,PosY=0.935,ScaleMode=SM_Right,Scale=1.0,Tints[0]=(B=255,G=255,R=255,A=128),Tints[1]=(B=255,G=255,R=255,A=128))
+    // SpecMinKillsDigits(1)=(RenderStyle=STY_Alpha,TextureScale=0.3,PosX=0.796,PosY=0.950,Tints[0]=(B=198,G=153,R=90,A=255),Tints[1]=(B=198,G=153,R=90,A=255))
 
     SpecBarBG=texture'TSC_T.SpecHUD.Battery_BG'
-    SpecBarY=0.08
-    SpecBarWidth=0.4
-    SpecBarHeight=0.04
+    SpecBarRed=texture'TSC_T.SpecHUD.BarFill_Red'
+    SpecBarBlue=texture'TSC_T.SpecHUD.BarFill_Blue'
+    bDrawSpecBar=true
+    SpecBarY=0.06
+    SpecBarWidth=0.30
+    SpecBarHeight=0.03
+
+    bSpecDrawClan=true
+    SpecClanNameX=0.005
+    SpecClanNameY=0.750
+    SpecClanBannerX=0.195
+    SpecClanBannerY=0.046
+    SpecClanBannerHeight=0.120
 
     bDrawSpecDeaths=False
     bDrawShopDirPointer=True

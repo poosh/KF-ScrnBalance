@@ -21,6 +21,7 @@ var localized string strBonusLevel;
 var localized string strStatus, strStatus2;
 var localized string strBetaOnly;
 var localized string strXPInitial, strXPProgress, strXPBonus;
+var localized string strOnlyAdmin, strOnlyScrnGT, strOnlyNotInTourney;
 
 // SRVFLAGS
 var transient int SrvFlags; // used for network replication of the values below
@@ -1266,7 +1267,7 @@ function bool CheckAdmin(PlayerController Sender)
     if ( IsAdmin(Sender) )
         return true;
 
-    Sender.ClientMessage("Requires ADMIN priviledges");
+    Sender.ClientMessage(strOnlyAdmin);
     return false;
 }
 
@@ -1275,7 +1276,7 @@ function bool CheckScrnGT(PlayerController Sender)
     if ( ScrnGT != none )
         return true;
 
-    Sender.ClientMessage("Avaliable in ScrnGameType only!");
+    Sender.ClientMessage(strOnlyScrnGT);
     return false;
 }
 
@@ -1284,7 +1285,7 @@ function bool CheckNotTourney(PlayerController Sender)
     if ( ScrnGT == none || !ScrnGT.IsTourney() )
         return true;
 
-    Sender.ClientMessage("Not Available in TOURNEY mode");
+    Sender.ClientMessage(strOnlyNotInTourney);
     return false;
 }
 
@@ -3196,7 +3197,7 @@ function RegisterVersion(string ItemName, int Version)
 
 defaultproperties
 {
-    VersionNumber=96917
+    VersionNumber=96921
     GroupName="KF-Scrn"
     FriendlyName="ScrN Balance"
     Description="Total rework of KF1 to make it modern and the best game in the world while sticking to the roots of the original."
@@ -3216,6 +3217,9 @@ defaultproperties
     strXPInitial="^G$Initial Perk Stats:"
     strXPProgress="^G$Perk Progression:"
     strXPBonus="^G$XP Bonus for winning: ^c$"
+    strOnlyAdmin="Requires ADMIN priviledges"
+    strOnlyScrnGT="Avaliable in ScrnGameType only!"
+    strOnlyNotInTourney="Not Available in TOURNEY mode"
 
     Perks(0)=class'ScrnVetFieldMedic'
     Perks(1)=class'ScrnVetSupportSpec'

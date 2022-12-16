@@ -1,0 +1,29 @@
+########################################################################################################################
+# A sample of TSC CLAN definition file
+# Clans allow easy team managing in TSC. When a clan game is activated (MVOTE CLAN GAME), players are automatically
+# split into teams according to their clan membership; a clan captain become TSC Team Captain without extra voting.
+#
+# TscClanInfo objects have the following fields:
+# Acronym - a unique clan id. Acronym must be the same as the name of TscClanInfo object (the one is square brackets)
+# ClanName - a human-friendly clan name. Only letters, digits, and spaces are allowed. No color tags, special symbols, etc.
+# DecoName - a decorated clan name. Color tags are allowed for this field. Use "|" characted for line breaks.
+#   DecoName is used only if BannerRef is not set. If DecoName is not set, ClanName is used instead.
+# LogoRef - path to clan logo image. Logo must be of square size. 256x256px recommended.
+#   If logoRef is not defined, the standard British or Steampunk team logo is used.
+# BannerRef - path to clan banner image. Banner must have 2:1 dimensions ration. 512x256px recommended.
+#   BannerRef and DecoName are used only on spectating hud. Players never see them, so usage is optional.
+#
+# NB! Do not forget adding custom packages containing logos and banners to ServerPackages either in KillingFloor.ini or
+# ScrnGames.ini. Otherwise, those packages are not be replicated to clients, and players cannot see clan logos.
+########################################################################################################################
+
+
+[ScrN TscClanInfo]
+Acronym=ScrN
+ClanName=Scrake Naders
+DecoName=^r$Scr^o$ake|^r$N^o$aders
+LogoRef=TscClans.scrn_logo
+BannerRef=TscClans.scrn_banner
+Captains=76561197992537591
+Players=76561197994574456
+Players=76561198006289592

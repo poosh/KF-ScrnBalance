@@ -20,7 +20,9 @@ var int StunThreshold;
 var int StunDuration, WakeUpDuration;
 var float StunFadeoutRate;
 var transient float StunDamage;
-var float InvulTime;
+var float StunFadeoutTime;  // time after last damage taken to start fading out
+var deprecated float InvulTime;
+var bool bInvul;
 
 var ShopVolume MyShop;
 var transient ScrnPlayerController LastHolder;
@@ -540,7 +542,7 @@ state Guarding
     {
         local ScrnPlayerController PC;
 
-        if ( Level.TimeSeconds < InvulTime )
+        if ( bInvul )
             return;
 
         if ( damageType == class'DamTypeFrag' )
@@ -551,6 +553,7 @@ state Guarding
             PC.DamageMade(Damage, Hitlocation, 10);
         }
         StunDamage += Damage;
+        StunFadeoutTime = Level.TimeSeconds + default.StunFadeoutTime;
         if ( StunDamage >= StunThreshold ) {
             GotoState('Stunned');
         }
@@ -562,7 +565,7 @@ state Guarding
         local ScrnPlayerController SC;
         local bool bNobodyAtBase, bNobodyAlive;
 
-        if ( StunDamage > 0 ) {
+        if ( StunDamage > 0 && Level.TimeSeconds > StunFadeoutTime ) {
             StunDamage -= StunFadeoutRate;
             if ( StunDamage < 0 )
                 StunDamage = 0;
@@ -628,6 +631,7 @@ state Stunned
         local rotator r;
 
         SetClientState(CS_Stunned);
+        bStunned = true;
         // log("State --> Stunned", class.name);
         r = Rotation;
         r.Pitch = -16384;
@@ -643,11 +647,12 @@ state Stunned
     function EndState()
     {
         // log("State <-- Stunned", class.name);
+        bStunned = false;
     }
 
     function ScoreOrHome()
     {
-        GotoState('WakingUp');
+        GotoState('Guarding');
     }
 
     function Timer()
@@ -665,6 +670,7 @@ state WakingUp
         local rotator r;
 
         SetClientState(CS_WakingUp);
+        bStunned = true;
 
         // log("State --> WakingUp", class.name);
         r = Rotation;
@@ -673,16 +679,14 @@ state WakingUp
         SetRotation(r);
         SetPhysics(PHYS_Rotating);
 
-        bActive = true;
         SetTimer(WakeUpDuration, false);
-        NetUpdateTime = Level.TimeSeconds - 1; // replicate immediately
         BroadcastLocalizedMessage(class'TSCMessages', 4+Team.TeamIndex*100);
     }
 
     function EndState()
     {
         // log("State <-- WakingUp", class.name);
-        bActive = false;
+        bStunned = false;
     }
 
     function Timer()
@@ -702,11 +706,11 @@ defaultproperties
     GameObjOffset=(X=0,Y=15,Z=0)
     GameObjRot=(Pitch=-16384,Yaw=0,Roll=0)
     Damage=5
-    StunThreshold=700
+    StunThreshold=500
     StunDuration=30
     WakeUpDuration=10
-    InvulTime=10  // cannot be damaged for the first 10s of a wave
     StunFadeoutRate=50
+    StunFadeoutTime=2.0
     SameTeamCounter=13
     bCanBeDamaged=False
     ClientState=CS_Home

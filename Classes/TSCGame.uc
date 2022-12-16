@@ -3,9 +3,11 @@ class TSCGame extends ScrnGameType
 
 var TSCGameReplicationInfo TSCGRI;
 var TSCVotingOptions TSCVotingOptions;
+var TSCClanVoting ClanVoting;
 var int OriginalFinalWave;
 
-var localized string RedTeamHumanName, BlueTeamHumanName;
+// use Teams[t].GetHumanReadableName() instead
+var deprecated string RedTeamHumanName, BlueTeamHumanName;
 
 var config byte OvertimeWaves;         // number of Overtime waves
 var config byte SudDeathWaves;         // number of Sudden Death waves
@@ -16,6 +18,7 @@ var localized string strBudgetCut;
 var TSCBaseGuardian TeamBases[2];
 var float BaseRadius; // Base radius
 var float MinBaseZ, MaxBaseZ; // min and max Z difference between player and base
+var float BaseInvulTime; // for how long Base Guardians cannot be damage after the wave start
 
 var transient int BigTeamSize, SmallTeamSize; // number of alive players in biggest team at start of the wave
 var transient bool bSingleTeam; // wave started without other team
@@ -31,6 +34,7 @@ var class<TSCBaseGuardian> BaseGuardianClasses[2];
 var ShopVolume TeamShops[2];
 var class<WillowWhisp> BaseWhisp;
 var byte WaveMinuteTimer;
+var float WaveKillReqPct; // min kills per team in each wave (fraction of TotalMaxMonsters)
 
 var bool bPendingShuffle; // shuffle teams at the end of the wave
 var protected bool bTeamChanging; // indicates that game changes team members, e.g. doing shuffle
@@ -42,6 +46,7 @@ struct SClanTags {
 };
 var config array<SClanTags> ClanTags;
 var config bool bClanCheck;
+var bool bClanGame; // mvote clan game
 
 var deprecated bool bCustomHUD, bCustomScoreboard;
 
@@ -61,7 +66,7 @@ var enum EHumanDamageMode
 var config bool bVoteHDmg, bVoteHDmgOnlyBeforeStart;
 var float HDmgScale;
 
-
+var transient bool bRecalcInventory;
 
 // this one is called from PreBeginPlay()
 function InitGameReplicationInfo()
@@ -101,14 +106,10 @@ function PostBeginPlay()
 
     SpawnBaseGuardian(0);
     Teams[0].HomeBase = TeamBases[0];
-    Teams[0].ColorNames[0]= RedTeamHumanName;
-    Teams[0].ColorNames[1]= BlueTeamHumanName;
     Teams[0].TeamColor=class'Canvas'.static.MakeColor(180, 0, 0, 255);
 
     SpawnBaseGuardian(1);
     Teams[1].HomeBase = TeamBases[1];
-    Teams[1].ColorNames[0]= RedTeamHumanName;
-    Teams[1].ColorNames[1]= BlueTeamHumanName;
     Teams[1].TeamColor=class'Canvas'.static.MakeColor(32, 92, 255, 255);
 }
 
@@ -138,14 +139,16 @@ event InitGame( string Options, out string Error )
     VH = class'ScrnVotingHandlerMut'.static.GetVotingHandler(self);
     if ( VH != none ) {
         TSCVotingOptions = TSCVotingOptions(VH.AddVotingOptions(class'TSCVotingOptions'));
-        if ( TSCVotingOptions != none ) {
-            TSCVotingOptions.TSC = self;
+        TSCVotingOptions.TSC = self;
+
+        if (!bSingleTeamGame) {
+            ClanVoting = TSCClanVoting(VH.AddVotingOptions(class'TSCClanVoting'));
+            ClanVoting.TSC = self;
         }
-        else
-            log("!!! Unable to spawn TSCVotingOptions!", 'TSC');
     }
-    else
-        log("Voting (mvote) disabled.", 'TSC');
+    else {
+        log("Voting (mvote) disabled.", class.name);
+    }
 
     if ( bSingleTeamGame ) {
         OvertimeWaves = 0;
@@ -179,8 +182,9 @@ event InitGame( string Options, out string Error )
     default.FriendlyFireScale = HDmgScale;
 
     // set MaxZombiesOnce to at least 48, unless it is a small map with only 1 trader
-    if ( MaxZombiesOnce < 48 && !bSingleTeamGame && ShopList.Length > 1 ) {
-        MaxZombiesOnce = 48;
+    if ( MaxZombiesOnce < default.MaxZombiesOnce && !bSingleTeamGame && ShopList.Length > 1 ) {
+        MaxZombiesOnce = default.MaxZombiesOnce;
+        StandardMaxZombiesOnce = MaxZombiesOnce;
     }
 }
 
@@ -216,6 +220,26 @@ function UnrealTeamInfo GetRedTeam(int TeamBots)
         Roster = super.GetRedTeam(0);
 
     return Roster;
+}
+
+function bool IsInvited(PlayerController PC)
+{
+    if (super.IsInvited(PC))
+        return true;
+
+    // auto-invite clan members during the lobby
+    if (bClanGame && !GameReplicationInfo.bMatchHasBegun
+            && (TSCTeams[0].ClanRep.Clan.IsMember(PC.GetPlayerIDHash())
+                || TSCTeams[1].ClanRep.Clan.IsMember(PC.GetPlayerIDHash()))) {
+        InvitePlayer(PC);
+        return true;
+    }
+    return false;
+}
+
+function bool StartClanGame(TSCClanInfo RedClan, TSCClanInfo BlueClan)
+{
+    return false;
 }
 
 // extracts ClanName from PlayerName or returns empty string, if player name
@@ -271,7 +295,7 @@ function UnrealTeamInfo MyClanTeam(PlayerReplicationInfo myPRI)
     if ( MyClan == "" )
         return none;
     // debug
-    Broadcast(Self, ScrnBalanceMut.ColoredPlayerName(myPRI)$" associated with '"$MyClan$"' clan");
+    Broadcast(Self, ScrnBalanceMut.ColoredPlayerName(myPRI)$" associated with ["$MyClan$"] clan");
 
     for ( i=0; i<GameReplicationInfo.PRIArray.Length; i++ ) {
         PRI = GameReplicationInfo.PRIArray[i];
@@ -287,8 +311,10 @@ function UnrealTeamInfo MyClanTeam(PlayerReplicationInfo myPRI)
 
 function bool ChangeTeam(Controller Other, int num, bool bNewTeam)
 {
+    local PlayerController PC;
     local UnrealTeamInfo NewTeam;
     local TSCBaseGuardian gnome;
+    local bool b;
 
     // if (CurrentGameProfile != none)
     // {
@@ -298,20 +324,36 @@ function bool ChangeTeam(Controller Other, int num, bool bNewTeam)
     if ( Other.PlayerReplicationInfo == none )
         return false; // no PlayerReplicationInfo = no team  -- PooSH
 
-    if ( Other.IsA('PlayerController') && Other.PlayerReplicationInfo.bOnlySpectator )
-    {
+    PC = PlayerController(Other);
+    if ( PC != none && Other.PlayerReplicationInfo.bOnlySpectator ) {
         Other.PlayerReplicationInfo.Team = None;
         return true;
     }
 
-    if ( bTeamChanging && num < 2 )
+    if ( bTeamChanging && num < 2 ) {
         NewTeam = Teams[num];
-    else if ( bClanCheck && !bNewTeam && !bSingleTeamGame
-            && !GameReplicationInfo.bMatchHasBegun && Other.PlayerReplicationInfo != none )
-        NewTeam = MyClanTeam(Other.PlayerReplicationInfo);
+    }
+    else if (bClanGame && PC != none && PC.bIsPlayer) {
+        b = TSCTeams[0].ClanRep.Clan.IsMember(PC.GetPlayerIDHash());
+        if (b != TSCTeams[1].ClanRep.Clan.IsMember(PC.GetPlayerIDHash())) {
+            // member of one and only one clan
+            if (b) {
+                NewTeam = TSCTeams[0];
+            }
+            else {
+                NewTeam = TSCTeams[1];
+            }
+        }
+    }
 
-    if ( NewTeam == none )
+    if ( NewTeam == None && bClanCheck && !bNewTeam && !bSingleTeamGame
+            && !GameReplicationInfo.bMatchHasBegun && Other.PlayerReplicationInfo != none ) {
+        NewTeam = MyClanTeam(Other.PlayerReplicationInfo);
+    }
+
+    if ( NewTeam == none ) {
         NewTeam = Teams[PickTeam(num,Other)];
+    }
 
     // check if already on this team
     if ( Other.PlayerReplicationInfo.Team == NewTeam )
@@ -335,14 +377,20 @@ function bool ChangeTeam(Controller Other, int num, bool bNewTeam)
     if ( Other.PlayerReplicationInfo.Team != None )
         Other.PlayerReplicationInfo.Team.RemoveFromTeam(Other);
 
-    if ( NewTeam.AddToTeam(Other) )
-    {
+    if ( NewTeam.AddToTeam(Other) ) {
         BroadcastLocalizedMessage( GameMessageClass, 3, Other.PlayerReplicationInfo, None, NewTeam );
 
         if ( bNewTeam && PlayerController(Other)!=None ) {
             GameEvent("TeamChange",string(NewTeam.TeamIndex),Other.PlayerReplicationInfo);
             // give starting cash fot team changers
             GiveStartingCash(PlayerController(Other));
+        }
+
+        if (bClanGame && NewTeam.TeamIndex < 2 && TSCGRI.TeamCaptain[NewTeam.TeamIndex] == none
+                && TSCTeam(NewTeam).ClanRep.Clan.IsCaptain(PC.GetPlayerIDHash())) {
+            // clan captain joined the party
+            SetTeamCaptain(NewTeam.TeamIndex, Other.PlayerReplicationInfo);
+
         }
     }
 
@@ -405,8 +453,10 @@ function ShuffleTeams()
     local int ConstantReds, ConstantBlues; // amount of player which can't change the team, e.g. because of carrying the gnome
     local int i, RedTeamSize;
 
-    if ( bSingleTeamGame )
-        return; // no team game = no shuffle
+    if ( bSingleTeamGame || bClanGame ) {
+        bPendingShuffle = false;
+        return;
+    }
 
     if ( GameReplicationInfo.bMatchHasBegun ) {
         if ( bWaveInProgress ) {
@@ -466,6 +516,58 @@ function ShuffleTeams()
     bTeamChanging = false;
 
     BroadcastLocalizedMessage(class'TSCMessages', 241);
+}
+
+function ForceClanTeams()
+{
+    local byte t;
+    local int i, p;
+    local PlayerController PC;
+    local PlayerReplicationInfo PRI;
+    local string id;
+    local int CaptainPriority[2];
+
+    if (!bClanGame)
+        return;
+
+    SetTeamCaptain(0, none);
+    SetTeamCaptain(1, none);
+    CaptainPriority[0] = 255;
+    CaptainPriority[1] = 255;
+
+    InviteList.length = 0;
+    ScrnBalanceMut.bTeamsLocked = false;
+    bTeamChanging = true;
+    for ( i = 0; i < TSCGRI.PRIArray.Length; ++i ) {
+        PRI = TSCGRI.PRIArray[i];
+        if (PRI == none)
+            continue;  // is this possible?
+        PC = PlayerController(PRI.Owner);
+        if (PC == none)
+            continue;
+        id = PC.GetPlayerIDHash();
+        for (t = 0; t < 2; ++t) {
+            p = TSCTeams[t].ClanRep.Clan.CaptainPriority(id);
+            if (p >= 0) {
+                PC.ServerChangeTeam(t);
+                if (p < CaptainPriority[t]) {
+                    SetTeamCaptain(t, PRI);
+                    CaptainPriority[t] = p;
+                }
+                break;
+            }
+            else if (TSCTeams[t].ClanRep.Clan.IsPlayer(id)) {
+                PC.ServerChangeTeam(t);
+                break;
+            }
+            else if (PRI.Team == TSCTeams[t]) {
+                PC.BecomeSpectator();
+                UninvitePlayer(PC);
+            }
+        }
+    }
+    bTeamChanging = false;
+    LockTeams();
 }
 
 function SetTeamCaptain(byte TeamIndex, PlayerReplicationInfo NewCaptainPRI)
@@ -538,9 +640,9 @@ function bool FFDisabled(pawn instigatedBy, pawn Victim)
         return false;
 
     if ( instigatedBy.GetTeamNum() == Victim.GetTeamNum() ) {
-        return HumanDamageMode < HDMG_Normal || TSCGRI.AtOwnBase(Victim);
+        return HumanDamageMode < HDMG_Normal || TSCGRI.AtOwnBase(Victim, true);
     }
-    return HumanDamageMode < HDMG_PvP && TSCGRI.AtOwnBase(Victim);
+    return HumanDamageMode < HDMG_PvP && TSCGRI.AtOwnBase(Victim, true);
 }
 
 
@@ -617,7 +719,8 @@ function ScoreKill(Controller Killer, Controller Other)
 {
     super.ScoreKill(Killer, Other);
 
-    if ( KFMonsterController(Other) != none && Killer != none && Killer.PlayerReplicationInfo != None && TSCTeam(killer.PlayerReplicationInfo.Team) != none ) {
+    if ( KFMonsterController(Other) != none && Killer != none && Killer.PlayerReplicationInfo != None
+            && TSCTeam(killer.PlayerReplicationInfo.Team) != none ) {
         TSCTeam(Killer.PlayerReplicationInfo.Team).ZedKills++;
     }
 }
@@ -638,22 +741,44 @@ function WipeTeam(TeamInfo Team, optional class<DamageType> DamageType)
     }
 }
 
-function bool AllowGameEnd(PlayerReplicationInfo Winner, string Reason)
+function bool AllowGameEnd(PlayerReplicationInfo WinnerPRI, string Reason)
 {
-    if ( Reason == "TeamScoreLimit" ) {
-        if ( AliveTeamPlayerCount[0] > 0 && AliveTeamPlayerCount[1] == 0 ) {
-            TSCGRI.Winner = Teams[0];
-            EngGameSong = SongRedWin;
+    local TSCTeam WinnerTeam, LoserTeam;
+
+    if ( !bSingleTeam && Reason == "TeamScoreLimit" ) {
+        if ( AliveTeamPlayerCount[0] == 0 ^^ AliveTeamPlayerCount[1] == 0 ) {
+            if ( AliveTeamPlayerCount[1] == 0 ) {
+                WinnerTeam = TSCTeams[0];
+                LoserTeam = TSCTeams[1];
+                EngGameSong = SongRedWin;
+            }
+            else {
+                WinnerTeam = TSCTeams[1];
+                LoserTeam = TSCTeams[0];
+                EngGameSong = SongBlueWin;
+            }
         }
-        else if ( AliveTeamPlayerCount[0] == 0 && AliveTeamPlayerCount[1] > 0 ) {
-            TSCGRI.Winner = Teams[1];
-            EngGameSong = SongBlueWin;
+        else if ( TotalMaxMonsters <= 0 && NumMonsters <= 0 && (TSCTeams[0].GetCurWaveKills() < TSCGRI.WaveKillReq
+                ^^ TSCTeams[1].GetCurWaveKills() < TSCGRI.WaveKillReq) ) {
+            if ( TSCTeams[1].GetCurWaveKills() < TSCGRI.WaveKillReq ) {
+                WinnerTeam = TSCTeams[0];
+                LoserTeam = TSCTeams[1];
+                EngGameSong = SongRedWin;
+            }
+            else {
+                WinnerTeam = TSCTeams[1];
+                LoserTeam = TSCTeams[0];
+                EngGameSong = SongBlueWin;
+            }
+            ScrnBalanceMut.BroadcastMessage(LoserTeam.GetHumanReadableName() $ " team did NOT killed enough zeds ("
+                    $ LoserTeam.GetCurWaveKills() $ " / " $ TSCGRI.WaveKillReq $ ")", true);
         }
         else {
             return false;
         }
         TSCGRI.EndGameType = 2;
-        ScrnBalanceMut.BroadcastMessage(TeamInfo(TSCGRI.Winner).GetHumanReadableName() $ " team won the game on wave "
+        TSCGRI.Winner = WinnerTeam;
+        ScrnBalanceMut.BroadcastMessage(WinnerTeam.GetHumanReadableName() $ " team won the game on wave "
                 $ string(WaveNum+1), true);
     }
     else if ( AlivePlayerCount <= 0 ) {
@@ -701,7 +826,7 @@ function TSCBaseGuardian SpawnBaseGuardian(byte TeamIndex)
     }
     if ( gnome == none ) {
         // map is totally fucked up
-        log("Unable to spawn Base Guardian for team " $ TeamIndex, 'TSC');
+        log("Unable to spawn Base Guardian for team " $ TeamIndex, class.name);
         return none;
     }
 
@@ -822,8 +947,15 @@ function SetupWave()
     i = rand(2);
     TeamBases[i].ScoreOrHome();
     TeamBases[1-i].ScoreOrHome();
-    TeamBases[0].InvulTime = Level.TimeSeconds + TeamBases[0].default.InvulTime;
-    TeamBases[1].InvulTime = TeamBases[0].InvulTime;
+    if (TeamBases[0].StunThreshold > 0) {
+        BaseInvulTime = Level.TimeSeconds + default.BaseInvulTime;
+        TeamBases[0].bInvul = true;
+        TeamBases[1].bInvul = true;
+    }
+    else {
+        BaseInvulTime = Level.TimeSeconds + 100000; // never trigger
+    }
+
 
     WavePlayerCount = AlivePlayerCount;
     BigTeamSize = max(AliveTeamPlayerCount[0], AliveTeamPlayerCount[1]);
@@ -849,10 +981,6 @@ function SetupWave()
         return;
     }
 
-    if ( WaveNum == 0 ) {
-        BroadcastLocalizedMessage(class'TSCMessages', 230); // human damage disabled
-    }
-
     if ( WaveNum >= OriginalFinalWave ) {
         TSCGRI.bOverTime = true;
         if ( bLockTeamsOnSuddenDeath )
@@ -865,6 +993,9 @@ function SetupWave()
         else {
             BroadcastLocalizedMessage(class'TSCMessages', 201); // overtime
         }
+    }
+    else if ( WaveNum == 0 ) {
+        BroadcastLocalizedMessage(class'TSCMessages', 230); // human damage disabled
     }
     else if ( HumanDamageMode > HDMG_None ) {
         if ( HumanDamageMode >= HDMG_Normal )
@@ -880,6 +1011,12 @@ function SetupWave()
     MaxMonsters = min(TotalMaxMonsters, MaxZombiesOnce); // max monsters that can be spawned
     TSCGRI.MaxMonsters = TotalMaxMonsters; // num monsters in wave replicated to clients
     TSCGRI.MaxMonstersOn = true; // I've no idea what is this for
+    if (bSingleTeam) {
+        TSCGRI.WaveKillReq = 0;
+    }
+    else {
+        TSCGRI.WaveKillReq = TSCGRI.MaxMonsters * WaveKillReqPct;
+    }
 
     NextSquadTeam = rand(2); // pickup random team for the next special squad
 
@@ -961,8 +1098,6 @@ protected function StartTourney()
 {
     super.StartTourney();
 
-    GameReplicationInfo.bNoTeamSkins = bSingleTeamGame;
-
     bAntiBlocker = true;
     bVoteHDmg = false;
 }
@@ -1002,8 +1137,52 @@ function ShopVolume TeamShop(byte TeamIndex)
     return none;
 }
 
+function InventoryUpdate(Pawn P)
+{
+    // we cannot recalc sell values now because those may not be set by the pickups yet
+    bRecalcInventory = true;
+}
+
+auto State PendingMatch
+{
+    function bool StartClanGame(TSCClanInfo RedClan, TSCClanInfo BlueClan)
+    {
+        local TSCClanReplicationInfo RedRep, BlueRep;
+
+        if (bSingleTeamGame) {
+            return false;
+        }
+
+        RedRep = class'TSCClanReplicationInfo'.static.Create(TSCTeams[0], RedClan);
+        if (RedRep == none) {
+            return false;
+        }
+
+        BlueRep = class'TSCClanReplicationInfo'.static.Create(TSCTeams[1], BlueClan);
+        if (BlueRep == none) {
+            return false;
+        }
+        TSCTeams[0].ClanRep = RedRep;
+        TSCTeams[1].ClanRep = BlueRep;
+        bClanGame = true;
+        ForceClanTeams();
+        return true;
+    }
+}
+
 State MatchInProgress
 {
+    function Timer()
+    {
+        super.Timer();
+
+        if (bRecalcInventory) {
+            bRecalcInventory = false;
+            TSCTeams[0].CalcInventorySellValue();
+            TSCTeams[1].CalcInventorySellValue();
+        }
+    }
+
     function BattleTimer()
     {
         super.BattleTimer();
@@ -1036,26 +1215,58 @@ State MatchInProgress
                 }
             }
         }
+
         if ( ++WaveMinuteTimer >= 60 ) {
-                WaveMinuteTimer = 0;
-                TSCTeams[0].PrevMinKills = TSCTeams[0].LastMinKills;
-                TSCTeams[0].LastMinKills = TSCTeams[0].ZedKills;
-                TSCTeams[1].PrevMinKills = TSCTeams[1].LastMinKills;
-                TSCTeams[1].LastMinKills = TSCTeams[1].ZedKills;
+            WaveMinuteTimer = 0;
+            TSCTeams[0].PrevMinKills = TSCTeams[0].LastMinKills;
+            TSCTeams[0].LastMinKills = TSCTeams[0].ZedKills;
+            TSCTeams[1].PrevMinKills = TSCTeams[1].LastMinKills;
+            TSCTeams[1].LastMinKills = TSCTeams[1].ZedKills;
+            InventoryUpdate(none);
         }
+
+        if (Level.TimeSeconds > BaseInvulTime) {
+            // BaseInvulTime will be reset at the start of the next wave.
+            // For now, simply increase it by big-anough number
+            BaseInvulTime += 3600;
+            if ((TeamBases[0].bInvul || TeamBases[1].bInvul) && (TeamBases[0].bActive || TeamBases[1].bActive)) {
+                BroadcastLocalizedMessage(class'TSCMessages', 233); // tell about auto-end
+            }
+            TeamBases[0].bInvul = false;
+            TeamBases[1].bInvul = false;
+        }
+
     }
 
     function DoWaveEnd()
     {
         local int NextWave;
 
+        // WaveNum will be increased in ScrnGameType. Use NextWave here instead.
         NextWave = WaveNum + 1;
-        if ( !bSingleTeam && (AliveTeamPlayerCount[0] == 0 ^^ AliveTeamPlayerCount[1] == 0) ) {
-            EndGame(none, "TeamScoreLimit");
+
+        if ( NextWave >= EndWaveNum() ) {
+            WaveNum++;
+            EndGame(None, "TimeLimit");
             if ( bGameEnded )
                 return;
+            // something has prevented end game. Restore the previous WaveNum value.
+            WaveNum--;
         }
-        else if ( AlivePlayerCount > 0 && NextWave >= OriginalFinalWave && NextWave < EndWaveNum() ) {
+
+        if ( !bSingleTeam ) {
+            if ( AliveTeamPlayerCount[0] == 0 ^^ AliveTeamPlayerCount[1] == 0 ) {
+                EndGame(none, "TeamScoreLimit");
+            }
+            else if ( TSCTeams[0].GetCurWaveKills() < TSCGRI.WaveKillReq
+                    ^^  TSCTeams[1].GetCurWaveKills() < TSCGRI.WaveKillReq ) {
+                EndGame(none, "TeamScoreLimit");
+            }
+        }
+        if ( bGameEnded )
+            return;
+
+        if ( AlivePlayerCount > 0 && NextWave >= OriginalFinalWave && NextWave < EndWaveNum() ) {
             if ( OvertimeWaves > 0 && NextWave == OriginalFinalWave ) {
                 TSCGRI.bOverTime = true;
                 BroadcastLocalizedMessage(class'TSCMessages', 201);
@@ -1203,15 +1414,15 @@ defaultproperties
     KFHints[1]="When the Trader opens her doors, she drops the Base Guardian nearby. Take it to your Base!"
     KFHints[2]="Pick up the Base Guardian next to the Trader, bring it where you want your Base to be, and press the SETUPBASE or CROUCH button."
     KFHints[3]="The Base can be established only once per wave. Once set up, it can not be moved."
-    KFHints[4]="If nobody stays at a Base, then the Guardian gets frustrated and disappears. No Guardian = No Base."
+    KFHints[4]="If nobody stays at the Base, the Guardian gets frustrated and disappears. No Guardian = No Base."
     KFHints[5]="Base Guardian has two cool features: it protects you from the Friendly Fire and damages enemy squad members."
     KFHints[6]="Base Guardian hurts enemy players within the range of the Base no matter of the Friendly Fire setting."
-    KFHints[7]="Base Guardian can be stunned with nades or 700+ cumulative damage."
+    KFHints[7]="Base Guardian can be stunned with nades or 500+ cumulative damage."
     KFHints[8]="Base Guardian is invulnerable while waking up or for the first 10 seconds of a wave."
     KFHints[9]="The Base can be established during the Trader Time only. So hurry up!"
     KFHints[10]="The other squad cannot stay at your Base."
-    KFHints[11]="You can play without a Base too, but who will protect you from the Friendly Fire then?"
-    KFHints[12]="Setting up a Base in a strategic map point is the key to success."
+    KFHints[11]="You can play without the Base too, but who will protect you from the Friendly Fire then?"
+    KFHints[12]="Setting up the Base in a strategic map point is the key to success."
     KFHints[13]="You cannot set up your own Base at the Enemy Base. However, the Bases may intersect."
     KFHints[14]="While carrying Base Guardian, you can pass it to another player by pressing the same key as throwing a weapon."
     KFHints[15]="Best camping spots in the standard KF game are not necessarily the best spots in TSC."
@@ -1221,10 +1432,10 @@ defaultproperties
     KFHints[19]="You can wait until ZEDs wipe out the enemy squad or help them. Help who? ZEDs or the other squad? The choice is up to you..."
     KFHints[20]="There are 4 Human Damage rules in TSC: OFF, No Friendly Fire, Normal, and PvP. Type MVOTE TEAM HDMG for the info."
     KFHints[21]="When Human Damage is OFF, you can not damage the other squad's members. The Base Guardian can, though."
-    KFHints[22]="Human Damage is OFF during the first wave, Trader Time, and when there are less than 10 zeds left in a wave."
+    KFHints[22]="Human Damage is OFF during the first wave, Trader Time, and when there are less than 10 zeds left in the wave."
     KFHints[23]="Human Damage is ON during waves (except the first one). Staying at your own Base protects you from it."
     KFHints[24]="You can switch team during the Trader Time. Type SWITCHTEAM in the console or bind it to a key."
-    KFHints[25]="Switching the team during the game kills you first. Then restarts you as another squad member."
+    KFHints[25]="Switching the team during the game kills you first. Then restarts you as an another squad member."
     KFHints[26]="You cannot switch a team during a wave."
     KFHints[27]="Medics, and only medics, can see the health and armor of enemy players."
     KFHints[28]="TSC, same as KF, is not about winning or losing. It is all about surviving."
@@ -1232,8 +1443,6 @@ defaultproperties
     KFHints[30]="During the Trader Time, if the other squad has 2+ players less than yours, you can switch to it on-the-fly (without dying)."
 
     DefaultEnemyRosterClass="ScrnBalanceSrv.TSCTeam"
-    RedTeamHumanName="British"
-    BlueTeamHumanName="Steampunk"
     bNoLateJoiners=False
     bPlayersVsBots=False
     bSingleTeamGame=False
@@ -1250,6 +1459,7 @@ defaultproperties
     bLockTeamsOnSuddenDeath=true
     bAntiBlocker=True
     DefaultGameLength=40
+    WaveKillReqPct=0.20
 
     bClanCheck=True
     ClanTags(0)=(Prefix="[",Postfix="]")
@@ -1269,6 +1479,7 @@ defaultproperties
     BaseRadius=1250 // 25 m
     MinBaseZ=-60
     MaxBaseZ=200
+    BaseInvulTime=30
     HumanDamageMode=HDMG_Normal
     bVoteHDmg=True
     bVoteHDmgOnlyBeforeStart=False

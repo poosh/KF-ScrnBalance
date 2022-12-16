@@ -103,6 +103,7 @@ defaultproperties
     PrePivot=(Z=23)
     SameTeamCounter=28
     Damage=2 // do less damage to enemies due to moving
+    StunThreshold=0 // cannot be stunned
 
     strBlame="%p blamed for base setup failure"
 }

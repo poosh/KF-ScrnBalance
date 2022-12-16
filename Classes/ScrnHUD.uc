@@ -106,6 +106,10 @@ var Color NoAmmoColor;
 var transient float PulseAlpha;
 var float PulseRate;
 
+var transient byte BlinkAlpha;
+var transient float BlinkPhase;
+var float BlinkRate;
+
 var transient bool bDrawingBonusLevel, bXPBonusFadingOut, bXPBonusFadingIn;
 var transient float CoolPerkAlpha;
 var transient float XPBonusNextPlaseTime, XPBonusFadeTime;
@@ -113,6 +117,12 @@ var transient float XPBonusNextPlaseTime, XPBonusFadeTime;
 var float XPLevelShowTime, BonusLevelShowTime, XPBonusFadeRate;
 
 var protected transient float MsgTopY; // top Y coordinate up upper console message displayed on the HUD
+
+enum EScrnEffect {
+    EFF_NONE,
+    EFF_PULSE,
+    EFF_BLINK
+};
 
 struct SHitInfo
 {
@@ -163,6 +173,7 @@ var localized string strPendingItems;
 var material ChatIcon;
 
 var bool bZedHealthShow;
+var bool bDebugSpectatingHUD;
 
 function PostBeginPlay()
 {
@@ -1154,6 +1165,30 @@ simulated function SetLowAmmoColor(out Color C, int ammo)
         C = NoAmmoColor;
     }
     C.A = PulseAlpha;
+}
+
+simulated function PulseColorIf(out Color C, bool req)
+{
+    if (req) {
+        C.A = PulseAlpha;
+    }
+    else {
+        C.A = KFHUDAlpha;
+    }
+}
+
+simulated function SetAlphaColor(out Color C, Color NewColor)
+{
+    C = NewColor;
+    C.A = KFHUDAlpha;
+}
+
+simulated function SetAlphaColorRGB(out Color C, byte R, byte G, byte B)
+{
+    C.R = R;
+    C.G = G;
+    C.B = B;
+    C.A = KFHUDAlpha;
 }
 
 simulated function UpdateHud()
@@ -2219,6 +2254,12 @@ simulated function Tick(float deltaTime)
     else
         PulseAlpha -= PulseRate * deltaTime / Level.TimeDilation;
 
+    BlinkPhase -= BlinkRate * deltaTime / Level.TimeDilation;
+    if (BlinkPhase < 0) {
+        BlinkPhase = 512;
+    }
+    BlinkAlpha = clamp(BlinkPhase, 0, 255);
+
     if ( bXPBonusFadingOut ) {
         CoolPerkAlpha -= XPBonusFadeRate * deltaTime;
         if ( CoolPerkAlpha <= 10) {
@@ -2369,9 +2410,9 @@ function DrawBlameIcons(Canvas C)
 
 simulated function DrawDirPointer(Canvas C, KFShopDirectionPointer DirPointer, Vector PointAt,
     int Row, int Col, optional bool bHideText, optional string TextPrefix, optional bool bRightSide,
-    optional bool bPulse)
+    optional EScrnEffect Effect)
 {
-    local color TextColor;
+    local color OldDrawColor;
     local float size;
     local vector   ScreenPos, WorldPos, FixedZPos;
     local rotator  DirPointerRotation;
@@ -2386,14 +2427,22 @@ simulated function DrawDirPointer(Canvas C, KFShopDirectionPointer DirPointer, V
         return;
     }
 
-    if (bPulse) {
-        DirPointer.SetDrawScale(DirPointer.default.DrawScale * PulseAlpha / 255.0);
-    }
-    else {
-        DirPointer.SetDrawScale(DirPointer.default.DrawScale);
-    }
+    OldDrawColor = C.DrawColor;
+    switch (Effect) {
+        case EFF_NONE:
+            DirPointer.SetDrawScale(DirPointer.default.DrawScale);
+            C.DrawColor.A = KFHUDAlpha;
+            break;
+        case EFF_PULSE:
+            DirPointer.SetDrawScale(DirPointer.default.DrawScale * PulseAlpha / 255.0);
+            C.DrawColor.A = PulseAlpha;
+            break;
+        case EFF_BLINK:
+            DirPointer.SetDrawScale(DirPointer.default.DrawScale * BlinkAlpha / 255.0);
+            C.DrawColor.A = BlinkAlpha;
+            break;
 
-    TextColor = C.DrawColor;
+    }
 
     size = C.SizeX / 16.0;
     if ( bRightSide )
@@ -2428,16 +2477,11 @@ simulated function DrawDirPointer(Canvas C, KFShopDirectionPointer DirPointer, V
     C.DrawActor(DirPointer, False, false);
     DirPointer.bHidden = true;
 
-    C.DrawColor = TextColor;
-    if (bPulse) {
-        C.DrawColor.A = PulseAlpha;
-    }
-
     if ( !bHideText ) {
         C.SetPos(ScreenPos.X, ScreenPos.Y + size * 0.5);
         DrawPointerDistance(C, PointAt, TextPrefix, MyLocation);
     }
-    C.DrawColor = TextColor;
+    C.DrawColor = OldDrawColor;
 }
 
 // must be called only from DrawDirPointer!
@@ -2637,6 +2681,11 @@ simulated function DrawPlayerInfos(Canvas C)
 
 simulated function DrawHud(Canvas C)
 {
+    if ( bDebugSpectatingHUD ) {
+        DrawSpectatingHud(C);
+        return;
+    }
+
     RenderDelta = Level.TimeSeconds - LastHUDRenderTime;
     LastHUDRenderTime = Level.TimeSeconds;
 
@@ -2705,12 +2754,15 @@ simulated function DrawHud(Canvas C)
 // a lot of copy-paste job, because some devs are using "final" mark too much
 simulated function DrawSpectatingHud(Canvas C)
 {
-    local bool bGameEnded;
+    local bool bGameEnded, bSpecHUD;
 
     DrawModOverlay(C);
 
     if( bHideHud )
         return;
+
+    bSpecHUD = bDebugSpectatingHUD || PlayerOwner.PlayerReplicationInfo == none
+            || PlayerOwner.PlayerReplicationInfo.bOnlySpectator;
 
     PlayerOwner.PostFX_SetActive(0, false);
 
@@ -2722,23 +2774,27 @@ simulated function DrawSpectatingHud(Canvas C)
         ScrnPC.ActiveNote = none;
 
     bGameEnded = KFGRI != none && KFGRI.EndGameType > 0;
-    if( KFGRI != none && KFGRI.EndGameType > 0 ) {
+    if( bGameEnded ) {
         if( KFGRI.EndGameType == 2 ) {
             DrawEndGameHUD(C, True);
             DrawStoryHUDInfo(C);
         }
-        else
+        else {
             DrawEndGameHUD(C, False);
+        }
     }
 
-    if ( PlayerOwner.PlayerReplicationInfo != none && !PlayerOwner.PlayerReplicationInfo.bOnlySpectator )
+    if ( !bSpecHUD ) {
         DrawKFHUDTextElements(C);
+    }
     DisplayLocalMessages(C);
 
-    if ( bShowScoreBoard && ScoreBoard != None )
+    if ( bShowScoreBoard && ScoreBoard != None ) {
         ScoreBoard.DrawScoreboard(C);
-    else if ( !bGameEnded && (PlayerOwner.PlayerReplicationInfo == none || PlayerOwner.PlayerReplicationInfo.bOnlySpectator) )
+    }
+    else if ( bSpecHUD && !bGameEnded ) {
         DrawSpecialSpectatingHUD(C);
+    }
 
     if ( bShowPortrait && Portrait != None )
         DrawPortraitSE(C);
@@ -3523,6 +3579,7 @@ exec function LeftGunAmmo(bool b)
     bShowLeftGunAmmo = b;
 }
 
+
 defaultproperties
 {
     MinMagCapacity=5
@@ -3648,4 +3705,5 @@ defaultproperties
     CoolCashDigits=(RenderStyle=STY_Alpha,DrawPivot=DP_UpperLeft,TextureScale=0.5,PosX=0.03,PosY=0.005,Tints[0]=(B=160,G=160,R=160,A=200),Tints[1]=(B=160,G=160,R=160,A=200))
 
     PulseRate=450
+    BlinkRate=512
 }

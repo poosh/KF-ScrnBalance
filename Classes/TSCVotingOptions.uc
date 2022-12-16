@@ -23,7 +23,7 @@ var localized string strCaptain, strCarrier, strHumanDamage, strInvite;
 function int GetGroupVoteIndex(PlayerController Sender, string Group, string Key, out string Value, out string VoteInfo)
 {
     if ( Key == "SHUFFLE" ) {
-        if ( TSC.IsTourney() ) {
+        if ( TSC.IsTourney() || TSC.bClanGame ) {
             Sender.ClientMessage(strOptionDisabled);
             return VOTE_LOCAL;
         }
@@ -253,7 +253,7 @@ defaultproperties
     DefaultGroup="TEAM"
 
     strCaptain="Team Captain"
-    strCarrier="Gnome Carrier"
+    strCarrier="Guardian Carrier"
     strHumanDamage="Human Damage"
     strInvite="Invite"
 

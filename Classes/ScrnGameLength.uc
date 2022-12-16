@@ -14,8 +14,10 @@ var config int GameVersion;
 var config string GameTitle;
 var config string Author;
 var config float BountyScale;
+var config bool bStartingCashReset;
 var config int StartingCashBonus;
 var config bool bStartingCashRelative;
+var config array<string> ServerPackages;
 var config array<string> Mutators;
 var config array<string> Waves;
 var config array<string> Zeds;
@@ -138,6 +140,11 @@ function LoadGame(ScrnGameType MyGame)
     }
     else {
         ApplyGameDifficulty(HardcoreDifficulty);
+    }
+
+    for ( i = 0; i < ServerPackages.length; ++i ) {
+        Log("Add server package: " $ ServerPackages[i], class.name);
+        Game.AddToPackageMap(ServerPackages[i]);
     }
 
     for ( i = 0; i < Mutators.length; ++i ) {
@@ -1306,6 +1313,20 @@ function byte SpawnZed(string Alias, string ZedClassStr, byte count, out string 
     }
 
     return Game.SpawnSquadLog(Game.FindSpawningVolumeForSquad(Squad, true), Squad);
+}
+
+function int CalcStartingCash(PlayerController PC)
+{
+    local int result;
+
+    result = StartingCashBonus;
+    if ( bStartingCashRelative ) {
+        result *= Game.RelativeWaveNum(Game.WaveNum);
+    }
+    if (!bStartingCashReset) {
+        result += Game.StartingCash;
+    }
+    return result;
 }
 
 defaultproperties

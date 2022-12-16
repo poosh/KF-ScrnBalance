@@ -27,6 +27,52 @@
 
 -------------------------------------------------------------------------------
 
+### v9.69.21
+- Added `ServerPackages` to *ScrnGames.ini*. Allows loading extra packages for specific games.
+- Added `bStartingCashReset` to *ScrnGames.ini*.
+- Added **XCM DUEL** game mode to *ScrnGames.ini* (GameLength=47). Previously, XCM DUEL was using the regular XCM mode (GameLength=7)
+- Fixed an issue where a player could cook grenade during pause.
+
+#### TSC
+- New TSC **20/80** rule - each team needs to kill at least 20% zeds in every wave. Failing to do so leads to the loss at the end of the wave.
+- The 20/80 rule applies only when both teams survived the wave.
+- Added wave kills on TSC HUD and Scoreboard
+- Defined specific **TSC Tourney** waves in *ScrnWaves.ini*.
+- From now on, TSC Tourney (GameLength=42) is played in 6 regular + 1 overtime + 1 sudden death waves.
+- Players start with no cash ($1) in TSC Tourney. However, zed count increased in Wave1 to compensate that.
+- TSC Tourney waves are:
+  1. TSC1: Wave1 + CR and ST, x4 spawn rate, more ammo and weapons on the map
+  2. TSC2: Wave3 with x3 spawn rate
+  3. TSC3: Wave6 with x2 spawn rate (x2)
+  4. TSC4: Wave7 with faster spawn rate
+  5. TSC5: Wave9 with faster spawn rate
+  6. TSC6: Wave10 with faster spawn rate
+  7. TSCOT: the Overtime wave - a harder version of Wave10
+  8. TSCSD: the Sudden Death Wave - a harder version of Wave10 + double spawn rate
+- Regular TSC and FTG-SC are still played in standard medium game + TSCOT + TSCSD.
+- Fixed a bug where sometimes a TSC game could go endlessly if both teams keep surviving the waves.
+- Fixed an exploit where the base could set on the enemy base by stunning the enemy Base Guardian
+- Fixed an issue where the message wrongly said "Human Damage ON" during wave 1
+- Base Guardian stun damage lowered to 500 (down from 700)
+- Base Guarding stun protection at the start of each wave increased to 30s (up from 10s). Players now get a message when stun protection wears off.
+- Base Guardian does not heal during 2s after the last damage taken. Previously, Guardian started healing immediately, making next to impossible to stun it with low-damage low-firerate weapons (e.g., 9mm pistol).
+- Base Guardian heal rate is 50 hp/s
+- Base Guardian does not protect from Human Damage while Waking Up from Stunned. Technically, both Waking Up and Stunned states are the same now; Waking Up just informs the players that the base will become active soon. Stun time is 30s, followed by 10s Waking Up phase. In other words, when the Base Guardian gets stunned, players are not protected from Human Damage for 40s.
+- Base direction pointers now indicate if the guardians are stunned.
+- Console command: `TeamStats` to display & log team stats (kills, death, etc.) during the match.
+
+#### Clans
+- Added clan support to TSC. Clans are defined in *ScrnClans.ini*. See *ScrnClans.sample* for details.
+- `mvote CLAN GAME <CLAN_A> <CLAN_B>` starts the clan game between `<CLAN_A>` and `<CLAN_B>`.
+- type `mvote CLAN HELP` for details
+- Server admins can create clans in-game via `mvote CLAN CREATE` command, then use `mvote CLAN CAPTAIN` and/or `mvote CLAN ADD` to set clan captain and/or add players to the clan.
+- Clan captains can add/remove players to/from the clan via `mvote CLAN ADD/REMOVE` commands.
+- Clan captains cannot add/remove other captains. That can be done only by a server admin.
+- A player can leave the clan via `mvote CLAN LEAVE`. The command works only during the clan game.
+- A player can be a member of multiple clans.
+- Added clan support to TSC HUD, Scoreboard and Lobby menu. During a clan game, clan logos and names are used instead of the standard British/Steampunk teams.
+
+
 ### v9.69.17
 - **FTG On The Clock** v2.50 - now, timer waves last 5 minutes regardless of player count.
 - If Stinky Clot prematurely dies (e.g., due to getting stuck or finishing the entire route), the base is automatically set instead of simply dropping the Guardian. Previously, the base was autosetting only during the boss wave.

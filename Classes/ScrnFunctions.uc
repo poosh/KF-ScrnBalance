@@ -58,6 +58,33 @@ final static function int BinarySearchStr(out array<string> arr, string val)
     return -1;
 }
 
+final static function int SearchStr(out array<string> arr, string val)
+{
+    local int i;
+
+    if (val == "" || arr.length == 0)
+        return -1;
+
+    for (i = 0; i < arr.length; ++i) {
+        if (arr[i] == val)
+            return i;
+    }
+    return -1;
+}
+
+final static function int SearchStrIgnoreCase(out array<string> arr, string val)
+{
+    local int i;
+
+    if (val == "" || arr.length == 0)
+        return -1;
+
+    for (i = 0; i < arr.length; ++i) {
+        if (arr[i] ~= val)
+            return i;
+    }
+    return -1;
+}
 
 // fancy time formatting
 static final function String FormatTime(int Seconds)

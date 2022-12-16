@@ -5,7 +5,7 @@ var color RedTeamColor,BlueTeamColor,WarningColor;
 var(Message) localized string strEnemyShop;
 var(Message) localized string strWaveEnding;
 var(Message) localized string strSeconds;
-var(Message) localized string strEnemyDmgEnabled, strHDmgEnabled, strHDmgDisabled;
+var(Message) localized string strEnemyDmgEnabled, strHDmgEnabled, strHDmgDisabled, strStunProtectionDisabled;
 var(Message) localized string strOvertime;
 var(Message) localized string strSuddenDeath;
 var(Message) localized string strGetBackToBase;
@@ -25,64 +25,72 @@ var(Message) localized string strBaseStunned[2];
 var(Message) localized string strBaseWakingUp[2];
 var(Message) localized string strBaseWakeUp[2];
 
-var(Message) localized string strTeamNames[2];
+var deprecated string strTeamNames[2];
 
 
 static function string GetString(
-    optional int Switch,
+    optional int sw,
     optional PlayerReplicationInfo RelatedPRI_1,
     optional PlayerReplicationInfo RelatedPRI_2,
     optional Object OptionalObject
     )
 {
-    switch (Switch) {
-        // red team
-        case   1:   return default.strBaseEstablished[0];
-        case   2:   return default.strBaseLost[0];
-        case   3:   return default.strBaseStunned[0];
-        case   4:   return default.strBaseWakingUp[0];
-        case   5:   return default.strBaseWakeUp[0];
-        case  10:   return default.strTeamWiped[0];
+    local byte t;
 
-        // blue team
-        case 101:   return default.strBaseEstablished[1];
-        case 102:   return default.strBaseLost[1];
-        case 103:   return default.strBaseStunned[1];
-        case 104:   return default.strBaseWakingUp[1];
-        case 105:   return default.strBaseWakeUp[1];
-        case 110:   return default.strTeamWiped[1];
+    if (sw < 200) {
+        // per-team messages
+        if (sw >= 100) {
+            t = 1;
+            sw -= 100;
+        }
 
-        case 200:    return default.strWaveEnding @ class'TSCGame'.default.WaveEndingCountDown @ default.strSeconds;
-        case 201:    return default.strOvertime;
-        case 202:    return default.strSuddenDeath;
-        case 211:    return default.strGetBackToBase;
-        case 230:    return default.strHDmgDisabled;
-        case 231:    return default.strHDmgEnabled;
-        case 232:    return default.strEnemyDmgEnabled;
-        case 240:    return default.strPendingShuffle;
-        case 241:    return default.strTeamShuffle;
-        case 242:    return default.strTeamUnlocked;
-        case 243:    return default.strTeamLocked;
-
-        // warning
-        case 300:    return default.strEnemyShop;
-        case 302:    return default.strSuddenDeath;
-        case 310:    return default.strBaseZ;
-        case 311:    return default.strGetBackToBaseOrDie;
-        case 312:    return default.strGetOutFromBase;
-        case 313:    return default.strBaseShop;
-
-
+        switch (sw) {
+            case   1:   return default.strBaseEstablished[t];
+            case   2:   return default.strBaseLost[t];
+            case   3:   return default.strBaseStunned[t];
+            case   4:   return default.strBaseWakingUp[t];
+            case   5:   return default.strBaseWakeUp[t];
+            case  10:   return default.strTeamWiped[t];
+        }
     }
+    else if (sw < 300) {
+        // info messages
+        switch (sw) {
+            case 200:    return default.strWaveEnding @ class'TSCGame'.default.WaveEndingCountDown @ default.strSeconds;
+            case 201:    return default.strOvertime;
+            case 202:    return default.strSuddenDeath;
+            case 211:    return default.strGetBackToBase;
+            case 230:    return default.strHDmgDisabled;
+            case 231:    return default.strHDmgEnabled;
+            case 232:    return default.strEnemyDmgEnabled;
+            case 233:    return default.strStunProtectionDisabled;
+            case 240:    return default.strPendingShuffle;
+            case 241:    return default.strTeamShuffle;
+            case 242:    return default.strTeamUnlocked;
+            case 243:    return default.strTeamLocked;
+        }
+    }
+    else if (sw < 400) {
+        // warning messages
+        switch (sw) {
+            case 300:    return default.strEnemyShop;
+            case 302:    return default.strSuddenDeath;
+            case 310:    return default.strBaseZ;
+            case 311:    return default.strGetBackToBaseOrDie;
+            case 312:    return default.strGetOutFromBase;
+            case 313:    return default.strBaseShop;
+        }
+    }
+
     return "";
 }
 
 static function string TeamName(TeamInfo Team)
 {
-    if ( Team != none && Team.TeamIndex < 2 )
-        return default.strTeamNames[Team.TeamIndex];
+    if (Team == none)
+        return "";
 
-    return "";
+    return Team.GetHumanReadableName();
 }
 
 static function color GetColor(
@@ -95,7 +103,7 @@ static function color GetColor(
         return default.RedTeamColor;
     else if ( Switch < 200 )
         return default.BlueTeamColor;
-    else if ( Switch >= 300 )
+    else if ( Switch >= 300 && Switch < 400 )
         return default.WarningColor;
 
     return Default.DrawColor;
@@ -112,14 +120,12 @@ defaultproperties
     FontSize=3
     Lifetime=5
 
-    strTeamNames(0)="British"
-    strTeamNames(1)="Steampunk"
-
     strWaveEnding="Wave will end in"
     strSeconds="seconds"
     strHDmgDisabled="Human Damage OFF"
     strHDmgEnabled="Human Damage ON"
     strEnemyDmgEnabled="Enemy Damage ON"
+    strStunProtectionDisabled="Base Stun Protection OFF"
     strOvertime="Overtime Wave"
     strSuddenDeath="SUDDEN DEATH"
 

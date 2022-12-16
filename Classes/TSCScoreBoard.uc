@@ -4,7 +4,9 @@ class TSCScoreBoard extends ScrnScoreBoard;
 
 var     color                   RedBG[2], BlueBG[2];
 
-var     material                RedLogo, BlueLogo;
+// use TSCTeam.GetLogo() instead
+var deprecated material RedLogo, BlueLogo;
+
 var     material                GameLogo;
 
 var     material                CptIcon, CptAssIcon;
@@ -39,7 +41,8 @@ static function float DrawNamePrefixIcons(Canvas C, PlayerReplicationInfo PRI, S
 }
 
 
-simulated function DrawTeam(Canvas Canvas, array<PlayerReplicationInfo> TeamPRIArray, int Left, int Top, int Width, int LineHeight, int LineCount,
+simulated function DrawTeam(Canvas Canvas, array<PlayerReplicationInfo> TeamPRIArray, int Left, int Top, int Width,
+    int LineHeight, int LineCount,
     bool bExtraInfo, color OddBGColor, color EvenBGColor)
 {
     local PlayerReplicationInfo PRI, OwnerPRI;
@@ -51,11 +54,17 @@ simulated function DrawTeam(Canvas Canvas, array<PlayerReplicationInfo> TeamPRIA
     local Material VeterancyBox,StarBox;
     local string S;
     local byte Stars;
-    local int TotalKills, TotalAss, TotalDeaths;
+    local int TotalKills, TotalAss, TotalDeaths, WaveKills;
+    local TSCTeam TSCTeam;
+    local TSCGameReplicationInfo TSCGRI;
 
     OwnerPRI = KFPlayerController(Owner).PlayerReplicationInfo;
+    TSCGRI = TSCGameReplicationInfo(Level.GRI);
 
     Canvas.Style = ERenderStyle.STY_Alpha;
+    if ( TeamPRIArray.length > 0 && TeamPRIArray[0] != none ) {
+        TSCTeam = TSCTeam(TeamPRIArray[0].Team);
+    }
 
     // lines
     Y = Top;
@@ -279,8 +288,9 @@ simulated function DrawTeam(Canvas Canvas, array<PlayerReplicationInfo> TeamPRIA
     // totals
     y = Top + LineCount*LineHeight; // + BoxTextOffsetY;
 
-    if ( TeamPRIArray.length > 0 && TeamPRIArray[0].Team != none )
-        Canvas.DrawColor = TeamPRIArray[0].Team.TeamColor;
+    if (TSCTeam != none ) {
+        Canvas.DrawColor = TSCTeam.TeamColor;
+    }
 
     if ( TotalDeaths > 0) {
         S = string(TotalDeaths);
@@ -301,12 +311,34 @@ simulated function DrawTeam(Canvas Canvas, array<PlayerReplicationInfo> TeamPRIA
         Canvas.DrawColor = HUDClass.default.WhiteColor;
     }
 
+    if ( TSCTeam != none && TotalKills > 0 ) {
+        y += YL;
+        WaveKills = TSCTeam.GetCurWaveKills();
+        S = WaveString @ KillsText $ ": " $ WaveKills;
+        Canvas.TextSize(S, XL, YL);
+        Canvas.SetPos(KillsXPos - XL, y);
+        if ( WaveKills < TSCGRI.WaveKillReq ) {
+            Canvas.DrawColor = class'ScrnHUD'.default.LowAmmoColor;
+        }
+        else {
+            Canvas.DrawColor = TSCTeam.TeamColor;
+        }
+        Canvas.DrawTextClipped(S);
+
+        if ( WaveKills < TSCGRI.WaveKillReq ) {
+            S = " / " $ TSCGRI.WaveKillReq;
+            Canvas.SetPos(KillsXPos, y);
+            Canvas.DrawTextClipped(S);
+        }
+    }
+
     Canvas.DrawColor = HUDClass.default.WhiteColor;
 }
 
 simulated event UpdateScoreBoard(Canvas Canvas)
 {
     local TSCGameReplicationInfo TSCGRRI;
+    local TSCTeam TSCTeams[2];
     local PlayerReplicationInfo PRI, OwnerPRI;
     local KFPlayerReplicationInfo KFPRI;
     local int i, fi, FontReduction, HeaderOffsetY, PlayerBoxSizeY;
@@ -318,13 +350,18 @@ simulated event UpdateScoreBoard(Canvas Canvas)
     local String S;
     local byte HumanDamageMode;
     local String Spectators;
+    local Material logo;
 
     TSCGRRI = TSCGameReplicationInfo(GRI);
     OwnerPRI = KFPlayerController(Owner).PlayerReplicationInfo;
-    if ( OwnerPRI != none && OwnerPRI.Team != none )
+    TSCTeams[0] = TSCTeam(GRI.Teams[0]);
+    TSCTeams[1] = TSCTeam(GRI.Teams[1]);
+    if ( OwnerPRI != none && OwnerPRI.Team != none ) {
         MyTeamIndex = OwnerPRI.Team.TeamIndex;
-    else
+    }
+    else {
         MyTeamIndex = -1;
+    }
 
     for ( i = 0; i < GRI.PRIArray.Length; i++)
     {
@@ -362,8 +399,19 @@ simulated event UpdateScoreBoard(Canvas Canvas)
     Canvas.Style = ERenderStyle.STY_Normal;
     HeaderOffsetY = Canvas.ClipY * 0.11;
 
-    // "Zeroth", Draw game name :)
-    S = GRI.GameName;
+    // "Zeroth", Draw game name
+    if (TSCGRRI.GameTitle != "") {
+        S = TSCGRRI.GameTitle;
+        if ( TSCGRRI.GameVersion > 0 ) {
+            S @= class'ScrnF'.static.VersionStr(TSCGRRI.GameVersion);
+        }
+    }
+    else {
+        S = GRI.GameName;
+    }
+    if (TSCTeams[0] != none && TSCTeams[0].ClanRep != none && TSCTeams[1] != none && TSCTeams[1].ClanRep != none) {
+        S = TSCTeams[0].ClanRep.ClanName $ " vs. " $ TSCTeams[1].ClanRep.ClanName $ " | " $ S;
+    }
     Canvas.TextSize(S, XL,YL);
     Canvas.SetPos( (Canvas.ClipX - XL)/2, HeaderOffsetY - YL);
     Canvas.DrawTextClipped(S);
@@ -464,11 +512,22 @@ simulated event UpdateScoreBoard(Canvas Canvas)
     Canvas.DrawColor.A = 100;
     XL = fmin(Canvas.ClipX * 0.25, PlayerBoxSizeY*DisplayedCount - 4);
     YL = fmax((PlayerBoxSizeY*DisplayedCount-XL)/2, 2);
-    Canvas.SetPos(RedBoxXPos+(RedBoxWidth-XL)/2, HeaderOffsetY + YL);
-    Canvas.DrawTile(RedLogo, XL, XL, 0, 0, RedLogo.MaterialUSize(), RedLogo.MaterialVSize());
 
-    Canvas.SetPos(BlueBoxXPos + (BlueBoxWidth-XL)/2, HeaderOffsetY + YL);
-    Canvas.DrawTile(BlueLogo, XL, XL, 0, 0, BlueLogo.MaterialUSize(), BlueLogo.MaterialVSize());
+    if (TSCTeams[0] != none) {
+        logo = TSCTeams[0].GetLogo();
+        if (logo != none) {
+            Canvas.SetPos(RedBoxXPos+(RedBoxWidth-XL)/2, HeaderOffsetY + YL);
+            Canvas.DrawTile(logo, XL, XL, 0, 0, logo.MaterialUSize(), logo.MaterialVSize());
+        }
+    }
+
+    if (TSCTeams[1] != none) {
+        logo = TSCTeams[1].GetLogo();
+        if (logo != none) {
+            Canvas.SetPos(BlueBoxXPos + (BlueBoxWidth-XL)/2, HeaderOffsetY + YL);
+            Canvas.DrawTile(logo, XL, XL, 0, 0, logo.MaterialUSize(), logo.MaterialVSize());
+        }
+    }
 
     DrawTeam(canvas, RedTeamPRIArray, RedBoxXPos, HeaderOffsetY, RedBoxWidth, PlayerBoxSizeY, DisplayedCount, MyTeamIndex == 0, RedBG[0], RedBG[1]);
     DrawTeam(canvas, BlueTeamPRIArray, BlueBoxXPos, HeaderOffsetY, BlueBoxWidth, PlayerBoxSizeY, DisplayedCount, MyTeamIndex == 1, BlueBG[0], BlueBG[1]);
@@ -490,8 +549,6 @@ defaultproperties
     BlueBG(1)=(R=64,G=64,B=160,A=200)
 
     KillsAssSeparator="+"
-    RedLogo=Texture'TSC_T.Team.BritishLogo'
-    BlueLogo=Texture'TSC_T.Team.SteampunkLogo'
     GameLogo=Texture'TSC_T.Team.TSC'
     DeathIcon=Texture'TSC_T.SpecHUD.Skull64'
 

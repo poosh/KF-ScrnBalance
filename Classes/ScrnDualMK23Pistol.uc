@@ -363,6 +363,7 @@ function GiveTo(Pawn Other, optional Pickup Pickup)
     bSpawnSingle = SingleGun == none;
     if ( bSpawnSingle ) {
         SingleGun = ScrnMK23Pistol(Spawn(DemoReplacement));
+        SingleGun.SellValue = 0;
     }
     SingleGun.DualGuns = self;
     SingleGun.InventoryGroup = 11;

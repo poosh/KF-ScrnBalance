@@ -12,6 +12,8 @@ var PlayerReplicationInfo TeamCarrier[2];   // MVOTE TEAM CARRIER
 var float BaseRadiusSqr; // Base radius squared, set from TSCGameType
 var float MinBaseZ, MaxBaseZ; // min and max Z difference between player and base, set from TSCGameType
 
+var int WaveKillReq; // required kills in the current wave for both team
+
 replication
 {
     reliable if ( bNetInitial && Role==ROLE_Authority )
@@ -20,7 +22,8 @@ replication
 
     reliable if( bNetDirty && Role == ROLE_Authority )
         BlueShop, bOverTime, bSuddenDeath,
-        HumanDamageMode, TeamCaptain, TeamCarrier;
+        HumanDamageMode, TeamCaptain, TeamCarrier,
+        WaveKillReq;
 }
 
 simulated function ShopVolume GetPlayerShop(PlayerReplicationInfo PRI)
@@ -52,29 +55,33 @@ simulated function ShopVolume GetTeamShop(int TeamNum)
     return none;
 }
 
-simulated function bool AtBase(Vector CheckLocation, Actor TeamBase)
+simulated function bool AtBase(Vector CheckLocation, Actor TeamBase, optional bool bIgnoreStunned)
 {
     local float ZDiff;
     local TSCBaseGuardian gnome;
 
     gnome = TSCBaseGuardian(TeamBase);
-    if ( gnome == none || !gnome.bActive )
+    if ( gnome == none )
         return false;
+
+    if ( !gnome.bActive && (!gnome.bStunned || bIgnoreStunned) )
+        return false;
+
 
     ZDiff = CheckLocation.Z - gnome.GetLocation().Z;
     return ZDiff >= MinBaseZ && ZDiff <= MaxBaseZ
         && VSizeSquared(CheckLocation - gnome.GetLocation()) < BaseRadiusSqr;
 }
 
-simulated function bool AtOwnBase(Pawn Player)
+simulated function bool AtOwnBase(Pawn Player, optional bool bIgnoreStunned)
 {
     if ( Player.PlayerReplicationInfo == none || Player.PlayerReplicationInfo.Team == none )
         return false;
 
-    return AtBase(Player.Location, Player.PlayerReplicationInfo.Team.HomeBase);
+    return AtBase(Player.Location, Player.PlayerReplicationInfo.Team.HomeBase, bIgnoreStunned);
 }
 
-simulated function bool AtEnemyBase(Pawn Player)
+simulated function bool AtEnemyBase(Pawn Player, optional bool bIgnoreStunned)
 {
     local int TeamIndex;
 
@@ -85,7 +92,18 @@ simulated function bool AtEnemyBase(Pawn Player)
     if ( TeamIndex < 0 || TeamIndex > 1 )
         return false;
 
-    return AtBase(Player.Location, Teams[1-TeamIndex].HomeBase);
+    return AtBase(Player.Location, Teams[1-TeamIndex].HomeBase, bIgnoreStunned);
+}
+
+// TeamNum must be 0 or 1
+static function int GetTeamCmbValue(int CmdValue, byte TeamNum)
+{
+    return (CmdValue >>> ((TeamNum & 1) << 3)) & 0xFFFF;
+}
+
+static function int SetTeamCmbValue(int Team0Val, int Team1Val)
+{
+    return ((Team1Val & 0xFFFF) << 8) | (Team0Val & 0xFFFF);
 }
 
 
