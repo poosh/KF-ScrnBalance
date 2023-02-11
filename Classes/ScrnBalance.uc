@@ -314,11 +314,7 @@ var transient int SrvTourneyMode;
 replication
 {
     reliable if ( (bNetInitial || bNetDirty) && Role == ROLE_Authority )
-        SrvMinLevel, SrvMaxLevel, HardcoreLevel, bTeamsLocked, bHardcore;
-
-        // flags to replicate config variables
-    reliable if ( bNetInitial && Role == ROLE_Authority )
-        SrvFlags, SrvAchievementFlags;
+        SrvMinLevel, SrvMaxLevel, HardcoreLevel, bTeamsLocked, SrvFlags, SrvAchievementFlags;
 
     // non-config vars and configs vars which seem to replicate fine
     reliable if ( bNetInitial && Role == ROLE_Authority )
@@ -2659,6 +2655,7 @@ function SetGameDifficulty(byte HardcoreDifficulty)
     }
     SetLevels();
     SetStartCash();
+    SetReplicationData();
 }
 
 function SetupSrvInfo()
@@ -3197,7 +3194,7 @@ function RegisterVersion(string ItemName, int Version)
 
 defaultproperties
 {
-    VersionNumber=96921
+    VersionNumber=96922
     GroupName="KF-Scrn"
     FriendlyName="ScrN Balance"
     Description="Total rework of KF1 to make it modern and the best game in the world while sticking to the roots of the original."

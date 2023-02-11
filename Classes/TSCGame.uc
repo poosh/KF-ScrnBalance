@@ -119,8 +119,6 @@ event InitGame( string Options, out string Error )
     local ScrnVotingHandlerMut VH;
     local Mutator M;
 
-    bTeamGame = !bSingleTeamGame;
-
     super.InitGame(Options, Error);
 
     // check loaded mutators
@@ -330,25 +328,27 @@ function bool ChangeTeam(Controller Other, int num, bool bNewTeam)
         return true;
     }
 
-    if ( bTeamChanging && num < 2 ) {
-        NewTeam = Teams[num];
-    }
-    else if (bClanGame && PC != none && PC.bIsPlayer) {
-        b = TSCTeams[0].ClanRep.Clan.IsMember(PC.GetPlayerIDHash());
-        if (b != TSCTeams[1].ClanRep.Clan.IsMember(PC.GetPlayerIDHash())) {
-            // member of one and only one clan
-            if (b) {
-                NewTeam = TSCTeams[0];
-            }
-            else {
-                NewTeam = TSCTeams[1];
+    if ( !bSingleTeamGame ) {
+        if ( bTeamChanging && num < 2 ) {
+            NewTeam = Teams[num];
+        }
+        else if (bClanGame && PC != none && PC.bIsPlayer) {
+            b = TSCTeams[0].ClanRep.Clan.IsMember(PC.GetPlayerIDHash());
+            if (b != TSCTeams[1].ClanRep.Clan.IsMember(PC.GetPlayerIDHash())) {
+                // member of one and only one clan
+                if (b) {
+                    NewTeam = TSCTeams[0];
+                }
+                else {
+                    NewTeam = TSCTeams[1];
+                }
             }
         }
-    }
 
-    if ( NewTeam == None && bClanCheck && !bNewTeam && !bSingleTeamGame
-            && !GameReplicationInfo.bMatchHasBegun && Other.PlayerReplicationInfo != none ) {
-        NewTeam = MyClanTeam(Other.PlayerReplicationInfo);
+        if ( NewTeam == None && bClanCheck && !bNewTeam
+                && !GameReplicationInfo.bMatchHasBegun && Other.PlayerReplicationInfo != none ) {
+            NewTeam = MyClanTeam(Other.PlayerReplicationInfo);
+        }
     }
 
     if ( NewTeam == none ) {

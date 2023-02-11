@@ -27,6 +27,10 @@
 
 -------------------------------------------------------------------------------
 
+### v9.69.22
+- **FTG**: fixed a bug where spectators did not switch team after joining the game.
+- Fixed Hardcore mode replication if changed via `mvote diff HoE+` (thanks *Mortimer*)
+
 ### v9.69.21
 - Added `ServerPackages` to *ScrnGames.ini*. Allows loading extra packages for specific games.
 - Added `bStartingCashReset` to *ScrnGames.ini*.
