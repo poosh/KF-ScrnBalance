@@ -27,6 +27,10 @@
 
 -------------------------------------------------------------------------------
 
+### v9.69.23
+- If a player placed more **pipebombs** than their perk allows to carry, the *oldest* pipebombs get blown up at the beginning of the next wave. Previously, the newest pipebombs got destroyed.
+- Optimized game loading sequence
+
 ### v9.69.22
 - **FTG**: fixed a bug where spectators did not switch team after joining the game.
 - Fixed Hardcore mode replication if changed via `mvote diff HoE+` (thanks *Mortimer*)

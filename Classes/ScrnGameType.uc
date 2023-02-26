@@ -148,7 +148,16 @@ event InitGame( string Options, out string Error )
         Options $= "?VotingHandler=" $ VotingHandlerOverride;
     }
 
-    super.InitGame(Options, Error);
+    // bypass KFGameType
+    super(Invasion).InitGame(Options, Error);
+
+    InitLevelRules();
+    InitGameVolumes();
+
+    InOpt = ParseOption(Options, "UseBots");
+    if ( InOpt != "" ) {
+        bNoBots = !bool(InOpt);
+    }
 
     if ( VotingHandler != none ) {
         log("VotingHandler=" $ VotingHandler.class, class.name);
@@ -157,10 +166,11 @@ event InitGame( string Options, out string Error )
         warn("No VotingHandler!");
     }
 
-    MaxPlayers = Clamp(GetIntOption( Options, "MaxPlayers", ConfigMaxPlayers ),0,32);
-    default.MaxPlayers = Clamp( ConfigMaxPlayers, 0, 32 );
+    MaxPlayers = Clamp(GetIntOption(Options, "MaxPlayers", ConfigMaxPlayers),0,32);
+    default.MaxPlayers = Clamp(ConfigMaxPlayers, 0, 32);
 
     CheckScrnBalance();
+    ScrnBalanceMut.SetStartCash();
     if ( ScrnBalanceMut.bScrnWaves ) {
         if (ScrnGameLength == none ) {  // mutators might already load this
             if (ScrnBalanceMut.bUserGames && KFGameLength >= 100 && KFGameLength < 200) {
@@ -178,7 +188,24 @@ event InitGame( string Options, out string Error )
             log("GameLength must be in [0..3]: 0-short, 1-medium, 2-long, 3-custom", class.name);
             KFGameLength = GL_Long;
         }
+        UpdateGameLength();
+
+        MonsterCollection = SpecialEventMonsterCollections[ GetSpecialEventType() ];
         log("MonsterCollection = " $ MonsterCollection, class.name);
+
+        bCustomGameLength = KFGameLength == GL_Custom;
+        if (!bCustomGameLength) {
+            InitialWave = 0;
+            bUseEndGameBoss = true;
+            bRespawnOnBoss = true;
+            if (StandardMonsterClasses.Length > 0) {
+                MonsterClasses = StandardMonsterClasses;
+            }
+            MonsterSquad = StandardMonsterSquads;
+            MaxZombiesOnce = StandardMaxZombiesOnce;
+            PrepareSpecialSquads();
+        }
+        LoadUpMonsterList();
     }
 
     WavePct = 100 / FinalWave;
@@ -236,6 +263,45 @@ function InitGameReplicationInfo()
         ScrnGRI.FakedPlayers = FakedPlayers;
         ScrnGRI.FakedAlivePlayers = FakedAlivePlayers;
         ScrnGRI.bStopCountDown = !bSuicideTimer;
+    }
+}
+
+function InitLevelRules()
+{
+    local KFLevelRules KFLRit;
+
+    foreach DynamicActors(class'KFLevelRules', KFLRit) {
+        if (KFLRules==none) {
+            KFLRules = KFLRit;
+            log("KFLRules = " $ KFLRules);
+        }
+        else {
+            warn("MULTIPLE KFLEVELRULES FOUND!!!!!");
+        }
+    }
+
+    //provide default rules if mapper did not need custom one
+    if(KFLRules==none) {
+        log("Map has no KFLevelRules. Spawn default.", class.name);
+        KFLRules = spawn(class'KFLevelRules');
+    }
+}
+
+function InitGameVolumes()
+{
+    local ShopVolume SH;
+    local ZombieVolume ZVol;
+
+    foreach AllActors(class'ShopVolume', SH) {
+        if (!SH.bObjectiveModeOnly || bUsingObjectiveMode) {
+            ShopList[ShopList.Length] = SH;
+        }
+    }
+
+    foreach DynamicActors(class'ZombieVolume', ZVol) {
+        if (!ZVol.bObjectiveModeOnly || bUsingObjectiveMode) {
+            ZedSpawnList[ZedSpawnList.Length] = ZVol;
+        }
     }
 }
 
