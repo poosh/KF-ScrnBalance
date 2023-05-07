@@ -27,6 +27,26 @@
 
 -------------------------------------------------------------------------------
 
+### v9.69.25
+#### New Mutator - Speed Boost
+- Boosts movement speed of players and zeds, leading to a faster gameplay pace.
+- Speed Boost mutator is optional and disabled by default.
+- To enable speed boost for all game types, add `AutoLoadMutators=ScrnBalanceSrv.ScrnSpeedMut` to *ScrnBalanceSrv.ini*.
+- To enable speed boost for particular games only, add `Mutators=ScrnBalanceSrv.ScrnSpeedMut` to either *ScrnGames.ini* or *KFMapVote.ini*.
+- Zed movement speed increased by 25%.
+- Player base speed speed increased by 30%: 200 => 260 uups. Note that other aspects of the game, like fire or reload rate, are unchanged, so players need more boost to stay on par with zeds.
+- Melee speed bonus lowered to 15% (down from 20%) - switching to knife grants aprox. +40 uups like in the base game.
+- Heavy melee weapons, while equipped, slow down players by 4 uups/kg (up from 2).
+- Low health does not slow the player down.
+- Increased weight's effect on movement. Each 1kg reduces speed by 3 uups. For instance, a Commando carrying only a SCAR moves by 30 uups faster than a fully stacked (15/15) player.
+- Reduced falling damage.
+- Added **Bunny-hopping**. While bunny-hopping does not grant a significant speed bonus, it may entertain players during boring trader runs.
+- Other speed boosts, such as Machete-sprint or TraderSpeedBoost, are disabled when using the Speed Boost mutator.
+
+#### Balance
+- Berserker is immune to falling damage
+
+
 ### v9.69.23
 - If a player placed more **pipebombs** than their perk allows to carry, the *oldest* pipebombs get blown up at the beginning of the next wave. Previously, the newest pipebombs got destroyed.
 - Optimized game loading sequence

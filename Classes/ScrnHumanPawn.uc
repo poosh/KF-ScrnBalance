@@ -89,11 +89,14 @@ var     transient Frag          PlayerGrenade;
 
 var bool bTraderSpeedBoost;
 var float TraderSpeedBoost;
+var bool bAllowMacheteBoost;
 var byte MacheteBoost; // that's one of the most retarded things I've done
 var float MacheteResetTime;
 var bool bMacheteDamageBoost;
 var float CarriedInventorySpeed;        // allows items in the inventory to modify the movement speed
 var bool bForceCarriedInventorySpeed;  // if true, force speed to CarriedInventorySpeed. Otherwise CarriedInventorySpeed is a multiplier.
+var float MeleeWeightSpeedReduction;  // speed reduction per current weapon weight (kg*uups) for melee weapons
+var float WeaponWeightSpeedReduction;  // speed reduction per current weapon weight (kg*uups) for non-melee weapons
 
 var transient KFMeleeGun QuickMeleeWeapon;
 var transient KFWeapon WeaponToFixClientState;
@@ -360,7 +363,7 @@ function bool AddInventory( inventory NewItem )
                 // Machete-sprinting. Available only in casual survival game modes (not TSC, Tourney, or Story)
                 mut = class'ScrnBalance'.default.Mut;
                 if ( mut.SrvTourneyMode == 0 && !mut.bTSCGame && !mut.bStoryMode ) {
-                    if ( MacheteBoost < 120 && VSizeSquared(Velocity) > 10000 ) {
+                    if ( bAllowMacheteBoost && MacheteBoost < 120 && VSizeSquared(Velocity) > 10000 ) {
                         if ( MacheteBoost < 60 )
                             MacheteBoost += 3;
                         else if ( MacheteBoost < 100 )
@@ -644,7 +647,10 @@ simulated function ApplyWeaponStats(Weapon NewWeapon)
         if ( Weap.bSpeedMeUp ) {
             if ( KFPRI.ClientVeteranSkill != none )
                 BaseMeleeIncrease += KFPRI.ClientVeteranSkill.Static.GetMeleeMovementSpeedModifier(KFPRI);
-            InventorySpeedModifier = (default.GroundSpeed * BaseMeleeIncrease) - (Weap.Weight * 2);
+            InventorySpeedModifier += default.GroundSpeed * BaseMeleeIncrease - Weap.Weight * MeleeWeightSpeedReduction;
+        }
+        else {
+            InventorySpeedModifier -= Weap.Weight * WeaponWeightSpeedReduction;
         }
 
         if ( ScrnPerk != none ) {
@@ -2917,24 +2923,27 @@ function Crap(optional int Amount)
 
 defaultproperties
 {
-     HealthRestoreRate=7.0
-     HealthSpeedModifier=0.15
-     NoVestClass=class'ScrnNoVestPickup'
-     StandardVestClass=class'ScrnCombatVestPickup'
-     LightVestClass=class'ScrnLightVestPickup'
-     CurrentVestClass=class'ScrnNoVestPickup'
-     ShieldStrengthMax=0.000000
-     bCheckHorzineArmorAch=true
-     strNoSpawnCashToss="Can not drop starting cash"
-     HeadshotSound=sound'ProjectileSounds.impact_metal09'
-     TraderSpeedBoost=1.5
-     CarriedInventorySpeed=1.0
-     PrevPerkLevel=-1
-     MaxFallSpeed=750
-     FartSound=SoundGroup'ScrnSnd.Fart'
-     RequiredEquipment(0)="ScrnBalanceSrv.ScrnKnife"
-     RequiredEquipment(1)="ScrnBalanceSrv.ScrnSingle"
-     RequiredEquipment(2)="ScrnBalanceSrv.ScrnFrag"
-     RequiredEquipment(3)="ScrnBalanceSrv.ScrnSyringe"
-     RequiredEquipment(4)="KFMod.Welder"
+    HealthRestoreRate=7.0
+    HealthSpeedModifier=0.15
+    NoVestClass=class'ScrnNoVestPickup'
+    StandardVestClass=class'ScrnCombatVestPickup'
+    LightVestClass=class'ScrnLightVestPickup'
+    CurrentVestClass=class'ScrnNoVestPickup'
+    ShieldStrengthMax=0.000000
+    bCheckHorzineArmorAch=true
+    strNoSpawnCashToss="Can not drop starting cash"
+    HeadshotSound=sound'ProjectileSounds.impact_metal09'
+    TraderSpeedBoost=1.5
+    CarriedInventorySpeed=1.0
+    MeleeWeightSpeedReduction=2
+    WeaponWeightSpeedReduction=0
+    bAllowMacheteBoost=true
+    PrevPerkLevel=-1
+    MaxFallSpeed=750
+    FartSound=SoundGroup'ScrnSnd.Fart'
+    RequiredEquipment(0)="ScrnBalanceSrv.ScrnKnife"
+    RequiredEquipment(1)="ScrnBalanceSrv.ScrnSingle"
+    RequiredEquipment(2)="ScrnBalanceSrv.ScrnFrag"
+    RequiredEquipment(3)="ScrnBalanceSrv.ScrnSyringe"
+    RequiredEquipment(4)="KFMod.Welder"
 }
