@@ -13,6 +13,7 @@
 [Lost_Champ]: http://steamcommunity.com/profiles/76561198080088953
 [P-Jay]: http://steamcommunity.com/profiles/76561198052307800
 [ImmortalNub]: https://steamcommunity.com/id/ImmortalNub
+[ivanmagadan]: https://steamcommunity.com/id/ivanmagadan/
 <!-- add other peaople too!!! -->
 
 # Version History
@@ -26,6 +27,16 @@
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+
+### v9.69.26
+- Fixed path to Stinky Clot in **FTG** (the green trail).
+- Changed ammo amount received from an ammo box for players with full guns (100% ammo):
+  - if the player has only one weapon that requires ammo (9mm and nades excluding), the gun receives double the amount.
+  - if the player has no guns that require ammo (except 9mm), he/she receives two nades instead of one.
+  - if the player has full ammo and nades, he/she receives extra 60 9mm rounds.
+- Buzzsaw Bow ammo pickup amount lowered to 1 (down from 2) to compensate for the above changes since Buzzsaw Bow usually is the only non-melee weapon in a Berserker's loadout (so Berserker will get two blades anyway).
+- Added duplicate check to `GunSkin` command (thanks [ivanmagadan])
+- New helper functions: `class'ScrnFunctions'.static.AddGunSkin()` and `RemoveGunSkin()`
 
 ### v9.69.25
 #### New Mutator - Speed Boost

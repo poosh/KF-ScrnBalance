@@ -1,5 +1,10 @@
 class BlueWhisp extends RedWhisp;
 
+function vector GetFinalDestination()
+{
+    return TSCGameReplicationInfo(PlayerController(Owner).GameReplicationInfo).BlueShop.Location;
+}
+
 function PostBeginPlay()
 {
     local int i,start;
@@ -33,10 +38,9 @@ function PostBeginPlay()
         }
     }
 
-    if( NumPoints < start+10 )
-    {
-         WayPoints[NumPoints] = TSCGameReplicationInfo(C.GameReplicationInfo).BlueShop.Location;
-         NumPoints++;
+    if( NumPoints < start+10 ) {
+        WayPoints[NumPoints] = GetFinalDestination();
+        NumPoints++;
     }
 
     Velocity = 500 * Normal(WayPoints[0] - Location) + C.Pawn.Velocity;

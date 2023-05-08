@@ -17,6 +17,69 @@ function float GetRespawnTime()
     return fmin(MinRespawnTime, RespawnTime / clamp(Level.Game.NumPlayers, 1, 6));
 }
 
+static function bool AddPerkedAmmo(KFAmmunition Ammo, KFPlayerReplicationInfo KFPRI, optional int Amount)
+{
+    if (Amount == 0) {
+        Amount = Ammo.AmmoPickupAmount;
+    }
+    if (Ammo.AmmoAmount >= Ammo.MaxAmmo) {
+        return false;
+    }
+    if (KFPRI != none && KFPRI.ClientVeteranSkill != none) {
+        Amount = float(Amount) * KFPRI.ClientVeteranSkill.static.GetAmmoPickupMod(KFPRI, ammo) + 0.0001;
+    }
+    if (Amount == 0) {
+        return false;
+    }
+    Ammo.AddAmmo(Amount);
+    return true;
+}
+
+function bool GiveAmmoTo(Pawn P) {
+    local bool bPickedUp;
+    local KFPlayerReplicationInfo KFPRI;
+    local Inventory CurInv;
+    local KFAmmunition ammo, SingleAmmo, FragAmmo, OtherAmmo;
+    local int OtherCount;
+
+    KFPRI = KFPlayerReplicationInfo(P.PlayerReplicationInfo);
+    for ( CurInv = P.Inventory; CurInv != none; CurInv = CurInv.Inventory ) {
+        ammo = KFAmmunition(CurInv);
+        if ( ammo != none && ammo.bAcceptsAmmoPickups && ammo.AmmoAmount < ammo.MaxAmmo ) {
+            bPickedUp = true;
+            if ( ammo.AmmoPickupAmount > 0 ) {
+                AddPerkedAmmo(ammo, KFPRI);
+                if (ammo.IsA('FragAmmo')) {
+                    FragAmmo = ammo;
+                }
+                else if (ammo.IsA('SingleAmmo')) {
+                    SingleAmmo = ammo;
+                }
+                else if (++OtherCount == 1) {
+                    OtherAmmo = ammo;
+                }
+            }
+            else if ( FRand() <= (1.0 / Level.Game.GameDifficulty) ) {
+                ammo.AddAmmo(1);
+            }
+        }
+    }
+
+    if (!bPickedUp) {
+        return false;
+    }
+
+    if (OtherCount <= 1) {
+        // If the player has only one extra gun (except 9mm or nades) - give twice amount to it.
+        // If player has no other guns but 9mm+nades (or all are full), give two nades.
+        // If nades are also full, give exra 60 9mm rounds.
+        (OtherAmmo != none && AddPerkedAmmo(OtherAmmo, KFPRI))
+            || (FragAmmo != none && AddPerkedAmmo(FragAmmo, KFPRI))
+            || (SingleAmmo != none && AddPerkedAmmo(SingleAmmo, KFPRI, 60));
+    }
+    return true;
+}
+
 state Pickup
 {
     function BeginState()
@@ -37,48 +100,17 @@ state Pickup
     function Touch(Actor Other)
     {
         local Pawn P;
-        local Inventory CurInv;
-        local bool bPickedUp;
-        local int AmmoPickupAmount;
-        local KFAmmunition ammo;
-        local KFPlayerReplicationInfo KFPRI;
-        local class<KFVeterancyTypes> Perk;
 
         P = Pawn(Other);
         if ( P == none || P.Controller == none || !P.bCanPickupInventory || !FastTrace(P.Location, Location) )
             return;
-        KFPRI = KFPlayerReplicationInfo(P.PlayerReplicationInfo);
-        if (KFPRI != none )
-            Perk = KFPRI.ClientVeteranSkill;
 
-        for ( CurInv = Other.Inventory; CurInv != none; CurInv = CurInv.Inventory ) {
-            ammo = KFAmmunition(CurInv);
-            if ( ammo != none && ammo.bAcceptsAmmoPickups && ammo.AmmoAmount < ammo.MaxAmmo ) {
-                if ( ammo.AmmoPickupAmount > 0 ) {
-                    if ( Perk != none ) {
-                        AmmoPickupAmount = float(ammo.AmmoPickupAmount)
-                                * Perk.static.GetAmmoPickupMod(KFPRI, ammo) + 0.0001;
-                    }
-                    else {
-                        AmmoPickupAmount = ammo.AmmoPickupAmount;
-                    }
-                    ammo.AddAmmo(AmmoPickupAmount);
-                    bPickedUp = true;
-                }
-                else {
-                    bPickedUp = true;
-                    if ( FRand() <= (1.0 / Level.Game.GameDifficulty) )
-                        ammo.AddAmmo(1);
-                }
-            }
-        }
-
-        if ( bPickedUp ) {
-            AnnouncePickup(Pawn(Other));
+        if (GiveAmmoTo(P)) {
+            AnnouncePickup(P);
             GotoState('Sleeping', 'Begin');
-
-            if ( KFGameType(Level.Game) != none )
+            if ( KFGameType(Level.Game) != none ) {
                 KFGameType(Level.Game).AmmoPickedUp(self);
+            }
         }
     }
 }

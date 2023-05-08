@@ -314,6 +314,37 @@ static function SendPerkList(PlayerController PC)
     }
 }
 
+static function bool AddGunSkin(class<KFWeaponPickup> BasePickup, class<KFWeaponPickup> SkinnedPickup) {
+    local int i;
+
+    if (BasePickup == none || SkinnedPickup == none) {
+        return false;
+    }
+
+    for (i = 0; i < BasePickup.default.VariantClasses.length; ++i) {
+        if (BasePickup.default.VariantClasses[i] == SkinnedPickup) {
+            return false;
+        }
+    }
+
+    BasePickup.default.VariantClasses[i] = SkinnedPickup;
+    return true;
+}
+
+static function RemoveGunSkin(class<KFWeaponPickup> BasePickup, class<KFWeaponPickup> SkinnedPickup) {
+    local int i;
+
+    if (BasePickup == none) {
+        return;
+    }
+
+    for (i = 0; i < BasePickup.default.VariantClasses.length; ++i) {
+        if (BasePickup.default.VariantClasses[i] == SkinnedPickup) {
+            BasePickup.default.VariantClasses.remove(i--, 1);
+        }
+    }
+}
+
 
 defaultproperties
 {

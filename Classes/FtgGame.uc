@@ -500,7 +500,13 @@ function StinkyControllerCompeledAction(StinkyController SC, int CompletedAction
 // show path to base instead of shop
 function ShowPathTo(PlayerController P, int DestinationIndex)
 {
+    ShowPathToBase(P);
+}
+
+function ShowPathToBase(PlayerController P)
+{
     local TSCBaseGuardian gnome;
+    local Actor Dest;
 
     gnome = TeamBases[P.PlayerReplicationInfo.Team.TeamIndex];
     if ( gnome == none || gnome.bHidden || TSCGRI.AtOwnBase(P.Pawn) )
@@ -509,7 +515,13 @@ function ShowPathTo(PlayerController P, int DestinationIndex)
         return;
     }
 
-    if ( P.FindPathToward(gnome, false) != None ) {
+    if (gnome.bHeld && gnome.Holder != none) {
+        Dest = gnome.Holder;
+    }
+    else {
+        Dest = gnome;
+    }
+    if ( P.FindPathToward(Dest, false) != None ) {
         Spawn(BaseWhisp, P,, P.Pawn.Location);
     }
 }
