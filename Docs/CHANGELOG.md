@@ -28,6 +28,12 @@
 
 -------------------------------------------------------------------------------
 
+### v9.69.27
+- Fixed weapon fire **spread** calculation during Zed Time.
+- Fixed an issue that sometimes caused micro-stuttering due to player speed desync.
+- Unfortunately, the micro-stuttering fix prevents **Combat Medic** to gain speed boost in Zed Time.
+- **Combat Medic** deals double damage during Zed Time (as compensation for the speed boost removal)
+
 ### v9.69.26
 - Fixed path to Stinky Clot in **FTG** (the green trail).
 - Changed ammo amount received from an ammo box for players with full guns (100% ammo):

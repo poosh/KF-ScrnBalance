@@ -41,12 +41,6 @@ static function float GetWeaponMovementSpeedBonus(KFPlayerReplicationInfo KFPRI,
     return 0.0; // no speed bonus with Syringe
 }
 
-static function float GetMovementSpeedModifier(KFPlayerReplicationInfo KFPRI, KFGameReplicationInfo KFGRI)
-{
-    // Level.TimeDilation = 1.1 * GameSpeed
-    return 1.20 / fmin(1.0, (KFGRI.Level.TimeDilation / 1.1));
-}
-
 static function int ReduceDamage(KFPlayerReplicationInfo KFPRI, KFPawn Injured, Pawn Instigator, int InDamage, class<DamageType> DmgType)
 {
     if ( !DmgType.default.bArmorStops && class'ScrnBalance'.default.Mut.bHardcore ) {
@@ -67,6 +61,10 @@ static function int ShieldReduceDamage(KFPlayerReplicationInfo KFPRI, ScrnHumanP
 
 static function int AddDamage(KFPlayerReplicationInfo KFPRI, KFMonster Injured, KFPawn DamageTaker, int InDamage, class<DamageType> DmgType)
 {
+    if (KFGameType(KFPRI.Level.Game) != none && KFGameType(KFPRI.Level.Game).bZEDTimeActive) {
+        InDamage *= 2;
+    }
+
     if ( DmgType == default.DefaultDamageTypeNoBonus )
         return InDamage;
 
@@ -127,7 +125,7 @@ static function bool ShowEnemyHealthBars(KFPlayerReplicationInfo KFPRI, KFPlayer
 
 defaultproperties
 {
-    SkillInfo="PERK SKILLS:|30% faster healing|50% faster Syringe recharge|20% faster movement speed|100% larger Medic Gun clip|75% faster attacks with Machete/Katana|Moves faster in Zed Time"
+    SkillInfo="PERK SKILLS:|30% faster healing|50% faster Syringe recharge|20% faster movement speed|100% larger Medic Gun clip|75% faster attacks with Machete/Katana|Double damage in Zed Time"
     CustomLevelInfo="PERK BONUSES (LEVEL %L):|%x more damage with Medic Guns|%a extra Medic ammo|%v better Armor|Up to %z Zed-Time Extensions|%$ discount on Medic Guns/Armor/Katana"
 
     PerkIndex=9

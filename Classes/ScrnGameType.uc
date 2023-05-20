@@ -698,13 +698,19 @@ function HandleZedTime(float dt)
             bSpeedingBackUp = true;
             ZEDTimeNextUpdate = CurrentZEDTimeDuration;
             for( C=Level.ControllerList;C!=None;C=C.NextController ) {
-                if (KFPlayerController(C)!= none)
-                    KFPlayerController(C).ClientExitZedTime();
+                if (C.PlayerReplicationInfo != none) {
+                    if (ScrnPlayerController(C) != none) {
+                        ScrnPlayerController(C).ExitZedTime();;
+                    }
+                    else if (KFPlayerController(C) != none) {
+                        KFPlayerController(C).ClientExitZedTime();
+                    }
+                }
             }
         }
         if ( CurrentZEDTimeDuration <= ZEDTimeNextUpdate || Level.NetMode == NM_StandAlone ) {
             ZEDTimeNextUpdate = CurrentZEDTimeDuration - ZEDTimeTransitionRate;
-            SetGameSpeed(Lerp(CurrentZEDTimeDuration/ZEDTimeTransitionTime, TurboScale, ZedTimeSlomoScale ));
+            SetGameSpeed(Lerp(CurrentZEDTimeDuration/ZEDTimeTransitionTime, TurboScale, ZedTimeSlomoScale));
         }
     }
 }
@@ -800,7 +806,7 @@ function Killed(Controller Killer, Controller Killed, Pawn KilledPawn, class<Dam
                     ZedTimeExtensionsUsed++;
                 }
             }
-            else if ( Level.TimeSeconds - LastZedTimeEvent > 0.1 ) {
+            else if ( Level.TimeSeconds - LastZedTimeEvent > 10.0 ) {
                 // Possibly do a slomo event when a zombie dies, with a higher chance if the zombie is closer to a player
                 if( Killer.Pawn != none && VSizeSquared(Killer.Pawn.Location - KilledPawn.Location) < 22500 ) // 3 meters
                     DramaticEvent(0.05);
@@ -862,10 +868,67 @@ function Killed(Controller Killer, Controller Killed, Pawn KilledPawn, class<Dam
     Super(Invasion).Killed(Killer,Killed,KilledPawn,DamageType);
 }
 
-function DramaticEvent(float BaseZedTimePossibility, optional float DesiredZedTimeDuration)
+function DramaticEvent(float Chance, optional float DesiredZedTimeDuration)
 {
-    if ( bZedTimeEnabled && BaseZedTimePossibility > 0 ) {
-        super.DramaticEvent(BaseZedTimePossibility, DesiredZedTimeDuration);
+    local float TimeSinceLastEvent;
+
+    if (!bZedTimeEnabled || Chance <= 0)
+        return;
+
+    if (Chance < 1.0) {
+        TimeSinceLastEvent = Level.TimeSeconds - LastZedTimeEvent;
+
+        // Don't go in slomo if we were just IN slomo
+        if (TimeSinceLastEvent < 10.0) {
+            return;
+        }
+
+        if( TimeSinceLastEvent > 60.0 ) {
+            Chance *= 4.0;
+        }
+        else if( TimeSinceLastEvent > 30.0 ) {
+            Chance *= 2.0;
+        }
+
+        if (frand() > Chance) {
+            return;
+        }
+    }
+
+    StartZedTime(DesiredZedTimeDuration);
+}
+
+function StartZedTime(optional float DesiredZedTimeDuration) {
+    local Controller C;
+
+    bZEDTimeActive =  true;
+    bSpeedingBackUp = false;
+    LastZedTimeEvent = Level.TimeSeconds;
+
+    if (DesiredZedTimeDuration > 0.0) {
+        CurrentZEDTimeDuration = DesiredZedTimeDuration;
+    }
+    else {
+        CurrentZEDTimeDuration = ZEDTimeDuration;
+    }
+
+    SetGameSpeed(ZedTimeSlomoScale);
+
+    for (C = Level.ControllerList; C != none; C = C.NextController) {
+        if (C.PlayerReplicationInfo == none)
+            continue;
+
+        if (ScrnPlayerController(C) != none) {
+            ScrnPlayerController(C).EnterZedTime();
+        }
+        else if (KFPlayerController(C) != none) {
+            KFPlayerController(C).ClientEnterZedTime();
+        }
+
+        if (KFSteamStatsAndAchievements(C.PlayerReplicationInfo.SteamStatsAndAchievements) != none) {
+            KFSteamStatsAndAchievements(C.PlayerReplicationInfo.SteamStatsAndAchievements).AddZedTime(
+                    CurrentZEDTimeDuration);
+        }
     }
 }
 
@@ -1229,11 +1292,7 @@ function DoBossDeath()
     local KFMonster DeadBoss;
     local int i;
 
-    bZEDTimeActive =  true;
-    bSpeedingBackUp = false;
-    LastZedTimeEvent = Level.TimeSeconds;
-    CurrentZEDTimeDuration = ZEDTimeDuration*2;
-    SetGameSpeed(ZedTimeSlomoScale);
+    StartZedTime(2.0 * ZEDTimeDuration);
 
     if (!bWaveBossInProgress)
         return;
@@ -3399,6 +3458,8 @@ State MatchInProgress
         if (bTradingDoorsOpen) {
             CloseShops();
             TraderProblemLevel = 0;
+            // prevent zed time in the very beginning of the wave
+            LastZedTimeEvent = Level.TimeSeconds;
         }
         if ( TraderProblemLevel < 4 ) {
             if( BootShopPlayers() )

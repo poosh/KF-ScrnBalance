@@ -1613,6 +1613,18 @@ simulated function ClientExitZedTime()
     bZEDTimeActive = false;
 }
 
+function EnterZedTime()
+{
+    bZEDTimeActive = true;
+    ClientEnterZedTime();
+}
+
+function ExitZedTime()
+{
+    bZEDTimeActive = false;
+    ClientExitZedTime();
+}
+
 function bool AllowVoiceMessage(name MessageType)
 {
     local float TimeSinceLastMsg;
@@ -2529,6 +2541,7 @@ exec function PrevWeapon()
         return;
     super.PrevWeapon();
 }
+
 
 // STATES
 
