@@ -4,6 +4,7 @@ var ScrnBalance ScrnBalanceMut;
 var protected transient int ObjTraderIndex;
 
 var globalconfig string VotingHandlerOverride;  // override VotingHandlerType with this one
+var bool bZedTimeEnabled;  // set it to false to completely disable the Zed Time in the game
 
 event InitGame( string Options, out string Error )
 {
@@ -244,7 +245,69 @@ function int ReduceDamage(int Damage, pawn injured, pawn instigatedBy, vector Hi
     // End code from DeathMatch.uc
 }
 
+function DramaticEvent(float Chance, optional float DesiredZedTimeDuration)
+{
+    local float TimeSinceLastEvent;
 
+    if (!bZedTimeEnabled || Chance <= 0)
+        return;
+
+    if (Chance < 1.0) {
+        TimeSinceLastEvent = Level.TimeSeconds - LastZedTimeEvent;
+
+        // Don't go in slomo if we were just IN slomo
+        if (TimeSinceLastEvent < 10.0) {
+            return;
+        }
+
+        if( TimeSinceLastEvent > 60.0 ) {
+            Chance *= 4.0;
+        }
+        else if( TimeSinceLastEvent > 30.0 ) {
+            Chance *= 2.0;
+        }
+
+        if (frand() > Chance) {
+            return;
+        }
+    }
+
+    StartZedTime(DesiredZedTimeDuration);
+}
+
+function StartZedTime(optional float DesiredZedTimeDuration) {
+    local Controller C;
+
+    bZEDTimeActive =  true;
+    bSpeedingBackUp = false;
+    LastZedTimeEvent = Level.TimeSeconds;
+
+    if (DesiredZedTimeDuration > 0.0) {
+        CurrentZEDTimeDuration = DesiredZedTimeDuration;
+    }
+    else {
+        CurrentZEDTimeDuration = ZEDTimeDuration;
+    }
+
+    SetGameSpeed(ZedTimeSlomoScale);
+
+    for (C = Level.ControllerList; C != none; C = C.NextController) {
+        if (C.PlayerReplicationInfo == none)
+            continue;
+
+        if (ScrnPlayerController(C) != none) {
+            ScrnPlayerController(C).EnterZedTime();
+        }
+        else if (KFPlayerController(C) != none) {
+            KFPlayerController(C).ClientEnterZedTime();
+        }
+
+        if (KFSteamStatsAndAchievements(C.PlayerReplicationInfo.SteamStatsAndAchievements) != none) {
+            KFSteamStatsAndAchievements(C.PlayerReplicationInfo.SteamStatsAndAchievements).AddZedTime(
+                    CurrentZEDTimeDuration);
+        }
+    }
+}
 
 // Fixed Spawn rate for >6 players  -- PooSH
 function float GetAdjustedSpawnInterval(float BaseInterval, float UsedWaveTimeElapsed, bool bIgnoreSineMod)
@@ -470,4 +533,5 @@ defaultproperties
     LoginMenuClass="ScrnBalanceSrv.ScrnInvasionLoginMenu"
     PlayerControllerClass=class'ScrnPlayerController'
     PlayerControllerClassName="ScrnBalanceSrv.ScrnPlayerController"
+    bZedTimeEnabled=true
 }

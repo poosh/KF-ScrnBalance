@@ -380,6 +380,7 @@ function bool AddInventory( inventory NewItem )
             }
         }
         CalcCarriedInventorySpeed();
+        CalcGroundSpeed();
         return true;
     }
     return false;
@@ -396,6 +397,7 @@ function DeleteInventory( inventory Item )
             PendingWeapon = QuickMeleeWeapon;
     }
     CalcCarriedInventorySpeed();
+    CalcGroundSpeed();
 }
 
 simulated function SetWeaponAttachment(WeaponAttachment NewAtt)

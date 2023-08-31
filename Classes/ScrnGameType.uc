@@ -2012,6 +2012,8 @@ protected function StartTourney()
     ScrnBalanceMut.SrvTourneyMode = TourneyMode;
     ScrnBalanceMut.bAltBurnMech = true;
     ScrnBalanceMut.bReplacePickups = true;
+    ScrnBalanceMut.bReplaceNades = true;
+    ScrnBalanceMut.bMedicNades = false;
     ScrnBalanceMut.bNoRequiredEquipment = false;
     ScrnBalanceMut.bDynamicLevelCap = false;
     ScrnBalanceMut.bAllowBehindView = false;
@@ -2065,6 +2067,7 @@ function SetupRepLink(ScrnClientPerkRepLink R)
         for ( i = 0; i < ScrnGameLength.AllZeds.length; ++i ) {
             R.Zeds[i] = ScrnGameLength.AllZeds[i];
         }
+        ScrnGameLength.SetupRepLink(R);
     }
 
     if ( TourneyMode == 0 )

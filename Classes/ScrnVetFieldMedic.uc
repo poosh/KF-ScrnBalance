@@ -7,6 +7,20 @@ static function int GetStatValueInt(ClientPerkRepLink StatOther, byte ReqNum)
   return StatOther.RDamageHealedStat;
 }
 
+static function class<Grenade> GetNadeType(KFPlayerReplicationInfo KFPRI)
+{
+    if (class'ScrnBalance'.default.Mut.bMedicNades)
+        return class'ScrnMedicNade';
+
+    return super.GetNadeType(KFPRI);
+}
+
+//cannot cook medic nades
+static function bool CanCookNade(KFPlayerReplicationInfo KFPRI, Weapon Weap)
+{
+    return !class'ScrnBalance'.default.Mut.bMedicNades;
+}
+
 static function float GetSyringeChargeRate(KFPlayerReplicationInfo KFPRI)
 {
     return 2.4 + (0.1 * float(GetClientVeteranSkillLevel(KFPRI))); // Level 6 - Recharges 200% faster

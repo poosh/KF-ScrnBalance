@@ -28,6 +28,34 @@
 
 -------------------------------------------------------------------------------
 
+### v9.69.30
+- New game mode **"10. KF Classic 1016"** - restricts perk and weapon loadout to KF v1016 (2010) - the last balanced vanilla version of the game. (check *KFMapVote.ini*)
+- ScrN **Demolitions Expert** spawns with **M4-203** by default. This weapon was not available in v1016, so the following workaround should be added to *ScrnBalanceSrv.ini* (the default config is already patched) to make Demo spawn with M79 in 1016:
+```ini
+SpawnInventory=6:ScrnBalanceSrv.ScrnM4203Pickup:0-255:60+15:150
+SpawnInventory=6-1:ScrnBalanceSrv.ScrnM79Pickup:0-255:12+1:150
+```
+- New game mode **"11. ScrN Classic 1034"** - restricts perk and weapon loadout to KF v1034 + ScrN Balance v1 (2012) - just before the "M99 era" (no DLC weapons). **Gunslinger** is already available.
+- Per-game weapon and perk restriction. Check `AllowWeaponPackages`, `AllowWeaponLists`, `AllowPerks`, and their "Block-" counterparts in *ScrnGames.ini* .
+- New config file *ScrnWeaponLists.ini* used for per-game weapon restriction.
+- New config option `bMedicNades` in *ScrnBalanceSrv.ini* to restore healing hand grenades for **Field Medic**. The option is disabled by default, and ScrN recommends to keep it that way. Use **M79M/M203M** medic grenade launchers instead. Added by the community request. **Tourney Mode** forces `bMedicNades=false`.
+- Fixed the dual pistol fire order issue on high ping servers, where sometimes only one of the pistols was firing all rounds (thanks [ImmortalNub])
+
+### v9.69.29
+- `mutate zed <alias> spawn` command now spawns the last used zed index instead of the first one.
+  For example:
+```
+mutate zed CL spawn         // spawns regular clot
+mutate zed CL 3 spawn       // spawns xmas clot
+mutate zed CL spawn         // spawns xmas clot
+```
+- This feature can be used on **KFT-ScrnTestGrounds-SE** to pre-select the zed variant to spawn on shooting plates.
+
+### v9.69.28
+- Fixed weapon fire **spread** calculation during Zed Time in **Story Game** too
+- Fixed movement speed calculation after picking/dropping a story item
+- **FTG**: Scaled Stinky Clot's movement speed limits according to the original ground speed. Previously, min and max speed were hardcoded constant values. Now, those scale across difficulty and affected by **Speed Boost** mutator.
+
 ### v9.69.27
 - Fixed weapon fire **spread** calculation during Zed Time.
 - Fixed an issue that sometimes caused micro-stuttering due to player speed desync.

@@ -60,6 +60,7 @@ var vector PistolSlideOffset; //for tactical reload
 var rotator PistolHammerRotation;
 
 var transient int FiringRound;
+var transient int OutOfOrderShots;  // equalize ammo in case when a single pistol was used before
 
 
 replication
@@ -159,9 +160,6 @@ simulated function WeaponTick(float dt)
 simulated function Fire(float F)
 {
     FiringRound = MagAmmoRemaining;
-    // Always make sure that the left pistol has more or equal ammo than the right one.
-    // Because the half-empty reload animation assumes that the left gun still has ammo.
-    ScrnDualDeagleFire(GetFireMode(0)).SetPistolFireOrder( LeftGunAmmoRemaining > RightGunAmmoRemaining() );
     super.Fire(f);
 }
 
@@ -271,8 +269,17 @@ simulated function SyncDualFromSingle()
         SingleGun.MagAmmoRemaining = MagAmmoRemaining - OtherGunAmmoRemaining;
     }
     // left gun ammo must be >= right gun. If not - silently swap magazines
+    // Because the half-empty reload animation assumes that the left gun still has ammo.
     LeftGunAmmoRemaining = max(OtherGunAmmoRemaining, SingleGun.MagAmmoRemaining);
+    OutOfOrderShots = max(0, LeftGunAmmoRemaining - RightGunAmmoRemaining() - 1);
+    SetPistolFireOrder();
 }
+
+simulated function SetPistolFireOrder()
+{
+    ScrnDualDeagleFire(GetFireMode(0)).SetPistolFireOrder(LeftGunAmmoRemaining > RightGunAmmoRemaining());
+}
+
 
 function bool HandlePickupQuery( pickup Item )
 {
@@ -882,6 +889,7 @@ simulated protected function ClientReplicateAmmo(byte SrvMagAmmoRemaining, byte 
     else {
         SetSlidePositions();
     }
+    SetPistolFireOrder();
 }
 
 //after reload tween slide back if tactical reload

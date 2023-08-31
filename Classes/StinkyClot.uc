@@ -2,8 +2,8 @@ class StinkyClot extends StinkyClotZed;
 
 var() name CompleteAnim;
 var() name GrabBone;
-var() float OutOfBaseSpeed;
-var() float MaxBoostSpeed;
+var() float OutOfBaseSpeedMod, MaxBoostSpeedMod;  // multipliers for GroundSpeed
+var transient float OutOfBaseSpeed, MaxBoostSpeed;
 
 var float NextStuckTestTime;
 var transient vector OldLocation;
@@ -37,6 +37,9 @@ simulated function PostBeginPlay()
         TeleportSound = sound(DynamicLoadObject(TeleportSoundRef, class'Sound', true));
         default.TeleportSound = TeleportSound;
     }
+
+    OutOfBaseSpeed = OutOfBaseSpeedMod * OriginalGroundSpeed;
+    MaxBoostSpeed = MaxBoostSpeedMod * OriginalGroundSpeed;
 }
 
 simulated function PostNetBeginPlay()
@@ -384,8 +387,8 @@ defaultproperties
     OnlineHeadshotOffset=(X=9,Z=-4)
 
     GroundSpeed=42
-    OutOfBaseSpeed=31.5
-    MaxBoostSpeed=150
+    OutOfBaseSpeedMod=0.65
+    MaxBoostSpeedMod=3.0
     Health=1000
     HealthMax=1000
     HeadHealth=1000

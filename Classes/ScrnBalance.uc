@@ -27,7 +27,7 @@ var localized string strOnlyAdmin, strOnlyScrnGT, strOnlyNotInTourney;
 var transient int SrvFlags; // used for network replication of the values below
 var globalconfig bool bSpawn0, bNoStartCashToss, bMedicRewardFromTeam;
 var globalconfig bool bAltBurnMech;
-var globalconfig bool bReplaceNades, bShieldWeight, bBeta;
+var globalconfig bool bReplaceNades, bMedicNades, bShieldWeight, bBeta;
 var globalconfig bool bShowDamages, bAllowWeaponLock;
 var deprecated bool bManualReload, bForceManualReload;
 var globalconfig bool bNoPerkChanges, bPerkChangeBoss, bPerkChangeDead, b10Stars;
@@ -1757,7 +1757,7 @@ function SetReplicationData()
     if ( bNoStartCashToss )                 SrvFlags = SrvFlags | 0x00000004;
     if ( bMedicRewardFromTeam )             SrvFlags = SrvFlags | 0x00000008;
 
-    // if ( bWeaponFix )                       SrvFlags = SrvFlags | 0x00000010;
+    if ( bMedicNades )                      SrvFlags = SrvFlags | 0x00000010;
     if ( bAltBurnMech )                     SrvFlags = SrvFlags | 0x00000020;
     // if ( bGunslinger )                      SrvFlags = SrvFlags | 0x00000040;
     if ( bTraderSpeedBoost )                SrvFlags = SrvFlags | 0x00000080;
@@ -1792,7 +1792,7 @@ simulated function LoadReplicationData()
     bNoStartCashToss                   = (SrvFlags & 0x00000004) > 0;
     bMedicRewardFromTeam               = (SrvFlags & 0x00000008) > 0;
 
-    // bWeaponFix                         = (SrvFlags & 0x00000010) > 0;
+    bMedicNades                        = (SrvFlags & 0x00000010) > 0;
     bAltBurnMech                       = (SrvFlags & 0x00000020) > 0;
     // bGunslinger                        = (SrvFlags & 0x00000040) > 0;
     bTraderSpeedBoost                  = (SrvFlags & 0x00000080) > 0;
@@ -3202,7 +3202,7 @@ function RegisterVersion(string ItemName, int Version)
 
 defaultproperties
 {
-    VersionNumber=96927
+    VersionNumber=96930
     GroupName="KF-Scrn"
     FriendlyName="ScrN Balance"
     Description="Total rework of KF1 to make it modern and the best game in the world while sticking to the roots of the original."

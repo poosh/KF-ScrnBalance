@@ -53,6 +53,10 @@ event ModeDoFire()
     super(KFFire).ModeDoFire();
 
     InitEffects();
+    if (ScrnWeap.OutOfOrderShots > 0) {
+        ScrnWeap.OutOfOrderShots--;
+        bFireLeft = false;  // gets swaped below
+    }
     SetPistolFireOrder(!bFireLeft);
 }
 

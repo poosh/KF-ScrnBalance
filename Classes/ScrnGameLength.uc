@@ -42,7 +42,12 @@ var config float LaterWaveSpawnCooldown;
 var config byte MinDifficulty, MaxDifficulty;
 var config bool bForceTourney;
 var config int TourneyFlags;
-
+var config array<name> AllowWeaponPackages;
+var config array<name> BlockWeaponPackages;
+var config array<string> AllowWeaponLists;
+var config array<string> BlockWeaponLists;
+var config array<name> AllowPerks;
+var config array<name> BlockPerks;
 // Doom3
 var config bool Doom3DisableSuperMonsters;
 var config byte Doom3DisableSuperMonstersFromWave;
@@ -97,9 +102,16 @@ var transient int ZedsBeforeSpecial;
 var transient bool bLoadedSpecial;  // is the last loaded squad special
 var transient int LoadedCount;  // loaded monster count (without squad breaks)
 var transient float PlayerCountOverrideForHealth;
+var transient array<name> AllowWeapons, BlockWeapons;
 
 var transient float WaveEndTime;
 var transient int WaveCounter;
+
+struct SZedCmdCache {
+    var string Alias;
+    var int LastCmdIdx;
+};
+var transient array<SZedCmdCache> ZedCmdCache;
 
 // Called from InitGame()
 // WARNING! GameReplicationInfo does not yet exist at this moment
@@ -265,6 +277,8 @@ function LoadGame(ScrnGameType MyGame)
     if ( Game.bUseEndGameBoss ) {
         Game.FinalWave--;  // the boss wave is after the final wave, e.g., wave 11/10
     }
+
+    LoadWeaponLists();
 }
 
 function PickRandomZedEvent()
@@ -357,6 +371,24 @@ function AddVoting()
     }
 }
 
+function int FindZedCmdCache(String Alias, bool bCreate)
+{
+    local int i;
+
+    for (i = 0; i < ZedCmdCache.Length; ++i) {
+        if (ZedCmdCache[i].Alias == Alias) {
+            return i;
+        }
+    }
+    if (bCreate) {
+        ZedCmdCache.insert(i, 1);
+        ZedCmdCache[i].Alias = Alias;
+        ZedCmdCache[i].LastCmdIdx = 1;
+        return i;
+    }
+    return -1;
+}
+
 // allows admins to control zed infos via MUTATE ZED <cmd>
 function ZedCmd(PlayerController Sender, string cmd)
 {
@@ -372,9 +404,11 @@ function ZedCmd(PlayerController Sender, string cmd)
     local byte SpawnCount, Spawned;
     local bool bSummon;
     local string msg;
+    local int CacheIdx;
 
     BoolValue = -1;
     c.B = 1;
+    CacheIdx = -1;
 
     Split(cmd, " ", args);
     if ( args.length == 0 || args[0] == "" ) {
@@ -424,9 +458,6 @@ function ZedCmd(PlayerController Sender, string cmd)
                     bNeedChanges = true;
             }
         }
-        else {
-            search_idx = 1;
-        }
     }
 
     if ( bNeedChanges && !Mut.CheckAdmin(Sender) )
@@ -438,45 +469,52 @@ function ZedCmd(PlayerController Sender, string cmd)
         bChanged = false;
 
         for ( j = 0; j < ZedInfos[i].Zeds.length; ++j ) {
-            if ( ZedInfos[i].Zeds[j].Alias == args[0] ) {
-                ++cur_idx;
-                if ( ZedInfos[i].Zeds[j].bDisabled ) {
-                    c.R = 255;
-                    c.G = 1;
-                }
-                else {
-                    c.R = 1;
-                    c.G = 255;
-                }
+            if ( ZedInfos[i].Zeds[j].Alias != args[0] )
+                continue;
 
-                if ( cur_idx == search_idx ) {
-                    if ( BoolValue != -1 ) {
-                        ZedInfos[i].Zeds[j].bDisabled = !bool(BoolValue);
-                        bChanged = true;
-                    }
-                    if ( bSetPct) {
-                        ZedInfos[i].Zeds[j].Pct = Pct;
-                        bChanged = true;
-                    }
-                    if (bSummon) {
-                        Spawned = SummonZed(Sender, ZedInfos[i].Zeds[j].Alias, ZedInfos[i].Zeds[j].ZedClass, msg);
-                    }
-                    else if ( SpawnCount > 0 ) {
-                        Game.TotalMaxMonsters += SpawnCount;
-                        Spawned = SpawnZed(ZedInfos[i].Zeds[j].Alias, ZedInfos[i].Zeds[j].ZedClass, SpawnCount, msg);
-                        // if not all zeds are spawned, restore the original TotalMaxMonsters
-                        Game.TotalMaxMonsters -= (SpawnCount - Spawned);
-                    }
-                    c.R = 255;
-                    c.G = 255;
-                }
-                Sender.ClientMessage(class'ScrnFunctions'.static.ColorStringC(
-                    class'ScrnF'.static.LPad(string(cur_idx), 3)
-                        @ class'ScrnF'.static.RPad(eval(ZedInfos[i].Zeds[j].bDisabled, "OFF", "ON"), 5)
-                        @ class'ScrnF'.static.LPad(eval(ZedInfos[i].Zeds[j].Pct == 0, "AUTO", string(ZedInfos[i].Zeds[j].Pct)), 7)
-                        @ ZedInfos[i].Zeds[j].ZedClass
-                    , c ));
+            ++cur_idx;
+
+            if (CacheIdx == -1) {
+                CacheIdx = FindZedCmdCache(args[0], true);
             }
+
+            if ( ZedInfos[i].Zeds[j].bDisabled ) {
+                c.R = 255;
+                c.G = 1;
+            }
+            else {
+                c.R = 1;
+                c.G = 255;
+            }
+
+            if ( (cur_idx == search_idx) || (search_idx == 0 && cur_idx == ZedCmdCache[CacheIdx].LastCmdIdx) ) {
+                if ( BoolValue != -1 ) {
+                    ZedInfos[i].Zeds[j].bDisabled = !bool(BoolValue);
+                    bChanged = true;
+                }
+                if ( bSetPct) {
+                    ZedInfos[i].Zeds[j].Pct = Pct;
+                    bChanged = true;
+                }
+                if (bSummon) {
+                    Spawned = SummonZed(Sender, ZedInfos[i].Zeds[j].Alias, ZedInfos[i].Zeds[j].ZedClass, msg);
+                }
+                else if ( SpawnCount > 0 ) {
+                    Game.TotalMaxMonsters += SpawnCount;
+                    Spawned = SpawnZed(ZedInfos[i].Zeds[j].Alias, ZedInfos[i].Zeds[j].ZedClass, SpawnCount, msg);
+                    // if not all zeds are spawned, restore the original TotalMaxMonsters
+                    Game.TotalMaxMonsters -= (SpawnCount - Spawned);
+                }
+                c.R = 255;
+                c.G = 255;
+                ZedCmdCache[CacheIdx].LastCmdIdx = cur_idx;
+            }
+            Sender.ClientMessage(class'ScrnFunctions'.static.ColorStringC(
+                class'ScrnF'.static.LPad(string(cur_idx), 3)
+                    @ class'ScrnF'.static.RPad(eval(ZedInfos[i].Zeds[j].bDisabled, "OFF", "ON"), 5)
+                    @ class'ScrnF'.static.LPad(eval(ZedInfos[i].Zeds[j].Pct == 0, "AUTO", string(ZedInfos[i].Zeds[j].Pct)), 7)
+                    @ ZedInfos[i].Zeds[j].ZedClass
+                , c ));
         }
         if ( bChanged )
             ZedInfos[i].SaveConfig();
@@ -1327,6 +1365,105 @@ function int CalcStartingCash(PlayerController PC)
         result += Game.StartingCash;
     }
     return result;
+}
+
+function LoadWeaponList(string WLName, out array<string> LoadedLists, out array<name> LoadedWeapons)
+{
+    local ScrnWeaponList wl;
+    local int i, j;
+
+    if (class'ScrnFunctions'.static.SearchStrIgnoreCase(LoadedLists, WLName) != -1)
+        return;  // already loaded
+
+    LoadedLists[LoadedLists.length] = WLName;
+
+    wl = new(none, WLName) class'ScrnWeaponList';
+    if (wl.WeaponLists.Length > 0) {
+        for (i = 0; i < wl.WeaponLists.Length; ++i) {
+            LoadWeaponList(wl.WeaponLists[i], LoadedLists, LoadedWeapons);
+        }
+    }
+    else if (wl.Weapons.Length == 0) {
+        return;
+    }
+
+    j = LoadedWeapons.Length;
+    LoadedWeapons.Length = j + wl.Weapons.Length;
+    for (i = 0; i < wl.Weapons.Length; ++i) {
+        LoadedWeapons[j++] = wl.Weapons[i];
+    }
+    Log("Weapon list '" $ WLName $ "' loaded ("$wl.Weapons.Length$" weapons)", class.name);
+}
+
+
+function LoadWeaponLists()
+{
+    local int i, j;
+    local array<string> LoadedAllowedLists, LoadedBlockedLists;
+
+    AllowWeapons.length = 0;
+    BlockWeapons.length = 0;
+
+    for (i = 0; i < AllowWeaponLists.Length; ++i) {
+        LoadWeaponList(AllowWeaponLists[i], LoadedAllowedLists, AllowWeapons);
+    }
+    for (i = 0; i < BlockWeaponLists.Length; ++i) {
+        LoadWeaponList(BlockWeaponLists[i], LoadedBlockedLists, BlockWeapons);
+    }
+
+    if (AllowWeapons.Length > 0 && BlockWeapons.Length > 0) {
+        // if AllowWeapons specified, only those can appear in the game.
+        // So we simply remove blocked weapons from the allowed list.
+        // If a blocked weapon is not in the allowed list, it is not allowed anyway.
+        for (i = 0; i < BlockWeapons.Length; ++i) {
+            for (j = AllowWeapons.Length - 1; j >= 0; --j) {
+                if (BlockWeapons[i] == AllowWeapons[j]) {
+                    AllowWeapons.remove(j, 1);
+                    // keep searching, as there may be duplicates
+                }
+            }
+        }
+        BlockWeapons.Length = 0;
+    }
+}
+
+function bool IsItemAllowed(class<Pickup> PC)
+{
+    local class<ScrnFunctions> f;
+
+    f = class'ScrnFunctions';
+    return PC != none
+            && (AllowWeaponPackages.Length == 0 || f.static.SearchName(AllowWeaponPackages, PC.outer.name) != -1)
+            && (BlockWeaponPackages.Length == 0 || f.static.SearchName(BlockWeaponPackages, PC.outer.name) == -1)
+            && (AllowWeapons.Length == 0 || f.static.SearchName(AllowWeapons, PC.name) != -1)
+            && (BlockWeapons.Length == 0 || f.static.SearchName(BlockWeapons, PC.name) == -1);
+}
+
+function bool IsPerkAllowed(class<ScrnVeterancyTypes> Perk)
+{
+    local class<ScrnFunctions> f;
+
+    f = class'ScrnFunctions';
+    return Perk != none
+            && (AllowPerks.Length == 0 || f.static.SearchName(AllowPerks, Perk.name) != -1)
+            && (BlockPerks.Length == 0 || f.static.SearchName(BlockPerks, Perk.name) == -1);
+}
+
+function SetupRepLink(ScrnClientPerkRepLink R)
+{
+    local int i;
+
+    for (i = R.ShopInventory.length-1; i >= 0; --i ) {
+        if (!IsItemAllowed( R.ShopInventory[i].PC)) {
+            R.ShopInventory.remove(i, 1);
+        }
+    }
+
+    for (i = R.CachePerks.length-1; i >= 0; --i ) {
+        if (!IsPerkAllowed(class<ScrnVeterancyTypes>((R.CachePerks[i].PerkClass)))) {
+            R.CachePerks.remove(i, 1);
+        }
+    }
 }
 
 defaultproperties

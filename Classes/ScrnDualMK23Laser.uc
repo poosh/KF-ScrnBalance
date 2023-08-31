@@ -439,7 +439,9 @@ function GiveTo( pawn Other, optional Pickup Pickup )
     if ( AmmoToAdd > 0 ) {
         AddAmmo(AmmoToAdd, 0);
     }
+    LeftGunAmmoRemaining = MagAmmoRemaining / 2;
 }
+
 
 defaultproperties
 {

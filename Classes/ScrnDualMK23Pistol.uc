@@ -19,6 +19,7 @@ var vector PistolSlideOffset; //for tactical reload
 var float ShortReloadFrameSkip; //for tactical reload
 
 var transient int FiringRound;
+var transient int OutOfOrderShots;  // equalize ammo in case when a single pistol was used before
 
 
 replication
@@ -137,10 +138,6 @@ simulated function Timer()
 simulated function Fire(float F)
 {
     FiringRound = MagAmmoRemaining;
-    // Always make sure that the left pistol has less or equal ammo than the right one.
-    // Because the half-empty reload animation assumes that the right gun still has ammo.
-    // this is opptosite to Dual HC
-    ScrnDualMK23Fire(GetFireMode(0)).SetPistolFireOrder( LeftGunAmmoRemaining < RightGunAmmoRemaining() );
     super.Fire(f);
 }
 
@@ -248,9 +245,17 @@ simulated function SyncDualFromSingle()
         OtherGunAmmoRemaining = max(MagAmmoRemaining - SingleGun.MagAmmoRemaining, 0);
         SingleGun.MagAmmoRemaining = MagAmmoRemaining - OtherGunAmmoRemaining;
     }
-    // left gun ammo must be <= right gun. If not - silently swap magazines
+    // left gun ammo must be <= right gun. If not - silently swap magazines.
+    // Because the half-empty reload animation assumes that the right gun still has ammo.
     // this is opposite to Dual HC
     LeftGunAmmoRemaining = min(OtherGunAmmoRemaining, SingleGun.MagAmmoRemaining);
+    OutOfOrderShots = max(0, RightGunAmmoRemaining() - LeftGunAmmoRemaining - 1);
+    SetPistolFireOrder();
+}
+
+simulated function SetPistolFireOrder()
+{
+    ScrnDualMK23Fire(GetFireMode(0)).SetPistolFireOrder(LeftGunAmmoRemaining >= RightGunAmmoRemaining());
 }
 
 function AttachToPawn(Pawn P)
@@ -644,6 +649,7 @@ simulated protected function ClientReplicateAmmo(byte SrvMagAmmoRemaining, byte 
     else {
         SetSlidePositions();
     }
+    SetPistolFireOrder();
 }
 
 //after reload tween slide back if tactical reload

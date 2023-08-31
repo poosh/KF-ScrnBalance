@@ -11,6 +11,11 @@ static function class<Grenade> GetNadeType(KFPlayerReplicationInfo KFPRI)
     return super(ScrnVeterancyTypes).GetNadeType(KFPRI); // no healing nades
 }
 
+static function bool CanCookNade(KFPlayerReplicationInfo KFPRI, Weapon Weap)
+{
+    return false;
+}
+
 static function float GetSyringeChargeRate(KFPlayerReplicationInfo KFPRI)
 {
     return 1.50;  // Recharges 50% faster

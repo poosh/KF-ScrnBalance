@@ -19,7 +19,7 @@ function SetPistolFireOrder(bool bNextFireLeft)
 {
     bFireLeft = bNextFireLeft;
 
-    if (bFireLeft)
+    if (!bFireLeft)
     {
         ScrnWeap.altFlashBoneName = ScrnWeap.default.FlashBoneName;
         ScrnWeap.FlashBoneName = ScrnWeap.default.altFlashBoneName;
@@ -52,6 +52,10 @@ event ModeDoFire()
     super(KFFire).ModeDoFire();
 
     InitEffects();
+    if (ScrnWeap.OutOfOrderShots > 0) {
+        ScrnWeap.OutOfOrderShots--;
+        bFireLeft = true;  // gets swaped below
+    }
     SetPistolFireOrder(!bFireLeft);
 }
 
@@ -232,6 +236,7 @@ function DoFireEffect()
 
 defaultproperties
 {
+    bFireLeft=true
     MaxPenetrations=0
     PenDmgReduction=0.500000
     DamageType=class'ScrnDamTypeDualMK23Pistol'
