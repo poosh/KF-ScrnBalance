@@ -30,6 +30,7 @@ echo Copying release files...
 xcopy /F /I /Y Configs\*.ini %RELEASEDIR%
 xcopy /F /I /Y Configs\*.sample %RELEASEDIR%
 xcopy /F /I /Y Docs\Release\* %RELEASEDIR%
+xcopy /F /I /Y Docs\CHANGELOG.md %RELEASEDIR%
 
 mkdir %RELEASEDIR%\System 2>nul
 xcopy /F /I /Y %KFDIR%\System\%KFPACKAGE%.int %RELEASEDIR%\System\

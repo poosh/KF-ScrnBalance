@@ -1,16 +1,18 @@
 class ScrnLAWFire extends LAWFire;
 
-//disabled instant zoom out
-function ServerPlayFiring()
+
+function bool AllowFire()
 {
-    Super(KFShotgunFire).ServerPlayFiring();
+     if (Weapon.Level.NetMode != NM_DedicatedServer && Instigator != none
+               && Instigator.IsHumanControlled() && Instigator.IsLocallyControlled())
+     {
+          if (!KFWeapon(Weapon).bAimingRifle || KFWeapon(Weapon).bZoomingIn) {
+               return false;
+          }
+     }
+     return Weapon.AmmoAmount(ThisModeNum) >= AmmoPerFire;
 }
 
-//disabled instant zoom out
-function PlayFiring()
-{
-    Super(KFShotgunFire).PlayFiring();
-}
 
 defaultproperties
 {

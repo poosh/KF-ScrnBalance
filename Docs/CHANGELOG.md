@@ -28,6 +28,15 @@
 
 -------------------------------------------------------------------------------
 
+### v9.69.33
+- **Pre-Aiming** - allows holding the Aim button while reloading or switching weapons to begin aiming ASAP. Originally, premature button press did nothing and required the player to release and press the button again.
+- Fixed an issue where it was possible to set players on fire despite their immunity to fire damage (Firebugs, teammates, etc. )
+- Fixed Trader Speed Boost at the start of the Trader Time (thanks *Mortimer*)
+- Trader Speed Boost is applied only when Trader doors are open
+- Possible fix for the "LAW not firing" bug (thanks [ivanmagadan])
+- Achievement names and descriptions made localized in the following packages:
+  ScrnBalanceSrv, ScrnWeaponPack, ScrnHTec, ScrnD3Ach
+
 ### v9.69.30
 - New game mode **"10. KF Classic 1016"** - restricts perk and weapon loadout to KF v1016 (2010) - the last balanced vanilla version of the game. (check *KFMapVote.ini*)
 - ScrN **Demolitions Expert** spawns with **M4-203** by default. This weapon was not available in v1016, so the following workaround should be added to *ScrnBalanceSrv.ini* (the default config is already patched) to make Demo spawn with M79 in 1016:

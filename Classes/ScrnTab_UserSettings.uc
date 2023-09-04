@@ -144,7 +144,7 @@ function ShowPanel(bool bShow)
     }
 
     lbl_Version.Caption = class'ScrnBalance'.default.FriendlyName @ class'ScrnBalance'.static.GetVersionStr();
-    lbl_CR.Caption = "Copyright (c) 2012-2022 PU Developing IK, Latvia. All Rights Reserved.";
+    lbl_CR.Caption = "Copyright (c) 2012-2023 PU Developing IK, Latvia. All Rights Reserved.";
     ServerStatus();
 
     PC = ScrnPlayerController(PlayerOwner());

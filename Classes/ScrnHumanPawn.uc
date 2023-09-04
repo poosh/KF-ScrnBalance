@@ -86,9 +86,9 @@ var class<KFWeapon> SpecWeapon;
 var byte AmmoStatus;
 var byte SpecWeight, SpecMagAmmo, SpecMags, SpecSecAmmo, SpecNades;
 
-var     transient Frag          PlayerGrenade;
+var transient Frag PlayerGrenade;
 
-var bool bTraderSpeedBoost;
+var deprecated bool bTraderSpeedBoost;
 var float TraderSpeedBoost;
 var bool bAllowMacheteBoost;
 var byte MacheteBoost; // that's one of the most retarded things I've done
@@ -99,6 +99,7 @@ var bool bForceCarriedInventorySpeed;  // if true, force speed to CarriedInvento
 var float MeleeWeightSpeedReduction;  // speed reduction per current weapon weight (kg*uups) for melee weapons
 var float WeaponWeightSpeedReduction;  // speed reduction per current weapon weight (kg*uups) for non-melee weapons
 var transient bool bWasMovementDisabled;
+var transient bool bWantsZoom;
 
 var transient KFMeleeGun QuickMeleeWeapon;
 var transient KFWeapon WeaponToFixClientState;
@@ -150,7 +151,6 @@ simulated function PostBeginPlay()
     if ( SoundGroupClass == none )
         SoundGroupClass = Class'KFMod.KFMaleSoundGroup';
 
-    bTraderSpeedBoost = class'ScrnBalance'.default.Mut.bTraderSpeedBoost;
 }
 
 simulated function PostNetBeginPlay()
@@ -209,7 +209,6 @@ function ReplaceRequiredEquipment()
     }
 }
 
-
 function RecalcWeight()
 {
     local Inventory Inv;
@@ -229,7 +228,6 @@ function RecalcWeight()
         CurrentWeight +=  Weap.Weight;
     }
 }
-
 
 simulated function ModifyVelocity(float DeltaTime, vector OldVelocity)
 {
@@ -261,6 +259,7 @@ function CalcGroundSpeed()
     local float WeightMod, MovementMod;
     local float EncumbrancePercentage;
     local KFGameReplicationInfo KFGRI;
+    local ScrnBalance Mut;
 
     if (Role < ROLE_Authority) {
         // let the server calculate GroundSpeed and replicate it to us
@@ -268,6 +267,7 @@ function CalcGroundSpeed()
     }
 
     KFGRI = KFGameReplicationInfo(Level.GRI);
+    Mut = class'ScrnBalance'.default.Mut;
 
     if ( bForceCarriedInventorySpeed ) {
         GroundSpeed = CarriedInventorySpeed;
@@ -292,7 +292,7 @@ function CalcGroundSpeed()
         MovementMod *= KFPRI.ClientVeteranSkill.static.GetMovementSpeedModifier(KFPRI, KFGRI);
     GroundSpeed *= MovementMod;
 
-    if ( bTraderSpeedBoost && !KFGRI.bWaveInProgress )
+    if ( Mut.bTraderSpeedBoost && Mut.KF.bTradingDoorsOpen )
         GroundSpeed *= TraderSpeedBoost;
 
     GroundSpeed += MacheteBoost;
@@ -1612,8 +1612,8 @@ function bool GiveHealth(int HealAmount, int _unused_HealMax)
 
     if( BurnDown > 0 ) {
         if( BurnDown > 1 )
-            BurnDown *= 0.5;
-        LastBurnDamage *= 0.5;
+            BurnDown /= 2;
+        LastBurnDamage /= 2;
     }
 
     // Don't let them heal more than the max health
@@ -1851,6 +1851,10 @@ simulated function Tick(float DeltaTime)
 
     if ( bViewTarget )
         UpdateSpecInfo();
+
+    if (bWantsZoom) {
+        CheckZoom();
+    }
 }
 
 // each weapon has own light battery
@@ -2275,6 +2279,9 @@ simulated function TakeDamage( int Damage, Pawn InstigatedBy, Vector Hitlocation
     }
 
     super(xPawn).TakeDamage(Damage, instigatedBy, hitLocation, momentum, damageType);
+    Damage = OldHealth - Health;
+    if (Damage == 0)
+        return;
 
     if( class<DamTypeVomit>(DamageType)!=none ) {
         BileCount=7;
@@ -2318,7 +2325,7 @@ simulated function TakeDamage( int Damage, Pawn InstigatedBy, Vector Hitlocation
                         BurnDown = 5;
                     BurnInstigator = InstigatedBy;
                     LastBurnDamage = OriginalDamage;
-                    bBurnified  = true;
+                    bBurnified = true;
                 }
             }
         }
@@ -2949,6 +2956,42 @@ function Crap(optional int Amount)
     TP.Velocity = TP.Speed * Vector(r);
     TP.SetRotation(r);
 }
+
+exec function IronSightZoomIn()
+{
+    local KFWeapon W;
+
+    bWantsZoom = true;
+    W = KFWeapon(Weapon);
+    if (W != none) {
+        W.IronSightZoomIn();
+    }
+}
+
+exec function IronSightZoomOut()
+{
+    local KFWeapon W;
+
+    bWantsZoom = false;
+    W = KFWeapon(Weapon);
+    if (W != none) {
+        W.IronSightZoomOut();
+    }
+}
+
+function CheckZoom()
+{
+    local KFWeapon W;
+
+    if (!bWantsZoom)
+        return;
+
+    W = KFWeapon(Weapon);
+    if (W != none && W.bHasAimingMode && !W.bAimingRifle && !W.bZoomingIn) {
+        W.IronSightZoomIn();
+    }
+}
+
 
 defaultproperties
 {

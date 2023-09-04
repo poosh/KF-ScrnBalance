@@ -205,8 +205,6 @@ simulated function LoadMutSettings()
     if ( Mut != none ) {
         if ( Mut.bHardCore )
             bOtherPlayerLasersBlue = false;
-        if ( ScrnPawn != none )
-            ScrnPawn.bTraderSpeedBoost = Mut.bTraderSpeedBoost;
     }
     else {
         //this shouldn't happen
