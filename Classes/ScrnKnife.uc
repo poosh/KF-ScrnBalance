@@ -85,6 +85,16 @@ simulated function PostBeginPlay()
     bCanThrow = KF_StoryGRI(Level.GRI) != none; // throw knife on dying only in story mode
 }
 
+simulated function bool PutDown()
+{
+    local bool result;
+
+    result = super.PutDown();
+    if (result && Instigator != none && Instigator.PendingWeapon != self && KFWeapon(Instigator.PendingWeapon) != none) {
+        KFWeapon(Instigator.PendingWeapon).ClientGrenadeState = GN_BringUp;  // force QuickBringUpTime
+    }
+    return result;
+}
 
 
 defaultproperties
@@ -97,8 +107,8 @@ defaultproperties
     QuickPutDownTime=0.01  // 0.15
     QuickBringUpTime=0.01  // 0.15
 
-    // PutDownAnimRate=2.0
-    // SelectAnimRate=2.0
-    // BringUpTime=0.25
-    // PutDownTime=0.25
+    PutDownAnimRate=3.333333
+    SelectAnimRate=5.666667
+    BringUpTime=0.10
+    PutDownTime=0.10
 }

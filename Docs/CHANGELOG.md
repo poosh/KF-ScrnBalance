@@ -28,6 +28,10 @@
 
 -------------------------------------------------------------------------------
 
+### v9.69.34
+- Added **Sprint** key binding, which results in `GetWeapon ScrnKnife | onrelease SwitchToLastWeapon`. In other words, the sprint key selects the knife while holding it and switches back to the last weapon on release. KF1 players have been doing that manually for over a decade with no problems, but those who moved from KF2 keep complaining.
+- Switching from/to the knife made faster for fluent "sprinting".
+
 ### v9.69.33
 - **Pre-Aiming** - allows holding the Aim button while reloading or switching weapons to begin aiming ASAP. Originally, premature button press did nothing and required the player to release and press the button again.
 - Fixed an issue where it was possible to set players on fire despite their immunity to fire damage (Firebugs, teammates, etc. )
