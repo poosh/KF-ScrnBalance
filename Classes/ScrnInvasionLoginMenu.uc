@@ -26,6 +26,11 @@ function InternalOnClose(optional Bool bCanceled)
 }
 */
 
+function ActivateScrnSettingsTab()
+{
+    c_Main.ActivateTab(c_Main.TabStack[6], true);
+}
+
 
 // copy-pasted from SRInvasionLoginMenu to change SRTab_MidGamePerks with ScrnTab_MidGamePerks
 function InitComponent(GUIController MyController, GUIComponent MyOwner)

@@ -27,7 +27,8 @@ var localized string strOnlyAdmin, strOnlyScrnGT, strOnlyNotInTourney;
 var transient int SrvFlags; // used for network replication of the values below
 var globalconfig bool bSpawn0, bNoStartCashToss, bMedicRewardFromTeam;
 var globalconfig bool bAltBurnMech;
-var globalconfig bool bReplaceNades, bMedicNades, bShieldWeight, bBeta;
+var deprecated bool bReplaceNades;
+var globalconfig bool bMedicNades, bShieldWeight, bBeta;
 var globalconfig bool bShowDamages, bAllowWeaponLock;
 var deprecated bool bManualReload, bForceManualReload;
 var globalconfig bool bNoPerkChanges, bPerkChangeBoss, bPerkChangeDead, b10Stars;
@@ -389,7 +390,6 @@ simulated function InitSettings()
     ApplyWeaponFix();
 
     if (bShieldWeight) {
-        bReplaceNades = true;
         class'ScrnFrag'.default.Weight = 0;
         class'ScrnHumanPawn'.default.StandardVestClass.default.Weight = 1;
     }
@@ -1629,7 +1629,6 @@ static function FillPlayInfo(PlayInfo PlayInfo)
     PlayInfo.AddSetting(default.BonusCapGroup,"bSpawn0","Zero Cost of Initial Inventory",1,0, "Check");
     PlayInfo.AddSetting(default.BonusCapGroup,"bReplacePickups","Replace Pickups",1,0, "Check");
     PlayInfo.AddSetting(default.BonusCapGroup,"bReplacePickupsStory","Replace Pickups (Story)",1,0, "Check");
-    PlayInfo.AddSetting(default.BonusCapGroup,"bReplaceNades","Replace Grenades",1,0, "Check");
     PlayInfo.AddSetting(default.BonusCapGroup,"bShieldWeight","Armor Has Weight",1,0, "Check");
     PlayInfo.AddSetting(default.BonusCapGroup,"bAltBurnMech","Alternate Burning Mechanism",1,0, "Check");
     PlayInfo.AddSetting(default.BonusCapGroup,"bShowDamages","Show Damages",1,0, "Check");
@@ -1664,7 +1663,6 @@ static function string GetDescriptionText(string PropName)
         case "bSpawn0":                     return "All initial weapons costs nothing";
         case "bReplacePickups":             return "Replaces weapon pickups on a map with their Scrn Editon (SE) versions.";
         case "bReplacePickupsStory":        return "Replaces weapon pickups in Objective Mode with their Scrn Editon (SE) versions.";
-        case "bReplaceNades":               return "Replaces hand grenades with 'coockable' ScrN version. Players can disable grenade cooking in ScrN Settings menu anyway. Disabling it here removes this ability from the server.";
         case "bShieldWeight":               return "Kevlar Vest weights 1 block instead of hand grenades. Players without vest can carry more. Automatically enables hand grenade replacing with ScrN version";
         case "bAltBurnMech":                return "Use Alternate Burning Mechanism. Shorter burning period, but higher damage at the begining. Also fixes many bugs, including Crawler Infinite Burning.";
         case "bShowDamages":                return "Allows showing damage values on the HUD. Clients will still be able to turn it off in their User.ini";
@@ -1786,7 +1784,7 @@ function SetReplicationData()
     // if ( bGunslinger )                      SrvFlags = SrvFlags | 0x00000040;
     if ( bTraderSpeedBoost )                SrvFlags = SrvFlags | 0x00000080;
 
-    if ( bReplaceNades )                    SrvFlags = SrvFlags | 0x00000100;
+    // if ( bReplaceNades )                    SrvFlags = SrvFlags | 0x00000100;
     if ( bShieldWeight )                    SrvFlags = SrvFlags | 0x00000200;
     if ( bHardcore )                        SrvFlags = SrvFlags | 0x00000400;
     if ( bBeta )                            SrvFlags = SrvFlags | 0x00000800;
@@ -1821,7 +1819,7 @@ simulated function LoadReplicationData()
     // bGunslinger                        = (SrvFlags & 0x00000040) > 0;
     bTraderSpeedBoost                  = (SrvFlags & 0x00000080) > 0;
 
-    bReplaceNades                      = (SrvFlags & 0x00000100) > 0;
+    // bReplaceNades                      = (SrvFlags & 0x00000100) > 0;
     bShieldWeight                      = (SrvFlags & 0x00000200) > 0;
     bHardcore                          = (SrvFlags & 0x00000400) > 0;
     bBeta                              = (SrvFlags & 0x00000800) > 0;
@@ -2980,7 +2978,7 @@ function bool ReplacePickup( Pickup item )
     local int i;
 
     if ( FragPickup(item) != none ) {
-        if ( !bReplaceNades || ScrnFragPickup(item) != none )
+        if ( ScrnFragPickup(item) != none )
             return false;
 
         i = FragReplacementIndex; // index of frag replacement
@@ -3226,7 +3224,7 @@ function RegisterVersion(string ItemName, int Version)
 
 defaultproperties
 {
-    VersionNumber=96934
+    VersionNumber=96935
     GroupName="KF-Scrn"
     FriendlyName="ScrN Balance"
     Description="Total rework of KF1 to make it modern and the best game in the world while sticking to the roots of the original."
@@ -3313,7 +3311,6 @@ defaultproperties
     bReplacePickups=true
     bReplacePickupsStory=true
     bAltBurnMech=true
-    bReplaceNades=true
     bShieldWeight=true
     pickupReplaceArray(0)=(oldClass=Class'KFMod.MP7MPickup',NewClass=class'ScrnMP7MPickup')
     pickupReplaceArray(1)=(oldClass=Class'KFMod.MP5MPickup',NewClass=class'ScrnMP5MPickup')
@@ -3368,7 +3365,7 @@ defaultproperties
 
     SpawnInventory(00)="*:ScrnBalanceSrv.ScrnKnifePickup:0-255::0"
     SpawnInventory(01)="*:ScrnBalanceSrv.ScrnSyringePickup:0-255::0"
-    SpawnInventory(02)="*:KFMod.WelderPickup:0-255::0"
+    SpawnInventory(02)="*:ScrnBalanceSrv.ScrnWelderPickup:0-255::0"
     SpawnInventory(03)="*:ScrnBalanceSrv.ScrnSinglePickup:0-255::0"
     SpawnInventory(04)="*:ScrnBalanceSrv.ScrnFragPickup:0-255:2:0"
     SpawnInventory(05)="0:ScrnBalanceSrv.ScrnCombatVestPickup:0-255:100"

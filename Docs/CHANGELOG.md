@@ -28,9 +28,22 @@
 
 -------------------------------------------------------------------------------
 
-### v9.69.34
+### v9.69.35
 - Added **Sprint** key binding, which results in `GetWeapon ScrnKnife | onrelease SwitchToLastWeapon`. In other words, the sprint key selects the knife while holding it and switches back to the last weapon on release. KF1 players have been doing that manually for over a decade with no problems, but those who moved from KF2 keep complaining.
 - Switching from/to the knife made faster for fluent "sprinting".
+- Added "Sprint" and "Cook Grenade" key bindings to Settings / Controls / ScrN Features
+- Removed "Enable Grenade Cooking" checkbox from ScrN Features since it is replaced by the separate key binding. Now, player can bind two nade keys: 1) cook 2) throw (for fast throwing). It was possible before the patch too, but was less convinient.
+- `bReplaceNades` deprecated
+- Fixed nade cooking for **Combat Medic**
+- Fixed an issue where custom key bindings appeared twice on the GUI page
+- ScrN Key Bindings appear on GUI even if ScrN Balance is not installed locally.
+- Added localization for Map Achievements
+- **ScrnWelder** - no changes from the vanilla welder. It was the last one KFMod "weapon" that hasn't been ported to ScrN. Not it is.
+- New game mode: **12. Headshots Prefered** - a medium game with perk restriction to Sharpshooter, Commando, and Gunslinger only. Weapon restriction to only those that are capable of scoring headshots. Hand nades prohibited too.
+- New game mode: **12. Noob Trinity** - perk restriction to Firebug, Demolition, and Heavy Machinegunner. 100% fun, 0% skill.
+- Turbo Game removed from the official rotation (deprecated by SpeedMut). Still available in the package.
+- "73. Half-Long Game" and "81. Fight the Patriarchs" removed from the official rotation due to `GameConfig` 4095-char limit.
+- Newcomers receive a welcome message when first time joining an ScrN server
 
 ### v9.69.33
 - **Pre-Aiming** - allows holding the Aim button while reloading or switching weapons to begin aiming ASAP. Originally, premature button press did nothing and required the player to release and press the button again.

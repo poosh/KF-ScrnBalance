@@ -49,8 +49,14 @@ function PositionButtons(Canvas C)
 
 function bool OnFooterClick(GUIComponent Sender)
 {
+    local ScrnPlayerController ScrnPC;
+
+    ScrnPC = ScrnPlayerController(PlayerOwner());
+    if (ScrnPC == none)
+        return false; // wtf?
+
     if ( Sender == b_Perks ) {
-        PlayerOwner().ClientOpenMenu(string(class'ScrnInvasionLoginMenu'), false);
+        ScrnPC.ClientOpenMenu(string(ScrnPC.ScrnLoginMenuClass));
         return false;
     }
     else if ( Sender == b_ViewMap ) {
@@ -60,11 +66,17 @@ function bool OnFooterClick(GUIComponent Sender)
             LobbyMenu(PageOwner).bAllowClose = false;
         }
     }
+    else if (Sender == b_Options) {
+        ScrnPC.ShowSettingsMenu(false);
+    }
     else if(Sender == b_Ready) {
         return super(LobbyFooter).OnFooterClick(Sender); // bypass serverperks
     }
-    else
+    else {
         return super.OnFooterClick(Sender);
+    }
+
+    return false;
 }
 
 defaultproperties

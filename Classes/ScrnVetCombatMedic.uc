@@ -13,7 +13,7 @@ static function class<Grenade> GetNadeType(KFPlayerReplicationInfo KFPRI)
 
 static function bool CanCookNade(KFPlayerReplicationInfo KFPRI, Weapon Weap)
 {
-    return false;
+    return super(ScrnVeterancyTypes).CanCookNade(KFPRI, Weap);
 }
 
 static function float GetSyringeChargeRate(KFPlayerReplicationInfo KFPRI)

@@ -130,6 +130,10 @@ var transient float LastMutateTime;
 var transient int MutateCounter;
 var localized string strMutateProtection;
 
+var class<KFSettingsPage> SettingsMenuClass;
+var globalconfig bool bWelcomed;
+var class<ScrnInvasionLoginMenu> ScrnLoginMenuClass;
+
 replication
 {
     reliable if ( Role == ROLE_Authority )
@@ -165,7 +169,6 @@ simulated function PreBeginPlay()
     class'ScrnMagnum44Fire'.static.PreloadAssets(Level);
     class'ScrnDual44MagnumFire'.static.PreloadAssets(Level);
     class'ScrnMAC10Fire'.static.PreloadAssets(Level);
-    class'KFMod.M79Fire'.static.PreloadAssets(Level);
 }
 
 
@@ -202,14 +205,6 @@ simulated function ClientPostLogin()
 
 simulated function LoadMutSettings()
 {
-    if ( Mut != none ) {
-        if ( Mut.bHardCore )
-            bOtherPlayerLasersBlue = false;
-    }
-    else {
-        //this shouldn't happen
-        log("Player Controller cannot find ScrnBalance!", 'ScrnBalance');
-    }
 }
 
 function InitPlayerReplicationInfo()
@@ -367,6 +362,37 @@ function ShowBuyMenu(string wlTag,float maxweight)
     StopForceFeedback();
 
     ClientOpenMenu(string(Class'ScrnGUIBuyMenu'),,wlTag,string(maxweight));
+}
+
+function ShowSettingsMenu(bool bGotoScrnSettings)
+{
+    local GUIController guictrl;
+    local ScrnSettingsPage pageSettings;
+
+    guictrl =  GUIController(Player.GUIController);
+    if (guictrl == none)
+        return; // twf?
+
+    if (!guictrl.OpenMenu(string(SettingsMenuClass)))
+        return;
+
+    pageSettings = ScrnSettingsPage(guictrl.FindMenuByClass(SettingsMenuClass));
+    if (pageSettings == none)
+        return;
+
+    if (bGotoScrnSettings) {
+        pageSettings.GotoScrnSettings();
+    }
+}
+
+function ShowLoginMenu()
+{
+    if (Pawn != none && Pawn.Health > 0)
+        return;
+
+    if (GameReplicationInfo != none) {
+        ClientReplaceMenu(LobbyMenuClassString);
+    }
 }
 
 
@@ -3206,6 +3232,9 @@ defaultproperties
     ProfilePageClassString="ScrnBalanceSrv.ScrnProfilePage"
     LobbyMenuClassString="ScrnBalanceSrv.ScrnLobbyMenu"
     TSCLobbyMenuClassString="ScrnBalanceSrv.TSCLobbyMenu"
+    SettingsMenuClass=class'ScrnSettingsPage'
+    ScrnLoginMenuClass=class'ScrnInvasionLoginMenu'
+
     PawnClass=class'ScrnHumanPawn'
     CustomPlayerReplicationInfoClass=class'ScrnCustomPRI'
     FlareCloudClass=class'ScrnFlareCloud'

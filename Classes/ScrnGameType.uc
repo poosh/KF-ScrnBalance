@@ -2012,7 +2012,6 @@ protected function StartTourney()
     ScrnBalanceMut.SrvTourneyMode = TourneyMode;
     ScrnBalanceMut.bAltBurnMech = true;
     ScrnBalanceMut.bReplacePickups = true;
-    ScrnBalanceMut.bReplaceNades = true;
     ScrnBalanceMut.bMedicNades = false;
     ScrnBalanceMut.bNoRequiredEquipment = false;
     ScrnBalanceMut.bDynamicLevelCap = false;

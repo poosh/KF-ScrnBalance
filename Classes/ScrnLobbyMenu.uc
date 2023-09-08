@@ -1,6 +1,63 @@
 class ScrnLobbyMenu extends SRLobbyMenu;
 
 var localized string strBrokenGame;
+var localized string strWelcomeTitle, strWelcomeText;
+
+var bool bNetInit;
+
+function Timer()
+{
+    super.Timer();
+
+    if (!bNetInit && PlayerOwner() != none && PlayerOwner().PlayerReplicationInfo != none
+            && PlayerOwner().GameReplicationInfo != none)
+    {
+        OnNetInit();
+        bNetInit = true;
+    }
+}
+
+function OnNetInit()
+{
+    local ScrnPlayerController ScrnPC;
+
+    ScrnPC = ScrnPlayerController(PlayerOwner());
+    if (ScrnPC != none && !ScrnPC.bWelcomed) {
+        ShowWelcome();
+    }
+}
+
+function SetWelcomed(ScrnMessageBoxCheck msgbox)
+{
+    ScrnPlayerController(PlayerOwner()).bWelcomed = msgbox.IsChecked();
+    PlayerOwner().SaveConfig();
+}
+
+function ShowWelcome()
+{
+    local ScrnPlayerController ScrnPC;
+    local GUIController guictrl;
+    local ScrnInvasionLoginMenu menu;
+    local ScrnMessageBoxCheck msgbox;
+
+    ScrnPC = ScrnPlayerController(PlayerOwner());
+    guictrl =  GUIController(PlayerOwner().Player.GUIController);
+    if (ScrnPC == none || guictrl == none)
+        return; // twf?
+
+    if (!guictrl.OpenMenu(string(ScrnPC.ScrnLoginMenuClass)))
+        return;
+    menu = ScrnInvasionLoginMenu(guictrl.FindMenuByClass(ScrnPC.ScrnLoginMenuClass));
+    if (menu == none)
+        return;
+
+    menu.ActivateScrnSettingsTab();
+    msgbox = class'ScrnMessageBoxCheck'.static.ShowMe(ScrnPC,
+            class'ScrnFunctions'.static.ParseColorTags(strWelcomeTitle),
+            class'ScrnFunctions'.static.ParseColorTags(strWelcomeText));
+    msgbox.onCheckChange = SetWelcomed;
+}
+
 
 function AddPlayer( KFPlayerReplicationInfo PRI, int Index, Canvas C )
 {
@@ -242,6 +299,8 @@ function bool ShowPerkMenu(GUIComponent Sender)
 defaultproperties
 {
     strBrokenGame = "(BAD GAME MODE!)"
+    strWelcomeTitle="^G$Welcome to ^r$ScrN Balance^G$!"
+    strWelcomeText="^G$Please configure ^s$ScrN Features ^G$and ^s$Key Bindings ^G$before jumping into the game.|Type ^s$MVOTE ^G$in the console for advanced stuff.|Have fun!"
 
      Begin Object Class=ScrnLobbyFooter Name=BuyFooter
          RenderWeight=0.300000

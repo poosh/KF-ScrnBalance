@@ -189,23 +189,23 @@ function ReplaceRequiredEquipment()
                 StoryRules.RequiredPlayerEquipment[i] = class'ScrnKnife';
             else if ( StoryRules.RequiredPlayerEquipment[i] == Class'KFMod.Single' )
                 StoryRules.RequiredPlayerEquipment[i] = class'ScrnSingle';
-            else if ( Mut.bReplaceNades && StoryRules.RequiredPlayerEquipment[i] == Class'KFMod.Frag' )
+            else if ( StoryRules.RequiredPlayerEquipment[i] == Class'KFMod.Frag' )
                 StoryRules.RequiredPlayerEquipment[i] = class'ScrnFrag';
             else if ( StoryRules.RequiredPlayerEquipment[i] == Class'KFMod.Syringe' )
                 StoryRules.RequiredPlayerEquipment[i] = class'ScrnSyringe';
+            else if ( StoryRules.RequiredPlayerEquipment[i] == Class'KFMod.Welder' )
+                StoryRules.RequiredPlayerEquipment[i] = class'ScrnWelder';
         }
     }
     else if ( Mut.bNoRequiredEquipment ) {
-        for ( i=0; i<16; ++i )
+        for ( i=0; i<16; ++i ) {
             RequiredEquipment[i] = "";
+        }
     }
     else {
-        RequiredEquipment[0] = String(class'ScrnKnife');
-        RequiredEquipment[1] = String(class'ScrnSingle');
-        if ( Mut.bReplaceNades ) {
-            RequiredEquipment[2] = String(class'ScrnFrag');
+        for ( i=0; i<16; ++i ) {
+            RequiredEquipment[i] = default.RequiredEquipment[i];
         }
-        RequiredEquipment[3] = String(class'ScrnSyringe');
     }
 }
 
@@ -3019,5 +3019,5 @@ defaultproperties
     RequiredEquipment(1)="ScrnBalanceSrv.ScrnSingle"
     RequiredEquipment(2)="ScrnBalanceSrv.ScrnFrag"
     RequiredEquipment(3)="ScrnBalanceSrv.ScrnSyringe"
-    RequiredEquipment(4)="KFMod.Welder"
+    RequiredEquipment(4)="ScrnBalanceSrv.ScrnWelder"
 }

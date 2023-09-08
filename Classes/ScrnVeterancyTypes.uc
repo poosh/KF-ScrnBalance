@@ -398,10 +398,7 @@ static function byte PreDrawPerk( Canvas C, byte Level, out Material PerkIcon, o
 
 static function class<Grenade> GetNadeType(KFPlayerReplicationInfo KFPRI)
 {
-    if ( class'ScrnBalance'.default.Mut.bReplaceNades )
-        return class'ScrnNade';
-
-    return super.GetNadeType(KFPRI);
+    return class'ScrnNade';
 }
 
 

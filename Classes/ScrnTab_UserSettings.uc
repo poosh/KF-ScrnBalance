@@ -16,8 +16,8 @@ var automated GUIButton               b_GetPrize;
 
 // weapons
 var automated GUISectionBackground    bg_Weapons;
+var automated GUIButton               b_Controls;
 var automated moCheckBox              ch_ManualReload;
-var automated moCheckBox              ch_CookNade;
 var automated moCheckBox              ch_PrioritizePerkedWeapons;
 // var automated moCheckBox              ch_PrioritizeBoomstick;
 var automated moCheckBox              ch_NeverSwitchOnPickup;
@@ -29,7 +29,6 @@ var automated GUIButton               b_PerkProgress;
 var automated GUIButton               b_Accuracy;
 
 var localized string strLockWeapons, strUnlockWeapons;
-var localized string strBoundToCook, strBoundToThrow, strCantFindNade;
 
 
 // HUD & Info
@@ -420,19 +419,6 @@ function InternalOnLoadINI(GUIComponent Sender, string s)
             ch_ManualReload.Checked(PC.bManualReload);
             break;
 
-        case ch_CookNade:
-            if ( PC.Mut.bReplaceNades ) {
-                ch_CookNade.Checked(IsCookingSet());
-                ch_CookNade.EnableMe();
-                ch_CookNade.Hint = strDisabledByServer;
-            }
-            else {
-                ch_CookNade.Checked(false);
-                ch_CookNade.DisableMe();
-                ch_CookNade.Hint = ch_CookNade.default.Hint;
-            }
-            break;
-
         case ch_PrioritizePerkedWeapons:
             ch_PrioritizePerkedWeapons.Checked(PC.bPrioritizePerkedWeapons);
             break;
@@ -541,10 +527,6 @@ function InternalOnChange(GUIComponent Sender)
         case ch_ManualReload:
                 PC.bManualReload = ch_ManualReload.IsChecked();
                 PC.SaveConfig();
-            break;
-
-        case ch_CookNade:
-            SetCookNade(ch_CookNade.IsChecked());
             break;
 
         case ch_PrioritizePerkedWeapons:
@@ -656,71 +638,6 @@ function InternalOnChange(GUIComponent Sender)
     }
 }
 
-function SetCookNade(bool bCook)
-{
-    local GUIController GC;
-    local array<string> BindAliases;
-    local array<string> BindKeyNames;
-    local array<string> LocalizedBindKeyNames;
-    local int i, j;
-    local string s, msg;
-
-    GC = GUIController(PlayerOwner().Player.GUIController);
-
-    if (bCook) {
-        //retrieve key bindings containing "ThrowGrenade" (command) or "ThrowNade" (alias)
-        GC.SearchBinds("ThrowGrenade", BindAliases);
-        if ( BindAliases.length == 0 )
-            GC.SearchBinds("ThrowNade", BindAliases);
-        if ( BindAliases.length == 0 )
-            PlayerOwner().ClientMessage(strCantFindNade);
-        else {
-            for ( i = 0; i < BindAliases.length; i++ ) {
-                //get keys that are bound to aliases
-                GC.GetAssignedKeys(BindAliases[i], BindKeyNames, LocalizedBindKeyNames);
-                //bind keys to cook grenade
-                for ( j = 0; j < BindKeyNames.length; j++ ) {
-                    s = BindKeyNames[j];
-                    GC.SetKeyBind(s, "CookGrenade | ThrowGrenade | OnRelease ThrowCookedGrenade");
-                    //inform player what binding has been changed
-                    if ( j < LocalizedBindKeyNames.length && LocalizedBindKeyNames[j] != "" )
-                        s = LocalizedBindKeyNames[j];
-                    msg = strBoundToCook;
-                    msg = Repl(msg, "%s", s, true);
-                    PlayerOwner().ClientMessage(msg);
-                }
-            }
-        }
-    }
-    else {
-        GC.SearchBinds("CookGrenade", BindAliases); //retrieve key bindings containing "CookGrenade"
-        for ( i = 0; i < BindAliases.length; i++ ) {
-            //get keys that are bound to aliases
-            GC.GetAssignedKeys(BindAliases[i], BindKeyNames, LocalizedBindKeyNames);
-            //bind keys to throw grenade
-            for ( j = 0; j < BindKeyNames.length; j++ ) {
-                s = BindKeyNames[j];
-                GC.SetKeyBind(s, "ThrowGrenade");
-                //inform player what binding has been changed
-                if ( j < LocalizedBindKeyNames.length && LocalizedBindKeyNames[j] != "" )
-                    s = LocalizedBindKeyNames[j];
-                msg = strBoundToThrow;
-                msg = Repl(msg, "%s", s, true);
-                PlayerOwner().ClientMessage(msg);
-            }
-        }
-    }
-}
-
-function bool IsCookingSet()
-{
-    local array<string> BindAliases;
-
-    GUIController(PlayerOwner().Player.GUIController).SearchBinds("CookGrenade", BindAliases);
-
-    return BindAliases.length > 0;
-}
-
 function bool ButtonClicked(GUIComponent Sender)
 {
     local ScrnPlayerController PC;
@@ -740,6 +657,9 @@ function bool ButtonClicked(GUIComponent Sender)
 
         case b_GunSkin:
             PC.GunSkin(0, true);
+            break;
+        case b_Controls:
+            ScrnPlayerController(PlayerOwner()).ShowSettingsMenu(true);
             break;
         case b_WeaponLock:
             PC.ToggleWeaponLock();
@@ -975,27 +895,25 @@ defaultproperties
     End Object
     bg_Weapons=WeaponsBG
 
+    Begin Object Class=GUIButton Name=ControlsButton
+        Caption="ScrN Key Bindings"
+        Hint="ScrN-specific key binding setup"
+        bAutoSize=False
+        WinTop=0.2275
+        WinLeft=0.015
+        WinWidth=0.288
+        WinHeight=0.045
+        RenderWeight=1.0
+        TabOrder=10
+        bBoundToParent=True
+        bScaleToParent=True
+        OnClick=ScrnTab_UserSettings.ButtonClicked
+    End Object
+    b_Controls=ControlsButton
+
     Begin Object Class=moCheckBox Name=ManualReload
         Caption="Manual Reload"
         Hint="Check this to disable automatic reloading when firing with an empty gun"
-        bFlipped=False
-        CaptionWidth=0.955000
-        WinTop=0.23
-        WinLeft=0.015
-        WinWidth=0.288
-        TabOrder=10
-        RenderWeight=0.5
-        ComponentClassName="ScrnBalanceSrv.ScrnGUICheckBoxButton"
-        OnCreateComponent=ManualReload.InternalOnCreateComponent
-        IniOption="@Internal"
-        OnChange=ScrnTab_UserSettings.InternalOnChange
-        OnLoadINI=ScrnTab_UserSettings.InternalOnLoadINI
-    End Object
-    ch_ManualReload=ManualReload
-
-    Begin Object Class=moCheckBox Name=CookNade
-        Caption="Enable Grenade 'Cooking'"
-        Hint="If checked, armed grenade will remain in your hands while key is being held. Nade cooking slows down toss rate!"
         bFlipped=False
         CaptionWidth=0.955000
         WinTop=0.28
@@ -1004,15 +922,12 @@ defaultproperties
         TabOrder=11
         RenderWeight=0.5
         ComponentClassName="ScrnBalanceSrv.ScrnGUICheckBoxButton"
-        OnCreateComponent=CookNade.InternalOnCreateComponent
+        OnCreateComponent=ManualReload.InternalOnCreateComponent
         IniOption="@Internal"
         OnChange=ScrnTab_UserSettings.InternalOnChange
         OnLoadINI=ScrnTab_UserSettings.InternalOnLoadINI
     End Object
-    ch_CookNade=CookNade
-    strBoundToCook="'%s' key bound to 'Cook' grenade"
-    strBoundToThrow="'%s' key bound to Throw grenade"
-    strCantFindNade="Can't find a key set for throwing grenades. Please assign it in Settings->Controls."
+    ch_ManualReload=ManualReload
 
     Begin Object Class=moCheckBox Name=PrioritizePerkedWeapons
         Caption="Perked Weapons First"
