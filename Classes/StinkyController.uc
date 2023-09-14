@@ -8,6 +8,7 @@ var array<Actor> MoveTargets;
 
 var array<KFAmmoPickup> AmmoCandidates;
 var transient KFAmmoPickup CurrentAmmoCandidate;
+var int AmmoSpawnCount;
 
 var transient Actor LastAlternatePathTarget;
 var transient NavigationPoint LastAlternatePathPoint;
@@ -111,6 +112,23 @@ function int CalcSpeed()
     return StinkyClot.OriginalGroundSpeed;
 }
 
+function AdjustSpeed()
+{
+    local int spd;
+
+    if (StinkyClot == none || StinkyClot.Health <= 0)
+        return;
+
+    spd = CalcSpeed();
+    // if (spd != int(StinkyClot.GroundSpeed)) {
+    //     log("Stinky Speed " $ int(StinkyClot.GroundSpeed) $ " => " $ spd, class.name);
+    // }
+    StinkyClot.GroundSpeed = spd;
+    StinkyClot.WaterSpeed = spd;
+    StinkyClot.AirSpeed = spd;
+    StinkyClot.HiddenGroundSpeed = spd;
+}
+
 function bool CanSpeedAdjust()
 {
     return false;
@@ -129,6 +147,16 @@ function float PlayCompleteAnimation()
     Pawn.Velocity.X = 0;
     Pawn.Velocity.Y = 0;
     Return 0.8;
+}
+
+function float AfterCompleteCooldown()
+{
+    return 2.0;
+}
+
+function WhatToDoNext()
+{
+    log("Stuck at state " $ GetStateName(), class.name);
 }
 
 function DoAdditionalActions()
@@ -175,7 +203,7 @@ state Moving extends Scripting
             if ( MoveTarget == none && ActionMoves == 0 ) {
                 // this could be a dead end, like badly placed ammo box or base guardian
                 // teleport one step back and try again
-                log("No path to " $ GetItemName(string(Target)));
+                log("No path to " $ GetItemName(string(Target)), class.name);
                 TeleportTarget = StinkyClot.MoveHistory[1];
                 ActionMoves++;
                 if ( TeleportTarget != none )
@@ -247,10 +275,7 @@ KeepMoving:
         Goto('KeepMoving');
     }
     TeleportAttempts = 0;
-    Pawn.GroundSpeed = CalcSpeed();
-    Pawn.WaterSpeed = Pawn.GroundSpeed;
-    Pawn.AirSpeed = Pawn.GroundSpeed;
-    StinkyClot.HiddenGroundSpeed = Pawn.GroundSpeed;
+    AdjustSpeed();
     // MayShootTarget();
     if ( MoveTarget != None && MoveTarget != Pawn ) {
         MoveToward(MoveTarget, Focus,,,Pawn.bIsWalking);
@@ -265,8 +290,11 @@ KeepMoving:
         StinkyClot.StuckCounter = 0;
         StinkyClot.NextStuckTestTime = Level.TimeSeconds + 5;
     }
-    sleep( PlayCompleteAnimation() );
+Completing:
+    sleep(PlayCompleteAnimation());
     CompleteAction();
+    sleep(AfterCompleteCooldown());
+    WhatToDoNext();
 }
 
 state MoveToGuardian extends Moving
@@ -280,8 +308,8 @@ state MoveToGuardian extends Moving
             // teleport next to guardian
             TeleportTarget = LastAlternatePathPoint;
         }
-        else if ( TheGuardian(Target) != none ) {
-            TheGuardian(Target).BlameBaseSetter(BlameStr);
+        else if ( FtgBaseGuardian(Target) != none ) {
+            FtgBaseGuardian(Target).BlameBaseSetter(BlameStr);
         }
     }
 
@@ -356,12 +384,12 @@ state MoveToShop extends Moving
         if ( FtgGame.TotalMaxMonsters <= 0 ) {
             if ( FtgGame.NumMonsters < 10 )
                 return StinkyClot.MaxBoostSpeed;
-            else if ( gnome.SameTeamCounter + 5 < gnome.default.SameTeamCounter)
+            else if (gnome.SameTeamCounter < gnome.default.SameTeamCounter)
                 return StinkyClot.OutOfBaseSpeed; // slowdown when nobody at the base to give team a chance to reach the base
             else
                 return 2.0 * StinkyClot.OriginalGroundSpeed;
         }
-        else if ( gnome.SameTeamCounter + 5 < gnome.default.SameTeamCounter)
+        else if (gnome.SameTeamCounter < gnome.default.SameTeamCounter)
             return StinkyClot.OutOfBaseSpeed; // slowdown when nobody at the base to give team a chance to reach the base
         else if ( FtgGame.TotalMaxMonsters < 50 )
             return StinkyClot.OriginalGroundSpeed * (2.0 - FtgGame.TotalMaxMonsters/50.0);
@@ -382,6 +410,7 @@ state MoveToAmmo extends Moving
     {
         super.BeginState();
         SetTimer(30, false);
+        AmmoSpawnCount = default.AmmoSpawnCount + FtgGame.AliveTeamPlayerCount[TeamIndex] / 3;
     }
 
     function EndState()
@@ -392,8 +421,7 @@ state MoveToAmmo extends Moving
 
     function Timer()
     {
-        CurrentAmmoCandidate = none;
-        GotoState('MoveToShop', 'Begin'); // abort ammo get
+        AbortScript();
     }
 
     function Actor GetMoveTarget()
@@ -404,7 +432,8 @@ state MoveToAmmo extends Moving
     function AbortScript()
     {
         // if can't reach ammo box, then just exit the state intead of aborting the entire script
-        CompleteAction();
+        CurrentAmmoCandidate = none;
+        WhatToDoNext();
     }
 
     function Stuck()
@@ -415,8 +444,22 @@ state MoveToAmmo extends Moving
     function CompleteAction()
     {
         CurrentAmmoCandidate.GotoState('Pickup');
-        CurrentAmmoCandidate = none;
-        GotoState('MoveToShop', 'Begin'); // get back to the mision
+        if (--AmmoSpawnCount <= 0) {
+            WhatToDoNext();
+        }
+    }
+
+    function WhatToDoNext()
+    {
+        if (AmmoSpawnCount <= 0 || CurrentAmmoCandidate == none || CurrentAmmoCandidate.IsInState('Pickup')) {
+            // get back to the mision
+            CurrentAmmoCandidate = none;
+            GotoState('MoveToShop', 'Begin');
+        }
+        else {
+            // spawn ammo once again
+            GotoState(, 'Completing');
+        }
     }
 }
 
@@ -425,4 +468,5 @@ defaultproperties
     MoveAttempts=5
     TeamIndex=1
     BlameStr="%p blamed for placing base in a glitch spot!"
+    AmmoSpawnCount=1
 }

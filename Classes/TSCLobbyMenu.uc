@@ -72,6 +72,11 @@ event Timer()
         l_HDmgInfo.Caption = HdmgInfo[GRI.HumanDamageMode];
     }
 
+    if (!bNetInit && PRI != none && GRI != none) {
+        OnNetInit();
+        bNetInit = true;
+    }
+
     UpdateButtonCaptions();
 }
 

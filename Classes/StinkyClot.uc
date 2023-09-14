@@ -301,10 +301,10 @@ function TakeDamage(int Damage, Pawn instigatedBy, Vector hitlocation, Vector mo
 function Died(Controller Killer, class<DamageType> damageType, vector HitLocation)
 {
     local int i;
-    local TheGuardian gnome;
+    local FtgBaseGuardian gnome;
 
     for( i=0; i<Attached.length; i++ ) {
-        gnome = TheGuardian(Attached[i]);
+        gnome = FtgBaseGuardian(Attached[i]);
         if ( gnome != none )
             gnome.PawnBaseDied();
     }

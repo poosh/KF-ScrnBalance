@@ -629,10 +629,11 @@ defaultproperties
     MinBaseZ = -500
     MaxBaseZ =  500
     ZedSpawnLoc=ZSLOC_AUTO
+    MinNetPlayers=1
 
     HUDType="ScrnBalanceSrv.FtgHUD"
     ScoreBoardType="ScrnBalanceSrv.ScrnScoreBoard"
-    BaseGuardianClasses(0)=class'TheGuardianRed'
-    BaseGuardianClasses(1)=class'TheGuardianBlue'
+    BaseGuardianClasses(0)=class'FtgBaseGuardianRed'
+    BaseGuardianClasses(1)=class'FtgBaseGuardianBlue'
     StinkyClass=class'StinkyClot'
 }

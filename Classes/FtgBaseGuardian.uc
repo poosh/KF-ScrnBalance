@@ -1,4 +1,4 @@
-class TheGuardian extends TSCBaseGuardian
+class FtgBaseGuardian extends TSCBaseGuardian
     abstract;
 
 var localized string strBlame;
@@ -86,6 +86,18 @@ state Guarding
     function bool ShouldWipeOnBaseLost()
     {
         return WipeOnBaseLost != none && ( TSCGRI.MaxMonsters > 10 || KFGameType(Level.Game).bWaveBossInProgress );
+    }
+
+    function Timer()
+    {
+        local int OldSameTeamCounter;
+
+        OldSameTeamCounter = SameTeamCounter;
+        super.Timer();
+        if (OldSameTeamCounter != SameTeamCounter && Holder != none && StinkyController(Holder.Controller) != none) {
+            // adjust StinkyClot's speed if all players leave the base or return back
+            StinkyController(Holder.Controller).AdjustSpeed();
+        }
     }
 }
 

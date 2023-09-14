@@ -14,7 +14,7 @@ defaultproperties
     MaxBaseZ=200
 
     ScoreBoardType="ScrnBalanceSrv.TSCScoreBoard"
-    BaseGuardianClasses(0)=class'TheGuardianRed'
-    BaseGuardianClasses(1)=class'TheGuardianBlue'
+    BaseGuardianClasses(0)=class'FtgBaseGuardianRed'
+    BaseGuardianClasses(1)=class'FtgBaseGuardianBlue'
     StinkyClass=class'StinkyClot'
 }

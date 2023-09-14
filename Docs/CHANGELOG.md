@@ -28,6 +28,17 @@
 
 -------------------------------------------------------------------------------
 
+### v9.69.36
+- Adjusted **Knife** select animation rate
+#### FTG
+- Stinky Clot spawns an extra extra ammo box per 3 players in the team (1 box for 1-2p, 2: 3-5p, 3: 6-8p, etc.).
+- Extra ammo is spawned only if players manage to quickly pickup the previous box.
+- Stinky Clot's movement speed reduction triggers instantly on all players leaving the base.
+  Previously, Stinky could keep the previous speed for the next 5-10s.
+- Fixed an issue where sometimes FTG required at least 2 players to start the match
+#### Code Changes
+- `TheGuardian` renamed to `FtgBaseGuardian` along with its Blue and Red subclasses.
+
 ### v9.69.35
 - Added **Sprint** key binding, which results in `GetWeapon ScrnKnife | onrelease SwitchToLastWeapon`. In other words, the sprint key selects the knife while holding it and switches back to the last weapon on release. KF1 players have been doing that manually for over a decade with no problems, but those who moved from KF2 keep complaining.
 - Switching from/to the knife made faster for fluent "sprinting".

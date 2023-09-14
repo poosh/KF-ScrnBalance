@@ -1,4 +1,4 @@
-class TheGuardianBlue extends TheGuardian;
+class FtgBaseGuardianBlue extends FtgBaseGuardian;
 
 defaultproperties
 {
