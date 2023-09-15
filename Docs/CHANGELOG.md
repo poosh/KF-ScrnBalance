@@ -28,6 +28,10 @@
 
 -------------------------------------------------------------------------------
 
+### v9.69.37
+- Added `PerPlayerExclude` to *ScrnWaves.ini*. Allows wave counter increase for big teams only.
+- **FTG**: Stinky Clot teleports next to the Guardian if it couldn't been reached in ~2 minutes.
+
 ### v9.69.36
 - Adjusted **Knife** select animation rate
 #### FTG

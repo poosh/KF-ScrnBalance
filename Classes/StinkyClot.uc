@@ -222,7 +222,7 @@ function LogPath()
         log ("No current route");
     }
 
-    if ( Controller.CurrentPath != none ) {
+    if ( Controller.NextRoutePath != none ) {
         log("Next route:    " $ Controller.NextRoutePath.Start $ " => " $ Controller.NextRoutePath.End, class.name);
     }
     else {

@@ -737,6 +737,8 @@ function RunWave()
 
 function SetWaveInfo()
 {
+    local int ExtraPlayers;
+
     if (Wave.PerPlayerMult == 0) {
         WaveCounter = Wave.Counter;
         switch ( Wave.EndRule ) {
@@ -746,8 +748,11 @@ function SetWaveInfo()
         }
     }
     else {
-        WaveCounter = Wave.Counter * ( 1.0 + Wave.PerPlayerMult
-                * (max(Game.AlivePlayerCount, Game.ScrnGRI.FakedPlayers) - 1) );
+        WaveCounter = Wave.Counter;
+        ExtraPlayers = max(Game.AlivePlayerCount, Game.ScrnGRI.FakedPlayers) - Wave.PerPlayerExclude;
+        if (ExtraPlayers > 0) {
+            WaveCounter *= 1.0 + Wave.PerPlayerMult * ExtraPlayers;
+        }
     }
     if (Wave.MaxCounter > 0 && WaveCounter > Wave.MaxCounter)
         WaveCounter = Wave.MaxCounter;

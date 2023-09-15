@@ -17,6 +17,9 @@ var transient Actor TeleportTarget;
 var transient int TeleportAttempts;
 var transient int ActionMoves;
 var int MoveAttempts;
+var float GuardianReachTime; // max time to reach the guardian. Gets extended if Stinky cannot see the guardian;
+var transient float GuardianReachDeadline;
+var int GuardianVisibilityChecks;
 
 var localized string BlameStr;
 
@@ -268,6 +271,7 @@ KeepMoving:
     }
     DoAdditionalActions();
     SetMoveTarget();
+Teleporting:
     if ( TeleportTarget != none ) {
         StinkyClot.TeleportToActor(TeleportTarget);
         TeleportTarget = none;
@@ -299,6 +303,46 @@ Completing:
 
 state MoveToGuardian extends Moving
 {
+    function BeginState()
+    {
+        super.BeginState();
+        SetTimer(60, false);
+        GuardianReachDeadline = 0;
+        GuardianVisibilityChecks = GuardianReachTime;
+    }
+
+    function EndState()
+    {
+        super.EndState();
+        SetTimer(GuardianReachTime, false);
+    }
+
+    function Timer()
+    {
+        if (GuardianReachDeadline == 0) {
+            if (GuardianVisibilityChecks <= 0 || LineOfSightTo(Target)) {
+                GuardianReachDeadline = Level.TimeSeconds + GuardianReachTime;
+                SetTimer(GuardianReachTime + 0.1, false);
+                log(FtgGame.ScrnBalanceMut.GameTimeStr() $ " Base Deadline in " $ GuardianReachTime, class.name);
+            }
+            else {
+                // wait for the line of sight
+                SetTimer(1, false);
+                --GuardianVisibilityChecks;
+            }
+        }
+        else if (Level.TimeSeconds < GuardianReachDeadline) {
+            SetTimer(GuardianReachDeadline - Level.TimeSeconds + 0.1, false);
+        }
+        else {
+            log(FtgGame.ScrnBalanceMut.GameTimeStr() $ " Base Deadline reached", class.name);
+            SetTimer(GuardianReachTime, false); // shouldn't trigger
+            FtgBaseGuardian(Target).BlameBaseSetter(BlameStr);
+            TeleportTarget = GetMoveTarget();
+            GotoState(, 'Teleporting');
+        }
+    }
+
     function Stuck()
     {
         global.Stuck();
@@ -465,6 +509,7 @@ state MoveToAmmo extends Moving
 
 defaultproperties
 {
+    GuardianReachTime=45
     MoveAttempts=5
     TeamIndex=1
     BlameStr="%p blamed for placing base in a glitch spot!"

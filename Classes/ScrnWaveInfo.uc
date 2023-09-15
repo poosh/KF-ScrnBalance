@@ -37,6 +37,7 @@ var config EDoorControl DoorControl, DoorControl2;
 var config EWaveEndRule EndRule;
 var config int Counter, MaxCounter;
 var config float PerPlayerMult;
+var config int PerPlayerExclude;
 var config float SpawnRateMod;
 var config float SpecialSquadCooldown;
 var config byte MaxZombiesOnce;
@@ -64,6 +65,7 @@ defaultproperties
     DoorControl=DOOR_Default
     EndRule=RULE_KillEmAll
     Counter=30
+    PerPlayerExclude=1
     SpecialSquadHealthMod=1.0
     ZedsPerSpecialSquad=50
     SpawnRateMod=1.0
