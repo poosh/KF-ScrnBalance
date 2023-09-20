@@ -437,6 +437,7 @@ function GiveTo( pawn Other, optional Pickup Pickup )
 
 defaultproperties
 {
+    LaserType=4
     LaserRecoilReduction=0.3
     LaserAttachmentClass=class'ScrnLaserAttachmentFirstPerson'
     LaserDotClass=class'ScrnLocalLaserDot'

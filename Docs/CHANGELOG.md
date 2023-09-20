@@ -28,6 +28,12 @@
 
 -------------------------------------------------------------------------------
 
+### v9.69.38
+- Yet another bugfix in `QuickMelee`
+- Laser sights are switched ON by default for MK23/.44
+#### ScrN Zed Pack
+- Fixed a network replication bug where sometimes decapitated zeds kept their heads client-side
+
 ### v9.69.37
 - Added `PerPlayerExclude` to *ScrnWaves.ini*. Allows wave counter increase for big teams only.
 - **FTG**: Stinky Clot teleports next to the Guardian if it couldn't been reached in ~2 minutes.

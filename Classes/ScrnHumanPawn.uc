@@ -1995,7 +1995,8 @@ function QuickMelee()
     if ( bThrowingNade
             || KFW.GetFireMode(0).NextFireTime - Level.TimeSeconds > 0.1
             // || KFW.GetFireMode(1).NextFireTime - Level.TimeSeconds > 0.1
-            // || KFW.ClientState != WS_ReadyToFire
+            || KFW.ClientState == WS_PutDown
+            || KFW.ClientGrenadeState != GN_None
             || (KFW.bIsReloading && !KFW.InterruptReload()) )
     {
         Controller.bAltFire = 0; // avoid accidental firing with the current weapon
