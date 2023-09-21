@@ -50,6 +50,8 @@ var localized string strLocked, strUnlocked, strLockDisabled;
 var transient float LastLockMsgTime; // last time when player received a message that weapon is locked
 
 var localized string strAlreadySpectating;
+var transient float OriginalSpectateSpeed;
+var float SpectateSpeedSprintMod;
 
 var globalconfig bool bPrioritizePerkedWeapons, bPrioritizeBoomstick;
 
@@ -201,6 +203,7 @@ simulated function ClientPostLogin()
         DamageAck = hud.ShowDamages;
         ServerAcknowledgeDamages(DamageAck);
     }
+    OriginalSpectateSpeed = SpectateSpeed;
 }
 
 simulated function LoadMutSettings()
@@ -2566,6 +2569,44 @@ exec function PrevWeapon()
     super.PrevWeapon();
 }
 
+exec function StartSprint()
+{
+    if (ScrnPawn != none) {
+        ScrnPawn.StartSprint();
+    }
+    else {
+        SpectateSpeed = OriginalSpectateSpeed * SpectateSpeedSprintMod;
+        ServerSpectateSpeed(SpectateSpeed);
+    }
+}
+
+exec function StopSprint()
+{
+    if (ScrnPawn != none) {
+        ScrnPawn.StopSprint();
+    }
+    else {
+        SpectateSpeed = OriginalSpectateSpeed;
+        ServerSpectateSpeed(SpectateSpeed);
+    }
+}
+
+exec function SetSpectateSpeed(Float F)
+{
+    OriginalSpectateSpeed = F;
+    SpectateSpeed = F;
+    if (bSprint > 0) {
+        SpectateSpeed *= SpectateSpeedSprintMod;
+    }
+    ServerSpectateSpeed(SpectateSpeed);
+}
+
+singular event UnPressButtons()
+{
+    super.UnPressButtons();
+    bSprint = 0;
+}
+
 
 // STATES
 
@@ -3261,6 +3302,7 @@ defaultproperties
 
     strSpecFavoriteAssigned="View target marked as favorite"
     strSpecNoFavorites="No favorite view targets! Press '4' to assign favorite."
+    SpectateSpeedSprintMod=3.0
 
     DLC(0)=(AppID=210934)
     DLC(1)=(AppID=210938)

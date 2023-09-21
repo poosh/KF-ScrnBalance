@@ -105,6 +105,9 @@ var transient KFMeleeGun QuickMeleeWeapon;
 var transient KFWeapon WeaponToFixClientState;
 var transient bool bQuickMeleeInProgress;
 var transient float QuickMeleeFinishTime;
+// available only client-side (owner-side)
+var transient KFWeapon SprintWeapon;
+var transient KFWeapon BeforeSprintWeapon;
 
 // indicates that the player is buying something at the current moment. Server-side only.
 var transient bool bServerShopping;
@@ -2139,6 +2142,40 @@ simulated function AltFire( optional float F )
     // super.StopFiring();
     // ServerStopFiring();
 // }
+
+function KFWeapon FindSprintWeapon()
+{
+    if (SprintWeapon == none) {
+        SprintWeapon = KFWeapon(FindInventoryType(class'Knife'));
+    }
+    return SprintWeapon;
+}
+
+function StartSprint()
+{
+    if (SprintWeapon == none && FindSprintWeapon() == none)
+        return;
+    if (Weapon == SprintWeapon)
+        return;
+
+    BeforeSprintWeapon = KFWeapon(Weapon);
+    if (BeforeSprintWeapon != none) {
+        PendingWeapon = SprintWeapon;
+        BeforeSprintWeapon.ClientGrenadeState = GN_TempDown;  // faster switching
+        BeforeSprintWeapon.PutDown();
+    }
+}
+
+function StopSprint()
+{
+    if (Weapon != SprintWeapon || BeforeSprintWeapon == none)
+        return;
+
+    PendingWeapon = BeforeSprintWeapon;
+    BeforeSprintWeapon.ClientGrenadeState = GN_BringUp;  // faster switching
+    SprintWeapon.PutDown();
+    BeforeSprintWeapon = none;
+}
 
 
 // made p2p damage more like p2m, not like in RO  -- PooSH

@@ -4,7 +4,7 @@ defaultproperties
 {
      KeyData(0)=(KeyLabel="ScrN Features",bIsSection=True)
      KeyData(1)=(Alias="CookGrenade | ThrowGrenade | OnRelease ThrowCookedGrenade",KeyLabel="Cook/Throw Grenade")
-     KeyData(2)=(Alias="GetWeapon ScrnKnife | onrelease SwitchToLastWeapon",KeyLabel="Sprint")
+     KeyData(2)=(Alias="StartSprint | Button bSprint | onrelease StopSprint",KeyLabel="Sprint")
      KeyData(3)=(Alias="IronSightZoomIn | TogglePlayerInfo | onrelease IronSightZoomOut | onrelease TogglePlayerInfo",KeyLabel="Clear Zoom")
      KeyData(4)=(Alias="Button bAltFire | QuickMelee",KeyLabel="Quick Melee")
      KeyData(5)=(Alias="mutate vote YES",KeyLabel="Vote YES")

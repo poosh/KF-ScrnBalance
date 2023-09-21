@@ -27,6 +27,17 @@
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+### v9.69.39
+- Added dedicated commands for sprinting: `StartSprint` and `StopSprint`.
+- The new key binding for the sprint is `StartSprint | Button bSprint | onrelease StopSprint`. Rebind the sprint key in GUI.
+- The new sprint command works for spectators too, significantly boosting camera movement speed.
+- Spectators can use `SetSpectateSpeed <X>` to change the camera speed. The default value is 600.
+- **Speed Mut**: restored the original melee movement speed bonus to 20% (up from 15%) to avoid inconsistencies where Medic with Syringe or Gunslinger with dual pistols moved faster than with a knife.
+#### ScrN Zed Pack
+- Restored the original **Circus Husk** (Dancing Robot) - community request
+- Improved headshot detection for jumping/falling zeds on dedicated servers
+- Fixed an exploit when Fleshpound did not rage when dealing a massive damage during attack animation.
+- Now, FP rages immediately after finishing the attack animation (on Suicidal and HoE)
 
 ### v9.69.38
 - Yet another bugfix in `QuickMelee`
