@@ -1801,6 +1801,13 @@ function float WaveSinMod()
     return 2.0 * (1.0 - abs(sin(WaveTimeElapsed  * SineWaveFreq)));
 }
 
+// returns the minumum zeds on the map to prevent it beeing too slow
+// Zed spawn rate may be increased if NumMonsters < MinZombiesOnce()
+function int MinZombiesOnce()
+{
+    return min(8 + 3*AlivePlayerCount, 24);
+}
+
 function bool SetBoringStage(byte stage)
 {
     if ( stage < BoringStages.length ) {
@@ -3657,24 +3664,31 @@ State MatchInProgress
     {
         local float NextSpawnTime;
 
-        if( NextSpawnSquad.length > 0 ) {
+        if (NextSpawnSquad.length > 0) {
             return 0.25;
         }
 
         NextSpawnTime = fclamp(KFLRules.WaveSpawnPeriod, 0.2, BoringStages[BoringStage].SpawnPeriod);
         NextSpawnTime /= 1.0 + (AlivePlayerCount - 1) * SpawnRatePlayerMod;
-        if ( BaseDifficulty < DIFF_HARD && NumMonsters >= 16 ) {
-            // slower spawns on Normal difficulty if there are already many zeds spawned
-            NextSpawnTime *= 2.0;
+
+        if (NumMonsters >= 32) {
+            // for maps with MaxZombiesOnce > 32: slower spawns if there are already 32+ zeds spawned
+            NextSpawnTime *= 1.5;
         }
 
-        if ( ScrnGameLength != none ) {
-            ScrnGameLength.AdjustNextSpawnTime(NextSpawnTime);
+        if (ScrnGameLength != none) {
+            ScrnGameLength.AdjustNextSpawnTime(NextSpawnTime, BoringStages[BoringStage].MinSpawnTime);
         }
         else {
-            if( NumMonsters >= 16 && WavePct >= 70 ) {
+            if (NumMonsters >= MinZombiesOnce()) {
+                // slower spawns on Normal difficulty if there are already many zeds spawned
+                if (BaseDifficulty < DIFF_HARD) {
+                    NextSpawnTime *= 2.0;
+                }
                 // longer cooldown on later waves if there are already many zeds spawned
-                NextSpawnTime *= 1.5;
+                if (WavePct >= 70) {
+                    NextSpawnTime *= 1.5;
+                }
             }
             // classic sine mod
             NextSpawnTime *= 1.0 + WaveSinMod();

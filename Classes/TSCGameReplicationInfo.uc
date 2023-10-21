@@ -6,6 +6,7 @@ var byte OvertimeWaves;         // number of Overtime waves
 var byte SudDeathWaves;         // number of Sudden Death waves
 var transient bool bOverTime, bSuddenDeath;
 var byte HumanDamageMode;
+var bool bHumanDamageEnabled;
 
 var PlayerReplicationInfo TeamCaptain[2];   // MVOTE TEAM CAPTAIN
 var PlayerReplicationInfo TeamCarrier[2];   // MVOTE TEAM CARRIER
@@ -22,7 +23,7 @@ replication
 
     reliable if( bNetDirty && Role == ROLE_Authority )
         BlueShop, bOverTime, bSuddenDeath,
-        HumanDamageMode, TeamCaptain, TeamCarrier,
+        bHumanDamageEnabled, HumanDamageMode, TeamCaptain, TeamCarrier,
         WaveKillReq;
 }
 

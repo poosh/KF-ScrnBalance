@@ -114,6 +114,11 @@ var transient bool bServerShopping;
 var transient float NextBrownCrapTime;
 var Sound FartSound;
 
+var(Display) FadeColor GlowColor;
+var(Display) Combiner GlowCmb;
+var Material GlowMaterial;
+var float GlowCheckTime;
+
 replication
 {
     reliable if( bNetOwner && bNetDirty && Role == ROLE_Authority )
@@ -1860,6 +1865,15 @@ simulated function Tick(float DeltaTime)
     }
 }
 
+simulated function TickFX(float DeltaTime)
+{
+    super.TickFX(DeltaTime);
+
+    if (Level.TimeSeconds > GlowCheckTime && !bInvis) {
+        CheckGlow();
+    }
+}
+
 // each weapon has own light battery
 function ApplyWeaponFlashlight(bool bDrainBattery)
 {
@@ -3030,6 +3044,131 @@ function CheckZoom()
     }
 }
 
+simulated function CheckGlow()
+{
+    local TSCGameReplicationInfo TSCGRI;
+
+    if (Level.NetMode == NM_DedicatedServer || IsLocallyControlled()) {
+        GlowCheckTime = Level.TimeSeconds + 999999;
+        return;
+    }
+
+    TSCGRI = TSCGameReplicationInfo(Level.GRI);
+    if ( TSCGRI == none ) {
+        GlowCheckTime = Level.TimeSeconds + 999999;
+        return;
+    }
+
+    GlowCheckTime = Level.TimeSeconds + default.GlowCheckTime;
+    if (Health > 0 && TSCGRI.bHumanDamageEnabled && !TSCGRI.AtOwnBase(self)) {
+        EnableGlow();
+    }
+    else {
+        DisableGlow();
+    }
+}
+
+simulated function Texture FindSkinTexture()
+{
+    local Texture tex;
+    local Combiner cmb;
+    local int i;
+
+    for (i = 0; i < Skins.Length; ++i) {
+        cmb = Combiner(Skins[i]);
+        if (cmb == none)
+            continue;
+        tex = Texture(cmb.Material1);
+        if (tex != none)
+            return tex;
+        tex = Texture(cmb.Material2);
+        if (tex != none)
+            return tex;
+    }
+    return none;
+}
+
+simulated function Color GetGlowColor()
+{
+    local TSCGameReplicationInfo TSCGRI;
+    local ScrnPlayerController LocalPC;
+
+    LocalPC = ScrnPlayerController(Level.GetLocalPlayerController());
+    if (LocalPC == none) {
+        return class'ScrnPlayerController'.default.GlowColorSingleTeam; // wtf?
+    }
+
+    TSCGRI = TSCGameReplicationInfo(Level.GRI);
+    if (TSCGRI == none || TSCGRI.bSingleTeamGame) {
+        return LocalPC.GlowColorSingleTeam;
+    }
+
+    if (GetTeamNum() == 0) {
+        return LocalPC.GlowColorRed;
+    }
+    return LocalPC.GlowColorBlue;
+}
+
+simulated function InitGlow()
+{
+    local Texture OriginalTex;
+
+    if (GlowColor == none) {
+        GlowColor = FadeColor(Level.ObjectPool.AllocateObject(class'FadeColor'));
+        GlowColor.FadePeriod = 0.35;
+    }
+    GlowColor.Color2 = GetGlowColor();
+
+    if (GlowCmb == none) {
+        // find the original skin texture to apply GlowColor on top of
+        OriginalTex = FindSkinTexture();
+        if (OriginalTex == none)
+            return;
+
+        GlowCmb = Combiner(Level.ObjectPool.AllocateObject(class'Combiner'));
+        GlowCmb.CombineOperation = CO_Add;
+        GlowCmb.AlphaOperation = AO_Use_Alpha_From_Material1;
+        GlowCmb.Material1 = OriginalTex;
+        GlowCmb.Material2 = GlowColor;
+        GlowCmb.FallbackMaterial = Skins[0];
+    }
+    GlowMaterial = GlowCmb;
+}
+
+simulated function EnableGlow()
+{
+    local int i, NumSkins;
+
+    if (Skins.Length == 0)
+        return;
+
+    InitGlow();
+    if (GlowMaterial == none || Skins[0] == GlowMaterial)
+        return;
+
+    NumSkins = clamp(Skins.Length, 2, 4);
+    for (i = 0; i < NumSkins; ++i) {
+        RealSkins[i] = Skins[i];
+        Skins[i] = GlowMaterial;
+    }
+    bUnlit = true;
+}
+
+simulated function DisableGlow()
+{
+    local int i, NumSkins;
+
+    bUnlit = false;
+
+    if (Skins.Length == 0 || GlowMaterial == none)
+        return;
+
+    NumSkins = clamp(Skins.Length, 2, 4);
+    for (i = 0; i < NumSkins; ++i) {
+        Skins[i] = RealSkins[i];
+    }
+}
+
 
 defaultproperties
 {
@@ -3058,4 +3197,5 @@ defaultproperties
     RequiredEquipment(2)="ScrnBalanceSrv.ScrnFrag"
     RequiredEquipment(3)="ScrnBalanceSrv.ScrnSyringe"
     RequiredEquipment(4)="ScrnBalanceSrv.ScrnWelder"
+    GlowCheckTime=0.35
 }

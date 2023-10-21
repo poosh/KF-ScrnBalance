@@ -933,37 +933,49 @@ function float GetWaveEndTime()
     return Game.Level.TimeSeconds + 60;
 }
 
-function AdjustNextSpawnTime(out float NextSpawnTime)
+function AdjustNextSpawnTime(out float NextSpawnTime, float MinSpawnTime)
 {
     local float SpawnRateMod;
 
-    if ( PendingNextSpawnSquad.length > 0 ) {
+    if (PendingNextSpawnSquad.length > 0) {
         NextSpawnTime = 0.25;
         return;
     }
 
     SpawnRateMod = fclamp(Wave.SpawnRateMod, 0.1, 10.0);
-    if ( FTG != none && (FTG.TeamBases[0].bHeld || FTG.TeamBases[1].bHeld) ) {
-        SpawnRateMod *= fclamp(FtgSpawnRateMod, 0.2, 1.0);
+    if (Game.NumMonsters >= Game.MinZombiesOnce()) {
+        // slower spawns on Normal difficulty if there are already many zeds spawned
+        if (Game.BaseDifficulty < Game.DIFF_HARD) {
+            NextSpawnTime *= 2.0;
+            MinSpawnTime *= 1.5;
+        }
+        // longer cooldown on later waves if there are already many zeds spawned
+        if (Game.WavePct >= LaterWavePct) {
+            NextSpawnTime *= LaterWaveSpawnCooldown;
+        }
+        // up to double the maximum delay between waves after loading the special squad
+        if (bLoadedSpecial) {
+            MinSpawnTime *= fclamp(Wave.SpecialSquadCooldown / 2.0, 1.0, 2.0);
+        }
+        // Slower spawns in FTG while the Guardian is being carried
+        if (FTG != none && (FTG.TeamBases[0].bHeld || FTG.TeamBases[1].bHeld)) {
+            SpawnRateMod *= fclamp(FtgSpawnRateMod, 0.2, 1.0);
+        }
     }
     NextSpawnTime /= SpawnRateMod;
+    MinSpawnTime /= SpawnRateMod;
 
-    if( Game.WavePct >= LaterWavePct && Game.NumMonsters >= 16 ) {
-        // longer cooldown on later waves if there are already many zeds spawned
-        NextSpawnTime *= LaterWaveSpawnCooldown;
-    }
-
-    if ( bLoadedSpecial ) {
+    if (bLoadedSpecial) {
         NextSpawnTime *= 1.0 + Wave.SpecialSquadCooldown;
     }
-    else if ( Wave.bRandomSquads ) {
+    else if (Wave.bRandomSquads) {
         // * 1.0 .. 3.0
         NextSpawnTime *= 1.0 + Game.WaveSinMod();
     }
     else {
         NextSpawnTime *= 2.0;  // average between 1.0 and 3.0
     }
-    NextSpawnTime = fmax(NextSpawnTime, Game.BoringStages[Game.GetBoringStage()].MinSpawnTime / SpawnRateMod);
+    NextSpawnTime = fmax(NextSpawnTime, MinSpawnTime);
 }
 
 function LoadNextSpawnSquad(out array < class<KFMonster> > NextSpawnSquad)

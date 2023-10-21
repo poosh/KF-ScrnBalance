@@ -27,6 +27,17 @@
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+### v9.69.40
+- **FTG/TSC**: Players glow when are a subject of friendly fire (human damage), e.g., outside the base during a wave.
+- **FTG**: disabled player auto-blame for setting a base in a glitch spot (community request)
+- Slightly adjusted zed spawn timings. Zeds spawn faster than ususal if there are not many zeds on the map, or slower if there are 32+ spawned already.
+- Players can adjust the glow color in *ScrnUser.ini* (client-side)
+
+#### ScrN Zed Pack
+- Added `bCommandoRevealsStalkers` config option for Commando to reveal Stalkers for all teammates (like in KF2)
+- bCommandoRevealsStalkers does not affect Ghosts
+- Refactored Stalker and Ghost code
+
 ### v9.69.39
 - Added dedicated commands for sprinting: `StartSprint` and `StopSprint`.
 - The new key binding for the sprint is `StartSprint | Button bSprint | onrelease StopSprint`. Rebind the sprint key in GUI.

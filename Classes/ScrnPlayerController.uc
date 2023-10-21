@@ -73,6 +73,7 @@ var string TSCLobbyMenuClassString;
 var config bool bTSCAdvancedKeyBindings; // pressing altfire while carrying the guardian gnome, sets up the base
 var config bool bTSCAutoDetectKeys; // turns off bTSCAdvancedKeyBindings if a dedicated key is bound for SetupBase
 var config string RedCharacter, BlueCharacter;
+var config Color GlowColorSingleTeam, GlowColorRed, GlowColorBlue;
 
 // not replicated yet
 // todo: find an efficient way to replicate
@@ -3366,6 +3367,9 @@ defaultproperties
     BlueCharacter="Pyro_Blue"
     bNotifyLocalPlayerTeamReceived=True
     bTSCAutoDetectKeys=true
+    GlowColorSingleTeam=(R=128,G=0,B=0)
+    GlowColorRed=(R=128,G=0,B=0)
+    GlowColorBlue=(R=0,G=64,B=128)
 
     RedCharacters(0)="Pyro_Red"
     RedCharacters(1)="Agent_Wilkes"

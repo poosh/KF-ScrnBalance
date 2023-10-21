@@ -632,8 +632,7 @@ function SetHumanDamage(EHumanDamageMode Hdmg)
 */
 function bool FFDisabled(pawn instigatedBy, pawn Victim)
 {
-    if ( bTradingDoorsOpen || WaveNum == 0 || HumanDamageMode == HDMG_None
-            || (!bWaveBossInProgress && TotalMaxMonsters<=0 && NumMonsters < 10) )
+    if (!TSCGRI.bHumanDamageEnabled)
         return true;
 
     if ( HumanDamageMode == HDMG_All )
@@ -713,6 +712,10 @@ function Killed(Controller Killer, Controller Killed, Pawn KilledPawn, class<Dam
         if ( AliveTeamPlayerCount[0] == 0 ^^ AliveTeamPlayerCount[1] == 0 )
             DramaticEvent(1.0); // do ZED time on winner's kill
     }
+
+    if (TotalMaxMonsters <= 0 && NumMonsters < 10 && !bWaveBossInProgress) {
+        TSCGRI.bHumanDamageEnabled = false;
+    }
 }
 
 function ScoreKill(Controller Killer, Controller Other)
@@ -770,7 +773,7 @@ function bool AllowGameEnd(PlayerReplicationInfo WinnerPRI, string Reason)
                 LoserTeam = TSCTeams[0];
                 EngGameSong = SongBlueWin;
             }
-            ScrnBalanceMut.BroadcastMessage(LoserTeam.GetHumanReadableName() $ " team did NOT killed enough zeds ("
+            ScrnBalanceMut.BroadcastMessage(LoserTeam.GetHumanReadableName() $ " team did not kill enough zeds ("
                     $ LoserTeam.GetCurWaveKills() $ " / " $ TSCGRI.WaveKillReq $ ")", true);
         }
         else {
@@ -929,7 +932,7 @@ function SetupWave()
     if ( (WaveNum+1) == RelativeWaveNum(ScrnBalanceMut.LockTeamAutoWave) )
         LockTeams();
 
-    NextMonsterTime = Level.TimeSeconds + 5.0;
+    NextMonsterTime = Level.TimeSeconds + 2.0 + 2.0 * frand();
     TraderProblemLevel = 0;
     rewardFlag=false;
     ZombiesKilled=0;
@@ -976,6 +979,7 @@ function SetupWave()
 
     CalcDoshDifficultyMult();
 
+    TSCGRI.bHumanDamageEnabled = HumanDamageMode > HDMG_None;
     if( WaveNum == FinalWave && bUseEndGameBoss ) {
         StartWaveBoss();
         return;
@@ -995,6 +999,7 @@ function SetupWave()
         }
     }
     else if ( WaveNum == 0 ) {
+        TSCGRI.bHumanDamageEnabled = false;
         BroadcastLocalizedMessage(class'TSCMessages', 230); // human damage disabled
     }
     else if ( HumanDamageMode > HDMG_None ) {
@@ -1032,6 +1037,14 @@ function SetupWave()
     TSCTeams[1].PrevMinKills = TSCTeams[1].ZedKills;
     TSCTeams[0].LastMinKills = TSCTeams[0].ZedKills;
     TSCTeams[1].LastMinKills = TSCTeams[1].ZedKills;
+}
+
+function int MinZombiesOnce()
+{
+    if (!bSingleTeamGame && !bTeamWiped) {
+        return min(8 + 3*AlivePlayerCount, 32);
+    }
+    return super.MinZombiesOnce();
 }
 
 function bool AddSquad()
@@ -1235,7 +1248,14 @@ State MatchInProgress
             TeamBases[0].bInvul = false;
             TeamBases[1].bInvul = false;
         }
+    }
 
+    function float CalcNextSquadSpawnTime()
+    {
+        if (PendingSpecialSquad.length > 0) {
+            return 0.25;
+        }
+        return super.CalcNextSquadSpawnTime();
     }
 
     function DoWaveEnd()
@@ -1366,6 +1386,7 @@ State MatchInProgress
         local Controller C;
 
         bTradingDoorsOpen = True;
+        TSCGRI.bHumanDamageEnabled = false;
 
         for( i=0; i<ShopList.Length; i++ ) {
             if( !ShopList[i].bAlwaysClosed && ShopList[i].bAlwaysEnabled )

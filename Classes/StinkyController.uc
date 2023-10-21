@@ -337,7 +337,7 @@ state MoveToGuardian extends Moving
         else {
             log(FtgGame.ScrnBalanceMut.GameTimeStr() $ " Base Deadline reached", class.name);
             SetTimer(GuardianReachTime, false); // shouldn't trigger
-            FtgBaseGuardian(Target).BlameBaseSetter(BlameStr);
+            // FtgBaseGuardian(Target).BlameBaseSetter(BlameStr);
             TeleportTarget = GetMoveTarget();
             GotoState(, 'Teleporting');
         }
@@ -352,9 +352,9 @@ state MoveToGuardian extends Moving
             // teleport next to guardian
             TeleportTarget = LastAlternatePathPoint;
         }
-        else if ( FtgBaseGuardian(Target) != none ) {
-            FtgBaseGuardian(Target).BlameBaseSetter(BlameStr);
-        }
+        // else if ( FtgBaseGuardian(Target) != none ) {
+        //     FtgBaseGuardian(Target).BlameBaseSetter(BlameStr);
+        // }
     }
 
     function int CalcSpeed()
@@ -512,6 +512,6 @@ defaultproperties
     GuardianReachTime=45
     MoveAttempts=5
     TeamIndex=1
-    BlameStr="%p blamed for placing base in a glitch spot!"
+    BlameStr="%p blamed for setting the base in a glitch spot!"
     AmmoSpawnCount=1
 }
