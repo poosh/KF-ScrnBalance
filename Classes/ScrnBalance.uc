@@ -145,7 +145,7 @@ var ScrnBalanceVoting MyVotingOptions;
 var globalconfig bool bPauseTraderOnly; //game can be vote-paused in trader time only
 var globalconfig float SkippedTradeTimeMult; //how much of the skipped trader time (mvote ENDTRADE) to add to the next one (0 - don't add, 1 - full, 0.5 - half of the skipped time)
 var transient int TradeTimeAddSeconds; //amount of seconds to add to the next trader time
-var globalconfig bool bAllowBlameVote, bAllowKickVote;
+var globalconfig bool bAllowBlameVote, bAllowKickVote, bKickBan;
 var globalconfig int BlameVoteCoolDown;
 var globalconfig bool bBlameFart;
 var transient int BlameCounter;
@@ -1747,13 +1747,18 @@ function SetLevels()
     }
     else
     {
-        MinLevel = -1;
+        MinLevel = 0;
         MaxLevel = BonusLevelNormalMax;
     }
 
-    if ( ScrnGT != none && ScrnGT.IsTourney() ) {
-        MaxLevel = clamp(MaxLevel, 0, 6);
-        MinLevel = MaxLevel;
+    if (ScrnGT != none) {
+        if (ScrnGT.ScrnGameLength != none) {
+            ScrnGT.ScrnGameLength.AdjustBonusLevels(MinLevel, MaxLevel);
+        }
+        if (ScrnGT.IsTourney()) {
+            MaxLevel = clamp(MaxLevel, 0, 6);
+            MinLevel = MaxLevel;
+        }
     }
 
     if ( MinLevel > MaxLevel )
@@ -3224,7 +3229,7 @@ function RegisterVersion(string ItemName, int Version)
 
 defaultproperties
 {
-    VersionNumber=96940
+    VersionNumber=96941
     GroupName="KF-Scrn"
     FriendlyName="ScrN Balance"
     Description="Total rework of KF1 to make it modern and the best game in the world while sticking to the roots of the original."
@@ -3457,6 +3462,7 @@ defaultproperties
     MaxPauseTimePerWave=180
     bAllowLockPerkVote=true
     bAllowKickVote=true
+    bKickBan=true
     bAllowBlameVote=true
     BlameVoteCoolDown=60
     bBlameFart=true

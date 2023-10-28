@@ -40,6 +40,7 @@ var config float HLMult;
 var config int LaterWavePct;
 var config float LaterWaveSpawnCooldown;
 var config byte MinDifficulty, MaxDifficulty;
+var config byte MinBonusLevel, MaxBonusLevel;
 var config bool bForceTourney;
 var config int TourneyFlags;
 var config array<name> AllowWeaponPackages;
@@ -152,6 +153,7 @@ function LoadGame(ScrnGameType MyGame)
     }
     else {
         ApplyGameDifficulty(HardcoreDifficulty);
+        Mut.SetLevels();
     }
 
     for ( i = 0; i < ServerPackages.length; ++i ) {
@@ -343,6 +345,16 @@ function bool ApplyGameDifficulty(byte HardcoreDifficulty)
         Mut.GameRules.ScaleHardcoreLevel(HLMult);
     }
     return true;
+}
+
+function AdjustBonusLevels(out int MinLevel, out int MaxLevel)
+{
+    if (MinBonusLevel != 255) {
+        MinLevel = MinBonusLevel;
+    }
+    if (MaxBonusLevel != 255) {
+        MaxLevel = MaxBonusLevel;
+    }
 }
 
 function bool VersionCheck()
@@ -1498,4 +1510,6 @@ defaultproperties
     bRandomTrader=true
     FtgSpawnRateMod=0.8
     FtgSpawnDelayOnPickup=10.0
+    MinBonusLevel=255
+    MaxBonusLevel=255
 }

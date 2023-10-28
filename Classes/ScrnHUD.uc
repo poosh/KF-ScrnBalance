@@ -3147,10 +3147,15 @@ simulated function LocalizedMessage( class<LocalMessage> Message, optional int S
             HUDPRI = PawnOwner.PlayerReplicationInfo;
         else
             HUDPRI = PlayerOwner.PlayerReplicationInfo;
-        if ( HUDPRI == RelatedPRI_1 )
-            CriticalString = Message.static.GetRelatedString( Switch, RelatedPRI_1, RelatedPRI_2, OptionalObject );
-        else
-            CriticalString = Message.static.GetString( Switch, RelatedPRI_1, RelatedPRI_2, OptionalObject );
+
+        if ( HUDPRI == RelatedPRI_1 ) {
+            CriticalString = class'ScrnFunctions'.static.ParseColorTags(
+                    Message.static.GetRelatedString(Switch, RelatedPRI_1, RelatedPRI_2, OptionalObject), HUDPRI);
+        }
+        else {
+            CriticalString = class'ScrnFunctions'.static.ParseColorTags(
+                    Message.static.GetString(Switch, RelatedPRI_1, RelatedPRI_2, OptionalObject));
+        }
     }
 
     if( bMessageBeep && Message.default.bBeep )
@@ -3218,11 +3223,17 @@ simulated function LocalizedMessage( class<LocalMessage> Message, optional int S
     LocalMessages[i].RelatedPRI2 = RelatedPRI_2;
     LocalMessages[i].OptionalObject = OptionalObject;
     LocalMessages[i].EndOfLife = Message.static.GetLifetime(Switch) + Level.TimeSeconds;
-    if ( class'ScrnBalance'.default.Mut != none )
-        LocalMessages[i].StringMessage = class'ScrnFunctions'.static.ParseColorTags(CriticalString, RelatedPRI_1);
-    else
-        LocalMessages[i].StringMessage = CriticalString;
+    LocalMessages[i].StringMessage = CriticalString;
     LocalMessages[i].LifeTime = Message.static.GetLifetime(Switch);
+}
+
+simulated function DrawMessage( Canvas C, int i, float PosX, float PosY, out float DX, out float DY )
+{
+    // fix for cases when some mutators directly write LocalMessages instead of calling LocalizedMessage()
+    // e.g., MutKillMessage
+    LocalMessages[i].StringMessage = class'ScrnFunctions'.static.ParseColorTags(LocalMessages[i].StringMessage,
+            LocalMessages[i].RelatedPRI);
+    super.DrawMessage(C, i, PosX, PosY, DX, DY);
 }
 
 function AddTextMessage(string M, class<LocalMessage> MessageClass, PlayerReplicationInfo PRI)

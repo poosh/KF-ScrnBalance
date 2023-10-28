@@ -1091,8 +1091,14 @@ event TeamMessage( PlayerReplicationInfo PRI, coerce string S, name Type  )
     }
 }
 
-simulated function ReceiveLocalizedMessage( class<LocalMessage> Message, optional int Switch, optional PlayerReplicationInfo RelatedPRI_1, optional PlayerReplicationInfo RelatedPRI_2, optional Object OptionalObject )
+simulated function ReceiveLocalizedMessage( class<LocalMessage> Message, optional int Switch,
+        optional PlayerReplicationInfo RelatedPRI_1, optional PlayerReplicationInfo RelatedPRI_2,
+        optional Object OptionalObject )
 {
+    // Wait for player to be up to date with replication when joining a server, before stacking up messages
+    if ( Level.NetMode == NM_DedicatedServer || GameReplicationInfo == None )
+        return;
+
     if ( Message == class'KFVetEarnedMessageSR' ||  Message == class'ScrnPromotedMessage'
             || (Message == class'KFVetEarnedMessagePL' && RelatedPRI_1 == PlayerReplicationInfo) ) {
         Message = class'ScrnPromotedMessage';
@@ -1108,7 +1114,12 @@ simulated function ReceiveLocalizedMessage( class<LocalMessage> Message, optiona
                 break;
         }
     }
-    super.ReceiveLocalizedMessage(Message, Switch, RelatedPRI_1, RelatedPRI_2, OptionalObject);
+
+    Message.Static.ClientReceive(Self, Switch, RelatedPRI_1, RelatedPRI_2, OptionalObject);
+    if (Player != None && Player.Console != None && Message.static.IsConsoleMessage(Switch)) {
+        Player.Console.Message(class'ScrnFunctions'.static.ParseColorTags(
+                Message.Static.GetString(Switch, RelatedPRI_1, RelatedPRI_2, OptionalObject), RelatedPRI_1), 0);
+    }
 }
 
 function SendVoiceMessage(PlayerReplicationInfo Sender,
@@ -1440,9 +1451,8 @@ exec function AmIMedic()
 // overrided to call vote for pause in unable to pause directly
 function bool SetPause( BOOL bPause )
 {
-    bFire = 0;
-    bAltFire = 0;
-    if ( !Level.Game.SetPause(bPause, self) ) {
+    UnPressButtons();
+    if ( Level.Game == none || !Level.Game.SetPause(bPause, self) ) {
         ServerMutate("VOTE PAUSE 120");
         return false;
     }
@@ -3107,6 +3117,8 @@ exec function FixQuickMelee()
     local KFWeapon W;
     local int c;
 
+    UnPressButtons();
+
     if ( Pawn == none )
         return;
 
@@ -3164,6 +3176,15 @@ exec function DebugZedSpawn()
     if ( Mut.CheckScrnGT(self) ) {
         Mut.ScrnGT.ToggleDebugZedSpawn();
     }
+}
+
+exec function DebugButtons() {
+    ClientMessage("bFire=" $ bFire
+            @ "bAltFire=" $ bAltFire
+            @ "bRun=" $ bRun
+            @ "bSprint=" $ bSprint
+            @ "bDuck=" $ bDuck
+    );
 }
 
 // ======================== COMMENT BEFORE RELEASE !!! =====================

@@ -7,16 +7,18 @@ function Timer()
     local KFPlayerReplicationInfo KFPRI;
     local ScrnHumanPawn ScrnPawn;
     local ScrnGameType ScrnGT;
+    local ScrnSyringe MySyringe;
 
     KFPRI = KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo);
     ScrnPawn = ScrnHumanPawn(Instigator);
-    ScrnGT = ScrnGameType( Weapon.Level.Game);
+    ScrnGT = ScrnGameType(Weapon.Level.Game);
+    MySyringe = ScrnSyringe(Weapon);
 
-    HealSum = Syringe(Weapon).HealBoostAmount;
+    HealSum = MySyringe.HealBoostAmount;
     if ( Weapon.Level.Game.NumPlayers == 1 || (KFPRI != none && KFPRI.Team != none
             && (KFPRI.Team.Size == 1 || (ScrnGT != none && ScrnGT.AliveTeamPlayerCount[KFPRI.Team.TeamIndex] == 1))) )
     {
-        HealSum = max(HealSum, 50);
+        HealSum = max(HealSum, MySyringe.SoloHealBoostAmount);
     }
 
     HealPotency = 1.0;
@@ -26,7 +28,7 @@ function Timer()
 
     Weapon.ConsumeAmmo(ThisModeNum, AmmoPerFire);
     if ( ScrnPawn != none )
-        ScrnPawn.TakeHealing(ScrnPawn, HealSum, HealPotency, KFWeapon(Weapon));
+        ScrnPawn.TakeHealing(ScrnPawn, HealSum, HealPotency, MySyringe);
     else
         Instigator.GiveHealth(HealSum, Instigator.HealthMax);
 }

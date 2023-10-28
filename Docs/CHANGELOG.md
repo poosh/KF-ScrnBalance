@@ -27,6 +27,13 @@
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+### v9.69.41
+- New config option `bKickBan` in *ScrnBalanceSrv.ini*
+- New config options: `MinBonusLevel`, `MaxBonusLevel` in *ScrnGames.ini*
+- **12. Noob Trinity** game mode now runs at uncapped bonus levels.
+- Fixed color tag parsing is some console messages
+- Fixed color tag parsing in Marco's Multi-Kill Messages (e.g, "^1Fresh ^2Meat +2 Scrake kills")
+
 ### v9.69.40
 - **FTG/TSC**: Players glow when are a subject of friendly fire (human damage), e.g., outside the base during a wave.
 - **FTG**: disabled player auto-blame for setting a base in a glitch spot (community request)

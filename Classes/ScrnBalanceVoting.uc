@@ -856,24 +856,7 @@ function ApplyVoteValue(int VoteIndex, string VoteValue)
             break;
 
         case VOTE_KICK:
-            if ( VotingHandler.VotedPlayer != none && !Mut.IsAdmin(VotingHandler.VotedPlayer) ) {
-                if ( Mut.ScrnGT != none )
-                    Mut.ScrnGT.UninvitePlayer(VotingHandler.VotedPlayer);
-
-                if ( Reason == "" ) {
-                    VotingHandler.BroadcastMessage(VoteValue $ " kicked");
-                    VotingHandler.VotedPlayer.ClientNetworkMessage("AC_Kicked", "Team Vote");
-                }
-                else {
-                    VotingHandler.BroadcastMessage(VoteValue $ " kicked for " $Reason);
-                    VotingHandler.VotedPlayer.ClientNetworkMessage("AC_Kicked", Reason);
-                }
-
-                if (VotingHandler.VotedPlayer.Pawn != none && Vehicle(VotingHandler.VotedPlayer.Pawn) == none)
-                    VotingHandler.VotedPlayer.Pawn.Destroy();
-                if (VotingHandler.VotedPlayer != None)
-                    VotingHandler.VotedPlayer.Destroy();
-            }
+            KickPlayer(VotingHandler.VotedPlayer, Mut.bKickBan, Reason);
             break;
 
         case VOTE_BORING:
@@ -953,6 +936,59 @@ function ApplyVoteValue(int VoteIndex, string VoteValue)
                 }
             }
             break;
+    }
+}
+
+function KickPlayer(PlayerController PC, optional bool bBan, optional string Reason)
+{
+    local string msg, IP, ID, PlayerName;
+    local AccessControl AC;
+
+    if (PC == none || Mut.IsAdmin(PC))
+        return;
+
+    if (Mut.ScrnGT != none) {
+        Mut.ScrnGT.UninvitePlayer(PC);
+    }
+
+    IP = PC.GetPlayerNetworkAddress();
+    ID = PC.GetPlayerIDHash();
+    PlayerName = GetPlayerName(PC.PlayerReplicationInfo);
+    AC = Mut.KF.AccessControl;
+
+    if (bBan) {
+        if(AC == none || AC.CheckIPPolicy(IP) != 0) {
+            bBan = false;
+        }
+        else {
+            IP = Left(IP, InStr(IP, ":"));
+            Log("Adding Session Ban for: " $ IP @ ID @ PlayerName);
+
+            if (AC.bBanByID) {
+                AC.SessionBannedIDs[AC.SessionBannedIDs.Length] = ID @ PlayerName;
+            }
+            else {
+                AC.SessionIPPolicies[AC.SessionIPPolicies.Length] = "DENY;" $ IP;
+            }
+            AC.SaveConfig();
+        }
+    }
+
+    msg = PlayerName @ eval(bBan, "banned", "kicked");
+    if (Reason == "") {
+        Reason = "Team Vote";
+    }
+    else {
+        msg $= ": " $ Reason;
+    }
+    VotingHandler.BroadcastMessage(msg);
+    PC.ClientNetworkMessage("AC_Kicked", Reason);
+
+    if (PC.Pawn != none && Vehicle(PC.Pawn) == none) {
+        PC.Pawn.Destroy();
+    }
+    if (PC != None) {
+        PC.Destroy();
     }
 }
 
