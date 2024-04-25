@@ -10,7 +10,8 @@ enum EWaveEndRule {
     RULE_KillBoss,
     RULE_GrabDosh,
     RULE_GrabDoshZed,
-    RULE_GrabAmmo
+    RULE_GrabAmmo,
+    RULE_KillSpecial
 };
 
 enum EDoorControl {
@@ -50,7 +51,7 @@ var config bool bMoreAmmoBoxes;
 
 var config bool bRandomSpawnLoc;
 var config float SpecialSquadHealthMod;
-var config int ZedsPerSpecialSquad;
+var config int ZedsBeforeSpecialSquad, ZedsPerSpecialSquad;
 var config bool bRandomSquads;
 var config bool bRandomSpecialSquads;
 var config array<string> SpecialSquads;

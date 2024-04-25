@@ -13,7 +13,8 @@
 [Lost_Champ]: http://steamcommunity.com/profiles/76561198080088953
 [P-Jay]: http://steamcommunity.com/profiles/76561198052307800
 [ImmortalNub]: https://steamcommunity.com/id/ImmortalNub
-[ivanmagadan]: https://steamcommunity.com/id/ivanmagadan/
+[ivanmagadan]: https://steamcommunity.com/id/ivanmagadan
+[Broski]: https://steamcommunity.com/id/broski270
 <!-- add other peaople too!!! -->
 
 # Version History
@@ -27,6 +28,27 @@
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+### v9.69.43
+#### Spawn Rate Overhaul
+- Faster zed spawning at the beginning of a wave.
+- If there are not enough zeds on the map, new ones are always spawned close to players, ignoring other settings, such as `bRandomSpawnLoc`. "Enough" currently means `6 + 3*AlivePlayerCount` zeds.
+- `MVOTE BORING` spawns zeds closer to players even if `bRandomSpawnLoc=true`
+- *ScrnGames.ini*: `LaterWavePct` and  `LaterWaveSpawnCooldown` deprecated. Set `SpawnRateMod` in each wave instead.
+- *ScrnWaves.ini*: adjusted `SpawnRateMod` to compensate for `LaterWaveSpawnCooldown` removal.
+- *ScrnWaves.ini*:`SpecialSquadCooldown` now is set in seconds instead of multiplier. The end result is the same for maps with default `WaveSpawnPeriod=2.0`. However, WaveSpawnPeriod no longer affects the cooldown.
+- *ScrnMapInfo.ini*: Added `ZedSpawnMinDistWeight` to limit zed spawn range on very big maps (e.g., *KF-Boardwalk*)
+
+#### ScrN Waves
+- Added `bUniqueWaves` to *ScrnGames.ini*
+- New wave end rule - `RULE_KillSpecial` (*ScrnWaves.ini*) - kill the special squad (e.g., a mid-game boss) to end the wave. `RULE_KillBoss` automatically switches to `RULE_KillSpecial` if used anywhere but the final wave.
+- Added `ZedsBeforeSpecialSquad` to *ScrnWaves.ini*
+- `bScrnWaves=True` hardcoded in TSC and FTG (previously it was hardcoded in TSC only)
+
+#### Other changes
+- **72. Mystery Game** - updated to v2.02. Added new wave "Big Fat Kenny" to demonstrate `RULE_KillSpecial`.
+- Fixed "Sole Survivor" stat (thanks [Broski])
+
+
 ### v9.69.41
 - New config option `bKickBan` in *ScrnBalanceSrv.ini*
 - New config options: `MinBonusLevel`, `MaxBonusLevel` in *ScrnGames.ini*

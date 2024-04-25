@@ -30,10 +30,11 @@ const DIFF_MAX      = 8; // HoE + Hardcore
 var const float MAX_DIST_SQ;
 
 enum EZedSpawnLocation {
-    ZSLOC_VANILLA,    // Same as in Vanilla KF
+    ZSLOC_NONE,       // The caller has no idea what the agrument means
     ZSLOC_CLOSER,     // Spawn zed closer to players (equals to bCloserZedSpawns=True in previous ScrN versions)
     ZSLOC_RANDOM,     // Spawn zeds in random locations no matter of distance to player
-    ZSLOC_AUTO        // Auto set the best spawn rating depending from wave stats
+    ZSLOC_AUTO,       // Auto set the best spawn rating depending from wave stats
+    ZSLOC_VANILLA     // Same as in Vanilla KF
 };
 var EZedSpawnLocation ZedSpawnLoc;
 var protected int ZVolVisibleCount;  // number of ZombieVolumes in ZedSpawnList that require player visibility checks
@@ -75,6 +76,7 @@ var float ZEDTimeTransitionTime;  // time to transit from slowmo to normal game 
 var float ZEDTimeTransitionRate;  // how often (in seconds) to update game speed
 var transient float ZEDTimeNextUpdate;
 
+var const bool bForceScrnWaves;
 var const bool bSingleTeamGame;
 var transient int WavePlayerCount; // alive player count at the beginning of the wave
 var transient int AlivePlayerCount, AliveTeamPlayerCount[2];
@@ -171,7 +173,7 @@ event InitGame( string Options, out string Error )
 
     CheckScrnBalance();
     ScrnBalanceMut.SetStartCash();
-    if ( ScrnBalanceMut.bScrnWaves ) {
+    if ( bForceScrnWaves || ScrnBalanceMut.bScrnWaves ) {
         if (ScrnGameLength == none ) {  // mutators might already load this
             if (ScrnBalanceMut.bUserGames && KFGameLength >= 100 && KFGameLength < 200) {
                 GameLengthClass = class'ScrnUserGameLength';
@@ -1499,7 +1501,16 @@ function bool CanSpawnInVolume(class<KFMonster> M, ZombieVolume ZVol)
     return true;
 }
 
-function ZombieVolume FindSpawningVolumeForSquad(out array< class<KFMonster> > Squad,
+function EZedSpawnLocation GetSpawnLocation()
+{
+    if (!HasEnoughZeds()) {
+        // not enough zeds on the map - spawn them closer
+        return ZSLOC_CLOSER;
+    }
+    return ZedSpawnLoc;
+}
+
+function ZombieVolume FindSpawningVolumeForSquad(out array< class<KFMonster> > Squad, EZedSpawnLocation ZSL,
         optional bool bIgnoreFailedSpawnTime, optional bool bBossSpawning)
 {
     local ZombieVolume BestZ, CurZ;
@@ -1508,6 +1519,10 @@ function ZombieVolume FindSpawningVolumeForSquad(out array< class<KFMonster> > S
     local Controller C;
     local float ZVolUsageTime, wDist, wUsage, wDesire, BoringDistMult;
     local byte BoringLocal;
+
+    if (ZSL == ZSLOC_NONE) {
+        ZSL = GetSpawnLocation();
+    }
 
     if ( Squad.Length == 0 )
         return none;
@@ -1526,7 +1541,7 @@ function ZombieVolume FindSpawningVolumeForSquad(out array< class<KFMonster> > S
      // do not lower actual boring stage
     BoringLocal = clamp(BoringLocal, BoringStage, BoringStages.length - 1);
 
-    switch (ZedSpawnLoc) {
+    switch (ZSL) {
         case ZSLOC_CLOSER:
             wDist = 0.50;
             wUsage = 0.30;
@@ -1534,7 +1549,7 @@ function ZombieVolume FindSpawningVolumeForSquad(out array< class<KFMonster> > S
             break;
 
         case ZSLOC_RANDOM:
-            wDist = 0.15;
+            wDist = 0.15 * min(3, 1 + BoringLocal);
             wUsage = 0.30;
             wDesire = 0.15;
             break;
@@ -1560,7 +1575,7 @@ function ZombieVolume FindSpawningVolumeForSquad(out array< class<KFMonster> > S
             }
             break;
     }
-
+    wDist = fmax(wDist, ScrnBalanceMut.MapInfo.ZedSpawnMinDistWeight);
     ZVolUsageTime = fmax(1.0, BoringStages[BoringLocal].ZVolUsageTime);
     // The higher boring stage, the closer zeds may spawn to the players
     BoringDistMult = 1.0 - 0.20 * BoringLocal;
@@ -1600,7 +1615,7 @@ function ZombieVolume FindSpawningVolumeForSquad(out array< class<KFMonster> > S
             // lower rating to favor volumes that can spawn more zeds.
             tScore *= CanSpawn / total;
         }
-        else if ( CurZ.bAllowPlainSightSpawns && ZedSpawnLoc == ZSLOC_RANDOM && !bBossSpawning ) {
+        else if ( CurZ.bAllowPlainSightSpawns && ZSL == ZSLOC_RANDOM && !bBossSpawning ) {
             // prefer hidden volumes during random spawns rather than spawning in the middle of a room
             // 450 equals to doubling SpawnDesirability at the given wDesire: 0.15 * 3000
             tScore += 450.0;
@@ -1625,7 +1640,7 @@ function ZombieVolume FindSpawningVolumeForSquad(out array< class<KFMonster> > S
 
 function ZombieVolume FindSpawningVolume(optional bool bIgnoreFailedSpawnTime, optional bool bBossSpawning)
 {
-    return FindSpawningVolumeForSquad(NextSpawnSquad, bIgnoreFailedSpawnTime, bBossSpawning);
+    return FindSpawningVolumeForSquad(NextSpawnSquad, ZSLOC_NONE, bIgnoreFailedSpawnTime, bBossSpawning);
 }
 
 static function string ZedSquadToString(out array< class<KFMonster> > Squad)
@@ -1801,11 +1816,9 @@ function float WaveSinMod()
     return 2.0 * (1.0 - abs(sin(WaveTimeElapsed  * SineWaveFreq)));
 }
 
-// returns the minumum zeds on the map to prevent it beeing too slow
-// Zed spawn rate may be increased if NumMonsters < MinZombiesOnce()
-function int MinZombiesOnce()
+function bool HasEnoughZeds()
 {
-    return min(8 + 3*AlivePlayerCount, 24);
+    return bWaveBossInProgress || NumMonsters >= min(6 + 3*AlivePlayerCount, 24);
 }
 
 function bool SetBoringStage(byte stage)
@@ -2789,7 +2802,7 @@ function SetupWave()
 
     CalcDoshDifficultyMult();
 
-    if( WaveNum == FinalWave && bUseEndGameBoss ) {
+    if (WaveNum == FinalWave && bUseEndGameBoss) {
         StartWaveBoss();
         return;
     }
@@ -3085,6 +3098,9 @@ function int SpawnSquad(ZombieVolume ZVol, out array< class<KFMonster> > Squad)
                 continue;
             OverrideMonsterHealth(M);
             ScrnBalanceMut.GameRules.ReinitMonster(M, ZVol);
+            if (ScrnGameLength != none) {
+                ScrnGameLength.ZedSpawned(M);
+            }
 
             M.Event = ZVol.ZombieDeathEvent;
             if ( ZVol.ZombieSpawnEvent != '' )
@@ -3230,7 +3246,6 @@ function AdjustBotCount()
             return;
         }
     }
-
 }
 
 function BossGrandEntry()
@@ -3671,16 +3686,11 @@ State MatchInProgress
         NextSpawnTime = fclamp(KFLRules.WaveSpawnPeriod, 0.2, BoringStages[BoringStage].SpawnPeriod);
         NextSpawnTime /= 1.0 + (AlivePlayerCount - 1) * SpawnRatePlayerMod;
 
-        if (NumMonsters >= 32) {
-            // for maps with MaxZombiesOnce > 32: slower spawns if there are already 32+ zeds spawned
-            NextSpawnTime *= 1.5;
-        }
-
         if (ScrnGameLength != none) {
             ScrnGameLength.AdjustNextSpawnTime(NextSpawnTime, BoringStages[BoringStage].MinSpawnTime);
         }
         else {
-            if (NumMonsters >= MinZombiesOnce()) {
+            if (HasEnoughZeds()) {
                 // slower spawns on Normal difficulty if there are already many zeds spawned
                 if (BaseDifficulty < DIFF_HARD) {
                     NextSpawnTime *= 2.0;

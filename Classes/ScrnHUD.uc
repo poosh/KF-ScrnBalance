@@ -2811,7 +2811,7 @@ simulated function DrawSpectatingHud(Canvas C)
 simulated function DrawKFHUDTextElements(Canvas C)
 {
     local float    XL, YL;
-    local int      NumZombies, Min;
+    local int      NumZombies, Counter;
     local string   S;
     local float    CircleSize;
     local float    ResScale;
@@ -2834,10 +2834,10 @@ simulated function DrawKFHUDTextElements(Canvas C)
         C.SetPos(C.ClipX - CircleSize, 2);
         C.DrawTile(Material'KillingFloorHUD.HUD.Hud_Bio_Clock_Circle', CircleSize, CircleSize, 0, 0, 256, 256);
 
-        Min = KFGRI.TimeToNextWave / 60;
-        NumZombies = KFGRI.TimeToNextWave - (Min * 60);
+        Counter = KFGRI.TimeToNextWave / 60;
+        NumZombies = KFGRI.TimeToNextWave - (Counter * 60);
 
-        S = Eval((Min >= 10), string(Min), "0" $ Min) $ ":" $ Eval((NumZombies >= 10), string(NumZombies), "0" $ NumZombies);
+        S = Eval((Counter >= 10), string(Counter), "0" $ Counter) $ ":" $ Eval((NumZombies >= 10), string(NumZombies), "0" $ NumZombies);
         C.Font = LoadFont(2);
         C.Strlen(S, XL, YL);
         C.SetDrawColor(255, 50, 50, KFHUDAlpha);
@@ -2849,7 +2849,7 @@ simulated function DrawKFHUDTextElements(Canvas C)
         C.SetPos(C.ClipX - CircleSize, 2);
         C.DrawTile(Material'KillingFloorHUD.HUD.Hud_Bio_Circle', CircleSize, CircleSize, 0, 0, 256, 256);
 
-        S = string(KFGRI.MaxMonsters);
+        Counter = KFGRI.MaxMonsters;
         if (ScrnGRI != none) {
             switch (ScrnGRI.WaveEndRule) {
                 case 3:  // RULE_EarnDosh
@@ -2861,17 +2861,22 @@ simulated function DrawKFHUDTextElements(Canvas C)
                         C.DrawColor.A = 255;
                     }
                     C.DrawTile(Texture'ScrnTex.HUD.Hud_Pound_Symbol_BW', CircleSize/4, CircleSize/4, 0, 0, 64, 64);
-                    S = string(ScrnGRI.WaveCounter);
+                    Counter = ScrnGRI.WaveCounter;
                     break;
 
                 case 7:  // RULE_GrabAmmo
                     C.SetPos(C.ClipX - CircleSize/2 - CircleSize/8, 8);
                     C.SetDrawColor(255, 255, 255, 255);
                     C.DrawTile(ClipsIcon.WidgetTexture, CircleSize/4, CircleSize/4, 0, 0, ClipsIcon.TextureCoords.X2, ClipsIcon.TextureCoords.Y2);
-                    S = string(ScrnGRI.WaveCounter);
+                    Counter = ScrnGRI.WaveCounter;
+                    break;
+
+                case 8:  // RULE_KillSpecial
+                    Counter = ScrnGRI.WaveCounter;
                     break;
             }
         }
+        S = eval(Counter >= 0, string(Counter), "?");
         C.Font = LoadFont(1);
         C.Strlen(S, XL, YL);
         if (XL > CircleSize * 0.75) {

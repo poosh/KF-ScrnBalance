@@ -154,20 +154,13 @@ event InitGame( string Options, out string Error )
     }
     else {
         bUseEndGameBoss = false;
-        if ( ScrnGameLength != none ) {
-            OvertimeWaves = ScrnGameLength.OTWaves;
-            SudDeathWaves = ScrnGameLength.SDWaves;
-            if ( ScrnGameLength.NWaves + OvertimeWaves + SudDeathWaves > 0 ) {
-                FinalWave = ScrnGameLength.NWaves;
-            }
-            else {
-                FinalWave = max(1, ScrnGameLength.Waves.length - OvertimeWaves - SudDeathWaves);
-            }
+        OvertimeWaves = ScrnGameLength.OTWaves;
+        SudDeathWaves = ScrnGameLength.SDWaves;
+        if ( ScrnGameLength.NWaves + OvertimeWaves + SudDeathWaves > 0 ) {
+            FinalWave = ScrnGameLength.NWaves;
         }
         else {
-            FinalWave = max(GetIntOption(Options, "NWaves", FinalWave), 1);
-            OvertimeWaves = max(GetIntOption(Options, "OTWaves", OvertimeWaves), 0);
-            SudDeathWaves = max(GetIntOption(Options, "SDWaves", SudDeathWaves), 0);
+            FinalWave = max(1, ScrnGameLength.Waves.length - OvertimeWaves - SudDeathWaves);
         }
     }
     OriginalFinalWave = FinalWave;
@@ -1039,12 +1032,26 @@ function SetupWave()
     TSCTeams[1].LastMinKills = TSCTeams[1].ZedKills;
 }
 
-function int MinZombiesOnce()
+function bool HasEnoughZeds()
 {
-    if (!bSingleTeamGame && !bTeamWiped) {
-        return min(8 + 3*AlivePlayerCount, 32);
+    if (!bTeamWiped) {
+        return NumMonsters >= min(6 + 3*AlivePlayerCount, 32);
     }
-    return super.MinZombiesOnce();
+    return super.HasEnoughZeds();
+}
+
+function EZedSpawnLocation GetSpawnLocation()
+{
+    if (!bTeamWiped) {
+        if (ScrnGameLength.bLoadedSpecial) {
+            // there are two special squads, one for each team. Spawn them closer to the target
+            return ZSLOC_CLOSER;
+        }
+        else {
+            return ZSLOC_RANDOM;
+        }
+    }
+    return super.GetSpawnLocation();
 }
 
 function bool AddSquad()
@@ -1064,16 +1071,15 @@ function bool AddSquad()
                 return false;
 
             if ( ScrnGameLength.bLoadedSpecial ) {
-                if (!bTeamWiped)
+                if (!bTeamWiped) {
                     PendingSpecialSquad = NextSpawnSquad; // backup for another team
+                }
                 bCheckSquadTeam = true; // One special squad per each team
-                ZedSpawnLoc = ZSLOC_CLOSER; // spawn close to the designated team
             }
             else {
                 // Check teams only when they are equal in number.
                 // If teams are uneven, then just pick up random player as squad's target
                 bCheckSquadTeam = BigTeamSize == SmallTeamSize;
-                ZedSpawnLoc = ZSLOC_RANDOM; // make zeds spawn more random on the map
             }
         }
     }
@@ -1314,7 +1320,7 @@ State MatchInProgress
             SpawnBaseGuardian(1);
         TeamBases[1].SendHome();
 
-        if ( ScrnGameLength != none && NextWave >= ScrnGameLength.Waves.length ) {
+        if ( NextWave >= ScrnGameLength.Waves.length ) {
             // if there are not enough waves in ScrnGameLength, then just re-load the last one again
             WaveNum = ScrnGameLength.Waves.length - 2;
         }
@@ -1466,6 +1472,7 @@ defaultproperties
     DefaultEnemyRosterClass="ScrnBalanceSrv.TSCTeam"
     bNoLateJoiners=False
     bPlayersVsBots=False
+    bForceScrnWaves=True
     bSingleTeamGame=False
     bUseEndGameBoss=False
     MinNetPlayers=2

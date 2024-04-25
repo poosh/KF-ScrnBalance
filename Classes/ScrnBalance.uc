@@ -1021,16 +1021,15 @@ function GameTimer()
 
 function Timer()
 {
-    // todo - talk to Marco about forcing game saving
-    if ( bNeedToSaveStats && Level.TimeSeconds > NextStatSaveTime ) {
-        SaveStats();
-    }
-
     if ( KF.IsInState('MatchInProgress') ) {
         if ( GameStartCountDown > 0)
             GameStartCountDown--; // wait for 10 seconds for game to be started and set up first wave
         else
             GameTimer();
+    }
+
+    if ( bNeedToSaveStats && Level.TimeSeconds > NextStatSaveTime ) {
+        SaveStats();
     }
 }
 
@@ -2479,11 +2478,11 @@ function PostBeginPlay()
     KF.bUseZEDThreatAssessment = true; // always use ScrnHumanPawn.AssessThreatTo()
     bStoryMode = KFStoryGameInfo(KF) != none;
     bTSCGame = TSCGame(KF) != none && !TSCGame(KF).bSingleTeamGame;
-    if ( bTSCGame ) {
-        bScrnWaves = true;
-    }
     ScrnGT = ScrnGameType(KF);
     if ( ScrnGT != none ) {
+        if (ScrnGT.bForceScrnWaves) {
+            bScrnWaves = true;
+        }
         ScrnGT.ScrnBalanceMut = self;
         MaxDifficulty = ScrnGT.DIFF_MAX;
     }
@@ -3229,7 +3228,7 @@ function RegisterVersion(string ItemName, int Version)
 
 defaultproperties
 {
-    VersionNumber=96941
+    VersionNumber=96943
     GroupName="KF-Scrn"
     FriendlyName="ScrN Balance"
     Description="Total rework of KF1 to make it modern and the best game in the world while sticking to the roots of the original."

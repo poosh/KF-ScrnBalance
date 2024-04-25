@@ -21,6 +21,7 @@ var config array<string> ServerPackages;
 var config array<string> Mutators;
 var config array<string> Waves;
 var config array<string> Zeds;
+var config bool bUniqueWaves;
 var config bool bAllowZedEvents;
 var config byte ForceZedEvent, FallbackZedEvent;
 var config bool bLogStats;
@@ -37,8 +38,6 @@ struct SHL {
 };
 var config array<SHL> HardcoreLevel;
 var config float HLMult;
-var config int LaterWavePct;
-var config float LaterWaveSpawnCooldown;
 var config byte MinDifficulty, MaxDifficulty;
 var config byte MinBonusLevel, MaxBonusLevel;
 var config bool bForceTourney;
@@ -101,9 +100,12 @@ var ScrnWaveInfo Wave, NextWave;
 var protected int NextWaveNum;
 var transient int ZedsBeforeSpecial;
 var transient bool bLoadedSpecial;  // is the last loaded squad special
+var array<KFMonster> Bosses;
+var transient bool bBossSpawned;
 var transient int LoadedCount;  // loaded monster count (without squad breaks)
 var transient float PlayerCountOverrideForHealth;
 var transient array<name> AllowWeapons, BlockWeapons;
+var transient array<string> UsedWaves;
 
 var transient float WaveEndTime;
 var transient int WaveCounter;
@@ -135,6 +137,7 @@ function LoadGame(ScrnGameType MyGame)
         Game.MaximizeDebugLogging();
     }
 
+    FtgSpawnRateMod = fclamp(FtgSpawnRateMod, 0.2, 1.0);
     MinDifficulty = clamp(MinDifficulty, Game.DIFF_MIN, Game.DIFF_MAX);
     if ( MaxDifficulty == 0 ) {
         MaxDifficulty = Game.DIFF_MAX;
@@ -587,6 +590,14 @@ function PrintAliases(PlayerController Sender)
     }
 }
 
+function ZedSpawned(KFMonster M)
+{
+    if (bLoadedSpecial && Wave.EndRule == RULE_KillSpecial) {
+        Bosses[Bosses.Length] = M;
+        bBossSpawned = true;
+    }
+}
+
 protected function bool LoadNextWave()
 {
     local int i;
@@ -595,7 +606,9 @@ protected function bool LoadNextWave()
     local KFPlayerController KFPC;
     local int NumPlayers;
 
-    ZedsBeforeSpecial = 0;
+    bLoadedSpecial = false;
+    bBossSpawned = false;
+    Bosses.length = 0;
     PendingSquads.length = 0;
     PendingSpecialSquads.length = 0;
     Squads.length = 0;
@@ -632,6 +645,16 @@ protected function bool LoadNextWave()
         if ( ParseSquad(Wave.SpecialSquads[i], squad) ) {
             SpecialSquads[SpecialSquads.length] = squad;
         }
+    }
+
+    if (Wave.EndRule == RULE_KillBoss && !(NextWaveNum == Game.FinalWave && Game.bUseEndGameBoss)) {
+        // RULE_KillBoss can use used only for end-game boss.
+        // Use RULE_KillSpecial for mid-wave bosses.
+        Wave.EndRule = RULE_KillSpecial;
+    }
+    if (Wave.EndRule == RULE_KillSpecial &&  SpecialSquads.length == 0) {
+        log("No special squads in wave", class.name);
+        return false;
     }
 
     if ( Wave.MaxZombiesOnce > 0 )
@@ -702,6 +725,19 @@ function bool LoadWave(int WaveNum)
     return true;
 }
 
+function string PickWaveName(array<string> Candidates) {
+    local int i;
+
+    i = rand(Candidates.Length);
+    if (bUniqueWaves) {
+        while (Candidates.Length > 1 && class'ScrnFunctions'.static.SearchStr(UsedWaves, Candidates[i]) != -1) {
+            Candidates.remove(i, 1);
+            i = rand(Candidates.Length);
+        }
+    }
+    return Candidates[i];
+}
+
 function ScrnWaveInfo CreateWave(string WaveDefinition)
 {
     local array<string> Parts;
@@ -709,11 +745,12 @@ function ScrnWaveInfo CreateWave(string WaveDefinition)
 
     // get rid of spaces
     WaveName = Repl(WaveDefinition, " ", "", true);
-    if ( InStr(WaveName, "|") != -1 ) {
+    if (InStr(WaveName, "|") != -1) {
         Split(WaveName, "|", Parts);
-        WaveName = Parts[rand(Parts.length)];
+        WaveName = PickWaveName(Parts);
     }
     log("Creating wave " $ WaveName, class.name);
+    UsedWaves[UsedWaves.Length] = WaveName;
     return new(none, WaveName) WaveInfoClass;
 }
 
@@ -751,8 +788,13 @@ function SetWaveInfo()
 {
     local int ExtraPlayers;
 
+    WaveCounter = Wave.Counter;
+    ZedsBeforeSpecial = Wave.ZedsBeforeSpecialSquad;
+    if ( ZedsBeforeSpecial > 0 && Wave.bRandomSquads ) {
+        ZedsBeforeSpecial *= 0.85 + 0.3*frand();
+    }
+
     if (Wave.PerPlayerMult == 0) {
-        WaveCounter = Wave.Counter;
         switch ( Wave.EndRule ) {
             case RULE_KillEmAll:
             case RULE_SpawnEmAll:
@@ -760,14 +802,17 @@ function SetWaveInfo()
         }
     }
     else {
-        WaveCounter = Wave.Counter;
         ExtraPlayers = max(Game.AlivePlayerCount, Game.ScrnGRI.FakedPlayers) - Wave.PerPlayerExclude;
         if (ExtraPlayers > 0) {
             WaveCounter *= 1.0 + Wave.PerPlayerMult * ExtraPlayers;
+            ZedsBeforeSpecial *= 1.0 + Wave.PerPlayerMult * ExtraPlayers;
         }
     }
-    if (Wave.MaxCounter > 0 && WaveCounter > Wave.MaxCounter)
-        WaveCounter = Wave.MaxCounter;
+
+    if (Wave.MaxCounter > 0) {
+        WaveCounter = min(WaveCounter, Wave.MaxCounter);
+        ZedsBeforeSpecial = min(ZedsBeforeSpecial, Wave.MaxCounter);
+    }
     WaveEndTime = Game.Level.TimeSeconds + WaveCounter + 0.1;
 
     switch (Wave.EndRule) {
@@ -805,6 +850,15 @@ function WaveTimer()
 
         case RULE_GrabAmmo:
             Game.ScrnGRI.WaveCounter = max(0, WaveCounter - Mut.GameRules.WaveAmmoPickups);
+            break;
+
+        case RULE_KillSpecial:
+            if (bBossSpawned) {
+                Game.ScrnGRI.WaveCounter = AliveZedCount(Bosses);
+            }
+            else {
+                Game.ScrnGRI.WaveCounter = -1;  // Show "?" on HUD
+            }
             break;
     }
 }
@@ -884,10 +938,25 @@ function LogStats()
     }
 }
 
+function int AliveZedCount(out array<KFMonster> ZedList)
+{
+    local int i, c;
+    local KFMonster M;
+
+    for (i = ZedList.length - 1; i >= 0; --i) {
+        M = ZedList[i];
+        if (M != none && !M.bDeleteMe && M.Health > 0) {
+            ++c;
+        }
+        else {
+            ZedList.remove(i, 1);
+        }
+    }
+    return c;
+}
+
 function bool CheckWaveEnd()
 {
-    local int i;
-
     switch ( Wave.EndRule ) {
         case RULE_KillEmAll:
             return Game.TotalMaxMonsters <= 0 && Game.NumMonsters <= 0;
@@ -895,14 +964,9 @@ function bool CheckWaveEnd()
             return Game.TotalMaxMonsters <= 0;
 
         case RULE_KillBoss:
-            if ( Game.bBossSpawned && Game.Bosses.length > 0 ) {
-                for ( i = 0; i < Game.Bosses.length; ++i ) {
-                    if ( Game.Bosses[i] != none && Game.Bosses[i].Health > 0 )
-                        return false; // boss is alive
-                }
-                return true; // all bosses are dead
-            }
-            break;
+            return Game.bBossSpawned && Game.bHasSetViewYet && AliveZedCount(Game.Bosses) == 0;
+        case RULE_KillSpecial:
+            return bBossSpawned && AliveZedCount(Bosses) == 0;
 
         case RULE_Timeout:
             return Game.Level.TimeSeconds >= WaveEndTime;
@@ -926,6 +990,7 @@ function int GetWaveZedCount()
     switch ( Wave.EndRule ) {
         case RULE_KillBoss:
             return 1;
+        case RULE_KillSpecial:
         case RULE_Timeout:
         case RULE_EarnDosh:
         case RULE_GrabDosh:
@@ -955,38 +1020,37 @@ function AdjustNextSpawnTime(out float NextSpawnTime, float MinSpawnTime)
     }
 
     SpawnRateMod = fclamp(Wave.SpawnRateMod, 0.1, 10.0);
-    if (Game.NumMonsters >= Game.MinZombiesOnce()) {
-        // slower spawns on Normal difficulty if there are already many zeds spawned
+    if (bLoadedSpecial) {
+        NextSpawnTime += Wave.SpecialSquadCooldown;
+    }
+
+    if (Game.HasEnoughZeds()) {
+           // for maps with MaxZombiesOnce > 32: slower spawns if there are already 32+ zeds spawned
+        if (Game.NumMonsters >= 32) {
+            NextSpawnTime *= 1.5;
+        }
+        // slower spawns on Normal difficulty
         if (Game.BaseDifficulty < Game.DIFF_HARD) {
             NextSpawnTime *= 2.0;
             MinSpawnTime *= 1.5;
         }
-        // longer cooldown on later waves if there are already many zeds spawned
-        if (Game.WavePct >= LaterWavePct) {
-            NextSpawnTime *= LaterWaveSpawnCooldown;
-        }
-        // up to double the maximum delay between waves after loading the special squad
-        if (bLoadedSpecial) {
-            MinSpawnTime *= fclamp(Wave.SpecialSquadCooldown / 2.0, 1.0, 2.0);
-        }
         // Slower spawns in FTG while the Guardian is being carried
         if (FTG != none && (FTG.TeamBases[0].bHeld || FTG.TeamBases[1].bHeld)) {
-            SpawnRateMod *= fclamp(FtgSpawnRateMod, 0.2, 1.0);
+            SpawnRateMod *= FtgSpawnRateMod;
+        }
+
+        if (Wave.bRandomSquads && !bLoadedSpecial) {
+            // 1.0 .. 3.0
+            NextSpawnTime *= 1.0 + Game.WaveSinMod();
+        }
+        else {
+            // average between 1.0 and 3.0
+            NextSpawnTime *= 2.0;
         }
     }
+
     NextSpawnTime /= SpawnRateMod;
     MinSpawnTime /= SpawnRateMod;
-
-    if (bLoadedSpecial) {
-        NextSpawnTime *= 1.0 + Wave.SpecialSquadCooldown;
-    }
-    else if (Wave.bRandomSquads) {
-        // * 1.0 .. 3.0
-        NextSpawnTime *= 1.0 + Game.WaveSinMod();
-    }
-    else {
-        NextSpawnTime *= 2.0;  // average between 1.0 and 3.0
-    }
     NextSpawnTime = fmax(NextSpawnTime, MinSpawnTime);
 }
 
@@ -996,13 +1060,17 @@ function LoadNextSpawnSquad(out array < class<KFMonster> > NextSpawnSquad)
 
     if ( PendingNextSpawnSquad.length == 0 ) {
         LoadedCount = 0;
-        if ( ZedsBeforeSpecial <= 0 && SpecialSquads.length > 0 ) {
+        if (ZedsBeforeSpecial <= 0 && SpecialSquads.length > 0 && !bBossSpawned) {
             LoadNextSpawnSquadInternal(PendingNextSpawnSquad, SpecialSquads, PendingSpecialSquads, Wave.bRandomSpecialSquads);
             ZedsBeforeSpecial = Wave.ZedsPerSpecialSquad;
             if ( Wave.bRandomSquads ) {
                 ZedsBeforeSpecial *= 0.85 + 0.3*frand();
             }
             bLoadedSpecial = true;
+        }
+        else if (bLoadedSpecial && Wave.EndRule == RULE_KillSpecial && !bBossSpawned) {
+            log("Boss failed to spawn", class.name);
+            bBossSpawned = true;
         }
         else {
             LoadNextSpawnSquadInternal(PendingNextSpawnSquad, Squads, PendingSquads, Wave.bRandomSquads);
@@ -1379,7 +1447,7 @@ function byte SpawnZed(string Alias, string ZedClassStr, byte count, out string 
         Squad[i] = Squad[0];
     }
 
-    return Game.SpawnSquadLog(Game.FindSpawningVolumeForSquad(Squad, true), Squad);
+    return Game.SpawnSquadLog(Game.FindSpawningVolumeForSquad(Squad, ZSLOC_NONE, true), Squad);
 }
 
 function int CalcStartingCash(PlayerController PC)
@@ -1505,8 +1573,6 @@ defaultproperties
     HLMult=1.0
     BountyScale=1.0
     bLogStats=true
-    LaterWavePct=70
-    LaterWaveSpawnCooldown=1.5
     bRandomTrader=true
     FtgSpawnRateMod=0.8
     FtgSpawnDelayOnPickup=10.0

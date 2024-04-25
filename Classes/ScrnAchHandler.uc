@@ -232,7 +232,7 @@ function WaveEnded(byte WaveNum)
         OnlyHealerSPI.ProgressAchievement('OnlyHealer', 1);
     if ( AlivePlayers == 1 && TotalPlayers >= 3) {
         LastAliveSPI.ProgressAchievement('ThinIcePirouette', 1);
-        KFSteamStatsAndAchievements(SPI.PlayerOwner.SteamStatsAndAchievements).AddOnlySurvivorOfWave();
+        KFSteamStatsAndAchievements(LastAliveSPI.PlayerOwner.SteamStatsAndAchievements).AddOnlySurvivorOfWave();
     }
 
     if ( TotalPlayers >= 3 && MinKills > max(1, MaxKills * 0.9) )

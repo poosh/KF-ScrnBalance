@@ -27,11 +27,6 @@ event InitGame( string Options, out string Error )
         FriendlyFireScale = 0;
         bSingleTeam = true;
         bTeamWiped = true;
-        if ( ScrnGameLength == none ) {
-            bUseEndGameBoss = true;
-            OvertimeWaves = 1; // boss wave
-            SudDeathWaves = 0;
-        }
     }
 }
 
@@ -216,7 +211,7 @@ function SetupWave()
 
     super.SetupWave();
 
-    if ( (ScrnGameLength != none && ScrnGameLength.Wave.bOpenTrader) || (ScrnGameLength == none && WaveNum > 0) ) {
+    if (ScrnGameLength.Wave.bOpenTrader) {
         ZedSpawnLoc = default.ZedSpawnLoc;
         //TotalMaxMonsters *= 0.75; // reduce amount of zeds in wave
         FriendlyFireScale = HDmgScale;
@@ -260,7 +255,6 @@ function bool SpawnStinkyClot()
 {
     local ZombieVolume ZVol;
     local array< class<KFMonster> > StinkySquad;
-    local EZedSpawnLocation OldZedSpawnLoc;
     local int StinkyCount;
 
     StinkySquad[0] = StinkyClass;
@@ -271,13 +265,10 @@ function bool SpawnStinkyClot()
     }
     StinkyCount = StinkySquad.length;
 
-    OldZedSpawnLoc = ZedSpawnLoc;
-    ZedSpawnLoc = ZSLOC_RANDOM;
-    ZVol = FindSpawningVolumeForSquad(StinkySquad, false);
+    ZVol = FindSpawningVolumeForSquad(StinkySquad, ZSLOC_RANDOM, false);
     if ( Zvol == none ) {
-        ZVol = FindSpawningVolumeForSquad(StinkySquad, true);
+        ZVol = FindSpawningVolumeForSquad(StinkySquad, ZSLOC_RANDOM, true);
     }
-    ZedSpawnLoc = OldZedSpawnLoc;
     if( ZVol == none ) {
         LogZedSpawn(LOG_ERROR, "Could not find a place to spawn a Stinky Clot ("$StinkyClass$")! Trying again later.");
         return false;
@@ -418,9 +409,7 @@ function StinkyControllerReady(StinkyController SC)
 
     SC.ActionNum = 0;
 
-    if ( bWaveBossInProgress || (ScrnGameLength != none && ScrnGameLength.NextWave != none
-        && !ScrnGameLength.NextWave.bOpenTrader) )
-    {
+    if (bWaveBossInProgress || (ScrnGameLength.NextWave != none && !ScrnGameLength.NextWave.bOpenTrader)) {
         // if there is no trader on the next wave, don't hurry to the closed shop - go for more ammo
         if ( StinkyTargets.length >= 5 ) {
             t = StinkyTargets.length * 3 / 4;
@@ -485,7 +474,7 @@ function StinkyControllerCompeledAction(StinkyController SC, int CompletedAction
             gnome.bHeld = true;
             ZedSpawnLoc = ZSLOC_RANDOM;
             SetBoringStage(0);
-            if ( !bWaveBossInProgress && ScrnGameLength != none ) {
+            if (!bWaveBossInProgress) {
                 NextMonsterTime += ScrnGameLength.FtgSpawnDelayOnPickup;
             }
         }
@@ -567,7 +556,7 @@ State MatchInProgress
         else
             super.DoWaveEnd();
 
-        if ( ScrnGameLength == none || ScrnGameLength.Wave.bOpenTrader ) {
+        if ( ScrnGameLength.Wave.bOpenTrader ) {
             KillAllStinkyClots();
         }
         else {
