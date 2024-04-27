@@ -1035,7 +1035,7 @@ function SetupWave()
 function bool HasEnoughZeds()
 {
     if (!bTeamWiped) {
-        return NumMonsters >= min(6 + 3*AlivePlayerCount, 32);
+        return NumMonsters >= min(4 * AlivePlayerCount, 24);
     }
     return super.HasEnoughZeds();
 }
@@ -1390,6 +1390,7 @@ State MatchInProgress
     {
         local int i;
         local Controller C;
+        local KFPlayerController KFPC;
 
         bTradingDoorsOpen = True;
         TSCGRI.bHumanDamageEnabled = false;
@@ -1413,17 +1414,16 @@ State MatchInProgress
         }
 
         // Tell all players to start showing the path to the trader
-        For( C=Level.ControllerList; C!=None; C=C.NextController )
-        {
-            if( C.Pawn!=None && C.Pawn.Health>0 )
+        for( C=Level.ControllerList; C!=None; C=C.NextController ) {
+            if( C.bIsPlayer && C.Pawn!=None && C.Pawn.Health>0 )
             {
                 // Disable pawn collision during trader time
                 C.Pawn.bBlockActors = !bAntiBlocker;
 
-                if( KFPlayerController(C) !=None )
-                {
-                    KFPlayerController(C).SetShowPathToTrader(true);
-                    KFPlayerController(C).ClientLocationalVoiceMessage(C.PlayerReplicationInfo, none, 'TRADER', 2);
+                KFPC = KFPlayerController(C);
+                if( KFPC != none ) {
+                    KFPC.SetShowPathToTrader(true);
+                    KFPC.ClientLocationalVoiceMessage(C.PlayerReplicationInfo, none, 'TRADER', 2);
                 }
             }
         }
@@ -1488,6 +1488,7 @@ defaultproperties
     bAntiBlocker=True
     DefaultGameLength=40
     WaveKillReqPct=0.20
+    PlayerKillScore=250
 
     bClanCheck=True
     ClanTags(0)=(Prefix="[",Postfix="]")

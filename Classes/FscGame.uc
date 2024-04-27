@@ -12,6 +12,7 @@ defaultproperties
     bUseEndGameBoss=false
     MinBaseZ=-60
     MaxBaseZ=200
+    PlayerKillScore=250
 
     ScoreBoardType="ScrnBalanceSrv.TSCScoreBoard"
     BaseGuardianClasses(0)=class'FtgBaseGuardianRed'

@@ -619,6 +619,7 @@ defaultproperties
     MaxBaseZ =  500
     ZedSpawnLoc=ZSLOC_AUTO
     MinNetPlayers=1
+    PlayerKillScore=100
 
     HUDType="ScrnBalanceSrv.FtgHUD"
     ScoreBoardType="ScrnBalanceSrv.ScrnScoreBoard"

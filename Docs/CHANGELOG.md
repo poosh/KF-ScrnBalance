@@ -28,6 +28,18 @@
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+### v9.69.45
+- **20. New Doom** (BETA) - totally reworked Doom 3 Demon Invasion mode to use modern ScrN features. A long game, 16+1 waves: 4 regular waves + 2 mid-game boss fights + 6 random waves + 6 trader paths + final boss battle. Each of the 8 Doom bosses now has its unique wave. A mid-game boss wave ends when the boss is defeated. Other enemies don't matter. Moreover, only killing the boss grants dosh.
+- **52. Escape the Hunter** - a new game mode by [nmmblez] included into the official rotation. The game loop is opposite from FTG: players must run away from the Invulnerable Hunter instead of following the guardian until the timer runs out. The game mode provides a unique KF experience but cannot be enjoyed by the mentally disabled.
+- "23. Late Pure Doom" and "41. FTG Survival Competition" removed from the official rotation due to `GameConfig` 4095-char limit.
+- Players now lose constant amount of dosh on death (instead if % of total money).
+- By default, a player death subtracts from $100 both from player and team wallet ($200 in total).
+- In **TSC** and Tourney, a death "costs" -$250 for the player and the team.
+- If killed by an enemy player in TSC, the killer and their team gains +$250, shifting the overall team dosh balance by $1000 in total.
+- *ScrnWaves.ini*: Added `bNoBounty` and `CashBonus`.
+- If the wave got picked randomly, its Header/Title/Message is not revealed until the trader time ends
+- "Enough zeds" formula changed to `4 * AlivePlayerCount`, capped at 16 (24 in TSC).
+
 ### v9.69.43
 #### Spawn Rate Overhaul
 - Faster zed spawning at the beginning of a wave.

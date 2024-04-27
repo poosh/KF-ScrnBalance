@@ -43,6 +43,8 @@ var config float SpawnRateMod;
 var config float SpecialSquadCooldown;
 var config byte MaxZombiesOnce;
 var config float BountyScale;
+var config bool bNoBounty;
+var config int CashBonus;
 var config float XP_Bonus, XP_BonusAlive;
 var config int SuicideTime;
 var config float SuicideTimePerPlayerMult;
@@ -56,6 +58,8 @@ var config bool bRandomSquads;
 var config bool bRandomSpecialSquads;
 var config array<string> SpecialSquads;
 var config array<string> Squads;
+
+var transient bool bRandomlyPicked;
 
 defaultproperties
 {

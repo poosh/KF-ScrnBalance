@@ -675,10 +675,12 @@ protected function bool LoadNextWave()
         Game.AddSuicideTime(SuicideTimePerWave * (1.0 + SuicideTimePerPlayerMult * (NumPlayers - 1)), false);
     }
 
+    Game.WaveCountDown = Wave.TraderTime;
     Game.ScrnGRI.bTraderArrow = Wave.bTraderArrow || Wave.bOpenTrader;
     Game.ScrnGRI.WaveEndRule = Wave.EndRule;
     Game.bZedPickupDosh = Wave.EndRule == RULE_GrabDoshZed;
     Game.bZedDropDosh = Wave.EndRule == RULE_GrabDoshZed || Wave.EndRule == RULE_GrabDosh;
+    Game.bZedGiveBounty = !Game.bZedDropDosh && (Wave.EndRule == RULE_EarnDosh || !Wave.bNoBounty);
     SetWaveInfo();
 
     if ( Wave.TraderMessage != "" ) {
@@ -740,18 +742,23 @@ function string PickWaveName(array<string> Candidates) {
 
 function ScrnWaveInfo CreateWave(string WaveDefinition)
 {
+    local ScrnWaveInfo NewWave;
     local array<string> Parts;
     local string WaveName;
+    local bool bRandomlyPicked;
 
     // get rid of spaces
     WaveName = Repl(WaveDefinition, " ", "", true);
     if (InStr(WaveName, "|") != -1) {
         Split(WaveName, "|", Parts);
         WaveName = PickWaveName(Parts);
+        bRandomlyPicked = true;
     }
     log("Creating wave " $ WaveName, class.name);
     UsedWaves[UsedWaves.Length] = WaveName;
-    return new(none, WaveName) WaveInfoClass;
+    NewWave = new(none, WaveName) WaveInfoClass;
+    NewWave.bRandomlyPicked = bRandomlyPicked;
+    return NewWave;
 }
 
 // Called by Game.SetupWave() when Battle Time starts (Trader/Cooldown Time ends)
@@ -823,11 +830,17 @@ function SetWaveInfo()
             break;
     }
 
-    Game.ScrnGRI.WaveHeader = Wave.Header;
-    Game.ScrnGRI.WaveTitle = Wave.Title;
-    Game.ScrnGRI.WaveMessage = Wave.Message;
-    Game.ScrnGRI.WaveMessage = Repl(Game.ScrnGRI.WaveMessage, "%c", string(WaveCounter), true);
-
+    if (Wave.bRandomlyPicked && Game.WaveCountDown > 10) {
+        // hide wave info during trader time to prevent premature reveal of a random wave
+        Game.ScrnGRI.WaveHeader = "";
+        Game.ScrnGRI.WaveTitle = "";
+        Game.ScrnGRI.WaveMessage = "";
+    }
+    else {
+        Game.ScrnGRI.WaveHeader = Wave.Header;
+        Game.ScrnGRI.WaveTitle = Wave.Title;
+        Game.ScrnGRI.WaveMessage = Repl(Wave.Message, "%c", string(WaveCounter), true);
+    }
     Game.ScrnGRI.WaveCounter = 0;
     WaveTimer();
 }
@@ -867,13 +880,23 @@ function WaveTimer()
 function WaveEnded()
 {
     local ScrnPlayerInfo SPI;
+    local bool bXP;
 
-    if ( !(Wave.XP_Bonus ~= 0 && Wave.XP_BonusAlive ~= 0) ) {
-        for ( SPI=Mut.GameRules.PlayerInfo; SPI!=none; SPI=SPI.NextPlayerInfo ) {
-            if ( SPI.PlayerOwner == none || SPI.PlayerOwner.PlayerReplicationInfo == none )
-                continue;
+    bXP = !(Wave.XP_Bonus ~= 0 && Wave.XP_BonusAlive ~= 0);
+    if (!bXP && Wave.CashBonus == 0)
+        return;
 
-            if ( SPI.bDied || Wave.XP_BonusAlive ~= 0 ) {
+    for (SPI=Mut.GameRules.PlayerInfo; SPI!=none; SPI=SPI.NextPlayerInfo) {
+        if (SPI.PlayerOwner == none || SPI.PlayerOwner.PlayerReplicationInfo == none)
+            continue;
+
+        SPI.PlayerOwner.PlayerReplicationInfo.Score += Wave.CashBonus;
+        if (SPI.PlayerOwner.PlayerReplicationInfo.Score < 0) {
+            SPI.PlayerOwner.PlayerReplicationInfo.Score = 0;
+        }
+
+        if (bXP) {
+            if (SPI.bDied || Wave.XP_BonusAlive ~= 0) {
                 SPI.BonusStats(SPI.GameStartStats, Wave.XP_Bonus);
             }
             else {

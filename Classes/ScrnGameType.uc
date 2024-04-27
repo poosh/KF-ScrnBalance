@@ -105,8 +105,8 @@ var transient array<Actor> InvalidPathTargets;
 
 var bool bKillMessages;  // should the game broadcast kill messages? Set to false if Marco's Kill Messages is in use.
 var float DoshDifficultyMult; // Multiplier for Moster.ScoringValue to calculate kill reward
-
-var bool bZedDropDosh, bZedPickupDosh;
+var int PlayerKillScore;  // How much dosh player loses on death (or gains on killing an enemy player).
+var bool bZedDropDosh, bZedPickupDosh, bZedGiveBounty;
 enum EDropKind {
     DK_TOSS,
     DK_SPAWN,
@@ -946,17 +946,23 @@ function ScoreKill(Controller Killer, Controller Victim)
             return;  // player became a spectator
 
         VictimPRI.NumLives++;
-        VictimPRI.Score -= (VictimPRI.Score * (GameDifficulty * 0.05));
-        if (VictimPRI.Score < 0 )
-            VictimPRI.Score = 0;
-        VictimPRI.NetUpdateTime = Level.TimeSeconds - 1;
-
+        VictimPRI.Score -= PlayerKillScore;
         if ( VictimPRI.Team != none ) {
-            VictimPRI.Team.Score -= 100;
-            if (VictimPRI.Team.Score < 0 )
+            VictimPRI.Team.Score -= PlayerKillScore;
+            if (VictimPRI.Score < 0) {
+                // Victim does not have enough dosh. Charge the team instead
+                VictimPRI.Team.Score += VictimPRI.Score;
+                VictimPRI.Score = 0;
+            }
+            if (VictimPRI.Team.Score < 0) {
                 VictimPRI.Team.Score = 0;
+            }
             VictimPRI.Team.NetUpdateTime = Level.TimeSeconds - 1;
         }
+        else if (VictimPRI.Score < 0) {
+            VictimPRI.Score = 0;
+        }
+        VictimPRI.NetUpdateTime = Level.TimeSeconds - 1;
 
         VictimPRI.bOutOfLives = true;
         if( Killer!=None && Killer.PlayerReplicationInfo!=None && Killer.bIsPlayer )
@@ -984,7 +990,7 @@ function ScoreKill(Controller Killer, Controller Victim)
         // p2p kills
         if ( Killer.PlayerReplicationInfo.Team == VictimPRI.Team ) {
             if ( VictimPRI != none ) {
-                KillScore = min(200, Killer.PlayerReplicationInfo.Score);
+                KillScore = min(2*PlayerKillScore, Killer.PlayerReplicationInfo.Score);
                 Killer.PlayerReplicationInfo.Score -= KillScore;
                 VictimPRI.Score += KillScore;
                 Killer.PlayerReplicationInfo.NetUpdateTime = Level.TimeSeconds - 1;
@@ -992,8 +998,8 @@ function ScoreKill(Controller Killer, Controller Victim)
             ScoreEvent(Killer.PlayerReplicationInfo, -1, "team_frag");
         }
         else {
-            Killer.PlayerReplicationInfo.Score += 100;
-            Killer.PlayerReplicationInfo.Team.Score += 100;
+            Killer.PlayerReplicationInfo.Score += PlayerKillScore;
+            Killer.PlayerReplicationInfo.Team.Score += PlayerKillScore;
             Killer.PlayerReplicationInfo.NetUpdateTime = Level.TimeSeconds - 1;
             Killer.PlayerReplicationInfo.Team.NetUpdateTime = Level.TimeSeconds - 1;
             ScoreEvent(Killer.PlayerReplicationInfo, 1, "tdm_frag");
@@ -1006,7 +1012,6 @@ function ScoreKill(Controller Killer, Controller Victim)
         return;
     }
 
-    // v9.52: allow customization of ScoringValue for each zed in addition to zed type
     if ( Monster(Victim.Pawn) != none ) {
         KillScore = Monster(Victim.Pawn).ScoringValue;
     }
@@ -1025,7 +1030,9 @@ function ScoreKill(Controller Killer, Controller Victim)
 
     ScoreKillAssists(KillScore, Victim, Killer);
 
-    Killer.PlayerReplicationInfo.Team.Score += KillScore;
+    if (bZedGiveBounty) {
+        Killer.PlayerReplicationInfo.Team.Score += KillScore;
+    }
     Killer.PlayerReplicationInfo.NetUpdateTime = Level.TimeSeconds - 1;
     Killer.PlayerReplicationInfo.Team.NetUpdateTime = Level.TimeSeconds - 1;
     TeamScoreEvent(Killer.PlayerReplicationInfo.Team.TeamIndex, 1, "tdm_frag");
@@ -1085,7 +1092,9 @@ function ScoreKillAssists(float Score, Controller Victim, Controller Killer)
                 continue;
 
             KillScore = round(KillScore);
-            MyVictim.KillAssistants[i].PC.PlayerReplicationInfo.Score += KillScore;
+            if (bZedGiveBounty) {
+                MyVictim.KillAssistants[i].PC.PlayerReplicationInfo.Score += KillScore;
+            }
 
             KFPRI = KFPlayerReplicationInfo(MyVictim.KillAssistants[i].PC.PlayerReplicationInfo) ;
             if ( KFPRI != none ) {
@@ -1818,7 +1827,7 @@ function float WaveSinMod()
 
 function bool HasEnoughZeds()
 {
-    return bWaveBossInProgress || NumMonsters >= min(6 + 3*AlivePlayerCount, 24);
+    return bWaveBossInProgress || NumMonsters >= min(4 * AlivePlayerCount, 16);
 }
 
 function bool SetBoringStage(byte stage)
@@ -2029,6 +2038,7 @@ protected function StartTourney()
     log("Starting TOURNEY MODE " $ TourneyMode, 'ScrnBalance');
 
     TurboScale = 1.0;
+    PlayerKillScore = 250;
     ScrnBalanceMut.SrvTourneyMode = TourneyMode;
     ScrnBalanceMut.bAltBurnMech = true;
     ScrnBalanceMut.bReplacePickups = true;
@@ -3585,21 +3595,25 @@ State MatchInProgress
                 i = 5; // Have Trader tell players that they've got 10 seconds
 
             for ( C = Level.ControllerList; C != None; C = C.NextController ) {
-                if ( KFPlayerController(C) != None )
+                if ( C.PlayerReplicationInfo != none && KFPlayerController(C) != None )
                     KFPlayerController(C).ClientLocationalVoiceMessage(C.PlayerReplicationInfo, none, 'TRADER', i);
             }
         }
-        else if ( (WaveCountDown > 0) && (WaveCountDown <= 5) ) {
-            if ( ScrnGameLength != none )
+        else if (WaveCountDown <= 7) {
+            if (ScrnGameLength != none) {
+                // replicate WaveHeader/Title/Message in case those were hidden
                 ScrnGameLength.SetWaveInfo();
+            }
 
-            if( WaveNum == FinalWave && bUseEndGameBoss )
-                BroadcastLocalizedMessage(class'ScrnWaitingMessage', 3);
-            else
-                BroadcastLocalizedMessage(class'ScrnWaitingMessage', 1);
-        }
-        else if ( WaveCountDown <= 1 ) {
-            SetupWave();
+            if (WaveCountDown > 0 && WaveCountDown <= 5) {
+                if( WaveNum == FinalWave && bUseEndGameBoss )
+                    BroadcastLocalizedMessage(class'ScrnWaitingMessage', 3);
+                else
+                    BroadcastLocalizedMessage(class'ScrnWaitingMessage', 1);
+            }
+            else if (WaveCountDown <= 1) {
+                SetupWave();
+            }
         }
     }
 
@@ -3739,7 +3753,6 @@ State MatchInProgress
                 return;
             }
             bRespawnDeadPlayers = ScrnGameLength.Wave.bRespawnDeadPlayers;
-            WaveCountDown = ScrnGameLength.Wave.TraderTime;
             if ( WaveCountDown <= 0 ) {
                 SetupWave();
                 return;
@@ -3843,7 +3856,7 @@ State MatchInProgress
                 C.Pawn.bBlockActors = !bAntiBlocker;
 
                 KFPC = KFPlayerController(C);
-                if( KFPC(C) != none ) {
+                if( KFPC != none ) {
                     KFPC.SetShowPathToTrader(true);
                     KFPC.ClientLocationalVoiceMessage(C.PlayerReplicationInfo, none, 'TRADER', TraderMessageIndex);
                 }
@@ -3938,6 +3951,8 @@ defaultproperties
     TurboScale=1.0
     ZEDTimeTransitionTime=0.498
     ZEDTimeTransitionRate=0.100
+    bZedGiveBounty=true
+    PlayerKillScore=100
 
     DebugZVolColors[0]=(R=255,G=1,B=1,A=255)
     DebugZVolColors[1]=(R=1,G=255,B=1,A=255)
