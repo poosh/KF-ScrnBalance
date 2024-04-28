@@ -3050,7 +3050,17 @@ function bool AddBoss()
     }
 
     WaveEndTime += 120;
-    if ( NextSpawnSquad.length == 0 ) {
+
+    if (NextSpawnSquad.length == 0 && ScrnGameLength != none && ScrnGameLength.HasPendingSquad()) {
+        // more bosses to come
+        ScrnGameLength.LoadNextSpawnSquad(NextSpawnSquad);
+        LogZedSquadSpawn(LOG_INFO, "More bosses to come", NextSpawnSquad);
+        TotalMaxMonsters += NextSpawnSquad.length;
+        MaxMonsters += NextSpawnSquad.length;
+        ScrnGRI.MaxMonsters += NextSpawnSquad.length; // num monsters in wave replicated to clients
+    }
+
+    if (NextSpawnSquad.length == 0) {
         bBossSpawned = true;
         NextMonsterTime = Level.TimeSeconds + 99999; // never (wait for AddBossBuddySquad())
         WaveEndTime += 3600;
@@ -3536,30 +3546,39 @@ State MatchInProgress
     {
         BattleTimer();
 
-        if ( bBossSpawned ) {
-            if( !bHasSetViewYet ) {
-                bHasSetViewYet = true;
-                BossGrandEntry();
-            }
-            else if( ViewingBoss != none && !ViewingBoss.bShotAnim ) {
-                ViewingBoss = None;
-                BossGrandExit();
-            }
-        }
-
-        if( TotalMaxMonsters <= 0 || Level.TimeSeconds > WaveEndTime ) {
-            // if everyone's spawned and they're all dead
-            if ( NumMonsters <= 0 )
+        if (!bBossSpawned) {
+            if (Level.TimeSeconds > WaveEndTime) {
                 DoWaveEnd();
-        }
-        else if ( Level.TimeSeconds > NextMonsterTime ) {
-            if ( !bBossSpawned ) {
+            }
+            else if (Level.TimeSeconds > NextMonsterTime) {
                 AddBoss();
             }
-            else {
-                AddSquad();
-                NextMonsterTime = Level.TimeSeconds + CalcNextSquadSpawnTime() * 2.0; // slower squad spawn in boss waves
+            return;
+        }
+
+        if (!bHasSetViewYet) {
+            bHasSetViewYet = true;
+            BossGrandEntry();
+        }
+        else if (ViewingBoss != none && !ViewingBoss.bShotAnim) {
+            ViewingBoss = None;
+            BossGrandExit();
+        }
+
+        if (ScrnGameLength != none) {
+            if (ScrnGameLength.CheckWaveEnd()) {
+                DoWaveEnd();
+                return;
             }
+        }
+        else if (TotalMaxMonsters <= 0 || Level.TimeSeconds > WaveEndTime) {
+            DoWaveEnd();
+            return;
+        }
+
+        if (Level.TimeSeconds > NextMonsterTime) {
+            AddSquad();
+            NextMonsterTime = Level.TimeSeconds + CalcNextSquadSpawnTime() * 2.0; // slower squad spawn in boss waves
         }
     }
 

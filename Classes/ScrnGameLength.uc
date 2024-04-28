@@ -1077,6 +1077,11 @@ function AdjustNextSpawnTime(out float NextSpawnTime, float MinSpawnTime)
     NextSpawnTime = fmax(NextSpawnTime, MinSpawnTime);
 }
 
+function bool HasPendingSquad()
+{
+    return PendingNextSpawnSquad.length > 0;
+}
+
 function LoadNextSpawnSquad(out array < class<KFMonster> > NextSpawnSquad)
 {
     local int i;

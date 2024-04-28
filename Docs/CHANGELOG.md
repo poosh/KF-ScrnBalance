@@ -28,6 +28,10 @@
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+### v9.69.49
+- Now end-game bosses can be spawned separately (e.g., `SpecialSquads=BOSS1 | BOSS2`)
+- **20. New Doom** v0.90 - almost finished. Fixed end-game boss spawn.
+
 ### v9.69.45
 - **20. New Doom** (BETA) - totally reworked Doom 3 Demon Invasion mode to use modern ScrN features. A long game, 16+1 waves: 4 regular waves + 2 mid-game boss fights + 6 random waves + 6 trader paths + final boss battle. Each of the 8 Doom bosses now has its unique wave. A mid-game boss wave ends when the boss is defeated. Other enemies don't matter. Moreover, only killing the boss grants dosh.
 - **52. Escape the Hunter** - a new game mode by [nmmblez] included into the official rotation. The game loop is opposite from FTG: players must run away from the Invulnerable Hunter instead of following the guardian until the timer runs out. The game mode provides a unique KF experience but cannot be enjoyed by the mentally disabled.

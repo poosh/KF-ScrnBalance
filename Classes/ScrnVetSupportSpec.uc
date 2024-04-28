@@ -160,7 +160,7 @@ defaultproperties
     DefaultDamageTypeNoBonus=class'ScrnDamTypeDefaultSupportBase'
     SamePerkAch="OP_Support"
 
-    SkillInfo="PERK SKILLS:|60% better Shotgun penetration|40% damage resistance while holding Chainsaw|+10 blocks in carry weight|150% faster welding/unwelding|Welder see door status from 30m"
+    SkillInfo="PERK SKILLS:|60% better Shotgun penetration|40% damage resistance while holding Chainsaw|+9 blocks in carry weight|150% faster welding/unwelding|Welder see door status from 30m"
     CustomLevelInfo="PERK BONUSES (LEVEL %L):|%x more damage with Shotguns/Chainsaw|%a extra ammo|+%g extra grenades|%$ discount on Shotguns"
 
     NumRequirements=1 // removed welding req. in v9.50
