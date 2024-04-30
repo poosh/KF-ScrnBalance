@@ -18,6 +18,7 @@ var const class<ScrnLocalLaserDot>          LaserDotClass;
 var     ScrnLocalLaserDot                   LaserDot;
 var     name                                LaserAttachmentBone;
 var         float                         FireSpotRenrerTime;
+var Sound ModeSwitchSound;
 
 //laser stuff
 replication
@@ -43,13 +44,29 @@ simulated function Destroyed()
     super(KFWeapon).Destroyed();
 }
 
+function ServerSpawnLight() { }
+function AdjustLightGraphic() { }
+
+// Use alt fire to switch laser type
+simulated function AltFire(float F)
+{
+    if (FireMode[0].bIsFiring || bIsReloading)
+        return;
+
+    if (ModeSwitchSound != none) {
+        PlaySound(ModeSwitchSound, SLOT_Misc, 100);
+    }
+    if (ModeSwitchAnim != '') {
+        PlayAnim(ModeSwitchAnim, FireMode[0].FireAnimRate, FireMode[0].TweenTime);
+    }
+    ToggleLaser();
+}
+
 //bring Laser to current state, which is indicating by LaserType
 simulated function ApplyLaserState()
 {
     local ScrnLaserWeaponAttachment Laser3rd;
 
-    //bLaserActive = LaserType > 0;
-    LaserType = 1; //always red laser
     bLaserActive = LaserType > 0;
     if( Role < ROLE_Authority  )
         ServerSetLaserType(LaserType);
@@ -89,7 +106,9 @@ simulated function ToggleLaser()
     if( !Instigator.IsLocallyControlled() )
         return;
 
-    if ( (++LaserType) > 2 )
+    if ( LaserType == 0 )
+        LaserType = default.LaserType;
+    else
         LaserType = 0;
     ApplyLaserState();
 }
@@ -183,7 +202,7 @@ simulated function TweenToReloadOffset()
 //added function to calculate and apply reload view offset
 simulated function WeaponTick(float dt)
 {
-    Super.WeaponTick(dt);
+    Super(KFWeaponShotgun).WeaponTick(dt);
     TweenToReloadOffset();
 }
 
@@ -318,23 +337,26 @@ simulated function ClientFinishReloading()
 
 defaultproperties
 {
-     ReloadRate=0.60
-     ReloadAnimRate=1.3425
-     FireModeClass(0)=class'ScrnBenelliFire'
-     Description="A military tactical shotgun with semi automatic fire capability. Holds up to 6 shells. Special shell construction allow pellets to penetrate fat much easier."
-     PickupClass=class'ScrnBenelliPickup'
-     AttachmentClass=class'ScrnBenelliAttachment' //New attachment to fix broken BenelliAttachment class
-     ItemName="Combat Shotgun SE"
-     PlayerViewPivot=(Pitch=-47,Roll=0,Yaw=-5) //fix to make sight centered
-     ReloadViewOffset=(X=0.000000,Y=0.000000,Z=0.000000) //reload offset to get the weapon away from the center of the screen while reloading
-     ReloadViewOffsetValue=(X=10.000000,Y=-5.000000,Z=-10.000000) //used to store the vector values
-     ReloadTweenRate = 0.2 //little less than zoomtime
+    ReloadRate=0.60
+    ReloadAnimRate=1.3425
+    FireModeClass(0)=class'ScrnBenelliFire'
+    Description="A military tactical shotgun with semi automatic fire capability. Holds up to 6 shells. Special shell construction allow pellets to penetrate fat much easier."
+    PickupClass=class'ScrnBenelliPickup'
+    AttachmentClass=class'ScrnBenelliAttachment' //New attachment to fix broken BenelliAttachment class
+    ItemName="Combat Shotgun SE"
+    PlayerViewPivot=(Pitch=-47,Roll=0,Yaw=-5) //fix to make sight centered
+    ReloadViewOffset=(X=0.000000,Y=0.000000,Z=0.000000) //reload offset to get the weapon away from the center of the screen while reloading
+    ReloadViewOffsetValue=(X=10.000000,Y=-5.000000,Z=-10.000000) //used to store the vector values
+    ReloadTweenRate = 0.2 //little less than zoomtime
 
-     //laser stuff
-     LaserAttachmentBone="LightBone"
-     LaserDotClass=class'ScrnLocalLaserDot'
-     LaserAttachmentClass=class'ScrnLaserAttachmentFirstPerson'
-     FireSpotRenrerTime=1.5
+    //laser stuff
+    LaserType=1
+    LaserAttachmentBone="LightBone"
+    LaserDotClass=class'ScrnLocalLaserDot'
+    LaserAttachmentClass=class'ScrnLaserAttachmentFirstPerson'
+    FireSpotRenrerTime=1.5
 
-     ModeSwitchAnim="LightOn"
+    ModeSwitchAnim="LightOn"
+    ModeSwitchSound=sound'KF_9MMSnd.NineMM_AltFire1'
+    bTorchEnabled=false
 }

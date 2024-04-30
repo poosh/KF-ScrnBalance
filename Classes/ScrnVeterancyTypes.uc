@@ -58,76 +58,25 @@ var bool bHardcoreReady;
 // try to avoid using this function on client-side, except for bNetOwner
 final static function Pawn FindPawn(PlayerReplicationInfo PRI)
 {
-    local Pawn P;
-
-    if ( PRI == none )
-        return none;
-
-    // Owner is set only on server-side or bNetOwner
-    if ( Controller(PRI.Owner) != none )
-        return Controller(PRI.Owner).Pawn;
-
-    foreach PRI.DynamicActors(class'Pawn', P) {
-        if ( P.PlayerReplicationInfo == PRI )
-            return P;
-    }
-
-    return none;
+    return class'ScrnFunctions'.static.FindPawnByPRI(PRI);
 }
 
 // Adds class to array. Doesn't add none or classes, which already are stored in array.
-final static function bool ClassAddToArrayUnique( out array <class> AArray, class AClass )
+final static function bool ClassAddToArrayUnique(out array<class> AArray, class AClass)
 {
-    if ( AClass == none || ClassIsInArray(AArray, AClass) )
-        return false;
-
-    AArray[AArray.length] = AClass;
-    return true;
+    return class'ScrnFunctions'.static.ClassAddToArrayUnique(AArray, AClass);
 }
 
 // returns true if an array contains a given class
 final static function bool ClassIsInArray(out array <class> AArray, class AClass)
 {
-    local int i;
-
-    if ( AClass == none )
-        return false;
-
-    for ( i = 0; i < AArray.length; ++i ) {
-        if ( AArray[i] == AClass )
-            return true;
-    }
-    return false;
+    return class'ScrnFunctions'.static.ClassIsInArray(AArray, AClass);
 }
 
 //returns true if class or its parent is in a given array
-final static function bool ClassChildIsInArray(out array <class> AArray, class AClass)
+final static function bool ClassChildIsInArray(out array<class> AArray, class AClass)
 {
-    local int i;
-
-    if ( AClass == none )
-        return false;
-
-    for ( i = 0; i < AArray.length; ++i ) {
-        if ( ClassIsChildOf(AClass, AArray[i]) )
-            return true;
-    }
-    return false;
-}
-
-//output array to a log - for debugging
-final static function LogArray(out array <class> AArray)
-{
-    local int i;
-
-    if ( AArray.length == 0 )
-        Log("Array is empty!");
-    else {
-        Log("Array elements:");
-        while ( i < AArray.length )
-            Log(String(AArray[i++]));
-        Log("End of array");
-    }
+    return class'ScrnFunctions'.static.ClassChildIsInArray(AArray, AClass);
 }
 
 //overload this to return perk specific stat values

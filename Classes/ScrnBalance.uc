@@ -3,7 +3,7 @@
  * @GitHub: https://github.com/poosh/KF-ScrnBalance
  * @author [ScrN]PooSH, contact via Steam: http://steamcommunity.com/id/scrn-poosh/
  *                      or Discord: https://discord.gg/Y3W5crSXA5
- * Copyright (c) 2012-2023 PU Developing IK, All Rights Reserved.
+ * Copyright (c) 2012-2024 PU Developing IK, All Rights Reserved.
  *****************************************************************************/
 
 class ScrnBalance extends ScrnMutator
@@ -215,6 +215,11 @@ var globalconfig int MinRespawnCashNormal, MinRespawnCashHard, MinRespawnCashSui
 var globalconfig int TraderTimeNormal, TraderTimeHard, TraderTimeSui, TraderTimeHoE;
 var globalconfig bool bLeaveCashOnDisconnect, bPlayerZEDTime;
 
+var globalconfig int MarkDistanceMeters;
+var globalconfig byte MarkZedBounty;
+var transient float SrvMarkDistance;  // in uu (1m = 50uu)
+var byte SrvMarkZedBounty;
+
 var globalconfig string ColoredServerName;
 
 var float OriginalWaveSpawnPeriod;
@@ -323,7 +328,7 @@ replication
 
     // non-config vars and configs vars which seem to replicate fine
     reliable if ( bNetInitial && Role == ROLE_Authority )
-        CustomWeaponLink, SrvTourneyMode, bTSCGame, bTestMap;
+        CustomWeaponLink, SrvTourneyMode, bTSCGame, bTestMap, SrvMarkDistance, SrvMarkZedBounty;
 
 }
 
@@ -373,14 +378,13 @@ simulated function ClientInitSettings()
     class'ScrnBalance'.default.Mut = self;
     bStoryMode = KF_StoryGRI(Level.GRI) != none;
     LoadReplicationData();
+    InitSettings();
 
     LocalPlayer = ScrnPlayerController(Level.GetLocalPlayerController());
     if ( LocalPlayer != none && LocalPlayer.Mut == none ) {
-        LocalPlayer.Mut = self;
-        LocalPlayer.LoadMutSettings();
+        LocalPlayer.SetMut(self);
     }
 
-    InitSettings();
 }
 
 // client & server side
@@ -2247,7 +2251,7 @@ function bool CheckReplacement(Actor Other, out byte bSuperRelevant)
     // classes below do not need replacement
     if ( PlayerController(Other)!=None ) {
         if ( ScrnPlayerController(Other) != none )
-            ScrnPlayerController(Other).Mut = self;
+            ScrnPlayerController(Other).SetMut(self);
     }
     else if ( KFMonster(Other) != none ) {
         SetupMonster(KFMonster(Other));
@@ -2556,6 +2560,8 @@ function PostBeginPlay()
     //exec this on server side only
     ApplySpawnBalance();
     ApplyWeaponFix();
+    SrvMarkDistance = MarkDistanceMeters * 50;
+    SrvMarkZedBounty = MarkZedBounty;
 
     if (bAltBurnMech) {
         BurnMech = spawn(class'ScrnBurnMech');
@@ -3228,7 +3234,7 @@ function RegisterVersion(string ItemName, int Version)
 
 defaultproperties
 {
-    VersionNumber=96946
+    VersionNumber=96950
     GroupName="KF-Scrn"
     FriendlyName="ScrN Balance"
     Description="Total rework of KF1 to make it modern and the best game in the world while sticking to the roots of the original."
@@ -3446,6 +3452,8 @@ defaultproperties
     StatBonusMinHL=0
     FirstStatBonusMult=2.0
     RandomMapStatBonus=2.0
+    MarkDistanceMeters=50
+    MarkZedBounty=35
 
     SkippedTradeTimeMult=0.75
     TraderTimeNormal=60

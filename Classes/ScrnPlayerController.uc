@@ -46,7 +46,7 @@ var bool bZEDTimeActive;
 var bool bHadArmor; //player had armor during the game
 
 var bool bWeaponsLocked; // disables player's weapons pick up by other players
-var localized string strLocked, strUnlocked, strLockDisabled;
+var localized string strLocked, strUnlocked, strSrvDisabled;
 var transient float LastLockMsgTime; // last time when player received a message that weapon is locked
 
 var localized string strAlreadySpectating;
@@ -143,10 +143,10 @@ replication
         ClientMonsterBlamed, ClientPostLogin;
 
     unreliable if ( Role == ROLE_Authority )
-        ClientPlayerDamaged;
+        ClientPlayerDamaged, ClientFlareDamage, ClientMark;
 
-    unreliable if ( Role == ROLE_Authority )
-        ClientFlareDamage;
+    unreliable if ( Role < ROLE_Authority )
+        ServerMark;
 
     reliable if ( Role < ROLE_Authority )
         SrvAchReset, ResetMyAchievements, ResetMapAch,
@@ -207,7 +207,13 @@ simulated function ClientPostLogin()
     OriginalSpectateSpeed = SpectateSpeed;
 }
 
-simulated function LoadMutSettings()
+function SetMut(ScrnBalance value)
+{
+    Mut = value;
+    LoadMutSettings();
+}
+
+function LoadMutSettings()
 {
 }
 
@@ -1122,32 +1128,72 @@ simulated function ReceiveLocalizedMessage( class<LocalMessage> Message, optiona
     }
 }
 
+function bool ShouldMarkVoiceMessageSender(name msgtype, byte msgid)
+{
+    switch (msgtype) {
+        // v11("Medic"), v12("Help") or v13("I need some money"). Money can be asked during trader time only.
+        case 'SUPPORT': return msgid <= 1 || (msgid == 2 && !KFGameReplicationInfo(Level.GRI).bWaveInProgress);
+        // v35 ("Lets hole up here!") or v36 ("Follow me")
+        case 'ALERT': return msgid == 4 || msgid == 5;
+        case 'MEDIC': return true;
+    }
+    return false;
+}
+
 function SendVoiceMessage(PlayerReplicationInfo Sender,
         PlayerReplicationInfo Recipient,
-        name messagetype,
-        byte messageID,
+        name msgtype,
+        byte msgid,
         name broadcasttype,
         optional Pawn soundSender,
         optional vector senderLocation)
 {
     local Controller C;
     local KFPlayerController PC;
+    local Actor A;
+    local string str;
+    local byte b;
+    local bool bMark;
 
     if (Pawn == none || Pawn.Health <= 0)
         return;
 
-    if (!AllowVoiceMessage(MessageType))
+    if (!AllowVoiceMessage(msgtype))
         return;
 
-    if (MessageType == 'SUPPORT' && messageID == 0) {
-        if (Pawn.Health >= 100)
-            return;  // you don't need a medic, buddy
-        // replicate player health ASAP
-        Sender.Timer();
-        Sender.NetUpdateTime = Level.TimeSeconds - 1.0;
-        // encode player health into message ID
-        MessageType = 'MEDIC';
-        messageID = Pawn.Health;
+    switch (msgtype) {
+        case 'SUPPORT':
+            if (msgid == 0) {
+                if (Pawn.Health >= 100)
+                    return;  // you don't need a medic, buddy
+                // replicate player health ASAP
+                Sender.Timer();
+                Sender.NetUpdateTime = Level.TimeSeconds - 1.0;
+                // encode player health into message ID
+                msgtype = 'MEDIC';
+                msgid = Pawn.Health;
+            }
+            break;
+        case 'ALERT':
+            if (msgid == 0 && mut.SrvMarkDistance > 0) { // LOOKOUT
+                // Try to identify what the player is screaming at.
+                // If the player is looking at markable target - mark it instead of broadcasting a generic message.
+                A = FindMarkTarget(str, b);
+                if (A != none) {
+                    ServerMark(A);
+                    ClientMark(Sender, A, CalcMarkLocation(A), str, b);
+                    return;
+                }
+            }
+            break;
+    }
+
+    bMark = ShouldMarkVoiceMessageSender(msgtype, msgid);
+    if (bMark) {
+        if (soundSender != none) {
+            // lower location to the ground
+            senderLocation.Z -= soundSender.CollisionHeight;
+        }
     }
 
     for (C = Level.ControllerList; C != none; C = C.NextController) {
@@ -1158,13 +1204,13 @@ function SendVoiceMessage(PlayerReplicationInfo Sender,
         if (Level.Game.bTeamGame && !SameTeamAs(PC))
             continue;
 
-        PC.ClientLocationalVoiceMessage(Sender, Recipient, messagetype, messageID, soundSender, senderLocation);
+        PC.ClientLocationalVoiceMessage(Sender, Recipient, msgtype, msgid, soundSender, senderLocation);
     }
 }
 
 function ClientLocationalVoiceMessage(PlayerReplicationInfo Sender,
                                       PlayerReplicationInfo Recipient,
-                                      name MessageType, byte MessageID,
+                                      name msgtype, byte msgid,
                                       optional Pawn SenderPawn, optional vector SenderLocation)
 {
     local VoicePack Voice;
@@ -1172,6 +1218,9 @@ function ClientLocationalVoiceMessage(PlayerReplicationInfo Sender,
     local ShopVolume Shop;
     local name MsgTag;
     local string Msg, Msg2;
+    local ScrnHUD hud;
+    local bool bMark;
+    local byte b;
 
     if (Sender == none || Sender.VoiceType == none || Player.Console == none || Level.NetMode == NM_DedicatedServer)
         return;
@@ -1179,62 +1228,79 @@ function ClientLocationalVoiceMessage(PlayerReplicationInfo Sender,
     MsgTag = 'Voice';
     Voice = Spawn(Sender.VoiceType, self);
     KFVoice = KFVoicePack(Voice);
+    hud = ScrnHUD(myHUD);
+    if (hud != none)
+        bMark = ShouldMarkVoiceMessageSender(msgtype, msgid);
 
     if (KFVoice == none) {
         // should not happen
-        Voice.ClientInitialize(Sender, Recipient, MessageType, MessageID);
+        Voice.ClientInitialize(Sender, Recipient, msgtype, msgid);
         return;
     }
 
-    if (MessageType == 'TRADER') {
-        MsgTag = 'Trader';
-        if ( Pawn != none && MessageID >= 4 ) {
-            foreach Pawn.TouchingActors(Class'ShopVolume', Shop) {
-                SenderLocation = Shop.MyTrader.Location;
-                // Only play the 30 Seconds remaining messages come across as Locational Speech if we're in the Shop
-                if ( MessageID == 4 )
-                    return;
+    switch (msgtype) {
+        case 'TRADER':
+            MsgTag = 'TRADER';
+            if ( Pawn != none && msgid >= 4 ) {
+                foreach Pawn.TouchingActors(Class'ShopVolume', Shop) {
+                    SenderLocation = Shop.MyTrader.Location;
+                    // Only play the 30 Seconds remaining messages come across as Locational Speech if we're in the Shop
+                    if ( msgid == 4 )
+                        return;
 
-                if ( MessageID == 5 )
-                    MessageID = 555;
-                break;
+                    if ( msgid == 5 )
+                        msgid = 555;
+                    break;
+                }
             }
-        }
 
-        // Only play the 10 Seconds remaining message if we are in the Shop
-        // and only play the 30 seconds remaning message if we haven't been to the Shop
-        if (MessageID == 5 || (MessageID == 4 && bHasHeardTraderWelcomeMessage))
-            return;
+            // Only play the 10 Seconds remaining message if we are in the Shop
+            // and only play the 30 seconds remaning message if we haven't been to the Shop
+            if (msgid == 5 || (msgid == 4 && bHasHeardTraderWelcomeMessage))
+                return;
 
-        if ( MessageID == 555 ) {
-            MessageID = 5;
-        }
-        else if ( MessageID == 7 ) {
-            // Store the fact that we've heard the Trader's Welcome message on the client
-            bHasHeardTraderWelcomeMessage = true;
-        }
-        else if ( MessageID == 6 ) {
-            // If we're hearing the Shop's Closed Message, reset the Trader's Welcome message flag
-            bHasHeardTraderWelcomeMessage = false;
-        }
+            if ( msgid == 555 ) {
+                msgid = 5;
+            }
+            else if ( msgid == 7 ) {
+                // Store the fact that we've heard the Trader's Welcome message on the client
+                bHasHeardTraderWelcomeMessage = true;
+            }
+            else if ( msgid == 6 ) {
+                // If we're hearing the Shop's Closed Message, reset the Trader's Welcome message flag
+                bHasHeardTraderWelcomeMessage = false;
+            }
 
-        if ( MessageID > 6 /*&& bBuyMenuIsOpen*/ ) {
-            // TODO: Show KFVoicePack(Voice).GetClientParsedMessage() in the Buy Menu
-            return;
-        }
+            if ( msgid > 6 /*&& bBuyMenuIsOpen*/ ) {
+                // TODO: Show KFVoicePack(Voice).GetClientParsedMessage() in the Buy Menu
+                return;
+            }
+            break;
+
+        case 'MEDIC':
+            // decode player health and switch back to v11
+            Msg2 = " (" $ msgid $ "%)";
+            msgtype = 'SUPPORT';
+            msgid = 0;
+            break;
+
     }
-    else if (MessageType == 'MEDIC') {
-        // decode player health and switch back to v11
-        Msg2 = " (" $ MessageID $ "%)";
-        MessageType = 'SUPPORT';
-        MessageID = 0;
-    }
 
-    KFVoice.ClientInitializeLocational(Sender, Recipient, MessageType, MessageID, SenderPawn, SenderLocation);
+    KFVoice.ClientInitializeLocational(Sender, Recipient, msgtype, msgid, SenderPawn, SenderLocation);
     Msg = KFVoice.GetClientParsedMessage() $ Msg2;
     if (Msg == "")
         return;
     TeamMessage(Sender, Msg, MsgTag);
+
+    if (bMark) {
+        b = hud.MARK_PLAYER;
+        if (msgtype == 'ALERT' && msgid == 4) {
+            // v35 ("Lets hole up here!")
+            b = hud.MARK_CAMP;
+            SenderPawn = none;  // bind to location not the pawn
+        }
+        hud.MarkTarget(Sender, SenderPawn, senderLocation,  Msg $ "|" $ Mut.ColoredPlayerName(Sender), b);
+    }
 }
 
 function ResetWaveStats()
@@ -1663,7 +1729,7 @@ function ExitZedTime()
     ClientExitZedTime();
 }
 
-function bool AllowVoiceMessage(name MessageType)
+function bool AllowVoiceMessage(name msgtype)
 {
     local float TimeSinceLastMsg;
 
@@ -1674,14 +1740,14 @@ function bool AllowVoiceMessage(name MessageType)
 
     if ( TimeSinceLastMsg < 3 )
     {
-        if ( (MessageType == 'TAUNT') || (MessageType == 'AUTOTAUNT') )
+        if ( (msgtype == 'TAUNT') || (msgtype == 'AUTOTAUNT') )
             return false;
         if ( TimeSinceLastMsg < 1 )
             return false;
     }
 
     // zed time screws up voice messages
-    if ( !bZEDTimeActive && MessageType != 'TRADER' && MessageType != 'AUTO' ) {
+    if ( !bZEDTimeActive && msgtype != 'TRADER' && msgtype != 'AUTO' ) {
         OldMessageTime = Level.TimeSeconds;
         if ( TimeSinceLastMsg < 10 ) {
             if ( MaxVoiceMsgIn10s > 0 )
@@ -1715,7 +1781,7 @@ exec function LockWeapons()
         ClientMessage(ConsoleColorString(strLocked, 192, 1, 1));
     }
     else
-        ClientMessage(strLockDisabled);
+        ClientMessage(strSrvDisabled);
 }
 
 exec function UnlockWeapons()
@@ -1726,7 +1792,7 @@ exec function UnlockWeapons()
         ClientMessage(ConsoleColorString(strUnlocked, 1, 192, 1));
     }
     else
-        ClientMessage(strLockDisabled);
+        ClientMessage(strSrvDisabled);
 }
 
 exec function ToggleWeaponLock()
@@ -2930,6 +2996,302 @@ function bool AllowFreeCamera()
             || (!Mut.bTSCGame && Mut.SrvTourneyMode == 0);
 }
 
+function bool IsMarkable(Actor A, out String caption, out byte MarkType)
+{
+    return IsMarkableActor(A) && (IsMarkableZed(KFMonster(A), caption, MarkType)
+            || IsMarkablePickup(Pickup(A), caption, MarkType));
+}
+
+function bool IsMarkableActor(Actor A)
+{
+    return A != none && !A.bDeleteMe && !A.bHidden;
+}
+
+function bool IsMarkableZed(KFMonster Zed, out String caption, out byte MarkType)
+{
+    if (!IsMarkableActor(Zed) || Zed.Health <= 0 || Zed.ScoringValue < Mut.SrvMarkZedBounty)
+        return false;
+
+    if (Zed.IsA('ZombieBoss'))
+        return false;  // prevent marking Patriarch to avoid cheating (marking while cloacked)
+
+    caption = Zed.MenuName;
+    if (Zed.IsA('ZombieFleshPound') || Zed.IsA('FemaleFP')) {
+        MarkType = class'ScrnHUD'.default.MARK_FLESHPOUND;
+    }
+    else if (Zed.IsA('ZombieScrake')) {
+        MarkType = class'ScrnHUD'.default.MARK_SCRAKE;
+    }
+    else {
+        MarkType = class'ScrnHUD'.default.MARK_ENEMY;
+    }
+
+    return true;
+}
+
+function bool IsMarkablePickup(Pickup P, out String caption, out byte MarkType)
+{
+    local KFWeaponPickup WP;
+
+    if (!IsMarkableActor(P))
+        return false;
+
+    if (KFAmmoPickup(P) != none) {
+        if (ScrnAmmoPickup(P) != none) {
+            caption = ScrnAmmoPickup(P).ItemName;
+        }
+        else {
+            caption = class'ScrnAmmoPickup'.default.ItemName;
+        }
+        MarkType = class'ScrnHUD'.default.MARK_AMMO;
+        return true;
+    }
+
+    WP = KFWeaponPickup(P);
+    if (WP != none) {
+        // allow marking spapwed on the map or dropped by players and having sell value. Don't mark crap like 9mm.
+        if (WP.SellValue > 0 || WP.DroppedBy == none) {
+            caption = WP.ItemName;
+            MarkType = class'ScrnHUD'.default.MARK_WEAPON;
+            return true;
+        }
+        return false;
+    }
+
+    if (Vest(P) != none) {
+        caption = class'ScrnCombatVestPickup'.default.ItemName;
+        MarkType = class'ScrnHUD'.default.MARK_ARMOR;
+        return true;
+    }
+
+    return false;
+}
+
+function Actor FindMarkEnemy(out String caption, out byte MarkType)
+{
+    local Vector TraceStart, TraceEnd, Dir, HitLocation, HitNormal;
+    local Actor Other;
+    local int i, c;
+    local array<Actor> IgnoreActors;
+    local KFMonster Zed;
+
+    if (Mut.SrvMarkDistance <= 0 || Pawn == none || Pawn.Health <= 0)
+        return none;
+
+    TraceStart = Pawn.Location + Pawn.EyePosition();
+    Dir = Vector(Pawn.Rotation);
+    TraceEnd = TraceStart + Mut.SrvMarkDistance * Dir;
+
+    while (++c <= 64) {
+        Other = Pawn.Trace(HitLocation, HitNormal, TraceEnd, TraceStart, true);
+        if (Other == none || Other.bWorldGeometry || Other == Level)
+            break;
+
+        if (ExtendedZCollision(Other) != none) {
+            Zed = KFMonster(Other.Owner);
+        }
+        else {
+            Zed = KFMonster(Other);
+        }
+
+        if (Zed != none && IsMarkableZed(Zed, caption, MarkType)) {
+            break;
+        }
+
+        IgnoreActors[IgnoreActors.Length] = Other;
+        Other.SetCollision(false);
+        TraceStart = HitLocation;
+        Zed = none;  // make sure we don't return unmarkable zed
+    }
+
+    for (i=0; i<IgnoreActors.Length; i++) {
+        if (IgnoreActors[i] != none) {
+            IgnoreActors[i].SetCollision(true);
+        }
+    }
+    return Zed;
+}
+
+function Actor FindMarkPickup(out String caption, out byte MarkType)
+{
+    local Pickup P, BestP;
+    local float PCos, BestCos;
+    local vector LookDir, PDir;
+
+    if (Mut.SrvMarkDistance <= 0 || Pawn == none || Pawn.Health <= 0)
+        return none;
+
+    LookDir = vector(Rotation);
+    BestCos = 0.98; // ~30 degree cone
+
+    foreach VisibleCollidingActors(class'Pickup', P, Mut.SrvMarkDistance, Pawn.Location, true) {
+        if (P.bHidden)
+            continue;
+
+        PDir = normal(P.Location - Pawn.Location);
+        PCos = PDir dot LookDir;
+        if (PCos > BestCos && IsMarkablePickup(P, caption, MarkType)) {
+            // if multiple pickups are inside the code, pick the closest to LookDir
+            BestP = P;
+            BestCos = PCos;
+        }
+    }
+    return BestP;
+}
+
+function Actor FindMarkTarget(out String caption, out byte MarkType)
+{
+    local Actor A;
+
+    if (Mut.SrvMarkDistance <= 0 || Pawn == none || Pawn.Health <= 0)
+        return none;
+
+    A = FindMarkEnemy(caption, MarkType);
+    if (A != none) {
+        return A;
+    }
+
+    A = FindMarkPickup(caption, MarkType);
+    if (A != none) {
+        return A;
+    }
+
+    return none;
+}
+
+function vector CalcMarkLocation(Actor A)
+{
+    local vector loc;
+
+    loc = A.Location;
+    loc.Z -= A.CollisionHeight;
+    return loc;
+}
+
+exec function Mark()
+{
+    local Actor A;
+    local string Caption;
+    local byte MarkType;
+    local ScrnHUD hud;
+
+    hud = ScrnHUD(myHUD);
+    if (hud == none || !hud.bShowMarks)
+        return;
+
+    if (mut.SrvMarkDistance <= 0) {
+        ClientMessage(strSrvDisabled);
+        return;
+    }
+
+    A = FindMarkTarget(caption, MarkType);
+    if (A == none || hud.IsMarked(A))
+        return;
+
+    if (!AllowVoiceMessage('ALERT'))
+        return;
+
+    ClientMark(PlayerReplicationInfo, A, CalcMarkLocation(A), Caption, MarkType);
+    if (Level.NetMode != NM_Standalone) {
+        ServerMark(A);
+    }
+}
+
+function ClientMark(PlayerReplicationInfo Sender, Actor A, vector ALocation, string Caption, byte MarkType)
+{
+    local ScrnHUD hud;
+    local name MsgType;
+    local byte MsgID;
+    local KFVoicePack KFVoice;
+    local Pawn SenderPawn;
+    local Vector SenderLoc;
+
+    if (Level.NetMode == NM_DedicatedServer)
+        return;
+
+    hud = ScrnHUD(myHUD);
+    if (hud == none || !hud.bShowMarks)
+        return;
+
+    hud.MarkTarget(Sender, A, ALocation, caption, MarkType);
+
+    if (hud.GetMarkGroup(MarkType) == hud.MARK_ENEMIES) {
+        switch (MarkType) {
+            case hud.MARK_FLESHPOUND:
+                MsgType = 'AUTO';
+                MsgID = 12;
+                break;
+            case hud.MARK_SCRAKE:
+                MsgType = 'AUTO';
+                MsgID = 14;
+                break;
+            default:
+                MsgType = 'ALERT';
+                MsgID = 0;  // Look out!
+        }
+    }
+
+    if (MsgType != '') {
+        KFVoice = KFVoicePack(Spawn(Sender.VoiceType, self));
+        if (KFVoice != none) {
+            SenderPawn = class'ScrnFunctions'.static.FindPawnByPRI(Sender);
+            if (SenderPawn != none) {
+                SenderLoc = SenderPawn.Location;
+            }
+            else {
+                SenderLoc = ALocation;
+            }
+            KFVoice.ClientInitializeLocational(Sender, PlayerReplicationInfo, MsgType, MsgID, SenderPawn, SenderLoc);
+        }
+    }
+
+    TeamMessage(Sender, Caption, 'Voice');
+}
+
+function ServerMark(Actor A)
+{
+    local string Caption;
+    local byte MarkType;
+    local float DistSq;
+    local Controller C;
+    local ScrnPlayerController PC;
+    local vector ALocation;
+    local bool bIgnoreDist;
+
+    if (mut.SrvMarkDistance <= 0) {
+        return;  // marking prohibited on the server
+    }
+
+    if (!AllowVoiceMessage('ALERT')) {
+        return; // no spamming with marks!
+    }
+
+    if (!IsMarkable(A, Caption, MarkType)) {
+        return; // the client sent us some garbage
+    }
+
+    ALocation = CalcMarkLocation(A);
+    // Players can be marked anywhere on the map.
+    // Other targets - within the double radius of max marking distance
+    bIgnoreDist = A.IsA('ScrnHumanPawn');
+    DistSq = (mut.SrvMarkDistance * 2) ** 2;
+
+    for (C = Level.ControllerList; C != none; C = C.NextController) {
+        if (!C.bIsPlayer || C == self || C.Pawn == none || C.Pawn.Health <= 0)
+            continue;
+
+        PC = ScrnPlayerController(C);
+        if (PC == none)
+            continue;
+
+        if (Level.Game.bTeamGame && !SameTeamAs(PC))
+            continue;
+
+        if (bIgnoreDist || VSizeSquared(A.Location - PC.Pawn.Location) < DistSq) {
+            PC.ClientMark(PlayerReplicationInfo, A, ALocation, Caption, MarkType);
+        }
+    }
+}
 
 state Spectating
 {
@@ -2997,7 +3359,6 @@ exec function TestColorTags(coerce string ColorTagString, optional int i)
     ConsoleMessage(s);
 }
 
-
 exec function MyTeam()
 {
     if ( PlayerReplicationInfo == none )
@@ -3008,8 +3369,6 @@ exec function MyTeam()
         ClientMessage("My Team Index = " $ PlayerReplicationInfo.Team.TeamIndex
             $ " ("$ PlayerReplicationInfo.Team.class$")");
 }
-
-
 
 function DebugRepLink(string S)
 {
@@ -3306,7 +3665,7 @@ defaultproperties
     MaxVoiceMsgIn10s=5
     strLocked="Weapon pickups LOCKED"
     strUnlocked="Weapon pickups UNLOCKED"
-    strLockDisabled="Weapon lock is disabled by server"
+    strSrvDisabled="The feature is disabled on this server"
     strAlreadySpectating="Already spectating. Type READY, if you want to join the game."
     strNoPerkChanges="Mid-game perk changes disabled"
     strPerkLocked="Perk is locked"

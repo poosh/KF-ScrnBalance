@@ -2383,10 +2383,9 @@ simulated function TakeDamage( int Damage, Pawn InstigatedBy, Vector Hitlocation
         }
     }
 
-    if ( Health > 0 && Health < 50 && Level.Game.NumPlayers > 1 && ScrnPC != none
-            && Level.TimeSeconds - LastDyingMessageTime > DyingMessageDelay )
-    {
-        if ( Health <= 25 || frand() < 0.5 ) {
+    if (Health > 0 && (Health + HealthToGive) < 50 && Level.Game.NumPlayers > 1 && ScrnPC != none
+            && Level.TimeSeconds > LastDyingMessageTime + DyingMessageDelay/2) {
+        if (Health <= 25 || Level.TimeSeconds > LastDyingMessageTime + DyingMessageDelay) {
             ScrnPC.Speech('SUPPORT', 0, "");  // MEDIC!
         }
         else {
@@ -3198,4 +3197,5 @@ defaultproperties
     RequiredEquipment(3)="ScrnBalanceSrv.ScrnSyringe"
     RequiredEquipment(4)="ScrnBalanceSrv.ScrnWelder"
     GlowCheckTime=0.35
+    DyingMessageDelay=8.0
 }

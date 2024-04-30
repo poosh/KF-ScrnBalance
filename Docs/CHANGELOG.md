@@ -28,9 +28,32 @@
 ## VERSION 9
 
 -------------------------------------------------------------------------------
-### v9.69.49
-- Now end-game bosses can be spawned separately (e.g., `SpecialSquads=BOSS1 | BOSS2`)
+### v9.69.50
+#### Mark (Ping / Spot)
+- New feature - **Mark** (a.k.a. *spot* or *ping*) - an ability to mark big zeds or items (ammo, weapons, armor) on the map. Teammates can see the marks (even through walls). Marks disappear in 5..10 seconds.
+- By default, the marking feature is used via the Speech Menu Command v31 ("Lookout!") - marks the zed or item the player is looking at.
+- The recommended way is binding the `MARK` command to a separate key (`set input T MARK` or via *ScrN Key Bindings* GUI).
+- Some Speech Menu items mark the player: v11 ("Medic"), v12 ("Help"), v36 ("Follow me")
+- v13 ("I need some money") - also marks the player, but only during the Trader Time.
+- v35 ("Lets hole up here!") - marks the player location and may stay up to the end of the Trader Time (30s max)
+- Marking can be prohibited on the server by setting `MarkDistanceMeters=0` in *ScrnBalanceSrv.ini*
+- Players can locally disable marks by setting `bShowMarks=false` in *ScrnUser.ini* (a GUI option will come later)
+- *ScrnBalanceSrv.ini*: new option `MarkDistanceMeters` - maximum distance to item/zed to set/reveal a mark.
+- *ScrnBalanceSrv.ini*: new option `MarkZedBounty` - filters out markable zeds by their Bounty (`ScoringValue`). By default, Husks, Scrakes and Fleshpounds are markable (and also Brutes, Jasons, Female FP, and upper roster of DooM demons). Patriarch cannot be marked to avoid exploits.
+
+#### Other changes
+- - Now end-game bosses can be spawned separately (e.g., `SpecialSquads=BOSS1 | BOSS2`)
 - **20. New Doom** v0.90 - almost finished. Fixed end-game boss spawn.
+- Removed a flashlight from **Combat Shotgun** as it looked silly together with laser sights. AltFire now toggles LS.
+- Added laser sight switching sound for all guns with LS.
+
+#### ScrN Zed Pack
+- **Husk** and **Tesla Husk** bounty raised to 35 (up from 17 and 25, respectively) to match `MarkZedBounty`. Original bounty was ridiculously low.
+
+#### Heavy Machinegunner
+- **XMV850** laser sight is turned on by default.
+- Fixed `ChainGun.SelectedHudImageRef` (thanks [P-Jay])
+
 
 ### v9.69.45
 - **20. New Doom** (BETA) - totally reworked Doom 3 Demon Invasion mode to use modern ScrN features. A long game, 16+1 waves: 4 regular waves + 2 mid-game boss fights + 6 random waves + 6 trader paths + final boss battle. Each of the 8 Doom bosses now has its unique wave. A mid-game boss wave ends when the boss is defeated. Other enemies don't matter. Moreover, only killing the boss grants dosh.

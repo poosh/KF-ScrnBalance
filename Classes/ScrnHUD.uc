@@ -3,6 +3,7 @@ class ScrnHUD extends SRHUDKillingFloor
 
 #exec OBJ LOAD FILE=ScrnTex.utx
 #exec OBJ LOAD FILE=ScrnAch_T.utx
+#exec OBJ LOAD FILE=KFStoryGame_Tex.utx
 
 //var byte colR, colG, colB;
 
@@ -174,6 +175,44 @@ var material ChatIcon;
 
 var bool bZedHealthShow;
 var bool bDebugSpectatingHUD;
+
+var config bool bShowMarks;
+var config float MarkIconSize;
+var config byte MarkFont;
+struct SMark {
+    var Actor Target;
+    var bool bIgnoreTarget;
+    var vector Location;
+    var String Caption;
+    var String Description;
+    var byte ColorIndex;
+    var float MarkLife;
+    var float PulseUntil;
+};
+var array<SMark> Marks;
+// mark groups (0..F)
+const MARK_ENEMIES      = 0x0;
+const MARK_PLAYERS      = 0x1;
+const MARK_LOCATIONS    = 0x2;
+const MARK_ITEMS        = 0x3;
+// mark types. 4 msb is the group, 4 lsb - item index within the group
+var const int MARK_ENEMY;
+var const int MARK_FLESHPOUND;
+var const int MARK_SCRAKE;
+var const int MARK_PLAYER;
+var const int MARK_CAMP;
+var const int MARK_PICKUP;
+var const int MARK_AMMO;
+var const int MARK_WEAPON;
+var const int MARK_ARMOR;
+var const int MARK_HEALTH;
+var array<Color> MarkColors;
+var Material MarkIcon;
+var float MaxMarks;
+var Color MarkEnemyColor;
+var Color MarkPlayerColor;
+var float MarkLife;
+
 
 function PostBeginPlay()
 {
@@ -1171,6 +1210,16 @@ simulated function PulseColorIf(out Color C, bool req)
 {
     if (req) {
         C.A = PulseAlpha;
+    }
+    else {
+        C.A = KFHUDAlpha;
+    }
+}
+
+simulated function BlinkColorIf(out Color C, bool req)
+{
+    if (req) {
+        C.A = BlinkAlpha;
     }
     else {
         C.A = KFHUDAlpha;
@@ -2321,9 +2370,9 @@ simulated function DrawHealthBar(Canvas C, Actor A, int Health, int MaxHealth, f
         return;
     }
 
-    // Target is located behind camera
     HBScreenPos = C.WorldToScreen(TargetLocation);
 
+    // Target is located behind camera
     if ( HBScreenPos.X <= 0 || HBScreenPos.X >= C.SizeX || HBScreenPos.Y <= 0 || HBScreenPos.Y >= C.SizeY)
     {
         return;
@@ -2715,9 +2764,10 @@ simulated function DrawHud(Canvas C)
         if ( bShowTargeting )
             DrawTargeting(C);
 
-        DrawPlayerInfos(C);
-
         PassStyle = STY_Alpha;
+        DrawPlayerInfos(C);
+        DrawMarks(C);
+
         DrawDamageIndicators(C);
         DrawHudPassA(C);
         DrawHudPassC(C);
@@ -3595,6 +3645,214 @@ exec function LeftGunAmmo(bool b)
     bShowLeftGunAmmo = b;
 }
 
+function DrawMark(Canvas C, int i)
+{
+    local vector CameraLocation, CamDir, TargetLocation, HBScreenPos;
+    local rotator CameraRotation;
+    local float Dist, XL, YL, y, scale;
+    local color OldDrawColor;
+    local string s;
+
+    OldDrawColor = C.DrawColor;
+
+    if (Marks[i].bIgnoreTarget) {
+        TargetLocation = Marks[i].Location;
+    }
+    else {
+        TargetLocation = Marks[i].Target.Location;
+        TargetLocation.Z -= Marks[i].Target.CollisionHeight;
+    }
+    C.GetCameraLocation(CameraLocation, CameraRotation);
+    CamDir = vector(CameraRotation);
+    Dist = VSize(TargetLocation - CameraLocation);
+    // Check Distance Threshold / behind camera cut off
+    if ((Normal(TargetLocation - CameraLocation) dot CamDir) < 0)
+        return;
+
+    HBScreenPos = C.WorldToScreen(TargetLocation);
+    if (HBScreenPos.X <= 0 || HBScreenPos.X >= C.SizeX || HBScreenPos.Y <= 0 || HBScreenPos.Y >= C.SizeY)
+        return;
+
+    if (Dist < 1000.0) {
+        // normal scale withing 20m
+        scale = 1.0;
+    }
+    else if (Dist > 2500.0) {
+        // small icons 50+m away
+        scale = 0.75;
+    }
+    else {
+        // scale icons at 20..50m
+        scale = lerp((2500-Dist)/1500, 0.75, 1.0);
+    }
+
+    C.DrawColor = MarkColors[Marks[i].ColorIndex];
+    PulseColorIf(C.DrawColor, Level.TimeSeconds < Marks[i].PulseUntil);
+    MarkIconSize = scale * FMin(default.MarkIconSize * (float(C.SizeX) / 1024.f), default.MarkIconSize);
+    C.Font = LoadSmallFontStatic(MarkFont);
+    C.FontScaleX = scale;
+    C.FontScaleY = scale;
+
+    C.SetPos(HBScreenPos.X - MarkIconSize * 0.5, HBScreenPos.Y - MarkIconSize);
+    C.DrawTile(MarkIcon, MarkIconSize, MarkIconSize, 0, 0, MarkIcon.MaterialUSize(), MarkIcon.MaterialVSize());
+
+    y = HBScreenPos.Y;
+    s = Marks[i].Caption;
+    C.TextSize(s, XL, YL);
+    C.SetPos(HBScreenPos.X - XL * 0.5, y);
+    C.DrawText(s);
+    y += YL;
+
+    s = Marks[i].Description;
+    if (s != "") {
+        C.TextSize(s, XL, YL);
+        C.SetPos(HBScreenPos.X - XL * 0.5, y);
+        C.DrawText(s);
+        y += YL;
+    }
+
+    s = int(Dist/50) $ "m";
+    C.TextSize(s, XL, YL);
+    C.SetPos(HBScreenPos.X - XL * 0.5, y);
+    C.DrawText(s);
+
+    C.DrawColor = OldDrawColor;
+    C.FontScaleX = 1;
+    C.FontScaleY = 1;
+}
+
+function DrawMarks(Canvas C)
+{
+    local int i;
+    local bool bValid;
+    local Actor A;
+
+    for (i = 0; i < Marks.Length; ++i) {
+        bValid = Level.TimeSeconds < Marks[i].MarkLife;
+        if (bValid && !Marks[i].bIgnoreTarget) {
+            A = Marks[i].Target;
+            bValid = A != none && !A.bDeleteMe && !A.bHidden && (Pawn(A) == none || Pawn(A).Health > 0);
+        }
+
+        if (bValid) {
+            DrawMark(C, i);
+        }
+        else {
+            Marks.remove(i--, 1);
+        }
+    }
+}
+
+static function byte GetMarkGroup(byte MarkType)
+{
+    return MarkType >>> 4;
+}
+
+function MarkTarget(PlayerReplicationInfo Sender, Actor Target, vector Location, String Caption, byte MarkType)
+{
+    local int i, oldest;
+    local string Description;
+    local byte MarkGroup;
+    local float t;
+
+    if (Sender == none || !bShowMarks)
+        return;
+
+    MarkGroup = GetMarkGroup(MarkType);
+    Divide(Caption, "|", Caption, Description);
+
+    switch (MarkGroup) {
+        case MARK_PLAYERS:
+            // clear any location marks left by the player
+            UnmarkTarget(Sender);
+            // keep the player marks for the full time even if the target is not replicated
+            t = MarkLife;
+            break;
+
+        case MARK_LOCATIONS:
+            // never link location to an actor
+            Target = Sender;
+            t = MarkLife;
+            if (MarkType == MARK_CAMP) {
+                if (KFGRI != none && !KFGRI.bWaveInProgress) {
+                    // camp spot stays active untill the end of end of the trader time
+                    t = fclamp(KFGRI.TimeToNextWave, MarkLife, 30);
+                }
+            }
+            break;
+    }
+
+    if (Target == PawnOwner) {
+        UnmarkTarget(Sender);
+        return;
+    }
+
+    if (Target == none) {
+        Target = Sender;
+    }
+    if (t == 0) {
+        t = MarkLife;
+        if (Target == Sender) {
+            // half of lifetime if we cannot monitor the target
+            t /= 2;
+        }
+    }
+
+    i = FindMarkedIndex(Target);
+    if (i == -1) {
+        if (i < MaxMarks) {
+            // create a new mark
+            i = Marks.Length;
+            Marks.insert(i, 1);
+        }
+        else {
+            // MaxMarks reached, replace the oldest one
+            for (i = 1; i < Marks.Length; ++i) {
+                if (Marks[i].MarkLife < Marks[oldest].MarkLife) {
+                    oldest = i;
+                }
+            }
+            i = oldest;
+        }
+    }
+
+    Marks[i].Target = Target;
+    Marks[i].bIgnoreTarget = Target == Sender;
+    Marks[i].Location = Location;
+    Marks[i].Caption = Caption;
+    Marks[i].Description = Description;
+    Marks[i].ColorIndex = min(MarkGroup, MarkColors.Length - 1);
+    Marks[i].MarkLife = Level.TimeSeconds + t;
+    Marks[i].PulseUntil = Level.TimeSeconds + 1.0;
+    // PlayerOwner.ClientMessage("Set mark #" $ i @ Caption $ " MarkType=" $ MarkType $ " MarkGroup="$MarkGroup);
+}
+
+function UnmarkTarget(Actor A) {
+    local int i;
+
+    i = FindMarkedIndex(A) ;
+    if (i != -1) {
+        Marks.remove(i, 1);
+    }
+}
+
+function int FindMarkedIndex(Actor A)
+{
+    local int i;
+
+    for (i = 0; i < Marks.Length; ++i) {
+        if (Marks[i].Target == A) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+function bool IsMarked(Actor A)
+{
+    return FindMarkedIndex(A) >= 0;
+}
+
 
 defaultproperties
 {
@@ -3722,4 +3980,25 @@ defaultproperties
 
     PulseRate=450
     BlinkRate=512
+
+    bShowMarks=true
+    MarkIconSize=32
+    MarkFont=5
+    MarkIcon=TexOscillator'KFStoryGame_Tex.HUD.ObjArrow_osc'
+    MaxMarks=10
+    MarkLife=10.0
+    MarkColors[0]=(R=210,G=1,B=1,A=200)     // MARK_ENEMIES
+    MarkColors[1]=(R=1,G=192,B=255,A=200)   // MARK_PLAYERS
+    MarkColors[2]=(R=255,G=20,B=147,A=200)  // MARK_LOCATIONS
+    MarkColors[3]=(R=1,G=192,B=1,A=200)     // MARK_ITEMS
+    // defaultproperties do not support hex values!
+    MARK_ENEMY=0            // 0x00
+    MARK_FLESHPOUND=1       // 0x01
+    MARK_SCRAKE=2           // 0x02
+    MARK_PLAYER=16          // 0x10
+    MARK_CAMP=32            // 0x20
+    MARK_AMMO=48            // 0x30
+    MARK_WEAPON=49          // 0x31
+    MARK_ARMOR=50           // 0x32
+    MARK_HEALTH=51          // 0x33
 }

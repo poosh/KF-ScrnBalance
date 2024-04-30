@@ -10,16 +10,16 @@ struct SColorTag
 var array<SColorTag> ColorTags;
 
 
-// ==============================================================
-//                           STRINGS
-// ==============================================================
+// ============================================================================
+// STRINGS
+// ============================================================================
 
 //  Performs binary search on sorted array.
 //  @param arr : array of sorted items (in ascending order). Array will not be modified.
 //               out modifier is used just for performance purpose (pass by reference).
 //  @param val : value to search
 //  @return array index or -1, if value not found.
-final static function int BinarySearch(out array<int> arr, int val)
+static final function int BinarySearch(out array<int> arr, int val)
 {
     local int start, end, i;
 
@@ -39,7 +39,7 @@ final static function int BinarySearch(out array<int> arr, int val)
 }
 
 
-final static function int BinarySearchStr(out array<string> arr, string val)
+static final function int BinarySearchStr(out array<string> arr, string val)
 {
     local int start, end, i;
 
@@ -58,7 +58,7 @@ final static function int BinarySearchStr(out array<string> arr, string val)
     return -1;
 }
 
-final static function int SearchStr(out array<string> arr, string val)
+static final function int SearchStr(out array<string> arr, string val)
 {
     local int i;
 
@@ -72,7 +72,7 @@ final static function int SearchStr(out array<string> arr, string val)
     return -1;
 }
 
-final static function int SearchStrIgnoreCase(out array<string> arr, string val)
+static final function int SearchStrIgnoreCase(out array<string> arr, string val)
 {
     local int i;
 
@@ -86,7 +86,7 @@ final static function int SearchStrIgnoreCase(out array<string> arr, string val)
     return -1;
 }
 
-final static function int SearchName(out array<name> arr, name val)
+static final function int SearchName(out array<name> arr, name val)
 {
     local int i;
 
@@ -129,6 +129,90 @@ static final function String FormatTime(int Seconds)
     return Time;
 }
 
+// ============================================================================
+// ARRAYS
+// ============================================================================
+// Adds class to array. Doesn't add none or classes which already are stored in array.
+static final function bool ClassAddToArrayUnique(out array<class> AArray, class AClass)
+{
+    if (AClass == none || ClassIsInArray(AArray, AClass))
+        return false;
+
+    AArray[AArray.length] = AClass;
+    return true;
+}
+
+// returns true if an array contains a given class
+static final function bool ClassIsInArray(out array<class> AArray, class AClass)
+{
+    local int i;
+
+    if (AClass == none)
+        return false;
+
+    for (i = 0; i < AArray.length; ++i) {
+        if (AArray[i] == AClass)
+            return true;
+    }
+    return false;
+}
+
+//returns true if class or its parent is in a given array
+static final function bool ClassChildIsInArray(out array<class> AArray, class AClass)
+{
+    local int i;
+
+    if (AClass == none)
+        return false;
+
+    for (i = 0; i < AArray.length; ++i) {
+        if (ClassIsChildOf(AClass, AArray[i]))
+            return true;
+    }
+    return false;
+}
+
+//output array to the log - for debugging
+static final function LogArray(out array <class> AArray)
+{
+    local int i;
+
+    if (AArray.length == 0)
+        Log("Array is empty!");
+    else {
+        Log("Array elements:");
+        for (i = 0; i < AArray.length; ++i) {
+            Log(String(AArray[i]));
+        }
+        Log("End of array");
+    }
+}
+
+
+// ============================================================================
+// PLAYERS & ADMINS
+// ============================================================================
+// Function is fast on the server side
+// or for local player (Level.GetLocalPlayerController().PlayerReplicationInfo == PRI).
+// Function is relatively slow on a client side when looking for other players.
+static final function Pawn FindPawnByPRI(PlayerReplicationInfo PRI)
+{
+    local Pawn P;
+
+    if ( PRI == none )
+        return none;
+
+    // Owner is set only on server-side or bNetOwner
+    if ( Controller(PRI.Owner) != none )
+        return Controller(PRI.Owner).Pawn;
+
+    foreach PRI.DynamicActors(class'Pawn', P) {
+        if ( P.PlayerReplicationInfo == PRI )
+            return P;
+    }
+
+    return none;
+}
 
 //  Splits long message on short ones before sending it to client.
 //  @param   Sender     Player, who will receive message(-s).

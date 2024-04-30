@@ -1,5 +1,7 @@
 class ScrnAmmoPickup extends KFAmmoPickup;
 
+var localized string ItemName;
+
 var name OriginalName;  // original name of KFAmmoPickup placed in the map
 
 function float GetRespawnTime()
@@ -194,6 +196,7 @@ Respawn:
 
 defaultproperties
 {
+    ItemName="Ammo"
     RespawnTime=30
     RespawnEffectTime=0.5
     RotationRate=(Yaw=0)

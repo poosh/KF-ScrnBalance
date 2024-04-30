@@ -47,6 +47,7 @@ simulated function Destroyed()
 // Use alt fire to switch laser type
 simulated function AltFire(float F)
 {
+    PlaySound(sound'KF_9MMSnd.NineMM_AltFire1',SLOT_Misc,100);
     ToggleLaser();
 }
 
