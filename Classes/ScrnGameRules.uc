@@ -771,12 +771,16 @@ function int NetDamage( int OriginalDamage, int Damage, pawn injured, pawn insti
             SPI.MadeDamage(Damage, ZedVictim, KFDamType, MonsterInfos[idx].bHeadshot, MonsterInfos[idx].bWasDecapitated);
     }
     else if ( ZedVictim != none ) {
-        if ( Damage > 1 && KFMonster(instigatedBy) != none ) {
+        if (Damage > 1 && KFMonster(instigatedBy) != none && instigatedBy != ZedVictim) {
             // Monster2Monster damage
             if ( Mut.bZedFights && !Mut.bStoryMode && DamageType != class'SirenScreamDamage'
                     && KFMonsterController(ZedVictim.Controller) != none ) {
                 // allow monsters fighting each other
                 KFMonsterController(ZedVictim.Controller).bUseThreatAssessment = false;
+                // Do not multiply burn, vomit or tesla damage (those have bLocationalHit=false)
+                if (DamageType.default.bLocationalHit) {
+                    Damage *= Mut.ZedToZedDamageMult;
+                }
             }
         }
     }

@@ -2803,6 +2803,9 @@ function SetupWave()
     // reset spawn volumes
     LastZVol = none;
     LastSpawningVolume = none;
+    // this mey be redundant, but we need to make sure that nothing messes up with AdjustedDifficulty,
+    // Which affects KFMonsterController.Skill (and more important - Doom3Controller's aiming)
+    AdjustedDifficulty = GameDifficulty;
 
     SetupPickups();
 
@@ -2820,13 +2823,11 @@ function SetupWave()
     if ( ScrnGameLength != none ) {
         TotalMaxMonsters = ScrnGameLength.GetWaveZedCount();
         WaveEndTime = ScrnGameLength.GetWaveEndTime();
-        AdjustedDifficulty = GameDifficulty + lerp(float(WaveNum)/FinalWave, 0.1, 0.3);
     }
     else {
         WaveIndex = min(WaveNum,15);
         TotalMaxMonsters = Waves[WaveIndex].WaveMaxMonsters;
         WaveEndTime = Level.TimeSeconds + Waves[WaveIndex].WaveDuration;
-        AdjustedDifficulty = GameDifficulty + Waves[WaveIndex].WaveDifficulty;
         TotalMaxMonsters = max(8, ScaleMonsterCount(TotalMaxMonsters));  // num monsters in wave
     }
 

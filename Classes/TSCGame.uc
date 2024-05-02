@@ -1004,7 +1004,6 @@ function SetupWave()
 
     TotalMaxMonsters = ScrnGameLength.GetWaveZedCount() + NumMonsters;
     WaveEndTime = ScrnGameLength.GetWaveEndTime();
-    AdjustedDifficulty = GameDifficulty + 0.3 * RelativeWaveNum(WaveNum);
 
     MaxMonsters = min(TotalMaxMonsters, MaxZombiesOnce); // max monsters that can be spawned
     TSCGRI.MaxMonsters = TotalMaxMonsters; // num monsters in wave replicated to clients

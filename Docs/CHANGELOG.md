@@ -28,6 +28,14 @@
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+### v9.69.51
+- *ScrnBalanceSrv.ini*: new option `ZedToZedDamageMult` (default=5.0) to boost the damage Zeds deal to each other.
+- Fixed an issue when `ToggleFlashlight` could switch to Combat Shotgun which does not have a flashlight anymore. Now, `ToggleFlashlight` also can switch to custom weapons that have a flashlight.
+- **20. New Doom** v0.91** - fixed Wave 16.
+- NearDeathOverlay is used what the player (or spectated pawn) has <25HP, not <25%.
+- Increased maximum duration of v35 ("Lets hole up here!") mark to 60s
+- Improved target detection for Marking
+
 ### v9.69.50
 #### Mark (Ping / Spot)
 - New feature - **Mark** (a.k.a. *spot* or *ping*) - an ability to mark big zeds or items (ammo, weapons, armor) on the map. Teammates can see the marks (even through walls). Marks disappear in 5..10 seconds.
@@ -42,13 +50,13 @@
 - *ScrnBalanceSrv.ini*: new option `MarkZedBounty` - filters out markable zeds by their Bounty (`ScoringValue`). By default, Husks, Scrakes and Fleshpounds are markable (and also Brutes, Jasons, Female FP, and upper roster of DooM demons). Patriarch cannot be marked to avoid exploits.
 
 #### Other changes
-- - Now end-game bosses can be spawned separately (e.g., `SpecialSquads=BOSS1 | BOSS2`)
+   Now end-game bosses can be spawned separately (e.g., `SpecialSquads=BOSS1 | BOSS2`)
 - **20. New Doom** v0.90 - almost finished. Fixed end-game boss spawn.
 - Removed a flashlight from **Combat Shotgun** as it looked silly together with laser sights. AltFire now toggles LS.
 - Added laser sight switching sound for all guns with LS.
 
 #### ScrN Zed Pack
-- **Husk** and **Tesla Husk** bounty raised to 35 (up from 17 and 25, respectively) to match `MarkZedBounty`. Original bounty was ridiculously low.
+- **Husk** and **Tesla Husk** bounty raised to 35 (up from 17 and 25, respectively) to match `MarkZedBounty`. The Original bounty was ridiculously low.
 
 #### Heavy Machinegunner
 - **XMV850** laser sight is turned on by default.

@@ -3009,11 +3009,17 @@ function bool IsMarkableActor(Actor A)
 
 function bool IsMarkableZed(KFMonster Zed, out String caption, out byte MarkType)
 {
-    if (!IsMarkableActor(Zed) || Zed.Health <= 0 || Zed.ScoringValue < Mut.SrvMarkZedBounty)
+    // default Zed Visibility is 128
+    // Spotted Stalkers and Pat have Visibility = 120
+    // Cloacked Stalkers and Pat have KFMonster = 1
+    // Visibility is not replicated to clients. Hence, the client always has ZombieBoss.Visibility = 128.
+    // That's why marking ZombieBoss is prohibited in all cases.
+
+    if (!IsMarkableActor(Zed) || Zed.Health <= 0 || Zed.ScoringValue < Mut.SrvMarkZedBounty || Zed.Visibility < 120)
         return false;
 
     if (Zed.IsA('ZombieBoss'))
-        return false;  // prevent marking Patriarch to avoid cheating (marking while cloacked)
+        return false;
 
     caption = Zed.MenuName;
     if (Zed.IsA('ZombieFleshPound') || Zed.IsA('FemaleFP')) {
@@ -3069,47 +3075,26 @@ function bool IsMarkablePickup(Pickup P, out String caption, out byte MarkType)
 
 function Actor FindMarkEnemy(out String caption, out byte MarkType)
 {
-    local Vector TraceStart, TraceEnd, Dir, HitLocation, HitNormal;
-    local Actor Other;
-    local int i, c;
-    local array<Actor> IgnoreActors;
-    local KFMonster Zed;
+    local KFMonster P, BestP;
+    local float PCos, BestCos;
+    local vector LookDir, PDir;
 
     if (Mut.SrvMarkDistance <= 0 || Pawn == none || Pawn.Health <= 0)
         return none;
 
-    TraceStart = Pawn.Location + Pawn.EyePosition();
-    Dir = Vector(Pawn.Rotation);
-    TraceEnd = TraceStart + Mut.SrvMarkDistance * Dir;
+    LookDir = vector(Rotation);
+    BestCos = 0.97; // ~30 degree cone
 
-    while (++c <= 64) {
-        Other = Pawn.Trace(HitLocation, HitNormal, TraceEnd, TraceStart, true);
-        if (Other == none || Other.bWorldGeometry || Other == Level)
-            break;
-
-        if (ExtendedZCollision(Other) != none) {
-            Zed = KFMonster(Other.Owner);
-        }
-        else {
-            Zed = KFMonster(Other);
-        }
-
-        if (Zed != none && IsMarkableZed(Zed, caption, MarkType)) {
-            break;
-        }
-
-        IgnoreActors[IgnoreActors.Length] = Other;
-        Other.SetCollision(false);
-        TraceStart = HitLocation;
-        Zed = none;  // make sure we don't return unmarkable zed
-    }
-
-    for (i=0; i<IgnoreActors.Length; i++) {
-        if (IgnoreActors[i] != none) {
-            IgnoreActors[i].SetCollision(true);
+    foreach VisibleCollidingActors(class'KFMonster', P, Mut.SrvMarkDistance, Pawn.Location, true) {
+        PDir = normal(P.Location - Pawn.Location);
+        PCos = PDir dot LookDir;
+        if (PCos > BestCos && IsMarkableZed(P, caption, MarkType)) {
+            // if multiple pickups are inside the code, pick the closest to LookDir
+            BestP = P;
+            BestCos = PCos;
         }
     }
-    return Zed;
+    return BestP;
 }
 
 function Actor FindMarkPickup(out String caption, out byte MarkType)
@@ -3122,7 +3107,7 @@ function Actor FindMarkPickup(out String caption, out byte MarkType)
         return none;
 
     LookDir = vector(Rotation);
-    BestCos = 0.98; // ~30 degree cone
+    BestCos = 0.97; // ~30 degree cone
 
     foreach VisibleCollidingActors(class'Pickup', P, Mut.SrvMarkDistance, Pawn.Location, true) {
         if (P.bHidden)

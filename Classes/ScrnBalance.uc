@@ -225,6 +225,7 @@ var globalconfig string ColoredServerName;
 var float OriginalWaveSpawnPeriod;
 var globalconfig float MinZedSpawnPeriod;
 var globalconfig bool bZedFights;
+var globalconfig float ZedToZedDamageMult;
 var globalconfig bool bServerInfoVeterancy;
 
 var transient array<KFUseTrigger> DoorKeys;
@@ -2671,6 +2672,7 @@ function SetGameDifficulty(byte HardcoreDifficulty)
     }
     bHardcore = bNewHardcore;
     KF.GameDifficulty = Difficulty;
+    KF.AdjustedDifficulty = Difficulty;  // used by AIController, icluding KFMonsterController
     KFGRI = KFGameReplicationInfo(KF.GameReplicationInfo);
     if ( KFGRI != none ) {
         KFGRI.BaseDifficulty = Difficulty;  // only initial replication
@@ -3234,7 +3236,7 @@ function RegisterVersion(string ItemName, int Version)
 
 defaultproperties
 {
-    VersionNumber=96950
+    VersionNumber=96951
     GroupName="KF-Scrn"
     FriendlyName="ScrN Balance"
     Description="Total rework of KF1 to make it modern and the best game in the world while sticking to the roots of the original."
@@ -3302,6 +3304,7 @@ defaultproperties
     MaxZombiesOnce=48
     MinZedSpawnPeriod=2.0
     bZedFights=true
+    ZedToZedDamageMult=5.0
     EventNum=0
     bForceEvent=true
     bResetSquadsAtStart=false

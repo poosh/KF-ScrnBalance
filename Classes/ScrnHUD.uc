@@ -3008,7 +3008,7 @@ simulated function DrawModOverlay( Canvas C )
     if ( CriticalOverlayTimer > Level.TimeSeconds )
         VisionOverlay = CriticalOverlay;
     else if ( (PlayerOwner.Pawn==PawnOwner || !PlayerOwner.bBehindView) && Vehicle(PawnOwner)==None
-            && PawnOwner.Health>0 && PawnOwner.Health<(PawnOwner.HealthMax*0.25) )
+            && PawnOwner.Health > 0 && PawnOwner.Health < 25 )
         VisionOverlay = NearDeathOverlay;
     else
         VisionOverlay = default.VisionOverlay;
@@ -3776,7 +3776,7 @@ function MarkTarget(PlayerReplicationInfo Sender, Actor Target, vector Location,
             if (MarkType == MARK_CAMP) {
                 if (KFGRI != none && !KFGRI.bWaveInProgress) {
                     // camp spot stays active untill the end of end of the trader time
-                    t = fclamp(KFGRI.TimeToNextWave, MarkLife, 30);
+                    t = fclamp(KFGRI.TimeToNextWave, MarkLife, 60);
                 }
             }
             break;

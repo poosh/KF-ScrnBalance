@@ -1915,6 +1915,45 @@ function int AddToFlashlightArray(class<KFWeapon> WeaponClass)
     return i;
 }
 
+simulated exec function ToggleFlashlight()
+{
+    local Inventory inv;
+    local int c;
+    local KFWeapon w, best;
+    local byte bestGroup;
+
+    if (Controller == none)
+        return;
+
+    w = KFWeapon(Weapon);
+    if (w != none && w.bTorchEnabled) {
+        Weapon.ClientStartFire(1);
+        return;
+    }
+
+    for (inv = Inventory; inv != none && ++c < 1000; inv = inv.Inventory) {
+        w = KFWeapon(inv);
+        if (w != none && w.bTorchEnabled && ((w.HasAmmo() && w.InventoryGroup > bestgroup) || best == none)) {
+            best = w;
+            if (w.HasAmmo()) {
+                bestGroup = w.InventoryGroup;
+            }
+        }
+    }
+
+    if (best != none) {
+        best.bPendingFlashlight = true;
+        PendingWeapon = best;
+        if (Weapon != none) {
+            Weapon.PutDown();
+        }
+        else {
+            ChangedWeapon();
+        }
+        return;
+    }
+}
+
 
 simulated function Frag FindPlayerGrenade()
 {

@@ -46,6 +46,7 @@ simulated function Destroyed()
 
 function ServerSpawnLight() { }
 function AdjustLightGraphic() { }
+function LightFire() { }
 
 // Use alt fire to switch laser type
 simulated function AltFire(float F)
