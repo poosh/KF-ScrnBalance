@@ -2941,6 +2941,26 @@ function DestroyDroppedPickups()
     }
 }
 
+function AmmoCreated(ScrnAmmoPickup AmmoBox)
+{
+    AmmoBox.RespawnTime = 30;  // we use predefined value and adjust it in GetRespawnTime();
+    AmmoPickups[AmmoPickups.Length] = AmmoBox;
+}
+
+// usually, AmmoDestroyed never triggers as ammo stays for the entire game
+function AmmoDestroyed(ScrnAmmoPickup AmmoBox)
+{
+    local int i;
+
+    for (i = 0; i < AmmoPickups.Length; ++i) {
+        if (AmmoPickups[i] == AmmoBox || AmmoPickups[i] == none) {
+            AmmoPickups.remove(i--, 1);
+        }
+    }
+    // reload on the next AmmoPickedUp call
+    SleepingAmmo.length = 0;
+}
+
 function AmmoPickedUp(KFAmmoPickup PickedUp)
 {
     local int i;

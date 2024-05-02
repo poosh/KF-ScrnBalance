@@ -693,8 +693,13 @@ function AdjustAmmoBoxCount(int DesiredAmmoBoxCount)
     local int CurrentAmmoBoxCount;
 
     for ( i = 0; i < KF.AmmoPickups.Length ; i++ ) {
-        if ( !KF.AmmoPickups[i].bSleeping )
+        if (KF.AmmoPickups[i] == none) {
+            // should not happen
+            KF.AmmoPickups.remove(i--, 1);
+        }
+        else if (!KF.AmmoPickups[i].bSleeping) {
             ++CurrentAmmoBoxCount;
+        }
     }
 
     if ( CurrentAmmoBoxCount < DesiredAmmoBoxCount ) {
@@ -2237,6 +2242,11 @@ function bool CheckReplacement(Actor Other, out byte bSuperRelevant)
         ReplaceWith(Other, string(class'ScrnAmmoPickup'));
         return false;
     }
+    else if ( Other.class == class'KFRandomAmmoSpawn' ) {
+        // KFRandomAmmoSpawn is a leftover from UT2004's KFMod and does not work in KF1.
+        warn("KFRandomAmmoSpawn is deprecated. Update the map.");
+        return false;
+    }
     else if ( bReplacePickups && Pickup(Other) != none && KF.IsInState('MatchInProgress') ) {
         // don't replace pickups placed on the map by the author - replace only dropped ones
         // or spawned by KFRandomItemSpawn
@@ -3236,7 +3246,7 @@ function RegisterVersion(string ItemName, int Version)
 
 defaultproperties
 {
-    VersionNumber=96951
+    VersionNumber=96952
     GroupName="KF-Scrn"
     FriendlyName="ScrN Balance"
     Description="Total rework of KF1 to make it modern and the best game in the world while sticking to the roots of the original."

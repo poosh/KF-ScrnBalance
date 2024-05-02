@@ -9,6 +9,7 @@ defaultproperties
      PickupClasses(4)=class'ScrnWinchesterPickup'
      PickupClasses(5)=class'ScrnAxePickup'
      PickupClasses(6)=class'ScrnMachetePickup'
+     PickupClasses(7)=Class'KFMod.Vest'
      PickupClasses(8)=class'ScrnMAC10Pickup'
      //PickupClasses(9)=Class'KFMod.M79Pickup'
      PickupWeight(1)=5

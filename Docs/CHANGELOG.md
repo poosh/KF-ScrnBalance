@@ -28,6 +28,10 @@
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+### v9.69.52
+- `KFRandomAmmoSpawn` items are automatically deleted from the map as those are leftovers from KFMod and do not work well in KF1.
+- Fixed a log spam when an ammo box gets destroyed mid-game. This happens only on badly designed maps.
+
 ### v9.69.51
 - *ScrnBalanceSrv.ini*: new option `ZedToZedDamageMult` (default=5.0) to boost the damage Zeds deal to each other.
 - Fixed an issue when `ToggleFlashlight` could switch to Combat Shotgun which does not have a flashlight anymore. Now, `ToggleFlashlight` also can switch to custom weapons that have a flashlight.

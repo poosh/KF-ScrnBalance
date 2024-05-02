@@ -4,6 +4,25 @@ var localized string ItemName;
 
 var name OriginalName;  // original name of KFAmmoPickup placed in the map
 
+function PostBeginPlay()
+{
+    if (ScrnGameType(Level.Game) != none) {
+        ScrnGameType(Level.Game).AmmoCreated(self);
+    }
+    else if (KFGameType(Level.Game) != none) {
+        KFGameType(Level.Game).AmmoPickups[KFGameType(Level.Game).AmmoPickups.Length] = self;
+    }
+    GotoState('Sleeping', 'Begin');
+}
+
+function Destroyed()
+{
+    if (ScrnGameType(Level.Game) != none) {
+        ScrnGameType(Level.Game).AmmoDestroyed(self);
+    }
+    super.Destroyed();
+}
+
 function float GetRespawnTime()
 {
     local ScrnGameType ScrnGT;
