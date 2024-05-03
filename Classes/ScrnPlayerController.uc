@@ -1134,7 +1134,7 @@ function bool ShouldMarkVoiceMessageSender(name msgtype, byte msgid)
         // v11("Medic"), v12("Help") or v13("I need some money"). Money can be asked during trader time only.
         case 'SUPPORT': return msgid <= 1 || (msgid == 2 && !KFGameReplicationInfo(Level.GRI).bWaveInProgress);
         // v33 ("Wait for me!") or v35 ("Lets hole up here!") or v36 ("Follow me")
-        case 'ALERT': return msgid == 4 || msgid == 5;
+        case 'ALERT': return msgid == 2 || msgid == 4 || msgid == 5;
         case 'MEDIC': return true;
     }
     return false;

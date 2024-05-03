@@ -3847,20 +3847,12 @@ function MarkTarget(KFPlayerReplicationInfo Sender, Actor Target, vector Locatio
     if (Sender == none || !bShowMarks)
         return;
 
-    if (Target == PawnOwner) {
-        UnmarkTarget(Sender, none);
-        return;
-    }
-
     MarkGroup = GetMarkGroup(MarkType);
     Divide(Caption, "|", Caption, Description);
 
     MarkLife = MarkLifeDefault;
     switch (MarkGroup) {
         case MARK_PLAYERS:
-            // clear any location marks left by the player
-            UnmarkTarget(Sender, none);
-            // keep the player marks for the full time even if the target is not replicated
             MarkLife = MarkLifePlayer;
             if (KFGRI != none && !KFGRI.bWaveInProgress) {
                 // twice longer marks during the trader time
@@ -3884,6 +3876,12 @@ function MarkTarget(KFPlayerReplicationInfo Sender, Actor Target, vector Locatio
             if (Target == none) {
                 MarkLife = MarkLifeNoTarget;
             }
+    }
+
+    if (Target == PawnOwner) {
+        // don't put mark on outselves
+        UnmarkTarget(Sender, none);
+        return;
     }
 
     i = Marks.Length;
@@ -3946,7 +3944,7 @@ function MarkTarget(KFPlayerReplicationInfo Sender, Actor Target, vector Locatio
 function UnmarkTarget(KFPlayerReplicationInfo Sender, Actor Target) {
     local int i;
 
-    for (i = Marks.Length - 1; i >= 0; ++i) {
+    for (i = Marks.Length - 1; i >= 0; --i) {
         if ((Marks[i].Target == Target) || (Target == none && Marks[i].Sender == Sender)) {
             Marks.remove(i, 1);
         }
