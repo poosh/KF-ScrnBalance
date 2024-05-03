@@ -47,6 +47,10 @@ var     float                   BlamedIconSize;
 
 var()   SpriteWidget            SingleNadeIcon;
 
+var()   SpriteWidget            SpeedBG;
+var()   SpriteWidget            SpeedIcon;
+var()   NumericWidget           SpeedDigits;
+
 var()   SpriteWidget            LeftGunAmmoBG;
 var()   SpriteWidget            LeftGunAmmoIcon;
 var()   NumericWidget           LeftGunAmmoDigits;
@@ -80,6 +84,7 @@ var transient float CriticalOverlayTimer;
 var config byte SpecHeaderFont;
 var localized string strFollowing;
 var localized string strTrader;
+var localized string strMax;
 
 var bool bCoolHud, bCoolHudLeftAlign;
 var config float CoolHudScale;
@@ -180,11 +185,14 @@ var config bool bShowMarks;
 var config float MarkIconSize;
 var config byte MarkFont;
 struct SMark {
+    var KFPlayerReplicationInfo Sender;
     var Actor Target;
     var bool bIgnoreTarget;
     var vector Location;
     var String Caption;
     var String Description;
+    var byte MarkGroup;
+    var byte MarkType;
     var byte ColorIndex;
     var float MarkLife;
     var float PulseUntil;
@@ -200,6 +208,7 @@ var const int MARK_ENEMY;
 var const int MARK_FLESHPOUND;
 var const int MARK_SCRAKE;
 var const int MARK_PLAYER;
+var const int MARK_MEDIC;
 var const int MARK_CAMP;
 var const int MARK_PICKUP;
 var const int MARK_AMMO;
@@ -211,7 +220,7 @@ var Material MarkIcon;
 var float MaxMarks;
 var Color MarkEnemyColor;
 var Color MarkPlayerColor;
-var float MarkLife;
+var float MarkLifeDefault, MarkLifeNoTarget, MarkLifePlayer, MarkLifeLocation;
 
 
 function PostBeginPlay()
@@ -321,22 +330,39 @@ simulated function DrawCowboyMode(Canvas C)
     C.DrawTile(texCowboy, C.ClipX * CowboyTileWidth, 64 * (C.ClipX * CowboyTileWidth)/512.0, 0, 0, 512, 64);
 }
 
-simulated function string GetSpeedStr(Canvas C)
+simulated function int GetCurrentSpeed()
 {
-    local int Speed;
-    local string s;
     local vector Velocity2D;
 
-    if ( PawnOwner == none )
-        return s;
+    if (PawnOwner == none)
+        return 0;
 
     Velocity2D = PawnOwner.Velocity;
     Velocity2D.Z = 0;
-    Speed = round(VSize(Velocity2D));
-    s = string(Speed);
-    if ( PlayerOwner.Pawn == PawnOwner ) {
-        // GroundSpeed is replicated to owner pawn only
-        Speed = round(PawnOwner.GroundSpeed);
+    return round(VSize(Velocity2D));
+}
+
+simulated function int GetMaxSpeed()
+{
+    local vector Velocity2D;
+
+    // GroundSpeed is replicated to owner pawn only
+    if (PawnOwner == none || PlayerOwner.Pawn != PawnOwner)
+        return 0;
+
+    Velocity2D = PawnOwner.Velocity;
+    Velocity2D.Z = 0;
+    return round(PawnOwner.GroundSpeed);
+}
+
+simulated function string GetSpeedStr(Canvas C)
+{
+    local string s;
+    local int Speed;
+
+    s = string(GetCurrentSpeed());
+    Speed = GetMaxSpeed();
+    if (Speed > 0) {
         s $= "/" $ Speed;
     }
 
@@ -597,17 +623,37 @@ simulated function DrawQuickSyringe(Canvas C)
     DrawNumericWidget(C, QuickSyringeDigits, DigitsSmall);
 }
 
+simulated function IntBox GetSpriteWidgetCoords(Canvas C, out SpriteWidget w)
+{
+    local IntBox box;
+    local float scale;
+
+    // XXX: should we apply w.Scale too?
+    scale = w.TextureScale * HudCanvasScale * HudScale;
+
+    // left
+    box.X1 = C.ClipX * w.PosX;
+    // width
+    box.X2 = w.TextureCoords.X2 * ResScaleX * scale;
+    // top
+    box.Y1 = C.ClipY * w.PosY;
+    // height
+    box.Y2 = w.TextureCoords.Y2 * ResScaleY * scale;
+    return box;
+}
+
 simulated function DrawOldHudItems(Canvas C)
 {
     local byte Counter, TempLevel;
     local float TempX, TempY, TempSize, BonusPerkX;
     local Material TempMaterial, TempStarMaterial;
+    local IntBox box;
 
-    if ( bShowSpeed ) {
-        C.Font = LoadSmallFontStatic(SpeedometerFont);
-        C.SetPos(C.ClipX * SpeedometerX, C.ClipY * SpeedometerY);
-        C.DrawText(GetSpeedStr(C) $ " ups");
-    }
+    // if ( bShowSpeed ) {
+    //     C.Font = LoadSmallFontStatic(SpeedometerFont);
+    //     C.SetPos(C.ClipX * SpeedometerX, C.ClipY * SpeedometerY);
+    //     C.DrawText(GetSpeedStr(C) $ " ups");
+    // }
 
     // HEALTH
     if ( !bLightHud && !bSpectatingZED )
@@ -626,26 +672,37 @@ simulated function DrawOldHudItems(Canvas C)
         DrawNumericWidget(C, ArmorDigits, DigitsSmall);
     }
 
+    // when scoreboard visible, draw max weight/speed values instead of the current ones
+    if (bShowScoreboard) {
+        C.Font = GetFontSizeIndex(C, -1);
+        C.DrawColor = WeightDigits.Tints[0];
+        C.TextSize(strMax, TempX, TempY);
+
+        if (!bSpectating) {
+            box = GetSpriteWidgetCoords(C, WeightBG);
+            C.SetPos(box.X1 + (box.X2 - TempX)/2, box.Y1 - TempY);
+            C.DrawText(strMax);
+        }
+        if (bShowSpeed) {
+            box = GetSpriteWidgetCoords(C, SpeedBG);
+            C.SetPos(box.X1 + (box.X2 - TempX)/2, box.Y1 - TempY);
+            C.DrawText(strMax);
+        }
+    }
+
     // WEIGHT
     if ( ScrnPawnOwner != none ) {
-        C.SetPos(C.ClipX * WeightBG.PosX, C.ClipY * WeightBG.PosY);
-
         if ( !bLightHud )
-            C.DrawTile(WeightBG.WidgetTexture, WeightBG.WidgetTexture.MaterialUSize() * WeightBG.TextureScale * 1.5 * HudCanvasScale * ResScaleX * HudScale, WeightBG.WidgetTexture.MaterialVSize() * WeightBG.TextureScale * HudCanvasScale * ResScaleY * HudScale, 0, 0, WeightBG.WidgetTexture.MaterialUSize(), WeightBG.WidgetTexture.MaterialVSize());
-
+            DrawSpriteWidget(C, WeightBG);
         DrawSpriteWidget(C, WeightIcon);
+        DrawNumericWidget(C, WeightDigits, DigitsSmall);
+    }
 
-        C.Font = LoadSmallFontStatic(5);
-        C.FontScaleX = C.ClipX / 1024.0;
-        C.FontScaleY = C.FontScaleX;
-        C.SetPos(C.ClipX * WeightDigits.PosX, C.ClipY * WeightDigits.PosY);
-        C.DrawColor = WeightDigits.Tints[0];
-        if ( bSpectating )
-            C.DrawText(string(ScrnPawnOwner.SpecWeight));
-        else
-            C.DrawText(int(ScrnPawnOwner.CurrentWeight)$"/"$int(ScrnPawnOwner.MaxCarryWeight));
-        C.FontScaleX = 1;
-        C.FontScaleY = 1;
+    if (bShowSpeed) {
+        if (!bLightHud)
+            DrawSpriteWidget(C, SpeedBG);
+        DrawSpriteWidget(C, SpeedIcon);
+        DrawNumericWidget(C, SpeedDigits, DigitsSmall);
     }
 
     // NADES
@@ -661,19 +718,11 @@ simulated function DrawOldHudItems(Canvas C)
         if ( KFMedicGun(OwnerWeapon) != none ) {
             MedicGunDigits.Value = KFMedicGun(OwnerWeapon).ChargeBar() * 100.0;
             if ( MedicGunDigits.Value * 5 < OwnerWeapon.FireModeClass[1].default.AmmoPerFire ) {
-                MedicGunDigits.Tints[0].R = 128;
-                MedicGunDigits.Tints[0].G = 128;
-                MedicGunDigits.Tints[0].B = 128;
-            }
-            else if ( MedicGunDigits.Value < 100 ) {
-                MedicGunDigits.Tints[0].R = 192;
-                MedicGunDigits.Tints[0].G = 96;
-                MedicGunDigits.Tints[0].B = 96;
+                MedicGunDigits.Tints[0] = LowAmmoColor;
             }
             else {
-                MedicGunDigits.Tints[0] = default.MedicGunDigits.Tints[0];
+                MedicGunDigits.Tints[0] = TeamColors[TeamIndex];
             }
-            MedicGunDigits.Tints[0].A = KFHUDAlpha;
             MedicGunDigits.Tints[1] = MedicGunDigits.Tints[0];
             if ( !bLightHud )
                 DrawSpriteWidget(C, MedicGunBG);
@@ -1183,7 +1232,7 @@ simulated function DrawWeaponName(Canvas C)
 
 
     C.Font  = GetFontSizeIndex(C, -1);
-    C.SetDrawColor(255, 50, 50, KFHUDAlpha);
+    C.DrawColor = TeamColors[TeamIndex];
     C.Strlen(CurWeaponName, XL, YL);
 
     // Diet Hud needs to move the weapon name a little bit or it looks weird
@@ -1261,8 +1310,19 @@ simulated function UpdateHud()
         bHealthFadeOut = CoolHealthFadeOutTime > 0;
     }
 
-    if ( ScrnPawnOwner != none )
-        FlashlightDigits.Value = 100 * (float(ScrnPawnOwner.TorchBatteryLife) / float(ScrnPawnOwner.default.TorchBatteryLife));
+    if ( ScrnPawnOwner != none ) {
+        FlashlightDigits.Value = 100.0 * ScrnPawnOwner.TorchBatteryLife / ScrnPawnOwner.default.TorchBatteryLife + 0.0001;
+
+        if (bSpectating) {
+            WeightDigits.Value = ScrnPawnOwner.SpecWeight;
+        }
+        else if (bShowScoreboard) {
+            WeightDigits.Value = int(ScrnPawnOwner.MaxCarryWeight + 0.0001);
+        }
+        else {
+            WeightDigits.Value = int(ScrnPawnOwner.CurrentWeight + 0.0001);
+        }
+    }
 
     //reset to default values
     ClipsDigits.Tints[0]                = TeamColors[TeamIndex];
@@ -1271,6 +1331,8 @@ simulated function UpdateHud()
     BulletsInClipDigits.Tints[1]        = TeamColors[TeamIndex];
     SecondaryClipsDigits.Tints[0]       = TeamColors[TeamIndex];
     SecondaryClipsDigits.Tints[1]       = TeamColors[TeamIndex];
+    SpeedDigits.Tints[0]                = TeamColors[TeamIndex];
+    SpeedDigits.Tints[1]                = TeamColors[TeamIndex];
     LeftGunAmmoDigits.Tints[0]          = TeamColors[TeamIndex];
     LeftGunAmmoDigits.Tints[1]          = TeamColors[TeamIndex];
 
@@ -1306,6 +1368,15 @@ simulated function UpdateHud()
     }
 
     ClipsDigits.Value = CurClipsPrimary;
+
+    if (bShowSpeed) {
+        if (bShowScoreboard) {
+            SpeedDigits.Value = GetMaxSpeed();
+        }
+        else {
+            SpeedDigits.Value = GetCurrentSpeed();
+        }
+    }
 
     if (bHasLeftGun) {
         LeftGunAmmoDigits.Value = CurLeftGunAmmo;
@@ -3608,6 +3679,12 @@ simulated function SetHUDAlpha()
     CoolCashIcon.Tints[1].A = KFHUDAlpha;
     CoolCashDigits.Tints[0].A = KFHUDAlpha;
     CoolCashDigits.Tints[1].A = KFHUDAlpha;
+    SpeedBG.Tints[0].A = KFHUDAlpha;
+    SpeedBG.Tints[1].A = KFHUDAlpha;
+    SpeedDigits.Tints[0].A = KFHUDAlpha;
+    SpeedDigits.Tints[1].A = KFHUDAlpha;
+    SpeedIcon.Tints[0].A = KFHUDAlpha;
+    SpeedIcon.Tints[1].A = KFHUDAlpha;
     LeftGunAmmoBG.Tints[0].A = KFHUDAlpha;
     LeftGunAmmoBG.Tints[1].A = KFHUDAlpha;
     LeftGunAmmoDigits.Tints[0].A = KFHUDAlpha;
@@ -3655,12 +3732,13 @@ function DrawMark(Canvas C, int i)
 
     OldDrawColor = C.DrawColor;
 
-    if (Marks[i].bIgnoreTarget) {
+    if (Marks[i].Target == none) {
         TargetLocation = Marks[i].Location;
     }
     else {
         TargetLocation = Marks[i].Target.Location;
         TargetLocation.Z -= Marks[i].Target.CollisionHeight;
+        Marks[i].Location = TargetLocation;
     }
     C.GetCameraLocation(CameraLocation, CameraRotation);
     CamDir = vector(CameraRotation);
@@ -3728,10 +3806,21 @@ function DrawMarks(Canvas C)
     local Actor A;
 
     for (i = 0; i < Marks.Length; ++i) {
+        A = Marks[i].Target;
         bValid = Level.TimeSeconds < Marks[i].MarkLife;
-        if (bValid && !Marks[i].bIgnoreTarget) {
-            A = Marks[i].Target;
-            bValid = A != none && !A.bDeleteMe && !A.bHidden && (Pawn(A) == none || Pawn(A).Health > 0);
+
+        if (bValid) {
+            if (Marks[i].MarkGroup == MARK_PLAYERS || Marks[i].MarkGroup == MARK_LOCATIONS) {
+                // A player mark is valid until the player is alive.
+                // Medic mark disappers once the player reaches 100hp.
+                // If player pawn (Target) is replicated, use its location. Otherwise, use TargetLocation.
+                bValid = Marks[i].Sender.PlayerHealth > 0
+                        && (Marks[i].MarkType != MARK_MEDIC || Marks[i].Sender.PlayerHealth < 100);
+                Marks[i].bIgnoreTarget = (A == none);
+            }
+            else if (!Marks[i].bIgnoreTarget) {
+                bValid = A != none && !A.bDeleteMe && !A.bHidden && (Pawn(A) == none || Pawn(A).Health > 0);
+            }
         }
 
         if (bValid) {
@@ -3748,122 +3837,144 @@ static function byte GetMarkGroup(byte MarkType)
     return MarkType >>> 4;
 }
 
-function MarkTarget(PlayerReplicationInfo Sender, Actor Target, vector Location, String Caption, byte MarkType)
+function MarkTarget(KFPlayerReplicationInfo Sender, Actor Target, vector Location, String Caption, byte MarkType)
 {
     local int i, oldest;
     local string Description;
     local byte MarkGroup;
-    local float t;
+    local float MarkLife;
 
     if (Sender == none || !bShowMarks)
         return;
 
+    if (Target == PawnOwner) {
+        UnmarkTarget(Sender, none);
+        return;
+    }
+
     MarkGroup = GetMarkGroup(MarkType);
     Divide(Caption, "|", Caption, Description);
 
+    MarkLife = MarkLifeDefault;
     switch (MarkGroup) {
         case MARK_PLAYERS:
             // clear any location marks left by the player
-            UnmarkTarget(Sender);
+            UnmarkTarget(Sender, none);
             // keep the player marks for the full time even if the target is not replicated
-            t = MarkLife;
+            MarkLife = MarkLifePlayer;
+            if (KFGRI != none && !KFGRI.bWaveInProgress) {
+                // twice longer marks during the trader time
+                MarkLife *= 2;
+            }
             break;
 
         case MARK_LOCATIONS:
             // never link location to an actor
-            Target = Sender;
-            t = MarkLife;
+            Target = none;
+            MarkLife = MarkLifeLocation;
             if (MarkType == MARK_CAMP) {
                 if (KFGRI != none && !KFGRI.bWaveInProgress) {
                     // camp spot stays active untill the end of end of the trader time
-                    t = fclamp(KFGRI.TimeToNextWave, MarkLife, 60);
+                    MarkLife = fclamp(KFGRI.TimeToNextWave, MarkLifeLocation, 60);
                 }
             }
             break;
+
+        default:
+            if (Target == none) {
+                MarkLife = MarkLifeNoTarget;
+            }
     }
 
-    if (Target == PawnOwner) {
-        UnmarkTarget(Sender);
-        return;
-    }
-
-    if (Target == none) {
-        Target = Sender;
-    }
-    if (t == 0) {
-        t = MarkLife;
-        if (Target == Sender) {
-            // half of lifetime if we cannot monitor the target
-            t /= 2;
+    i = Marks.Length;
+    if (i > 0) {
+        if (MarkGroup == MARK_PLAYERS || MarkGroup == MARK_LOCATIONS) {
+            // first iteration - a player can mark only one location or self
+            for (i = 0; i < Marks.Length; ++i) {
+                if (Marks[i].Sender == Sender && (Marks[i].MarkGroup == MARK_PLAYERS
+                        || Marks[i].MarkGroup == MARK_LOCATIONS))
+                    break;
+            }
+        }
+        if (i == Marks.Length && Target != none) {
+            // second iteration - check if the target already marked
+            for (i = 0; i < Marks.Length; ++i) {
+                if (Marks[i].Target == Target)
+                    break;
+            }
         }
     }
 
-    i = FindMarkedIndex(Target);
-    if (i == -1) {
+    if (i == Marks.Length) {
         if (i < MaxMarks) {
             // create a new mark
             i = Marks.Length;
             Marks.insert(i, 1);
         }
         else {
-            // MaxMarks reached, replace the oldest one
+            // check if there are any marks from the same sender, otherwise replace the oldest one
             for (i = 1; i < Marks.Length; ++i) {
-                if (Marks[i].MarkLife < Marks[oldest].MarkLife) {
-                    oldest = i;
+                if (Marks[oldest].Sender == Sender) {
+                    if (Marks[i].Sender == Sender && Marks[i].MarkLife < Marks[oldest].MarkLife) {
+                        oldest = i;
+                    }
+                }
+                else {
+                    if (Marks[i].Sender == Sender || Marks[i].MarkLife < Marks[oldest].MarkLife) {
+                        oldest = i;
+                    }
                 }
             }
             i = oldest;
         }
     }
 
+    Marks[i].Sender = Sender;
     Marks[i].Target = Target;
-    Marks[i].bIgnoreTarget = Target == Sender;
+    Marks[i].bIgnoreTarget = Target == none;
     Marks[i].Location = Location;
+    Marks[i].MarkGroup = MarkGroup;
+    Marks[i].MarkType = MarkType;
     Marks[i].Caption = Caption;
     Marks[i].Description = Description;
     Marks[i].ColorIndex = min(MarkGroup, MarkColors.Length - 1);
-    Marks[i].MarkLife = Level.TimeSeconds + t;
+    Marks[i].MarkLife = Level.TimeSeconds + MarkLife;
     Marks[i].PulseUntil = Level.TimeSeconds + 1.0;
     // PlayerOwner.ClientMessage("Set mark #" $ i @ Caption $ " MarkType=" $ MarkType $ " MarkGroup="$MarkGroup);
 }
 
-function UnmarkTarget(Actor A) {
+function UnmarkTarget(KFPlayerReplicationInfo Sender, Actor Target) {
     local int i;
 
-    i = FindMarkedIndex(A) ;
-    if (i != -1) {
-        Marks.remove(i, 1);
+    for (i = Marks.Length - 1; i >= 0; ++i) {
+        if ((Marks[i].Target == Target) || (Target == none && Marks[i].Sender == Sender)) {
+            Marks.remove(i, 1);
+        }
     }
 }
 
-function int FindMarkedIndex(Actor A)
+function bool IsMarked(Actor Target)
 {
     local int i;
 
     for (i = 0; i < Marks.Length; ++i) {
-        if (Marks[i].Target == A) {
-            return i;
-        }
+        if (Marks[i].Target == Target)
+            return true;
     }
-    return -1;
-}
-
-function bool IsMarked(Actor A)
-{
-    return FindMarkedIndex(A) >= 0;
+    return false;
 }
 
 
 defaultproperties
 {
     MinMagCapacity=5
-    LowAmmoPercent=0.250000
+    LowAmmoPercent=0.250
     texCowboy=Texture'ScrnTex.HUD.CowboyMode'
     CowboyTileY=0.02
-    CowboyTileWidth=0.250000
+    CowboyTileWidth=0.250
     ShowDamages=1
     DamagePopupFont=4
-    DamagePopupFadeOutTime=3.000000
+    DamagePopupFadeOutTime=3.000
     bShowSpeed=true
     SpeedometerX=0.85
     SpeedometerY=0.00
@@ -3871,12 +3982,12 @@ defaultproperties
     ChatIcon=Texture'ScrnTex.HUD.ChatIcon'
     CriticalOverlay=Shader'KFX.NearDeathShader'
 
-    BlamedIcon=(WidgetTexture=Texture'ScrnTex.HUD.Crap64',RenderStyle=STY_Alpha,TextureCoords=(X2=64,Y2=64),TextureScale=0.500000,PosX=0.95,PosY=0.5,ScaleMode=SM_Right,Scale=1.000000,Tints[0]=(B=255,G=255,R=255,A=255),Tints[1]=(B=255,G=255,R=255,A=255))
+    BlamedIcon=(WidgetTexture=Texture'ScrnTex.HUD.Crap64',RenderStyle=STY_Alpha,TextureCoords=(X2=64,Y2=64),TextureScale=0.500,PosX=0.95,PosY=0.5,ScaleMode=SM_Right,Scale=1.0,Tints[0]=(B=255,G=255,R=255,A=255),Tints[1]=(B=255,G=255,R=255,A=255))
     BlamedIconSize=32
     BlameCountdown=120
     BlameDrawDistance=800
 
-    SingleNadeIcon=(WidgetTexture=Texture'KillingFloor2HUD.HUD.Hud_M79',RenderStyle=STY_Alpha,TextureCoords=(X2=64,Y2=64),TextureScale=0.220000,PosX=0.781000,PosY=0.943000,ScaleMode=SM_Right,Scale=1.000000,Tints[0]=(B=255,G=255,R=255,A=255),Tints[1]=(B=255,G=255,R=255,A=255))
+    SingleNadeIcon=(WidgetTexture=Texture'KillingFloor2HUD.HUD.Hud_M79',RenderStyle=STY_Alpha,TextureCoords=(X2=64,Y2=64),TextureScale=0.220,PosX=0.781,PosY=0.943,ScaleMode=SM_Right,Scale=1.0,Tints[0]=(B=255,G=255,R=255,A=255),Tints[1]=(B=255,G=255,R=255,A=255))
 
     // used in ScrnBuyMenuSaleList. Brought here to allow user config
     TraderGroupColor=(R=128,G=128,B=128,A=255)
@@ -3891,13 +4002,60 @@ defaultproperties
     strFollowing="FOLLOWING:"
     strTrader="Trader: "
     strPendingItems="Waiting for shop items from server: "
+    strMax="MAX"
 
     DigitsSmall=(DigitTexture=Texture'KillingFloorHUD.Generic.HUD',TextureCoords[0]=(X1=8,Y1=6,X2=32,Y2=38),TextureCoords[1]=(X1=50,Y1=6,X2=68,Y2=38),TextureCoords[2]=(X1=83,Y1=6,X2=113,Y2=38),TextureCoords[3]=(X1=129,Y1=6,X2=157,Y2=38),TextureCoords[4]=(X1=169,Y1=6,X2=197,Y2=38),TextureCoords[5]=(X1=206,Y1=6,X2=235,Y2=38),TextureCoords[6]=(X1=241,Y1=6,X2=269,Y2=38),TextureCoords[7]=(X1=285,Y1=6,X2=315,Y2=38),TextureCoords[8]=(X1=318,Y1=6,X2=348,Y2=38),TextureCoords[9]=(X1=357,Y1=6,X2=388,Y2=38),TextureCoords[10]=(X1=390,Y1=6,X2=428,Y2=38))
-    WeightDigits=(RenderStyle=STY_Alpha,TextureScale=0.300000,PosX=0.195000,PosY=0.942000,Tints[0]=(B=64,G=64,R=255,A=255),Tints[1]=(B=64,G=64,R=255,A=255))
 
-    LeftGunAmmoBG=(WidgetTexture=Texture'KillingFloorHUD.HUD.Hud_Box_128x64',RenderStyle=STY_Alpha,TextureCoords=(X2=128,Y2=64),TextureScale=0.35,PosX=0.260,PosY=0.935,ScaleMode=SM_Right,Scale=1.0,Tints[0]=(B=255,G=255,R=255,A=255),Tints[1]=(B=255,G=255,R=255,A=255))
-    LeftGunAmmoIcon=(WidgetTexture=Texture'KillingFloorHUD.HUD.Hud_Bullets',RenderStyle=STY_Alpha,TextureCoords=(X2=64,Y2=64),TextureScale=0.20,PosX=0.266,PosY=0.945,ScaleMode=SM_Right,Scale=1.0,Tints[0]=(B=255,G=255,R=255,A=255),Tints[1]=(B=255,G=255,R=255,A=255))
-    LeftGunAmmoDigits=(RenderStyle=STY_Alpha,TextureScale=0.300,PosX=0.292,PosY=0.950,Tints[0]=(B=64,G=64,R=255,A=255),Tints[1]=(B=64,G=64,R=255,A=255))
+    // LEFT SIDE - from left to right
+    HealthBG=(WidgetTexture=Texture'KillingFloorHUD.HUD.Hud_Box_128x64',RenderStyle=STY_Alpha,TextureCoords=(X2=128,Y2=64),TextureScale=0.35,PosX=0.015,PosY=0.935,ScaleMode=SM_Right,Scale=1.0,Tints[0]=(B=255,G=255,R=255,A=128),Tints[1]=(B=255,G=255,R=255,A=128))
+    HealthIcon=(WidgetTexture=Texture'KillingFloorHUD.HUD.Hud_Medical_Cross',RenderStyle=STY_Alpha,TextureCoords=(X2=64,Y2=64),TextureScale=0.160,PosX=0.020,PosY=0.947,ScaleMode=SM_Right,Scale=1.0,Tints[0]=(B=255,G=255,R=255,A=255),Tints[1]=(B=255,G=255,R=255,A=255))
+    HealthDigits=(RenderStyle=STY_Alpha,TextureScale=0.300,PosX=0.041,PosY=0.950,Tints[0]=(B=64,G=64,R=255,A=255),Tints[1]=(B=64,G=64,R=255,A=255))
+
+    ArmorBG=(WidgetTexture=Texture'KillingFloorHUD.HUD.Hud_Box_128x64',RenderStyle=STY_Alpha,TextureCoords=(X2=128,Y2=64),TextureScale=0.35,PosX=0.085,PosY=0.935,ScaleMode=SM_Right,Scale=1.0,Tints[0]=(B=255,G=255,R=255,A=128),Tints[1]=(B=255,G=255,R=255,A=128))
+    ArmorIcon=(WidgetTexture=Texture'KillingFloorHUD.HUD.Hud_Shield',RenderStyle=STY_Alpha,TextureCoords=(X2=64,Y2=64),TextureScale=0.200,PosX=0.090,PosY=0.945,ScaleMode=SM_Right,Scale=1.0,Tints[0]=(B=255,G=255,R=255,A=255),Tints[1]=(B=255,G=255,R=255,A=255))
+    ArmorDigits=(RenderStyle=STY_Alpha,TextureScale=0.300,PosX=0.115,PosY=0.950,Tints[0]=(B=64,G=64,R=255,A=255),Tints[1]=(B=64,G=64,R=255,A=255))
+
+    WeightBG=(WidgetTexture=Texture'KillingFloorHUD.HUD.Hud_Box_128x64',RenderStyle=STY_Alpha,TextureCoords=(X2=128,Y2=64),TextureScale=0.35,PosX=0.155,PosY=0.935,ScaleMode=SM_Right,Scale=1.0,Tints[0]=(B=255,G=255,R=255,A=255),Tints[1]=(B=255,G=255,R=255,A=255))
+    WeightIcon=(WidgetTexture=Texture'KillingFloorHUD.HUD.Hud_Weight',RenderStyle=STY_Alpha,TextureCoords=(X2=64,Y2=64),TextureScale=0.200,PosX=0.160,PosY=0.945,ScaleMode=SM_Right,Scale=1.0,Tints[0]=(B=255,G=255,R=255,A=255),Tints[1]=(B=255,G=255,R=255,A=255))
+    WeightDigits=(RenderStyle=STY_Alpha,TextureScale=0.300,PosX=0.185,PosY=0.950,Tints[0]=(B=64,G=64,R=255,A=255),Tints[1]=(B=64,G=64,R=255,A=255))
+
+    SpeedBG=(WidgetTexture=Texture'KillingFloorHUD.HUD.Hud_Box_128x64',RenderStyle=STY_Alpha,TextureCoords=(X2=128,Y2=64),TextureScale=0.35,PosX=0.225,PosY=0.935,ScaleMode=SM_Right,Scale=1.0,Tints[0]=(B=255,G=255,R=255,A=255),Tints[1]=(B=255,G=255,R=255,A=255))
+    SpeedIcon=(WidgetTexture=Texture'KillingFloorHUD.HUD.Hud_Lightning_Bolt',RenderStyle=STY_Alpha,TextureCoords=(X2=64,Y2=64),TextureScale=0.20,PosX=0.230,PosY=0.945,ScaleMode=SM_Right,Scale=1.0,Tints[0]=(B=255,G=255,R=255,A=255),Tints[1]=(B=255,G=255,R=255,A=255))
+    SpeedDigits=(RenderStyle=STY_Alpha,TextureScale=0.300,PosX=0.251,PosY=0.950,Tints[0]=(B=64,G=64,R=255,A=255),Tints[1]=(B=64,G=64,R=255,A=255))
+
+    // RIGHT SIDE - from right to left
+    GrenadeBG=(WidgetTexture=Texture'KillingFloorHUD.HUD.Hud_Box_128x64',RenderStyle=STY_Alpha,TextureCoords=(X2=128,Y2=64),TextureScale=0.35,PosX=0.915,PosY=0.935,ScaleMode=SM_Right,Scale=1.0,Tints[0]=(B=255,G=255,R=255,A=255),Tints[1]=(B=255,G=255,R=255,A=255))
+    GrenadeIcon=(WidgetTexture=Texture'KillingFloorHUD.HUD.Hud_Grenade',RenderStyle=STY_Alpha,TextureCoords=(X2=64,Y2=64),TextureScale=0.200,PosX=0.930,PosY=0.945,ScaleMode=SM_Right,Scale=1.0,Tints[0]=(B=255,G=255,R=255,A=255),Tints[1]=(B=255,G=255,R=255,A=255))
+    GrenadeDigits=(RenderStyle=STY_Alpha,TextureScale=0.300,PosX=0.960,PosY=0.950,Tints[0]=(B=64,G=64,R=255,A=255),Tints[1]=(B=64,G=64,R=255,A=255))
+
+    ClipsBG=(WidgetTexture=Texture'KillingFloorHUD.HUD.Hud_Box_128x64',RenderStyle=STY_Alpha,TextureCoords=(X2=128,Y2=64),TextureScale=0.35,PosX=0.845,PosY=0.935,ScaleMode=SM_Right,Scale=1.0,Tints[0]=(B=255,G=255,R=255,A=255),Tints[1]=(B=255,G=255,R=255,A=255))
+    ClipsIcon=(WidgetTexture=Texture'KillingFloorHUD.HUD.Hud_Ammo_Clip',RenderStyle=STY_Alpha,TextureCoords=(X2=64,Y2=64),TextureScale=0.200,PosX=0.850,PosY=0.945,ScaleMode=SM_Right,Scale=1.0,Tints[0]=(B=255,G=255,R=255,A=255),Tints[1]=(B=255,G=255,R=255,A=255))
+    ClipsDigits=(RenderStyle=STY_Alpha,TextureScale=0.300,PosX=0.875,PosY=0.950,Tints[0]=(B=64,G=64,R=255,A=255),Tints[1]=(B=64,G=64,R=255,A=255))
+    WelderBG=(WidgetTexture=Texture'KillingFloorHUD.HUD.Hud_Box_128x64',RenderStyle=STY_Alpha,TextureCoords=(X2=128,Y2=64),TextureScale=0.35,PosX=0.845,PosY=0.935,Scale=1.0,Tints[0]=(B=255,G=255,R=255,A=255),Tints[1]=(B=255,G=255,R=255,A=255))
+    WelderIcon=(WidgetTexture=Texture'KillingFloorHUD.HUD.Hud_Lightning_Bolt',RenderStyle=STY_Alpha,TextureCoords=(X2=64,Y2=64),TextureScale=0.200,PosX=0.850,PosY=0.945,Scale=1.0,Tints[0]=(B=255,G=255,R=255,A=255),Tints[1]=(B=255,G=255,R=255,A=255))
+    WelderDigits=(RenderStyle=STY_Alpha,TextureScale=0.300,PosX=0.875,PosY=0.950,Tints[0]=(B=64,G=64,R=255,A=255),Tints[1]=(B=64,G=64,R=255,A=255))
+
+    BulletsInClipBG=(WidgetTexture=Texture'KillingFloorHUD.HUD.Hud_Box_128x64',RenderStyle=STY_Alpha,TextureCoords=(X2=128,Y2=64),TextureScale=0.35,PosX=0.775,PosY=0.935,ScaleMode=SM_Right,Scale=1.0,Tints[0]=(B=255,G=255,R=255,A=255),Tints[1]=(B=255,G=255,R=255,A=255))
+    BulletsInClipIcon=(WidgetTexture=Texture'KillingFloorHUD.HUD.Hud_Bullets',RenderStyle=STY_Alpha,TextureCoords=(X2=64,Y2=64),TextureScale=0.200,PosX=0.780,PosY=0.945,ScaleMode=SM_Right,Scale=1.0,Tints[0]=(B=255,G=255,R=255,A=255),Tints[1]=(B=255,G=255,R=255,A=255))
+    BulletsInClipDigits=(RenderStyle=STY_Alpha,TextureScale=0.300,PosX=0.803,PosY=0.950,Tints[0]=(B=64,G=64,R=255,A=255),Tints[1]=(B=64,G=64,R=255,A=255))
+
+    LeftGunAmmoBG=(WidgetTexture=Texture'KillingFloorHUD.HUD.Hud_Box_128x64',RenderStyle=STY_Alpha,TextureCoords=(X2=128,Y2=64),TextureScale=0.35,PosX=0.705,PosY=0.935,ScaleMode=SM_Right,Scale=1.0,Tints[0]=(B=255,G=255,R=255,A=255),Tints[1]=(B=255,G=255,R=255,A=255))
+    LeftGunAmmoIcon=(WidgetTexture=Texture'KillingFloorHUD.HUD.Hud_Bullets',RenderStyle=STY_Alpha,TextureCoords=(X2=64,Y2=64),TextureScale=0.200,PosX=0.710,PosY=0.945,ScaleMode=SM_Right,Scale=1.0,Tints[0]=(B=255,G=255,R=255,A=255),Tints[1]=(B=255,G=255,R=255,A=255))
+    LeftGunAmmoDigits=(RenderStyle=STY_Alpha,TextureScale=0.300,PosX=0.733,PosY=0.950,Tints[0]=(B=64,G=64,R=255,A=255),Tints[1]=(B=64,G=64,R=255,A=255))
+    SecondaryClipsBG=(WidgetTexture=Texture'KillingFloorHUD.HUD.Hud_Box_128x64',RenderStyle=STY_Alpha,TextureCoords=(X2=128,Y2=64),TextureScale=0.35,PosX=0.705,PosY=0.935,ScaleMode=SM_Right,Scale=1.0,Tints[0]=(B=255,G=255,R=255,A=255),Tints[1]=(B=255,G=255,R=255,A=255))
+    SecondaryClipsIcon=(WidgetTexture=Texture'KillingFloor2HUD.HUD.Hud_M79',RenderStyle=STY_Alpha,TextureCoords=(X2=64,Y2=64),TextureScale=0.220,PosX=0.704,PosY=0.943,ScaleMode=SM_Right,Scale=1.0,Tints[0]=(B=255,G=255,R=255,A=255),Tints[1]=(B=255,G=255,R=255,A=255))
+    SecondaryClipsDigits=(RenderStyle=STY_Alpha,TextureScale=0.300,PosX=0.731,PosY=0.950,Tints[0]=(B=64,G=64,R=255,A=255),Tints[1]=(B=64,G=64,R=255,A=255))
+    FlashlightBG=(WidgetTexture=Texture'KillingFloorHUD.HUD.Hud_Box_128x64',RenderStyle=STY_Alpha,TextureCoords=(X2=128,Y2=64),TextureScale=0.35,PosX=0.705,PosY=0.935,Scale=1.0,Tints[0]=(B=255,G=255,R=255,A=255),Tints[1]=(B=255,G=255,R=255,A=255))
+    FlashlightIcon=(WidgetTexture=Texture'KillingFloorHUD.HUD.Hud_Flashlight',RenderStyle=STY_Alpha,TextureCoords=(X2=64,Y2=64),TextureScale=0.310,PosX=0.704,PosY=0.938,Scale=1.0,Tints[0]=(B=255,G=255,R=255,A=255),Tints[1]=(B=255,G=255,R=255,A=255))
+    FlashlightOffIcon=(WidgetTexture=Texture'KillingFloorHUD.HUD.Hud_Flashlight_Off',RenderStyle=STY_Alpha,TextureCoords=(X2=64,Y2=64),TextureScale=0.310,PosX=0.704,PosY=0.938,Scale=1.0,Tints[0]=(B=255,G=255,R=255,A=255),Tints[1]=(B=255,G=255,R=255,A=255))
+    FlashlightDigits=(RenderStyle=STY_Alpha,TextureScale=0.300,PosX=0.731,PosY=0.950,Tints[0]=(B=64,G=64,R=255,A=255),Tints[1]=(B=64,G=64,R=255,A=255))
+    MedicGunBG=(WidgetTexture=Texture'KillingFloorHUD.HUD.Hud_Box_128x64',RenderStyle=STY_Alpha,TextureCoords=(X2=128,Y2=64),TextureScale=0.35,PosX=0.705,PosY=0.935,Scale=1.0,Tints[0]=(B=255,G=255,R=255,A=255),Tints[1]=(B=255,G=255,R=255,A=255))
+    MedicGunIcon=(WidgetTexture=Texture'KillingFloorHUD.HUD.Hud_Syringe',RenderStyle=STY_Alpha,TextureCoords=(X2=64,Y2=64),TextureScale=0.200,PosX=0.707500,PosY=0.945,Scale=1.0,Tints[0]=(B=255,G=255,R=255,A=255),Tints[1]=(B=255,G=255,R=255,A=255))
+    MedicGunDigits=(RenderStyle=STY_Alpha,TextureScale=0.300,PosX=0.731,PosY=0.950,Tints[0]=(B=64,G=64,R=255,A=255),Tints[1]=(B=64,G=64,R=255,A=255))
+
+    SyringeBG=(WidgetTexture=Texture'KillingFloorHUD.HUD.Hud_Box_128x64',RenderStyle=STY_Alpha,TextureCoords=(X2=128,Y2=64),TextureScale=0.35,PosX=0.845,PosY=0.935,Scale=1.0,Tints[0]=(B=255,G=255,R=255,A=255),Tints[1]=(B=255,G=255,R=255,A=255))
+    SyringeIcon=(WidgetTexture=Texture'KillingFloorHUD.HUD.Hud_Syringe',RenderStyle=STY_Alpha,TextureCoords=(X2=64,Y2=64),TextureScale=0.200,PosX=0.850,PosY=0.945,Scale=1.0,Tints[0]=(B=255,G=255,R=255,A=255),Tints[1]=(B=255,G=255,R=255,A=255))
+    SyringeDigits=(RenderStyle=STY_Alpha,TextureScale=0.300,PosX=0.875,PosY=0.950,Tints[0]=(B=64,G=64,R=255,A=255),Tints[1]=(B=64,G=64,R=255,A=255))
 
     HealthBarCutoffDist=1000
     HealthBarFullVisDist=350 // also max distance for enemy drawing
@@ -3966,8 +4124,8 @@ defaultproperties
     BigArmorColor=(R=0,G=255,B=255,A=200)
     CoolHudColor=(R=255,G=255,B=255,A=255)
     CoolHudAmmoColor=(R=160,G=160,B=160,A=200)
-    LowAmmoColor=(R=192,G=160,B=0,A=200)
-    NoAmmoColor=(R=192,G=0,B=0,A=200)
+    LowAmmoColor=(R=192,G=160,B=0,A=255)
+    NoAmmoColor=(R=255,G=160,B=0,A=255)
 
     strBonusLevel="^Bonus Level^"
     XPLevelShowTime=30
@@ -3975,7 +4133,7 @@ defaultproperties
     XPBonusFadeRate=500
 
     CoolPerkLevelDigits=(RenderStyle=STY_Alpha,DrawPivot=DP_MiddleMiddle,OffsetX=5,OffsetY=-2)
-    CoolCashIcon=(WidgetTexture=Texture'ScrnTex.HUD.Hud_Pound_Symbol_BW',RenderStyle=STY_Alpha,DrawPivot=DP_UpperLeft,TextureCoords=(X2=64,Y2=64),TextureScale=0.25,PosX=0.00,PosY=0.004,Scale=1.000000,Tints[0]=(B=255,G=255,R=255,A=200),Tints[1]=(B=255,G=255,R=255,A=200))
+    CoolCashIcon=(WidgetTexture=Texture'ScrnTex.HUD.Hud_Pound_Symbol_BW',RenderStyle=STY_Alpha,DrawPivot=DP_UpperLeft,TextureCoords=(X2=64,Y2=64),TextureScale=0.25,PosX=0.00,PosY=0.004,Scale=1.0,Tints[0]=(B=255,G=255,R=255,A=200),Tints[1]=(B=255,G=255,R=255,A=200))
     CoolCashDigits=(RenderStyle=STY_Alpha,DrawPivot=DP_UpperLeft,TextureScale=0.5,PosX=0.03,PosY=0.005,Tints[0]=(B=160,G=160,R=160,A=200),Tints[1]=(B=160,G=160,R=160,A=200))
 
     PulseRate=450
@@ -3986,7 +4144,10 @@ defaultproperties
     MarkFont=5
     MarkIcon=TexOscillator'KFStoryGame_Tex.HUD.ObjArrow_osc'
     MaxMarks=10
-    MarkLife=10.0
+    MarkLifeDefault=10.0
+    MarkLifeNoTarget=5.0
+    MarkLifePlayer=10.0
+    MarkLifeLocation=20.0
     MarkColors[0]=(R=210,G=1,B=1,A=200)     // MARK_ENEMIES
     MarkColors[1]=(R=1,G=192,B=255,A=200)   // MARK_PLAYERS
     MarkColors[2]=(R=255,G=20,B=147,A=200)  // MARK_LOCATIONS
@@ -3996,6 +4157,7 @@ defaultproperties
     MARK_FLESHPOUND=1       // 0x01
     MARK_SCRAKE=2           // 0x02
     MARK_PLAYER=16          // 0x10
+    MARK_MEDIC=17           // 0x11
     MARK_CAMP=32            // 0x20
     MARK_AMMO=48            // 0x30
     MARK_WEAPON=49          // 0x31

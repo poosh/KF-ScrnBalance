@@ -1133,7 +1133,7 @@ function bool ShouldMarkVoiceMessageSender(name msgtype, byte msgid)
     switch (msgtype) {
         // v11("Medic"), v12("Help") or v13("I need some money"). Money can be asked during trader time only.
         case 'SUPPORT': return msgid <= 1 || (msgid == 2 && !KFGameReplicationInfo(Level.GRI).bWaveInProgress);
-        // v35 ("Lets hole up here!") or v36 ("Follow me")
+        // v33 ("Wait for me!") or v35 ("Lets hole up here!") or v36 ("Follow me")
         case 'ALERT': return msgid == 4 || msgid == 5;
         case 'MEDIC': return true;
     }
@@ -1181,7 +1181,7 @@ function SendVoiceMessage(PlayerReplicationInfo Sender,
                 A = FindMarkTarget(str, b);
                 if (A != none) {
                     ServerMark(A);
-                    ClientMark(Sender, A, CalcMarkLocation(A), str, b);
+                    ClientMark(KFPlayerReplicationInfo(Sender), A, CalcMarkLocation(A), str, b);
                     return;
                 }
             }
@@ -1220,7 +1220,7 @@ function ClientLocationalVoiceMessage(PlayerReplicationInfo Sender,
     local string Msg, Msg2;
     local ScrnHUD hud;
     local bool bMark;
-    local byte b;
+    local byte MarkType;
 
     if (Sender == none || Sender.VoiceType == none || Player.Console == none || Level.NetMode == NM_DedicatedServer)
         return;
@@ -1228,9 +1228,20 @@ function ClientLocationalVoiceMessage(PlayerReplicationInfo Sender,
     MsgTag = 'Voice';
     Voice = Spawn(Sender.VoiceType, self);
     KFVoice = KFVoicePack(Voice);
+    MarkType = hud.MARK_PLAYER;
     hud = ScrnHUD(myHUD);
-    if (hud != none)
+    if (hud != none) {
         bMark = ShouldMarkVoiceMessageSender(msgtype, msgid);
+        if (bMark) {
+            if (msgtype == 'MEDIC' || (msgtype == 'SUPPORT' && msgid == 0)) {
+                MarkType = hud.MARK_MEDIC;
+            }
+            else if (msgtype == 'ALERT' && msgid == 4) {
+                // v35 ("Lets hole up here!")
+                MarkType = hud.MARK_CAMP;
+            }
+        }
+    }
 
     if (KFVoice == none) {
         // should not happen
@@ -1293,13 +1304,7 @@ function ClientLocationalVoiceMessage(PlayerReplicationInfo Sender,
     TeamMessage(Sender, Msg, MsgTag);
 
     if (bMark) {
-        b = hud.MARK_PLAYER;
-        if (msgtype == 'ALERT' && msgid == 4) {
-            // v35 ("Lets hole up here!")
-            b = hud.MARK_CAMP;
-            SenderPawn = none;  // bind to location not the pawn
-        }
-        hud.MarkTarget(Sender, SenderPawn, senderLocation,  Msg $ "|" $ Mut.ColoredPlayerName(Sender), b);
+        hud.MarkTarget(KFPlayerReplicationInfo(Sender), SenderPawn, senderLocation,  Msg $ "|" $ Mut.ColoredPlayerName(Sender), MarkType);
     }
 }
 
@@ -3158,10 +3163,12 @@ exec function Mark()
     local Actor A;
     local string Caption;
     local byte MarkType;
+    local KFPlayerReplicationInfo KFPRI;
     local ScrnHUD hud;
 
+    KFPRI = KFPlayerReplicationInfo(PlayerReplicationInfo);
     hud = ScrnHUD(myHUD);
-    if (hud == none || !hud.bShowMarks)
+    if (KFPRI == none || hud == none || !hud.bShowMarks)
         return;
 
     if (mut.SrvMarkDistance <= 0) {
@@ -3176,13 +3183,13 @@ exec function Mark()
     if (!AllowVoiceMessage('ALERT'))
         return;
 
-    ClientMark(PlayerReplicationInfo, A, CalcMarkLocation(A), Caption, MarkType);
+    ClientMark(KFPRI, A, CalcMarkLocation(A), Caption, MarkType);
     if (Level.NetMode != NM_Standalone) {
         ServerMark(A);
     }
 }
 
-function ClientMark(PlayerReplicationInfo Sender, Actor A, vector ALocation, string Caption, byte MarkType)
+function ClientMark(KFPlayerReplicationInfo Sender, Actor A, vector ALocation, string Caption, byte MarkType)
 {
     local ScrnHUD hud;
     local name MsgType;
@@ -3191,7 +3198,7 @@ function ClientMark(PlayerReplicationInfo Sender, Actor A, vector ALocation, str
     local Pawn SenderPawn;
     local Vector SenderLoc;
 
-    if (Level.NetMode == NM_DedicatedServer)
+    if (Level.NetMode == NM_DedicatedServer || Sender == none)
         return;
 
     hud = ScrnHUD(myHUD);
@@ -3240,11 +3247,17 @@ function ServerMark(Actor A)
     local float DistSq;
     local Controller C;
     local ScrnPlayerController PC;
+    local KFPlayerReplicationInfo KFPRI;
     local vector ALocation;
     local bool bIgnoreDist;
 
     if (mut.SrvMarkDistance <= 0) {
         return;  // marking prohibited on the server
+    }
+
+    KFPRI = KFPlayerReplicationInfo(PlayerReplicationInfo);
+    if (KFPRI == none) {
+        return;
     }
 
     if (!AllowVoiceMessage('ALERT')) {
@@ -3273,7 +3286,7 @@ function ServerMark(Actor A)
             continue;
 
         if (bIgnoreDist || VSizeSquared(A.Location - PC.Pawn.Location) < DistSq) {
-            PC.ClientMark(PlayerReplicationInfo, A, ALocation, Caption, MarkType);
+            PC.ClientMark(KFPRI, A, ALocation, Caption, MarkType);
         }
     }
 }

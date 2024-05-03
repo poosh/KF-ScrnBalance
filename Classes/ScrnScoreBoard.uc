@@ -228,6 +228,8 @@ simulated event UpdateScoreBoard(Canvas Canvas)
     local float StoryIconS;
     local material StoryIcon;
     local String Spectators;
+    local int TotalKills, TotalDeaths, TotalCash;
+    local int LineHeight;
 
     OwnerPRI = KFPlayerController(Owner).PlayerReplicationInfo;
     bStoryMode = KF_StoryPRI(OwnerPRI) != none;
@@ -308,7 +310,8 @@ simulated event UpdateScoreBoard(Canvas Canvas)
     Canvas.DrawTextClipped(S);
     if ( OwnerPRI != none && OwnerPRI.Team != none ) {
         Canvas.DrawColor = DoshColor;
-        S = " " $ class'ScrnUnicode'.default.Dosh $ int(OwnerPRI.Team.Score);
+        TotalCash = OwnerPRI.Team.Score;
+        S = " " $ class'ScrnUnicode'.default.Dosh $ TotalCash;
         Canvas.SetPos(0.5 * (Canvas.ClipX + XL), HeaderOffsetY);
         Canvas.DrawTextClipped(S);
     }
@@ -456,7 +459,9 @@ simulated event UpdateScoreBoard(Canvas Canvas)
 
     Canvas.Style = ERenderStyle.STY_Normal;
 
-    // Draw the player informations.
+    // Draw the player information
+    LineHeight = PlayerBoxSizeY + BoxSpaceY;
+    y = BoxTextOffsetY;
     for ( i = 0; i < PlayerCount; i++ )
     {
         //PRI = GRI.PRIArray[i];
@@ -465,7 +470,6 @@ simulated event UpdateScoreBoard(Canvas Canvas)
         StoryPRI = KF_StoryPRI(PRI);
 
         Canvas.DrawColor = HUDClass.default.WhiteColor;
-        y = (PlayerBoxSizeY + BoxSpaceY)*i + BoxTextOffsetY;
 
         // Display admin. - moved to DrawNamePostfixIcons()
         // if( PRI.bAdmin )
@@ -506,6 +510,7 @@ simulated event UpdateScoreBoard(Canvas Canvas)
         }
 
         // draw kills
+        TotalKills += KFPRI.Kills;
         Canvas.TextSize(KFPRI.Kills, KillWidthX, YL);
         Canvas.SetPos(KillsXPos - KillWidthX, y);
         Canvas.DrawTextClipped(KFPRI.Kills);
@@ -519,6 +524,7 @@ simulated event UpdateScoreBoard(Canvas Canvas)
 
         // deaths
         if ( PRI.Deaths > 0 ) {
+            TotalDeaths += PRI.Deaths;
             S = string(int(PRI.Deaths));
             Canvas.TextSize(S, XL, YL);
             Canvas.SetPos(DeathsXPos - XL/2, y);
@@ -526,6 +532,7 @@ simulated event UpdateScoreBoard(Canvas Canvas)
         }
 
         // draw cash
+        TotalCash += PRI.Score;
         S = class'ScrnUnicode'.default.Dosh $ int(PRI.Score);
         Canvas.TextSize(S, XL, YL);
         Canvas.SetPos(CashXPos-XL*0.5f, y);
@@ -587,20 +594,46 @@ simulated event UpdateScoreBoard(Canvas Canvas)
         Canvas.TextSize(S, XL, YL);
         Canvas.SetPos(HealthXpos - 0.5 * XL, y);
         Canvas.DrawTextClipped(S);
+
+        y += LineHeight;
+    }
+
+    // totals
+    if (NotShownCount == 0) {
+        Canvas.Font = class'ROHud'.static.GetSmallMenuFont(Canvas);
+        Canvas.DrawColor = HUDClass.default.RedColor;
+        if ( TotalCash > 0) {
+            S = class'ScrnUnicode'.default.Dosh $ TotalCash;
+            Canvas.TextSize(S, XL, YL);
+            Canvas.SetPos(CashXPos - XL/2, y);
+            Canvas.DrawTextClipped(S);
+        }
+        if ( TotalDeaths > 0) {
+            S = string(TotalDeaths);
+            Canvas.TextSize(S, XL, YL);
+            Canvas.SetPos(DeathsXPos - XL/2, y);
+            Canvas.DrawTextClipped(S);
+        }
+        if ( TotalKills > 0 ) {
+            Canvas.TextSize(TotalKills, XL, YL);
+            Canvas.SetPos(KillsXPos - XL, y);
+            Canvas.DrawTextClipped(TotalKills);
+            Canvas.DrawColor = HUDClass.default.WhiteColor;
+        }
+        y += LineHeight;
     }
 
     Canvas.Font = class'ROHud'.static.LoadMenuFontStatic( min(8, fi+3) );
     if( NotShownCount>0 ) // Draw not shown info
     {
-        Canvas.DrawColor.G = 255;
-        Canvas.DrawColor.B = 0;
-        Canvas.SetPos(NameXPos, (PlayerBoxSizeY + BoxSpaceY)*PlayerCount + BoxTextOffsetY);
+        Canvas.DrawColor = HUDClass.default.GreenColor;
+        Canvas.SetPos(NameXPos, y);
         Canvas.DrawText(NotShownCount@NotShownInfo,true);
     }
     else if ( Spectators != "" )
     {
-        Canvas.DrawColor = Class'HudBase'.Default.GrayColor;
-        Canvas.SetPos(NameXPos, (PlayerBoxSizeY + BoxSpaceY)*PlayerCount + BoxTextOffsetY);
+        Canvas.DrawColor = HUDClass.Default.GrayColor;
+        Canvas.SetPos(NameXPos, y);
         Canvas.DrawText(SpectatorsText $ ": |" $ Spectators, true);
     }
 }

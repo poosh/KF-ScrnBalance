@@ -54,7 +54,7 @@ simulated function DrawTeam(Canvas Canvas, array<PlayerReplicationInfo> TeamPRIA
     local Material VeterancyBox,StarBox;
     local string S;
     local byte Stars;
-    local int TotalKills, TotalAss, TotalDeaths, WaveKills;
+    local int TotalKills, TotalAss, TotalDeaths, TotalCash, WaveKills;
     local TSCTeam TSCTeam;
     local TSCGameReplicationInfo TSCGRI;
 
@@ -218,6 +218,7 @@ simulated function DrawTeam(Canvas Canvas, array<PlayerReplicationInfo> TeamPRIA
 
         if ( bExtraInfo && KFPRI != none ) {
             // draw cash
+            TotalCash += PRI.Score;
             S = class'ScrnUnicode'.default.Dosh $ int(PRI.Score);
             Canvas.TextSize(S, XL, YL);
             Canvas.SetPos(CashXPos-XL*0.5f, y);
@@ -290,8 +291,17 @@ simulated function DrawTeam(Canvas Canvas, array<PlayerReplicationInfo> TeamPRIA
 
     if (TSCTeam != none ) {
         Canvas.DrawColor = TSCTeam.TeamColor;
+        TotalCash += TSCTeam.Score;
     }
 
+    if (bExtraInfo) {
+        if ( TotalCash > 0) {
+            S = class'ScrnUnicode'.default.Dosh $ TotalCash;
+            Canvas.TextSize(S, XL, YL);
+            Canvas.SetPos(CashXPos - XL/2, y);
+            Canvas.DrawTextClipped(S);
+        }
+    }
     if ( TotalDeaths > 0) {
         S = string(TotalDeaths);
         Canvas.TextSize(S, XL, YL);

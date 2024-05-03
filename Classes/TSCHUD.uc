@@ -152,6 +152,8 @@ simulated function UpdateTeamHud()
     ArmorDigits.Tints[1] = TeamColors[TeamIndex];
     WeightDigits.Tints[0] = TeamColors[TeamIndex];
     WeightDigits.Tints[1] = TeamColors[TeamIndex];
+    SpeedDigits.Tints[0] = TeamColors[TeamIndex];
+    SpeedDigits.Tints[1] = TeamColors[TeamIndex];
     LeftGunAmmoDigits.Tints[0] = TeamColors[TeamIndex];
     LeftGunAmmoDigits.Tints[1] = TeamColors[TeamIndex];
     GrenadeDigits.Tints[0] = TeamColors[TeamIndex];
@@ -178,6 +180,7 @@ simulated function UpdateTeamHud()
     HealthBG.WidgetTexture = Boxes[TeamIndex];
     ArmorBG.WidgetTexture = Boxes[TeamIndex];
     WeightBG.WidgetTexture = Boxes[TeamIndex];
+    SpeedBG.WidgetTexture = Boxes[TeamIndex];
     LeftGunAmmoBG.WidgetTexture = Boxes[TeamIndex];
     GrenadeBG.WidgetTexture = Boxes[TeamIndex];
     ClipsBG.WidgetTexture = Boxes[TeamIndex];
@@ -203,6 +206,7 @@ simulated function UpdateTeamHud()
         HealthIcon.WidgetTexture=Texture'TSC_T.HUD.Hud_Medical_Cross';
         ArmorIcon.WidgetTexture=Texture'TSC_T.HUD.Hud_Shield';
         WeightIcon.WidgetTexture=Texture'TSC_T.HUD.Hud_Weight';
+        SpeedIcon.WidgetTexture=Texture'TSC_T.HUD.Hud_Lightning_Bolt';
         GrenadeIcon.WidgetTexture=Texture'TSC_T.HUD.Hud_Grenade';
         ClipsIcon.WidgetTexture=Texture'TSC_T.HUD.Hud_Ammo_Clip';
         SecondaryClipsIcon.WidgetTexture=Texture'TSC_T.HUD.Hud_M79';

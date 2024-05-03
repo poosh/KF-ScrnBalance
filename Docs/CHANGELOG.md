@@ -28,6 +28,16 @@
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+### v9.69.53
+- **M7A3** magazine capacity raised to 20 (up from 15)
+- v33 ("Wait for me!") now also marks the player location
+- Fixed some netcode issues with player mark replication.
+- Note that if a marked player or enemy is too far away, their marked location is not updated on move. This is designed behavior.
+- Added Kill/Death/Dosh totals on the scoreboard.
+- Added a proper HUD widget for the movement speed.
+- Replaced the ugly weight numbers with the normal ones. By default, only the current weight is displayed. When Scoreboard is opened, the value changes to the max weight. Same with the speed.
+- Some minor HUD improvements
+
 ### v9.69.52
 - `KFRandomAmmoSpawn` items are automatically deleted from the map as those are leftovers from KFMod and do not work well in KF1.
 - Fixed a log spam when an ammo box gets destroyed mid-game. This happens only on badly designed maps.
