@@ -5,6 +5,7 @@ var     localized   string      KillsAssSeparator;
 var     localized   string      strPingMax;
 var     localized   string      SpectatorsText;
 var     localized   string      SuicideTimeText;
+var     localized   string      TotalText;
 
 
 var     material                 AdminIcon, BlameIcon, BigBlameIcon;
@@ -598,16 +599,19 @@ simulated event UpdateScoreBoard(Canvas Canvas)
         y += LineHeight;
     }
 
+    y -= BoxSpaceY;
     // totals
     if (NotShownCount == 0) {
-        Canvas.Font = class'ROHud'.static.GetSmallMenuFont(Canvas);
-        Canvas.DrawColor = HUDClass.default.RedColor;
-        if ( TotalCash > 0) {
-            S = class'ScrnUnicode'.default.Dosh $ TotalCash;
-            Canvas.TextSize(S, XL, YL);
-            Canvas.SetPos(CashXPos - XL/2, y);
-            Canvas.DrawTextClipped(S);
-        }
+        Canvas.Font =  class'ROHud'.static.LoadMenuFontStatic(min(8, fi+1));
+        Canvas.DrawColor = HUDClass.default.WhiteColor;
+
+        Canvas.SetPos(NameXPos, y);
+        Canvas.DrawTextClipped(TotalText);
+        // DOSH
+        S = class'ScrnUnicode'.default.Dosh $ TotalCash;
+        Canvas.TextSize(S, XL, YL);
+        Canvas.SetPos(CashXPos - XL/2, y);
+        Canvas.DrawTextClipped(S);
         if ( TotalDeaths > 0) {
             S = string(TotalDeaths);
             Canvas.TextSize(S, XL, YL);
@@ -618,9 +622,8 @@ simulated event UpdateScoreBoard(Canvas Canvas)
             Canvas.TextSize(TotalKills, XL, YL);
             Canvas.SetPos(KillsXPos - XL, y);
             Canvas.DrawTextClipped(TotalKills);
-            Canvas.DrawColor = HUDClass.default.WhiteColor;
         }
-        y += LineHeight;
+        y += YL;
     }
 
     Canvas.Font = class'ROHud'.static.LoadMenuFontStatic( min(8, fi+3) );
@@ -649,6 +652,7 @@ defaultproperties
     PointsText="Do$h"
     TimeText="Time"
     strPingMax="N/A"
+    TotalText="Total:"
     DeathIcon=Texture'InterfaceArt_tex.deathicons.mine'
     BlameIcon=Texture'ScrnTex.HUD.Crap64'
     BigBlameIcon=Texture'ScrnAch_T.Achievements.PoopTrain'

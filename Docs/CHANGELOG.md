@@ -28,105 +28,111 @@
 ## VERSION 9
 
 -------------------------------------------------------------------------------
-### v9.69.53
-- **M7A3** magazine capacity raised to 20 (up from 15)
-- v33 ("Wait for me!") now also marks the player location
-- Fixed some netcode issues with player mark replication.
-- Note that if a marked player or enemy is too far away, their marked location is not updated on move. This is designed behavior.
-- Added Kill/Death/Dosh totals on the scoreboard.
-- Added a proper HUD widget for the movement speed.
-- Replaced the ugly weight numbers with the normal ones. By default, only the current weight is displayed. When Scoreboard is opened, the value changes to the max weight. Same with the speed.
-- Some minor HUD improvements
+## v9.70
+#### Feature Summary (from 9.69.39)
+- New feature - **MARK** (a.k.a. **SPOT** or **PING**).
+- A brand new game mode - **52. Escape the Hunter** (by [nmmblez])
+- Remastered Doom Demon Invasion into a new game mode - **20. New Doom**
+- Improved headshot detection (once more)
+- Enhanced Zed Spawning system.
 
-### v9.69.52
-- `KFRandomAmmoSpawn` items are automatically deleted from the map as those are leftovers from KFMod and do not work well in KF1.
-- Fixed a log spam when an ammo box gets destroyed mid-game. This happens only on badly designed maps.
-
-### v9.69.51
-- *ScrnBalanceSrv.ini*: new option `ZedToZedDamageMult` (default=5.0) to boost the damage Zeds deal to each other.
-- Fixed an issue when `ToggleFlashlight` could switch to Combat Shotgun which does not have a flashlight anymore. Now, `ToggleFlashlight` also can switch to custom weapons that have a flashlight.
-- **20. New Doom** v0.91** - fixed Wave 16.
-- NearDeathOverlay is used what the player (or spectated pawn) has <25HP, not <25%.
-- Increased maximum duration of v35 ("Lets hole up here!") mark to 60s
-- Improved target detection for Marking
-
-### v9.69.50
 #### Mark (Ping / Spot)
 - New feature - **Mark** (a.k.a. *spot* or *ping*) - an ability to mark big zeds or items (ammo, weapons, armor) on the map. Teammates can see the marks (even through walls). Marks disappear in 5..10 seconds.
 - By default, the marking feature is used via the Speech Menu Command v31 ("Lookout!") - marks the zed or item the player is looking at.
 - The recommended way is binding the `MARK` command to a separate key (`set input T MARK` or via *ScrN Key Bindings* GUI).
-- Some Speech Menu items mark the player: v11 ("Medic"), v12 ("Help"), v36 ("Follow me")
+- Some Speech Menu items mark the player: v11 ("Medic"), v12 ("Help"), v33 ("Wait for me!"), v36 ("Follow me")
 - v13 ("I need some money") - also marks the player, but only during the Trader Time.
 - v35 ("Lets hole up here!") - marks the player location and may stay up to the end of the Trader Time (30s max)
 - Marking can be prohibited on the server by setting `MarkDistanceMeters=0` in *ScrnBalanceSrv.ini*
 - Players can locally disable marks by setting `bShowMarks=false` in *ScrnUser.ini* (a GUI option will come later)
 - *ScrnBalanceSrv.ini*: new option `MarkDistanceMeters` - maximum distance to item/zed to set/reveal a mark.
 - *ScrnBalanceSrv.ini*: new option `MarkZedBounty` - filters out markable zeds by their Bounty (`ScoringValue`). By default, Husks, Scrakes and Fleshpounds are markable (and also Brutes, Jasons, Female FP, and upper roster of DooM demons). Patriarch cannot be marked to avoid exploits.
+   Note that if a marked player or enemy is too far away, their marked location is not updated on move. This is designed behavior.
 
-#### Other changes
-   Now end-game bosses can be spawned separately (e.g., `SpecialSquads=BOSS1 | BOSS2`)
-- **20. New Doom** v0.90 - almost finished. Fixed end-game boss spawn.
+#### Escape The Hunter
+- A new game mode by [nmmblez] included into the official rotation. The game loop is opposite from FTG: players must run away from the **Chaser** (Invulnerable Hunter's cousin) instead of following the guardian until the timer runs out.
+- The game mode provides a unique KF experience but cannot be enjoyed by the mentally disabled.
+
+#### New Doom
+- Totally reworked Doom 3 Demon Invasion mode to use modern ScrN features. A long game, 16+1 waves: 4 regular waves + 2 mid-game boss fights + 6 random waves + 6 trader paths + final boss battle. Each of the 8 Doom bosses now has its unique wave. A mid-game boss wave ends when the boss is defeated. Other enemies don't matter. Moreover, only killing the boss grants dosh.
+- Significantly improved Doom AI, especially projectile aiming. On Suicidal/HoE, ranged Doom Demons better predict a player movement and may shoot the ground beneath the player for splash damage.
+- Enhanced almost all Doom Demons. Read *README.md* in ScrnDoom3KF for more details.
+
+#### Money Balance
+- Players now lose constant amount of dosh on death (instead if % of total money).
+- By default, a player death subtracts from $100 both from player and team wallet ($200 in total).
+- In **TSC** and Tourney, a death "costs" -$250 for the player and the team.
+- If killed by an enemy player in TSC, the killer and their team gains +$250, shifting the overall team dosh balance by $1000 in total.
+
+#### Weapon Balance
+- **M7A3** magazine capacity raised to 20 (up from 15)
+- **Combat Medic** melee speed bonus raised to +100% (up from +75%) to match Berserker's DPS.
 - Removed a flashlight from **Combat Shotgun** as it looked silly together with laser sights. AltFire now toggles LS.
 - Added laser sight switching sound for all guns with LS.
+- Fixed an issue when `ToggleFlashlight` could switch to Combat Shotgun which does not have a flashlight anymore. Now, `ToggleFlashlight` also can switch to custom weapons that have a flashlight.
+
+#### ScrN Games/Waves/Zeds
+- "23. Late Pure Doom" and "41. FTG Survival Competition" removed from the official rotation due to `GameConfig` 4095-char limit.
+- Now end-game bosses can be spawned separately (e.g., `SpecialSquads=BOSS1 | BOSS2`)
+- *ScrnWaves.ini*: Added `bNoBounty` and `CashBonus`.
+- If the wave got picked randomly, its Header/Title/Message is not revealed until the trader time ends
+- Faster zed spawning at the beginning of a wave.
+- If there are not enough zeds on the map, new ones are always spawned close to players, ignoring other settings, such as `bRandomSpawnLoc`. "Enough" currently means `4 * AlivePlayerCount`, capped at 16 (24 in TSC).
+- `MVOTE BORING` spawns zeds closer to players even if `bRandomSpawnLoc=true`
+- *ScrnGames.ini*: New config options: `MinBonusLevel`, `MaxBonusLevel`, `bUniqueWaves`
+- *ScrnGames.ini*: `LaterWavePct` and  `LaterWaveSpawnCooldown` deprecated. Set `SpawnRateMod` in each wave instead.
+- *ScrnWaves.ini*: New config option - `ZedsBeforeSpecialSquad`
+- *ScrnWaves.ini*: adjusted `SpawnRateMod` to compensate for `LaterWaveSpawnCooldown` removal.
+- *ScrnWaves.ini*: `SpecialSquadCooldown` now is set in seconds instead of multiplier. The end result is the same for maps with default `WaveSpawnPeriod=2.0`. However, WaveSpawnPeriod no longer affects the cooldown.
+- *ScrnWaves.ini*: New wave end rule - `RULE_KillSpecial` () - kill the special squad (e.g., a mid-game boss) to end the wave. `RULE_KillBoss` automatically switches to `RULE_KillSpecial` if used anywhere but the final wave.
+- *ScrnMapInfo.ini*: Added `ZedSpawnMinDistWeight` to limit zed spawn range on very big maps (e.g., *KF-Boardwalk*)
+- **72. Mystery Game** - updated to v2.02. Added new wave "Big Fat Kenny" to demonstrate `RULE_KillSpecial`.
+
+#### TSC / FTG
+- `bScrnWaves=True` hardcoded in **TSC** and **FTG** (previously it was hardcoded in TSC only)
+- Players glow when are a subject of friendly fire (human damage), e.g., outside the base during a wave.
+- Players can adjust the glow color in *ScrnUser.ini* (client-side)
+- **FTG**: disabled player auto-blame for setting a base in a glitch spot (community request)
+
+#### Other Changes
+- *ScrnBalanceSrv.ini*: New config option `bKickBan` in
+- **12. Noob Trinity** game mode now runs at uncapped bonus levels.
+- *ScrnBalanceSrv.ini*: new option `ZedToZedDamageMult` (default=5.0) to boost the damage Zeds deal to each other.
+- Added Kill/Death/Dosh totals on the scoreboard.
+- Added a proper HUD widget for the movement speed.
+- Replaced the ugly weight numbers with the normal ones. By default, only the current weight is displayed. When Scoreboard is opened, the value changes to the max weight. Same with the speed.
+- NearDeathOverlay is used what the player (or spectated pawn) has <25HP, not <25%.
+- Some minor HUD improvements
+- `KFRandomAmmoSpawn` items are automatically deleted from the map as those are leftovers from KFMod and do not work well in KF1.
+- Fixed a log spam when an ammo box gets destroyed mid-game. This happens only on badly designed maps.
+- Fixed "Sole Survivor" stat (thanks [Broski])
+- Fixed color tag parsing is some console messages
+- Fixed color tag parsing in Marco's Multi-Kill Messages (e.g, "^1Fresh ^2Meat +2 Scrake kills")
+
+#### Code changes
+- Moved many generic helper functions from ScrnBalanceSrv to ScrnShared.
+- Localized generic messages in ScrN Voting Handler (may cause compatibility issues)
+- `mvote HELP` is still parsed server-side and not localized yet.
 
 #### ScrN Zed Pack
+- Improved headshot detection while a Zed is moving and attacking at the same time.
 - **Husk** and **Tesla Husk** bounty raised to 35 (up from 17 and 25, respectively) to match `MarkZedBounty`. The Original bounty was ridiculously low.
+- Added `bCommandoRevealsStalkers` config option for Commando to reveal Stalkers for all teammates (like in KF2)
+- `bCommandoRevealsStalkers` does not affect Ghosts
+- Refactored Stalker and Ghost code
+- Fixed a warning: "PlayAnim: Sequence 'Jump' not found for mesh 'Patriarch_Freak'"
+- Fixed a network replication bug where sometimes a decapitated **Bloat** kept his head client-side.
 
 #### Heavy Machinegunner
 - **XMV850** laser sight is turned on by default.
 - Fixed `ChainGun.SelectedHudImageRef` (thanks [P-Jay])
 
-
-### v9.69.45
-- **20. New Doom** (BETA) - totally reworked Doom 3 Demon Invasion mode to use modern ScrN features. A long game, 16+1 waves: 4 regular waves + 2 mid-game boss fights + 6 random waves + 6 trader paths + final boss battle. Each of the 8 Doom bosses now has its unique wave. A mid-game boss wave ends when the boss is defeated. Other enemies don't matter. Moreover, only killing the boss grants dosh.
-- **52. Escape the Hunter** - a new game mode by [nmmblez] included into the official rotation. The game loop is opposite from FTG: players must run away from the Invulnerable Hunter instead of following the guardian until the timer runs out. The game mode provides a unique KF experience but cannot be enjoyed by the mentally disabled.
-- "23. Late Pure Doom" and "41. FTG Survival Competition" removed from the official rotation due to `GameConfig` 4095-char limit.
-- Players now lose constant amount of dosh on death (instead if % of total money).
-- By default, a player death subtracts from $100 both from player and team wallet ($200 in total).
-- In **TSC** and Tourney, a death "costs" -$250 for the player and the team.
-- If killed by an enemy player in TSC, the killer and their team gains +$250, shifting the overall team dosh balance by $1000 in total.
-- *ScrnWaves.ini*: Added `bNoBounty` and `CashBonus`.
-- If the wave got picked randomly, its Header/Title/Message is not revealed until the trader time ends
-- "Enough zeds" formula changed to `4 * AlivePlayerCount`, capped at 16 (24 in TSC).
-
-### v9.69.43
-#### Spawn Rate Overhaul
-- Faster zed spawning at the beginning of a wave.
-- If there are not enough zeds on the map, new ones are always spawned close to players, ignoring other settings, such as `bRandomSpawnLoc`. "Enough" currently means `6 + 3*AlivePlayerCount` zeds.
-- `MVOTE BORING` spawns zeds closer to players even if `bRandomSpawnLoc=true`
-- *ScrnGames.ini*: `LaterWavePct` and  `LaterWaveSpawnCooldown` deprecated. Set `SpawnRateMod` in each wave instead.
-- *ScrnWaves.ini*: adjusted `SpawnRateMod` to compensate for `LaterWaveSpawnCooldown` removal.
-- *ScrnWaves.ini*:`SpecialSquadCooldown` now is set in seconds instead of multiplier. The end result is the same for maps with default `WaveSpawnPeriod=2.0`. However, WaveSpawnPeriod no longer affects the cooldown.
-- *ScrnMapInfo.ini*: Added `ZedSpawnMinDistWeight` to limit zed spawn range on very big maps (e.g., *KF-Boardwalk*)
-
-#### ScrN Waves
-- Added `bUniqueWaves` to *ScrnGames.ini*
-- New wave end rule - `RULE_KillSpecial` (*ScrnWaves.ini*) - kill the special squad (e.g., a mid-game boss) to end the wave. `RULE_KillBoss` automatically switches to `RULE_KillSpecial` if used anywhere but the final wave.
-- Added `ZedsBeforeSpecialSquad` to *ScrnWaves.ini*
-- `bScrnWaves=True` hardcoded in TSC and FTG (previously it was hardcoded in TSC only)
-
-#### Other changes
-- **72. Mystery Game** - updated to v2.02. Added new wave "Big Fat Kenny" to demonstrate `RULE_KillSpecial`.
-- Fixed "Sole Survivor" stat (thanks [Broski])
-
-
-### v9.69.41
-- New config option `bKickBan` in *ScrnBalanceSrv.ini*
-- New config options: `MinBonusLevel`, `MaxBonusLevel` in *ScrnGames.ini*
-- **12. Noob Trinity** game mode now runs at uncapped bonus levels.
-- Fixed color tag parsing is some console messages
-- Fixed color tag parsing in Marco's Multi-Kill Messages (e.g, "^1Fresh ^2Meat +2 Scrake kills")
-
-### v9.69.40
-- **FTG/TSC**: Players glow when are a subject of friendly fire (human damage), e.g., outside the base during a wave.
-- **FTG**: disabled player auto-blame for setting a base in a glitch spot (community request)
-- Slightly adjusted zed spawn timings. Zeds spawn faster than ususal if there are not many zeds on the map, or slower if there are 32+ spawned already.
-- Players can adjust the glow color in *ScrnUser.ini* (client-side)
-
-#### ScrN Zed Pack
-- Added `bCommandoRevealsStalkers` config option for Commando to reveal Stalkers for all teammates (like in KF2)
-- bCommandoRevealsStalkers does not affect Ghosts
-- Refactored Stalker and Ghost code
+#### Horzine Technician
+- Maximum damage that Siren's Sonic Shatter can do per each shattered zed is capped at 80 on Normal, 140 - HoE.
+- Frozen zeds now receive minor Damage over Time (DoT).
+- Increased **ZED Gun MKI** damage to 100 (up from 85)
+- Increased **ZED Gun MKII** damage to 80 (up from 50)
+- **Cryo Thrower** weight lowered to 7 (down from 8)
 
 ### v9.69.39
 - Added dedicated commands for sprinting: `StartSprint` and `StopSprint`.

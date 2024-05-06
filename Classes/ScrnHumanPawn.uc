@@ -3110,10 +3110,18 @@ simulated function Texture FindSkinTexture()
 {
     local Texture tex;
     local Combiner cmb;
+    local Shader shd;
     local int i;
 
     for (i = 0; i < Skins.Length; ++i) {
-        cmb = Combiner(Skins[i]);
+        shd = Shader(Skins[i]);
+        if (shd != none) {
+            cmb = Combiner(shd.Diffuse);
+        }
+        else {
+            cmb = Combiner(Skins[i]);
+        }
+
         if (cmb == none)
             continue;
         tex = Texture(cmb.Material1);

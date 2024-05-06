@@ -16,9 +16,9 @@ const VOTE_UNREADY              =  9;
 
 var protected TSCGame.EHumanDamageMode HDmg;
 var protected bool bHDmgHelpPrepared;
-var array<localized string> HDmgHelp, HDmgValues;
+var array<string> HDmgHelp, HDmgValues;
 
-var localized string strCaptain, strCarrier, strHumanDamage, strInvite;
+var string strCaptain, strCarrier, strHumanDamage, strInvite;
 
 function int GetGroupVoteIndex(PlayerController Sender, string Group, string Key, out string Value, out string VoteInfo)
 {

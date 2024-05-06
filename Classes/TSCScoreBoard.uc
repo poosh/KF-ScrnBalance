@@ -294,6 +294,8 @@ simulated function DrawTeam(Canvas Canvas, array<PlayerReplicationInfo> TeamPRIA
         TotalCash += TSCTeam.Score;
     }
 
+    Canvas.SetPos(NameXPos, y);
+    Canvas.DrawTextClipped(TotalText);
     if (bExtraInfo) {
         if ( TotalCash > 0) {
             S = class'ScrnUnicode'.default.Dosh $ TotalCash;
@@ -314,12 +316,12 @@ simulated function DrawTeam(Canvas Canvas, array<PlayerReplicationInfo> TeamPRIA
         Canvas.DrawTextClipped(TotalKills);
         Canvas.DrawColor = HUDClass.default.WhiteColor;
     }
-    if ( TotalAss > 0) {
-        Canvas.DrawColor = AssColor;
-        Canvas.SetPos(KillsXPos, y);
-        Canvas.DrawTextClipped(KillsAssSeparator $ TotalAss);
-        Canvas.DrawColor = HUDClass.default.WhiteColor;
-    }
+    // if ( TotalAss > 0) {
+    //     Canvas.DrawColor = AssColor;
+    //     Canvas.SetPos(KillsXPos, y);
+    //     Canvas.DrawTextClipped(KillsAssSeparator $ TotalAss);
+    //     Canvas.DrawColor = HUDClass.default.WhiteColor;
+    // }
 
     if ( TSCTeam != none && TotalKills > 0 ) {
         y += YL;

@@ -17,11 +17,11 @@ var ScrnBalance Mut; // pointer to self to use in static functions, i.e class'Sc
 
 var const string BonusCapGroup;
 
-var localized string strBonusLevel;
-var localized string strStatus, strStatus2;
-var localized string strBetaOnly;
-var localized string strXPInitial, strXPProgress, strXPBonus;
-var localized string strOnlyAdmin, strOnlyScrnGT, strOnlyNotInTourney;
+var string strBonusLevel;
+var string strStatus, strStatus2;
+var string strBetaOnly;
+var string strXPInitial, strXPProgress, strXPBonus;
+var string strOnlyAdmin, strOnlyScrnGT, strOnlyNotInTourney;
 
 // SRVFLAGS
 var transient int SrvFlags; // used for network replication of the values below
@@ -108,7 +108,7 @@ var ScrnMapInfo MapInfo;
 var ScrnGameRules GameRules;
 var ScrnSrvReplInfo SrvInfo;
 
-var localized string strAchEarn;
+var string strAchEarn;
 var globalconfig bool bBroadcastAchievementEarn; //tell other players that somebody earned an achievement (excluding map achs)
 var globalconfig int AchievementFlags;
 var transient int SrvAchievementFlags; // used for network replication
@@ -189,7 +189,7 @@ var globalconfig bool bForceEvent;
 var globalconfig bool bResetSquadsAtStart; // calls ScrnGameRules.ResetSquads() at map start
 
 var globalconfig bool bAutoKickOffPerkPlayers;
-var localized String strAutoKickOffPerk;
+var String strAutoKickOffPerk;
 
 struct SSquadConfig {
     var String SquadName;
@@ -586,20 +586,14 @@ static final function string ColorString(string s, byte R, byte G, byte B)
     return class'ScrnFunctions'.static.ColorString(s, R, G, B);
 }
 
-simulated function string PlainPlayerName(PlayerReplicationInfo PRI)
+static final function string PlainPlayerName(PlayerReplicationInfo PRI)
 {
-    if ( PRI == none )
-        return "";
-
-    return class'ScrnFunctions'.static.StripColorTags(PRI.PlayerName);
+    return class'ScrnFunctions'.static.PlainPlayerName(PRI);
 }
 
-simulated function string ColoredPlayerName(PlayerReplicationInfo PRI)
+static final function string ColoredPlayerName(PlayerReplicationInfo PRI)
 {
-    if ( PRI == none )
-        return "";
-
-    return class'ScrnFunctions'.static.ParseColorTags(PRI.PlayerName, PRI);
+    return class'ScrnFunctions'.static.ColoredPlayerName(PRI);
 }
 
 function StolenWeapon(Pawn NewOwner, KFWeaponPickup WP)
@@ -3246,7 +3240,7 @@ function RegisterVersion(string ItemName, int Version)
 
 defaultproperties
 {
-    VersionNumber=96955
+    VersionNumber=97000
     GroupName="KF-Scrn"
     FriendlyName="ScrN Balance"
     Description="Total rework of KF1 to make it modern and the best game in the world while sticking to the roots of the original."

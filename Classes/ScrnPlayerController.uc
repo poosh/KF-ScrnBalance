@@ -46,7 +46,7 @@ var bool bZEDTimeActive;
 var bool bHadArmor; //player had armor during the game
 
 var bool bWeaponsLocked; // disables player's weapons pick up by other players
-var localized string strLocked, strUnlocked, strSrvDisabled;
+var localized string strLocked, strUnlocked;
 var transient float LastLockMsgTime; // last time when player received a message that weapon is locked
 
 var localized string strAlreadySpectating;
@@ -1785,8 +1785,9 @@ exec function LockWeapons()
         ServerLockWeapons(bWeaponsLocked);
         ClientMessage(ConsoleColorString(strLocked, 192, 1, 1));
     }
-    else
-        ClientMessage(strSrvDisabled);
+    else {
+        ReceiveLocalizedMessage(class'ScrnMsg', class'ScrnMsg'.default.msgSrvDisabled);
+    }
 }
 
 exec function UnlockWeapons()
@@ -1796,8 +1797,9 @@ exec function UnlockWeapons()
         ServerLockWeapons(bWeaponsLocked);
         ClientMessage(ConsoleColorString(strUnlocked, 1, 192, 1));
     }
-    else
-        ClientMessage(strSrvDisabled);
+    else {
+        ReceiveLocalizedMessage(class'ScrnMsg', class'ScrnMsg'.default.msgSrvDisabled);
+    }
 }
 
 exec function ToggleWeaponLock()
@@ -3172,7 +3174,7 @@ exec function Mark()
         return;
 
     if (mut.SrvMarkDistance <= 0) {
-        ClientMessage(strSrvDisabled);
+        ReceiveLocalizedMessage(class'ScrnMsg', class'ScrnMsg'.default.msgSrvDisabled);
         return;
     }
 
@@ -3663,7 +3665,6 @@ defaultproperties
     MaxVoiceMsgIn10s=5
     strLocked="Weapon pickups LOCKED"
     strUnlocked="Weapon pickups UNLOCKED"
-    strSrvDisabled="The feature is disabled on this server"
     strAlreadySpectating="Already spectating. Type READY, if you want to join the game."
     strNoPerkChanges="Mid-game perk changes disabled"
     strPerkLocked="Perk is locked"

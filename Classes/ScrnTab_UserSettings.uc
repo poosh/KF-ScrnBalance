@@ -218,7 +218,7 @@ function RefreshInfo()
     }
     else {
         b_WeaponLock.DisableMe();
-        b_WeaponLock.Hint = PC.strSrvDisabled;
+        b_WeaponLock.Hint = class'ScrnMsg'.default.strSrvDisabled;
     }
 
     if ( KFGameReplicationInfo(PC.GameReplicationInfo) != none ) {

@@ -284,7 +284,7 @@ state AutoPass
 {
 Begin:
     sleep(0.01);
-    VotingHandler.VotePassed(VotingHandler.VoteInitiator.PlayerReplicationInfo.PlayerName);
+    VotingHandler.VotePassed(VotingHandler.VoteInitiator.PlayerReplicationInfo);
     GotoState('');
 }
 
