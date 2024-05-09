@@ -4069,7 +4069,7 @@ defaultproperties
     PerkColors(2)=(R=0,G=225,B=0,A=255)
     PerkColors(3)=(R=0,G=125,B=255,A=255)
     PerkColors(4)=(R=178,G=0,B=255,A=255)
-    PerkColors(5)=(R=255,G=128,B=0,A=255)
+    PerkColors(5)=(R=160,G=64,B=0,A=255)
     PerkColors(6)=(R=160,G=0,B=0,A=255)
 
 

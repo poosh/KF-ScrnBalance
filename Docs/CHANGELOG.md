@@ -28,6 +28,11 @@
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+## v9.70.01
+- New **Gunslinger** perk icon
+- Enhanced some perk icons
+- FTG/TSC: Fixed glowing of some player models
+
 ## v9.70
 #### Feature Summary (from 9.69.39)
 - New feature - **MARK** (a.k.a. **SPOT** or **PING**).

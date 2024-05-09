@@ -116,8 +116,8 @@ var Sound FartSound;
 
 var(Display) FadeColor GlowColor;
 var(Display) Combiner GlowCmb;
-var Material GlowMaterial;
 var float GlowCheckTime;
+var transient bool bGlowInited;
 
 replication
 {
@@ -166,6 +166,19 @@ simulated function PostNetBeginPlay()
     super.PostNetBeginPlay();
 
     CalcHealthMax();
+}
+
+simulated function Destroyed()
+{
+    if (GlowCmb != none) {
+        Level.ObjectPool.FreeObject(GlowCmb);
+        GlowCmb = none;
+    }
+    if (GlowColor != none) {
+        Level.ObjectPool.FreeObject(GlowColor);
+        GlowColor = none;
+    }
+    super.Destroyed();
 }
 
 // WARNING! Returns false if called on the client side for non-owned pawn
@@ -3112,10 +3125,24 @@ simulated function Texture FindSkinTexture()
     local Combiner cmb;
     local Shader shd;
     local int i;
+    // local String s;
 
+    // for (i = 0; i < Skins.Length; ++i) {
+    //     s = PlayerReplicationInfo.CharacterName $ ".Skins: {" $ Skins[0];
+    //     for (i = 1; i < Skins.Length; ++i) {
+    //         s $= ", " $ Skins[i];
+    //     }
+    //     s $= "}";
+    //     log(s, 'ScrnBalance');
+    // }
+
+    // first pass - look for a shader or combiner
     for (i = 0; i < Skins.Length; ++i) {
         shd = Shader(Skins[i]);
         if (shd != none) {
+            tex = Texture(shd.Diffuse);
+            if (tex != none)
+                return tex;
             cmb = Combiner(shd.Diffuse);
         }
         else {
@@ -3130,6 +3157,13 @@ simulated function Texture FindSkinTexture()
         tex = Texture(cmb.Material2);
         if (tex != none)
             return tex;
+    }
+    // second pass - look for any texture
+    for (i = 0; i < Skins.Length; ++i) {
+        tex = Texture(Skins[i]);
+        if (tex != none) {
+            return tex;
+        }
     }
     return none;
 }
@@ -3155,47 +3189,71 @@ simulated function Color GetGlowColor()
     return LocalPC.GlowColorBlue;
 }
 
+simulated function Combiner AllocateGlowCombiner(Material OriginalMat)
+{
+    local Combiner cmb;
+
+    cmb = Combiner(Level.ObjectPool.AllocateObject(class'Combiner'));
+    cmb.CombineOperation = CO_Add;
+    cmb.AlphaOperation = AO_Use_Alpha_From_Material1;
+    cmb.Material1 = OriginalMat;
+    cmb.Material2 = GlowColor;
+    cmb.InvertMask = false;
+    cmb.Modulate2X = false;
+    cmb.Modulate4X = false;
+    return cmb;
+}
+
 simulated function InitGlow()
 {
     local Texture OriginalTex;
 
+    if (bGlowInited)
+        return;
+    bGlowInited = true;
+
+    if (Skins.Length == 0)
+        return;
+
     if (GlowColor == none) {
         GlowColor = FadeColor(Level.ObjectPool.AllocateObject(class'FadeColor'));
+        GlowColor.Color1.R = 0;
+        GlowColor.Color1.G = 0;
+        GlowColor.Color1.B = 0;
+        GlowColor.Color1.A = 0;
         GlowColor.FadePeriod = 0.35;
+        GlowColor.ColorFadeType = FC_Linear;
     }
-    GlowColor.Color2 = GetGlowColor();
 
     if (GlowCmb == none) {
         // find the original skin texture to apply GlowColor on top of
         OriginalTex = FindSkinTexture();
-        if (OriginalTex == none)
-            return;
-
-        GlowCmb = Combiner(Level.ObjectPool.AllocateObject(class'Combiner'));
-        GlowCmb.CombineOperation = CO_Add;
-        GlowCmb.AlphaOperation = AO_Use_Alpha_From_Material1;
-        GlowCmb.Material1 = OriginalTex;
-        GlowCmb.Material2 = GlowColor;
-        GlowCmb.FallbackMaterial = Skins[0];
+        if (OriginalTex != none) {
+            GlowCmb = AllocateGlowCombiner(OriginalTex);
+            GlowCmb.FallbackMaterial = Skins[0];
+        }
     }
-    GlowMaterial = GlowCmb;
 }
 
 simulated function EnableGlow()
 {
     local int i, NumSkins;
 
-    if (Skins.Length == 0)
+    if (!bGlowInited)
+        InitGlow();
+
+    if (GlowCmb == none || Skins[0] == GlowCmb)
         return;
 
-    InitGlow();
-    if (GlowMaterial == none || Skins[0] == GlowMaterial)
-        return;
+    // in case the pawn changed the team
+    GlowColor.Color2 = GetGlowColor();
 
-    NumSkins = clamp(Skins.Length, 2, 4);
+    // A player pawn must have at least two skins: #0 - body, #1 - face.
+    // The same sking can be used for body and face. In this case, Skins[0] = Skins[1]
+    NumSkins = Clamp(Skins.Length, 2, 4);
     for (i = 0; i < NumSkins; ++i) {
         RealSkins[i] = Skins[i];
-        Skins[i] = GlowMaterial;
+        Skins[i] = GlowCmb;
     }
     bUnlit = true;
 }
@@ -3204,15 +3262,14 @@ simulated function DisableGlow()
 {
     local int i, NumSkins;
 
-    bUnlit = false;
-
-    if (Skins.Length == 0 || GlowMaterial == none)
+    if (GlowCmb == none || Skins[0] != GlowCmb)
         return;
 
-    NumSkins = clamp(Skins.Length, 2, 4);
+    NumSkins = Clamp(Skins.Length, 2, 4);
     for (i = 0; i < NumSkins; ++i) {
         Skins[i] = RealSkins[i];
     }
+    bUnlit = false;
 }
 
 
