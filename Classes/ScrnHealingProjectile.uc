@@ -1,5 +1,7 @@
 class ScrnHealingProjectile extends HealingProjectile;
 
+var int InstantHealAmount;
+
 simulated function PostNetReceive()
 {
     if( bHidden && !bHitHealTarget )
@@ -32,7 +34,8 @@ simulated function ProcessTouch(Actor Other, Vector HitLocation)
     local float HealSum; // for modifying based on perks
     local float HealPotency;
 
-    if ( Other == none || Other == Instigator || Other.Base == Instigator )
+    if (Other == none || Other == Instigator || Other.Base == Instigator || !Other.bBlockHitPointTraces
+            || Other.IsA('ExtendedZCollision'))
         return;
 
     // KFBulletWhipAttachment is attached to KFPawns
@@ -56,15 +59,19 @@ simulated function ProcessTouch(Actor Other, Vector HitLocation)
                 if ( PRI != none && PRI.ClientVeteranSkill != none )
                     HealPotency = PRI.ClientVeteranSkill.Static.GetHealPotency(PRI);
 
-                MedicReward = HealBoostAmount * HealPotency;
-                HealSum = MedicReward;
+                MedicReward = (HealBoostAmount + InstantHealAmount) * HealPotency;
+                HealSum = HealBoostAmount * HealPotency;
 
                 if ( (Healed.Health + Healed.healthToGive + MedicReward) > Healed.HealthMax ) {
                     MedicReward = max(0, Healed.HealthMax - (Healed.Health + Healed.healthToGive));
                 }
 
-                if ( Healed.Controller != none )
-                    Healed.Controller.ShakeView(ShakeRotMag, ShakeRotRate, ShakeRotTime, ShakeOffsetMag, ShakeOffsetRate, ShakeOffsetTime);
+                // if ( Healed.Controller != none )
+                //     Healed.Controller.ShakeView(ShakeRotMag, ShakeRotRate, ShakeRotTime, ShakeOffsetMag, ShakeOffsetRate, ShakeOffsetTime);
+
+                if (InstantHealAmount != 0) {
+                    Healed.Health = min(Healed.Health + InstantHealAmount * HealPotency, Healed.HealthMax);
+                }
 
                 if ( ScrnHumanPawn(Healed) != none )
                     ScrnHumanPawn(Healed).TakeHealing(ScrnHumanPawn(Instigator), HealSum, HealPotency, KFWeapon(Instigator.Weapon));

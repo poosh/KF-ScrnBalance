@@ -75,6 +75,9 @@ var automated GUIButton               b_MVOTE_No;
 var automated GUIButton               b_MVOTE_Boring;
 var automated GUIButton               b_MVOTE_EndTrade;
 
+var automated moComboBox              cbx_MVOTE_Difficulty;
+var automated GUIButton               b_MVOTE_Difficulty;
+
 var transient int                     PlayerLocalID;
 var transient string                  PlayerSteamID64;
 
@@ -126,6 +129,13 @@ function InitComponent(GUIController MyController, GUIComponent MyOwner)
             cbx_HudStyle.EnableMe();
         }
     }
+
+    if (cbx_MVOTE_Difficulty.ItemCount() == 0) {
+        cbx_MVOTE_Difficulty.AddItem(class'ScrnScoreBoard'.default.SkillLevel[2]);
+        cbx_MVOTE_Difficulty.AddItem(class'ScrnScoreBoard'.default.SkillLevel[4]);
+        cbx_MVOTE_Difficulty.AddItem(class'ScrnScoreBoard'.default.SkillLevel[5]);
+        cbx_MVOTE_Difficulty.AddItem(class'ScrnScoreBoard'.default.SkillLevel[7]);
+    }
 }
 
 function ShowPanel(bool bShow)
@@ -133,6 +143,7 @@ function ShowPanel(bool bShow)
     local ScrnPlayerController PC;
     local ScrnHUD H;
     local ScrnCustomPRI ScrnPRI;
+    local ScrnGameReplicationInfo ScrnGRI;
     local bool b;
 
     Super.ShowPanel(bShow);
@@ -143,7 +154,7 @@ function ShowPanel(bool bShow)
     }
 
     lbl_Version.Caption = class'ScrnBalance'.default.FriendlyName @ class'ScrnBalance'.static.GetVersionStr();
-    lbl_CR.Caption = "Copyright (c) 2012-2023 PU Developing IK, Latvia. All Rights Reserved.";
+    lbl_CR.Caption = "Copyright (c) 2012-2024 PU Developing IK, Latvia. All Rights Reserved.";
     ServerStatus();
 
     PC = ScrnPlayerController(PlayerOwner());
@@ -151,7 +162,7 @@ function ShowPanel(bool bShow)
         return;
     H = ScrnHUD(PC.myHUD);
     ScrnPRI = class'ScrnCustomPRI'.static.FindMe(PC.PlayerReplicationInfo);
-
+    ScrnGRI = ScrnGameReplicationInfo(PC.GameReplicationInfo);
 
     // tourney member
     b = ScrnPRI != none && ScrnPRI.IsTourneyMember();
@@ -182,6 +193,20 @@ function ShowPanel(bool bShow)
     sl_HudAmmoScale.SetValue(H.CoolHudAmmoScale);
     sl_HudY.SetValue(H.CoolHudAmmoOffsetY);
 
+    if (ScrnGRI != none) {
+        if (ScrnGRI.BaseDifficulty < 4) {
+            cbx_MVOTE_Difficulty.SetIndex(0);
+        }
+        else if (ScrnGRI.BaseDifficulty == 4) {
+            cbx_MVOTE_Difficulty.SetIndex(1);
+        }
+        else if (ScrnGRI.BaseDifficulty < 7) {
+            cbx_MVOTE_Difficulty.SetIndex(2);
+        }
+        else {
+            cbx_MVOTE_Difficulty.SetIndex(3);
+        }
+    }
 
     RefreshInfo();
     bFillPlayerList = true; // fill player list in 1s
@@ -709,6 +734,21 @@ function bool ButtonClicked(GUIComponent Sender)
     return true;
 }
 
+function bool DifficultyVoteButtonClicked(GUIComponent Sender)
+{
+    local byte diff;
+
+    switch (cbx_MVOTE_Difficulty.GetIndex()) {
+        case 0: diff = 2; break;
+        case 1: diff = 4; break;
+        case 2: diff = 5; break;
+        case 3: diff = 7; break;
+        default: return false;  // wtf?
+    }
+    PlayerOwner().Mutate("VOTE DIFF " $ diff);
+    return true;
+}
+
 function bool PlayerVoteButtonClicked(GUIComponent Sender)
 {
     local bool bNeedReason;
@@ -737,6 +777,9 @@ function bool PlayerVoteButtonClicked(GUIComponent Sender)
             cmd = "TEAM A";
             break;
         case b_Team_Invite:
+            cmd = "INVITE";
+            break;
+        case b_MVOTE_Difficulty:
             cmd = "INVITE";
             break;
     }
@@ -1347,7 +1390,7 @@ defaultproperties
         WinTop=0.510
         WinLeft=0.005
         WinWidth=0.99
-        WinHeight=0.235
+        WinHeight=0.290
         RenderWeight=0.100100
         OnPreDraw=WeaponsBG.InternalPreDraw
     End Object
@@ -1517,77 +1560,40 @@ defaultproperties
     End Object
     b_TSC_A=TSC_A_Button
 
-    Begin Object Class=GUIButton Name=VoteYesButton
-        Caption="Vote YES"
-        Hint="Accept current vote in progress"
-        bAutoSize=False
-        WinTop=0.68
+    Begin Object Class=moComboBox Name=DifficultyList
+        bReadOnly=True
+        CaptionWidth=0.3312
+        Caption="Difficulty:"
+        IniOption="@Internal"
+        Hint="Select a difficulty to vote"
+        WinTop=0.685
         WinLeft=0.015
-        WinWidth=0.095
-        WinHeight=0.045
-        RenderWeight=1.0
+        WinWidth=0.25
         TabOrder=70
-        bBoundToParent=True
-        bScaleToParent=True
-        bVisible = false
-        OnClick=ScrnTab_UserSettings.ButtonClicked
-        OnKeyEvent=VoteYesButton.InternalOnKeyEvent
+        RenderWeight=1.0
+        OnChange=ScrnTab_UserSettings.InternalOnChange
+        OnLoadINI=ScrnTab_UserSettings.InternalOnLoadINI
+        OnCreateComponent=DifficultyList.InternalOnCreateComponent
     End Object
-    b_MVOTE_Yes=VoteYesButton
+    cbx_MVOTE_Difficulty=DifficultyList
 
-    Begin Object Class=GUIButton Name=VoteNoButton
-        Caption="Vote NO"
-        Hint="Decline current vote in progress"
+    Begin Object Class=GUIButton Name=DiffVoteButton
+        Caption="Change Difficulty"
+        Hint="Vote to change the game difficulty"
         bAutoSize=False
         WinTop=0.68
-        WinLeft=0.115
-        WinWidth=0.095
+        WinLeft=0.28
+        WinWidth=0.195
         WinHeight=0.045
-        RenderWeight=1.0
+        RenderWeight=2.0
         TabOrder=71
         bBoundToParent=True
         bScaleToParent=True
-        bVisible = false
-        OnClick=ScrnTab_UserSettings.ButtonClicked
-        OnKeyEvent=VoteNoButton.InternalOnKeyEvent
+        bVisible=true
+        OnClick=ScrnTab_UserSettings.DifficultyVoteButtonClicked
+        OnKeyEvent=DiffVoteButton.InternalOnKeyEvent
     End Object
-    b_MVOTE_No=VoteNoButton
-
-    Begin Object Class=GUIButton Name=BoringButton
-        Caption="Boring"
-        Hint="Boosts zed spawn rates, making game faster."
-        bAutoSize=False
-        WinTop=0.68
-        WinLeft=0.28
-        WinWidth=0.195
-        WinHeight=0.045
-        RenderWeight=2.0
-        TabOrder=72
-        bBoundToParent=True
-        bScaleToParent=True
-        bVisible = false
-        OnClick=ScrnTab_UserSettings.ButtonClicked
-        OnKeyEvent=BoringButton.InternalOnKeyEvent
-    End Object
-    b_MVOTE_Boring=BoringButton
-
-    Begin Object Class=GUIButton Name=EndTradeButton
-        Caption="End Trade"
-        Hint="Skips Trader Time and starts next wave."
-        bAutoSize=False
-        WinTop=0.68
-        WinLeft=0.28
-        WinWidth=0.195
-        WinHeight=0.045
-        RenderWeight=2.0
-        TabOrder=72
-        bBoundToParent=True
-        bScaleToParent=True
-        bVisible = false
-        OnClick=ScrnTab_UserSettings.ButtonClicked
-        OnKeyEvent=EndTradeButton.InternalOnKeyEvent
-    End Object
-    b_MVOTE_EndTrade=EndTradeButton
+    b_MVOTE_Difficulty=DiffVoteButton
 
     Begin Object Class=GUIButton Name=TeamLockButton
         Caption="Lock Team"
@@ -1601,7 +1607,7 @@ defaultproperties
         TabOrder=73
         bBoundToParent=True
         bScaleToParent=True
-        bVisible = false
+        bVisible=true
         OnClick=ScrnTab_UserSettings.ButtonClicked
         OnKeyEvent=TeamLockButton.InternalOnKeyEvent
     End Object
@@ -1643,6 +1649,77 @@ defaultproperties
     End Object
     b_Team_Invite=TeamInviteButton
 
+    Begin Object Class=GUIButton Name=VoteYesButton
+        Caption="Vote YES"
+        Hint="Accept current vote in progress"
+        bAutoSize=False
+        WinTop=0.735
+        WinLeft=0.015
+        WinWidth=0.095
+        WinHeight=0.045
+        RenderWeight=1.0
+        TabOrder=80
+        bBoundToParent=True
+        bScaleToParent=True
+        bVisible = false
+        OnClick=ScrnTab_UserSettings.ButtonClicked
+        OnKeyEvent=VoteYesButton.InternalOnKeyEvent
+    End Object
+    b_MVOTE_Yes=VoteYesButton
+
+    Begin Object Class=GUIButton Name=VoteNoButton
+        Caption="Vote NO"
+        Hint="Decline current vote in progress"
+        bAutoSize=False
+        WinTop=0.735
+        WinLeft=0.115
+        WinWidth=0.095
+        WinHeight=0.045
+        RenderWeight=1.0
+        TabOrder=81
+        bBoundToParent=True
+        bScaleToParent=True
+        bVisible = false
+        OnClick=ScrnTab_UserSettings.ButtonClicked
+        OnKeyEvent=VoteNoButton.InternalOnKeyEvent
+    End Object
+    b_MVOTE_No=VoteNoButton
+
+    Begin Object Class=GUIButton Name=BoringButton
+        Caption="Boring"
+        Hint="Boosts zed spawn rates, making game faster."
+        bAutoSize=False
+        WinTop=0.735
+        WinLeft=0.28
+        WinWidth=0.195
+        WinHeight=0.045
+        RenderWeight=2.0
+        TabOrder=82
+        bBoundToParent=True
+        bScaleToParent=True
+        bVisible = false
+        OnClick=ScrnTab_UserSettings.ButtonClicked
+        OnKeyEvent=BoringButton.InternalOnKeyEvent
+    End Object
+    b_MVOTE_Boring=BoringButton
+
+    Begin Object Class=GUIButton Name=EndTradeButton
+        Caption="End Trade"
+        Hint="Skips Trader Time and starts next wave."
+        bAutoSize=False
+        WinTop=0.735
+        WinLeft=0.28
+        WinWidth=0.195
+        WinHeight=0.045
+        RenderWeight=2.0
+        TabOrder=82
+        bBoundToParent=True
+        bScaleToParent=True
+        bVisible = false
+        OnClick=ScrnTab_UserSettings.ButtonClicked
+        OnKeyEvent=EndTradeButton.InternalOnKeyEvent
+    End Object
+    b_MVOTE_EndTrade=EndTradeButton
 
     // SERVER INFO ---------------------------------------------------------------------
     Begin Object Class=GUILabel Name=ServerInfoLabel
@@ -1651,7 +1728,7 @@ defaultproperties
         VertAlign=TSTA_Left
         bMultiLine=True
         TextColor=(R=192,G=192,B=192,A=255)
-        WinTop=0.755
+        WinTop=0.810
         WinLeft=0.01
         WinWidth=0.98
         WinHeight=0.24

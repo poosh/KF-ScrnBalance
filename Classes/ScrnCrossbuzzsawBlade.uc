@@ -7,13 +7,13 @@ var float ShutMeUpTime;
 replication
 {
     reliable if ( Role==ROLE_Authority )
-        ImpactActorFixed; 
+        ImpactActorFixed;
 }
 
 simulated function PostBeginPlay()
 {
     super.PostBeginPlay();
-    
+
     ShutMeUpTime += Level.TimeSeconds;
 }
 
@@ -24,12 +24,12 @@ simulated function PostNetReceive()
             Destroy();
         else if( ImpactActorFixed!=None && Base != ImpactActorFixed )
             GoToState('OnWall');
-    }          
+    }
 }
 
 // destroy an actor and make sure it will be destroyed on clients too
 simulated function ReplicatedDestroy()
-{    
+{
     if ( Level.NetMode == NM_Client || Level.NetMode == NM_StandAlone ) {
         Destroy();
     }
@@ -52,9 +52,9 @@ function Timer()
 simulated function Tick( float Delta )
 {
     super.Tick(Delta);
-    
+
     if ( AmbientSound != None && ShutMeUpTime > Level.TimeSeconds )
-        AmbientSound = None; // make sure I'll shutup        
+        AmbientSound = None; // make sure I'll shutup
 }
 
 // overrided to change calss to ReplicatedDestroy()
@@ -76,7 +76,7 @@ simulated state OnWall
         SetCollisionSize(75,50);
 
         UV2Texture=FadeColor'PatchTex.Common.PickupOverlay';
-        
+
         NetUpdateFrequency = 2.0;
     }
 
@@ -107,6 +107,12 @@ simulated state OnWall
         if( Base==None )
             ReplicatedDestroy();
     }
+}
+
+simulated function HitWall( vector HitNormal, actor Wall )
+{
+    super.HitWall(HitNormal, Wall);
+    IgnoreImpactPawn = none;  // allow hitting the same target after bouncing
 }
 
 simulated function ProcessTouch (Actor Other, vector HitLocation)
@@ -166,7 +172,7 @@ simulated function ProcessTouch (Actor Other, vector HitLocation)
         P = Pawn(Other);
     else if ( ExtendedZCollision(Other)!=None && Pawn(Other.Owner)!=None )
         P = Pawn(Other.Owner);
-    
+
     if( Level.NetMode!=NM_Client )
         PlayhitNoise(P != none && P.ShieldStrength>0 );
 
@@ -176,8 +182,8 @@ simulated function ProcessTouch (Actor Other, vector HitLocation)
             P.TakeDamage(Damage * HeadShotDamageMult, Instigator, HitLocation, MomentumTransfer * X, DamageTypeHeadShot);
         else
             P.TakeDamage(Damage, Instigator, HitLocation, MomentumTransfer * X, MyDamageType);
-            
-        // If blade kills pawn, decatipates it or it was already decapitated, 
+
+        // If blade kills pawn, decatipates it or it was already decapitated,
         // then apply lower damage and speed reduction
         // -- PooSH
         if ( Physics==PHYS_Projectile && (P == none || P.Health <= 0 || (KFMonster(P) != none && KFMonster(P).bDecapitated)) ) {
@@ -196,7 +202,7 @@ simulated function ProcessTouch (Actor Other, vector HitLocation)
         }
     }
     else {
-        Other.TakeDamage(Damage, Instigator, HitLocation, MomentumTransfer * X, MyDamageType); 
+        Other.TakeDamage(Damage, Instigator, HitLocation, MomentumTransfer * X, MyDamageType);
     }
 }
 

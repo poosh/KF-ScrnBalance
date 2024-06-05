@@ -59,6 +59,7 @@ simulated function ProcessTouch (Actor Other, vector HitLocation)
     local KFPawn HitPawn;
     local Pawn Victim;
     local KFMonster KFM;
+    local bool bNoDamageReduction;
 
     if ( Other == none || Other == Instigator || Other.Base == Instigator || !Other.bBlockHitPointTraces  )
         return;
@@ -66,7 +67,7 @@ simulated function ProcessTouch (Actor Other, vector HitLocation)
     X = Vector(Rotation);
 
     if ( Instigator != none && ROBulletWhipAttachment(Other) != none ) {
-        // we touched player's auxilary collision cylinder, not let's trace to the player himself
+        // we touched player's auxilary collision cylinder, now let's trace to the player himself
         // Other.Base = KFPawn
         if( Other.Base == none || Other.Base.bDeleteMe )
             return;
@@ -79,6 +80,7 @@ simulated function ProcessTouch (Actor Other, vector HitLocation)
         HitPawn = KFPawn(Other);
         if ( HitPawn != none ) {
             Victim = HitPawn;
+            bNoDamageReduction = Victim.Health <= 0;
             HitPawn.ProcessLocationalDamage(Damage, Instigator, TempHitLocation, MomentumTransfer * X, MyDamageType,HitPoints);
         }
     }
@@ -91,11 +93,14 @@ simulated function ProcessTouch (Actor Other, vector HitLocation)
         KFM = KFMonster(Victim);
 
         if ( Victim != none ) {
+            // kick dead bodies for visual fx but no gameplay impact
+            bNoDamageReduction = Victim.Health <= 0;
+
             if ( OldVictim != Victim ) {
                 OldVictim = Victim;
                 SameVictimCounter = 1;
             }
-            else if ( ++SameVictimCounter >= 3 ) {
+            else if ( ++SameVictimCounter > 2 ) {
                 // the same target can hit twice max: body and head (ExtendedZCollision)
                 return;
             }
@@ -104,14 +109,21 @@ simulated function ProcessTouch (Actor Other, vector HitLocation)
             if ( bHeadshot ) {
                 Victim.TakeDamage(Damage * HeadShotDamageMult, Instigator, HitLocation, MomentumTransfer * X, MyDamageType);
             }
-            else {
+            else if (SameVictimCounter == 1) {
                 Victim.TakeDamage(Damage, Instigator, HitLocation, MomentumTransfer * X, MyDamageType);
+            }
+            else {
+                // only headshots can damage the same target twice.
+                return;
             }
         }
         else {
             Other.TakeDamage(Damage, Instigator, HitLocation, MomentumTransfer * X, MyDamageType);
         }
     }
+
+    if (bNoDamageReduction)
+        return;
 
     if ( Instigator != none )
         KFPRI = KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo);
@@ -159,12 +171,12 @@ simulated function float ZedPenDamageReduction(KFMonster Monster)
 
 defaultproperties
 {
-     BigZedPenDmgReduction=0.33
-     BigZedMinHealth=1000
-     MediumZedPenDmgReduction=0.50
-     MediumZedMinHealth=500
-     MaxPenetrations=3
-     PenDamageReduction=0.700000
-     Damage=35.000000
-     MinDamage=10
+    BigZedPenDmgReduction=0.33
+    BigZedMinHealth=1000
+    MediumZedPenDmgReduction=0.50
+    MediumZedMinHealth=500
+    MaxPenetrations=3
+    PenDamageReduction=0.700000
+    Damage=35.000000
+    MinDamage=10
 }

@@ -28,6 +28,19 @@
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+## v9.70.02
+- Added difficulty voting GUI setting
+- Players don't drop spawn inventory on death. They drop only the weapons they have bought + the current weapon.
+- Fixed a shotgun exploit where it was possible to do damage twices to the same zed without scoring a headshot.
+- Restored **Combat Shotgun** flashlight. Laser sights automatically turns off when the flashlight is active.
+- *KFMapVote.ini* cleanup - removed many game mod variation from the official rotation, leaving only the core/recommended game modes.
+- The rest of game modes are still available and can be restored by uncommenting the respective GameConfig lines.
+- **XCM v1.02** - added wave (challenge) names
+- Fixed yet another bug in **Healing Projectile** hit detection.
+- Reworked **M7A3M** healing projectile: now it consumes 100% of the charge but heals 20hp instantly + 50hp over time (offperk), 35+87hp if healed by a lv6 Field Medic or 26+65 - Combat Medic.
+- Fixed an issue where **Buzzsaw** Blade couldn't hit the same target again after bouncing off a wall.
+- Fixed a warning in `ScrnHumanPawn.SetWeaponAttachment()`
+
 ## v9.70.01
 - New **Gunslinger** perk icon
 - Enhanced some perk icons

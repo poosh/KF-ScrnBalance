@@ -1,12 +1,10 @@
-class ScrnM7A3MHealingProjectile extends ScrnMP7MHealingProjectile;
+class ScrnM7A3MHealingProjectile extends ScrnHealingProjectile;
 
-function ClientSuccessfulHeal(String PlayerName)
-{
-    if( ScrnM7A3MMedicGun(Instigator.Weapon) != none )
-        ScrnM7A3MMedicGun(Instigator.Weapon).ClientSuccessfulHeal(PlayerName);
-}
 
 defaultproperties
 {
-     HealBoostAmount=30
+    HealBoostAmount=50
+    InstantHealAmount=20
+    Speed=20000
+    MaxSpeed=20000
 }

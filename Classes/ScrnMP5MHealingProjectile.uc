@@ -1,10 +1,5 @@
-class ScrnMP5MHealingProjectile extends ScrnMP7MHealingProjectile;
+class ScrnMP5MHealingProjectile extends ScrnHealingProjectile;
 
-function ClientSuccessfulHeal(String PlayerName)
-{
-    if( MP5MMedicGun(Instigator.Weapon) != none )
-        MP5MMedicGun(Instigator.Weapon).ClientSuccessfulHeal(PlayerName);
-}
 
 defaultproperties
 {

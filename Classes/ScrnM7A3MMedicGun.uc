@@ -3,7 +3,8 @@ class ScrnM7A3MMedicGun extends M7A3MMedicGun;
 var         name             ReloadShortAnim;
 var         float             ReloadShortRate;
 
-var transient bool  bShortReload;
+var transient bool bShortReload;
+var transient bool bWasFullyCharged;
 
 // copy-pasted to add (MagCapacity+1)
 simulated function bool AllowReload()
@@ -108,6 +109,66 @@ function AddReloadedAmmo()
     {
         KFSteamStatsAndAchievements(PlayerController(Instigator.Controller).SteamStatsAndAchievements).OnWeaponReloaded();
     }
+}
+
+simulated function RenderOverlays( Canvas Canvas )
+{
+    if (HealAmmoCharge >= MaxAmmoCount) {
+        if (!bWasFullyCharged) {
+            bWasFullyCharged = true;
+            MyHealth = 100;
+            SetTextColor2(76,148,177);
+            ++MyScriptedTexture.Revision;
+        }
+    }
+    else {
+        bWasFullyCharged = false;
+        MyHealth = 100 * HealAmmoCharge / MaxAmmoCount;
+        SetTextColor2(218,18,18);
+        ++MyScriptedTexture.Revision;
+    }
+
+    if (AmmoAmount(0) <= 0) {
+        if (OldValue != -5) {
+            OldValue = -5;
+            Skins[2] = ScopeRed;
+            MyFont = SmallMyFont;
+            SetTextColor(218,18,18);
+            MyMessage = EmptyMessage;
+            ++MyScriptedTexture.Revision;
+        }
+    }
+    else if (bIsReloading) {
+        if (OldValue != -4) {
+            OldValue = -4;
+            MyFont = SmallMyFont;
+            SetTextColor(32,187,112);
+            MyMessage = ReloadMessage;
+            ++MyScriptedTexture.Revision;
+        }
+    }
+    else if (OldValue != (MagAmmoRemaining+1)) {
+        OldValue = MagAmmoRemaining + 1;
+        Skins[2] = ScopeGreen;
+        MyFont = Default.MyFont;
+
+        if ((MagAmmoRemaining ) <= (MagCapacity/2))
+            SetTextColor(32,187,112);
+        if ((MagAmmoRemaining ) <= (MagCapacity/3))
+        {
+            SetTextColor(218,18,18);
+            Skins[2] = ScopeRed;
+        }
+        if ((MagAmmoRemaining ) >= (MagCapacity/2))
+            SetTextColor(76,148,177);
+        MyMessage = String(MagAmmoRemaining);
+
+        ++MyScriptedTexture.Revision;
+    }
+
+    MyScriptedTexture.Client = Self;
+    Super(KFMedicGun).RenderOverlays(Canvas);
+    MyScriptedTexture.Client = None;
 }
 
 defaultproperties

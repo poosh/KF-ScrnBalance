@@ -1,8 +1,8 @@
 class ScrnBenelliShotgun extends BenelliShotgun;
 
 var bool bChamberThisReload; //if full reload is uninterrupted, play chambering animation
-var vector ReloadViewOffset, ReloadViewOffsetInterp, ReloadViewOffsetValue, TargetViewOffset; //offset used during reloads
-var float ReloadTweenStartTime, ReloadTweenEndTime, ReloadTweenRate;
+// var vector ReloadViewOffset, ReloadViewOffsetInterp, ReloadViewOffsetValue, TargetViewOffset; //offset used during reloads
+// var float ReloadTweenStartTime, ReloadTweenEndTime, ReloadTweenRate;
 
 //copypaste from Scrn M14 and vanilla M14 for laser
 var         LaserDot                    Spot;                       // The first person laser site dot
@@ -42,25 +42,6 @@ simulated function Destroyed()
         LaserAttachment.Destroy();
 
     super(KFWeapon).Destroyed();
-}
-
-function ServerSpawnLight() { }
-function AdjustLightGraphic() { }
-function LightFire() { }
-
-// Use alt fire to switch laser type
-simulated function AltFire(float F)
-{
-    if (FireMode[0].bIsFiring || bIsReloading)
-        return;
-
-    if (ModeSwitchSound != none) {
-        PlaySound(ModeSwitchSound, SLOT_Misc, 100);
-    }
-    if (ModeSwitchAnim != '') {
-        PlayAnim(ModeSwitchAnim, FireMode[0].FireAnimRate, FireMode[0].TweenTime);
-    }
-    ToggleLaser();
 }
 
 //bring Laser to current state, which is indicating by LaserType
@@ -118,20 +99,20 @@ simulated function BringUp(optional Weapon PrevWeapon)
 {
     ApplyLaserState();
     Super.BringUp(PrevWeapon);
-    if ( Level.NetMode != NM_DedicatedServer )
-    {
-        ReloadViewOffset = Vect(0,0,0);
-    }
+    // if ( Level.NetMode != NM_DedicatedServer )
+    // {
+    //     ReloadViewOffset = Vect(0,0,0);
+    // }
 }
 
 simulated function ClientReload()
 {
     bChamberThisReload = ( MagAmmoRemaining == 0 && (AmmoAmount(0) - MagAmmoRemaining > MagCapacity) ); //for chambering animation
     Super.ClientReload();
-    TargetViewOffset = ReloadViewOffsetValue;
-    ReloadTweenStartTime = Level.TimeSeconds;
-    ReloadTweenEndTime = Level.TimeSeconds + ReloadTweenRate;
-    ReloadViewOffsetInterp = ReloadViewOffset; //store values for interpolation
+    // TargetViewOffset = ReloadViewOffsetValue;
+    // ReloadTweenStartTime = Level.TimeSeconds;
+    // ReloadTweenEndTime = Level.TimeSeconds + ReloadTweenRate;
+    // ReloadViewOffsetInterp = ReloadViewOffset; //store values for interpolation
 }
 
 // Set the new fire mode on the server
@@ -149,14 +130,14 @@ function ServerSetLaserType(byte NewLaserType)
 simulated function bool PutDown()
 {
     TurnOffLaser();
-    if( Instigator.IsLocallyControlled() )
-    {
-        //don't do this stuff on dedicated servers
-        TargetViewOffset = Vect(0,0,0);
-        ReloadTweenStartTime = Level.TimeSeconds;
-        ReloadTweenEndTime = Level.TimeSeconds + ReloadTweenRate;
-        ReloadViewOffsetInterp = ReloadViewOffset; //store values for interpolation
-    }
+    // if( Instigator.IsLocallyControlled() )
+    // {
+    //     //don't do this stuff on dedicated servers
+    //     TargetViewOffset = Vect(0,0,0);
+    //     ReloadTweenStartTime = Level.TimeSeconds;
+    //     ReloadTweenEndTime = Level.TimeSeconds + ReloadTweenRate;
+    //     ReloadViewOffsetInterp = ReloadViewOffset; //store values for interpolation
+    // }
     return super(KFWeapon).PutDown();
 }
 
@@ -178,53 +159,55 @@ simulated function TurnOffLaser()
 }
 
 //tweens to reload offset when reloading and tweens back to 0,0,0 when reload ends or is interrupted by zoom or fire
-simulated function TweenToReloadOffset()
-{
-    local float Alpha; //for lerp
-    if (ReloadTweenEndTime == 0)
-    {
-        return; //do nothing
-    }
-    if (Level.TimeSeconds > ReloadTweenEndTime)
-    {
-        ReloadViewOffset = TargetViewOffset; //set target
-        ReloadTweenEndTime = 0; //set this to 0
-    }
-    Alpha = (Level.TimeSeconds-ReloadTweenStartTime)/ReloadTweenRate; //returns float between 0 and 1
-    if ( Level.NetMode != NM_DedicatedServer )
-    {
-        //lerp from current interp value to target
-        ReloadViewOffset.X = Lerp(Alpha, ReloadViewOffsetInterp.X, TargetViewOffset.X);
-        ReloadViewOffset.Y = Lerp(Alpha, ReloadViewOffsetInterp.Y, TargetViewOffset.Y);
-        ReloadViewOffset.Z = Lerp(Alpha, ReloadViewOffsetInterp.Z, TargetViewOffset.Z);
-    }
-}
+// simulated function TweenToReloadOffset()
+// {
+//     local float Alpha; //for lerp
+//     if (ReloadTweenEndTime == 0)
+//     {
+//         return; //do nothing
+//     }
+//     if (Level.TimeSeconds > ReloadTweenEndTime)
+//     {
+//         ReloadViewOffset = TargetViewOffset; //set target
+//         ReloadTweenEndTime = 0; //set this to 0
+//     }
+//     Alpha = (Level.TimeSeconds-ReloadTweenStartTime)/ReloadTweenRate; //returns float between 0 and 1
+//     if ( Level.NetMode != NM_DedicatedServer )
+//     {
+//         //lerp from current interp value to target
+//         ReloadViewOffset.X = Lerp(Alpha, ReloadViewOffsetInterp.X, TargetViewOffset.X);
+//         ReloadViewOffset.Y = Lerp(Alpha, ReloadViewOffsetInterp.Y, TargetViewOffset.Y);
+//         ReloadViewOffset.Z = Lerp(Alpha, ReloadViewOffsetInterp.Z, TargetViewOffset.Z);
+//     }
+// }
 
-//added function to calculate and apply reload view offset
 simulated function WeaponTick(float dt)
 {
-    Super(KFWeaponShotgun).WeaponTick(dt);
-    TweenToReloadOffset();
+    Super.WeaponTick(dt);
+    if ((FlashLight != none && FlashLight.bHasLight) == (LaserType > 0)) {
+        ToggleLaser(); // automatically turn on laser if flashlight is off
+    }
+    // TweenToReloadOffset();
 }
 
 // Server forces the reload to be cancelled
-simulated function bool InterruptReload()
-{
-    //solo testing kek
-    if ( Level.NetMode != NM_DedicatedServer )
-    {
-        TargetViewOffset = Vect(0,0,0);
-        ReloadTweenStartTime = Level.TimeSeconds;
-        ReloadTweenEndTime = Level.TimeSeconds + ReloadTweenRate;
-        ReloadViewOffsetInterp = ReloadViewOffset; //store values for interpolation
-    }
-    return Super.InterruptReload();
-}
+// simulated function bool InterruptReload()
+// {
+//     //solo testing kek
+//     if ( Level.NetMode != NM_DedicatedServer )
+//     {
+//         TargetViewOffset = Vect(0,0,0);
+//         ReloadTweenStartTime = Level.TimeSeconds;
+//         ReloadTweenEndTime = Level.TimeSeconds + ReloadTweenRate;
+//         ReloadViewOffsetInterp = ReloadViewOffset; //store values for interpolation
+//     }
+//     return Super.InterruptReload();
+// }
 
 //supports laser and reload view offset
 simulated function RenderOverlays( Canvas Canvas )
 {
-    local vector DrawOffset;
+    // local vector DrawOffset;
     local int i;
     local Vector StartTrace, EndTrace;
     local Vector HitLocation, HitNormal;
@@ -250,8 +233,8 @@ simulated function RenderOverlays( Canvas Canvas )
             FireMode[i].DrawMuzzleFlash(Canvas);
     }
 
-    DrawOffset = (90/DisplayFOV * ReloadViewOffset) >> Instigator.GetViewRotation(); //calculate additional offset
-    SetLocation( Instigator.Location + Instigator.CalcDrawOffset(self) + DrawOffset); //add additional offset
+    // DrawOffset = (90/DisplayFOV * ReloadViewOffset) >> Instigator.GetViewRotation(); //calculate additional offset
+    SetLocation( Instigator.Location + Instigator.CalcDrawOffset(self) );
     SetRotation( Instigator.GetViewRotation() + ZoomRotInterp);
 
     KFSGM = KFShotgunFire(FireMode[0]);
@@ -320,10 +303,10 @@ simulated function ClientFinishReloading()
     bIsReloading = false;
 
     //do reload tween stuff
-    TargetViewOffset = Vect(0,0,0);
-    ReloadTweenStartTime = Level.TimeSeconds;
-    ReloadTweenEndTime = Level.TimeSeconds + ReloadTweenRate;
-    ReloadViewOffsetInterp = ReloadViewOffset; //store values for interpolation
+    // TargetViewOffset = Vect(0,0,0);
+    // ReloadTweenStartTime = Level.TimeSeconds;
+    // ReloadTweenEndTime = Level.TimeSeconds + ReloadTweenRate;
+    // ReloadViewOffsetInterp = ReloadViewOffset; //store values for interpolation
 
     //play chambering animation if finished reloading from empty
     if ( !bChamberThisReload )
@@ -346,9 +329,9 @@ defaultproperties
     AttachmentClass=class'ScrnBenelliAttachment' //New attachment to fix broken BenelliAttachment class
     ItemName="Combat Shotgun SE"
     PlayerViewPivot=(Pitch=-47,Roll=0,Yaw=-5) //fix to make sight centered
-    ReloadViewOffset=(X=0.000000,Y=0.000000,Z=0.000000) //reload offset to get the weapon away from the center of the screen while reloading
-    ReloadViewOffsetValue=(X=10.000000,Y=-5.000000,Z=-10.000000) //used to store the vector values
-    ReloadTweenRate = 0.2 //little less than zoomtime
+    // ReloadViewOffset=(X=0.000000,Y=0.000000,Z=0.000000) //reload offset to get the weapon away from the center of the screen while reloading
+    // ReloadViewOffsetValue=(X=10.000000,Y=-5.000000,Z=-10.000000) //used to store the vector values
+    // ReloadTweenRate = 0.2 //little less than zoomtime
 
     //laser stuff
     LaserType=1
@@ -359,5 +342,5 @@ defaultproperties
 
     ModeSwitchAnim="LightOn"
     ModeSwitchSound=sound'KF_9MMSnd.NineMM_AltFire1'
-    bTorchEnabled=false
+    bTorchEnabled=true
 }

@@ -442,7 +442,7 @@ simulated function SetWeaponAttachment(WeaponAttachment NewAtt)
     }
 
     if ( HitAnims[3] == 'HitR_M14' ) {
-        HitAnims[4] = 'HitR_M14_EBR';
+        HitAnims[3] = 'HitR_M14_EBR';
     }
 }
 
@@ -958,8 +958,8 @@ function int ShieldAbsorb( int damage )
 
     // I don't get Tripwire's armor protection formula (possibly just a chain of bugs that somehow work together),
     // so I wrote my own one, which is quite simple:
-    // Shield > 50%  = 67% protection
-    // Shield 26-50% = 50% protection
+    // Shield >100%  = 67% protection
+    // Shield 26-100% = 50% protection
     // Shield <= 25% = 33% protection
     // (c) PooSH
 
@@ -981,13 +981,13 @@ function int ShieldAbsorb( int damage )
         damage -= AbsorbedValue;
     }
     else {
-        if ( ShieldStrength > 50 ) {
-            AbsorbedValue = min(0.67 * damage, ShieldStrength - 50);
+        if ( ShieldStrength > 100 ) {
+            AbsorbedValue = min(0.67 * damage, ShieldStrength - 100);
             ShieldStrength -= AbsorbedValue;
             damage -= AbsorbedValue;
         }
         // don't put "else" here - after lowering the shield this can be executed too
-        if ( ShieldStrength > 25 && ShieldStrength <= 50 ) {
+        if ( ShieldStrength > 25 && ShieldStrength <= 100 ) {
             AbsorbedValue = min(0.50 * damage, ShieldStrength - 25);
             ShieldStrength -= AbsorbedValue;
             damage -= AbsorbedValue;
@@ -2725,10 +2725,10 @@ function ServerFire(byte FireMode)
         // GameRules.WeaponStoppedFire(PlayerController(Controller), Weapon);
 // }
 
-static function DropAllWeapons(Pawn P)
+static function DropAllWeapons(Pawn P, optional bool bOnlyValuable)
 {
     local Inventory Inv, NextInv;
-    local KFWeapon Weap;
+    local KFWeapon Weap, CurWeap;
     local int i, c;
     local rotator r;
     local Vector X,Y,Z, TossVel;
@@ -2736,6 +2736,7 @@ static function DropAllWeapons(Pawn P)
     if ( P == none || (P.DrivenVehicle != None && !P.DrivenVehicle.bAllowWeaponToss) )
         return;
 
+    CurWeap = KFWeapon(P.Weapon);
     r = P.Rotation;
     r.pitch = 0;
     // two passes because dropping a weapon may add another one (e.g. dual pistols / single pistol)
@@ -2743,7 +2744,8 @@ static function DropAllWeapons(Pawn P)
         for ( Inv = P.Inventory; Inv != none && ++c < 1000; Inv = NextInv ) {
             NextInv = Inv.Inventory;
             Weap = KFWeapon(Inv);
-            if (Weap != none && Weap.bCanThrow && !Weap.bKFNeverThrow ) {
+            if (Weap != none && Weap.bCanThrow && !Weap.bKFNeverThrow
+                    && (!bOnlyValuable || Weap == CurWeap || Weap.SellValue > 0)) {
                 //PlayerController(P.Controller).ClientMessage("Dropping " $ GetItemName(String(Weap.class)) $ "...");
                 OnWeaponDrop(Weap);
                 r.yaw += 4096 + 8192.0 * frand(); // 45 +/- 22.5 degrees

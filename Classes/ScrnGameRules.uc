@@ -897,7 +897,7 @@ function bool PreventDeath(Pawn Killed, Controller Killer, class<DamageType> dam
         if ( Mut.bSpawn0 || Mut.bStoryMode ) {
             idx = Killed.Health;
             Killed.Health = max(Killed.Health, 1); // requires health to spawn second pistol
-            class'ScrnHumanPawn'.static.DropAllWeapons(Killed); // toss all weapons after death, if bSpawn0=true or in Story Mode
+            class'ScrnHumanPawn'.static.DropAllWeapons(Killed, true); // toss all weapons after death, if bSpawn0=true or in Story Mode
             Killed.Health = idx;
         }
     }
