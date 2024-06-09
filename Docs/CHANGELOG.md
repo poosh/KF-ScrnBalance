@@ -28,6 +28,11 @@
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+## v9.70.04
+- *ScrnBalanceSrv.ini*: added `bLouderZeds`
+- *ScrnMapVote.ini*: lowered zed spawn rate on KF-HospitalHorrors to partially compensate for improved spawns.
+- Fixed healing projectile hit detection (introduced in .02)
+
 ## v9.70.02
 - Added difficulty voting GUI setting
 - Players don't drop spawn inventory on death. They drop only the weapons they have bought + the current weapon.

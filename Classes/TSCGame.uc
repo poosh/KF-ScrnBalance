@@ -793,6 +793,20 @@ function bool AllowGameEnd(PlayerReplicationInfo WinnerPRI, string Reason)
     return true;
 }
 
+function bool CheckEndGame(PlayerReplicationInfo Winner, string Reason)
+{
+    if (!super.CheckEndGame(Winner, Reason))
+        return false;
+
+    if (TeamBases[0] != none) {
+        TeamBases[0].SendHome();
+    }
+    if (TeamBases[1] != none) {
+        TeamBases[1].SendHome();
+    }
+    return true;
+}
+
 function TSCBaseGuardian SpawnBaseGuardian(byte TeamIndex)
 {
     local NavigationPoint N;

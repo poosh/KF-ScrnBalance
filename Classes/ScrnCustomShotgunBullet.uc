@@ -80,6 +80,9 @@ simulated function ProcessTouch (Actor Other, vector HitLocation)
         HitPawn = KFPawn(Other);
         if ( HitPawn != none ) {
             Victim = HitPawn;
+            // cannot hit a player more than once
+            OldVictim = HitPawn;
+            SameVictimCounter = 3;
             bNoDamageReduction = Victim.Health <= 0;
             HitPawn.ProcessLocationalDamage(Damage, Instigator, TempHitLocation, MomentumTransfer * X, MyDamageType,HitPoints);
         }

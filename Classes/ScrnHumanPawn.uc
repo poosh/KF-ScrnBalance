@@ -3304,4 +3304,5 @@ defaultproperties
     RequiredEquipment(4)="ScrnBalanceSrv.ScrnWelder"
     GlowCheckTime=0.35
     DyingMessageDelay=8.0
+    bBlockHitPointTraces=true
 }

@@ -34,8 +34,7 @@ simulated function ProcessTouch(Actor Other, Vector HitLocation)
     local float HealSum; // for modifying based on perks
     local float HealPotency;
 
-    if (Other == none || Other == Instigator || Other.Base == Instigator || !Other.bBlockHitPointTraces
-            || Other.IsA('ExtendedZCollision'))
+    if (Other == none || Other == Instigator || Other.Base == Instigator || Other.IsA('ExtendedZCollision'))
         return;
 
     // KFBulletWhipAttachment is attached to KFPawns
@@ -44,8 +43,9 @@ simulated function ProcessTouch(Actor Other, Vector HitLocation)
         if ( Healed == none || Healed.Health >= Healed.HealthMax )
             return;
     }
-    else
+    else {
         Healed = KFHumanPawn(Other);
+    }
 
     if( Healed != none ) {
         if( Role == ROLE_Authority ) {
