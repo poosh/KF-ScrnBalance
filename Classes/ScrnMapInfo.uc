@@ -38,8 +38,7 @@ var config array<name> ZVolElevated;
 var config array<name> ZVolJumpable;
 var config array<SZVolDoor> ZVolDoors;
 
-var config byte GuardianLight;
-var config byte GuardianHueRed, GuardianHueBlue;
+var config byte GuardianLight, GuardianHue;
 var config byte FTGTargetsPerWave;
 var config array<name> FTGBadAmmo;
 var config array<name> FTGTargets;

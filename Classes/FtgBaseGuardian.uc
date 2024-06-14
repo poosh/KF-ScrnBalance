@@ -117,5 +117,10 @@ defaultproperties
     Damage=2 // do less damage to enemies due to moving
     StunThreshold=0 // cannot be stunned
 
+    LightRadius=25
+    GuardianLightRadius=25
+    LightBrightness=50
+    GuardianBrightness=50
+
     strBlame="%p blamed for base setup failure"
 }

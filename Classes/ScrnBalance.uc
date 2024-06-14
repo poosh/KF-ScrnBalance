@@ -323,6 +323,10 @@ var globalconfig bool bNoTeamSkins;
 var transient int SrvTourneyMode;
 // END OF TSC STUFF
 
+// FTG stuff
+var globalconfig byte GuardianLight, GuardianHue;
+// END OF FTG STUFF
+
 replication
 {
     reliable if ( (bNetInitial || bNetDirty) && Role == ROLE_Authority )
@@ -3212,6 +3216,18 @@ function BlamePlayer(ScrnPlayerController PC, string Reason, optional int BlameI
     PC.LastBlamedTime = Level.TimeSeconds;
 }
 
+function byte GetGuardianLight() {
+    if (MapInfo.GuardianLight > 0)
+        return MapInfo.GuardianLight;
+    return GuardianLight;
+}
+
+function byte GetGuardianHue() {
+    if (MapInfo.GuardianHue > 0)
+        return MapInfo.GuardianHue;
+    return GuardianHue;
+}
+
 
 function bool IsScrnAuthority()
 {
@@ -3246,7 +3262,7 @@ function RegisterVersion(string ItemName, int Version)
 
 defaultproperties
 {
-    VersionNumber=97004
+    VersionNumber=97005
     GroupName="KF-Scrn"
     FriendlyName="ScrN Balance"
     Description="Total rework of KF1 to make it modern and the best game in the world while sticking to the roots of the original."

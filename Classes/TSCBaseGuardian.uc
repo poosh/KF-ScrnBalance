@@ -27,7 +27,7 @@ var bool bInvul;
 var ShopVolume MyShop;
 var transient ScrnPlayerController LastHolder;
 
-var byte GuardianBrightness, GuardianHue;
+var byte GuardianBrightness, GuardianLightRadius, GuardianHue;
 
 var enum EClientState {
     CS_Home,
@@ -45,7 +45,7 @@ replication
         Team, ClientState;
 
     reliable if (bNetInitial && Role == ROLE_Authority)
-        GuardianBrightness, GuardianHue;
+        GuardianBrightness, GuardianLightRadius, GuardianHue;
 }
 
 simulated function PostBeginPlay()
@@ -288,6 +288,33 @@ function GiveToClosestPlayer(vector Loc)
     }
 }
 
+function SetBrightness(byte value)
+{
+    if (value == 0) {
+        value = default.GuardianBrightness;
+    }
+    GuardianBrightness = value;
+    ApplyClientState();
+}
+
+function SetLightRadius(byte value)
+{
+    if (value == 0) {
+        value = default.GuardianLightRadius;
+    }
+    GuardianLightRadius = value;
+    ApplyClientState();
+}
+
+function SetHue(byte value)
+{
+    if (value == 0) {
+        value = default.GuardianHue;
+    }
+    GuardianHue = value;
+    ApplyClientState();
+}
+
 function SetClientState(EClientState NewState)
 {
     if ( ClientState != NewState ) {
@@ -299,7 +326,7 @@ function SetClientState(EClientState NewState)
 
 simulated function ApplyClientState()
 {
-    LightRadius = default.LightRadius;
+    LightRadius = GuardianLightRadius;
     LightBrightness = GuardianBrightness;
     if (GuardianHue != 0) {
         LightHue = GuardianHue;
@@ -718,9 +745,10 @@ defaultproperties
     LightType=LT_None
     LightEffect=LE_QuadraticNonIncidence
     LightRadius=50
-    LightSaturation=128
-    LightBrightness=150 // 180
-    GuardianBrightness=150
+    GuardianLightRadius=50
+    LightBrightness=100
+    GuardianBrightness=100
+    LightSaturation=127
     LightPeriod=30
     bStatic=False
     bHidden=True

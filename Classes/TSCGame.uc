@@ -1,6 +1,9 @@
 class TSCGame extends ScrnGameType
     config;
 
+#exec OBJ LOAD FILE=HillbillyHorror_SM.usx
+#exec OBJ LOAD FILE=Pier_SM.usx
+
 var TSCGameReplicationInfo TSCGRI;
 var TSCVotingOptions TSCVotingOptions;
 var TSCClanVoting ClanVoting;
@@ -811,7 +814,6 @@ function TSCBaseGuardian SpawnBaseGuardian(byte TeamIndex)
 {
     local NavigationPoint N;
     local TSCBaseGuardian gnome;
-    local byte CustomHue;
 
     if ( TeamIndex >= 2 )
         return none;
@@ -844,24 +846,10 @@ function TSCBaseGuardian SpawnBaseGuardian(byte TeamIndex)
     gnome.TSCGRI = TSCGRI;
     TeamBases[TeamIndex] = gnome;
 
-    if ( ScrnBalanceMut.MapInfo.GuardianLight > 0 ) {
-        gnome.GuardianBrightness = ScrnBalanceMut.MapInfo.GuardianLight;
-        gnome.LightBrightness = gnome.GuardianBrightness;
+    gnome.SetBrightness(ScrnBalanceMut.GetGuardianLight());
+    if (bSingleTeamGame) {
+         gnome.SetHue(ScrnBalanceMut.GetGuardianHue());
     }
-
-    switch (TeamIndex) {
-        case 0:
-            CustomHue = ScrnBalanceMut.MapInfo.GuardianHueRed;
-            break;
-        case 1:
-            CustomHue = ScrnBalanceMut.MapInfo.GuardianHueBlue;
-            break;
-    }
-    if (CustomHue != 0) {
-        gnome.GuardianHue = CustomHue;
-        gnome.LightHue = CustomHue;
-    }
-
     return gnome;
 }
 

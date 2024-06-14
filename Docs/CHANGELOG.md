@@ -28,6 +28,12 @@
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+## v9.70.05
+- *ScrnBalanceSrv.ini*: added `GuardianLight` and `GuardianHue` for TSC/FTG global overrides
+- *ScrnMapVote.ini*: `GuardianHueBlue` and `GuardianHueBlue` replaced by `GuardianHue`, which is available in FTG only.
+- **FTG** - Base light color turned green by default (can be replaced via `GuardianHue`), and lowered its radius and brightness.
+- **M7A3M**: damage rased to 80 (up from 70)
+
 ## v9.70.04
 - *ScrnBalanceSrv.ini*: added `bLouderZeds`
 - *ScrnMapVote.ini*: lowered zed spawn rate on KF-HospitalHorrors to partially compensate for improved spawns.
