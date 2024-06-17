@@ -85,7 +85,8 @@ state Guarding
 
     function bool ShouldWipeOnBaseLost()
     {
-        return WipeOnBaseLost != none && ( TSCGRI.MaxMonsters > 10 || KFGameType(Level.Game).bWaveBossInProgress );
+        return WipeOnBaseLost != none && !Level.Game.bGameEnded
+                && (TSCGRI.MaxMonsters > 10 || KFGameType(Level.Game).bWaveBossInProgress);
     }
 
     function Timer()
