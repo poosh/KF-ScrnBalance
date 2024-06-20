@@ -111,6 +111,7 @@ var transient KFWeapon BeforeSprintWeapon;
 
 // indicates that the player is buying something at the current moment. Server-side only.
 var transient bool bServerShopping;
+var transient byte ShopUpdateCounter;  // if changed, need to update shop inventory
 var transient float NextBrownCrapTime;
 var Sound FartSound;
 
@@ -122,7 +123,7 @@ var transient bool bGlowInited;
 replication
 {
     reliable if( bNetOwner && bNetDirty && Role == ROLE_Authority )
-        QuickMeleeWeapon, MacheteBoost, CarriedInventorySpeed, bForceCarriedInventorySpeed;
+        QuickMeleeWeapon, MacheteBoost, CarriedInventorySpeed, bForceCarriedInventorySpeed, ShopUpdateCounter;
 
     reliable if( Role == ROLE_Authority )
         ClientSetVestClass; //send it to all clients, cuz they need to know max health and max shield
@@ -365,6 +366,7 @@ function CalcCarriedInventorySpeed()
     }
 }
 
+// executes only server-side
 function bool AddInventory( inventory NewItem )
 {
     local KFWeapon weap;
@@ -377,36 +379,38 @@ function bool AddInventory( inventory NewItem )
         weap.bIsTier3Weapon = true;
     }
 
-    if ( super.AddInventory(NewItem) ) {
-        if ( weap != none ) {
-            if ( weap.bTorchEnabled ) {
-                AddToFlashlightArray(weap.class); // v6.22 - each weapon has own flashlight
-            }
+    if (!super.AddInventory(NewItem))
+        return false;
 
-            if ( CheckQuickMeleeWeapon(KFMeleeGun(weap)) && ScrnMachete(weap) != none ) {
-                // Machete-sprinting. Available only in casual survival game modes (not TSC, Tourney, or Story)
-                mut = class'ScrnBalance'.default.Mut;
-                if ( mut.SrvTourneyMode == 0 && !mut.bTSCGame && !mut.bStoryMode ) {
-                    if ( bAllowMacheteBoost && MacheteBoost < 120 && VSizeSquared(Velocity) > 10000 ) {
-                        if ( MacheteBoost < 60 )
-                            MacheteBoost += 3;
-                        else if ( MacheteBoost < 100 )
-                            MacheteBoost += 2;
-                        else
-                            MacheteBoost++;
-                    }
-                    MacheteResetTime = Level.TimeSeconds + 3.0;
-                    bMacheteDamageBoost = true;
+    if ( weap != none ) {
+        if ( weap.bTorchEnabled ) {
+            AddToFlashlightArray(weap.class); // v6.22 - each weapon has own flashlight
+        }
+
+        if ( CheckQuickMeleeWeapon(KFMeleeGun(weap)) && ScrnMachete(weap) != none ) {
+            // Machete-sprinting. Available only in casual survival game modes (not TSC, Tourney, or Story)
+            mut = class'ScrnBalance'.default.Mut;
+            if ( mut.SrvTourneyMode == 0 && !mut.bTSCGame && !mut.bStoryMode ) {
+                if ( bAllowMacheteBoost && MacheteBoost < 120 && VSizeSquared(Velocity) > 10000 ) {
+                    if ( MacheteBoost < 60 )
+                        MacheteBoost += 3;
+                    else if ( MacheteBoost < 100 )
+                        MacheteBoost += 2;
+                    else
+                        MacheteBoost++;
                 }
+                MacheteResetTime = Level.TimeSeconds + 3.0;
+                bMacheteDamageBoost = true;
             }
         }
-        CalcCarriedInventorySpeed();
-        CalcGroundSpeed();
-        return true;
     }
-    return false;
+    CalcCarriedInventorySpeed();
+    CalcGroundSpeed();
+    ++ShopUpdateCounter;
+    return true;
 }
 
+// executes on server-side and owner client
 function DeleteInventory( inventory Item )
 {
     super.DeleteInventory(Item);
@@ -419,6 +423,7 @@ function DeleteInventory( inventory Item )
     }
     CalcCarriedInventorySpeed();
     CalcGroundSpeed();
+    ++ShopUpdateCounter;
 }
 
 simulated function SetWeaponAttachment(WeaponAttachment NewAtt)
@@ -1136,6 +1141,7 @@ simulated function SetTraderUpdate()
 {
     super.SetTraderUpdate();
     bServerShopping = false;
+    ++ShopUpdateCounter;
 }
 
 // ===================================== AMMO =====================================
@@ -1390,91 +1396,76 @@ function ServerSellWeapon( Class<Weapon> WClass )
     local KFWeapon W, SinglePistol;
     local int SellValue;
     local int AmmoAmount;
+    local bool bCurrent;
 
-    if ( !CanBuyNow() || Class<KFWeapon>(WClass) == none || Class<KFWeaponPickup>(WClass.Default.PickupClass)==none
-        || Class<KFWeapon>(WClass).Default.bKFNeverThrow )
+    if (!CanBuyNow() || Class<KFWeapon>(WClass) == none || Class<KFWeaponPickup>(WClass.Default.PickupClass)==none
+            || Class<KFWeapon>(WClass).Default.bKFNeverThrow)
     {
         SetTraderUpdate();
         return;
     }
 
     I = Inventory;
-    while ( I != none && I.Class != WClass && ++c < 1000 ) {
+    while (I != none && I.Class != WClass && ++c < 1000) {
         I = I.Inventory;
     }
 
-    if ( I == none || I.Class != WClass )
+    if (I == none || I.Class != WClass)
         return; //no instances of specified class found in inventory
 
     W = KFWeapon(I);
     SellValue = CalcSellValue(W);
 
-    if ( Dualies(W) != none ) {
+    if (Dualies(W) != none) {
         AmmoAmount = W.AmmoAmount(0);
-        if( W.DemoReplacement != none ) {
+
+        if (W.class == class'Dualies') {
+            SinglePistol = Spawn(class'Single', self);
+        }
+        else if (W.class == class'ScrnDualies') {
+            SinglePistol = Spawn(class'ScrnSingle', self);
+        }
+        else if (W.DemoReplacement != none) {
             // ScrN dualies
-            if ( ScrnDualDeagle(W) != none ) {
+            if (ScrnDualDeagle(W) != none) {
                 SinglePistol = ScrnDualDeagle(W).DetachSingle();
             }
-            else if ( ScrnDualMK23Pistol(W) != none ) {
+            else if (ScrnDualMK23Pistol(W) != none) {
                 SinglePistol = ScrnDualMK23Pistol(W).DetachSingle();
             }
-            else if ( ScrnDual44Magnum(W) != none ) {
+            else if (ScrnDual44Magnum(W) != none) {
                 SinglePistol = ScrnDual44Magnum(W).DetachSingle();
             }
 
-            if ( SinglePistol != none) {
-                // Single Pistol already exists in the inventory
-                SellValue -= SinglePistol.SellValue;
-                //restore ammo count to it previous value
-                ForceAmmoAmount(SinglePistol, AmmoAmount);
-                SinglePistol = none;  // no further processing needed
-            }
-            else {
-                SinglePistol = KFWeapon(Spawn(W.DemoReplacement, self));
+            if (SinglePistol != none) {
+                // the player has both single and dualies in the inventory - delete both
+                if (SinglePistol == Weapon || SinglePistol == PendingWeapon) {
+                    bCurrent = true;
+                }
+                SinglePistol.Destroy();
+                SinglePistol = none;
             }
         }
-        else if ( W.class.outer.name == 'KFMod' ) {
-            //legacy guns
-            if ( W.class==Class'Dualies' ) {
-                SinglePistol = Spawn(class'Single', self);
-                SellValue *= 2; //cuz we can't sell 9mm
-            }
-            else if ( W.class==Class'DualDeagle' )
-                SinglePistol = Spawn(class'Deagle', self);
-            else if ( W.class==Class'Dual44Magnum' )
-                SinglePistol = Spawn(class'Magnum44Pistol', self);
-            else if ( W.class==Class'DualMK23Pistol' )
-                SinglePistol = Spawn(class'MK23Pistol', self);
-            else if ( W.class==Class'DualFlareRevolver' )
-                SinglePistol = Spawn(class'FlareRevolver', self);
-        }
 
-        if( SinglePistol != none ) {
-            SellValue /= 2;
-            //fixed an exploit when player buys perked dualies with discount,
-            //then changes the perk and sells 2-nd pistol as an off-perk weapon for a full SellValue
-            // (c) PooSH, 2012
-            SinglePistol.SellValue = SellValue;
-
+        if (SinglePistol != none ) {
+            SinglePistol.SellValue = 0;
             SinglePistol.GiveTo(self);
-            //restore ammo count to it previous value
+            //restore ammo count to its previous value
             ForceAmmoAmount(SinglePistol, AmmoAmount);
         }
     }
 
-    if ( I==Weapon || I==PendingWeapon ) {
+    bCurrent = bCurrent || I == Weapon || I == PendingWeapon;
+    if (bCurrent) {
         ClientCurrentWeaponSold();
     }
-
     PlayerReplicationInfo.Score += SellValue;
-
     I.Destroy();
-
     SetTraderUpdate();
 
-    if ( KFGameType(Level.Game)!=none )
+    if (KFGameType(Level.Game) !=none) {
         KFGameType(Level.Game).WeaponDestroyed(WClass);
+    }
 }
 
 // Searches for a weapon in the player's inventory. If finds - sets outputs and returns true
@@ -1549,8 +1540,7 @@ function ServerBuyWeapon( Class<Weapon> WClass, float ItemWeight )
         {
             Weight -= SingleWeight;
             Price*=0.5;
-            //if one gun is perked, but other isn't - give lowest sell value to fix exploits
-            SellValue =  fmin(SellValue, SingleSellValue*2);
+            SellValue = 0.75*Price + SingleSellValue;
         }
     }
     else if( WClass==class'Single' || WClass==class'Deagle' || WClass==class'GoldenDeagle' || WClass==class'Magnum44Pistol'
@@ -2939,16 +2929,18 @@ simulated function Setup(xUtil.PlayerRecord rec, optional bool bLoadNow)
 function bool CanBuyNow()
 {
     local ShopVolume Shop, MyShop, EnemyShop;
+    local KFGameReplicationInfo KFGRI;
     local TSCGameReplicationInfo TSCGRI;
     local bool bAtEnemyShop;
 
-    if( KFGameType(Level.Game)==None || KFGameType(Level.Game).bWaveInProgress
-            || PlayerReplicationInfo==None || PlayerReplicationInfo.Team==None )
+    KFGRI = KFGameReplicationInfo(Level.GRI);
+    TSCGRI = TSCGameReplicationInfo(Level.GRI);
+
+    if (KFGRI == none || KFGRI.bWaveInProgress || PlayerReplicationInfo==None || PlayerReplicationInfo.Team==None)
         return False;
 
-    TSCGRI = TSCGameReplicationInfo(Level.GRI);
     if ( TSCGRI == none ) {
-        MyShop = KFGameReplicationInfo(Level.GRI).CurrentShop;
+        MyShop = KFGRI.CurrentShop;
         EnemyShop = none;
     }
     else if ( PlayerReplicationInfo.Team.TeamIndex == 0 ) {

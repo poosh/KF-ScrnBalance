@@ -1,8 +1,9 @@
 class ScrnTab_BuyMenu extends SRKFTab_BuyMenu;
 
-var protected int LastDosh, LastInvCount, LastAmmoCount, LastShieldStrength,  LastPerkLevel;
-var protected class<KFVeterancyTypes> LastPerk;
-var protected class<ScrnVestPickup> LastVestClass;
+var int LastDosh, LastInvCount, LastAmmoCount, LastShieldStrength,  LastPerkLevel;
+var class<KFVeterancyTypes> LastPerk;
+var class<ScrnVestPickup> LastVestClass;
+var byte LastShopUpdateCounter;
 
 var protected float LastAutoFillTime;
 
@@ -15,9 +16,11 @@ var localized string strSelectedItemRequirements;
 var localized string strIntoScrnLocked;
 var byte InfoPageNum, ForceInfoPageNum;
 var localized string SaleButtonCaption, strSale0, strNoSale;
+var localized string PurchaseButtonCaption;
 
 var transient ScrnClientPerkRepLink PerkLink;
 var transient KFPlayerReplicationInfo KFPRI;
+var transient ScrnHumanPawn ScrnPawn;
 
 var private transient bool bOnAnyChangeInProgress;
 
@@ -31,8 +34,27 @@ function InitComponent(GUIController MyController, GUIComponent MyOwner)
     ScrnInvList.OnSellClick = SellBuyable;
 }
 
+function Free()
+{
+    super.Free();
+
+    // reset all actor references
+    LastPerk = none;
+    LastVestClass = none;
+    PerkLink = none;
+    KFPRI = none;
+    ScrnPawn = none;
+
+    SelectedItem = none;
+    OldPerkClass = none;
+    MyAmmos.Length = 0;
+    OldPickupClass = none;
+}
+
 function ShowPanel(bool bShow)
 {
+    local ScrnBuyMenuInvList invList;
+
     super(UT2K4TabPanel).ShowPanel(bShow);
 
     if ( !bShow ) {
@@ -41,6 +63,7 @@ function ShowPanel(bool bShow)
     }
     KFPRI = KFPlayerReplicationInfo(PlayerOwner().PlayerReplicationInfo);
     PerkLink = Class'ScrnClientPerkRepLink'.Static.FindMe(PlayerOwner());
+    ScrnPawn = ScrnHumanPawn(PlayerOwner().Pawn);
     bJustOpened = true;
     bClosed = false;
     LastInvCount = -1; // force item update on timer
@@ -48,24 +71,7 @@ function ShowPanel(bool bShow)
 
     ResetInfo();
     TheBuyable = none;
-
-    /*
-    if ( InvSelect.List.MyBuyables.Length > 0 ) {
-        for ( i = 0; i < InvSelect.List.MyBuyables.Length; i++ ) {
-            if ( InvSelect.List.MyBuyables[i] != none && (InvSelect.List.MyBuyables[i].ItemWeaponClass == class'Single' ||
-                    InvSelect.List.MyBuyables[i].ItemWeaponClass == class'Dualies') ) {
-                TheBuyable = InvSelect.List.MyBuyables[i];
-                InvSelect.List.Index = i;
-                break;
-            }
-        }
-    }
-
-    if ( KFPlayerController(PlayerOwner()) != none )
-        KFPlayerController(PlayerOwner()).bDoTraderUpdate = true;
-    */
-
-    LastBuyable = TheBuyable;
+    LastBuyable = none;
 
     InvSelect.SetPosition(InvBG.WinLeft + 7.0 / float(Controller.ResX),
                           InvBG.WinTop + 55.0 / float(Controller.ResY),
@@ -78,8 +84,19 @@ function ShowPanel(bool bShow)
                            SaleBG.WinWidth - 15.0 / float(Controller.ResX),
                            SaleBG.WinHeight - 63.0 / float(Controller.ResY),
                            true);
-}
 
+    invList = ScrnBuyMenuInvList(InvSelect.List);
+
+    MagBG.WinLeft = InvSelect.WinLeft + InvSelect.WinWidth * (invList.ItemBGWidthScale + invList.AmmoBGWidthScale);
+    MagBG.WinWidth = InvSelect.WinWidth * (1.0 - invList.ItemBGWidthScale - invList.AmmoBGWidthScale) * invList.ClipButtonWidthScale;
+    MagLabel.WinLeft = MagBG.WinLeft;
+    MagLabel.WinWidth = MagBG.WinWidth;
+
+    FillBG.WinLeft = MagBG.WinLeft + MagBG.WinWidth;
+    FillBG.WinWidth = InvSelect.WinWidth * (1.0 - invList.ItemBGWidthScale - invList.AmmoBGWidthScale) * (1.0 - invList.ClipButtonWidthScale);
+    FillLabel.WinLeft = FillBG.WinLeft;
+    FillLabel.WinWidth = FillBG.WinWidth;
+}
 
 //overloaded to show Item description -- PooSH
 function SetInfoText()
@@ -135,22 +152,21 @@ function DoBuyKevlar()
 
 function DoBuy()
 {
-    if ( TheBuyable != none && KFPawn(PlayerOwner().Pawn) != none && TheBuyable.ItemPickupClass != none ) {
-        if ( ClassIsChildOf(TheBuyable.ItemPickupClass, class'ScrnVestPickup') ) {
-            if ( ScrnHumanPawn(PlayerOwner().Pawn) != none ) {
-                ScrnHumanPawn(PlayerOwner().Pawn).ServerBuyShield(class<ScrnVestPickup>(TheBuyable.ItemPickupClass));
-                MakeSomeBuyNoise(class'Vest');
-            }
-        }
-        else if (TheBuyable.ItemWeaponClass != none ){
-            KFPawn(PlayerOwner().Pawn).ServerBuyWeapon(TheBuyable.ItemWeaponClass, 0);
-            MakeSomeBuyNoise();
-        }
+    if (TheBuyable == none || ScrnPawn == none || TheBuyable.ItemPickupClass == none)
+        return;
 
-        SaleSelect.List.Index = -1;
-        TheBuyable = none;
-        LastBuyable = none;
+    if ( ClassIsChildOf(TheBuyable.ItemPickupClass, class'ScrnVestPickup') ) {
+        ScrnPawn.ServerBuyShield(class<ScrnVestPickup>(TheBuyable.ItemPickupClass));
+        MakeSomeBuyNoise(class'Vest');
     }
+    else if (TheBuyable.ItemWeaponClass != none ){
+        ScrnPawn.ServerBuyWeapon(TheBuyable.ItemWeaponClass, 0);
+        MakeSomeBuyNoise();
+    }
+
+    SaleSelect.List.Index = -1;
+    TheBuyable = none;
+    LastBuyable = none;
 }
 
 function SaleChange(GUIComponent Sender)
@@ -214,19 +230,43 @@ function OnAnychange()
 
 function UpdateBuySellButtons()
 {
-    super.UpdateBuySellButtons();
+    RefreshSelection();
+    SaleButton.SetVisibility(InvSelect.List.Index >= 0 && TheBuyable != none);
+    if (SaleButton.bVisible) {
+        if (!TheBuyable.bSellable) {
+            SaleButton.DisableMe();
+            SaleButton.Caption = strNoSale;
+        }
+        else {
+            SaleButton.EnableMe();
+            if (TheBuyable.bIsVest) {
+                SaleButton.Caption = ScrnPawn.LightVestClass.default.ItemName;
+            }
+            else if (TheBuyable.ItemSellValue <= 0) {
+                SaleButton.Caption = strSale0;
+            }
+            else {
+                SaleButton.Caption = SaleButtonCaption $ " (" $ class'ScrnUnicode'.default.Dosh $ TheBuyable.ItemSellValue $ ")";
+            }
+        }
 
-    if ( SaleButton.MenuState == MSAT_Disabled || TheBuyable == none ) {
-        SaleButton.Caption = strNoSale;
     }
-    else if ( TheBuyable.bIsVest ) {
-        SaleButton.Caption = ScrnHumanPawn(PlayerOwner().Pawn).LightVestClass.default.ItemName;
-    }
-    else if ( TheBuyable.ItemSellValue <= 0 ) {
-        SaleButton.Caption = strSale0;
-    }
-    else {
-        SaleButton.Caption = SaleButtonCaption;
+
+    PurchaseButton.SetVisibility(SaleSelect.List.Index >= 0 && TheBuyable != none);
+    if (PurchaseButton.bVisible) {
+        if (SaleSelect.List.CanBuys[SaleSelect.List.Index] != 1) {
+            PurchaseButton.DisableMe();
+        }
+        else {
+            PurchaseButton.EnableMe();
+        }
+
+        if (TheBuyable.ItemCost > 0) {
+            PurchaseButton.Caption = PurchaseButtonCaption $ " (" $ class'ScrnUnicode'.default.Dosh $ int(TheBuyable.ItemCost) $ ")";
+        }
+        else {
+            PurchaseButton.Caption = PurchaseButtonCaption;
+        }
     }
 }
 
@@ -239,18 +279,21 @@ function ResetInfo()
 function MyInventoryStats(out int ItemCount, out int TotalAmmoAmount)
 {
     local Inventory Inv;
+    local Ammunition ammo;
 
     ItemCount = 0;
     TotalAmmoAmount = 0;
 
-    if ( PlayerOwner().Pawn == none )
+    if ( ScrnPawn == none )
         return; // wtf?
 
     // limit to 1000 to prevent circular loops
-    for ( Inv = PlayerOwner().Pawn.Inventory; Inv != none && ItemCount < 1000 ; Inv = Inv.Inventory ) {
-        ItemCount++;
-        if ( Ammunition(Inv) != none )
-            TotalAmmoAmount += Ammunition(Inv).AmmoAmount;
+    for (Inv = ScrnPawn.Inventory; Inv != none && ItemCount < 1000 ; Inv = Inv.Inventory) {
+        ++ItemCount;
+        ammo = Ammunition(Inv);
+        if (ammo != none) {
+            TotalAmmoAmount += ammo.AmmoAmount;
+        }
     }
 }
 
@@ -281,20 +324,20 @@ function UpdateCheck()
 
     MyInventoryStats(MyInvCount, MyAmmoCount);
     // ignore KFPC.bDoTraderUpdate and do it the right way
-    if ( LastDosh != int(PlayerOwner().PlayerReplicationInfo.Score)
+    if (LastShopUpdateCounter != ScrnPawn.ShopUpdateCounter
+            || LastDosh != int(KFPRI.Score)
             || LastPerk != KFPRI.ClientVeteranSkill
             || LastPerkLevel != KFPRI.ClientVeteranSkillLevel
             || LastInvCount != MyInvCount
-            || (ScrnHumanPawn(PlayerOwner().Pawn) != none
-                && LastVestClass != ScrnHumanPawn(PlayerOwner().Pawn).GetCurrentVestClass()) )
+            || LastVestClass != ScrnPawn.GetCurrentVestClass())
     {
         UpdateAll();
     }
-    else if ( LastAmmoCount != MyAmmoCount || LastShieldStrength != PlayerOwner().Pawn.ShieldStrength ) {
+    else if ( LastAmmoCount != MyAmmoCount || LastShieldStrength != ScrnPawn.ShieldStrength ) {
         // no need to update inventory list, just update the ammo values
         UpdateAmmo();
         LastAmmoCount = MyAmmoCount;
-        LastShieldStrength = PlayerOwner().Pawn.ShieldStrength;
+        LastShieldStrength = ScrnPawn.ShieldStrength;
     }
 
 }
@@ -304,13 +347,13 @@ function UpdateAll()
     if ( PerkLink != none )
         PerkLink.ParseLocks();
     super.UpdateAll();
-    LastDosh = int(PlayerOwner().PlayerReplicationInfo.Score);
+    LastShopUpdateCounter = ScrnPawn.ShopUpdateCounter;
+    LastDosh = int(KFPRI.Score);
     LastPerk = KFPRI.ClientVeteranSkill;
     LastPerkLevel = KFPRI.ClientVeteranSkillLevel;
     MyInventoryStats(LastInvCount, LastAmmoCount);
-    LastShieldStrength = PlayerOwner().Pawn.ShieldStrength;
-    if ( ScrnHumanPawn(PlayerOwner().Pawn) != none )
-        LastVestClass = ScrnHumanPawn(PlayerOwner().Pawn).GetCurrentVestClass();
+    LastShieldStrength = ScrnPawn.ShieldStrength;
+    LastVestClass = ScrnPawn.GetCurrentVestClass();
 }
 
 function UpdateAmmo()
@@ -326,7 +369,7 @@ function UpdateAmmo()
 // removed MyAmmos and UpdateMyBuyables() call
 function UpdateAutoFillAmmo()
 {
-    AutoFillButton.Caption = AutoFillString @ "(" $ class'ScrnUnicode'.default.Dosh $ int(InvSelect.List.AutoFillCost)$")";
+    AutoFillButton.Caption = AutoFillString $ " (" $ class'ScrnUnicode'.default.Dosh $ int(InvSelect.List.AutoFillCost)$")";
 
     if ( int(InvSelect.List.AutoFillCost) < 1 )
         AutoFillButton.DisableMe();
@@ -382,19 +425,14 @@ function SellBuyable(GUIBuyable item) {
 
 function DoSell()
 {
-    local ScrnHumanPawn ScrnPawn;
-
     if ( TheBuyable == none )
         return;
 
     if ( TheBuyable.bIsVest ) {
-        ScrnPawn = ScrnHumanPawn(PlayerOwner().Pawn);
         // there is no reason to sell the light armor as it has no weight.
         // So instead of selling armor, buy the light one
-        if ( ScrnPawn != none ) {
-            ScrnPawn.ServerBuyShield(ScrnPawn.LightVestClass);
-            MakeSomeBuyNoise(class'Vest');
-        }
+        ScrnPawn.ServerBuyShield(ScrnPawn.LightVestClass);
+        MakeSomeBuyNoise(class'Vest');
     }
     else {
         super.DoSell();
@@ -417,7 +455,7 @@ function bool InternalOnClick(GUIComponent Sender)
 
 function bool InternalOnKeyEvent(out byte Key, out byte State, float delta)
 {
-    if ( State == 1 ) { // key press
+    if (State == 1 && Key >= 0x70 && Key < 0x7C){ // F key press
         switch ( Key ) {
             case 0x70: // IK_F1
                 Controller.PlayInterfaceSound(CS_Click);
@@ -425,34 +463,39 @@ function bool InternalOnKeyEvent(out byte Key, out byte State, float delta)
                 if ( InvSelect.List.ItemCount > 0 && InvSelect.List.Index == -1 )
                     InvSelect.List.SetIndex(0);
                 return true;
-                break; // is this break needed here?
             case 0x71: // IK_F2
                 Controller.PlayInterfaceSound(CS_Click);
                 SetFocus(SaleSelect.List);
                 if ( SaleSelect.List.ItemCount > 0 && SaleSelect.List.Index == -1 )
                     SaleSelect.List.SetIndex(0);
                 return true;
-                break;
             case 0x72: // IK_F3
+                ScrnGUIBuyMenu(OwnerPage()).ActivateSearch();
+                return true;
+            case 0x73: // IK_F4
                 Controller.PlayInterfaceSound(CS_Click);
                 ForceInfoPageNum = 1 - InfoPageNum;
                 OnAnychange();
                 return true;
-                break;
             case 0x74: // IK_F5
                 Controller.PlayInterfaceSound(CS_Click);
                 RefreshButton.OnClick(RefreshButton);
                 return true;
-                break;
             case 0x76: // IK_F7
                 DoBuyKevlar();
                 return true;
-                break;
             case 0x77: // IK_F8
                 Controller.PlayInterfaceSound(CS_Up);
                 AutoFillButton.OnClick(AutoFillButton);
                 return true;
-                break;
+            case 0x78: // IK_F9
+                if (Controller.CtrlPressed) {
+                    ScrnBuyMenuInvList(InvSelect.List).SellAll(!Controller.ShiftPressed);
+                }
+                else {
+                    ScrnGUIBuyMenu(OwnerPage()).ActivatePerkTab();
+                }
+                return true;
         }
     }
     return false;
@@ -461,136 +504,187 @@ function bool InternalOnKeyEvent(out byte Key, out byte State, float delta)
 
 defaultproperties
 {
-     Begin Object Class=ScrnBuyMenuInvListBox Name=InventoryBox
-         OnCreateComponent=InventoryBox.InternalOnCreateComponent
-         WinTop=0.070841
-         WinLeft=0.000108
-         WinWidth=0.328204
-         WinHeight=0.521856
-        TabOrder=10
-     End Object
-     InvSelect=InventoryBox
+    Begin Object Class=ScrnBuyMenuInvListBox Name=InventoryBox
+        OnCreateComponent=InventoryBox.InternalOnCreateComponent
+        WinTop=0.070841
+        WinLeft=0.000108
+        WinWidth=0.328204
+        WinHeight=0.521856
+       TabOrder=10
+    End Object
+    InvSelect=InventoryBox
 
-     Begin Object Class=ScrnBuyMenuSaleListBox Name=SaleBox
-         OnCreateComponent=SaleBox.InternalOnCreateComponent
-         WinTop=0.064312
-         WinLeft=0.672632
-         WinWidth=0.325857
-         WinHeight=0.674039
-        TabOrder=20
-     End Object
-     SaleSelect=SaleBox
+    Begin Object Class=ScrnBuyMenuSaleListBox Name=SaleBox
+        OnCreateComponent=SaleBox.InternalOnCreateComponent
+        WinTop=0.064312
+        WinLeft=0.672632
+        WinWidth=0.325857
+        WinHeight=0.674039
+       TabOrder=20
+    End Object
+    SaleSelect=SaleBox
 
-     Begin Object Class=ScrnGUIBuyWeaponInfoPanel Name=ItemInf
-         WinTop=0.193730
-         WinLeft=0.332571
-         WinWidth=0.333947
-         WinHeight=0.489407
-     End Object
-     ItemInfo=ItemInf
+    Begin Object Class=ScrnGUIBuyWeaponInfoPanel Name=ItemInf
+        WinTop=0.193730
+        WinLeft=0.332571
+        WinWidth=0.333947
+        WinHeight=0.489407
+    End Object
+    ItemInfo=ItemInf
 
-     Begin Object Class=ScrnTraderRequirementsListBox Name=ItemReq
-         WinTop=0.183730
-         WinLeft=0.3335
-         WinWidth=0.33
-         WinHeight=0.529407
-         bVisible=False
-     End Object
-     ItemRequirements=ItemReq
+    Begin Object Class=ScrnTraderRequirementsListBox Name=ItemReq
+        WinTop=0.183730
+        WinLeft=0.3335
+        WinWidth=0.33
+        WinHeight=0.529407
+        bVisible=False
+    End Object
+    ItemRequirements=ItemReq
     ForceInfoPageNum=255
 
-     Begin Object Class=GUILabel Name=SelectedItemL
-         Caption="Selected Item Info"
-         TextAlign=TXTA_Center
-         TextColor=(B=158,G=176,R=175)
-         TextFont="UT2SmallFont"
-         FontScale=FNS_Small
-         WinTop=0.138
-         WinLeft=0.332571
-         WinWidth=0.333947
-         WinHeight=20.000000
-         RenderWeight=0.510000
-     End Object
-     SelectedItemLabel=SelectedItemL
-     strSelectedItemRequirements="Requirements for Unlocking Selected Item"
-     strIntoScrnLocked="You have to meet the above requirements for unlocking the selected item. If multiple requirements have the same leading number in square brackets [X], then you need only one of those. Press F3 for item's description."
+    Begin Object Class=GUILabel Name=SelectedItemL
+        Caption="Selected Item Info"
+        TextAlign=TXTA_Center
+        TextColor=(B=158,G=176,R=175)
+        TextFont="UT2SmallFont"
+        FontScale=FNS_Small
+        WinTop=0.138
+        WinLeft=0.332571
+        WinWidth=0.333947
+        WinHeight=20.000000
+        RenderWeight=0.510000
+    End Object
+    SelectedItemLabel=SelectedItemL
+    strSelectedItemRequirements="Requirements for Unlocking Selected Item"
+    strIntoScrnLocked="You have to meet the above requirements for unlocking the selected item. If multiple requirements have the same leading number in square brackets [X], then you need only one of those. Press F3 for item's description."
 
 
-     Begin Object Class=GUIButton Name=SaleB
-         Caption="Sell Weapon"
-         Hint="Sell selected item [BACKSPACE]"
-         WinTop=0.004750
-         WinLeft=0.000394
-         WinWidth=0.162886
-         WinHeight=35.000000
-         RenderWeight=0.450000
-         OnClick=KFTab_BuyMenu.InternalOnClick
-         OnKeyEvent=SaleB.InternalOnKeyEvent
-         bTabStop=False
-     End Object
-     SaleButton=SaleB
-     SaleButtonCaption="Sell Weapon"
-     strSale0="Donate to Charity"
-     strNoSale="Not Sellable"
+    Begin Object Class=GUIButton Name=SaleB
+        Caption="Sell Weapon"
+        Hint="Sell selected item [BACKSPACE]"
+        WinTop=0.000
+        WinLeft=0.000394
+        WinWidth=0.162886
+        WinHeight=35.000000
+        RenderWeight=0.450000
+        OnClick=KFTab_BuyMenu.InternalOnClick
+        OnKeyEvent=SaleB.InternalOnKeyEvent
+        bTabStop=False
+    End Object
+    SaleButton=SaleB
+    SaleButtonCaption="Sell"
+    strSale0="Donate to Charity"
+    strNoSale="Not Sellable"
 
-     Begin Object Class=GUIButton Name=PurchaseB
-         Caption="Purchase Weapon"
-         Hint="Buy selected weapon [ENTER]"
-         WinTop=0.004750
-         WinLeft=0.729647
-         WinWidth=0.220714
-         WinHeight=35.000000
-         RenderWeight=0.450000
-         OnClick=KFTab_BuyMenu.InternalOnClick
-         OnKeyEvent=PurchaseB.InternalOnKeyEvent
-         bTabStop=False
-     End Object
-     PurchaseButton=PurchaseB
+    Begin Object Class=GUIImage Name=MagB
+        Image=Texture'KF_InterfaceArt_tex.Menu.Innerborder_transparent'
+        ImageStyle=ISTY_Stretched
+        WinTop=0.000
+        WinLeft=0.205986
+        WinWidth=0.054624
+        WinHeight=35.000000
+        RenderWeight=0.500000
+    End Object
+    MagBG=GUIImage'MagB'
 
-     Begin Object Class=GUIButton Name=AutoFill
-         Caption="[F8] Auto Fill Ammo"
-         Hint="First click fills up all weapons except hand grenades and pipebombs. Second click buys pipebombs and grenades."
-         WinTop=0.79
-         WinLeft=0.725646
-         WinWidth=0.220714
-         WinHeight=0.050852
-         RenderWeight=0.450000
-         OnClick=KFTab_BuyMenu.InternalOnClick
-         OnKeyEvent=AutoFill.InternalOnKeyEvent
-         TabOrder=100
-     End Object
-     AutoFillButton=AutoFill
-     AutoFillString="[F8] Fill All Ammo"
+    Begin Object Class=GUIImage Name=FillB
+        Image=Texture'KF_InterfaceArt_tex.Menu.Innerborder_transparent'
+        ImageStyle=ISTY_Stretched
+        WinTop=0.000
+        WinLeft=0.266769
+        WinWidth=0.054624
+        WinHeight=35.000000
+        RenderWeight=0.500000
+    End Object
+    FillBG=GUIImage'FillB'
 
-     Begin Object Class=GUIButton Name=Refresh
-         Caption="[F5] Refresh"
-         Hint="Reload the Trader Menu, including max value reset of weapon info bars."
-         WinTop=0.85
-         WinLeft=0.725646
-         WinWidth=0.220714
-         WinHeight=0.050852
-         RenderWeight=0.450000
-         OnClick=KFTab_BuyMenu.InternalOnClick
-         OnKeyEvent=Refresh.InternalOnKeyEvent
-         TabOrder=101
-     End Object
-     RefreshButton=Refresh
+    Begin Object Class=GUILabel Name=MagL
+        Caption="Mag"
+        TextAlign=TXTA_Center
+        TextColor=(B=158,G=176,R=175)
+        TextFont="UT2SmallFont"
+        FontScale=FNS_Small
+        WinTop=0.000
+        WinLeft=0.205986
+        WinWidth=0.054624
+        WinHeight=35.000000
+        RenderWeight=0.510000
+    End Object
+    MagLabel=GUILabel'MagL'
 
-     Begin Object Class=GUIButton Name=Exit
-         Caption="[ESC] Exit Trader Menu"
-         Hint="Close The Trader Menu"
-         WinTop=0.91
-         WinLeft=0.725646
-         WinWidth=0.220714
-         WinHeight=0.050852
-         RenderWeight=0.450000
-         OnClick=KFTab_BuyMenu.InternalOnClick
-         OnKeyEvent=Exit.InternalOnKeyEvent
-         TabOrder=102
-     End Object
-     ExitButton=Exit
+    Begin Object Class=GUILabel Name=FillL
+        Caption="Fill"
+        TextAlign=TXTA_Center
+        TextColor=(B=158,G=176,R=175)
+        TextFont="UT2SmallFont"
+        FontScale=FNS_Small
+        WinTop=0.000
+        WinLeft=0.266769
+        WinWidth=0.054624
+        WinHeight=35.000000
+        RenderWeight=0.510000
+    End Object
+    FillLabel=GUILabel'FillL'
 
-     InfoText(0)="Welcome to my shop, powered by ScrN Balance!   HOTKEYS:|F1/F2: go to inventory/sale list|ENTER/BACKPACE: buy/sell item. F7/F8: autofill armor/ammo|0-9: Quick group selection / buy X clips.|PAGE UP/DOWN: Select previous/next group. LEFT/RIGHT: close/open current group.|UP/DOWN: select previous/next item in the same group."
+    Begin Object Class=GUIButton Name=PurchaseB
+        Caption="Purchase Weapon"
+        Hint="Buy selected weapon [ENTER]"
+        WinTop=0.000
+        WinLeft=0.729647
+        WinWidth=0.220714
+        WinHeight=35.000000
+        RenderWeight=0.450000
+        OnClick=KFTab_BuyMenu.InternalOnClick
+        OnKeyEvent=PurchaseB.InternalOnKeyEvent
+        bTabStop=False
+    End Object
+    PurchaseButton=PurchaseB
+    PurchaseButtonCaption="Buy"
 
-     OnKeyEvent=InternalOnKeyEvent
+    Begin Object Class=GUIButton Name=AutoFill
+        Caption="[F8] Auto Fill Ammo"
+        Hint="First click fills up all weapons except hand grenades and pipebombs. Second click buys pipebombs and grenades."
+        WinTop=0.79
+        WinLeft=0.725646
+        WinWidth=0.220714
+        WinHeight=0.050852
+        RenderWeight=0.450000
+        OnClick=KFTab_BuyMenu.InternalOnClick
+        OnKeyEvent=AutoFill.InternalOnKeyEvent
+        TabOrder=100
+    End Object
+    AutoFillButton=AutoFill
+    AutoFillString="[F8] Fill All Ammo"
+
+    Begin Object Class=GUIButton Name=Refresh
+        Caption="[F5] Refresh"
+        Hint="Reload the Trader Menu, including max value reset of weapon info bars."
+        WinTop=0.85
+        WinLeft=0.725646
+        WinWidth=0.220714
+        WinHeight=0.050852
+        RenderWeight=0.450000
+        OnClick=KFTab_BuyMenu.InternalOnClick
+        OnKeyEvent=Refresh.InternalOnKeyEvent
+        TabOrder=101
+    End Object
+    RefreshButton=Refresh
+
+    Begin Object Class=GUIButton Name=Exit
+        Caption="[ESC] Exit Trader Menu"
+        Hint="Close The Trader Menu"
+        WinTop=0.91
+        WinLeft=0.725646
+        WinWidth=0.220714
+        WinHeight=0.050852
+        RenderWeight=0.450000
+        OnClick=KFTab_BuyMenu.InternalOnClick
+        OnKeyEvent=Exit.InternalOnKeyEvent
+        TabOrder=102
+    End Object
+    ExitButton=Exit
+
+    InfoText(0)="Welcome to my shop, powered by ScrN Balance!   HOTKEYS:|F1/F2: go to inventory/sale list|ENTER/BACKPACE: buy/sell item. F7/F8: autofill armor/ammo|0-9: Quick group selection / buy X clips.|PAGE UP/DOWN: Select previous/next group. LEFT/RIGHT: close/open current group.|UP/DOWN: select previous/next item in the same group."
+
+    OnKeyEvent=InternalOnKeyEvent
 }

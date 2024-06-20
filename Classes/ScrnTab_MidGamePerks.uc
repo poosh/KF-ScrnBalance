@@ -52,20 +52,24 @@ function bool OnSaveButtonClicked(GUIComponent Sender)
 
 defaultproperties
 {
-     Begin Object Class=ScrnPerkSelectListBox Name=PerkSelectList
-         OnCreateComponent=PerkSelectList.InternalOnCreateComponent
-         WinTop=0.057760
-         WinLeft=0.029240
-         WinWidth=0.437166
-         WinHeight=0.742836
-     End Object
-     lb_PerkSelect=PerkSelectList
+    Begin Object Class=ScrnPerkSelectListBox Name=PerkSelectList
+        OnCreateComponent=PerkSelectList.InternalOnCreateComponent
+        WinTop=0.057760
+        WinLeft=0.029240
+        WinWidth=0.437166
+        WinHeight=0.742836
+        TabOrder=0
+        bTabStop=true
+    End Object
+    lb_PerkSelect=PerkSelectList
 
-     Begin Object class=ScrnPerkProgressListBox Name=PerkProgressList
-         WinWidth=0.463858
-         WinHeight=0.341256
-         WinLeft=0.499269
-         WinTop=0.476850
-     End Object
-     lb_PerkProgress=PerkProgressList
+    Begin Object class=ScrnPerkProgressListBox Name=PerkProgressList
+        WinWidth=0.463858
+        WinHeight=0.341256
+        WinLeft=0.499269
+        WinTop=0.476850
+        TabOrder=1
+        bTabStop=false
+    End Object
+    lb_PerkProgress=PerkProgressList
 }

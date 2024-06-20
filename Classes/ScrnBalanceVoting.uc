@@ -161,34 +161,6 @@ function String PerksStr(out array<class< ScrnVeterancyTypes> > Perks)
     return s;
 }
 
-
-function SendPerkList(PlayerController Sender)
-{
-    local ClientPerkRepLink L;
-    local class<ScrnVeterancyTypes> Perk;
-    local int i;
-    local string s;
-
-    L = GetPlayerLink(Sender);
-    if ( L == none )
-        return;
-
-    for ( i = 0; i < L.CachePerks.Length; ++i ) {
-        Perk = class<ScrnVeterancyTypes>(L.CachePerks[i].PerkClass);
-        if ( Perk == none )
-            continue;
-
-        if ( Perk.default.bLocked ) {
-            s = "[LOCKED] ";
-        }
-        else {
-            s = "";
-        }
-        s $= string(i + 1) $ ". " $ Perk.default.ShortName $ " - " $ Perk.default.VeterancyName;
-        Sender.ClientMessage(s);
-    }
-}
-
 static function bool TryStrToInt(string str, out int val)
 {
     val = int(str);
@@ -439,7 +411,7 @@ function int GetVoteIndex(PlayerController Sender, string Key, out string Value,
                 str = Repl(str, "%s", errstr);
                 Sender.ClientMessage(str);
             }
-            SendPerkList(Sender);
+            class'ScrnFunctions'.static.SendPerkList(Sender);
             return VOTE_LOCAL;
         }
         for ( i = 0; i < VotedPerks.length; ++i ) {

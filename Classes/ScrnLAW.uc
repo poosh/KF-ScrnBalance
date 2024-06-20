@@ -39,6 +39,6 @@ defaultproperties
     Description="Light Anti-tank Weapon. Designed to punch through armored vehicles... but can't kill even a Scrake! Maybe because he doesn't wear armor to punch through ^^"
     PickupClass=class'ScrnLAWPickup'
     AttachmentClass=class'ScrnLAWAttachment'
-    ItemName="L.A.W. SE"
+    ItemName="LAW SE"
     bHoldToReload=false // to show correct ammo amount on classic hud
 }

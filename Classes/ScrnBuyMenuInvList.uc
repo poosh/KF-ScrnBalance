@@ -6,7 +6,10 @@ class ScrnBuyMenuInvList extends SRKFBuyMenuInvList;
 var localized string UpgradeArmorCaption;
 var localized string NoWeightCaption;
 
+var bool bHasOffPerkWeapons;
+
 delegate OnSellClick(GUIBuyable Buyable);
+delegate OnBuyablesLoaded(ScrnBuyMenuInvList List);
 
 // all update checks now are perfomed in ScrnTab_BuyMenu
 function Timer()
@@ -38,8 +41,7 @@ function UpdateList()
     ItemCount = MyBuyables.Length;
 
     // Update the players inventory list
-    for ( i = 0; i < ItemCount; i++ )
-    {
+    for (i = 0; i < ItemCount; i++) {
         if ( MyBuyables[i] == none )
             continue;
 
@@ -129,7 +131,8 @@ function UpdateMyAmmo()
 
 function UpdateMyBuyables()
 {
-    local GUIBuyable MyBuyable, KnifeBuyable, FragBuyable, TPBuyable;
+    local GUIBuyable MyBuyable, PistolBuyable, KnifeBuyable, FragBuyable, TPBuyable;
+    local bool bSpecial;
     local Inventory CurInv;
     local float CurAmmo, MaxAmmo;
     local KFWeapon KFWeap;
@@ -167,6 +170,7 @@ function UpdateMyBuyables()
     //Clear the MyBuyables array
     CopyAllBuyables();
     MyBuyables.Length = 0;
+    bHasOffPerkWeapons = false;
 
     Perk = class<ScrnVeterancyTypes>(KFPRI.ClientVeteranSkill);
     if( Perk==None )
@@ -256,39 +260,48 @@ function UpdateMyBuyables()
         else
             MyBuyable.ItemSellValue = MyBuyable.ItemCost * 0.75;
 
-        if ( PipeBombExplosive(CurInv) != none ) {
-            //give 75% of all pipes, not 2 (even if there is only 1 left)
-            // calc price per ammo and multiply by ammo count
-            MyBuyable.ItemSellValue /= PipeBombExplosive(CurInv).default.FireModeClass[0].default.AmmoClass.default.InitialAmount;
-            MyBuyable.ItemSellValue *= PipeBombExplosive(CurInv).AmmoAmount(0);
-        }
-
         if ( !MyBuyable.bMelee && int(MaxAmmo)>int(CurAmmo) )
             AutoFillCost += MyBuyable.ItemFillAmmoCost;
 
-        if ( CurInv.IsA('Knife') )
-        {
-            MyBuyable.bSellable    = false;
-            KnifeBuyable = MyBuyable;
+        bSpecial = false;
+        if (MyBuyable.ItemWeight <= 1) {
+            bSpecial = true;
+            if (CurInv.IsA('PipeBombExplosive')) {
+                //give 75% of all pipes, not 2 (even if there is only 1 left)
+                // calc price per ammo and multiply by ammo count
+                MyBuyable.ItemSellValue /= KFWeap.default.FireModeClass[0].default.AmmoClass.default.InitialAmount;
+                MyBuyable.ItemSellValue *= KFWeap.AmmoAmount(0);
+                bSpecial = false;
+            }
+            else if (CurInv.IsA('Single')) {
+                MyBuyable.bSellable = !KFWeap.default.bKFNeverThrow;
+                PistolBuyable = MyBuyable;
+            }
+            else if (CurInv.IsA('Knife')) {
+                MyBuyable.bSellable = false;
+                KnifeBuyable = MyBuyable;
+            }
+            else if (CurInv.IsA('Frag')) {
+                MyBuyable.bSellable = false;
+                FragBuyable = MyBuyable;
+            }
+            else if (CurInv.IsA('ToiletPaper')) {
+                MyBuyable.bSellable = false;
+                TPBuyable = MyBuyable;
+            }
+            else {
+                bSpecial = false;
+            }
         }
-        else if ( CurInv.IsA('Frag') )
-        {
-            MyBuyable.bSellable    = false;
-            FragBuyable = MyBuyable;
-        }
-        else if ( CurInv.IsA('ToiletPaper') )
-        {
-            MyBuyable.bSellable    = false;
-            TPBuyable = MyBuyable;
-        }
-        else
-        {
-            MyBuyable.bSellable    = !KFWeap.default.bKFNeverThrow;
+
+        if (!bSpecial) {
+            MyBuyable.bSellable = !KFWeap.default.bKFNeverThrow;
             MyBuyables.Insert(0,1);
             MyBuyables[0] = MyBuyable;
+            if (MyBuyable.ItemWeight > 1 && MyBuyable.ItemPerkIndex != Perk.default.PerkIndex) {
+                bHasOffPerkWeapons = true;
+            }
         }
-
-
 
         // =============================== SECONDARY AMMO ===============================
         if ( !KFWeap.bHasSecondaryAmmo )
@@ -398,10 +411,11 @@ function UpdateMyBuyables()
             FragBuyable.ItemPerkIndex = Perk.default.PerkIndex;
     }
 
-    if( MyBuyables.Length < 8 ) {
+    if( MyBuyables.Length < 7 ) {
         MyBuyables.Length = 11;
-        MyBuyables[7] = none;
-        if ( TPBuyable != none ) {
+        MyBuyables[6] = none;
+        MyBuyables[7] = PistolBuyable;
+        if (TPBuyable != none) {
             MyBuyables[8] = TPBuyable;
         }
         else {
@@ -411,21 +425,57 @@ function UpdateMyBuyables()
         MyBuyables[10] = MyBuyable; // ARMOR
     }
     else {
-        if ( TPBuyable != none ) {
-            MyBuyables.insert(MyBuyables.Length, 4);
-            MyBuyables[MyBuyables.Length-4] = none;
-            MyBuyables[MyBuyables.Length-3] = TPBuyable;
+        MyBuyables.insert(MyBuyables.Length, 1);
+        MyBuyables[MyBuyables.Length-1] = none;
+        if (PistolBuyable != none) {
+            MyBuyables.insert(MyBuyables.Length, 1);
+            MyBuyables[MyBuyables.Length-1] = PistolBuyable;
         }
-        else {
-            MyBuyables.insert(MyBuyables.Length, 3);
-            MyBuyables[MyBuyables.Length-3] = none;
+        if (TPBuyable != none) {
+            MyBuyables.insert(MyBuyables.Length, 1);
+            MyBuyables[MyBuyables.Length-1] = TPBuyable;
         }
+        MyBuyables.insert(MyBuyables.Length, 2);
         MyBuyables[MyBuyables.Length-2] = FragBuyable;
         MyBuyables[MyBuyables.Length-1] = MyBuyable; // ARMOR
     }
 
     //Now Update the list
     UpdateList();
+    OnBuyablesLoaded(self);
+}
+
+function SellAll(bool offperkOnly)
+{
+    local GUIBuyable MyBuyable;
+    local int i;
+    local KFPlayerReplicationInfo KFPRI;
+    local byte MyPerkIndex;
+
+    KFPRI = KFPlayerReplicationInfo(PlayerOwner().PlayerReplicationInfo);
+    if (KFPRI == none)
+        return;  // wtf?
+    MyPerkIndex = KFPRI.ClientVeteranSkill.default.PerkIndex;
+
+    for (i = 0; i < ItemCount; i++) {
+        MyBuyable = MyBuyables[i];
+        if (MyBuyable == none)
+            continue;
+
+        if (!MyBuyable.bSellable || MyBuyable.ItemWeight <= 0 || MyBuyable.bIsVest)
+            continue;
+
+        if (offperkOnly) {
+            // always consider 1kg items perked (machete, pipebombs)
+            if (MyBuyable.ItemWeight == 1)
+                continue;
+
+             if (MyBuyable.ItemPerkIndex == MyPerkIndex)
+                continue;
+        }
+
+        OnSellClick(MyBuyable);
+    }
 }
 
 function GUIBuyable GetSelectedBuyable()

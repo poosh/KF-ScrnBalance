@@ -26,6 +26,8 @@ var array<localized string> LockStrings;
 
 var int VestCategory;  // the item group that contains most armor items
 
+var array<String> SearchKeywords;
+
 // all update checks now are perfomed in ScrnTab_BuyMenu
 function Timer()
 {
@@ -35,19 +37,10 @@ function Timer()
 event Opened(GUIComponent Sender)
 {
     local ScrnHUD myHUD;
-    local ScrnClientPerkRepLink CPRL;
-    local KFPlayerReplicationInfo KFPRI;
-    local class<ScrnVeterancyTypes> Perk;
-    local int i, MatchedCategory;
 
     super.Opened(Sender);
 
     myHUD = ScrnHUD(PlayerOwner().myHUD);
-    CPRL = Class'ScrnClientPerkRepLink'.Static.FindMe(PlayerOwner());
-    KFPRI = KFPlayerReplicationInfo(PlayerOwner().PlayerReplicationInfo);
-    if ( KFPRI != none )
-        Perk = class<ScrnVeterancyTypes>(KFPRI.ClientVeteranSkill);
-
     // load config variables
     if ( myHUD != none ) {
         GroupColor = myHUD.TraderGroupColor;
@@ -57,25 +50,41 @@ event Opened(GUIComponent Sender)
         PriceButtonDisabledColor = myHUD.TraderPriceButtonDisabledColor;
         PriceButtonSelectedColor = myHUD.TraderPriceButtonSelectedColor;
     }
+    SetPerkCategory();
+}
+
+function SetPerkCategory()
+{
+    local ScrnClientPerkRepLink CPRL;
+    local KFPlayerReplicationInfo KFPRI;
+    local class<ScrnVeterancyTypes> Perk;
+    local int i, MatchedCategory;
+
+    CPRL = Class'ScrnClientPerkRepLink'.Static.FindMe(PlayerOwner());
+    KFPRI = KFPlayerReplicationInfo(PlayerOwner().PlayerReplicationInfo);
+    if (KFPRI == none || CPRL == none)
+        return;  //wtf?
+    Perk = class<ScrnVeterancyTypes>(KFPRI.ClientVeteranSkill);
+    if (Perk == none)
+        return;  //wtf?
 
     MatchedCategory = -2;
-    if( CPRL != none && Perk != none ) {
-        // select perked category by default
-        for ( i = 0; i < CPRL.ShopCategories.length; ++i ) {
-            if (CPRL.ShopCategories[i].PerkIndex == Perk.default.PerkIndex ) {
-                MatchedCategory = i;
-                break;
-            }
-            else if (CPRL.ShopCategories[i].PerkIndex == Perk.default.RelatedPerkIndex ) {
-                MatchedCategory = i;
-                // keep looking - maybe we'll find the category that matches PerrkIndex
-            }
+    // select perked category by default
+    for ( i = 0; i < CPRL.ShopCategories.length; ++i ) {
+        if (CPRL.ShopCategories[i].PerkIndex == Perk.default.PerkIndex ) {
+            MatchedCategory = i;
+            break;
+        }
+        else if (CPRL.ShopCategories[i].PerkIndex == Perk.default.RelatedPerkIndex ) {
+            MatchedCategory = i;
+            // keep looking - maybe we'll find the category that matches PerrkIndex
         }
     }
     if ( MatchedCategory >= -1 ) {
         ActiveCategory = -2;  // force update
         SetCategoryNum(MatchedCategory, true);
     }
+    SearchKeywords.Length = 0;
 }
 
 //returns true also if any children of pickup class are found
@@ -93,7 +102,6 @@ function bool IsChildInInventory(class<Pickup> Item)
 
     return false;
 }
-
 
 function UpdateForSaleBuyables()
 {
@@ -143,7 +151,7 @@ function UpdateForSaleBuyables()
 
     ScrnPawn = ScrnHumanPawn(PlayerOwner().Pawn);
 
-    if( ActiveCategory>=-1 )
+    if( ActiveCategory>=-1 || SearchKeywords.Length > 0)
     {
         // Grab the weapons!
         if( CurrentShop!=None )
@@ -183,21 +191,28 @@ function UpdateForSaleBuyables()
                     && ForSalePickup.default.CorrespondingPerkIndex != 7 ) // off-perk
                 continue;
 
-            if( ActiveCategory==-1 )
-            {
+            if (SearchKeywords.Length > 0) {
+                if (!class'ScrnFunctions'.static.MatchKeywords(caps(ForSalePickup.default.ItemName), SearchKeywords)
+                        && (ForSalePickup.default.ItemShortName == ForSalePickup.default.ItemName
+                            || !class'ScrnFunctions'.static.MatchKeywords(caps(ForSalePickup.default.ItemShortName), SearchKeywords)))
+                    continue;
+            }
+            else if (ActiveCategory == -1) {
                 if( !Class'SRClientSettings'.Static.IsFavorite(ForSalePickup) )
                     continue; // not favorite
-
-                // check for duplicates
-                for ( k=0; k < ForSaleBuyables.length; ++k ) {
-                    if ( ForSaleBuyables[k].ItemPickupClass == ForSalePickup )
-                        break;
-                }
-                if ( k < ForSaleBuyables.length )
-                    continue; // ForSalePickup is already inside ForSaleBuyables
             }
-            else if( ActiveCategory != CPRL.ShopInventory[j].CatNum )
+            else if( ActiveCategory != CPRL.ShopInventory[j].CatNum ) {
                 continue;
+            }
+
+            // check for duplicates
+            for ( k=0; k < ForSaleBuyables.length; ++k ) {
+                if ( ForSaleBuyables[k].ItemPickupClass == ForSalePickup )
+                    break;
+            }
+            if ( k < ForSaleBuyables.length ) {
+                continue;
+            }
 
             ForSaleWeapon = class<KFWeapon>(ForSalePickup.default.InventoryType);
             if ( ForSaleWeapon != none && ForSaleWeapon.default.bKFNeverThrow )
@@ -344,13 +359,18 @@ function UpdateList()
     local ClientPerkRepLink CPRL;
     local KFPlayerReplicationInfo KFPRI;
     local ScrnHumanPawn ScrnPawn;
+    local bool bDisplayCategories;
 
     CPRL = Class'ScrnClientPerkRepLink'.Static.FindMe(PlayerOwner());
     KFPRI = KFPlayerReplicationInfo(PlayerOwner().PlayerReplicationInfo);
     ScrnPawn = ScrnHumanPawn(PlayerOwner().Pawn);
 
     // Update the ItemCount and select the first item
-    ItemCount = CPRL.ShopCategories.Length + ForSaleBuyables.Length + 1;
+    bDisplayCategories = SearchKeywords.Length == 0;
+    ItemCount = ForSaleBuyables.Length;
+    if (bDisplayCategories) {
+        ItemCount += CPRL.ShopCategories.Length + 1;
+    }
 
     // Clear the arrays
     if ( ForSaleBuyables.Length < PrimaryStrings.Length )
@@ -362,39 +382,40 @@ function UpdateList()
     }
 
     // Update categories
-    if( ActiveCategory>=-1 )
-    {
-        for( i=-1; i<(ActiveCategory+1); ++i )
-        {
-            if( i==-1 )
+    if (bDisplayCategories) {
+        if (ActiveCategory >= -1) {
+            for( i=-1; i<(ActiveCategory+1); ++i )
             {
-                PrimaryStrings[j] = FavoriteGroupName;
-                ListPerkIcons[j] = None;
+                if( i==-1 )
+                {
+                    PrimaryStrings[j] = FavoriteGroupName;
+                    ListPerkIcons[j] = None;
+                }
+                else
+                {
+                    PrimaryStrings[j] = CPRL.ShopCategories[i].Name;
+                    if( CPRL.ShopCategories[i].PerkIndex<CPRL.ShopPerkIcons.Length )
+                        ListPerkIcons[j] = CPRL.ShopPerkIcons[CPRL.ShopCategories[i].PerkIndex];
+                    else ListPerkIcons[j] = None;
+                }
+                CanBuys[j] = 3+i;
+                ++j;
             }
-            else
+        }
+        else
+        {
+            PrimaryStrings[j] = FavoriteGroupName;
+            CanBuys[j] = 2;
+            ++j;
+            for( i=0; i<CPRL.ShopCategories.Length; ++i )
             {
                 PrimaryStrings[j] = CPRL.ShopCategories[i].Name;
                 if( CPRL.ShopCategories[i].PerkIndex<CPRL.ShopPerkIcons.Length )
                     ListPerkIcons[j] = CPRL.ShopPerkIcons[CPRL.ShopCategories[i].PerkIndex];
                 else ListPerkIcons[j] = None;
+                CanBuys[j] = 3+i;
+                ++j;
             }
-            CanBuys[j] = 3+i;
-            ++j;
-        }
-    }
-    else
-    {
-        PrimaryStrings[j] = FavoriteGroupName;
-        CanBuys[j] = 2;
-        ++j;
-        for( i=0; i<CPRL.ShopCategories.Length; ++i )
-        {
-            PrimaryStrings[j] = CPRL.ShopCategories[i].Name;
-            if( CPRL.ShopCategories[i].PerkIndex<CPRL.ShopPerkIcons.Length )
-                ListPerkIcons[j] = CPRL.ShopPerkIcons[CPRL.ShopCategories[i].PerkIndex];
-            else ListPerkIcons[j] = None;
-            CanBuys[j] = 3+i;
-            ++j;
         }
     }
 
@@ -428,8 +449,7 @@ function UpdateList()
         ++j;
     }
 
-    if( ActiveCategory>=-1 )
-    {
+    if (bDisplayCategories && ActiveCategory>=-1) {
         for( i=(ActiveCategory+1); i<CPRL.ShopCategories.Length; ++i )
         {
             PrimaryStrings[j] = CPRL.ShopCategories[i].Name;
@@ -668,7 +688,7 @@ function bool GotoNextItemInCategory()
             return true;
         }
         else if ( CanBuys[i] >= 2 )
-            return GotoFirstItemInCategory();
+            return false;
     }
     return false;
 }
@@ -683,7 +703,7 @@ function bool GotoPrevItemInCategory()
             return true;
         }
         else if ( CanBuys[i] >= 2 )
-            return GotoLastItemInCategory();
+            return false;
     }
     return false;
 }
@@ -717,7 +737,12 @@ function bool GotoFirstItemInCategory()
 function bool InternalOnKeyEvent(out byte Key, out byte State, float delta)
 {
     if ( State == 1 ) { // key press
-        if (Key >= 0x30 && Key <= 0x39) { // 0..9
+        if (Key >= 0x60 && Key <= 0x69) {
+             // convert IK_NumPadX to IK_X
+            Key -= 0x30;
+        }
+        if (Key >= 0x30 && Key <= 0x39) {
+            // 0..9
             SetCategoryNum(Key - 0x31);
             return true;
         }
@@ -856,6 +881,27 @@ function bool SelectVestCategory() {
         return true;
     }
     return false;
+}
+
+function QuickSearch(string s) {
+    if (s == "") {
+        if (SearchKeywords.Length > 0) {
+            SearchKeywords.Length = 0;
+            UpdateForSaleBuyables();
+        }
+        return;
+    }
+
+    // require at least two characters to be entered to begin searching
+    if (Len(s) >= 2) {
+        ActiveCategory = -2;
+        SearchKeywords.Length = 0;
+        Split(caps(s), " ", SearchKeywords);
+        SelectionOffset = 0;
+        UpdateForSaleBuyables();
+        SetTopItem(0);
+        GotoFirstItemInCategory();
+    }
 }
 
 defaultproperties

@@ -28,6 +28,47 @@
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+## v9.70.08
+### Shop Menu Overhaul
+#### Weapon Search Textbox
+- Added Weapon Search Textbox, allowing to quickly search for weapons to buy.
+- Weapon Search Textbox is focused by default when entering the Shop Menu. Press `F3` anywhere in the Shop Menu to focus it again.
+- Weapon Search is tokenized by words. For example, entering "med pis" finds "Medic Pistol".
+- Pressing `Enter` from Weapon Search Textbox buys the selected weapon. You can also press Up/Down arrow keys to quickly navigate through search results.
+#### Perk Selection Submenu
+- Removed Quick Perk Selection
+- Perk/Store buttons replaced with a single "Change Perk" button.
+- Perk list now displays 9 items at once, avoiding scrolling for Gunslinger or Combat Medic seletion.
+- Quick Perk selection by pressing number keys (`1`..`9`).
+- Perk confirmation on `Enter`.
+- Return to Shop on `Esc`. Previously, pressing Escape exited the Shop Menu.
+- `F9` - hotkey to open/close Perk Submenu
+- For example, switching to Commando can be as easy as pressing 3 keys: `F9`, `4`, `Enter`.
+#### Shop Menu
+- **9mm Pistol** moved under Equipment
+- New "Sell Off-Perk" / "Sell ALL" weapons button. The first click sells all off-perk weapons. The second one sells all weapons but the starting equipment. 1kg items (Machete, Pipe Bombs) are excluded from the off-perk category, so they are not sold on the first click.
+- `Ctrl+F9` sells off-perk weapons.
+- `Ctrl+Shift+F9` sells all weapons (simulates the button double-click)
+- There can be up to 12 weapon category icons now.
+- Fixed a rare issue where trader inventory did not update after selling a weapon.
+
+### Lobby Marks
+- Now, players can mark locations on the map during Lobby time, for insstance, to suggest the camping spot.
+- Press "View Map" button in the Lobby to browse the map.
+- Go to location you want to map and press the `Mark` or "Lets hole up here!" key to leave the mapk. Keep in mind that the Speech Menu does not work for spectators, so v35 will NOT work. You have to bind a dedicated key for `Mark` or `speech ALERT 4`.
+- You can add a custom label to the mark by typing in the console `mark <my label name>`. For example, `mark Weld this door!`.
+
+### Weapon/Money Balance
+- Selling Dual Pistols sells them BOTH. The only exception is 9mm pistol.
+- `Dual-9mm Pistols` now weight 2kg and cost $200 (mainly, to bypass new Shop Menu checks).
+
+
+## v9.70.07
+- **TSC**: players get thrown out of enemy shop immediately when pressing the USE key
+- **XCM v1.03**: disabled random player start
+- *ScrnMapVote.ini*: enhanced KF-EvilSantasLair
+- Fixed a state sync issue between `ScrnGameType` and `ScrnBalance` during the first second of Trader Time begin/end
+
 ## v9.70.05
 - *ScrnBalanceSrv.ini*: added `GuardianLight` and `GuardianHue` for TSC/FTG global overrides
 - *ScrnMapVote.ini*: `GuardianHueBlue` and `GuardianHueBlue` replaced by `GuardianHue`, which is available in FTG only.

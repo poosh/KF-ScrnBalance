@@ -1677,7 +1677,7 @@ function bool LogZedSpawn(int severity, coerce string str)
 {
     if ( severity > LogZedSpawnLevel )
         return false;
-    log(str, class.name);
+    log(class'ScrnFunctions'.static.StripColorTags(str), class.name);
     return true;
 }
 
@@ -3902,6 +3902,7 @@ State MatchInProgress
                 }
             }
         }
+        ScrnBalanceMut.GameTimer();
     }
 
     // C&P to replace AllActors with DynamicActors - performance tweak
@@ -3938,6 +3939,7 @@ State MatchInProgress
                 }
             }
         }
+        ScrnBalanceMut.GameTimer();
     }
 
     function StartWaveBoss()

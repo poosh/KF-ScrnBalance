@@ -2,7 +2,6 @@ class ScrnPerkSelectList extends SRPerkSelectList;
 
 var float ProgressBarBottomOffset;
 
-
 function float PerkHeight(Canvas c)
 {
     return (MenuOwner.ActualHeight() / ItemsPerPage ) - 1.0;
@@ -91,9 +90,23 @@ function DrawPerk(Canvas Canvas, int CurIndex, float X, float Y, float Width, fl
     Canvas.DrawTileStretched(ProgressBarForeground, ProgressBarWidth * PerkProgress[CurIndex], TempHeight);
 }
 
+function bool InternalOnKeyEvent( out byte Key, out byte KeyState, float Delta )
+{
+    local int num;
+
+    if (KeyState == 1) {  // key press
+        num = class'ScrnFunctions'.static.GetNumKeyIndex(Key);
+        if (num != 255 && IsValidIndex(num)) {
+            SetIndex(num);
+            return true;
+        }
+    }
+    return super.InternalOnKeyEvent(Key, KeyState, Delta);
+}
+
 defaultproperties
 {
-    ItemsPerPage=8 // reserve space for our lovely Gunslinger
+    ItemsPerPage=9
     ProgressBarHeight=0.30
     ItemSpacing=8
     ItemBorder=0.02

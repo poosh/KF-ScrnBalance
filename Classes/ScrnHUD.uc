@@ -210,6 +210,7 @@ var const int MARK_SCRAKE;
 var const int MARK_PLAYER;
 var const int MARK_MEDIC;
 var const int MARK_CAMP;
+var const int MARK_LOBBY;
 var const int MARK_PICKUP;
 var const int MARK_AMMO;
 var const int MARK_WEAPON;
@@ -2888,6 +2889,7 @@ simulated function DrawSpectatingHud(Canvas C)
     PlayerOwner.PostFX_SetActive(0, false);
 
     DrawPlayerInfos(C);
+    DrawMarks(C);
 
     DrawFadeEffect(C);
 
@@ -3809,7 +3811,7 @@ function DrawMarks(Canvas C)
         A = Marks[i].Target;
         bValid = Level.TimeSeconds < Marks[i].MarkLife;
 
-        if (bValid) {
+        if (bValid && KFGRI.bMatchHasBegun) {
             if (Marks[i].MarkGroup == MARK_PLAYERS || Marks[i].MarkGroup == MARK_LOCATIONS) {
                 // A player mark is valid until the player is alive.
                 // Medic mark disappers once the player reaches 100hp.
@@ -3827,6 +3829,7 @@ function DrawMarks(Canvas C)
             DrawMark(C, i);
         }
         else {
+            // PlayerOwner.ClientMessage("Remove mark #" $ i);
             Marks.remove(i--, 1);
         }
     }
@@ -3854,6 +3857,7 @@ function MarkTarget(KFPlayerReplicationInfo Sender, Actor Target, vector Locatio
     switch (MarkGroup) {
         case MARK_PLAYERS:
             MarkLife = MarkLifePlayer;
+            Description = class'ScrnBalance'.default.Mut.ColoredPlayerName(Sender);
             if (KFGRI != none && !KFGRI.bWaveInProgress) {
                 // twice longer marks during the trader time
                 MarkLife *= 2;
@@ -3864,11 +3868,14 @@ function MarkTarget(KFPlayerReplicationInfo Sender, Actor Target, vector Locatio
             // never link location to an actor
             Target = none;
             MarkLife = MarkLifeLocation;
+            Description = class'ScrnBalance'.default.Mut.ColoredPlayerName(Sender);
             if (MarkType == MARK_CAMP) {
-                if (KFGRI != none && !KFGRI.bWaveInProgress) {
-                    // camp spot stays active untill the end of end of the trader time
-                    MarkLife = fclamp(KFGRI.TimeToNextWave, MarkLifeLocation, 60);
-                }
+                // camp spot stays active untill the end of end of the trader time
+                MarkLife = fclamp(KFGRI.TimeToNextWave, MarkLifeLocation, 60);
+            }
+            else if (MarkType == MARK_LOBBY) {
+                // longer marks durign lobby
+                MarkLife = 60;
             }
             break;
 
@@ -3878,7 +3885,7 @@ function MarkTarget(KFPlayerReplicationInfo Sender, Actor Target, vector Locatio
             }
     }
 
-    if (Target == PawnOwner) {
+    if (Target == PawnOwner && PawnOwner != none) {
         // don't put mark on outselves
         UnmarkTarget(Sender, none);
         return;
@@ -3933,7 +3940,7 @@ function MarkTarget(KFPlayerReplicationInfo Sender, Actor Target, vector Locatio
     Marks[i].Location = Location;
     Marks[i].MarkGroup = MarkGroup;
     Marks[i].MarkType = MarkType;
-    Marks[i].Caption = Caption;
+    Marks[i].Caption = class'ScrnFunctions'.static.ParseColorTags(Caption);
     Marks[i].Description = Description;
     Marks[i].ColorIndex = min(MarkGroup, MarkColors.Length - 1);
     Marks[i].MarkLife = Level.TimeSeconds + MarkLife;
@@ -4157,6 +4164,7 @@ defaultproperties
     MARK_PLAYER=16          // 0x10
     MARK_MEDIC=17           // 0x11
     MARK_CAMP=32            // 0x20
+    MARK_LOBBY=33           // 0x21
     MARK_AMMO=48            // 0x30
     MARK_WEAPON=49          // 0x31
     MARK_ARMOR=50           // 0x32

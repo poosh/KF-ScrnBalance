@@ -136,6 +136,7 @@ var localized string strMutateProtection;
 var class<KFSettingsPage> SettingsMenuClass;
 var globalconfig bool bWelcomed;
 var class<ScrnInvasionLoginMenu> ScrnLoginMenuClass;
+var class<GUIBuyMenu> ShopMenuClass;
 
 replication
 {
@@ -146,7 +147,7 @@ replication
         ClientPlayerDamaged, ClientFlareDamage, ClientMark;
 
     unreliable if ( Role < ROLE_Authority )
-        ServerMark;
+        ServerMark, ServerLobbyMark;
 
     reliable if ( Role < ROLE_Authority )
         SrvAchReset, ResetMyAchievements, ResetMapAch,
@@ -369,9 +370,12 @@ function PawnDied(Pawn P)
 
 function ShowBuyMenu(string wlTag,float maxweight)
 {
+    if (ScrnPawn != none && !ScrnPawn.CanBuyNow())
+        return;
+
     StopForceFeedback();
 
-    ClientOpenMenu(string(Class'ScrnGUIBuyMenu'),,wlTag,string(maxweight));
+    ClientOpenMenu(string(ShopMenuClass),,wlTag,string(maxweight));
 }
 
 function ShowSettingsMenu(bool bGotoScrnSettings)
@@ -614,7 +618,27 @@ simulated function PlayerTick( float DeltaTime )
 // TraderMenuOpened and TraderMenuClosed execute on client-side only
 simulated function TraderMenuOpened()
 {
+    local rotator PlayerRot;
+    local KFWeapon W;
+
     bShopping = true;
+
+    if (Pawn != none) {
+        W = KFWeapon(Pawn.Weapon);
+        if (W != none) {
+            if (W.bAimingRifle) {
+                W.IronSightZoomOut();
+            }
+        }
+    }
+
+    // XXX: Do we still need this?
+    // Set camera's pitch to zero when menu initialised (otherwise spinny weap goes kooky)
+    PlayerRot = Rotation;
+    PlayerRot.Yaw = PlayerRot.Yaw % 65536;
+    PlayerRot.Pitch = 0;
+    PlayerRot.Roll = 0;
+    SetRotation(PlayerRot);
 }
 
 simulated function TraderMenuClosed()
@@ -1155,7 +1179,9 @@ function SendVoiceMessage(PlayerReplicationInfo Sender,
     local byte b;
     local bool bMark;
 
-    if (Pawn == none || Pawn.Health <= 0)
+    // allow  v35 ("Lets hole up here!") during lobby
+    // if ((Pawn == none || Pawn.Health <= 0) && (Level.GRI.bMatchHasBegun || !(msgtype == 'ALERT' && msgid == 4)))
+    if ((Pawn == none || Pawn.Health <= 0) && Level.GRI.bMatchHasBegun)
         return;
 
     if (!AllowVoiceMessage(msgtype))
@@ -1197,6 +1223,8 @@ function SendVoiceMessage(PlayerReplicationInfo Sender,
     }
 
     for (C = Level.ControllerList; C != none; C = C.NextController) {
+        if (!C.bIsPlayer)
+            continue;
         PC = KFPlayerController(C);
         if (PC == none)
             continue;
@@ -1304,7 +1332,7 @@ function ClientLocationalVoiceMessage(PlayerReplicationInfo Sender,
     TeamMessage(Sender, Msg, MsgTag);
 
     if (bMark) {
-        hud.MarkTarget(KFPlayerReplicationInfo(Sender), SenderPawn, senderLocation,  Msg $ "|" $ Mut.ColoredPlayerName(Sender), MarkType);
+        hud.MarkTarget(KFPlayerReplicationInfo(Sender), SenderPawn, senderLocation,  Msg, MarkType);
     }
 }
 
@@ -1496,22 +1524,58 @@ exec function TeamSay( string Msg )
         super.TeamSay(Msg);
 }
 
-function ServerSpeech( name Type, int Index, string Callsign )
+function ServerLobbyMark(string Caption)
 {
-    if ( bSpeechVote && Type == 'ACK' ) {
-        if ( index == 0 )
-            ServerMutate("VOTE TRYYES");
-        else if ( index == 1 )
-            ServerMutate("VOTE TRYNO");
-    }
-    if ( Type == 'SUPPORT' && Index == 2 ) {
-        BeggingForMoney++;
-    }
+    local KFPlayerReplicationInfo KFPRI;
+    local Controller C;
+    local ScrnPlayerController PC;
 
-    super.ServerSpeech(Type, Index, Callsign);
+    if (Level.GRI.bMatchHasBegun)
+        return;
+
+    KFPRI = KFPlayerReplicationInfo(PlayerReplicationInfo);
+    if (KFPRI == none)
+        return;
+
+    for (C = Level.ControllerList; C != none; C = C.NextController) {
+        if (!C.bIsPlayer)
+            continue;
+
+        PC = ScrnPlayerController(C);
+        if (PC == none)
+            continue;
+
+        if (Level.Game.bTeamGame && !SameTeamAs(PC))
+            continue;
+
+        PC.ClientMark(KFPRI, none, Location, Caption, class'ScrnHUD'.default.MARK_LOBBY);
+    }
 }
 
-
+function ServerSpeech(name msgtype, int msgid, string Callsign)
+{
+    switch (msgtype) {
+        case 'ACK':
+            if (bSpeechVote && msgid < 1) {
+                ServerMutate(eval(msgid == 0, "VOTE TRYYES", "VOTE TRYNO"));
+            }
+            break;
+        case 'SUPPORT':
+            if (msgid == 2) {
+                ++BeggingForMoney;
+            }
+            break;
+        case 'ALERT':
+            if (!Level.GRI.bMatchHasBegun && msgid == 4) {
+                if (Callsign == "") {
+                    Callsign = class'KFVoicePack'.default.AlertAbbrev[4];
+                }
+                ServerLobbyMark(Callsign);
+            }
+            break;
+    }
+    super.ServerSpeech(msgtype, msgid, Callsign);
+}
 
 exec function AmIMedic()
 {
@@ -3160,7 +3224,7 @@ function vector CalcMarkLocation(Actor A)
     return loc;
 }
 
-exec function Mark()
+exec function Mark(optional string msg)
 {
     local Actor A;
     local string Caption;
@@ -3172,6 +3236,11 @@ exec function Mark()
     hud = ScrnHUD(myHUD);
     if (KFPRI == none || hud == none || !hud.bShowMarks)
         return;
+
+    if (!Level.GRI.bMatchHasBegun) {
+        ServerLobbyMark(msg);
+        return;
+    }
 
     if (mut.SrvMarkDistance <= 0) {
         ReceiveLocalizedMessage(class'ScrnMsg', class'ScrnMsg'.default.msgSrvDisabled);
@@ -3239,7 +3308,9 @@ function ClientMark(KFPlayerReplicationInfo Sender, Actor A, vector ALocation, s
         }
     }
 
-    TeamMessage(Sender, Caption, 'Voice');
+    if (Caption != "") {
+        TeamMessage(Sender, Caption, 'Voice');
+    }
 }
 
 function ServerMark(Actor A)
@@ -3656,6 +3727,7 @@ defaultproperties
     TSCLobbyMenuClassString="ScrnBalanceSrv.TSCLobbyMenu"
     SettingsMenuClass=class'ScrnSettingsPage'
     ScrnLoginMenuClass=class'ScrnInvasionLoginMenu'
+    ShopMenuClass=Class'ScrnGUIBuyMenu'
 
     PawnClass=class'ScrnHumanPawn'
     CustomPlayerReplicationInfoClass=class'ScrnCustomPRI'
