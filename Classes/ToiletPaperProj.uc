@@ -246,7 +246,7 @@ simulated state Disintegrating
 
 defaultproperties
 {
-    Damage=13
+    Damage=33
     MyDamageType=class'ToiletPaperDamType'
 
     RotationRate=(pitch=5000,yaw=5000,roll=5000)

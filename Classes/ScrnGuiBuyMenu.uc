@@ -28,7 +28,7 @@ event Opened(GUIComponent Sender)
 
     ScrnPlayerController(PlayerOwner()).TraderMenuOpened();
     ActivateShopTab();
-	SetTimer(0.05f, true);
+    SetTimer(0.05f, true);
 }
 
 function KFBuyMenuClosed(optional bool bCanceled)
@@ -82,6 +82,45 @@ function bool ChangePerkClick(GUIComponent Sender)
         ActivateShopTab();
     }
     return false;
+}
+
+function UpdateHeader()
+{
+    local ScrnPlayerController ScrnPC;
+    local KFGameReplicationInfo KFGRI;
+    local KFPlayerReplicationInfo KFPRI;
+
+    ScrnPC = ScrnPlayerController(PlayerOwner());
+    if (ScrnPC == none)
+        return;
+    KFGRI = KFGameReplicationInfo(ScrnPC.GameReplicationInfo);
+    KFPRI = KFPlayerReplicationInfo(ScrnPC.PlayerReplicationInfo);
+    if (KFPRI == none || KFGRI == none)
+        return;
+
+    if (KFPRI.ClientVeteranSkill == none) {
+        CurrentPerkLabel.Caption = NoActivePerk;
+    }
+    else {
+        CurrentPerkLabel.Caption = KFPRI.ClientVeteranSkill.default.VeterancyName
+                @ LvAbbrString @ KFPRI.ClientVeteranSkillLevel;
+    }
+
+    TimeLeftLabel.Caption = TraderClose @ class'ScrnFunctions'.static.FormatTime(KFGRI.TimeToNextWave);
+    if (KFGRI.TimeToNextWave < 10 ) {
+        TimeLeftLabel.TextColor = RedColor;
+    }
+    else {
+        TimeLeftLabel.TextColor = GreenGreyColor;
+    }
+
+    WaveLabel.Caption = WaveString $ ": " $ string(KFGRI.WaveNumber + 1) $ "/" $ KFGRI.FinalWave;
+    if (KFGRI.WaveNumber >= KFGRI.FinalWave) {
+        WaveLabel.TextColor = RedColor;
+    }
+    else {
+        WaveLabel.TextColor = GreenGreyColor;
+    }
 }
 
 function bool SellAllClick(GUIComponent Sender)
