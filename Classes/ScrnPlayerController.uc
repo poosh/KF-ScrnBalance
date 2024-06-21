@@ -1256,7 +1256,6 @@ function ClientLocationalVoiceMessage(PlayerReplicationInfo Sender,
     MsgTag = 'Voice';
     Voice = Spawn(Sender.VoiceType, self);
     KFVoice = KFVoicePack(Voice);
-    MarkType = hud.MARK_PLAYER;
     hud = ScrnHUD(myHUD);
     if (hud != none) {
         bMark = ShouldMarkVoiceMessageSender(msgtype, msgid);
@@ -1267,6 +1266,9 @@ function ClientLocationalVoiceMessage(PlayerReplicationInfo Sender,
             else if (msgtype == 'ALERT' && msgid == 4) {
                 // v35 ("Lets hole up here!")
                 MarkType = hud.MARK_CAMP;
+            }
+            else {
+                MarkType = hud.MARK_PLAYER;
             }
         }
     }

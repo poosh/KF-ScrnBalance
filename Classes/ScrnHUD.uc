@@ -193,16 +193,16 @@ struct SMark {
     var String Description;
     var byte MarkGroup;
     var byte MarkType;
-    var byte ColorIndex;
+    var Color Color;
     var float MarkLife;
     var float PulseUntil;
 };
 var array<SMark> Marks;
 // mark groups (0..F)
-const MARK_ENEMIES      = 0x0;
-const MARK_PLAYERS      = 0x1;
-const MARK_LOCATIONS    = 0x2;
-const MARK_ITEMS        = 0x3;
+const MARK_ENEMIES      = 0;
+const MARK_PLAYERS      = 1;
+const MARK_LOCATIONS    = 2;
+const MARK_ITEMS        = 3;
 // mark types. 4 msb is the group, 4 lsb - item index within the group
 var const int MARK_ENEMY;
 var const int MARK_FLESHPOUND;
@@ -3766,7 +3766,7 @@ function DrawMark(Canvas C, int i)
         scale = lerp((2500-Dist)/1500, 0.75, 1.0);
     }
 
-    C.DrawColor = MarkColors[Marks[i].ColorIndex];
+    C.DrawColor = Marks[i].Color;
     PulseColorIf(C.DrawColor, Level.TimeSeconds < Marks[i].PulseUntil);
     MarkIconSize = scale * FMin(default.MarkIconSize * (float(C.SizeX) / 1024.f), default.MarkIconSize);
     C.Font = LoadSmallFontStatic(MarkFont);
@@ -3942,9 +3942,18 @@ function MarkTarget(KFPlayerReplicationInfo Sender, Actor Target, vector Locatio
     Marks[i].MarkType = MarkType;
     Marks[i].Caption = class'ScrnFunctions'.static.ParseColorTags(Caption);
     Marks[i].Description = Description;
-    Marks[i].ColorIndex = min(MarkGroup, MarkColors.Length - 1);
+    if (asc(Marks[i].Caption) == 27) {
+        // decode color from color tag
+        Marks[i].Color = class'Canvas'.static.MakeColor(
+                asc(Mid(Marks[i].Caption, 1, 1)),
+                asc(Mid(Marks[i].Caption, 2, 1)),
+                asc(Mid(Marks[i].Caption, 3, 1)));
+    }
+    else {
+        Marks[i].Color = MarkColors[min(MarkGroup, MarkColors.Length - 1)];
+    }
     Marks[i].MarkLife = Level.TimeSeconds + MarkLife;
-    Marks[i].PulseUntil = Level.TimeSeconds + 1.0;
+    Marks[i].PulseUntil = Level.TimeSeconds + 2.0;
     // PlayerOwner.ClientMessage("Set mark #" $ i @ Caption $ " MarkType=" $ MarkType $ " MarkGroup="$MarkGroup);
 }
 

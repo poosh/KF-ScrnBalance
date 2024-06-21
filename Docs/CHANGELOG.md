@@ -28,9 +28,12 @@
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+## v9.70.11
+- Fixed mark colors
+- Lobby marks can be colored via color tags, e.g., `mark ^3this is yellow mark`
+
 ## v9.70.10
 - Shop Menu displays Medic Gun healing info
-
 ### ScrN Weapon Pack
 - Fixed **HK417** bringup/putdown animations
 - Slightly boosted **CZ805M** healing recharge rate
