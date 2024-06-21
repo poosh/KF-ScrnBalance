@@ -10,7 +10,7 @@ var private color OriginalBarColor;
 function InitComponent( GUIController MyController, GUIComponent MyOwner )
 {
     Super.InitComponent(MyController,MyOwner);
-    
+
     OriginalBarColor = BarColor;
 }
 
@@ -30,7 +30,7 @@ function InternalOnRendered(canvas Canvas)
 
     if ( !bVisible )
         return;
-        
+
     Canvas.DrawColor = CaptionColor;
     Canvas.StrLen(Caption, w, h);
     switch ( CaptionAlign ) {
@@ -74,7 +74,7 @@ defaultproperties
     CaptionMargin=0.05
     FontScale=FNS_Small
     bCaptureMouse=True
-    Begin Object Class=GUIToolTip Name=GUIButtonToolTip
+    Begin Object Class=GUIToolTip Name=MyToolTip
     End Object
-    ToolTip=GUIToolTip'XInterface.GUIButton.GUIButtonToolTip'    
+    ToolTip=MyToolTip
 }

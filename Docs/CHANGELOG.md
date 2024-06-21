@@ -28,6 +28,15 @@
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+## v9.70.10
+- Shop Menu displays Medic Gun healing info
+
+### ScrN Weapon Pack
+- Fixed **HK417** bringup/putdown animations
+- Slightly boosted **CZ805M** healing recharge rate
+- Increased max ammo for **SVD** (90 => 100), **SVDS** (60 => 70), **Hunting Rifle** (50 => 70)
+- Increased **SVDS** fire rate (0.75s => 0.5s)
+
 ## v9.70.08
 ### Shop Menu Overhaul
 #### Weapon Search Textbox

@@ -1,9 +1,12 @@
 class ScrnGUIBuyWeaponInfoPanel extends SRGUIBuyWeaponInfoPanel;
 
-var automated     GUIImage             ScrnLogo, TourneyLogo;
-var localized     string                 strSecondsPerShot, StrReloadsInDPM, strMeters;
-var automated     GUILabel             lblDamage, lblDPS, lblDPM, lblRange, lblMag, lblAmmo;
-var automated    ScrnGUIWeaponBar     barDamage, barDPS, barDPM, barRange, barMag, barAmmo;
+var automated GUIImage ScrnLogo, TourneyLogo;
+var localized string strSecondsPerShot, StrReloadsInDPM, strMeters, strSecondsPerCharge;
+var localized string capDamage[2], capDPS[2], capMag[2];
+var localized string hintDamage[2], hintDPS[2], hintMag[2];
+
+var automated GUILabel             lblDamage, lblDPS, lblDPM, lblRange, lblMag, lblAmmo;
+var automated ScrnGUIWeaponBar     barDamage, barDPS, barDPM, barRange, barMag, barAmmo;
 
 var automated     moCheckBox           ch_FireMode0, ch_FireMode1;
 
@@ -13,6 +16,9 @@ var bool bHSDamage;
 
 var int TopDamage, TopDPM, TopMag, TopAmmo;
 var float TopDPS, TopRange, TopRadius;
+
+var bool bHeal;  // healing stats instead of damage
+var int TopHealPerShot, TopHealPerCharge, TopHealPerMinute, TopHealShots;
 
 var             GUIBuyable            LastBuyable;
 
@@ -33,6 +39,11 @@ function ResetValues()
     TopDPS = 0;
     TopRange = 0;
     TopRadius = 0;
+
+    TopHealPerShot = 0;
+    TopHealPerCharge = 0;
+    TopHealPerMinute = 0;
+    TopHealShots = 0;
 }
 
 function float GetBarPct(float Value, float MaxValue)
@@ -46,6 +57,85 @@ function float GetBarPct(float Value, float MaxValue)
     return Sqrt(Value) / Sqrt(MaxValue);
 }
 
+function LoadHealStats(GUIBuyable NewBuyable, bool bSetTopValuesOnly, class<HealingProjectile> HealProj,
+        class<WeaponFire> WF)
+{
+    local class<KFMedicGun> MedicGun;
+    local KFPlayerReplicationInfo KFPRI;
+    local class<KFVeterancyTypes> Perk;
+    local class<ScrnHealingProjectile> ScrnProj;
+    local int HealPerShot, HealPerCharge, HealPerMinute, HealShots;
+    local int PerkedValue;
+    local float Mult, RechargeTime;
+    local string s;
+
+    MedicGun = class<KFMedicGun>(NewBuyable.ItemWeaponClass);
+    ScrnProj = class<ScrnHealingProjectile>(HealProj);
+    KFPRI = KFPlayerReplicationInfo(PlayerOwner().PlayerReplicationInfo);
+
+    if (HealProj == none || MedicGun == none || KFPRI == none)
+        return;
+
+    Perk = KFPRI.ClientVeteranSkill;
+
+    bHeal = true;
+
+    HealPerShot = HealProj.default.HealBoostAmount;
+    if (ScrnProj != none) {
+        HealPerShot += ScrnProj.default.InstantHealAmount;
+    }
+
+    if (NewBuyable.ItemWeaponClass.name == 'CZ805M') {
+        // a dirty hack for the only known gun with increased ammo per fire
+        HealShots = 625 / WF.default.AmmoPerFire;
+        RechargeTime = 62.5;
+    }
+    else {
+        HealShots = 500 / WF.default.AmmoPerFire;
+        RechargeTime = 50.0;
+    }
+
+    PerkedValue = HealPerShot * Perk.static.GetHealPotency(KFPRI);
+    HealPerCharge = PerkedValue * HealShots;
+    // Medic Gun restores 2% charge per AmmoRegenRate. The smaller AmmoRegenRate, the faster recharge.
+    Mult = fmax(0.01, Perk.static.GetSyringeChargeRate(KFPRI));
+    RechargeTime = fmax(0.01, RechargeTime * MedicGun.default.AmmoRegenRate) / Mult;
+    HealPerMinute = (60.0/RechargeTime) * HealPerCharge;
+
+    TopHealPerShot = max(TopHealPerShot, PerkedValue);
+    TopHealPerCharge = max(TopHealPerCharge, HealPerCharge);
+    TopHealPerMinute = max(TopHealPerMinute, HealPerMinute);
+    TopHealShots = max(TopHealShots, HealShots);
+
+    if (bSetTopValuesOnly)
+        return;
+
+    // Damage bar displays Healing HP per shot
+    barDamage.Value = barDamage.High * GetBarPct(PerkedValue, TopHealPerShot);
+    barDamage.SetHighlight(PerkedValue > HealPerShot);
+    s = string(PerkedValue);
+    if (PerkedValue != HealPerShot) {
+        s $= " ("$string(HealPerShot) $ eval(PerkedValue > HealPerShot, "+", "") $ string(PerkedValue-HealPerShot)$")";
+    }
+    barDamage.Caption = S;
+
+    // DPS bar shows heals per charge
+    barDPS.Value = barDPS.High * GetBarPct(HealPerCharge, TopHealPerCharge);
+    barDPS.SetHighlight(PerkedValue > HealPerShot);
+    barDPS.Caption = string(HealPerCharge);
+
+    // DPM bar shows heals per minute, taking into account charge rate
+    barDPM.Value = barDPM.High * GetBarPct(HealPerMinute, TopHealPerMinute);
+    barDPM.SetHighlight(PerkedValue > HealPerShot || Mult > 1.00);
+    barDPM.Caption = string(HealPerMinute) $ ", " $ RechargeTime $ strSecondsPerCharge;
+
+
+    // Magazine bar displays shots per charge
+    barMag.Value = barMag.High * GetBarPct(HealShots, TopHealShots);
+    barMag.SetHighlight(false);
+    barMag.Caption = string(HealShots);
+}
+
 function LoadStats(GUIBuyable NewBuyable, byte FireMode, optional bool bSetTopValuesOnly, optional bool bHSDamage)
 {
     local KFPlayerReplicationInfo KFPRI;
@@ -55,6 +145,7 @@ function LoadStats(GUIBuyable NewBuyable, byte FireMode, optional bool bSetTopVa
     local class<InstantFire> IFClass;
     local class<BaseProjectileFire> ProjFireClass;
     local class<Projectile> ProjClass;
+    local class<HealingProjectile> HealProjClass;
     local class<KFMeleeFire> MeeleeFireClass;
     local class<DamageType> DamType;
     local class<KFWeaponDamageType> KFDamType;
@@ -66,6 +157,7 @@ function LoadStats(GUIBuyable NewBuyable, byte FireMode, optional bool bSetTopVa
     local int MagCapacity, MagCount, TotalAmmo;
 
     // reset values
+    bHeal = false;
     if ( !bSetTopValuesOnly ) {
         barDamage.Value = 0;
         barDPS.Value = 0;
@@ -87,7 +179,7 @@ function LoadStats(GUIBuyable NewBuyable, byte FireMode, optional bool bSetTopVa
 
     KFPRI = KFPlayerReplicationInfo(PlayerOwner().PlayerReplicationInfo);
     if ( KFPRI != none ) {
-        Perk = KFPlayerReplicationInfo(PlayerOwner().PlayerReplicationInfo).ClientVeteranSkill;
+        Perk = KFPRI.ClientVeteranSkill;
         ScrnPerk = class<ScrnVeterancyTypes>(Perk);
     }
 
@@ -179,11 +271,16 @@ function LoadStats(GUIBuyable NewBuyable, byte FireMode, optional bool bSetTopVa
             HSMult = 0;
 
     }
-    //projectile
     else if ( ProjFireClass != none && ProjClass != none ) {
         BaseDmg = ProjClass.default.Damage;
         DamType = ProjClass.default.MyDamageType;
         KFDamType = class<KFWeaponDamageType>(DamType);
+        HealProjClass = class<HealingProjectile>(ProjClass);
+
+        if (class<HealingProjectile>(ProjClass) != none) {
+            LoadHealStats(NewBuyable, bSetTopValuesOnly, class<HealingProjectile>(ProjClass), WF);
+            return;
+        }
 
         if (bHSDamage) {
             //current implementation works with projectiles extended from base classes
@@ -287,9 +384,8 @@ function LoadStats(GUIBuyable NewBuyable, byte FireMode, optional bool bSetTopVa
     if ( KFDamType != none && KFDamType.default.bDealBurningDamage && class<DamTypeMAC10MPInc>(KFDamType) == none )
         BaseDmg *= 1.5; // stupid fire damage multiplier in KFMonster.TakeDamage()
 
-    //handles old non headshot calculations
-    if (!bHSDamage)
-    {
+    if (!bHSDamage) {
+        // old non headshot calculations
         if ( BaseDmg > 0 && Perk != none )
             PerkedValue = Perk.static.AddDamage(KFPRI, none, KFPawn(PlayerOwner().Pawn), BaseDmg, DamType);
         else
@@ -319,21 +415,19 @@ function LoadStats(GUIBuyable NewBuyable, byte FireMode, optional bool bSetTopVa
             BaseDmg *= Mult;
         }
     }
-    //calculate headshot damage
-    if (bHSDamage )
-    {
+    else {
         //handle hitscan weapons
-            //get perk boosted damage value
-            if ( BaseDmg > 0 && Perk != none )
-                PerkedValue = Perk.static.AddDamage(KFPRI, none, KFPawn(PlayerOwner().Pawn), BaseDmg, DamType);
-            else
-                PerkedValue = BaseDmg;
+        //get perk boosted damage value
+        if ( BaseDmg > 0 && Perk != none )
+            PerkedValue = Perk.static.AddDamage(KFPRI, none, KFPawn(PlayerOwner().Pawn), BaseDmg, DamType);
+        else
+            PerkedValue = BaseDmg;
 
-            //get headshot damage
-            OldHSMult = HSMult; //store HSMult
-            HSMult *= Perk.static.GetHeadShotDamMulti(KFPRI, KFPawn(PlayerOwner().Pawn), DamType); //get perk boosted HS multiplier
-            //OldPerkedValue = PerkedValue; //store old perked value
-            PerkedValueHS = PerkedValue * HSMult; //hopefully this affects hitscan stuff only
+        //get headshot damage
+        OldHSMult = HSMult; //store HSMult
+        HSMult *= Perk.static.GetHeadShotDamMulti(KFPRI, KFPawn(PlayerOwner().Pawn), DamType); //get perk boosted HS multiplier
+        //OldPerkedValue = PerkedValue; //store old perked value
+        PerkedValueHS = PerkedValue * HSMult; //hopefully this affects hitscan stuff only
 
         if ( Mult == 1 ) {
             s = string(PerkedValueHS);
@@ -347,7 +441,6 @@ function LoadStats(GUIBuyable NewBuyable, byte FireMode, optional bool bSetTopVa
     }
 
     TopDamage = max(TopDamage, PerkedValue);
-
     //sets numbers in info box
     if ( !bSetTopValuesOnly ) {
         barDamage.Value = barDamage.High * GetBarPct(PerkedValue, TopDamage);
@@ -386,16 +479,11 @@ function LoadStats(GUIBuyable NewBuyable, byte FireMode, optional bool bSetTopVa
         }
         barDamage.Caption = S;
     }
+
     BaseDmg = PerkedValue;
-    if (!bHSDamage)
-    {
-        //do nothing
-    }
-    else
-    {
+    if (bHSDamage) {
         BaseDmg = PerkedValueHS; //use headshot damage
     }
-
     if ( BaseDmg > 0 ) {
         // DPS
         FireTime = WF.default.FireRate;
@@ -462,6 +550,7 @@ function LoadStats(GUIBuyable NewBuyable, byte FireMode, optional bool bSetTopVa
 function Display(GUIBuyable NewBuyable)
 {
     local ScrnCustomPRI ScrnPRI;
+    local int i;
 
     // just in case
     b_power.SetVisibility(false);
@@ -512,9 +601,18 @@ function Display(GUIBuyable NewBuyable)
         else {
             ch_FireMode0.SetVisibility(true);
             ch_FireMode1.SetVisibility(true);
-            ch_HSDmgCheck.SetVisibility(true);
 
             LoadStats(NewBuyable, byte(ch_FireMode1.IsChecked()), false, bHSDamage);
+
+            ch_HSDmgCheck.SetVisibility(!bHeal);
+            i = int(bHeal);
+            lblDamage.Caption = capDamage[i];
+            barDamage.SetHint(hintDamage[i]);
+            lblDPS.Caption = capDPS[i];
+            barDPS.SetHint(hintDPS[i]);
+            lblMag.Caption = capMag[i];
+            barMag.SetHint(hintMag[i]);
+
             barDamage.SetVisibility(barDamage.Value > 0);
             barDPS.SetVisibility(barDPS.Value > 0);
             barDPM.SetVisibility(barDPM.Value > 0);
@@ -710,10 +808,11 @@ defaultproperties
         OnCreateComponent=Mode1Check.InternalOnCreateComponent
         bFlipped=True
         Caption=""
-        Hint="Toggle headshot damage display"
-        WinTop=0.580000 //same height as damage display
-        WinLeft=0.25 //0.50 for primary fire checkbox
-        WinWidth=0.40
+        Hint="Toggle headshot/impact damage display"
+        WinTop=0.580000
+        WinLeft=0.25
+        WinWidth=0.055
+        WinHeight=0.055
         TabOrder=2
         ComponentClassName="ScrnBalanceSrv.ScrnGUICheckBoxButton"
         IniOption="@Internal"
@@ -725,9 +824,23 @@ defaultproperties
      End Object
      ch_HSDmgCheck=HSDmgCheck
 
+
+    capDamage[0]="Damage:"
+    capDamage[1]="Heal per shot:"
+    capDPS[0]="per second:"
+    capDPS[1]="per charge:"
+    capMag[0]="Magazine:"
+    capMag[1]="Shots in charge:"
+
+    hintDamage[0]="Weapon actual damage, including perk bonus"
+    hintDamage[1]="Healed Health Points per shot, including perk bonus"
+    hintDPS[0]="Damage per second"
+    hintDPS[1]="Healed HP per charge"
+    hintMag[0]="Ammo count in magazine"
+    hintMag[1]="Healing shots without recharging"
+
     Begin Object Class=GUILabel Name=DamageCap
         Caption="Damage:"
-        Hint="Weapon actual damage, including perk bonus"
         TextColor=(B=158,G=176,R=175)
         TextAlign=TXTA_Left
         VertAlign=TXTA_Center
@@ -744,7 +857,7 @@ defaultproperties
     lblDamage=DamageCap
 
     Begin Object Class=ScrnGUIWeaponBar Name=DamageBar
-        Hint="Weapon damage"
+        Hint="Weapon actual damage, including perk bonus"
         BorderSize=3.000000
         WinTop=0.58
         WinLeft=0.30
@@ -759,7 +872,6 @@ defaultproperties
 
     Begin Object Class=GUILabel Name=DPSCap
         Caption="per second:"
-        Hint="Damage per second"
         TextColor=(B=158,G=176,R=175)
         TextAlign=TXTA_Left
         VertAlign=TXTA_Center
@@ -776,7 +888,7 @@ defaultproperties
     lblDPS=DPSCap
 
     Begin Object Class=ScrnGUIWeaponBar Name=DPSBar
-        Hint="Damage per second or magazine (if able to shoot whole magazine"
+        Hint="Damage per second"
         BorderSize=3.000000
         WinTop=0.65
         WinLeft=0.30
@@ -788,6 +900,7 @@ defaultproperties
     End Object
     barDPS=DPSBar
     strSecondsPerShot="s/shot"
+    strSecondsPerCharge="s/100%"
 
     Begin Object Class=GUILabel Name=DPMCap
         Caption="per minute:"

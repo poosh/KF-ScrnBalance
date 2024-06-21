@@ -8,10 +8,10 @@ var int  ForcePrice;
 
 var transient bool bInitReplicationReceived;
 
-replication 
+replication
 {
     reliable if ( Role == ROLE_Authority )
-        Perk, WeaponClass, bWeapon, bDiscount, bFire, bFireAlt, bAmmo, bAmmoAlt, 
+        Perk, WeaponClass, bWeapon, bDiscount, bFire, bFireAlt, bAmmo, bAmmoAlt,
         bOverrideDamType, bOverrideDamTypeAlt, bSpecial,
         ForcePrice;
 }
@@ -35,41 +35,41 @@ simulated function PostNetBeginPlay()
     }
 }
 
-simulated function LoadWeaponBonuses() 
+simulated function LoadWeaponBonuses()
 {
     local class<WeaponFire> WF;
     local class<KFWeaponDamageType> DT;
     local class<KFWeaponPickup> WP;
-    
-    if ( Perk == none || WeaponClass == none ) 
+
+    if ( Perk == none || WeaponClass == none )
         return;
-     
+
     if ( bWeapon )
-        Perk.static.ClassAddToArrayUnique(Perk.default.PerkedWeapons, WeaponClass);  
+        Perk.static.ClassAddToArrayUnique(Perk.default.PerkedWeapons, WeaponClass);
     if ( bSpecial )
-        Perk.static.ClassAddToArrayUnique(Perk.default.SpecialWeapons, WeaponClass);  
+        Perk.static.ClassAddToArrayUnique(Perk.default.SpecialWeapons, WeaponClass);
     if ( bDiscount )
-        Perk.static.ClassAddToArrayUnique(Perk.default.PerkedPickups, WeaponClass.default.PickupClass);  
-    
+        Perk.static.ClassAddToArrayUnique(Perk.default.PerkedPickups, WeaponClass.default.PickupClass);
+
     WP = class<KFWeaponPickup>(WeaponClass.default.PickupClass);
     if ( ForcePrice > 0 && WP != none )
         WP.default.Cost = ForcePrice;
-    
+
     // Primary fire
     WF = WeaponClass.default.FireModeClass[0];
     if ( WF != none && WF != Class'KFMod.NoFire' ) {
         if ( bAmmo ) {
-            Perk.static.ClassAddToArrayUnique(Perk.default.PerkedAmmo, WF.default.AmmoClass); 
-        }    
+            Perk.static.ClassAddToArrayUnique(Perk.default.PerkedAmmo, WF.default.AmmoClass);
+        }
         if ( bOverrideDamType && Perk.default.DefaultDamageType != none ) {
             //replace weapon perk index
-            class<KFWeaponPickup>(WeaponClass.default.PickupClass).default.CorrespondingPerkIndex = Perk.default.PerkIndex; 
+            class<KFWeaponPickup>(WeaponClass.default.PickupClass).default.CorrespondingPerkIndex = Perk.default.PerkIndex;
 
             if ( bFire || Perk.default.DefaultDamageTypeNoBonus == none )
                 DT = Perk.default.DefaultDamageType;
             else
                 DT = Perk.default.DefaultDamageTypeNoBonus;
-                
+
             //overriding damage types to allow leveling up
             if ( WF.default.ProjectileClass != none )
                 WF.default.ProjectileClass.default.MyDamageType = DT;
@@ -78,24 +78,24 @@ simulated function LoadWeaponBonuses()
         }
         else if ( bFire ) {
             if ( WF.default.ProjectileClass != none )
-                Perk.static.ClassAddToArrayUnique(Perk.default.PerkedDamTypes, WF.default.ProjectileClass.default.MyDamageType); 
+                Perk.static.ClassAddToArrayUnique(Perk.default.PerkedDamTypes, WF.default.ProjectileClass.default.MyDamageType);
             if ( class<InstantFire>(WF) != none )
                 Perk.static.ClassAddToArrayUnique(Perk.default.PerkedDamTypes, class<InstantFire>(WF).default.DamageType);
-        }    
+        }
     }
-    
+
     // Alternate Fire
     WF = WeaponClass.default.FireModeClass[1];
     if ( WF != none && WF != Class'KFMod.NoFire' ) {
         if ( bAmmoAlt ) {
-            Perk.static.ClassAddToArrayUnique(Perk.default.PerkedAmmo, WF.default.AmmoClass); 
-        }    
+            Perk.static.ClassAddToArrayUnique(Perk.default.PerkedAmmo, WF.default.AmmoClass);
+        }
         if ( bOverrideDamTypeAlt && Perk.default.DefaultDamageType != none ) {
             if ( bFireAlt || Perk.default.DefaultDamageTypeNoBonus == none )
                 DT = Perk.default.DefaultDamageType;
             else
-                DT = Perk.default.DefaultDamageTypeNoBonus;        
-        
+                DT = Perk.default.DefaultDamageTypeNoBonus;
+
             //overriding damage types to allow leveling up
             if ( WF.default.ProjectileClass != none )
                 WF.default.ProjectileClass.default.MyDamageType = DT;
@@ -104,13 +104,13 @@ simulated function LoadWeaponBonuses()
         }
         else if ( bFireAlt ) {
             if ( WF.default.ProjectileClass != none )
-                Perk.static.ClassAddToArrayUnique(Perk.default.PerkedDamTypes, WF.default.ProjectileClass.default.MyDamageType); 
+                Perk.static.ClassAddToArrayUnique(Perk.default.PerkedDamTypes, WF.default.ProjectileClass.default.MyDamageType);
             if ( class<InstantFire>(WF) != none )
                 Perk.static.ClassAddToArrayUnique(Perk.default.PerkedDamTypes, class<InstantFire>(WF).default.DamageType);
-        }    
-    } 
+        }
+    }
 
-    Log("Custom weapon" @ String(WeaponClass) @ "loaded for " @ String(Perk) @ "perk.", 'ScrnBalance');
+    Log(String(WeaponClass) $ " loaded for " $ String(Perk), 'ScrnBalance');
 }
 
 defaultproperties

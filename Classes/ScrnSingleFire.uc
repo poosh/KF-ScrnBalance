@@ -8,6 +8,12 @@ function PostBeginPlay()
     ScrnWeap = ScrnSingle(Weapon);
 }
 
+simulated function DestroyEffects()
+{
+    super.DestroyEffects();
+    ScrnWeap = none;
+}
+
 function PlayFiring()
 {
     super.PlayFiring();

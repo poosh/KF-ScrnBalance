@@ -11,6 +11,12 @@ function PostBeginPlay()
     ScrnWeap = ScrnMK23Pistol(Weapon);
 }
 
+simulated function DestroyEffects()
+{
+    super.DestroyEffects();
+    ScrnWeap = none;
+}
+
 function PlayFiring()
 {
     super.PlayFiring();

@@ -13,6 +13,12 @@ function PostBeginPlay()
     ScrnWeap = ScrnDual44Magnum(Weapon);
 }
 
+simulated function DestroyEffects()
+{
+    super.DestroyEffects();
+    ScrnWeap = none;
+}
+
 function SetPistolFireOrder(bool bNextFireLeft)
 {
     bFireLeft = bNextFireLeft;
