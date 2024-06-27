@@ -28,19 +28,7 @@
 ## VERSION 9
 
 -------------------------------------------------------------------------------
-## v9.70.11
-- Fixed mark colors
-- Lobby marks can be colored via color tags, e.g., `mark ^3this is yellow mark`
-
-## v9.70.10
-- Shop Menu displays Medic Gun healing info
-### ScrN Weapon Pack
-- Fixed **HK417** bringup/putdown animations
-- Slightly boosted **CZ805M** healing recharge rate
-- Increased max ammo for **SVD** (90 => 100), **SVDS** (60 => 70), **Hunting Rifle** (50 => 70)
-- Increased **SVDS** fire rate (0.75s => 0.5s)
-
-## v9.70.08
+## v9.70.12
 ### Shop Menu Overhaul
 #### Weapon Search Textbox
 - Added Weapon Search Textbox, allowing to quickly search for weapons to buy.
@@ -63,47 +51,53 @@
 - `Ctrl+Shift+F9` sells all weapons (simulates the button double-click)
 - There can be up to 12 weapon category icons now.
 - Fixed a rare issue where trader inventory did not update after selling a weapon.
+- Shop Menu displays Medic Gun healing info
 
 ### Lobby Marks
 - Now, players can mark locations on the map during Lobby time, for insstance, to suggest the camping spot.
 - Press "View Map" button in the Lobby to browse the map.
 - Go to location you want to map and press the `Mark` or "Lets hole up here!" key to leave the mapk. Keep in mind that the Speech Menu does not work for spectators, so v35 will NOT work. You have to bind a dedicated key for `Mark` or `speech ALERT 4`.
 - You can add a custom label to the mark by typing in the console `mark <my label name>`. For example, `mark Weld this door!`.
+- Lobby marks can be colored via color tags, e.g., `mark ^3this is yellow mark`
 
 ### Weapon/Money Balance
+- Players don't drop spawn inventory on death. They drop only the weapons they have bought + the current weapon.
 - Selling Dual Pistols sells them BOTH. The only exception is 9mm pistol.
 - `Dual-9mm Pistols` now weight 2kg and cost $200 (mainly, to bypass new Shop Menu checks).
-
-
-## v9.70.07
-- **TSC**: players get thrown out of enemy shop immediately when pressing the USE key
-- **XCM v1.03**: disabled random player start
-- *ScrnMapVote.ini*: enhanced KF-EvilSantasLair
-- Fixed a state sync issue between `ScrnGameType` and `ScrnBalance` during the first second of Trader Time begin/end
-
-## v9.70.05
-- *ScrnBalanceSrv.ini*: added `GuardianLight` and `GuardianHue` for TSC/FTG global overrides
-- *ScrnMapVote.ini*: `GuardianHueBlue` and `GuardianHueBlue` replaced by `GuardianHue`, which is available in FTG only.
-- **FTG** - Base light color turned green by default (can be replaced via `GuardianHue`), and lowered its radius and brightness.
-- **M7A3M**: damage rased to 80 (up from 70)
-
-## v9.70.04
-- *ScrnBalanceSrv.ini*: added `bLouderZeds`
-- *ScrnMapVote.ini*: lowered zed spawn rate on KF-HospitalHorrors to partially compensate for improved spawns.
-- Fixed healing projectile hit detection (introduced in .02)
-
-## v9.70.02
-- Added difficulty voting GUI setting
-- Players don't drop spawn inventory on death. They drop only the weapons they have bought + the current weapon.
-- Fixed a shotgun exploit where it was possible to do damage twices to the same zed without scoring a headshot.
 - Restored **Combat Shotgun** flashlight. Laser sights automatically turns off when the flashlight is active.
-- *KFMapVote.ini* cleanup - removed many game mod variation from the official rotation, leaving only the core/recommended game modes.
-- The rest of game modes are still available and can be restored by uncommenting the respective GameConfig lines.
-- **XCM v1.02** - added wave (challenge) names
+- Fixed a shotgun exploit where it was possible to do damage twices to the same zed without scoring a headshot.
 - Fixed yet another bug in **Healing Projectile** hit detection.
+- **M7A3M**: damage rased to 80 (up from 70)
 - Reworked **M7A3M** healing projectile: now it consumes 100% of the charge but heals 20hp instantly + 50hp over time (offperk), 35+87hp if healed by a lv6 Field Medic or 26+65 - Combat Medic.
 - Fixed an issue where **Buzzsaw** Blade couldn't hit the same target again after bouncing off a wall.
+
+### Game Modes
+- **TSC**: players get thrown out of enemy shop immediately when pressing the USE key
+- **FTG**: Base light color turned green by default (can be replaced via `GuardianHue`), and lowered its radius and brightness.
+- **XCM v1.03**: disabled random player start, added wave (challenge) names
+- *ScrnBalanceSrv.ini*: added `GuardianLight` and `GuardianHue` for TSC/FTG global overrides
+- *ScrnMapVote.ini*: `GuardianHueBlue` and `GuardianHueBlue` replaced by `GuardianHue`, which is available in FTG only.
+- *ScrnMapVote.ini*: enhanced KF-EvilSantasLair
+- *ScrnMapVote.ini*: lowered zed spawn rate on KF-HospitalHorrors to partially compensate for improved spawns.
+- *KFMapVote.ini* cleanup - removed many game mod variation from the official rotation, leaving only the core/recommended game modes. The rest of game modes are still available and can be restored by uncommenting the respective `GameConfig` lines.
+
+### Other Changes
+- Added difficulty voting GUI setting
+- Fixed a state sync issue between `ScrnGameType` and `ScrnBalance` during the first second of Trader Time begin/end
+- *ScrnBalanceSrv.ini*: added `bLouderZeds`
 - Fixed a warning in `ScrnHumanPawn.SetWeaponAttachment()`
+
+### ScrN Zed Pack
+- **Hard Pat**: lowered charging minigun speed multiplier (x2.3 => x1.75)
+- **Hard Pat** always charges player with minigun after the final healing (previously, it was 40% chance)
+- **Hard Pat**: when firing multiple rockers, reduced the splash radius of subsequent rockets by 20%
+
+### ScrN Weapon Pack
+- Fixed **HK417** bringup/putdown animations
+- Slightly boosted **CZ805M** healing recharge rate
+- Increased max ammo for **SVD** (90 => 100), **SVDS** (60 => 70), **Hunting Rifle** (50 => 70)
+- Increased **SVDS** fire rate (0.75s => 0.5s)
+
 
 ## v9.70.01
 - New **Gunslinger** perk icon
