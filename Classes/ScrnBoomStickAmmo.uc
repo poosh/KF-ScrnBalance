@@ -3,6 +3,6 @@ class ScrnBoomStickAmmo extends DBShotgunAmmo;
 defaultproperties
 {
      AmmoPickupAmount=6
-     MaxAmmo=42
-     InitialAmount=24
+     MaxAmmo=36
+     InitialAmount=18
 }

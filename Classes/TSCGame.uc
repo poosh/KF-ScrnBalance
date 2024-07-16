@@ -1019,6 +1019,8 @@ function SetupWave()
     TSCTeams[1].LastMinKills = TSCTeams[1].ZedKills;
 }
 
+function HandleRemainingZeds() {}
+
 function bool HasEnoughZeds()
 {
     if (!bTeamWiped) {

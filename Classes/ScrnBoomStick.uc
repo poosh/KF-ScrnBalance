@@ -464,6 +464,7 @@ defaultproperties
 {
     MagCapacity=2
     bHoldToReload=true  // doesn't mean what it says. Set to allow stuff like interrupt reload etc.
+    Weight=8
 
     // Instigator anim
     WeaponReloadAnim="Reload_HuntingShotgun"
@@ -471,8 +472,8 @@ defaultproperties
     ReloadAnim="Fire_Last"
     ReloadPhaseTimes(0)=0.217500            // fire
     ReloadPhaseTimes(1)=1.000               // start inserting shells
-    ReloadPhaseTimes(2)=2.340               // shells inserted
-    ReloadRate=2.75
+    ReloadPhaseTimes(2)=2.200               // shells inserted
+    ReloadRate=2.50
     ReloadAnimRate=1.0
 
     SingleReloadAnim="reload_half"

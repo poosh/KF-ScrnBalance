@@ -1118,15 +1118,15 @@ function bool CanEndWave()
     local MonsterController MC;
     local Monster M;
     local KFHumanPawn P;
-    local int TotalHP;
 
     for ( C = Level.ControllerList; C != None; C = C.NextController ) {
         MC = MonsterController(C);
         M = Monster(C.Pawn);
-        if ( MC==none || M == none )
+        if (MC==none || M == none || M.Health <= 0)
             continue;
 
-        TotalHP += M.default.Health;
+        if (M.ScoringValue > Mut.MaxVoteKillBounty)
+            return false;
 
         if ( Mut.bVoteKillCheckVisibility ) {
             foreach VisibleCollidingActors(class'KFHumanPawn', P, 1000) {
@@ -1135,7 +1135,7 @@ function bool CanEndWave()
             }
         }
     }
-    return TotalHP <= Mut.MaxVoteKillHP;
+    return true;
 }
 
 function DoEndWave()

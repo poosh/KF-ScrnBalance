@@ -151,7 +151,7 @@ function FlashMuzzleFlash()
 defaultproperties
 {
     FireVeryLastRate=0.25
-    FireRate=2.75
+    FireRate=2.50
     ProjectileClass=class'ScrnBoomStickBullet'
     AmmoClass=class'ScrnBoomStickAmmo'
     AmmoPerFire=2

@@ -198,10 +198,12 @@ simulated function Tick(float DeltaTime)
         X = vector(Rotation);
         if ( NailedMonster.Health > 0 ) {
             NailedMonster.Velocity = Velocity;
+            NailedMonster.Acceleration = Acceleration;
             if ( Physics != PHYS_None ) {
                 bStillFlying = true;
                 if ( NailedMonster.bZedUnderControl ) {
-                    if ( !NailedMonster.SetLocation(ZedNewLoc) )
+                    if (!FastTrace(Location, ZedNewLoc) || !FastTrace(NailedMonster.Location, ZedNewLoc)
+                            || !NailedMonster.SetLocation(ZedNewLoc) )
                         ReleaseMonster();
                 }
             }
@@ -209,7 +211,9 @@ simulated function Tick(float DeltaTime)
                 if ( bStillFlying ) {
                     bStillFlying = false;
                     if ( NailedMonster.bZedUnderControl ) {
-                        NailedMonster.SetLocation(ZedNewLoc); // set final pinned location
+                        if (FastTrace(NailedMonster.Location, ZedNewLoc)) {
+                            NailedMonster.SetLocation(ZedNewLoc); // set final pinned location
+                        }
                         NailedMonster.bZedUnderControl = false; //allow other nails to pin this zed
                     }
                     // nail stopped, so trace precise location where to pin the zed

@@ -6,7 +6,8 @@ defaultproperties
     MediumZedPenDmgReduction=0.75
     MaxPenetrations=4
     PenDamageReduction=0.800000
-    Damage=50.000000
+    Damage=60
+    HeadShotDamageMult=1.25
     MomentumTransfer=60000.000000
     MyDamageType=Class'KFMod.DamTypeDBShotgun'
 }

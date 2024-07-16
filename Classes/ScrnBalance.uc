@@ -153,7 +153,8 @@ var globalconfig bool bAllowPauseVote, bAllowLockPerkVote, bAllowBoringVote;
 var globalconfig int MaxPauseTime, MaxPauseTimePerWave;
 var transient int PauseTimeRemaining;
 var globalconfig byte MaxVoteKillMonsters;
-var globalconfig int  MaxVoteKillHP;
+var deprecated int  MaxVoteKillHP;
+var globalconfig int MaxVoteKillBounty;
 var globalconfig bool bVoteKillCheckVisibility;
 var globalconfig float VoteKillPenaltyMult;
 var globalconfig byte MinVoteFF, MaxVoteFF;
@@ -3262,7 +3263,7 @@ function RegisterVersion(string ItemName, int Version)
 
 defaultproperties
 {
-    VersionNumber=97012
+    VersionNumber=97013
     GroupName="KF-Scrn"
     FriendlyName="ScrN Balance"
     Description="Total rework of KF1 to make it modern and the best game in the world while sticking to the roots of the original."
@@ -3504,8 +3505,8 @@ defaultproperties
     BlameVoteCoolDown=60
     bBlameFart=true
     bAllowBoringVote=true
-    MaxVoteKillMonsters=10
-    MaxVoteKillHP=2000
+    MaxVoteKillMonsters=9
+    MaxVoteKillBounty=49
     bVoteKillCheckVisibility=true
     VoteKillPenaltyMult=5.0
     LockTeamMinWave=5.0

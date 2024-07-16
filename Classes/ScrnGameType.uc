@@ -82,7 +82,8 @@ var transient int WavePlayerCount; // alive player count at the beginning of the
 var transient int AlivePlayerCount, AliveTeamPlayerCount[2];
 var array<KFMonster> Bosses;
 var transient bool bBossSpawned;
-var transient float ZedLastSpawnTime;
+var transient float ZedLastSpawnTime, LastZedKillTime;
+var transient byte RemainingZedHandleCounter;
 var transient int NextSquadTarget[2];
 var float KillRemainingZedsCooldown;  // time after LastSpawnTime when games tries to kill the remaining zeds
 var int MaxSpawnAttempts, MaxSpecialSpawnAttempts; // maximum spawn attempts before deleting the squad
@@ -828,6 +829,7 @@ function Killed(Controller Killer, Controller Killed, Pawn KilledPawn, class<Dam
     }
 
     if ( KilledMonster != none || MonsterController(Killed) != None ) {
+        LastZedKillTime = Level.TimeSeconds;
         ZombiesKilled++;
         ScrnGRI.MaxMonsters = Max(TotalMaxMonsters + NumMonsters - 1, 0);
 
@@ -864,6 +866,11 @@ function Killed(Controller Killer, Controller Killed, Pawn KilledPawn, class<Dam
 
                 bDidMoveTowardTraderMessage = true;
             }
+        }
+    }
+    else if (PlayerController(Killed) != none) {
+        if (bSuicideTimer && ScrnGameLength != none) {
+            AddSuicideTime(ScrnGameLength.SuicideTimePerPlayerDeath, false);
         }
     }
 
@@ -1294,6 +1301,54 @@ function KillRemainingZeds(bool bForceKill)
     }
 }
 
+function MarkRemainingZeds()
+{
+    local Controller C, C2;
+    local ScrnPlayerController PC;
+    local KFMonster Zed;
+
+    for (C = Level.ControllerList; C != None; C = C.NextController) {
+        if (!C.bIsPlayer)
+            continue;
+        PC = ScrnPlayerController(C);
+        if (PC == none)
+            continue;
+
+        for (C2 = Level.ControllerList; C2 != None; C2 = C2.NextController) {
+            Zed = KFMonster(C2.Pawn);
+            if (Zed == none || Zed.Health <= 0)
+                continue;
+
+            Zed.bAlwaysRelevant = true;
+            PC.ClientMark(KFPlayerReplicationInfo(PC.PlayerReplicationInfo), Zed, PC.CalcMarkLocation(Zed),
+                    Zed.MenuName, class'ScrnHUD'.default.MARK_LASTZED);
+        }
+    }
+}
+
+function HandleRemainingZeds()
+{
+    local Controller C;
+
+    if (Level.TimeSeconds < LastZedKillTime + 5.0)
+        return;
+
+    ++RemainingZedHandleCounter;
+    if (RemainingZedHandleCounter == 1) {
+        for (C = Level.ControllerList; C != None; C = C.NextController) {
+            if (KFMonster(C.Pawn) != none && C.Pawn.Health > 0) {
+                C.Pawn.bAlwaysRelevant = true;
+            }
+        }
+    }
+    else if (RemainingZedHandleCounter >= 3 && RemainingZedHandleCounter <= 5) {
+        // marking is unreliable, so repeat it multiple times
+        MarkRemainingZeds();
+    }
+    else if (RemainingZedHandleCounter >= 30) {
+        KillRemainingZeds(false);
+    }
+}
 
 // Force slomo for a longer period of time when the boss dies
 function DoBossDeath()
@@ -2803,6 +2858,7 @@ function SetupWave()
     // reset spawn volumes
     LastZVol = none;
     LastSpawningVolume = none;
+    RemainingZedHandleCounter = 0;
     // this mey be redundant, but we need to make sure that nothing messes up with AdjustedDifficulty,
     // Which affects KFMonsterController.Skill (and more important - Doom3Controller's aiming)
     AdjustedDifficulty = GameDifficulty;
@@ -3547,10 +3603,18 @@ State MatchInProgress
 
         if ( TotalMaxMonsters <= 0 ) {
              // all monsters spawned
-            if ( ScrnGameLength == none && NumMonsters <= 0 )
-                DoWaveEnd();
-            else if ( NumMonsters <= 5 && Level.TimeSeconds > ZedLastSpawnTime + KillRemainingZedsCooldown )
-                KillRemainingZeds(false);
+            if (ScrnGameLength == none) {
+                if (NumMonsters <= 0) {
+                    DoWaveEnd();
+                }
+                else if (NumMonsters <= 5 && Level.TimeSeconds > ZedLastSpawnTime + KillRemainingZedsCooldown) {
+                    KillRemainingZeds(false);
+                }
+
+            }
+            else if (ScrnGameLength.CanKillRemainingZeds()) {
+                HandleRemainingZeds();
+            }
         }
         else if ( Level.TimeSeconds > NextMonsterTime && NumMonsters + 4 <= MaxMonsters ) {
             if ( AddSquad() ) {

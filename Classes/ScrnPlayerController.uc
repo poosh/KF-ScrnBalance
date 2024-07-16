@@ -3290,6 +3290,9 @@ function ClientMark(KFPlayerReplicationInfo Sender, Actor A, vector ALocation, s
                 MsgType = 'AUTO';
                 MsgID = 14;
                 break;
+            case hud.MARK_LASTZED:
+                Caption = "";
+                break;
             default:
                 MsgType = 'ALERT';
                 MsgID = 0;  // Look out!

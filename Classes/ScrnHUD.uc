@@ -207,6 +207,7 @@ const MARK_ITEMS        = 3;
 var const int MARK_ENEMY;
 var const int MARK_FLESHPOUND;
 var const int MARK_SCRAKE;
+var const int MARK_LASTZED;
 var const int MARK_PLAYER;
 var const int MARK_MEDIC;
 var const int MARK_CAMP;
@@ -3879,6 +3880,12 @@ function MarkTarget(KFPlayerReplicationInfo Sender, Actor Target, vector Locatio
             }
             break;
 
+        case MARK_ENEMIES:
+            if (MarkType == MARK_LASTZED && Target != none) {
+                MarkLife = 600;
+                break;
+            }
+            // else fall-through
         default:
             if (Target == none) {
                 MarkLife = MarkLifeNoTarget;
@@ -4170,6 +4177,7 @@ defaultproperties
     MARK_ENEMY=0            // 0x00
     MARK_FLESHPOUND=1       // 0x01
     MARK_SCRAKE=2           // 0x02
+    MARK_LASTZED=3          // 0x03
     MARK_PLAYER=16          // 0x10
     MARK_MEDIC=17           // 0x11
     MARK_CAMP=32            // 0x20

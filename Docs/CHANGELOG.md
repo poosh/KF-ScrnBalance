@@ -28,6 +28,18 @@
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+## v9.70.13
+- Last zeds in a wave get auto-marked.
+- Added "End Wave" button to ScrN Features. The button cycles between "Boring / End Wave / End Trade" depending on the current game state.
+- *ScrnBalanceSrv.ini*: deprecated `MaxVoteKillHP` - replaced by `MaxVoteKillBounty`.
+- Reverted the shotgun change from 9.70.12. Now shotguns can do damage twice without scoring a headshot. For example, "LAW+HSg" team combo works again now.
+- **Boomstick** (HSg) weight lower to 8 (down from 10) and max ammo to 36, perked 46 (down from 54), enhancing loadout variety.
+- **Boomstick** pellet base damage raise to 60 (up from 50), headshot multiplier lowered to x1.25 (down from x1.50). Headshot damage remains the same.
+- Fixed a bug where a **nail** could push a zed through a wall (floor, ceiling), e.g., on KF-Swamp. Zeds may still get stuck in walls on maps with complex geometry, but at least they get stuck on the right side of the wall.
+- Carry weight bonus (>15) doesn't slow down players anymore (Support Spec., HMG). Unlike vanilla, these perks do not receive a low-weight speed bonus either.
+- *ScrnGames.ini*: added `SuicideTimePerPlayerDeath`
+- **XCM v1.04**: a player death adds +30s to the suicide timer. That allows the remaining players to finish the wave when the timer is tight already.
+
 ## v9.70.12
 ### Shop Menu Overhaul
 #### Weapon Search Textbox
@@ -65,7 +77,7 @@
 - Selling Dual Pistols sells them BOTH. The only exception is 9mm pistol.
 - `Dual-9mm Pistols` now weight 2kg and cost $200 (mainly, to bypass new Shop Menu checks).
 - Restored **Combat Shotgun** flashlight. Laser sights automatically turns off when the flashlight is active.
-- Fixed a shotgun exploit where it was possible to do damage twices to the same zed without scoring a headshot.
+- Fixed a shotgun exploit where it was possible to do damage twice to the same zed without scoring a headshot.
 - Fixed yet another bug in **Healing Projectile** hit detection.
 - **M7A3M**: damage rased to 80 (up from 70)
 - Reworked **M7A3M** healing projectile: now it consumes 100% of the charge but heals 20hp instantly + 50hp over time (offperk), 35+87hp if healed by a lv6 Field Medic or 26+65 - Combat Medic.

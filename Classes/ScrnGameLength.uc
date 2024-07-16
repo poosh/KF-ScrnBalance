@@ -30,7 +30,7 @@ var config bool bRandomTrader;
 var config int TraderSpeedBoost;
 var config int SuicideTime;
 var config int SuicideTimePerWave;
-var config float SuicideTimePerPlayerMult;
+var config float SuicideTimePerPlayerMult, SuicideTimePerPlayerDeath;
 
 struct SHL {
     var byte Difficulty;
@@ -874,6 +874,10 @@ function WaveTimer()
             }
             break;
     }
+}
+
+function bool CanKillRemainingZeds() {
+    return Wave.EndRule == RULE_KillEmAll && Game.TotalMaxMonsters <= 0 && Game.NumMonsters < 10;
 }
 
 // Called by ScrnGameType at the end of the wave - just before loading the next wave

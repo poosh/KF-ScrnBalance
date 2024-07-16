@@ -279,7 +279,6 @@ simulated function ModifyVelocity(float DeltaTime, vector OldVelocity)
 function CalcGroundSpeed()
 {
     local float WeightMod, MovementMod;
-    local float EncumbrancePercentage;
     local KFGameReplicationInfo KFGRI;
     local ScrnBalance Mut;
 
@@ -296,17 +295,17 @@ function CalcGroundSpeed()
         return;
     }
 
-    // Calculate encumbrance, but cap it to the maxcarryweight so when we use dev weapon cheats we don't move mega slow
-    EncumbrancePercentage = (FMin(CurrentWeight, MaxCarryWeight) / default.MaxCarryWeight); //changed MaxCarryWeight to default.MaxCarryWeight
-    // Calculate the weight modifier to speed
-    WeightMod = (1.0 - (EncumbrancePercentage * WeightSpeedModifier));
+    WeightMod = WeightSpeedModifier;
+    if (CurrentWeight <= default.MaxCarryWeight) {
+        WeightMod *= CurrentWeight / default.MaxCarryWeight;
+    }
 
     // Apply all the modifiers
     GroundSpeed = default.GroundSpeed;
     if (Health < 100) {
         GroundSpeed *= (HealthSpeedModifier * Health/100.0) + (1.0 - HealthSpeedModifier);
     }
-    GroundSpeed *= WeightMod;
+    GroundSpeed *= (1.0 - WeightMod);
     GroundSpeed += InventorySpeedModifier;
 
     MovementMod = CarriedInventorySpeed;

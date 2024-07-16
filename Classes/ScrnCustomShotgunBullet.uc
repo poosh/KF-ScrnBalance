@@ -104,7 +104,7 @@ simulated function ProcessTouch (Actor Other, vector HitLocation)
                 SameVictimCounter = 1;
             }
             else if ( ++SameVictimCounter > 2 ) {
-                // the same target can hit twice max: body and head (ExtendedZCollision)
+                // the same target can hit twice max
                 return;
             }
 
@@ -112,12 +112,8 @@ simulated function ProcessTouch (Actor Other, vector HitLocation)
             if ( bHeadshot ) {
                 Victim.TakeDamage(Damage * HeadShotDamageMult, Instigator, HitLocation, MomentumTransfer * X, MyDamageType);
             }
-            else if (SameVictimCounter == 1) {
-                Victim.TakeDamage(Damage, Instigator, HitLocation, MomentumTransfer * X, MyDamageType);
-            }
             else {
-                // only headshots can damage the same target twice.
-                return;
+                Victim.TakeDamage(Damage, Instigator, HitLocation, MomentumTransfer * X, MyDamageType);
             }
         }
         else {

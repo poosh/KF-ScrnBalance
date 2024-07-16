@@ -74,6 +74,7 @@ var automated GUIButton               b_MVOTE_Yes;
 var automated GUIButton               b_MVOTE_No;
 var automated GUIButton               b_MVOTE_Boring;
 var automated GUIButton               b_MVOTE_EndTrade;
+var automated GUIButton               b_MVOTE_EndWave;
 
 var automated moComboBox              cbx_MVOTE_Difficulty;
 var automated GUIButton               b_MVOTE_Difficulty;
@@ -227,10 +228,12 @@ function Timer()
 function RefreshInfo()
 {
     local ScrnPlayerController PC;
+    local KFGameReplicationInfo KFPRI;
 
     PC = ScrnPlayerController(PlayerOwner());
     if ( PC == none )
         return;
+    KFPRI =  KFGameReplicationInfo(PC.GameReplicationInfo);
 
     if ( PC.Mut.bAllowWeaponLock ) {
         b_WeaponLock.EnableMe();
@@ -246,13 +249,21 @@ function RefreshInfo()
         b_WeaponLock.Hint = class'ScrnMsg'.default.strSrvDisabled;
     }
 
-    if ( KFGameReplicationInfo(PC.GameReplicationInfo) != none ) {
-        b_MVOTE_Boring.SetVisibility(KFGameReplicationInfo(PC.GameReplicationInfo).bWaveInProgress);
-        b_MVOTE_EndTrade.SetVisibility(!b_MVOTE_Boring.bVisible);
+    if (KFPRI == none) {
+        // should not happen
+        b_MVOTE_Boring.Hide();
+        b_MVOTE_EndWave.Hide();
+        b_MVOTE_EndTrade.Hide();
+    }
+    else if (KFPRI.bWaveInProgress) {
+        b_MVOTE_Boring.SetVisibility(KFPRI.MaxMonsters > 20);
+        b_MVOTE_EndWave.SetVisibility(KFPRI.MaxMonsters < 10);
+        b_MVOTE_EndTrade.Hide();
     }
     else {
         b_MVOTE_Boring.Hide();
-        b_MVOTE_EndTrade.Hide();
+        b_MVOTE_EndWave.Hide();
+        b_MVOTE_EndTrade.Show();
     }
 
     b_Team_Unlock.SetVisibility(class'ScrnBalance'.default.Mut.bTeamsLocked);
@@ -722,6 +733,9 @@ function bool ButtonClicked(GUIComponent Sender)
             break;
         case b_MVOTE_EndTrade:
             PC.Mutate("VOTE ENDTRADE");
+            break;
+        case b_MVOTE_EndWave:
+            PC.Mutate("VOTE END WAVE");
             break;
         case b_Team_Lock:
             PC.Mutate("VOTE LOCKTEAM");
@@ -1720,6 +1734,24 @@ defaultproperties
         OnKeyEvent=EndTradeButton.InternalOnKeyEvent
     End Object
     b_MVOTE_EndTrade=EndTradeButton
+
+    Begin Object Class=GUIButton Name=EndWaveButton
+        Caption="End Wave"
+        Hint="Kills the remaining zeds to end the wave."
+        bAutoSize=False
+        WinTop=0.735
+        WinLeft=0.28
+        WinWidth=0.195
+        WinHeight=0.045
+        RenderWeight=2.0
+        TabOrder=82
+        bBoundToParent=True
+        bScaleToParent=True
+        bVisible = false
+        OnClick=ScrnTab_UserSettings.ButtonClicked
+        OnKeyEvent=EndWaveButton.InternalOnKeyEvent
+    End Object
+    b_MVOTE_EndWave=EndWaveButton
 
     // SERVER INFO ---------------------------------------------------------------------
     Begin Object Class=GUILabel Name=ServerInfoLabel
