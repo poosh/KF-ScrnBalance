@@ -28,7 +28,7 @@
 ## VERSION 9
 
 -------------------------------------------------------------------------------
-## v9.70.13
+## v9.70.15
 - Last zeds in a wave get auto-marked.
 - Added "End Wave" button to ScrN Features. The button cycles between "Boring / End Wave / End Trade" depending on the current game state.
 - *ScrnBalanceSrv.ini*: deprecated `MaxVoteKillHP` - replaced by `MaxVoteKillBounty`.
@@ -39,6 +39,15 @@
 - Carry weight bonus (>15) doesn't slow down players anymore (Support Spec., HMG). Unlike vanilla, these perks do not receive a low-weight speed bonus either.
 - *ScrnGames.ini*: added `SuicideTimePerPlayerDeath`
 - **XCM v1.04**: a player death adds +30s to the suicide timer. That allows the remaining players to finish the wave when the timer is tight already.
+
+#### Zed Pack
+- Fixed an issue where **Hard Pat** could shoot rockets without arming
+- **Grittier Siren** cannot be scream-canceled anymore
+- Lowered **Jason** bounty to $125 (down from $300)
+
+#### Horzine Technician
+- New weapon: **Cryo Harpoon Bomber** (the remake of Seal Squeal)
+
 
 ## v9.70.12
 ### Shop Menu Overhaul

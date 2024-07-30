@@ -1330,7 +1330,7 @@ function HandleRemainingZeds()
 {
     local Controller C;
 
-    if (Level.TimeSeconds < LastZedKillTime + 5.0)
+    if (RemainingZedHandleCounter == 0 && Level.TimeSeconds < LastZedKillTime + NumMonsters)
         return;
 
     ++RemainingZedHandleCounter;
