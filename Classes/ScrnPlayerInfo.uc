@@ -126,6 +126,7 @@ var int PRI_Score, PRI_Kills, PRI_KillAssists, PRI_Deaths, PRI_StartTime;
 var byte PRI_BlameCounter;
 var class<KFVeterancyTypes> PRI_ClientVeteranSkill;
 var byte PRI_TeamIndex;
+var byte PRI_DeathWave;
 
 
 function Destroyed()
@@ -1018,6 +1019,7 @@ function BackupPRI()
 {
     local KFPlayerReplicationInfo KFPRI;
     local ScrnCustomPRI ScrnPRI;
+    local ScrnPlayerController ScrnPC;
 
     if ( PlayerOwner == none )
         return;
@@ -1026,6 +1028,7 @@ function BackupPRI()
     if ( KFPRI == none )
         return;
     ScrnPRI = class'ScrnCustomPRI'.static.FindMe(KFPRI);
+    ScrnPC = ScrnPlayerController(PlayerOwner);
 
     if ( !GameRules.Mut.bLeaveCashOnDisconnect )
         PRI_Score = KFPRI.Score;
@@ -1043,12 +1046,17 @@ function BackupPRI()
     if ( ScrnPRI != none ) {
         PRI_BlameCounter = ScrnPRI.BlameCounter;
     }
+
+    if (ScrnPC != none) {
+        PRI_DeathWave = ScrnPC.DeathWave;
+    }
 }
 
 function RestorePRI()
 {
     local KFPlayerReplicationInfo KFPRI;
     local ScrnCustomPRI ScrnPRI;
+    local ScrnPlayerController ScrnPC;
 
     if ( PlayerOwner == none )
         return;
@@ -1057,6 +1065,7 @@ function RestorePRI()
     if ( KFPRI == none )
         return;
     ScrnPRI = class'ScrnCustomPRI'.static.FindMe(KFPRI);
+    ScrnPC = ScrnPlayerController(PlayerOwner);
 
     if ( KFPRI.Kills == 0 && KFPRI.KillAssists == 0 && KFPRI.Deaths == 0 ) {
         if ( PRI_ClientVeteranSkill != none )
@@ -1074,6 +1083,10 @@ function RestorePRI()
 
     if ( ScrnPRI != none ) {
         ScrnPRI.BlameCounter = max(PRI_BlameCounter, ScrnPRI.BlameCounter);
+    }
+
+    if (ScrnPC != none) {
+        ScrnPC.DeathWave = PRI_DeathWave;
     }
 }
 

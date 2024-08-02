@@ -11,8 +11,16 @@ var transient array<SPawnSpeed> DefaultSpeeds;
 
 function PostBeginPlay()
 {
+    local ScrnBalance mut;
+
     super.PostBeginPlay();
     class'ScrnPlayerController'.default.PawnClass = class'ScrnSpeedPawn';
+
+    mut = class'ScrnBalance'.default.Mut;
+    if (mut.BurnMech != none) {
+        // faster speed => faster burning
+        mut.BurnMech.TimeScale = 1.0 / SpeedMod;
+    }
 }
 
 function ModifySpeed(Pawn P)

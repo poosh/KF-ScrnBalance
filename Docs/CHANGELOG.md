@@ -28,6 +28,13 @@
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+## v9.70.18
+- *ScrnBalanceSrv.ini*: added `bLateJoinersSpectate` to force late joiners to spectators by default - with exception of reconnecting players.
+- Spectators may spawn immediately after joining the game during Trader Time.
+- *ScrnWaves.ini*: `WaveHeader`, `WaveTitle`, and `WaveMessage` support color tags.
+- **SpeedMut**: proportionally increased burning DoT
+- **Husk Gun**: 20% faster charging
+
 ## v9.70.15
 - Last zeds in a wave get auto-marked.
 - Added "End Wave" button to ScrN Features. The button cycles between "Boring / End Wave / End Trade" depending on the current game state.
@@ -46,7 +53,7 @@
 - Lowered **Jason** bounty to $125 (down from $300)
 
 #### Horzine Technician
-- New weapon: **Cryo Harpoon Bomber** (the remake of Seal Squeal)
+- New weapon: **Cryo Harpoon Bomber** - a remake of Seal Squeal (thanks [ivanmagadan] for the idea)
 
 
 ## v9.70.12

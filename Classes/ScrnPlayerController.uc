@@ -7,7 +7,8 @@ var ScrnHumanPawn ScrnPawn;
 var ScrnBalance Mut;
 var transient bool bHadPawn;
 
-var byte VeterancyChangeWave; // wave number, when player has changed his perk
+var byte VeterancyChangeWave; // last wave number when the player has changed a perk
+var byte DeathWave; // last wave number when the player died
 
 var globalconfig bool bManualReload, bOtherPlayerLasersBlue;
 var globalconfig bool bAlwaysDisplayAchProgression; // always display a message on any achievement progress
@@ -52,6 +53,7 @@ var transient float LastLockMsgTime; // last time when player received a message
 var localized string strAlreadySpectating;
 var transient float OriginalSpectateSpeed;
 var float SpectateSpeedSprintMod;
+var transient bool bForcedSpectator;  // players wanted to play but forced to be spectator
 
 var globalconfig bool bPrioritizePerkedWeapons, bPrioritizeBoomstick;
 
@@ -194,6 +196,10 @@ function PostLogin()
         SetName(PlayerName);
 
     Mut.GameRules.PlayerEntering(self);
+    if (bForcedSpectator && PlayerReplicationInfo.bOnlySpectator && PlayerReplicationInfo.Kills > 0) {
+        // reconnected player - try to rejoin the game
+        BecomeActivePlayer();
+    }
 }
 
 simulated function ClientPostLogin()
@@ -1603,9 +1609,6 @@ function BecomeSpectator()
     bWasOnlySpectator = PlayerReplicationInfo.bOnlySpectator;
     super.BecomeSpectator();
 
-    if (Role < ROLE_Authority)
-        return;
-
     if ( PlayerReplicationInfo.bOnlySpectator && !bWasOnlySpectator )
         Mut.GameRules.PlayerLeaving(self);
 
@@ -1618,24 +1621,32 @@ function BecomeActivePlayer()
     local bool bWasOnlySpectator;
 
     bWasOnlySpectator = PlayerReplicationInfo.bOnlySpectator;
+
     super.BecomeActivePlayer();
 
+    if (PlayerReplicationInfo.bOnlySpectator)
+        return;  // failed to become an active player
 
-    if (Role < ROLE_Authority) {
-        if ( ScrnHUD(MyHUD) != none ) {
-            ScrnHUD(MyHUD).DisableHudHacks();
-        }
-        return;
+    bForcedSpectator = false;
+    if ( Mut.KF.bTradingDoorsOpen ) {
+        if ( Mut.bDynamicLevelCap )
+            Mut.DynamicLevelCap();
     }
 
-    if ( !PlayerReplicationInfo.bOnlySpectator ) {
-        if ( Mut.KF.bTradingDoorsOpen ) {
-            if ( Mut.bDynamicLevelCap )
-                Mut.DynamicLevelCap();
-        }
-        StartCash = PlayerReplicationInfo.Score;
-        if ( bWasOnlySpectator )
-            Mut.GameRules.PlayerEntering(self);
+    StartCash = PlayerReplicationInfo.Score;
+    if (Mut.ScrnGT != none) {
+        Mut.ScrnGT.GiveStartingCash(self);
+    }
+    if (bWasOnlySpectator) {
+        Mut.GameRules.PlayerEntering(self);
+    }
+}
+
+function ClientBecameActivePlayer()
+{
+    super.ClientBecameActivePlayer();
+    if ( ScrnHUD(MyHUD) != none ) {
+        ScrnHUD(MyHUD).DisableHudHacks();
     }
 }
 
@@ -1906,6 +1917,31 @@ exec function GunSlot(optional byte Slot)
     WeaponSlot(Slot);
 }
 
+function ServerReStartPlayer()
+{
+    local KFGameType KF;
+
+    KF = KFGameType(Level.Game);
+
+    if (PlayerReplicationInfo.bOnlySpectator)
+        return;  // wtf?
+
+    PlayerReplicationInfo.bReadyToPlay = true;
+
+    if (Level.Game.bWaitingToStartMatch)
+        return;
+
+    if (KF != none && KF.WaveNum != DeathWave) {
+        PlayerReplicationInfo.bOutOfLives = false;
+        PlayerReplicationInfo.NumLives = 0;
+    }
+    if (PlayerReplicationInfo.bOutOfLives) {
+        return;
+    }
+    ClientCloseMenu(true, true);
+    Level.Game.RestartPlayer(self);
+}
+
 exec function Ready()
 {
     if ( PlayerReplicationInfo.bOnlySpectator ) {
@@ -1913,10 +1949,13 @@ exec function Ready()
         return;
     }
 
-    if ( PlayerReplicationInfo.Team == none )
+    if ( PlayerReplicationInfo.Team == none)
         return;
 
-    if ( Level.NetMode == NM_Standalone || !PlayerReplicationInfo.bReadyToPlay ) {
+    if (Pawn != none && Pawn.Health > 0)
+        return;
+
+    // if ( Level.NetMode == NM_Standalone || !PlayerReplicationInfo.bReadyToPlay ) {
         SendSelectedVeterancyToServer(true);
 
         //Set Ready
@@ -1924,7 +1963,7 @@ exec function Ready()
         PlayerReplicationInfo.bReadyToPlay = True;
         if ( Level.GRI.bMatchHasBegun )
             ClientCloseMenu(true, false);
-    }
+    // }
 }
 
 exec function Spectate()
@@ -1948,7 +1987,7 @@ exec function Unready()
 
 exec function ShowMenu()
 {
-    if ( Level.GRI.bMatchHasBegun || PlayerReplicationInfo.bOnlySpectator )
+    if ( (Level.GRI.bMatchHasBegun && PlayerReplicationInfo.bReadyToPlay) || PlayerReplicationInfo.bOnlySpectator )
         super.ShowMenu();
     else
         ShowLobbyMenu();
@@ -2778,7 +2817,7 @@ state Dead
         KF = KFGameType(Level.Game);
         ScrnGT = ScrnGameType(Level.Game);
 
-        if ( KF != none && Level.Game.GameReplicationInfo.bMatchHasBegun ) {
+        if ( KF != none && Level.GRI.bMatchHasBegun ) {
             if ( ScrnGT != none ) {
                 bRestartMe = ScrnGT.PlayerCanRestart(self);
             }
@@ -3417,6 +3456,14 @@ state Spectating
     }
 }
 
+auto state PlayerWaiting
+{
+    function ServerRestartPlayer()
+    {
+        global.ServerRestartPlayer();
+    }
+}
+
 
 // ============================== DEBUG STUFF ==============================
 
@@ -3726,6 +3773,7 @@ defaultproperties
     DamageNumbersClass=class'ScrnDamageNumbers'
     AchievementDisplayCooldown=5.000000
     bChangedPerkDuringGame=True
+    DeathWave=255
     Custom3DScopeSens=24
     ProfilePageClassString="ScrnBalanceSrv.ScrnProfilePage"
     LobbyMenuClassString="ScrnBalanceSrv.ScrnLobbyMenu"

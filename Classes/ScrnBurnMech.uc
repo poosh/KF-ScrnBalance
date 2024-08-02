@@ -23,6 +23,7 @@ var array<ScrnFlareCloud> FlareClouds;
 var int BurnDuration; // tick count from ignition till the end of burning
 var int BurnInCount; // tick count from ignition till reaching the maximum burn damage
 var float BurnPeriod; // how often zeds will receive damage from burning
+var float TimeScale;  // unlike BurnPeriod, TimeScale scales DoT value
 
 var(Sound)     Sound     FlareSound;
 var            string    FlareSoundRef;
@@ -225,7 +226,7 @@ function MakeBurnDamage(KFMonster Victim, int Damage, Pawn InstigatedBy, Vector 
     }
     Monsters[i].Victim = Victim;
     Monsters[i].Instigator = InstigatedBy;
-    Monsters[i].NextBurnTime = Level.TimeSeconds + BurnPeriod;
+    Monsters[i].NextBurnTime = Level.TimeSeconds + BurnPeriod * TimeScale;
     Monsters[i].BurnTicks = 0;
     Monsters[i].BurnDamage = Damage;
     Monsters[i].TotalInputDamage = Damage;
@@ -316,7 +317,7 @@ function Timer()
 
             Monsters[i].BurnDown--;
             Monsters[i].BurnTicks++;
-            Monsters[i].NextBurnTime += BurnPeriod;
+            Monsters[i].NextBurnTime += BurnPeriod * TimeScale;
 
             if ( Monsters[i].FlareCount == 0 && Monsters[i].BurnTicks > M.CrispUpThreshhold ) {
                 M.ZombieCrispUp(); // Melt em' :)
@@ -354,5 +355,6 @@ defaultproperties
     BurnDuration=8
     BurnInCount=2
     BurnPeriod=1.0
+    TimeScale=1.0
     FlareSoundRef="KF_IJC_HalloweenSnd.KF_FlarePistol_Projectile_Loop"
 }

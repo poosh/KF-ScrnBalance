@@ -247,4 +247,7 @@ defaultproperties
     hintGetGnome="Take the Guardian from your Trader to set up the Base"
     hintBaseLostTrader="You lost your Guardian and now you are dead!"
     hintStinkyClot="OMG it is a Stinky Clot! You cannot kill them but those things are really nasty."
+
+    bSpecDrawClan=false
+    bDrawSpecBar=false
 }

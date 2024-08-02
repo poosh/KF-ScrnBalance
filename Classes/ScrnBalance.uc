@@ -39,6 +39,7 @@ var transient byte HardcoreLevel; // set from ScrnGameRules. Used for replicatio
 
 var globalconfig int ForcedMaxPlayers;
 var globalconfig bool bAllowBehindView;
+var globalconfig bool bLateJoinersSpectate;
 
 var globalconfig int
     BonusLevelNormalMax
@@ -3263,7 +3264,7 @@ function RegisterVersion(string ItemName, int Version)
 
 defaultproperties
 {
-    VersionNumber=97015
+    VersionNumber=97018
     GroupName="KF-Scrn"
     FriendlyName="ScrN Balance"
     Description="Total rework of KF1 to make it modern and the best game in the world while sticking to the roots of the original."
@@ -3348,6 +3349,7 @@ defaultproperties
     bPlayerZEDTime=true
     bShowDamages=true
     bAllowBehindView=true
+    bLateJoinersSpectate=true
 
     bReplacePickups=true
     bReplacePickupsStory=true

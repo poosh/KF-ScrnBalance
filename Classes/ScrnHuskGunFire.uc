@@ -184,7 +184,7 @@ function ModeDoFire()
 defaultproperties
 {
     MaxHoldTime=0.0 // no auto fire
-    MaxChargeTime=3.0 // 3s to full charge
+    MaxChargeTime=2.4 // time to full charge
     MaxChargeAmmo=10
     WeakProjectileClass=class'ScrnHuskGunProjectile_Weak'
     StrongProjectileClass=class'ScrnHuskGunProjectile_Strong'

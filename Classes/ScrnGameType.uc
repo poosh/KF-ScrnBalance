@@ -261,8 +261,8 @@ function InitGameReplicationInfo()
             log("Bad game version! Game " $ ScrnBalanceMut.VersionStr(ScrnGameLength.GameVersion)
                     $ ", Wave " $ ScrnBalanceMut.VersionStr(ScrnGameLength.Wave.GameVersion), class.name);
         }
-        ScrnGRI.GameTitle = ScrnGameLength.GameTitle;
-        ScrnGRI.GameAuthor = ScrnGameLength.Author;
+        ScrnGRI.GameTitle = class'ScrnFunctions'.static.ParseColorTags(ScrnGameLength.GameTitle);
+        ScrnGRI.GameAuthor = class'ScrnFunctions'.static.ParseColorTags(ScrnGameLength.Author);
         ScrnGRI.FakedPlayers = FakedPlayers;
         ScrnGRI.FakedAlivePlayers = FakedAlivePlayers;
         ScrnGRI.bStopCountDown = !bSuicideTimer;
@@ -871,6 +871,9 @@ function Killed(Controller Killer, Controller Killed, Pawn KilledPawn, class<Dam
     else if (PlayerController(Killed) != none) {
         if (bSuicideTimer && ScrnGameLength != none) {
             AddSuicideTime(ScrnGameLength.SuicideTimePerPlayerDeath, false);
+        }
+        if (ScrnPlayerController(Killed) != none) {
+            ScrnPlayerController(Killed).DeathWave = WaveNum;
         }
     }
 
@@ -2071,7 +2074,7 @@ function GetServerDetails( out ServerResponseLine ServerState )
         AddServerDetail( ServerState, "ScrN Tourney Mode", TourneyMode );
 
     if ( ScrnGameLength != none ) {
-        AddServerDetail( ServerState, "ScrN Game", ScrnGameLength.GameTitle );
+        AddServerDetail(ServerState, "ScrN Game", class'ScrnFunctions'.static.StripColorTags(ScrnGameLength.GameTitle));
     }
 }
 
@@ -2245,6 +2248,26 @@ function bool CanSpectate( PlayerController Viewer, bool bOnlySpectator, actor V
 
     return Pawn(ViewTarget) != None && Pawn(ViewTarget).IsPlayerPawn()
         && (bOnlySpectator || Pawn(ViewTarget).PlayerReplicationInfo.Team == Viewer.PlayerReplicationInfo.Team);
+}
+
+event PlayerController Login(string Portal, string Options, out string Error)
+{
+    local PlayerController NewPlayer;
+    local bool bSpectator;
+
+    bSpectator = ParseOption(Options, "SpectatorOnly") == "1";
+    if (ScrnBalanceMut.bLateJoinersSpectate && !bSpectator && GameReplicationInfo.bMatchHasBegun && !bGameEnded
+            && NumSpectators < MaxSpectators)
+    {
+        Options = "?SpectatorOnly=1" $ Options;
+    }
+
+    NewPlayer = Super.Login(Portal,Options,Error);
+
+    if (ScrnPlayerController(NewPlayer) != none && !bSpectator && NewPlayer.PlayerReplicationInfo.bOnlySpectator) {
+        ScrnPlayerController(NewPlayer).bForcedSpectator = true;
+    }
+    return NewPlayer;
 }
 
 event PostLogin( PlayerController NewPlayer )
@@ -2425,23 +2448,25 @@ function bool PlayerCanRestart(PlayerController PC)
         return false;
 
     // NumLives actually is NumDeaths this wave
-    return !PRI.bOutOfLives && PRI.NumLives == 0;
+    return !PRI.bOutOfLives && PRI.NumLives <= 0;
 }
 
 function RestartPlayer( Controller aPlayer )
 {
     local PlayerController PC;
 
+    if ( aPlayer.Pawn != none && aPlayer.Pawn.Health > 0 )
+        return;  // wtf? Already alive.
+
     PC = PlayerController(aPlayer);
     if ( PC == none ) {
         // bots
-        if ( aPlayer.PlayerReplicationInfo.bOutOfLives || aPlayer.PlayerReplicationInfo.NumLives > 0
-                || aPlayer.Pawn != None )
+        if ( aPlayer.PlayerReplicationInfo.bOutOfLives || aPlayer.PlayerReplicationInfo.NumLives > 0)
             return;
     }
     else if ( !PlayerCanRestart(PC) ) {
         PC.PlayerReplicationInfo.bOutOfLives = true;
-        PC.PlayerReplicationInfo.NumLives = 1;
+        PC.PlayerReplicationInfo.NumLives = 1;  // NumDeaths
         PC.GoToState('Spectating');
         return;
     }
@@ -2486,7 +2511,7 @@ function bool AllowBecomeActivePlayer(PlayerController CI)
     }
 
     if ( /*!GameReplicationInfo.bMatchHasBegun ||*/ NumPlayers >= MaxPlayers
-        || CI.IsInState('GameEnded') || CI.IsInState('RoundEnded') )
+        /* || CI.IsInState('GameEnded') || CI.IsInState('RoundEnded') */ )
     {
         CI.ReceiveLocalizedMessage(GameMessageClass, 13);
 
@@ -2496,10 +2521,10 @@ function bool AllowBecomeActivePlayer(PlayerController CI)
         // else
         if ( NumPlayers >= MaxPlayers )
             CI.ClientMessage("Reason: MaxPlayers reached ("$MaxPlayers$")");
-        else if ( CI.IsInState('GameEnded') )
-            CI.ClientMessage("Reason: You are in GameEnded state");
-        else if ( CI.IsInState('RoundEnded') )
-            CI.ClientMessage("Reason: You are in RoundEnded state");
+        // else if ( CI.IsInState('GameEnded') )
+        //     CI.ClientMessage("Reason: You are in GameEnded state");
+        // else if ( CI.IsInState('RoundEnded') )
+        //     CI.ClientMessage("Reason: You are in RoundEnded state");
 
         return false;
     }
@@ -2509,7 +2534,6 @@ function bool AllowBecomeActivePlayer(PlayerController CI)
         RemainingBots--;
         bPlayerBecameActive = true;
     }
-    GiveStartingCash(CI);
     return true;
 }
 

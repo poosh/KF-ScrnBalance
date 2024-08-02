@@ -57,7 +57,6 @@ function bool OnFooterClick(GUIComponent Sender)
 
     if ( Sender == b_Perks ) {
         ScrnPC.ClientOpenMenu(string(ScrnPC.ScrnLoginMenuClass));
-        return false;
     }
     else if ( Sender == b_ViewMap ) {
         if( KF_StoryGRI(PlayerOwner().Level.GRI) == none ) {
@@ -70,7 +69,8 @@ function bool OnFooterClick(GUIComponent Sender)
         ScrnPC.ShowSettingsMenu(false);
     }
     else if(Sender == b_Ready) {
-        return super(LobbyFooter).OnFooterClick(Sender); // bypass serverperks
+        ScrnPC.ConsoleCommand(eval(ScrnPC.PlayerReplicationInfo.bReadyToPlay, "UNREADY", "READY"));
+        b_Ready.Caption = eval(ScrnPC.PlayerReplicationInfo.bReadyToPlay, UnreadyString, ReadyString);
     }
     else {
         return super.OnFooterClick(Sender);

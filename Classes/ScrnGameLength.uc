@@ -837,9 +837,10 @@ function SetWaveInfo()
         Game.ScrnGRI.WaveMessage = "";
     }
     else {
-        Game.ScrnGRI.WaveHeader = Wave.Header;
-        Game.ScrnGRI.WaveTitle = Wave.Title;
-        Game.ScrnGRI.WaveMessage = Repl(Wave.Message, "%c", string(WaveCounter), true);
+        Game.ScrnGRI.WaveHeader = class'ScrnFunctions'.static.ParseColorTags(Wave.Header);
+        Game.ScrnGRI.WaveTitle = class'ScrnFunctions'.static.ParseColorTags(Wave.Title);
+        Game.ScrnGRI.WaveMessage = class'ScrnFunctions'.static.ParseColorTags(
+                Repl(Wave.Message, "%c", string(WaveCounter), true));
     }
     Game.ScrnGRI.WaveCounter = 0;
     WaveTimer();
