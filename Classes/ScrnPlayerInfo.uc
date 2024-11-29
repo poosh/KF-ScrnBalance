@@ -120,6 +120,7 @@ var private int LastFoundCustomDataIndex;
 
 
 // Backup data for PlayerReplicationInfo
+var bool bBackedUp;
 var string PlayerName;
 var int SteamID32;
 var int PRI_Score, PRI_Kills, PRI_KillAssists, PRI_Deaths, PRI_StartTime;
@@ -1052,6 +1053,7 @@ function BackupPRI()
         PRI_HadPawn = ScrnPC.bHadPawn;
         PRI_StarCash = ScrnPC.StartCash;
     }
+    bBackedUp = true;
 }
 
 function RestorePRI()
@@ -1060,7 +1062,7 @@ function RestorePRI()
     local ScrnCustomPRI ScrnPRI;
     local ScrnPlayerController ScrnPC;
 
-    if ( PlayerOwner == none )
+    if (PlayerOwner == none || !bBackedUp)
         return;
 
     KFPRI = KFPlayerReplicationInfo(PlayerOwner.PlayerReplicationInfo);
@@ -1069,9 +1071,11 @@ function RestorePRI()
     ScrnPRI = class'ScrnCustomPRI'.static.FindMe(KFPRI);
     ScrnPC = ScrnPlayerController(PlayerOwner);
 
-    if ( KFPRI.Kills == 0 && KFPRI.KillAssists == 0 && KFPRI.Deaths == 0 ) {
-        if ( PRI_ClientVeteranSkill != none )
+    if (ScrnPC != none && !ScrnPC.bHadPawn) {
+        // player reconnecting
+        if (PRI_ClientVeteranSkill != none)
             KFPRI.ClientVeteranSkill = PRI_ClientVeteranSkill;
+
         if ( PRI_TeamIndex < 2 && ( KFPRI.Team == none || KFPRI.Team.TeamIndex != PRI_TeamIndex ) )
             Level.Game.ChangeTeam( PlayerOwner, PRI_TeamIndex, true );
     }
@@ -1091,6 +1095,18 @@ function RestorePRI()
         ScrnPC.bHadPawn = ScrnPC.bHadPawn || PRI_HadPawn;
         ScrnPC.StartCash = max(ScrnPC.StartCash, PRI_StarCash);
     }
+    else {
+        // should not happen
+        log(PlayerName $ " is NOT a ScrnPlayerController! Class: " $ PlayerOwner.class);
+
+    }
+
+    log(PlayerName $ " stats restored: "
+            $ " Dosh=$" $ int(KFPRI.Score)
+            $ " StartDosh=$" $ ScrnPC.StartCash
+            $ " Kills=" $ KFPRI.Kills
+            $ " Deaths=" $ int(KFPRI.Deaths)
+    );
 }
 
 

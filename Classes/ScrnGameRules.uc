@@ -282,17 +282,32 @@ function PlayerLeaving(ScrnPlayerController PC)
     if ( Level.Game.bGameEnded )
         return; // game over
 
+    log("Player Leaving: " $ class'ScrnFunctions'.static.PlainPlayerName(PC.PlayerReplicationInfo)
+            $ " SteamID64=" $ PC.ScrnCustomPRI.GetSteamID64()
+            $ " SteamID32=" $ PC.ScrnCustomPRI.GetSteamID32()
+            $ " Dosh=$" $ PC.PlayerReplicationInfo.Score
+            , 'ScrnBalance');
     SPI = GetPlayerInfo(PC);
     if ( SPI != none ) {
         SPI.BackupPRI();
         SPI.PlayerOwner = none;
+    }
+    else {
+        log(class'ScrnFunctions'.static.PlainPlayerName(PC.PlayerReplicationInfo) $ " has no SPI", 'ScrnBalance');
     }
 }
 
 // Ensure that PC has valid SteamID before this function call!
 function PlayerEntering(ScrnPlayerController PC)
 {
-    CreatePlayerInfo(PC, true);
+    local ScrnPlayerInfo SPI;
+    log("Player Entering: " $ class'ScrnFunctions'.static.PlainPlayerName(PC.PlayerReplicationInfo)
+            $ " SteamID64=" $ PC.ScrnCustomPRI.GetSteamID64()
+            $ " SteamID32=" $ PC.ScrnCustomPRI.GetSteamID32()
+            $ " Dosh=$" $ PC.PlayerReplicationInfo.Score
+            , 'ScrnBalance');
+    SPI = CreatePlayerInfo(PC, true, true);
+    SPI.RestorePRI();
 }
 
 function TransferDoshToTeam(ScrnPlayerInfo SPI)
@@ -1396,13 +1411,15 @@ final function ClearNonePlayerInfos()
  *
  * @param   PlayerOwner             PlayerController, which owns the SPI object. Note that it means
  *                                  SPI.PlayerOwner = PlayerOwner, NOT SPI.Owner (latter is none)
- * @param   bDontRestoreFromBackup  This parameter is used only when SPI object is in the backup.
+ * @param   bKeepInBackup           This parameter is used only when SPI object is in the backup.
  *                                  True means it will be kept in backup.
  *                                  False means it will be restored to active player info list.
+ * @param   bForceRestorePRI        Force loading PRI data from SPI if the latter already exists
  * @return  SPI object which is linked to given PlayerOwner. Theoretically function always should returns
  *          a valid pointer.
  */
-final function ScrnPlayerInfo CreatePlayerInfo(PlayerController PlayerOwner, optional bool bDontRestoreFromBackup)
+function ScrnPlayerInfo CreatePlayerInfo(PlayerController PlayerOwner, optional bool bKeepInBackup,
+        optional bool bForceRestorePRI)
 {
     local ScrnPlayerInfo SPI, PrevSPI;
     local ScrnCustomPRI ScrnPRI;
@@ -1413,8 +1430,12 @@ final function ScrnPlayerInfo CreatePlayerInfo(PlayerController PlayerOwner, opt
 
     // Does it exist and active?
     for ( SPI=PlayerInfo; SPI!=none; SPI=SPI.NextPlayerInfo ) {
-        if ( SPI.PlayerOwner == PlayerOwner )
+        if ( SPI.PlayerOwner == PlayerOwner ) {
+            if (bForceRestorePRI) {
+                SPI.RestorePRI();
+            }
             return SPI;
+        }
     }
 
     ScrnPRI = class'ScrnCustomPRI'.static.FindMe(PlayerOwner.PlayerReplicationInfo);
@@ -1439,8 +1460,11 @@ final function ScrnPlayerInfo CreatePlayerInfo(PlayerController PlayerOwner, opt
                     SPI.PlayerOwner = PlayerOwner;
                     SPI.RestorePRI();
                 }
+                else if (bForceRestorePRI) {
+                    SPI.RestorePRI();
+                }
 
-                if ( bDontRestoreFromBackup ) {
+                if (!bKeepInBackup) {
                     //remove from backup
                     if ( PrevSPI != none )
                         PrevSPI.NextPlayerInfo = SPI.NextPlayerInfo;
@@ -1485,6 +1509,7 @@ final function ScrnPlayerInfo CreatePlayerInfo(PlayerController PlayerOwner, opt
     SPI.StartWave = Mut.KF.WaveNum;
     SPI.BackupStats(SPI.GameStartStats);
     SPI.ProgressAchievement('Welcome', 1);
+    log("Create ScrnPlayerInfo for " $ SPI.PlayerName, 'ScrnBalance');
     return SPI;
 }
 

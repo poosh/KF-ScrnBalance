@@ -1139,8 +1139,9 @@ function bool RewardSurvivingPlayers()
         }
         else if (AliveTeamPlayerCount[t] > 0) {
             SocialBudget[t] = Teams[t].Score * fclamp(ScrnBalanceMut.SocialTax, 0.0, 1.0);
-            log("Team"$t$" scored $" $  int(Teams[t].Score) $ ". Social Tax ("
-                    $ int(ScrnBalanceMut.SocialTax * 100) $ "%) = $" $ SocialBudget[t], 'ScrnBalance');
+            log("Team"$t$" scored $" $  int(Teams[t].Score) $ " in wave " $ string(WaveNum + 1)
+                    $ ". Social Tax (" $ int(ScrnBalanceMut.SocialTax * 100) $ "%) = $" $ SocialBudget[t]
+                    , 'ScrnBalance');
             Teams[t].Score -= SocialBudget[t];
         }
     }
@@ -1171,7 +1172,7 @@ function bool RewardAlivePlayers()
         if (AliveTeamPlayerCount[t] > 0) {
             Dosh[t] = Teams[t].Score / AliveTeamPlayerCount[t];
             Teams[t].NetUpdateTime = Level.TimeSeconds - 1;
-            log("Team"$t$" Wallet = $" $ int(Teams[t].Score) $ " = " $ AliveTeamPlayerCount[t] $ " players = $"
+            log("Team"$t$" Wallet = $" $ int(Teams[t].Score) $ ", " $ AliveTeamPlayerCount[t] $ " players, $"
                     $ Dosh[t] $ " per player", 'ScrnBalance');
         }
     }
@@ -2679,8 +2680,11 @@ function GiveStartingCash(PlayerController PC)
         cash = StartingCash;
     }
 
-    ScrnPC.PlayerReplicationInfo.Score = max(0, cash);
-    ScrnPC.StartCash = PC.PlayerReplicationInfo.Score;
+    ScrnPC.StartCash = max(0, cash);
+    ScrnPC.PlayerReplicationInfo.Score = ScrnPC.StartCash;
+    log("Give starting dosh $" $ ScrnPC.StartCash $ " to "
+            $ class'ScrnFunctions'.static.PlainPlayerName(ScrnPC.PlayerReplicationInfo)
+            , class.name);
 }
 
 function bool AllowGameEnd(PlayerReplicationInfo Winner, string Reason)

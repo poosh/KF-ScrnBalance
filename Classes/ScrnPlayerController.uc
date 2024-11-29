@@ -1666,15 +1666,15 @@ function BecomeActivePlayer()
             Mut.DynamicLevelCap();
     }
 
+    if (bWasOnlySpectator) {
+        Mut.GameRules.PlayerEntering(self);
+    }
+
     if (Mut.ScrnGT != none) {
         Mut.ScrnGT.GiveStartingCash(self);
     }
     else {
         StartCash = PlayerReplicationInfo.Score;
-    }
-
-    if (bWasOnlySpectator) {
-        Mut.GameRules.PlayerEntering(self);
     }
 }
 
