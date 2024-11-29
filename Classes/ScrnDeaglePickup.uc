@@ -45,11 +45,13 @@ function bool CheckCanCarry(KFHumanPawn Hm) {
 
 defaultproperties
 {
-     DualInventoryType=class'ScrnDualDeagle'
-     cost=750
-     ItemName="Handcannon SE"
-     ItemShortName="Handcannon SE"
-     InventoryType=class'ScrnDeagle'
-     Weight=4
-     BuyClipSize=8
+    DualInventoryType=class'ScrnDualDeagle'
+    cost=750
+    AmmoCost=15
+    BuyClipSize=7
+    ItemName="Handcannon SE"
+    ItemShortName="Handcannon SE"
+    AmmoItemName=".50 AE"
+    InventoryType=class'ScrnDeagle'
+    Weight=4
 }

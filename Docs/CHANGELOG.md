@@ -28,6 +28,97 @@
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+## v9.70.20
+#### DO$H
+- New feature: **Digital Dosh Transfer (DDT)**. Allows transfering dosh to other players from the Trader Menu.
+- DDT allows sharing dosh with the team by sending dosh to the Team Walletm when everybody can use it.
+- New Trader button: "Request Dosh" - allows doing "v13 - I Need Money" without exiting the Trader.
+- A dosh request puts the player on top of the DDT player list and marks it so the teammates can identify those in need.
+- If a player abuses dosh requests, blame them (`MVOTE BLAME`). Blame vote clears the dosh request mark.
+- Blamed players cannot use voice communication commands (vXX) for one minute after the blame.
+- Blame message (poop) display time reduced to one minute - to match the communication ban.
+- New Trader button: "F7 Armor" - quickly repairs the current armor or buys a new one.
+- New Trader button: "F9 Share Dosh" - share all dosh with the team.
+- The "F10 Exit" button received a new hotkey. Esc also works.
+- Players can quickly refill everyhing, share spare dosh, then exit the trader by ressing buttons: **F7, F8, F8, F9, F10**.
+- There is no typo in the line above. The first F8 fills weapon ammo without resupplying nades or pipebombs. The second click restocks nades and pipebombs.
+- "Sell Offperk" / "Sell ALL" button hotkeys changed to `Ctrl+Backspace` / `Ctrl+Shift+Backspace`
+- Improved netcode in Trader Menu
+- The default dropped dosh amount is set to $100 (up from $50). Players can still drop $50 by executing `TossCash 50`
+- Dropped dosh objects combine on touching each other.
+- Dosh object size scales by the dosh amount.
+
+#### Side Arm Selection
+- The selection of single-handed weapons made twice as fast (single pistols, knife, machete, syringe, welder)
+- Switching to a side arm is faster than switching between primary weapons.
+- Fast switching between single and dual pistols via alt-fire
+- **Dual Flare Revolvers**: alt-fire switches between single and dual guns
+
+#### Gunslinger
+- **Laser .44 Magnums** upgraded to Armor-Piercing rounds.
+- Laser and non-laser pistols of the same kind can be carried together.
+- Laser .44 Magnums have a separate ammo pool from regular ones due to ammo difference (.44 AP vs. .44)
+- **Laser MK23** share the ammo pool with regulal MK23(-s), doubling the ammo capacity.
+- Fire rate bonus on **Flare Revolvers**
+- Discount and reload bonus on **Medic Pistol**
+- Extra +10% damage bonus on **LAR** to kill HoE Clots with one body shots. Previously, it left a Clot with 3HP.
+- **LAR** in Gunslinger's hands can flinch-lock Scrakes like HC.
+- Fixed incorrect sell price of dual pistols
+- **Handcannon** starting and max ammo adjutested to match full magazines (7, 14)
+- **MK23** lowered ammo cost to 14 per magazine (down from 16)
+
+#### ScrnBalanceSrv.ini
+- New: `bStoryZedPack`
+- `AutoLoadMutators=ScrnBalanceSrv.ScrnSpeedMut` enabled by default
+- Trader time and starting dosh can be adjusted in *ScrnGames.ini* and *ScrnWaves.ini*
+- The config options below are deprecated and hardcoded to the given values:
+```ini
+bSpawn0=true
+bMedicRewardFromTeam=true
+bLeaveCashOnDisconnect=true
+bNoStartCashToss=false
+StartCashNormal=0
+StartCashHard=0
+StartCashSui=0
+StartCashHoE=0
+MinRespawnCashNormal=0
+MinRespawnCashHard=0
+MinRespawnCashSui=0
+MinRespawnCashHoE=0
+TraderTimeNormal=60
+TraderTimeHard=60
+TraderTimeSui=60
+TraderTimeHoE=60
+```
+
+#### ScrnGames.ini
+- Deprecated: `bStartingCashReset`, `StartingCashBonus`, `bStartingCashRelative`
+- New: `StartDosh`, `StartDoshPerWave`, `StartDoshMin`, `StartDoshMax`
+
+#### Other Changes
+- **Syringe**: both healing mods made twice faster. Pro players are using macros to skip healing animations anyway, while newbies were unnecessarily struggling for too long.
+- **MP5M**: Removed tactical reload as being unrealistic.
+- **MP5M**: Regular reload made faster to compensate for tactical reload removal.
+- Blocked weapons (*ScrnGames.ini*) do not spawn on the map anymore (thanks [nmmblez])
+- **ScrN Objective Mode** now uses **ScrN Zed Pack** (see `bStoryZedPack` in *ScrnBalanceSrv.ini*)
+- If a player has >100 armor, the cyan bar is drawn on the blue background. It fixes the issue where players with slightly above 100 armor looked like they did not have armor at all.
+
+#### Known Issues
+- Trader Menu shows the full price of dual pistols despite the single exists in the inventory. Only half of the cost is actually charged, though.
+- Trader Menu ignores single pistol weight when upgrading to dual pistols, requiring the player to have free weight for single+dual (10kg in the case of Handcannons). As a workaround, temporarily drop other weapons while upgrading to dual pistols.
+
+#### Code Changes
+- Refactored the healing code. Medic reward calculation moved to `ScrnHumanPawn.TakeHealing()`. Make sure to check your custom medic guns for ScrN compatibility.
+
+#### ScrN Weapon Pack
+- Faster selection of **Medic Pistol** and **Colt**
+- **Colt** received Horzine modification to .50 AE rounds. Extra damage to Fleshpouds.
+- **Colt** price incereased to 1750 (up from 1250)
+
+#### Horzine Technicial
+- **Cryo Thrower**: tactical reload gives +1 ammo (3 in the magazine + 1 in the barrel)
+
+
 ## v9.70.18
 - *ScrnBalanceSrv.ini*: added `bLateJoinersSpectate` to force late joiners to spectators by default - with exception of reconnecting players.
 - Spectators may spawn immediately after joining the game during Trader Time.

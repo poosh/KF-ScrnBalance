@@ -2,9 +2,9 @@ class ScrnDeagleAmmo extends DeagleAmmo;
 
 defaultproperties
 {
-     AmmoPickupAmount=16
-     MaxAmmo=96
-     InitialAmount=40
+     AmmoPickupAmount=14
+     MaxAmmo=98
+     InitialAmount=28
      PickupClass=class'ScrnDeagleAmmoPickup'
      ItemName=".50 AE"
 }

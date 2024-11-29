@@ -60,12 +60,12 @@ static function ClientReceive(
 defaultproperties
 {
      bComplexString=True
-     Lifetime=120
+     Lifetime=60
      DrawColor=(B=64,G=64,R=255)
      PosY=0.800000
      FontSize=5
-     Messages(0)="You are blamed by the team!"
-     Messages(1)="As a punishment you have to"
-     Messages(2)="look at this for 2 minutes:"
+     Messages(0)="THE TEAM BLAMES YOU!"
+     Messages(1)="As a punishment, you must look"
+     Messages(2)="at the poop for 60 seconds:"
      PictureRef="ScrnTex.HUD.Crap256"
 }

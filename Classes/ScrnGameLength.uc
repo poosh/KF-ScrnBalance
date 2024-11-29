@@ -3,6 +3,12 @@ Class ScrnGameLength extends Object
     PerObjectConfig
     Config(ScrnGames);
 
+// Deprecated config options. Those will be delete in future, so make sure not to use them.
+var deprecated bool bStartingCashReset;
+var deprecated int StartingCashBonus;
+var deprecated bool bStartingCashRelative;
+
+
 var ScrnGameType Game;
 var FtgGame FTG;
 var ScrnBalance Mut;
@@ -13,10 +19,9 @@ var class<ScrnZedInfo> ZedInfoClass;
 var config int GameVersion;
 var config string GameTitle;
 var config string Author;
+var config int StartDosh, StartDoshPerWave, StartDoshMin, StartDoshMax;
+var int RecommendedStartDosh;
 var config float BountyScale;
-var config bool bStartingCashReset;
-var config int StartingCashBonus;
-var config bool bStartingCashRelative;
 var config array<string> ServerPackages;
 var config array<string> Mutators;
 var config array<string> Waves;
@@ -264,6 +269,14 @@ function LoadGame(ScrnGameType MyGame)
     if ( ZedVotes.length > 0 )
         AddVoting();
 
+    Game.StartingCash = 0;  // the game must call CalcStartingCash() instead
+    if (StartDoshMax <= 0) {
+        StartDoshMax = 1000000;
+    }
+    else {
+        RecommendedStartDosh = StartDoshMax;
+    }
+
     // this makes sure the Wave is never none
     if ( Waves.length == 0 ) {
         warn("ScrnGameLength: NO WAVES DEFINED!");
@@ -274,6 +287,12 @@ function LoadGame(ScrnGameType MyGame)
         Wave = CreateWave(Waves[Waves.length-1]);
         Game.bUseEndGameBoss = Wave.EndRule == RULE_KillBoss;
         Wave = CreateWave(Waves[0]);
+
+        if (StartDosh == 0 && StartDoshPerWave == 0) {
+            StartDoshPerWave = RecommendedStartDosh / Waves.length / 25 * 25;
+            StartDosh = StartDoshPerWave;
+            log("Calculated StartDoshPerWave=" $ StartDoshPerWave, class.name);
+        }
     }
     Wave.bRespawnDeadPlayers = true;  // always allow player start on wave 1
     NextWave = Wave;  // prevent loading the same object again during LoadWave(0) call
@@ -1485,16 +1504,7 @@ function byte SpawnZed(string Alias, string ZedClassStr, byte count, out string 
 
 function int CalcStartingCash(PlayerController PC)
 {
-    local int result;
-
-    result = StartingCashBonus;
-    if ( bStartingCashRelative ) {
-        result *= Game.RelativeWaveNum(Game.WaveNum);
-    }
-    if (!bStartingCashReset) {
-        result += Game.StartingCash;
-    }
-    return result;
+    return clamp(StartDosh + Game.WaveNum * StartDoshPerWave, StartDoshMin, StartDoshMax);
 }
 
 function LoadWeaponList(string WLName, out array<string> LoadedLists, out array<name> LoadedWeapons)
@@ -1596,6 +1606,36 @@ function SetupRepLink(ScrnClientPerkRepLink R)
     }
 }
 
+function SetupRandomItemSpawn(ScrnRandomItemSpawn Items)
+{
+    local int i;
+    local bool bHasItems;
+
+    if (Items.bForceDefault) {
+        // we don't want to mess up with the default items, so we copy them to the object and disable bForceDefault
+        for (i = 0; i < ArrayCount(Items.PickupClasses); ++i) {
+            Items.PickupClasses[i] = Items.default.PickupClasses[i];
+            Items.PickupWeight[i] = Items.default.PickupWeight[i];
+        }
+        Items.bForceDefault = false;
+    }
+
+    for (i = 0; i < ArrayCount(Items.PickupClasses); ++i) {
+        if (IsItemAllowed(Items.PickupClasses[i])) {
+            bHasItems = true;
+        }
+        else {
+            Items.PickupClasses[i] = none;
+            Items.PickupWeight[i] = 0;
+        }
+    }
+
+    if (!bHasItems) {
+        Items.bPermanentlyDisabled = true;
+        Items.DisableMe();
+    }
+}
+
 defaultproperties
 {
     WaveInfoClass=class'ScrnWaveInfo'
@@ -1611,4 +1651,5 @@ defaultproperties
     FtgSpawnDelayOnPickup=10.0
     MinBonusLevel=255
     MaxBonusLevel=255
+    RecommendedStartDosh=2000
 }

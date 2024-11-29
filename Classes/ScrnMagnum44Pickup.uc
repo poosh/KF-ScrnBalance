@@ -45,12 +45,13 @@ function bool CheckCanCarry(KFHumanPawn Hm) {
 
 defaultproperties
 {
-     DualInventoryType=class'ScrnDual44Magnum'
-     cost=150
-     AmmoCost=10
-     BuyClipSize=6
-     ItemName="44 Magnum SE"
-     ItemShortName="44 Magnum SE"
-     InventoryType=class'ScrnMagnum44Pistol'
-     Weight=2
+    DualInventoryType=class'ScrnDual44Magnum'
+    cost=150
+    AmmoCost=10
+    BuyClipSize=6
+    ItemName="Magnum .44 SE"
+    ItemShortName="Magnum .44 SE"
+    AmmoItemName=".44 Magnum"
+    InventoryType=class'ScrnMagnum44Pistol'
+    Weight=2
 }

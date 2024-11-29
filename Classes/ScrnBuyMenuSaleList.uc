@@ -225,24 +225,14 @@ function UpdateForSaleBuyables()
                         || (ScrnPawn.GetCurrentVestClass() == ForSalePickup && ScrnPawn.ShieldStrength >= ScrnPawn.GetShieldStrengthMax() ) )
                     continue;
             }
-            else if ( ForSaleWeapon != none ) {
-                // Remove single weld.
+            else if (ForSaleWeapon != none && ForSalePickup.outer.name == 'KFMod') {
+                // Remove single weild. Legacy code.
                 //Scrn pistols are linked through DemoReplacement, so no need to look for chilldren here
                 if ( (ForSalePickup == class'DeaglePickup' && IsInInventory(class'DualDeaglePickup'))
                      || (ForSalePickup == class'Magnum44Pickup' && IsInInventory(class'Dual44MagnumPickup'))
                      || (ForSalePickup == class'MK23Pickup' && IsInInventory(class'DualMK23Pickup'))
                      || (ForSalePickup == class'FlareRevolverPickup' && IsInInventory(class'DualFlareRevolverPickup'))
                      || DualIsInInventory(ForSaleWeapon) )
-                    continue;
-
-                // hide single and dual pistols, if player has laser variant
-                if ( (ForSalePickup == class'Magnum44Pickup' || ForSalePickup == class'ScrnMagnum44Pickup'
-                        || ForSalePickup == class'Dual44MagnumPickup' || ForSalePickup == class'ScrnDual44MagnumPickup')
-                        && IsInInventory(class'ScrnDual44MagnumLaserPickup') )
-                    continue;
-                if ( (ForSalePickup == class'MK23Pickup' || ForSalePickup == class'ScrnMK23Pickup'
-                        || ForSalePickup == class'DualMK23Pickup' || ForSalePickup == class'ScrnDualMK23Pickup')
-                        && IsInInventory(class'ScrnDualMK23LaserPickup') )
                     continue;
 
                 // Make cheaper.
@@ -360,10 +350,12 @@ function UpdateList()
     local KFPlayerReplicationInfo KFPRI;
     local ScrnHumanPawn ScrnPawn;
     local bool bDisplayCategories;
+    local int Dosh;
 
     CPRL = Class'ScrnClientPerkRepLink'.Static.FindMe(PlayerOwner());
     KFPRI = KFPlayerReplicationInfo(PlayerOwner().PlayerReplicationInfo);
     ScrnPawn = ScrnHumanPawn(PlayerOwner().Pawn);
+    Dosh = ScrnPawn.GetAvailableDosh();
 
     // Update the ItemCount and select the first item
     bDisplayCategories = SearchKeywords.Length == 0;
@@ -438,7 +430,7 @@ function UpdateList()
             else
                 SecondaryStrings[j] = LockStrings[min(ForSaleBuyables[i].ItemAmmoCurrent,LockStrings.Length-1)];
         }
-        else if ( ForSaleBuyables[i].ItemCost > KFPRI.Score
+        else if ( ForSaleBuyables[i].ItemCost > Dosh
                 || ForSaleBuyables[i].ItemWeight + ScrnPawn.CurrentWeight > ScrnPawn.MaxCarryWeight )
         {
             CanBuys[j] = 0;
@@ -902,6 +894,27 @@ function QuickSearch(string s) {
         SetTopItem(0);
         GotoFirstItemInCategory();
     }
+}
+
+function IndexChanged(GUIComponent Sender)
+{
+    local ScrnHumanPawn ScrnPawn;
+    local GUIBuyable NewBuyable;
+
+    ScrnPawn = ScrnHumanPawn(PlayerOwner().Pawn);
+
+    if (ScrnPawn != none && Index >= 0 && CanBuys[Index]==0 && (Index - SelectionOffset) >= 0) {
+        NewBuyable = ForSaleBuyables[Index-SelectionOffset];
+        if (NewBuyable.ItemAmmoCurrent == 0) {
+            if (NewBuyable.ItemWeight + ScrnPawn.CurrentWeight > ScrnPawn.MaxCarryWeight) {
+                ScrnPawn.DemoPlaySound(TraderSoundTooHeavy, SLOT_Interface, 2.0);
+            }
+            else if (NewBuyable.ItemCost > ScrnPawn.GetAvailableDosh()) {
+                ScrnPawn.DemoPlaySound(TraderSoundTooExpensive, SLOT_Interface, 2.0);
+            }
+        }
+    }
+    Super(GUIVertList).IndexChanged(Sender);
 }
 
 defaultproperties

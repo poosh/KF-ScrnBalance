@@ -1,6 +1,8 @@
 class ScrnCustomPRI extends LinkedReplicationInfo;
 
+var byte                    DoshRequestCounter;
 var byte                    BlameCounter;
+
 var private Material        Avatar, ClanIcon, PreNameIcon, PostNameIcon;
 var Color                   PrefixIconColor, PostfixIconColor;
 var private int             TourneyPlayoffs, TourneyWins;
@@ -17,8 +19,8 @@ const SteamUID_Part2 =         960265728;
 replication
 {
     reliable if ( bNetDirty && Role == Role_Authority )
-        BlameCounter, SteamID32;
-}  
+        DoshRequestCounter, BlameCounter, SteamID32;
+}
 
 function PostBeginPlay()
 {
@@ -29,7 +31,7 @@ function PostBeginPlay()
 simulated function PostNetReceive()
 {
     super.PostNetReceive();
-    
+
     if ( SteamID32 > 0 && SteamID32 != ClientSteamID32 ) {
         ClientSteamID32 = SteamID32;
         SetSteamID32(SteamID32);
@@ -41,10 +43,10 @@ simulated function PostNetReceive()
 final static function int SteamID64_to_32(string sid64)
 {
     local int a, billions;
-    
+
     if ( len(sid64) != 17 || left(sid64, 5) != "76561" )
         return 0;
-    
+
     billions = int(left(sid64,8)) - SteamUID_Part1;
     a = int(right(sid64,9));
 
@@ -53,13 +55,13 @@ final static function int SteamID64_to_32(string sid64)
         a += 1000000000;
     }
     a -= SteamUID_Part2;
-    
-    
+
+
     if ( billions > 4 || (billions == 4 && a >= 294967296) ) { // 2^32
         log("Steam ID too high for 32-bit number: " $ sid64);
         return 0; //
     }
-    
+
     if ( billions > 2 || (billions == 2 && a >= 147483648) ) { // 2^31
         // need to set highest (sign) bit to 1
         billions -= 2;
@@ -67,17 +69,17 @@ final static function int SteamID64_to_32(string sid64)
         a += billions * 1000000000;
         a = a | (1<<31);
     }
-    else 
-        a += billions * 1000000000; 
-    
+    else
+        a += billions * 1000000000;
+
     return a;
-}   
+}
 
 final static function string SteamID32_to_64(int sid32)
 {
     local int a, billions;
     local string result;
-    
+
     if ( sid32 < 0 ) {
         // negative number mean highest int32 bit is 1 -> 2147483648
         a = sid32 & 0x7FFFFFFF; // unset sign bit
@@ -99,19 +101,19 @@ final static function string SteamID32_to_64(int sid32)
         if ( a > 1000000000 ) {
             billions++;
             a -= 1000000000;
-        }        
+        }
     }
     result = string(a);
     while ( len(result) < 9 )
         result = "0" $ result;
     result = string(billions) $ result;
     return result;
-} 
+}
 
 final simulated function SetSteamID64(string value)
 {
     local int a;
-    
+
     a = SteamID64_to_32(value);
     if ( a != 0 ) {
         SteamID64 = value;
@@ -139,18 +141,18 @@ function simulated int GetSteamID32()
 final simulated function LoadHighlyDecorated()
 {
     class'ScrnHighlyDecorated'.static.GetHighlyDecorated(
-        SteamID32, Avatar, ClanIcon, 
-        PreNameIcon, PrefixIconColor, PostNameIcon, PostfixIconColor, 
+        SteamID32, Avatar, ClanIcon,
+        PreNameIcon, PrefixIconColor, PostNameIcon, PostfixIconColor,
         TourneyPlayoffs, TourneyWins);
 }
 
 final static function ScrnCustomPRI FindMe(PlayerReplicationInfo PRI)
 {
     local LinkedReplicationInfo L;
-    
+
     if ( PRI == none )
         return none;
-    
+
     for( L = PRI.CustomReplicationInfo; L != none; L = L.NextReplicationInfo ) {
         if ( ScrnCustomPRI(L) != none )
             return ScrnCustomPRI(L);
@@ -200,7 +202,7 @@ Begin:
     while ( ++SteamID64Attempts <= 120 ) {
         sleep(1); // give time to execute PostLogin() and set SteamID64
         SteamID64 = PlayerController(Owner).GetPlayerIDHash();
-        if ( len(SteamID64) == 17 && left(SteamID64, 5) == "76561" ) {  
+        if ( len(SteamID64) == 17 && left(SteamID64, 5) == "76561" ) {
             SetSteamID64(SteamID64);
             NetUpdateTime = Level.TimeSeconds - 1;
             break;

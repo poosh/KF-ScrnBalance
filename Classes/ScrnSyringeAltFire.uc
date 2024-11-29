@@ -35,4 +35,6 @@ function Timer()
 
 defaultproperties
 {
+    FireRate=2.12
+    FireAnimRate=2.0
 }

@@ -33,4 +33,5 @@ defaultproperties
 {
     LifeSpan=60
     AmbientSoundRef=""
+    DamageRadius=0
 }

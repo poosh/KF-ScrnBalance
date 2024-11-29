@@ -134,11 +134,34 @@ var class<ScrnFlareCloud> FlareCloudClass;
 var transient float LastMutateTime;
 var transient int MutateCounter;
 var localized string strMutateProtection;
+var localized string strShutUp;
 
 var class<KFSettingsPage> SettingsMenuClass;
 var globalconfig bool bWelcomed;
 var class<ScrnInvasionLoginMenu> ScrnLoginMenuClass;
 var class<GUIBuyMenu> ShopMenuClass;
+var globalconfig bool bAutoOpenGiveDosh;
+
+// Only actors support smart pointers to other actors.
+// An object cannot store pointers to actors whose lifetime may be shorter than the object's.
+// For example:
+//      myActor.TestActor = tmpActor;  // good
+//      myObject.TestActor = tmpActor; // BAD!
+//      tmpActor.Destroy();
+//      if (myActor.TestActor != none) {
+//          // this code doesn't execute because myActor.TestActor got nullified
+//      }
+//      if (myObject.TestActor != none) {
+//          // this code executes and crashes the game because myObject.TestActor became a dangling pointer
+//      }
+// Hence, GUI objects cannot store references to other players' PRIs because the game will crash if the player being
+// referenced disconnects while the GUI is open.
+// As a workaround, a GUI object may store temporary references here, accessing those via:
+//      ScrnPlayerController(PlayerOwner()).GUI_*
+var transient PlayerReplicationInfo GUI_PRI;
+var transient array<PlayerReplicationInfo> GUI_PRIs;
+
+delegate OnTraderDoshRequest(PlayerReplicationInfo Sender, string Msg);
 
 replication
 {
@@ -1180,6 +1203,7 @@ function SendVoiceMessage(PlayerReplicationInfo Sender,
 {
     local Controller C;
     local KFPlayerController PC;
+    local ScrnCustomPRI ScrnPRI;
     local Actor A;
     local string str;
     local byte b;
@@ -1204,6 +1228,13 @@ function SendVoiceMessage(PlayerReplicationInfo Sender,
                 // encode player health into message ID
                 msgtype = 'MEDIC';
                 msgid = Pawn.Health;
+            }
+            else if (msgid == 2) {
+                ScrnPRI = class'ScrnCustomPRI'.static.FindMe(Sender);
+                if (ScrnPRI != none) {
+                    ScrnPRI.DoshRequestCounter++;
+                    ScrnPRI.NetUpdateTime = Level.TimeSeconds - 1;
+                }
             }
             break;
         case 'ALERT':
@@ -1330,7 +1361,6 @@ function ClientLocationalVoiceMessage(PlayerReplicationInfo Sender,
             msgtype = 'SUPPORT';
             msgid = 0;
             break;
-
     }
 
     KFVoice.ClientInitializeLocational(Sender, Recipient, msgtype, msgid, SenderPawn, SenderLocation);
@@ -1341,6 +1371,9 @@ function ClientLocationalVoiceMessage(PlayerReplicationInfo Sender,
 
     if (bMark) {
         hud.MarkTarget(KFPlayerReplicationInfo(Sender), SenderPawn, senderLocation,  Msg, MarkType);
+    }
+    if (msgtype == 'SUPPORT' && msgid == 2 && bShopping  && Sender != PlayerReplicationInfo) {
+        OnTraderDoshRequest(Sender, Msg);
     }
 }
 
@@ -1633,10 +1666,13 @@ function BecomeActivePlayer()
             Mut.DynamicLevelCap();
     }
 
-    StartCash = PlayerReplicationInfo.Score;
     if (Mut.ScrnGT != none) {
         Mut.ScrnGT.GiveStartingCash(self);
     }
+    else {
+        StartCash = PlayerReplicationInfo.Score;
+    }
+
     if (bWasOnlySpectator) {
         Mut.GameRules.PlayerEntering(self);
     }
@@ -1684,16 +1720,11 @@ function Possess(Pawn aPawn)
 
     //ClientMessage("Possess("$aPawn$"). Current Pawn="$Pawn);
     if ( Role == ROLE_Authority && Mut != none ) {
-        if ( bHadPawn )
-            StartCash = max(StartCash, Mut.KF.MinRespawnCash);
-        else
-            StartCash = max(StartCash, Mut.KF.StartingCash);
-
         if ( Mut.ScrnGT != none && Mut.ScrnGT.ScrnGameLength != none && Mut.ScrnGT.ScrnGameLength.Wave.bStartAtTrader )
         {
             R = aPawn.Rotation;
             // spawnned at the trader on a trader teleporter.
-            // Releporters usually are facing away from the trader, so turn 180
+            // Teleporters usually are facing away from the trader, so turn 180
             R.yaw += 32768;
             R = Normalize(R);
 
@@ -1767,15 +1798,8 @@ simulated event Destroyed()
 
 
     if ( Role == ROLE_Authority ) {
-        if ( Mut != none &&  PlayerReplicationInfo != none ) {
-            if ( Mut.bLeaveCashOnDisconnect && PlayerReplicationInfo.Team != none
-                && PlayerReplicationInfo.Score > StartCash )
-            {
-                PlayerReplicationInfo.Team.Score += PlayerReplicationInfo.Score - StartCash;
-                PlayerReplicationInfo.Score = StartCash; // just in case
-            }
-            if ( Mut.GameRules != none )
-                Mut.GameRules.PlayerLeaving(self);
+        if (Mut != none &&  PlayerReplicationInfo != none && Mut.GameRules != none) {
+            Mut.GameRules.PlayerLeaving(self);
         }
     }
 
@@ -1818,6 +1842,11 @@ function bool AllowVoiceMessage(name msgtype)
     if ( Level.NetMode == NM_Standalone || (PlayerReplicationInfo != none && PlayerReplicationInfo.bAdmin) )
         return true;
 
+    if (LastBlamedTime > 0 && Level.TimeSeconds - LastBlamedTime < 60) {
+        ClientMessage(repl(strShutUp, "%s", string(int(ceil(LastBlamedTime + 60 - Level.TimeSeconds)))));
+        return false;
+    }
+
     TimeSinceLastMsg = Level.TimeSeconds - OldMessageTime;
 
     if ( TimeSinceLastMsg < 3 )
@@ -1835,7 +1864,7 @@ function bool AllowVoiceMessage(name msgtype)
             if ( MaxVoiceMsgIn10s > 0 )
                 MaxVoiceMsgIn10s--;
             else {
-                ClientMessage("Keep quiet for " $ ceil(10-TimeSinceLastMsg) $"s");
+                ClientMessage(repl(strShutUp, "%s", string(int(ceil(10-TimeSinceLastMsg)))));
                 return false;
             }
         }
@@ -3781,6 +3810,7 @@ defaultproperties
     SettingsMenuClass=class'ScrnSettingsPage'
     ScrnLoginMenuClass=class'ScrnInvasionLoginMenu'
     ShopMenuClass=Class'ScrnGUIBuyMenu'
+    bAutoOpenGiveDosh=true
 
     PawnClass=class'ScrnHumanPawn'
     CustomPlayerReplicationInfoClass=class'ScrnCustomPRI'
@@ -3795,6 +3825,7 @@ defaultproperties
     strPerkLocked="Perk is locked"
     strPerkNotAvailable="Perk is not available"
     strMutateProtection="Cannot mutate too often. Wait a bit."
+    strShutUp="Keep quiet for %s seconds"
     bWaveGarbageCollection=False
     bOtherPlayerLasersBlue=true
 

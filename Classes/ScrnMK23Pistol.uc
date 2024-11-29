@@ -13,9 +13,13 @@ var float TweenEndTime;
 var vector PistolSlideOffset; //for tactical reload
 
 var bool bFiringLastRound;
+var protected bool bDoubleAmmo;
 
 replication
 {
+    reliable if ( Role == ROLE_Authority )
+        bDoubleAmmo;
+
     reliable if ( Role == ROLE_Authority )
         ClientReplicateAmmo;
 }
@@ -30,6 +34,17 @@ simulated function PostNetReceive()
         }
     }
 }
+
+simulated function Destroyed()
+{
+    if (bDoubleAmmo) {
+        // this code triggers only when selling weapon at the trader
+        bDoubleAmmo = class'ScrnDualMK23Laser'.static.CheckDoubleAmmo(Instigator, self);
+    }
+
+    super.Destroyed();
+}
+
 
 simulated function Fire(float F)
 {
@@ -173,6 +188,61 @@ simulated function WeaponTick(float dt)
         {
             ReloadMeNow();
         }
+    }
+}
+
+function bool IsDoubleAmmo() {
+    return bDoubleAmmo;
+}
+
+function SetDoubleAmmo(bool value) {
+    if (bDoubleAmmo == value)
+        return;
+    bDoubleAmmo = value;
+    NextAmmoCheckTime = Level.TimeSeconds - 1;
+    NetUpdateTime = Level.TimeSeconds - 1;
+    if (Ammo[0] != none) {
+        Ammo[0].AmmoAmount = clamp(Ammo[0].AmmoAmount, 0, MaxAmmo(0));
+        Ammo[0].NetUpdateTime = Level.TimeSeconds - 1;
+    }
+    if (ScrnHumanPawn(Instigator) != none) {
+        ScrnHumanPawn(Instigator).SetTraderUpdate();
+    }
+}
+
+simulated function float GetAmmoMulti()
+{
+    local KFPlayerReplicationInfo KFPRI;
+
+    if (DualGuns != none)
+        return DualGuns.GetAmmoMulti();
+
+    if ( NextAmmoCheckTime > Level.TimeSeconds )
+        return LastAmmoResult;
+
+    NextAmmoCheckTime = Level.TimeSeconds + 0.1;
+
+    LastAmmoResult = 1.0 + int(bDoubleAmmo);
+    if ( Instigator != none )
+        KFPRI = KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo);
+    if ( KFPRI != none && KFPRI.ClientVeteranSkill != none ) {
+        LastAmmoResult *= KFPRI.ClientVeteranSkill.static.AddExtraAmmoFor(KFPRI, AmmoClass[0]);
+    }
+    return LastAmmoResult;
+}
+
+simulated function GetAmmoCount(out float MaxAmmoPrimary, out float CurAmmoPrimary)
+{
+    if ( AmmoClass[0] == None )
+        return;
+
+    if ( Ammo[0] != None ) {
+        MaxAmmoPrimary = int(Ammo[0].default.MaxAmmo * GetAmmoMulti());
+        CurAmmoPrimary = Ammo[0].AmmoAmount;
+    }
+    else {
+        MaxAmmoPrimary = int(AmmoClass[0].Default.MaxAmmo * GetAmmoMulti());
+        CurAmmoPrimary = AmmoCharge[0];
     }
 }
 
@@ -375,12 +445,20 @@ simulated function DetachFromPawn(Pawn P)
 
 function DropFrom(vector StartLocation)
 {
+    local Pawn MyInstigator;
+
     if ( DualGuns != none ) {
         DualGuns.Velocity = Velocity;
         DualGuns.DropFrom(StartLocation);
+        return;
     }
-    else {
-        super.DropFrom(StartLocation);
+
+    MyInstigator = Instigator; // backup, as it gets cleared in DropFrom()
+
+    super.DropFrom(StartLocation);
+
+    if (bDoubleAmmo) {
+        class'ScrnDualMK23Laser'.static.CheckDoubleAmmo(MyInstigator, self);
     }
 }
 
@@ -400,18 +478,25 @@ function GiveTo( pawn Other, optional Pickup Pickup )
     }
 
     Super.GiveTo(Other,Pickup);
+
+    class'ScrnDualMK23Laser'.static.CheckDoubleAmmo(Other);
 }
 
 
 defaultproperties
 {
-     ReloadShortRate=1.83
-     ReloadShortAnim="Reload"
-     PistolSlideOffset=(X=0,Y=-0.0275000,Z=0.0)
-     Weight=3.000000
-     FireModeClass(0)=class'ScrnMK23Fire'
-     Description="Match grade 45 caliber pistol. Good balance between power, ammo count and rate of fire. Damage is near to Magnum's, but has no bullet penetration."
-     PickupClass=class'ScrnMK23Pickup'
-     ItemName="MK23 SE"
-     Priority=80
+    ReloadShortRate=1.83
+    ReloadShortAnim="Reload"
+    PistolSlideOffset=(X=0,Y=-0.0275000,Z=0.0)
+    Weight=3.000000
+    FireModeClass(0)=class'ScrnMK23Fire'
+    Description="Match grade .45 ACP caliber pistol featuring a good balance between power, ammo count, and rate of fire. Damage is near to .44 Magnum but has no bullet overpenetration."
+    PickupClass=class'ScrnMK23Pickup'
+    ItemName="MK23 SE"
+    Priority=80
+
+    PutDownTime=0.15
+    BringUpTime=0.15
+    SelectAnimRate=3.5556
+    PutDownAnimRate=3.5556
 }

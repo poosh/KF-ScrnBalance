@@ -1,11 +1,10 @@
-class ScrnMessageBoxCheck extends UT2K4GenericMessageBox;
+class ScrnMessageBoxCheck extends ScrnMessageBox;
 
 var automated moCheckBox ch;
 
 var protected bool wasChecked;
 
 delegate onCheckChange(ScrnMessageBoxCheck msg);
-delegate onMsgClose(ScrnMessageBoxCheck msg);
 
 function bool IsChecked()
 {
@@ -17,21 +16,21 @@ function bool IsChanged()
     return IsChecked() != wasChecked;
 }
 
+function Close(bool bCancel)
+{
+    if (!bCancel && IsChanged()) {
+        onCheckChange(self);
+    }
+    super.Close(bCancel);
+}
+
+
 static function ScrnMessageBoxCheck ShowMe(ScrnPlayerController PC, string Title, string Message, optional bool bChecked,
         optional string CheckboxCaption)
 {
     local ScrnMessageBoxCheck result;
-    local GUIController guictrl;
 
-    if (PC == none || PC.Player == none)
-        return none;
-
-    guictrl = GUIController(PC.Player.GUIController);
-    if (guictrl == none)
-        return none;
-
-    guictrl.OpenMenu(string(default.class), Title, Message);
-    result = ScrnMessageBoxCheck(guictrl.FindMenuByClass(default.class));
+    result = ScrnMessageBoxCheck(ShowMessage(PC, Title, Message));
     if (result == none)
         return none;
 
@@ -45,14 +44,6 @@ static function ScrnMessageBoxCheck ShowMe(ScrnPlayerController PC, string Title
     return result;
 }
 
-function bool InternalOnClick(GUIComponent Sender)
-{
-    if (IsChanged()) {
-        onCheckChange(self);
-    }
-    onMsgClose(self);
-    return super.InternalOnClick(Sender);
-}
 
 defaultproperties
 {

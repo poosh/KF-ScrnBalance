@@ -8,15 +8,27 @@ var localized string strSellOffperkWeapons, strSellAllWeapons;
 var localized string strSellOffperkWeaponsHint, strSellAllWeaponsHint;
 var localized string strChangePerk, strCancel;
 
+var ScrnPlayerController ScrnPC;
 var ScrnTab_BuyMenu BuyMenuTab;
 var ScrnKFTab_Perks PerkTab;
 var bool bPlayerHasOffperkWeapons;
 var int SearchTicks;
 
+function Free()
+{
+    super.Free();
+
+    // reset all actor references
+    ScrnPC = none;
+}
+
+
 function InitTabs()
 {
     BuyMenuTab = ScrnTab_BuyMenu(c_Tabs.AddTab(PanelCaption[0], string(class'ScrnTab_BuyMenu'),, PanelHint[0]));
     PerkTab = ScrnKFTab_Perks(c_Tabs.AddTab(PanelCaption[1], string(class'ScrnKFTab_Perks'),, PanelHint[1]));
+
+    BuyMenuTab.TraderMenu = self;
 
     ScrnBuyMenuFilter(BuyMenuFilter).SaleListBox = ScrnBuyMenuSaleList(BuyMenuTab.SaleSelect.List);
     ScrnBuyMenuInvList(BuyMenuTab.InvSelect.List).OnBuyablesLoaded = OnPlayerInventoryLoaded;
@@ -24,9 +36,13 @@ function InitTabs()
 
 event Opened(GUIComponent Sender)
 {
+    ScrnPC = ScrnPlayerController(PlayerOwner());
+
     super(UT2k4MainPage).Opened(Sender);
 
-    ScrnPlayerController(PlayerOwner()).TraderMenuOpened();
+    ScrnPC.OnTraderDoshRequest = BuyMenuTab.OnPlayerDoshRequest;
+    ScrnPC.TraderMenuOpened();
+
     ActivateShopTab();
     SetTimer(0.05f, true);
 }
@@ -35,7 +51,8 @@ function KFBuyMenuClosed(optional bool bCanceled)
 {
     super(UT2k4MainPage).OnClose(bCanceled);
 
-    ScrnPlayerController(PlayerOwner()).TraderMenuClosed();
+    ScrnPC.OnTraderDoshRequest = none;
+    ScrnPC.TraderMenuClosed();
 }
 
 function Timer()
@@ -49,13 +66,17 @@ function Timer()
 
 function OnTabChanged(GUIComponent Sender)
 {
-    SearchEdit.SetText("");
-    SearchEdit.SetVisibility(BuyMenuTab.bVisible);
-    SearchLabel.SetVisibility(BuyMenuTab.bVisible);
-    BuyMenuFilter.SetVisibility(BuyMenuTab.bVisible);
+    local bool b;
 
-    SellAllButton.SetVisibility(BuyMenuTab.bVisible);
-    ChangePerkButton.Caption = eval(BuyMenuTab.bVisible, strChangePerk, strCancel);
+    b = BuyMenuTab != none && BuyMenuTab.bVisible;
+
+    SearchEdit.SetText("");
+    SearchEdit.SetVisibility(b);
+    SearchLabel.SetVisibility(b);
+    BuyMenuFilter.SetVisibility(b);
+
+    SellAllButton.SetVisibility(b);
+    ChangePerkButton.Caption = eval(b, strChangePerk, strCancel);
 }
 
 function ActivateShopTab()
@@ -86,13 +107,9 @@ function bool ChangePerkClick(GUIComponent Sender)
 
 function UpdateHeader()
 {
-    local ScrnPlayerController ScrnPC;
     local KFGameReplicationInfo KFGRI;
     local KFPlayerReplicationInfo KFPRI;
 
-    ScrnPC = ScrnPlayerController(PlayerOwner());
-    if (ScrnPC == none)
-        return;
     KFGRI = KFGameReplicationInfo(ScrnPC.GameReplicationInfo);
     KFPRI = KFPlayerReplicationInfo(ScrnPC.PlayerReplicationInfo);
     if (KFPRI == none || KFGRI == none)
@@ -244,13 +261,14 @@ defaultproperties
 
     Begin Object Class=GUIButton Name=ChangePerkB
         Caption="Change Perk..."
-        Hint="Toggle perk selection menu [F9]"
+        Hint="Toggle perk selection menu [F6]"
         WinTop=0.055
         WinLeft=0.065
         WinWidth=0.12
         WinHeight=35.000000
         RenderWeight=0.450000
         bTabStop=False
+        OnClickSound=CS_Down
         OnClick=ScrnGuiBuyMenu.ChangePerkClick
     End Object
     ChangePerkButton=ChangePerkB
@@ -266,13 +284,14 @@ defaultproperties
         WinHeight=35.000000
         RenderWeight=0.450000
         bTabStop=False
+        OnClickSound=CS_Click
         OnClick=ScrnGuiBuyMenu.SellAllClick
     End Object
     SellAllButton=SellAllB
     strSellOffperkWeapons="Sell Off-Perk"
-    strSellOffperkWeaponsHint="Sells all off-perk weapons, excluding starting equipment, Machete, and Pipe Bombs [Ctrl+F9]"
+    strSellOffperkWeaponsHint="Sells all off-perk weapons, excluding starting equipment, Machete, and Pipe Bombs [Ctrl+Backspace]"
     strSellAllWeapons="Sell ALL"
-    strSellAllWeaponsHint="Sells everything but starting equipment [Ctrl+Shift+F9]"
+    strSellAllWeaponsHint="Sells everything but starting equipment [Ctrl+Shift+Backspace]"
 
     Begin Object Class=GUILabel Name=HBGLL
         bVisible=false
@@ -300,7 +319,7 @@ defaultproperties
     BuyMenuFilter=ScrnFilter
 
     Begin Object Class=GUILabel Name=SearchL
-        Caption="[F3] Search:"
+        Caption="F3 Search:"
         TextAlign=TXTA_Right
         TextColor=(B=158,G=176,R=175)
         WinTop=0.005

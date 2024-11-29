@@ -15,12 +15,6 @@ function PostBeginPlay()
     ScrnWeap = ScrnDualDeagle(Weapon);
 }
 
-simulated function DestroyEffects()
-{
-    super.DestroyEffects();
-    ScrnWeap = none;
-}
-
 //called after reload and on zoom toggle, sets next pistol to fire to sync with slide lock order
 function SetPistolFireOrder(bool bNextFireLeft)
 {

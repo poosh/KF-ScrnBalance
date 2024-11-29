@@ -79,3 +79,20 @@ function bool AllowCashPickup(ScrnPlayerInfo SPI, CashPickup Cash)
 
     return true;
 }
+
+/**
+ * Allows prohibiting a player from transfering
+ *
+ * @param SPI player who to transfer dosh
+ * @param Receiver dosh receiver. None means dosh transfer to the Team Wallet
+ * @param Amount dosh amount
+ * @return  true  - the mod allows or does not care about (by default) the transfer
+ *          false - the mod prohibits the pickup
+ */
+function bool AllowDoshTransfer(ScrnPlayerInfo SPI, PlayerReplicationInfo Receiver, int Amount)
+{
+    if ( Next != None && !Next.AllowDoshTransfer(SPI, Receiver, Amount) )
+        return false;
+
+    return true;
+}

@@ -13,6 +13,16 @@ class ScrnBalance extends ScrnMutator
 #exec OBJ LOAD FILE=ScrnTex.utx
 #exec OBJ LOAD FILE=ScrnAch_T.utx
 
+// Deprecated config options. Those will be delete in future, so make sure not to use them.
+var deprecated bool bSpawn0, bNoStartCashToss, bLeaveCashOnDisconnect;
+var deprecated bool bMedicRewardFromTeam;
+var deprecated bool bReplaceNades;
+var deprecated bool bManualReload, bForceManualReload;
+var deprecated int StartCashNormal, StartCashHard, StartCashSui, StartCashHoE;
+var deprecated int MinRespawnCashNormal, MinRespawnCashHard, MinRespawnCashSui, MinRespawnCashHoE;
+var deprecated int TraderTimeNormal, TraderTimeHard, TraderTimeSui, TraderTimeHoE;
+
+
 var ScrnBalance Mut; // pointer to self to use in static functions, i.e class'ScrnBalance'.default.Mut
 
 var const string BonusCapGroup;
@@ -25,16 +35,16 @@ var string strOnlyAdmin, strOnlyScrnGT, strOnlyNotInTourney;
 
 // SRVFLAGS
 var transient int SrvFlags; // used for network replication of the values below
-var globalconfig bool bSpawn0, bNoStartCashToss, bMedicRewardFromTeam;
 var globalconfig bool bAltBurnMech;
-var deprecated bool bReplaceNades;
 var globalconfig bool bMedicNades, bShieldWeight, bBeta;
 var globalconfig bool bShowDamages, bAllowWeaponLock;
-var deprecated bool bManualReload, bForceManualReload;
 var globalconfig bool bNoPerkChanges, bPerkChangeBoss, bPerkChangeDead, b10Stars;
 var globalconfig bool bTraderSpeedBoost;
 var bool bHardcore;
 // END OF SRVFLAGS
+
+var float SocialTax;
+
 var transient byte HardcoreLevel; // set from ScrnGameRules. Used for replication purposes only.
 
 var globalconfig int ForcedMaxPlayers;
@@ -184,11 +194,19 @@ var globalconfig int   StatBonusMinHL;
 var globalconfig bool bBroadcastPickups; // broadcast weapon pickups
 var globalconfig String BroadcastPickupText; // broadcast weapon pickups
 
-const ZEDEVENT_RANDOM = 254;
+const ZEDEVENT_STANDARD     = 0;
+const ZEDEVENT_SUMMER       = 1;
+const ZEDEVENT_HALLOWEEN    = 2;
+const ZEDEVENT_XMAS         = 3;
+const ZEDEVENT_CLASSIC      = 4;
+const ZEDEVENT_ZEDPACK      = 10;
+const ZEDEVENT_RANDOM       = 254;
+const ZEDEVENT_DEFAULT      = 255;
 var protected globalconfig byte EventNum;
 var transient byte CurrentEventNum;
 var globalconfig bool bForceEvent;
 var globalconfig bool bResetSquadsAtStart; // calls ScrnGameRules.ResetSquads() at map start
+var globalconfig bool bStoryZedPack;
 
 var globalconfig bool bAutoKickOffPerkPlayers;
 var String strAutoKickOffPerk;
@@ -212,10 +230,7 @@ var globalconfig bool bNoRequiredEquipment;
 var globalconfig bool bUseExpLevelForSpawnInventory;
 var globalconfig array<string> SpawnInventory;
 
-var globalconfig int StartCashNormal, StartCashHard, StartCashSui, StartCashHoE;
-var globalconfig int MinRespawnCashNormal, MinRespawnCashHard, MinRespawnCashSui, MinRespawnCashHoE;
-var globalconfig int TraderTimeNormal, TraderTimeHard, TraderTimeSui, TraderTimeHoE;
-var globalconfig bool bLeaveCashOnDisconnect, bPlayerZEDTime;
+var globalconfig bool bPlayerZEDTime;
 
 var globalconfig int MarkDistanceMeters;
 var globalconfig byte MarkZedBounty;
@@ -412,8 +427,6 @@ simulated function InitSettings()
     class'ScrnFragPickup'.default.Weight = class'ScrnFrag'.default.Weight;
     RecalcAllPawnWeight();
 
-    class'KFMod.CrossbowArrow'.default.DamageRadius = 0; // isn't used anywhere. Set to 0 to fix description
-
     // Achievements
     bUseAchievements = bool(AchievementFlags & ACH_ENABLE);
 
@@ -421,45 +434,7 @@ simulated function InitSettings()
     // Assertion failed: inst->KPhysRootIndex != INDEX_NONE && inst->KPhysLastIndex != INDEX_NONE [File:.\KSkeletal.cpp] [Line: 595]
     class'FellLava'.default.bSkeletize = false;
 
-    EventZedNames();
-
     bInitialized = true;
-}
-
-simulated function EventZedNames()
-{
-  class'KFChar.ZombieClot_CIRCUS'.default.MenuName = "Strange Little Clot";
-  class'KFChar.ZombieBloat_CIRCUS'.default.MenuName = "Pukey the Clown";
-  class'KFChar.ZombieStalker_CIRCUS'.default.MenuName = "Assistant";
-  class'KFChar.ZombieCrawler_CIRCUS'.default.MenuName = "Two-Head Girl";
-  class'KFChar.ZombieGorefast_CIRCUS'.default.MenuName = "Sword Polisher";
-  class'KFChar.ZombieHusk_CIRCUS'.default.MenuName = "Mecha-Man";
-  class'KFChar.ZombieSiren_CIRCUS'.default.MenuName = "Bearded Beauty";
-  class'KFChar.ZombieScrake_CIRCUS'.default.MenuName = "Man Monkey";
-  class'KFChar.ZombieFleshpound_CIRCUS'.default.MenuName = "Flesh Clown";
-  class'KFChar.ZombieBoss_CIRCUS'.default.MenuName = "Ring Leader";
-
-  class'KFChar.ZombieClot_HALLOWEEN'.default.MenuName = "Honey Biscuit";
-  class'KFChar.ZombieBloat_HALLOWEEN'.default.MenuName = "Mama Bessie";
-  class'KFChar.ZombieStalker_HALLOWEEN'.default.MenuName = "Maggie May";
-  class'KFChar.ZombieCrawler_HALLOWEEN'.default.MenuName = "Half of Uncle Pervis";
-  class'KFChar.ZombieGorefast_HALLOWEEN'.default.MenuName = "Banjo Chewey";
-  class'KFChar.ZombieHusk_HALLOWEEN'.default.MenuName = "Brother Sparky";
-  class'KFChar.ZombieSiren_HALLOWEEN'.default.MenuName = "Granny Crystal May";
-  class'KFChar.ZombieScrake_HALLOWEEN'.default.MenuName = "Cousin Otis";
-  class'KFChar.ZombieFleshpound_HALLOWEEN'.default.MenuName = "Bubba";
-  class'KFChar.ZombieBoss_HALLOWEEN'.default.MenuName = "Sheriff Wade";
-
-  class'KFChar.ZombieClot_XMAS'.default.MenuName = "Elf";
-  class'KFChar.ZombieBloat_XMAS'.default.MenuName = "Fake Santa";
-  class'KFChar.ZombieStalker_XMAS'.default.MenuName = "Mrs. Claws";
-  class'KFChar.ZombieCrawler_XMAS'.default.MenuName = "Reindeer";
-  class'KFChar.ZombieGorefast_XMAS'.default.MenuName = "Gingerfast";
-  class'KFChar.ZombieHusk_XMAS'.default.MenuName = "Snow Husk";
-  class'KFChar.ZombieSiren_XMAS'.default.MenuName = "Screaming Tree";
-  class'KFChar.ZombieScrake_XMAS'.default.MenuName = "Jack Frost";
-  class'KFChar.ZombieFleshpound_XMAS'.default.MenuName = "Nutcracker";
-  class'KFChar.ZombieBoss_XMAS'.default.MenuName = "Santriarch";
 }
 
 simulated function TimeLog(coerce string s)
@@ -1127,7 +1102,6 @@ auto simulated state WaitingForTick
         if ( !bStoryMode ) {
             InitDoors();
             FixShops();
-            SetStartCash();
             if ( ScrnGT != none ) {
                 if ( bTSCGame ) {
                     Level.GRI.bNoTeamSkins = bNoTeamSkins && !ScrnGT.IsTourney();
@@ -1182,43 +1156,7 @@ Begin:
     }
 }
 
-function SetStartCash()
-{
-    local Controller C;
-    if ( KF.GameDifficulty >= 7 ) // HoE
-    {
-        KF.TimeBetweenWaves = TraderTimeHoE;
-        KF.StartingCash = StartCashHoE;
-        KF.MinRespawnCash = MinRespawnCashHoE;
-    }
-    else if (KF.GameDifficulty >= 5 ) // Suicidal
-    {
-        KF.TimeBetweenWaves = TraderTimeSui;
-        KF.StartingCash = StartCashSui;
-        KF.MinRespawnCash = MinRespawnCashSui;
-    }
-    else if ( KF.GameDifficulty >= 4 ) // Hard
-    {
-        KF.TimeBetweenWaves = TraderTimeHard;
-        KF.StartingCash = StartCashHard;
-        KF.MinRespawnCash = MinRespawnCashHard;
-    }
-    else
-    {
-        KF.TimeBetweenWaves = TraderTimeNormal;
-        KF.StartingCash = StartCashNormal;
-        KF.MinRespawnCash = MinRespawnCashNormal;
-    }
-
-    for ( C = Level.ControllerList; C != none; C = C.nextController ) {
-        if ( C.PlayerReplicationInfo != none ) {
-            if ( ScrnGT != none && PlayerController(C) != none )
-                ScrnGT.GiveStartingCash(PlayerController(C));
-            else
-                C.PlayerReplicationInfo.Score = KF.StartingCash;
-        }
-    }
-}
+/*deprecated*/ function SetStartCash();
 
 function DebugArmor(PlayerController Sender)
 {
@@ -1636,7 +1574,6 @@ static function FillPlayInfo(PlayInfo PlayInfo)
     PlayInfo.AddSetting(default.BonusCapGroup,"BonusLevelHoeMax","7.HoE Max Bonus Level",1,0, "Text", "4;0:70",,,True);
     PlayInfo.AddSetting(default.BonusCapGroup,"MaxZombiesOnce","Max Specimens At Once",1,0, "Text", "4;8:254",,,True);
 
-    PlayInfo.AddSetting(default.BonusCapGroup,"bSpawn0","Zero Cost of Initial Inventory",1,0, "Check");
     PlayInfo.AddSetting(default.BonusCapGroup,"bReplacePickups","Replace Pickups",1,0, "Check");
     PlayInfo.AddSetting(default.BonusCapGroup,"bReplacePickupsStory","Replace Pickups (Story)",1,0, "Check");
     PlayInfo.AddSetting(default.BonusCapGroup,"bShieldWeight","Armor Has Weight",1,0, "Check");
@@ -1670,7 +1607,6 @@ static function string GetDescriptionText(string PropName)
         case "BonusLevelHoeMax":            return "Maximum perk level, which bonuses can be applied on HoE difficulty. Perk levels above this won't have any extra bonuses.";
         case "MaxZombiesOnce":              return "Maximum specimens at once on playtime, note that high values will LAG when theres a lot of them.";
 
-        case "bSpawn0":                     return "All initial weapons costs nothing";
         case "bReplacePickups":             return "Replaces weapon pickups on a map with their Scrn Editon (SE) versions.";
         case "bReplacePickupsStory":        return "Replaces weapon pickups in Objective Mode with their Scrn Editon (SE) versions.";
         case "bShieldWeight":               return "Kevlar Vest weights 1 block instead of hand grenades. Players without vest can carry more. Automatically enables hand grenade replacing with ScrN version";
@@ -1790,9 +1726,9 @@ function SetReplicationData()
 
     SrvFlags = 0;
     // if ( bSpawnBalance )                    SrvFlags = SrvFlags | 0x00000001;
-    if ( bSpawn0 )                          SrvFlags = SrvFlags | 0x00000002;
-    if ( bNoStartCashToss )                 SrvFlags = SrvFlags | 0x00000004;
-    if ( bMedicRewardFromTeam )             SrvFlags = SrvFlags | 0x00000008;
+    // if ( bSpawn0 )                          SrvFlags = SrvFlags | 0x00000002;
+    // if ( bNoStartCashToss )                 SrvFlags = SrvFlags | 0x00000004;
+    // if ( bMedicRewardFromTeam )             SrvFlags = SrvFlags | 0x00000008;
 
     if ( bMedicNades )                      SrvFlags = SrvFlags | 0x00000010;
     if ( bAltBurnMech )                     SrvFlags = SrvFlags | 0x00000020;
@@ -1825,9 +1761,9 @@ simulated function LoadReplicationData()
     AchievementFlags = SrvAchievementFlags;
 
     // bSpawnBalance                      = (SrvFlags & 0x00000001) > 0;
-    bSpawn0                            = (SrvFlags & 0x00000002) > 0;
-    bNoStartCashToss                   = (SrvFlags & 0x00000004) > 0;
-    bMedicRewardFromTeam               = (SrvFlags & 0x00000008) > 0;
+    // bSpawn0                            = (SrvFlags & 0x00000002) > 0;
+    // bNoStartCashToss                   = (SrvFlags & 0x00000004) > 0;
+    // bMedicRewardFromTeam               = (SrvFlags & 0x00000008) > 0;
 
     bMedicNades                        = (SrvFlags & 0x00000010) > 0;
     bAltBurnMech                       = (SrvFlags & 0x00000020) > 0;
@@ -2381,8 +2317,6 @@ function SetupRepLink(ClientPerkRepLink R)
 
 function ForceEvent()
 {
-    local class<KFMonstersCollection> MC;
-
     if (ScrnGT != none && ScrnGT.ZedEventNum > 0) {
         CurrentEventNum = ScrnGT.ZedEventNum;
     }
@@ -2393,43 +2327,45 @@ function ForceEvent()
         }
     }
 
-    if (bScrnWaves) {
+    if (ScrnGT != none && bScrnWaves) {
         return;  // all we need for ScrnWaves is to load CurrentEventNum. ScrnGameLength will handle everything else.
     }
 
-    switch ( CurrentEventNum ) {
+    switch (CurrentEventNum) {
         case ZEDEVENT_RANDOM:  // random event
             CurrentEventNum = 1 + rand(4);
             break;
-        case 255:
-            CurrentEventNum = 4;  // force regular zeds
+        case ZEDEVENT_DEFAULT:
+            CurrentEventNum = ZEDEVENT_CLASSIC;  // force regular zeds
             break;
     }
 
-    if ( MC == none ) {
-        switch (CurrentEventNum) {
-            case 0: case 4: case 255: // force regular zeds
-                log("Normal zeds forced for this map", 'ScrnBalance');
-                KF.MonsterCollection = class'KFMod.KFMonstersCollection';
-                CurrentEventNum = 0;
-                break;
-            case 1:
-                log("Summer zeds forced for this map", 'ScrnBalance');
-                KF.MonsterCollection = class'KFMod.KFMonstersSummer';
-                break;
-            case 2:
-                log("Halloween zeds forced for this map", 'ScrnBalance');
-                KF.MonsterCollection = class'KFMod.KFMonstersHalloween';
-                break;
-            case 3:
-                log("Xmas zeds forced for this map", 'ScrnBalance');
-                KF.MonsterCollection = class'KFMod.KFMonstersXmas';
-                break;
-            default:
-                log("Custom ZED Event Number: "$CurrentEventNum, 'ScrnBalance');
-                CurrentEventNum = EventNum;
-                return;
-        }
+    switch (CurrentEventNum) {
+        case ZEDEVENT_STANDARD: case ZEDEVENT_CLASSIC: // force regular zeds
+            log("Normal zeds forced for this map", 'ScrnBalance');
+            KF.MonsterCollection = class'KFMod.KFMonstersCollection';
+            CurrentEventNum = 0;
+            break;
+        case ZEDEVENT_SUMMER:
+            log("Summer zeds forced for this map", 'ScrnBalance');
+            KF.MonsterCollection = class'KFMod.KFMonstersSummer';
+            break;
+        case ZEDEVENT_HALLOWEEN:
+            log("Halloween zeds forced for this map", 'ScrnBalance');
+            KF.MonsterCollection = class'KFMod.KFMonstersHalloween';
+            break;
+        case ZEDEVENT_XMAS:
+            log("Xmas zeds forced for this map", 'ScrnBalance');
+            KF.MonsterCollection = class'KFMod.KFMonstersXmas';
+            break;
+        case ZEDEVENT_ZEDPACK:
+            log("ScrN Zed Pack forced for this map", 'ScrnBalance');
+            KF.MonsterCollection = class'KFMod.KFMonstersCollection';
+            break;
+        default:
+            log("Custom ZED Event Number: "$CurrentEventNum, 'ScrnBalance');
+            CurrentEventNum = EventNum;
+            return;
     }
     KF.SpecialEventMonsterCollections[KF.GetSpecialEventType()] = KF.MonsterCollection;
     class'ScrnGameRules'.static.ResetGameSquads(KF, CurrentEventNum);
@@ -2527,13 +2463,22 @@ function PostBeginPlay()
     MapInfo = new(none, OriginalMapName) class'ScrnMapInfo';
     MapInfo.Mut = self;
 
-    if ( bForceEvent || (ScrnGT != none && ScrnGT.ZedEventNum > 0) )
+    if (bStoryMode && bStoryZedPack) {
+        log("Forcing Zed Pack for Story Mode", 'ScrnBalance');
+        EventNum = ZEDEVENT_ZEDPACK;
         ForceEvent();
-    else
-        CurrentEventNum = int(KF.GetSpecialEventType()); // autodetect event
+    }
+    else {
+        if (bForceEvent || (ScrnGT != none && ScrnGT.ZedEventNum > 0)) {
+            ForceEvent();
+        }
+        else {
+            CurrentEventNum = int(KF.GetSpecialEventType()); // autodetect event
+        }
 
-    if ( bResetSquadsAtStart || (EventNum == ZEDEVENT_RANDOM && !bScrnWaves) ) {
-        GameRules.ResetGameSquads(KF, CurrentEventNum);
+        if ( bResetSquadsAtStart || (EventNum == ZEDEVENT_RANDOM && !bScrnWaves) ) {
+            GameRules.ResetGameSquads(KF, CurrentEventNum);
+        }
     }
 
     AddToPackageMap("ScrnAnims.ukx");
@@ -2708,7 +2653,6 @@ function SetGameDifficulty(byte HardcoreDifficulty)
         GameRules.InitHardcoreLevel();
     }
     SetLevels();
-    SetStartCash();
     SetReplicationData();
 }
 
@@ -3199,6 +3143,7 @@ function BlamePlayer(ScrnPlayerController PC, string Reason, optional int BlameI
     if ( BlameInc == 0 )
         BlameInc = 1;
     ScrnPRI.BlameCounter += BlameInc;
+    ScrnPRI.DoshRequestCounter = 0;
     if ( ScrnPRI.BlameCounter == 5 )
         class'ScrnAchCtrl'.static.Ach2Player(PC, 'MaxBlame');
 
@@ -3264,10 +3209,10 @@ function RegisterVersion(string ItemName, int Version)
 
 defaultproperties
 {
-    VersionNumber=97018
+    VersionNumber=97020
     GroupName="KF-Scrn"
     FriendlyName="ScrN Balance"
-    Description="Total rework of KF1 to make it modern and the best game in the world while sticking to the roots of the original."
+    Description="Total rework of KF1 to make it modern and the best tactical coop in the world while sticking to the roots of the original."
 
     // TODO: Mutator should exist server-side only. Move client stuff to ScrnSrvReplInfo.
     bAddToServerPackages=true
@@ -3314,19 +3259,6 @@ defaultproperties
     bBuyPerkedWeaponsOnly=false
     bPickPerkedWeaponsOnly=false
 
-    bSpawn0=true
-    bMedicRewardFromTeam=true
-    bLeaveCashOnDisconnect=true
-    bNoStartCashToss=false
-    StartCashNormal=100
-    StartCashHard=100
-    StartCashSui=100
-    StartCashHoE=100
-    MinRespawnCashNormal=100
-    MinRespawnCashHard=100
-    MinRespawnCashSui=100
-    MinRespawnCashHoE=100
-
     bScrnWaves=true
     MaxWaveSize=500
     MaxZombiesOnce=48
@@ -3337,6 +3269,7 @@ defaultproperties
     EventNum=0
     bForceEvent=true
     bResetSquadsAtStart=false
+    bStoryZedPack=true
 
     ForcedMaxPlayers=0
     bBroadcastPickups=true
@@ -3489,11 +3422,10 @@ defaultproperties
     MarkZedBounty=35
 
     SkippedTradeTimeMult=0.75
-    TraderTimeNormal=60
-    TraderTimeHard=60
-    TraderTimeSui=60
-    TraderTimeHoE=60
-    bTraderSpeedBoost=true
+    SocialTax=0.40
+
+    // deprecated. Hardcoded to be true. Left for custom mods that rely on ScrnBalance
+    bMedicRewardFromTeam=true
 
     bAllowVoting=true
     bAllowPauseVote=true

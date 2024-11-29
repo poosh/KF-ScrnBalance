@@ -34,6 +34,7 @@ static function float AddExtraAmmoFor(KFPlayerReplicationInfo KFPRI, Class<Ammun
 {
     if ( ClassIsChildOf(AmmoType, class'SingleAmmo') || ClassIsChildOf(AmmoType, class'DualiesAmmo')
             || ClassIsChildOf(AmmoType, class'Magnum44Ammo')
+            || ClassIsChildOf(AmmoType, class'ScrnMagnum44APAmmo')
             || ClassIsChildOf(AmmoType, class'MK23Ammo')
             || ClassIsChildOf(AmmoType, class'DeagleAmmo')
             || ClassIsChildOf(AmmoType, class'FlareRevolverAmmo')
@@ -67,6 +68,11 @@ static function int AddDamage(KFPlayerReplicationInfo KFPRI, KFMonster Injured, 
         // Anyway, Bloat has much body hp, so it is not a big deal.
         if ( ZombieBloat(Injured) != none ) {
             InDamage *= 1.5;
+        }
+
+        // Allow LAR to kill HoE Clots with one body shot
+        if (ClassIsChildOf(DmgType, class'KFMod.DamTypeWinchester')) {
+            InDamage *= 1.1;
         }
     }
     else if ( ClassIsChildOf(DmgType, class'KFMod.DamTypeDualies') ) {
@@ -128,7 +134,8 @@ static function bool CheckCowboyMode(KFPlayerReplicationInfo KFPRI, class<Weapon
 // Modify fire speed
 static function float GetFireSpeedModStatic(KFPlayerReplicationInfo KFPRI, class<Weapon> Other)
 {
-    if ( ClassIsChildOf(Other, class'Winchester') ||  Other.name == 'Colt' )
+    if ( ClassIsChildOf(Other, class'Winchester') ||  Other.name == 'Colt'
+            || ClassIsChildOf(Other, class'FlareRevolver') || ClassIsChildOf(Other, class'DualFlareRevolver'))
         return 1.6;
 
     //increase fire only with full-automatic pistols
@@ -146,7 +153,7 @@ static function float GetReloadSpeedModifierStatic(KFPlayerReplicationInfo KFPRI
 {
     if ( ClassIsChildOf(Other, class'Magnum44Pistol') || ClassIsChildOf(Other, class'Dual44Magnum')
             || ClassIsChildOf(Other, class'FlareRevolver') || ClassIsChildOf(Other, class'DualFlareRevolver')
-            || Other.name == 'Colt' )
+            || Other.name == 'Colt' || Other.name == 'MedicPistol' )
     {
         if ( class'ScrnBalance'.default.Mut.bHardcore )
             return 1.6;
@@ -185,6 +192,7 @@ static function float GetCostScaling(KFPlayerReplicationInfo KFPRI, class<Pickup
             || Item == class'Magnum44Pickup' || Item == class'Dual44MagnumPickup'
             || ClassIsChildOf(Item, class'ScrnDual44MagnumLaserPickup')
             || ClassIsChildOf(Item, class'FlareRevolverPickup') || ClassIsChildOf(Item, class'DualFlareRevolverPickup')
+            || Item.Name == 'ColtPickup' || Item.Name == 'MedicPistolPickup'
             || ClassIsInArray(default.PerkedPickups, Item)
         )
     {

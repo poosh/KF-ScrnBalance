@@ -172,8 +172,8 @@ event InitGame( string Options, out string Error )
     MaxPlayers = Clamp(GetIntOption(Options, "MaxPlayers", ConfigMaxPlayers),0,32);
     default.MaxPlayers = Clamp(ConfigMaxPlayers, 0, 32);
 
+    MinRespawnCash = 0;  // we use SocialTax instead
     CheckScrnBalance();
-    ScrnBalanceMut.SetStartCash();
     if ( bForceScrnWaves || ScrnBalanceMut.bScrnWaves ) {
         if (ScrnGameLength == none ) {  // mutators might already load this
             if (ScrnBalanceMut.bUserGames && KFGameLength >= 100 && KFGameLength < 200) {
@@ -1119,58 +1119,77 @@ function ScoreKillAssists(float Score, Controller Victim, Controller Killer)
 
 function bool RewardSurvivingPlayers()
 {
-    local Controller C;
-    local int SurvivedPlayers[2];
-    local int moneyPerPlayer[2];
     local byte t;
+    local int SocialBudget[2];
 
-    for ( C = Level.ControllerList; C != none; C = C.NextController ) {
-        if ( C.Pawn != none && C.PlayerReplicationInfo != none && C.PlayerReplicationInfo.Team != none
-                && C.PlayerReplicationInfo.Team.TeamIndex < 2 )
-        {
-            t = C.PlayerReplicationInfo.Team.TeamIndex;
-            SurvivedPlayers[t]++;
-        }
+    if (rewardFlag) {
+        // XXX: rewardFlag seems a legacy crap. Do we need to check it?
+        return false;
     }
 
-
-    for ( t = 0; t < 2; ++t ) {
+    for (t = 0; t < 2; ++t) {
         // bug: Team 0 scored $-1.#J. 6 survivors, earned $0 each.
-        if ( Teams[t].Score < 0 || Teams[t].Score > 1000000000 ) {
-            log("!!! BUGGED TEAM SCORE: " $ Teams[t].Score, 'ScrnBalance');
+        if (Teams[t].Score < 0 || Teams[t].Score > 1000000000) {
+            log("!!! BUGGED TEAM"$t$" SCORE: " $ Teams[t].Score, 'ScrnBalance');
             Teams[t].Score = 0;
         }
-        else if ( !(Teams[t].Score < 0 || Teams[t].Score >= 0) ) {
-            log("!!! BUGGED TEAM SCORE (NAN): " $ Teams[t].Score, 'ScrnBalance');
+        else if (class'ScrnFunctions'.static.IsNaN(Teams[t].Score)) {
+            log("!!! BUGGED TEAM"$t$" SCORE (NAN): " $ Teams[t].Score, 'ScrnBalance');
             Teams[t].Score = 0;
         }
-        else if ( SurvivedPlayers[t] > 0 ) {
-            moneyPerPlayer[t] = Teams[t].Score / SurvivedPlayers[t];
+        else if (AliveTeamPlayerCount[t] > 0) {
+            SocialBudget[t] = Teams[t].Score * fclamp(ScrnBalanceMut.SocialTax, 0.0, 1.0);
+            log("Team"$t$" scored $" $  int(Teams[t].Score) $ ". Social Tax ("
+                    $ int(ScrnBalanceMut.SocialTax * 100) $ "%) = $" $ SocialBudget[t], 'ScrnBalance');
+            Teams[t].Score -= SocialBudget[t];
+        }
+    }
+
+    RewardAlivePlayers();
+
+    // Unlike the government, we return taxes to the taxpayers
+    for (t = 0; t < 2; ++t) {
+        Teams[t].Score = SocialBudget[t];
+    }
+    return true;
+}
+
+function bool RewardAlivePlayers()
+{
+    local Controller C;
+    local PlayerReplicationInfo PRI;
+    local byte t;
+    local int Dosh[2];
+
+    UpdateMonsterCount();
+
+    if (rewardFlag) {
+        return false;
+    }
+
+    for (t = 0; t < 2; ++t) {
+        if (AliveTeamPlayerCount[t] > 0) {
+            Dosh[t] = Teams[t].Score / AliveTeamPlayerCount[t];
             Teams[t].NetUpdateTime = Level.TimeSeconds - 1;
-            log("Team " $ t $ " scored $" $  Teams[t].Score $ ". " $ SurvivedPlayers[t]
-                    $ " survivors, earned $" $ moneyPerPlayer[t] $ " each."
-                    , 'ScrnBalance');
+            log("Team"$t$" Wallet = $" $ int(Teams[t].Score) $ " = " $ AliveTeamPlayerCount[t] $ " players = $"
+                    $ Dosh[t] $ " per player", 'ScrnBalance');
         }
     }
 
-    for ( C = Level.ControllerList; C != none; C = C.NextController ) {
-        if ( C.Pawn != none && C.PlayerReplicationInfo != none && C.PlayerReplicationInfo.Team != none
-                && C.PlayerReplicationInfo.Team.TeamIndex < 2 )
-        {
-            t = C.PlayerReplicationInfo.Team.TeamIndex;
-            if ( SurvivedPlayers[t] > 1 ) {
-                C.PlayerReplicationInfo.Score += moneyPerPlayer[t];
-                Teams[t].Score -= moneyPerPlayer[t];
-            }
-            else if ( SurvivedPlayers[t] == 1 ) {
-                C.PlayerReplicationInfo.Score += Teams[t].Score;
-                Teams[t].Score = 0;
-            }
-            SurvivedPlayers[t]--;
-            C.PlayerReplicationInfo.NetUpdateTime = Level.TimeSeconds - 1;
+    for (C = Level.ControllerList; C != none; C = C.NextController) {
+        PRI = C.PlayerReplicationInfo;
+        if (C.Pawn == none || C.Pawn.Health <= 0 || PRI == none || PRI.Team == none ||PRI.Team.TeamIndex >= 2)
+            continue;
+
+        t = PRI.Team.TeamIndex;
+        PRI.Score += Dosh[t];
+        Teams[t].Score -= Dosh[t];
+        if (Teams[t].Score < AliveTeamPlayerCount[t]) {
+            // A lucky last player gets the spare change.
+            PRI.Score += Teams[t].Score;
+            Teams[t].Score = 0;
         }
     }
-
     return true;
 }
 
@@ -2108,15 +2127,6 @@ protected function StartTourney()
     ScrnBalanceMut.MaxWaveSize = 500;
 
     ScrnBalanceMut.bUseExpLevelForSpawnInventory = false;
-    ScrnBalanceMut.bSpawn0 = true;
-    ScrnBalanceMut.bNoStartCashToss = true;
-    ScrnBalanceMut.bMedicRewardFromTeam = true;
-    ScrnBalanceMut.StartCashHard = 200;
-    ScrnBalanceMut.StartCashSui = 200;
-    ScrnBalanceMut.StartCashHoE = 200;
-    ScrnBalanceMut.MinRespawnCashHard = 100;
-    ScrnBalanceMut.MinRespawnCashSui = 100;
-    ScrnBalanceMut.MinRespawnCashHoE = 100;
 
     ScrnBalanceMut.InitSettings();
     ScrnBalanceMut.SetReplicationData();
@@ -2210,6 +2220,13 @@ function SetupRepLink(ScrnClientPerkRepLink R)
     }
 }
 
+function SetupRandomItemSpawn(ScrnRandomItemSpawn Items)
+{
+    if (ScrnGameLength != none) {
+        ScrnGameLength.SetupRandomItemSpawn(Items);
+    }
+}
+
 // initialize a bot which is associated with a pawn placed in the level
 function InitPlacedBot(Controller C, RosterEntry R)
 {
@@ -2273,9 +2290,9 @@ event PlayerController Login(string Portal, string Options, out string Error)
 event PostLogin( PlayerController NewPlayer )
 {
     super.PostLogin(NewPlayer);
-    GiveStartingCash(NewPlayer);
     if ( ScrnPlayerController(NewPlayer) != none )
         ScrnPlayerController(NewPlayer).PostLogin();
+    GiveStartingCash(NewPlayer);
 }
 
 function LockTeams()
@@ -2502,6 +2519,14 @@ function RestartPlayer( Controller aPlayer )
 
 function bool AllowBecomeActivePlayer(PlayerController CI)
 {
+    local ScrnPlayerController ScrnPC;
+
+    ScrnPC = ScrnPlayerController(CI);
+    if (ScrnPC == none) {
+        // prevent some crap entering our game
+        return false;
+    }
+
     if( CI.PlayerReplicationInfo==None || !CI.PlayerReplicationInfo.bOnlySpectator )
         Return False; // Already is an active player
 
@@ -2535,6 +2560,35 @@ function bool AllowBecomeActivePlayer(PlayerController CI)
         bPlayerBecameActive = true;
     }
     return true;
+}
+
+// only ScrnPlayerController can play ScrN games
+function bool RespawnDeadPlayer(ScrnPlayerController PC)
+{
+    local KFPlayerReplicationInfo KFPRI;
+    local ScrnPlayerInfo SPI;
+
+    if (PC == none || PC.Pawn != none)
+        return false;
+
+    KFPRI = KFPlayerReplicationInfo(PC.PlayerReplicationInfo);
+    if (KFPRI == none || KFPRI.bOnlySpectator)
+        return false;
+
+    SPI = ScrnBalanceMut.GameRules.CreatePlayerInfo(PC);
+    if (SPI == none)
+        return false;
+
+    KFPRI.bOutOfLives = false;
+    KFPRI.NumLives = 0;
+
+    PC.GotoState('PlayerWaiting');
+    PC.SetViewTarget(PC);
+    PC.ClientSetBehindView(false);
+    PC.bBehindView = False;
+    PC.ClientSetViewTarget(PC.Pawn);
+    PC.ServerReStartPlayer();
+    return PC.Pawn != none;
 }
 
 function AddSuicideTime(int dt, bool bReset)
@@ -2608,7 +2662,15 @@ function SuicideTimer()
 
 function GiveStartingCash(PlayerController PC)
 {
+    local ScrnPlayerController ScrnPC;
     local int cash;
+
+    ScrnPC = ScrnPlayerController(PC);
+    if (ScrnPC == none)
+        return;
+
+    if (ScrnPC.StartCash > 0)
+        return;  // starting cash is given only once per game
 
     if (ScrnGameLength != none) {
         cash = ScrnGameLength.CalcStartingCash(PC);
@@ -2617,9 +2679,8 @@ function GiveStartingCash(PlayerController PC)
         cash = StartingCash;
     }
 
-    PC.PlayerReplicationInfo.Score = max(0, cash);
-    if ( ScrnPlayerController(PC) != none )
-        ScrnPlayerController(PC).StartCash = PC.PlayerReplicationInfo.Score;
+    ScrnPC.PlayerReplicationInfo.Score = max(0, cash);
+    ScrnPC.StartCash = PC.PlayerReplicationInfo.Score;
 }
 
 function bool AllowGameEnd(PlayerReplicationInfo Winner, string Reason)
@@ -3852,13 +3913,12 @@ State MatchInProgress
     function DoWaveEnd()
     {
         local Controller C;
-        local KFPlayerController KFPC;
+        local ScrnPlayerController ScrnPC;
+
         local KFPlayerReplicationInfo KFPRI;
         local bool bRespawnDeadPlayers;
 
-        if ( !rewardFlag ) {
-            RewardSurvivingPlayers();
-        }
+        RewardSurvivingPlayers();
 
         // Clear Trader Message status
         bDidTraderMovingMessage = false;
@@ -3906,41 +3966,33 @@ State MatchInProgress
         ScrnGRI.bWaveInProgress = false;
 
         for ( C = Level.ControllerList; C != none; C = C.NextController ) {
-            if ( C.PlayerReplicationInfo == none )
+            if (C.PlayerReplicationInfo == none)
                 continue;
 
-            if ( bRespawnDeadPlayers ) {
-                C.PlayerReplicationInfo.bOutOfLives = false;
-                C.PlayerReplicationInfo.NumLives = 0;
-            }
-
-            KFPC = KFPlayerController(C);
+            ScrnPC = ScrnPlayerController(C);
             KFPRI = KFPlayerReplicationInfo(C.PlayerReplicationInfo);
-            if ( KFPC != none && KFPRI != none )
-            {
-                KFPC.bChangedVeterancyThisWave = false;
-                if ( KFPRI.ClientVeteranSkill != KFPC.SelectedVeterancy )
-                    KFPC.SendSelectedVeterancyToServer();
+            if (ScrnPC == none || KFPRI == none)
+                continue;
 
-                if ( bRespawnDeadPlayers && KFPC.Pawn == none && !KFPRI.bOnlySpectator )
-                {
-                    if (ScrnGameLength == none || !ScrnGameLength.bStartingCashReset) {
-                        KFPRI.Score = Max(MinRespawnCash, KFPRI.Score);
-                    }
-                    KFPC.GotoState('PlayerWaiting');
-                    KFPC.SetViewTarget(C);
-                    KFPC.ClientSetBehindView(false);
-                    KFPC.bBehindView = False;
-                    KFPC.ClientSetViewTarget(C.Pawn);
-                    KFPC.ServerReStartPlayer();
-                }
-
-                if ( KFSteamStatsAndAchievements(KFPC.SteamStatsAndAchievements) != none )
-                    KFSteamStatsAndAchievements(KFPC.SteamStatsAndAchievements).WaveEnded();
-
-                KFPC.bSpawnedThisWave = KFPC.Pawn != none && WaveNum > FinalWave;
+            ScrnPC.bChangedVeterancyThisWave = false;
+            if (KFPRI.ClientVeteranSkill != ScrnPC.SelectedVeterancy) {
+                ScrnPC.SendSelectedVeterancyToServer();
             }
+
+            if (bRespawnDeadPlayers) {
+                RespawnDeadPlayer(ScrnPC);
+            }
+
+            if ( KFSteamStatsAndAchievements(ScrnPC.SteamStatsAndAchievements) != none )
+                KFSteamStatsAndAchievements(ScrnPC.SteamStatsAndAchievements).WaveEnded();
+
+            // XXX: Do we need that crap?
+            // Actually bSpawnedThisWave means "spawned on boss wave"
+            ScrnPC.bSpawnedThisWave = ScrnPC.Pawn != none && WaveNum > FinalWave;
         }
+
+        // Reward also respawned players with social tax money
+        RewardAlivePlayers();
 
         bUpdateViewTargs = True;
         if ( WaveNum < FinalWave && (ScrnGameLength == none || ScrnGameLength.Wave.bOpenTrader) ) {
@@ -4065,6 +4117,7 @@ defaultproperties
     PlayerControllerClassName="ScrnBalanceSrv.ScrnPlayerController"
 
     DefaultGameLength=-1
+    MinRespawnCash=0
     bSingleTeamGame=true
     bUseEndGameBoss=true
     bUseZEDThreatAssessment=true

@@ -84,16 +84,16 @@ simulated function float RateSelf()
 
 defaultproperties
 {
-     FireModeClass(0)=class'ScrnMacheteFire'
-     FireModeClass(1)=class'ScrnMacheteFireB'
-     PickupClass=class'ScrnMachetePickup'
-     ItemName="Machete SE"
+    FireModeClass(0)=class'ScrnMacheteFire'
+    FireModeClass(1)=class'ScrnMacheteFireB'
+    PickupClass=class'ScrnMachetePickup'
+    ItemName="Machete SE"
 
-     QuickPutDownTime=0.01  // 0.15
-     QuickBringUpTime=0.01  // 0.15
+    QuickPutDownTime=0.01  // 0.15
+    QuickBringUpTime=0.01  // 0.15
 
-     // PutDownAnimRate=2.0
-     // SelectAnimRate=2.0
-     // BringUpTime=0.25
-     // PutDownTime=0.25
+    PutDownAnimRate=2.8889
+    SelectAnimRate=6.6667
+    BringUpTime=0.15
+    PutDownTime=0.15
 }

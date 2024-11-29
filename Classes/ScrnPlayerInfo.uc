@@ -127,7 +127,8 @@ var byte PRI_BlameCounter;
 var class<KFVeterancyTypes> PRI_ClientVeteranSkill;
 var byte PRI_TeamIndex;
 var byte PRI_DeathWave;
-
+var bool PRI_HadPawn;
+var int PRI_StarCash;
 
 function Destroyed()
 {
@@ -1030,8 +1031,7 @@ function BackupPRI()
     ScrnPRI = class'ScrnCustomPRI'.static.FindMe(KFPRI);
     ScrnPC = ScrnPlayerController(PlayerOwner);
 
-    if ( !GameRules.Mut.bLeaveCashOnDisconnect )
-        PRI_Score = KFPRI.Score;
+    PRI_Score = KFPRI.Score;
     PRI_Kills = KFPRI.Kills;
     PRI_KillAssists = KFPRI.KillAssists;
     PRI_Deaths = KFPRI.Deaths;
@@ -1049,6 +1049,8 @@ function BackupPRI()
 
     if (ScrnPC != none) {
         PRI_DeathWave = ScrnPC.DeathWave;
+        PRI_HadPawn = ScrnPC.bHadPawn;
+        PRI_StarCash = ScrnPC.StartCash;
     }
 }
 
@@ -1074,8 +1076,7 @@ function RestorePRI()
             Level.Game.ChangeTeam( PlayerOwner, PRI_TeamIndex, true );
     }
 
-    if ( !GameRules.Mut.bLeaveCashOnDisconnect )
-        KFPRI.Score = max(PRI_Score, KFPRI.Score);
+    KFPRI.Score = max(PRI_Score, KFPRI.Score);
     KFPRI.Kills = max(PRI_Kills, KFPRI.Kills);
     KFPRI.KillAssists = max(PRI_KillAssists, KFPRI.KillAssists);
     KFPRI.Deaths = max(PRI_Deaths, KFPRI.Deaths);
@@ -1087,6 +1088,8 @@ function RestorePRI()
 
     if (ScrnPC != none) {
         ScrnPC.DeathWave = PRI_DeathWave;
+        ScrnPC.bHadPawn = ScrnPC.bHadPawn || PRI_HadPawn;
+        ScrnPC.StartCash = max(ScrnPC.StartCash, PRI_StarCash);
     }
 }
 
@@ -1119,6 +1122,25 @@ function PickedCash(CashPickup Dosh)
     // achievements
     for ( i=0; i<GameRules.AchHandlers.length; ++i )
         GameRules.AchHandlers[i].PickedCash(Dosh.CashAmount, self, DonatorSPI, Dosh.bDroppedCash);
+}
+
+function TransferedCash(PlayerReplicationInfo Receiver, int Amout)
+{
+    local ScrnPlayerInfo ReceiverSPI;
+    local int i;
+
+    ReceiverSPI = GameRules.GetPlayerInfo(PlayerController(Receiver.Owner));
+    if (ReceiverSPI != none) {
+        ReceiverSPI.CashReceived += Amout;
+        ReceiverSPI.CashReceivedPerWave += Amout;
+        CashDonated += Amout;
+        CashDonatedPerWave += Amout;
+
+        for (i=0; i<GameRules.AchHandlers.length; ++i) {
+            GameRules.AchHandlers[i].PickedCash(Amout, ReceiverSPI, self, true);
+        }
+    }
+
 }
 
 function PickedWeapon(KFWeaponPickup WeaponPickup)

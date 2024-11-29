@@ -13,12 +13,6 @@ function PostBeginPlay()
     ScrnWeap = ScrnDual44Magnum(Weapon);
 }
 
-simulated function DestroyEffects()
-{
-    super.DestroyEffects();
-    ScrnWeap = none;
-}
-
 function SetPistolFireOrder(bool bNextFireLeft)
 {
     bFireLeft = bNextFireLeft;
@@ -200,33 +194,11 @@ function DoTrace(Vector Start, Rotator Dir)
     }
 }
 
-/*
-simulated function float GetSpread()
-{
-    local float AccuracyMod;
-
-    AccuracyMod = 1.0;
-
-    // Spread bonus while using laser sights
-    if ( ScrnDual44MagnumLaser(Weapon) != none && ScrnDual44MagnumLaser(Weapon).bLaserActive)
-        AccuracyMod = 0.5;
-
-    return AccuracyMod * super.GetSpread();
-}
-*/
-
-// Remove left gun's aiming bug  (c) PooSH
-// Thanks to n87, Benjamin
-function DoFireEffect()
-{
-    super(KFFire).DoFireEffect();
-}
-
 defaultproperties
 {
-     PenDmgReduction=0.500000
-     MaxPenetrations=4
-     DamageType=class'ScrnDamTypeDual44Magnum'
-     DamageMax=90
-     AmmoClass=class'ScrnMagnum44Ammo'
+    PenDmgReduction=0.50
+    MaxPenetrations=3
+    DamageType=class'ScrnDamTypeDual44Magnum'
+    DamageMax=90
+    AmmoClass=class'ScrnMagnum44Ammo'
 }

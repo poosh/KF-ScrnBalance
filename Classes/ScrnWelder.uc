@@ -13,4 +13,9 @@ defaultproperties
     PickupClass=Class'ScrnWelderPickup'
     TraderInfoTexture=Texture'KillingFloorHUD.WeaponSelect.Welder'
     ItemName="Welder SE"
+
+    PutDownAnimRate=4.2222
+    SelectAnimRate=3.5556
+    BringUpTime=0.15
+    PutDownTime=0.15
 }

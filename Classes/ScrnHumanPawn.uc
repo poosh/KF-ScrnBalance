@@ -26,6 +26,7 @@ var float HealthToGiveRemainder; // pawn receives integer amount of hp. remainde
 var byte ClientHealthToGive; //required for client replication
 var int ClientHealthBonus;
 var() int HealthBonus;
+var float DoshPerHeal;  // how much dosh medic receives for healing me
 
 var const class<ScrnVestPickup> NoVestClass;            // dummy class that indicates player has no armor
 var const class<ScrnVestPickup> StandardVestClass;      // standard KF armor (combat armor)
@@ -39,6 +40,7 @@ var bool bCowboyMode;
 
 var transient ScrnHumanPawn   LastHealedBy; // last player who healed me
 var transient ScrnHumanPawn   LastHealed; // last player, who was healed by me
+var transient int             LastHealAmount;
 var transient KFMonster       CombatMedicTarget; // "LastHealedBy" must kill this monster to earn an ach
 var transient int             HealthBeforeHealing;
 var transient float           LastDamageTime;
@@ -61,8 +63,10 @@ var protected transient float LastThreatTime, LastThreat;
 var transient float ForcedThreatLevel;
 var transient float ForcedThreatLevelTime;
 
+var class<ScrnCashPickup> TossedCashClass;
 var localized string strNoSpawnCashToss;
-
+var localized string strDoshTransferToPlayer;
+var localized string strDoshTransferToTeam;
 
 struct SWeaponFlashlight {
     var class<KFWeapon> WeaponClass;
@@ -88,7 +92,6 @@ var byte SpecWeight, SpecMagAmmo, SpecMags, SpecSecAmmo, SpecNades;
 
 var transient Frag PlayerGrenade;
 
-var deprecated bool bTraderSpeedBoost;
 var float TraderSpeedBoost;
 var bool bAllowMacheteBoost;
 var byte MacheteBoost; // that's one of the most retarded things I've done
@@ -142,7 +145,7 @@ replication
         // bCowboyMode; // net owner can check cowboy mode himself
 
     reliable if(Role < ROLE_Authority)
-        ServerBuyShield, ServerSellShield;
+        ServerBuyShield, ServerSellShield, ServerDoshTransfer;
 
     reliable if(Role < ROLE_Authority)
         ServerReload, ServerFire;
@@ -1058,7 +1061,7 @@ simulated function CalcVestCost(class<ScrnVestPickup> VestClass, out int Cost, o
 function ServerBuyShield(class<ScrnVestPickup> VestClass)
 {
     local float Price1p;
-    local int Cost, AmountToBuy;
+    local int Cost, AmountToBuy, Dosh;
 
     if ( VestClass == none || VestClass == NoVestClass || !CanUseVestClass(VestClass) )
         return;
@@ -1069,20 +1072,19 @@ function ServerBuyShield(class<ScrnVestPickup> VestClass)
         // @ "Vest to Buy = " $ GetItemName(String(VestClass))
         // @ "Amount to Buy = " $ AmountToBuy $ " * " $ Price1p $ " = $" $ Cost, 'ScrnBalance');
 
-    if ( CanBuyNow() && (AmountToBuy > 0 || Price1p == 0) ) {
+    if (CanBuyNow() && (AmountToBuy > 0 || Price1p == 0)) {
+        Dosh = GetAvailableDosh();
         bServerShopping = true;
-        if ( PlayerReplicationInfo.Score >= Cost ) {
-            if ( SetVestClass(VestClass) && AddShieldStrength(AmountToBuy) )
-                PlayerReplicationInfo.Score -= Cost;
+        if (Dosh >= Cost) {
+            if (SetVestClass(VestClass) && AddShieldStrength(AmountToBuy)) {
+                TraderChargeDosh(Cost);
+            }
         }
-        else if ( VestClass == CurrentVestClass && ShieldStrength > 0 ) {
+        else if (VestClass == CurrentVestClass && ShieldStrength > 0) {
             //repair shield for money players has, if not enough to buy a full shield
-            AmountToBuy = PlayerReplicationInfo.Score / Price1p;
-            if ( AmountToBuy > 0 && AddShieldStrength(AmountToBuy) ) {
-                PlayerReplicationInfo.Score -= ceil(AmountToBuy * Price1p);
-                if ( PlayerReplicationInfo.Score < 0 )
-                    PlayerReplicationInfo.Score = 0;
-                UsedStartCash(ceil(AmountToBuy * Price1p));
+            AmountToBuy = Dosh / Price1p;
+            if (AmountToBuy > 0 && AddShieldStrength(AmountToBuy)) {
+                TraderChargeDosh(ceil(AmountToBuy * Price1p));
             }
         }
         bServerShopping = false;
@@ -1093,7 +1095,6 @@ function ServerBuyShield(class<ScrnVestPickup> VestClass)
 
 function ServerSellShield()
 {
-    //Marcus warns you : NO REFUNDS ;)
     SetVestClass(NoVestClass);
     SetTraderUpdate();
 }
@@ -1138,7 +1139,7 @@ function AddDefaultInventory()
 
 simulated function SetTraderUpdate()
 {
-    super.SetTraderUpdate();
+    ScrnPC.DoTraderUpdate();
     bServerShopping = false;
     ++ShopUpdateCounter;
 }
@@ -1262,11 +1263,7 @@ function FixAmmo(Class<Ammunition> AClass)
     CalcAmmoCost(self, AClass, MyAmmo, ClipPrice, FullRefillPrice, ClipSize);
 }
 
-function UsedStartCash(int UseAmount)
-{
-    if ( UseAmount != 0 && ScrnPC != none )
-        ScrnPC.StartCash = Max(ScrnPC.StartCash - UseAmount, 0);
-}
+/*deprecated*/ function UsedStartCash(int UseAmount);
 
 function bool ServerBuyAmmo( Class<Ammunition> AClass, bool bOnlyClip )
 {
@@ -1274,7 +1271,8 @@ function bool ServerBuyAmmo( Class<Ammunition> AClass, bool bOnlyClip )
     local float ClipPrice, FullRefillPrice;
     local int ClipSize;
     local int AmmoToAdd;
-    local float Price;
+    local int Price;
+    local int Dosh;
 
     if ( !CanBuyNow() || !CalcAmmoCost(self, AClass, MyAmmo, ClipPrice, FullRefillPrice, ClipSize)
             || MyAmmo.AmmoAmount >= MyAmmo.MaxAmmo ) {
@@ -1282,10 +1280,12 @@ function bool ServerBuyAmmo( Class<Ammunition> AClass, bool bOnlyClip )
         return false;
     }
 
-    if ( bOnlyClip ) {
+    Dosh = GetAvailableDosh();
+
+    if (bOnlyClip) {
         AmmoToAdd = ClipSize;
         Price = ClipPrice;
-        if ( AmmoToAdd + MyAmmo.AmmoAmount > MyAmmo.MaxAmmo ) {
+        if (AmmoToAdd + MyAmmo.AmmoAmount > MyAmmo.MaxAmmo) {
             AmmoToAdd = MyAmmo.MaxAmmo - MyAmmo.AmmoAmount;
             Price = ceil(float(AmmoToAdd) * ClipPrice/ClipSize);
         }
@@ -1296,20 +1296,18 @@ function bool ServerBuyAmmo( Class<Ammunition> AClass, bool bOnlyClip )
     }
 
     bServerShopping = true;
-    if ( PlayerReplicationInfo.Score < Price ) {
+    if (Dosh < Price) {
         // Not enough CASH (so buy the amount you CAN afford).
-        AmmoToAdd *= (PlayerReplicationInfo.Score/Price);
-        Price = ceil(float(AmmoToAdd) * ClipPrice/ClipSize);
+        AmmoToAdd = AmmoToAdd * Dosh / Price;
+        Price = ceil(float(AmmoToAdd) * ClipPrice / ClipSize);
 
-        if ( AmmoToAdd > 0 ) {
-            PlayerReplicationInfo.Score = Max(PlayerReplicationInfo.Score - Price, 0);
-            UsedStartCash(Price);
+        if (AmmoToAdd > 0) {
+            TraderChargeDosh(Price);
             MyAmmo.AddAmmo(AmmoToAdd);
         }
     }
     else {
-        PlayerReplicationInfo.Score = int(PlayerReplicationInfo.Score-Price);
-        UsedStartCash(Price);
+        TraderChargeDosh(Price);
         MyAmmo.AddAmmo(AmmoToAdd);
     }
     bServerShopping = false;
@@ -1435,6 +1433,9 @@ function ServerSellWeapon( Class<Weapon> WClass )
             else if (ScrnDual44Magnum(W) != none) {
                 SinglePistol = ScrnDual44Magnum(W).DetachSingle();
             }
+            else if (ScrnDualFlareRevolver(W) != none) {
+                SinglePistol = ScrnDualFlareRevolver(W).DetachSingle();
+            }
 
             if (SinglePistol != none) {
                 // the player has both single and dualies in the inventory - delete both
@@ -1459,6 +1460,7 @@ function ServerSellWeapon( Class<Weapon> WClass )
         ClientCurrentWeaponSold();
     }
     PlayerReplicationInfo.Score += SellValue;
+    PlayerReplicationInfo.NetUpdateTime = Level.TimeSeconds - 1.0;
     I.Destroy();
     SetTraderUpdate();
 
@@ -1468,7 +1470,7 @@ function ServerSellWeapon( Class<Weapon> WClass )
 }
 
 // Searches for a weapon in the player's inventory. If finds - sets outputs and returns true
-final function bool HasWeaponClassToSell( class<KFWeapon> Weap, out float SellValue, out float Weight )
+final function bool HasWeaponClassToSellInt( class<KFWeapon> Weap, out int SellValue, out int Weight )
 {
     local Inventory I;
     local int c;
@@ -1485,12 +1487,25 @@ final function bool HasWeaponClassToSell( class<KFWeapon> Weap, out float SellVa
     return false;
 }
 
+// deprecated
+final function bool HasWeaponClassToSell( class<KFWeapon> Weap, out float SellValue, out float Weight )
+{
+    local int iSellValue, iWeight;
+
+    if (HasWeaponClassToSellInt(Weap, iSellValue, iWeight)) {
+        SellValue = iSellValue;
+        Weight = iWeight;
+        return true;
+    }
+    return false;
+}
+
 // fixed exploit then player buys perked dualies, drops them, changes perk and picks them
 // with the full sell price
 // (c) PooSH, 2012
 function ServerBuyWeapon( Class<Weapon> WClass, float ItemWeight )
 {
-    local float Price,Weight, SellValue, SingleSellValue, SingleWeight;
+    local int Price, Weight, SellValue, SingleSellValue, SingleWeight;
     local Inventory I;
     local int c;
     local KFWeapon KFW;
@@ -1515,64 +1530,54 @@ function ServerBuyWeapon( Class<Weapon> WClass, float ItemWeight )
                 && !ScrnPerk.static.OverridePerkIndex(WP) )
             return;
     }
-    SellValue = Price * 0.75;
+    SellValue = Price * 3 / 4;
     Weight = Class<KFWeapon>(WClass).Default.Weight;
 
-    if ( (WClass==class'Magnum44Pistol' || WClass==class'ScrnMagnum44Pistol'
-                || WClass==class'Dual44Magnum' || WClass==class'ScrnDual44Magnum')
-            && HasWeaponClass(class'ScrnDual44MagnumLaser') )
-        return;
-    else if ( (WClass==class'MK23Pistol' || WClass==class'ScrnMK23Pistol'
-                || WClass==class'DualMK23Pistol' || WClass==class'ScrnDualMK23Pistol')
-            && HasWeaponClass(class'ScrnDualMK23Laser') )
-        return;
-    else if( WClass==class'DualDeagle' || WClass==class'Dual44Magnum'
-            || WClass==class'DualMK23Pistol' || WClass==class'DualFlareRevolver'
-            || WClass.Default.DemoReplacement!=None )
-    {
-        if ( (WClass==class'DualDeagle' && HasWeaponClassToSell(class'Deagle', SingleSellValue, SingleWeight))
-             || (WClass==class'GoldenDualDeagle' && HasWeaponClassToSell(class'GoldenDeagle', SingleSellValue, SingleWeight))
-             || (WClass==class'Dual44Magnum' && HasWeaponClassToSell(class'Magnum44Pistol', SingleSellValue, SingleWeight))
-             || (WClass==class'DualMK23Pistol' && HasWeaponClassToSell(class'MK23Pistol', SingleSellValue, SingleWeight))
-             || (WClass==class'DualFlareRevolver' && HasWeaponClassToSell(class'FlareRevolver', SingleSellValue, SingleWeight))
-             || (WClass.Default.DemoReplacement!=None && HasWeaponClassToSell(class<KFWeapon>(WClass.Default.DemoReplacement), SingleSellValue, SingleWeight)) )
+    if (WClass.Outer.Name == 'KFMod') {
+        // legacy crap
+        if ((WClass==class'Deagle' && HasWeaponClass(class'DualDeagle'))
+                ||  (WClass==class'GoldenDeagle' && HasWeaponClass(class'GoldenDualDeagle'))
+                ||  (WClass==class'Magnum44Pistol' && HasWeaponClass(class'Dual44Magnum'))
+                ||  (WClass==class'Dualies' && HasWeaponClass(class'Single'))
+                ||  (WClass==class'DualMK23Pistol' && HasWeaponClass(class'MK23Pistol'))
+                ||  (WClass==class'DualFlareRevolver' && HasWeaponClass(class'FlareRevolver')))
+            return; // Has the dual weapon.
+
+        if ((WClass==class'DualDeagle' && HasWeaponClassToSellInt(class'Deagle', SingleSellValue, SingleWeight))
+                || (WClass==class'GoldenDualDeagle' && HasWeaponClassToSellInt(class'GoldenDeagle', SingleSellValue, SingleWeight))
+                || (WClass==class'Dual44Magnum' && HasWeaponClassToSellInt(class'Magnum44Pistol', SingleSellValue, SingleWeight))
+                || (WClass==class'DualMK23Pistol' && HasWeaponClassToSellInt(class'MK23Pistol', SingleSellValue, SingleWeight))
+                || (WClass==class'DualFlareRevolver' && HasWeaponClassToSellInt(class'FlareRevolver', SingleSellValue, SingleWeight)))
         {
             Weight -= SingleWeight;
-            Price*=0.5;
-            SellValue = 0.75*Price + SingleSellValue;
+            Price /= 2;
+            SellValue = Price * 3 / 4 + SingleSellValue;
         }
     }
-    else if( WClass==class'Single' || WClass==class'Deagle' || WClass==class'GoldenDeagle' || WClass==class'Magnum44Pistol'
-        || WClass==class'MK23Pistol' || WClass==class'FlareRevolver' )
-    {
-        if ( (WClass==class'Deagle' && HasWeaponClass(class'DualDeagle'))
-                || (WClass==class'GoldenDeagle' && HasWeaponClass(class'GoldenDualDeagle'))
-                || (WClass==class'Magnum44Pistol' && HasWeaponClass(class'Dual44Magnum'))
-                || (WClass==class'Dualies' && HasWeaponClass(class'Single'))
-                || (WClass==class'DualMK23Pistol' && HasWeaponClass(class'MK23Pistol'))
-                || (WClass==class'DualFlareRevolver' && HasWeaponClass(class'FlareRevolver'))
-            )
-            return; // Has the dual weapon.
+    else if (WClass.Default.DemoReplacement != none) {
+        if (HasWeaponClassToSellInt(class<KFWeapon>(WClass.Default.DemoReplacement), SingleSellValue, SingleWeight)) {
+            // Twice cheaper dual guns when having the single one
+            Weight -= SingleWeight;
+            Price /= 2;
+            SellValue = Price * 3 / 4 + SingleSellValue;
+        }
     }
-    else // Check for custom dual weapon mode
-    {
-        for ( I=Inventory; I!=None && ++c < 1000; I=I.Inventory )
-            if( Weapon(I)!=None && Weapon(I).DemoReplacement==WClass )
-                return;
+    else {
+        for (I=Inventory; I!=None && ++c < 1000; I=I.Inventory) {
+            if (Weapon(I) != none && Weapon(I).DemoReplacement == WClass)
+                return;  // cannot buy single when having duals
+        }
     }
 
-    Price = int(Price); // Truncuate price.
-
-    if ( (Weight>0 && !CanCarry(Weight)) || PlayerReplicationInfo.Score<Price )
+    if ((Weight > 0 && !CanCarry(Weight)) || GetAvailableDosh() < Price)
         return;
 
-    if ( !Mut.GameRules.CanBuyWeapon(self, WP) )
+    if (!Mut.GameRules.CanBuyWeapon(self, WP))
         return;
 
     bServerShopping = true;
     I = Spawn(WClass, self);
-    if ( I != none )
-    {
+    if (I != none) {
         KFW = KFWeapon(I);
 
         if ( KFW != none ) {
@@ -1583,17 +1588,16 @@ function ServerBuyWeapon( Class<Weapon> WClass, float ItemWeight )
         }
 
         I.GiveTo(self);
-        if ( KFW != none && KFW.AmmoClass[0] != none ) {
+        if (KFW != none && KFW.AmmoClass[0] != none) {
             // fixes a bug in KFWeapon.GiveAmmo() which applies AddExtraAmmoFor() twice if both fire modes share
             // the same ammo
             FixAmmo(KFW.AmmoClass[0]);
         }
-        PlayerReplicationInfo.Score -= Price;
-        UsedStartCash(Price);
+        TraderChargeDosh(Price);
         ClientForceChangeWeapon(I);
     }
     else {
-        ClientMessage("Error: Weapon failed to spawn.");
+        ClientMessage("Error: Weapon" $ WClass $ "failed to spawn.");
     }
     bServerShopping = false;
     SetTraderUpdate();
@@ -1626,21 +1630,15 @@ function bool GiveHealth(int HealAmount, int _unused_HealMax)
         LastBurnDamage /= 2;
     }
 
-    // Don't let them heal more than the max health
-    if( HealAmount + HealthToGive + Health > HealthMax ) {
-        healAmount = HealthMax - (Health + HealthToGive);
+    HealAmount = min(HealAmount, HealthMax - Health - HealthToGive);
+    if (HealAmount <= 0)
+        return false;
 
-        if( healAmount == 0 )
-            return false;
-    }
-
-    if( Health < HealthMax ) {
-        HealthToGive+=HealAmount;
-        ClientHealthToGive = HealthToGive;
-        lastHealTime = level.timeSeconds;
-        return true;
-    }
-    return false;
+    HealthToGive += HealAmount;
+    ClientHealthToGive = HealthToGive;
+    lastHealTime = level.timeSeconds;
+    LastHealAmount = HealAmount;
+    return true;
 }
 
 // returns true, if player is using medic perk
@@ -1652,34 +1650,54 @@ simulated function bool IsMedic()
     return false;
 }
 
-function TakeHealing(ScrnHumanPawn Healer, int HealAmount, float HealPotency, optional KFWeapon MedicGun)
+function bool TakeHealing(ScrnHumanPawn Healer, int HealAmount, float HealPotency, optional KFWeapon MedicGun)
 {
     local ScrnPlayerInfo SPI;
+    local int MedicReward;
+    local KFSteamStatsAndAchievements HealerStats;
 
     if ( HealthToGive <= 0 || HealthBeforeHealing == 0 || Health < HealthBeforeHealing )
         HealthBeforeHealing = Health;
 
-    if ( GiveHealth(HealAmount, HealthMax) ) {
-        HealthRestoreRate = fmax(default.HealthRestoreRate * HealPotency, 1);
+    if (!GiveHealth(HealAmount, HealthMax))
+        return false;
 
-        if ( LastHealedBy != Healer ) {
-            LastHealedBy = Healer;
-            HealthBeforeHealing = Health;
-        }
+    HealthRestoreRate = fmax(default.HealthRestoreRate * HealPotency, 1);
 
-        if ( Healer != none ) {
-            Healer.LastHealed = self;
-            if ( PlayerController(Healer.Controller) != none &&  GameRules != none) {
-                SPI = GameRules.GetPlayerInfo(PlayerController(Healer.Controller));
-                if ( SPI != none )
-                    SPI.Healed(HealAmount, self, MedicGun);
-            }
-            if ( KFMonster(LastDamagedBy) != none && Healer.IsMedic() ) {
-                CombatMedicTarget = KFMonster(LastDamagedBy);
-            }
+    if ( LastHealedBy != Healer ) {
+        LastHealedBy = Healer;
+        HealthBeforeHealing = Health;
+    }
+
+    if (Healer == none || Healer == self)
+        return true;
+
+    HealerStats = KFSteamStatsAndAchievements(Healer.PlayerReplicationInfo.SteamStatsAndAchievements);
+    if (HealerStats != none) {
+        HealerStats.AddDamageHealed(LastHealAmount, false, false);
+    }
+    MedicReward = LastHealAmount * DoshPerHeal;
+    // Give the Healer dosh from our Team Wallet
+    if (KFPRI != none && KFPRI.Team != none) {
+        MedicReward = min(MedicReward, KFPRI.Team.Score);
+        if (MedicReward > 0) {
+            KFPRI.Team.Score -= MedicReward;
+            Healer.PlayerReplicationInfo.Score += MedicReward;
+            Healer.AlphaAmount = 255;
+
         }
     }
-    ClientHealthToGive = HealthToGive;
+
+    Healer.LastHealed = self;
+    if ( PlayerController(Healer.Controller) != none &&  GameRules != none) {
+        SPI = GameRules.GetPlayerInfo(PlayerController(Healer.Controller));
+        if ( SPI != none )
+            SPI.Healed(LastHealAmount, self, MedicGun);
+    }
+    if ( KFMonster(LastDamagedBy) != none && Healer.IsMedic() ) {
+        CombatMedicTarget = KFMonster(LastDamagedBy);
+    }
+    return true;
 }
 
 //overrided to add HealthRestoreRate
@@ -2812,39 +2830,32 @@ exec function TossCash( int Amount )
     local ScrnCashPickup CashPickup;
     local Vector TossVel;
     local Actor A;
-    local int StartCash;
+    local ScrnCustomPRI ScrnPRI;
 
     // To fix cash tossing exploit.
     if( Level.TimeSeconds < CashTossTimer || (Level.TimeSeconds < LongTossCashTimer && LongTossCashCount>=20) )
         return;
 
-    PlayerReplicationInfo.Score = int(PlayerReplicationInfo.Score); // why it is defined as float in a first place?
-    if ( PlayerReplicationInfo.Score <= 0 )
-        return;
-
-    if ( ScrnPC != none )
-        StartCash = ScrnPC.StartCash;
-    if ( Amount <= 0 )
-        Amount = 50;
-    if ( Amount > PlayerReplicationInfo.Score )
-        Amount = PlayerReplicationInfo.Score;
-
-    // don't use bNoStartCashToss in story mode
-    if ( class'ScrnBalance'.default.Mut.bNoStartCashToss && KF_StoryGRI(Level.GRI) == none ) {
-        if ( PlayerReplicationInfo.Score <= ScrnPC.StartCash ) {
-            PlayerController(Controller).ClientMessage(strNoSpawnCashToss);
-            CashTossTimer = Level.TimeSeconds+1.0;
-            return;
-        }
-        Amount = Min(Amount, PlayerReplicationInfo.Score - ScrnPC.StartCash);
+    ScrnPRI = class'ScrnCustomPRI'.static.FindMe(PlayerReplicationInfo);
+    if (ScrnPRI != none && ScrnPRI.DoshRequestCounter > 0) {
+        // if the player shares the dosh, they don't need it anymore
+        // Reset it even if the player doesn't have any dosh, allowing the player to reset the counter
+        ScrnPRI.DoshRequestCounter = 0;
+        ScrnPRI.NetUpdateTime = Level.TimeSeconds - 1;
     }
 
-    // copied from KFPawn to override dosh class
+    if (Amount <= 0) {
+        Amount = 100;
+    }
+    Amount = min(Amount, PlayerReplicationInfo.Score);
+    if (Amount <= 0)
+        return;
+
     GetAxes(Rotation,X,Y,Z);
     TossVel = Vector(GetViewRotation());
     TossVel = TossVel * ((Velocity Dot TossVel) + 500) + Vect(0,0,200);
-    CashPickup = Spawn(class'ScrnCashPickup',,, Location + 0.8 * CollisionRadius * X - 0.5 * CollisionRadius * Y);
-    if(CashPickup != none) {
+    CashPickup = Spawn(TossedCashClass,,, Location + 0.8 * CollisionRadius * X - 0.5 * CollisionRadius * Y);
+    if (CashPickup != none) {
         CashPickup.CashAmount = Amount;
         CashPickup.bDroppedCash = true;
         CashPickup.RespawnTime = 0;   // Dropped cash doesnt respawn. For obvious reasons.
@@ -2853,23 +2864,96 @@ exec function TossCash( int Amount )
         CashPickup.InitDroppedPickupFor(None);
         PlayerReplicationInfo.Score -= Amount;
 
-        if ( Level.Game.NumPlayers > 1 && Level.TimeSeconds - LastDropCashMessageTime > DropCashMessageDelay )
-            PlayerController(Controller).Speech('AUTO', 4, "");
-        // Hack to get Slot machines to accept dosh that's thrown inside their collision cylinder.
-        ForEach CashPickup.TouchingActors(class 'Actor', A) {
-            if( A.IsA('KF_Slot_Machine') )
-                A.Touch(Cashpickup);
+        if (ScrnPC != none && Level.Game.NumPlayers > 1
+                && Level.TimeSeconds - LastDropCashMessageTime > DropCashMessageDelay) {
+            ScrnPC.Speech('AUTO', 4, "");
+        }
+
+        // Hack to get actors to accept dosh that's thrown inside their collision cylinder.
+        // TODO: Check if bCollideWhenPlacing natively does the same.
+        foreach CashPickup.TouchingActors(class 'Actor', A) {
+            if (A.IsA('ScrnCashPickup') || A.IsA('KF_Slot_Machine')) {
+                A.Touch(CashPickup);
+            }
         }
     }
-    // end of copy
 
-    CashTossTimer = Level.TimeSeconds+0.1f;
-    if( LongTossCashTimer<Level.TimeSeconds ){
+    CashTossTimer = Level.TimeSeconds + 0.1;
+    if (LongTossCashTimer<Level.TimeSeconds) {
         LongTossCashTimer = Level.TimeSeconds+5.f;
         LongTossCashCount = 0;
     }
-    else
+    else {
         ++LongTossCashCount;
+    }
+}
+
+function ServerDoshTransfer(int Amount, optional PlayerReplicationInfo Receiver)
+{
+    local ScrnCustomPRI ScrnPRI;
+
+    Amount = min(Amount, PlayerReplicationInfo.Score);
+    if (Amount <= 0)
+        return;
+
+    ScrnPRI = class'ScrnCustomPRI'.static.FindMe(PlayerReplicationInfo);
+
+    if (Receiver != none) {
+        if (!ScrnPC.Mut.GameRules.AllowDoshTransfer(self, Receiver, Amount)) {
+            return;
+        }
+        Receiver.Score += Amount;
+        PlayerReplicationInfo.Score -= Amount;
+        Receiver.NetUpdateTime = Level.TimeSeconds - 1;
+        ClientMessage(Repl(Repl(strDoshTransferToPlayer,
+                "%$", string(Amount)),
+                "%p", class'ScrnF'.static.ColoredPlayerName(Receiver)));
+    }
+    else if (PlayerReplicationInfo.Team != none) {
+        PlayerReplicationInfo.Team.Score += Amount;
+        PlayerReplicationInfo.Score -= Amount;
+        ClientMessage(Repl(strDoshTransferToTeam, "%$", string(Amount)));
+        PlayerReplicationInfo.Team.NetUpdateTime = Level.TimeSeconds - 1;
+    }
+    PlayerReplicationInfo.NetUpdateTime = Level.TimeSeconds - 1;
+    if (ScrnPRI != none && ScrnPRI.DoshRequestCounter > 0) {
+        // if the player shares the dosh, they don't need it anymore
+        ScrnPRI.DoshRequestCounter = 0;
+        ScrnPRI.NetUpdateTime = Level.TimeSeconds - 1;
+    }
+}
+
+simulated function int GetAvailableDosh()
+{
+    local int dosh;
+
+    dosh = PlayerReplicationInfo.Score;
+    if (PlayerReplicationInfo.Team != none) {
+        dosh += PlayerReplicationInfo.Team.Score;
+    }
+    return dosh;
+}
+
+// NB! Ensure the player has enough dosh before calling this function!
+function TraderChargeDosh(int Amount)
+{
+    if (Amount <= 0)
+        return;
+
+    PlayerReplicationInfo.Score -= Amount;
+
+    // There is a special place in hell for people who store financial data in float.
+    if (PlayerReplicationInfo.Score < 1.0) {
+        if (PlayerReplicationInfo.Score < 0 && PlayerReplicationInfo.Team != none) {
+            PlayerReplicationInfo.Team.Score += PlayerReplicationInfo.Score;
+            if ( PlayerReplicationInfo.Team.Score < 1.0) {
+                 PlayerReplicationInfo.Team.Score = 0;
+            }
+             PlayerReplicationInfo.Team.NetUpdateTime = Level.TimeSeconds - 1;
+        }
+        PlayerReplicationInfo.Score = 0;
+    }
+    PlayerReplicationInfo.NetUpdateTime = Level.TimeSeconds - 1;
 }
 
 simulated function DoHitCamEffects(vector HitDirection, float JarrScale, float BlurDuration, float JarDurationScale )
@@ -2877,7 +2961,6 @@ simulated function DoHitCamEffects(vector HitDirection, float JarrScale, float B
     if( ScrnPC!=none && Viewport(ScrnPC.Player)!=None )
         Super(KFHumanPawn_Story).DoHitCamEffects(HitDirection,JarrScale, BlurDuration, JarDurationScale);
 }
-
 
 // fixes critical bug:
 // Assertion failed: inst->KPhysRootIndex != INDEX_NONE && inst->KPhysLastIndex != INDEX_NONE [File:.\KSkeletal.cpp] [Line: 595]
@@ -3268,7 +3351,8 @@ simulated function DisableGlow()
 
 defaultproperties
 {
-    HealthRestoreRate=7.0
+    DoshPerHeal=0.6  // the same as in vanilla
+    HealthRestoreRate=7.0  // 10
     HealthSpeedModifier=0.15
     NoVestClass=class'ScrnNoVestPickup'
     StandardVestClass=class'ScrnCombatVestPickup'
@@ -3277,6 +3361,9 @@ defaultproperties
     ShieldStrengthMax=0.000000
     bCheckHorzineArmorAch=true
     strNoSpawnCashToss="Can not drop starting cash"
+    strDoshTransferToPlayer="^r$$%$ ^w$transfered to ^g$%p"
+    strDoshTransferToTeam="^r$$%$ ^w$transfered to the Team Wallet"
+    TossedCashClass=class'ScrnCashPickup'
     HeadshotSound=sound'ProjectileSounds.impact_metal09'
     AccelRate=1500
     TraderSpeedBoost=1.5

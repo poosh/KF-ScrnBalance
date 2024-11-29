@@ -32,13 +32,13 @@ var array<PerkIconData> OnHUDIcons;
 var bool bOldStyleIcons;
 
 struct SDefaultInventory {
-    var class<Pickup>     PickupClass;
-    var byte             MinPerkLevel;
+    var class<Pickup>   PickupClass;
+    var byte            MinPerkLevel;
     var byte            MaxPerkLevel;
-    var bool            bSetAmmo;        // set weapon's ammo (true) or use initial amount (false)
+    var bool            bSetAmmo;       // set weapon's ammo (true) or use initial amount (false)
     var int             AmmoAmount;     // initial ammo amount
-    var float             AmmoPerLevel;     // ammo amount per each perk level above MinPerkLevel (excluding)
-    var int             SellValue;        // sell value of the inventory
+    var float           AmmoPerLevel;   // ammo amount per each perk level above MinPerkLevel (excluding)
+    var int             SellValue;       // sell value of the inventory (deprecated)
     var name            Achievement;    // Achievement that must be unlocked to get this weapon
     var byte            X;              // exclusion index. DefaultInventory[i] is not given if DefaultInventory[i-X] exist in the inventory.
 };
@@ -192,20 +192,9 @@ final static function bool IsGunslingerEnabled()
     return true;
 }
 
-// Change the cost of the weapons player spawn with
-// v6.10 - KF1054 - now KFHumanPawn.CreateInventoryVeterancy() requires direct sell value, not the %
+// Got for free => give away for free
 static function float GetInitialCostScaling(KFPlayerReplicationInfo KFPRI, class<Pickup> Item)
 {
-    local byte level;
-
-    if ( !class'ScrnBalance'.default.Mut.bSpawn0 ) {
-        level = GetClientVeteranSkillLevel(KFPRI);
-        if ( level >= 6 )
-            return default.StartingWeaponSellPriceLevel6;
-        if ( level == 5 )
-            return default.StartingWeaponSellPriceLevel5;
-    }
-
     return 0;
 }
 
@@ -452,7 +441,6 @@ static function AddDefaultInventory(KFPlayerReplicationInfo KFPRI, Pawn P)
     local Ammunition AmmoInv;
     local class<ScrnVestPickup> ScrnVest;
     local int ExtraAmmo;
-    local float SellValue;
     local ScrnBalance Mut;
     local bool bBalance;
     local ScrnGameLength ScrnGL;
@@ -482,8 +470,6 @@ static function AddDefaultInventory(KFPlayerReplicationInfo KFPRI, Pawn P)
                     && class'ScrnAchCtrl'.static.IsAchievementUnlocked(L, default.DefaultInventory[i].Achievement))) )
         {
             ExtraAmmo = max(0, default.DefaultInventory[i].AmmoPerLevel * (level - default.DefaultInventory[i].MinPerkLevel));
-            if ( !Mut.bSpawn0 )
-                SellValue = default.DefaultInventory[i].SellValue;
             ScrnVest = class<ScrnVestPickup>(default.DefaultInventory[i].PickupClass);
             if ( ScrnVest != none || class<ShieldPickup>(default.DefaultInventory[i].PickupClass) != none ) {
                 if ( ScrnVest != none && ScrnPawn != none )
@@ -503,7 +489,7 @@ static function AddDefaultInventory(KFPlayerReplicationInfo KFPRI, Pawn P)
             }
             else if ( (ScrnGL == none || ScrnGL.IsItemAllowed(default.DefaultInventory[i].PickupClass))
                     && ShouldAddDefaultInventory(i, KFPRI, P) ) {
-                KFP.CreateInventoryVeterancy(string(default.DefaultInventory[i].PickupClass.default.InventoryType), SellValue);
+                KFP.CreateInventoryVeterancy(string(default.DefaultInventory[i].PickupClass.default.InventoryType), 0);
                 if (  default.DefaultInventory[i].bSetAmmo ) {
                     W = Weapon(KFP.FindInventoryType(default.DefaultInventory[i].PickupClass.default.InventoryType));
                     if ( W != none )

@@ -84,7 +84,7 @@ function bool MyKeyEvent(out byte Key, out byte State, float delta)
 
     switch (Key) {
         case 0x1B: // IK_Escape
-        case 0x78: // IK_F9
+        case 0x75: // IK_F6
             OnDoneClick(none);
             return true;
     }

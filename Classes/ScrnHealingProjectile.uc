@@ -29,7 +29,6 @@ simulated function PostNetReceive()
 simulated function ProcessTouch(Actor Other, Vector HitLocation)
 {
     local KFPlayerReplicationInfo PRI;
-    local int MedicReward;
     local KFHumanPawn Healed;
     local float HealSum; // for modifying based on perks
     local float HealPotency;
@@ -39,9 +38,10 @@ simulated function ProcessTouch(Actor Other, Vector HitLocation)
 
     // KFBulletWhipAttachment is attached to KFPawns
     if ( ROBulletWhipAttachment(Other) != none ) {
+        // snap to the player
         Healed = KFHumanPawn(Other.Owner);
         if ( Healed == none || Healed.Health >= Healed.HealthMax )
-            return;
+            return;  // ignore the aux cylinder and continue flying
     }
     else {
         Healed = KFHumanPawn(Other);
@@ -59,54 +59,19 @@ simulated function ProcessTouch(Actor Other, Vector HitLocation)
                 if ( PRI != none && PRI.ClientVeteranSkill != none )
                     HealPotency = PRI.ClientVeteranSkill.Static.GetHealPotency(PRI);
 
-                MedicReward = (HealBoostAmount + InstantHealAmount) * HealPotency;
                 HealSum = HealBoostAmount * HealPotency;
-
-                if ( (Healed.Health + Healed.healthToGive + MedicReward) > Healed.HealthMax ) {
-                    MedicReward = max(0, Healed.HealthMax - (Healed.Health + Healed.healthToGive));
-                }
-
-                // if ( Healed.Controller != none )
-                //     Healed.Controller.ShakeView(ShakeRotMag, ShakeRotRate, ShakeRotTime, ShakeOffsetMag, ShakeOffsetRate, ShakeOffsetTime);
 
                 if (InstantHealAmount != 0) {
                     Healed.Health = min(Healed.Health + InstantHealAmount * HealPotency, Healed.HealthMax);
                 }
 
-                if ( ScrnHumanPawn(Healed) != none )
+                if (ScrnHumanPawn(Healed) != none) {
                     ScrnHumanPawn(Healed).TakeHealing(ScrnHumanPawn(Instigator), HealSum, HealPotency, KFWeapon(Instigator.Weapon));
-                else
-                    Healed.GiveHealth(HealSum, Healed.HealthMax);
-
-                if ( PRI != None ) {
-                    if ( MedicReward > 0 && KFSteamStatsAndAchievements(PRI.SteamStatsAndAchievements) != none )
-                        KFSteamStatsAndAchievements(PRI.SteamStatsAndAchievements).AddDamageHealed(MedicReward,
-                            MP7MMedicGun(Instigator.Weapon) != none, MP5MMedicGun(Instigator.Weapon) != none);
-
-                    // Give the medic reward money as a percentage of how much of the person's health they healed
-                    MedicReward = int((FMin(float(MedicReward),Healed.HealthMax)/Healed.HealthMax) * 60.0); // Increased to 80 in Balance Round 6, reduced to 60 in Round 7
-
-                    if ( class'ScrnBalance'.default.Mut.bMedicRewardFromTeam && Healed.PlayerReplicationInfo != none && Healed.PlayerReplicationInfo.Team != none ) {
-                        // give money from team wallet
-                        if ( Healed.PlayerReplicationInfo.Team.Score >= MedicReward ) {
-                            Healed.PlayerReplicationInfo.Team.Score -= MedicReward;
-                            PRI.Score += MedicReward;
-                        }
-                    }
-                    else
-                        PRI.Score += MedicReward;
-
-                    // Don't reward team with healing money  --  PooSH
-                    //PRI.Team.Score += MedicReward;
-
-
-                    if ( KFHumanPawn(Instigator) != none )
-                    {
-                        KFHumanPawn(Instigator).AlphaAmount = 255;
-                    }
-
-                    ClientSuccessfulHeal(Healed.GetPlayerName());
                 }
+                else {
+                    Healed.GiveHealth(HealSum, Healed.HealthMax);
+                }
+                ClientSuccessfulHeal(Healed.GetPlayerName());
             }
         }
         else {

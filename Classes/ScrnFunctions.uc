@@ -54,6 +54,39 @@ static function byte GetNumKeyIndex(byte Key) {
     return 255;
 }
 
+static final function int SearchObj(out array<Object> arr, Object val)
+{
+    local int i;
+
+    if (val == none || arr.length == 0)
+        return -1;
+
+    for (i = 0; i < arr.length; ++i) {
+        if (arr[i] == val)
+            return i;
+    }
+    return -1;
+}
+
+static final function bool ObjAddUnique(out array<Object> arr, Object val)
+{
+    if (val == none)
+        return false;
+
+    if (SearchObj(arr, val) != -1)
+        return false;
+
+    arr[arr.length] = val;
+    return true;
+}
+
+// Returns true of float is not a real number (NaN, -INF, or +INF)
+static final function bool IsNaN(float f)
+{
+    return !(f < 0 || f >= 0);
+}
+
+
 static function class<ScrnVeterancyTypes> FindPerkByName(ClientPerkRepLink L, string VeterancyNameOrIndex)
 {
     local int i;

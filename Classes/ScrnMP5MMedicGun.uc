@@ -6,6 +6,7 @@ var string OldAnimRef;
 var MeshAnimation NewAnim; //test
 var ScrnMP5MBullets MP5MBullets; //for tactical reload
 
+var bool bHasShortReload;
 var transient bool  bShortReload;
 
 static function PreloadAssets(Inventory Inv, optional bool bSkipRefCount)
@@ -78,7 +79,7 @@ simulated function bool AllowReload()
     }
 
     return !( FireMode[0].IsFiring() || FireMode[1].IsFiring() || bIsReloading || ClientState == WS_BringUp
-            || MagAmmoRemaining >= MagCapacity + 1 || AmmoAmount(0) <= MagAmmoRemaining
+            || MagAmmoRemaining >= MagCapacity + int(bHasShortReload) || AmmoAmount(0) <= MagAmmoRemaining
             || (FireMode[0].NextFireTime - Level.TimeSeconds) > 0.1 );
 }
 
@@ -104,7 +105,7 @@ exec function ReloadMeNow()
 
     bIsReloading = true;
     ReloadTimer = Level.TimeSeconds;
-    bShortReload = MagAmmoRemaining > 0;
+    bShortReload = bHasShortReload && (MagAmmoRemaining > 0);
     if ( bShortReload )
         ReloadRate = Default.ReloadShortRate / ReloadMulti;
     else
@@ -142,7 +143,7 @@ simulated function ClientReload()
         ReloadMulti = 1.0;
 
     bIsReloading = true;
-    if (MagAmmoRemaining <= 0)
+    if (!bHasShortReload || MagAmmoRemaining <= 0)
     {
         bShortReload = false;
         PlayAnim(ReloadAnim, ReloadAnimRate*ReloadMulti, 0.1);
@@ -215,8 +216,8 @@ defaultproperties
 {
     ReloadShortRate=2.00
     ReloadAnim="Reload"
-    ReloadRate=2.90
-    ReloadAnimRate=1.3
+    ReloadRate=2.375
+    ReloadAnimRate=1.6
     Magcapacity=32
     HealAmmoCharge=0
     Weight=4.000000

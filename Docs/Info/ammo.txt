@@ -75,6 +75,7 @@ KFMod.ZEDMKIIAmmoPickup
 ScrnBalanceSrv.*
 ------------------------------------------------------------------
 ScrnBalanceSrv.ScrnChainsawAmmoPickup
+ScrnBalanceSrv.ScrnMagnum44APAmmo
 ScrnBalanceSrv.ScrnM203MAmmoPickup
 ScrnBalanceSrv.ScrnM203MAmmoPickup
 ScrnBalanceSrv.ScrnM79MAmmoPickup

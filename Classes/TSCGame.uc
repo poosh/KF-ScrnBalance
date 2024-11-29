@@ -131,9 +131,6 @@ event InitGame( string Options, out string Error )
 
     // hard-code some ScrN features
     ScrnBalanceMut.MaxVoteKillMonsters = 0; // no vote end wave since it is auto-ended in 30 seconds
-    ScrnBalanceMut.bSpawn0 = true;
-    ScrnBalanceMut.bNoStartCashToss = true;
-    ScrnBalanceMut.bMedicRewardFromTeam = true;
     if ( ScrnBalanceMut.ForcedMaxPlayers < 12 )
         ScrnBalanceMut.ForcedMaxPlayers = 0;
 

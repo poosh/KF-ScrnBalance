@@ -45,10 +45,13 @@ function bool CheckCanCarry(KFHumanPawn Hm) {
 
 defaultproperties
 {
-     DualInventoryType=class'ScrnDualMK23Pistol'
-     Weight=3.000000
-     Description="Match grade 45 caliber pistol. Good balance between power, ammo count and rate of fire. Damage is near to Magnum's, but has no bullet penetration."
-     ItemName="MK23 SE"
-     ItemShortName="MK23 SE"
-     InventoryType=class'ScrnMK23Pistol'
+    DualInventoryType=class'ScrnDualMK23Pistol'
+    Weight=3
+    AmmoCost=14
+    BuyClipSize=12
+    AmmoItemName=".45 ACP"
+    Description="Match grade .45 ACP caliber pistol featuring a good balance between power, ammo count, and rate of fire. Damage is near to .44 Magnum but has no bullet overpenetration."
+    ItemName="MK23 SE"
+    ItemShortName="MK23 SE"
+    InventoryType=class'ScrnMK23Pistol'
 }

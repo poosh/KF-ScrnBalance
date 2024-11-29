@@ -12,11 +12,9 @@ function HealOrHurt(float DamageAmount, float DamageRadius, class<DamageType> Da
 function HealRadius(float HealAmount, float HealRadius, vector HealLocation)
 {
     local KFHumanPawn Victim;
-    local int i;
+    local ScrnHumanPawn ScrnVictim;
     // Healing
     local KFPlayerReplicationInfo KFPRI;
-    local KFSteamStatsAndAchievements Stats;
-    local int MedicReward, TotalEarnedDosh;
     local float HealSum; // for modifying based on perks
     local float HealPotency;
 
@@ -29,67 +27,29 @@ function HealRadius(float HealAmount, float HealRadius, vector HealLocation)
     // raise it half a meter to be sure it doesn't stuck inside a floor like bugged pipes
     HealLocation.Z = HealLocation.Z + 25;
 
-    if ( Instigator != none )
+    if (Instigator != none)
         KFPRI = KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo);
-
-    if ( KFPRI != none ) {
-        Stats = KFSteamStatsAndAchievements(KFPRI.SteamStatsAndAchievements);
-
-        if ( KFPRI.ClientVeteranSkill != none )
-            HealPotency = KFPRI.ClientVeteranSkill.Static.GetHealPotency(KFPRI);
+    if (KFPRI != none && KFPRI.ClientVeteranSkill != none) {
+        HealPotency = KFPRI.ClientVeteranSkill.Static.GetHealPotency(KFPRI);
     }
+    HealSum = HealAmount * HealPotency;
 
     foreach CollidingActors(class'KFHumanPawn', Victim, HealRadius, HealLocation) {
         if( Victim.Health <= 0 || Victim.Health >= Victim.HealthMax )
             continue;
 
-        MedicReward = HealAmount * HealPotency;
-        HealSum = MedicReward;
+        ScrnVictim = ScrnHumanPawn(Victim);
 
-        if ( (Victim.Health + Victim.healthToGive + MedicReward) > Victim.HealthMax )
-            MedicReward = max(0, Victim.HealthMax - (Victim.Health + Victim.healthToGive));
 
-        //used to set different health restore rate
-        if ( ScrnHumanPawn(Victim) != none )
-            ScrnHumanPawn(Victim).TakeHealing(ScrnHumanPawn(Instigator), HealSum, HealPotency, none);
-        else
+        if (ScrnVictim != none) {
+            if (ScrnVictim.TakeHealing(ScrnVictim, HealSum, HealPotency, none)) {
+                HealedHP += ScrnVictim.LastHealAmount;
+                class'ScrnFunctions'.static.ObjAddUnique(HealedPlayers, Victim);
+            }
+        }
+        else {
             Victim.GiveHealth(HealSum, Victim.HealthMax);
-
-        // calculate total amount of health and unique player count
-        HealedHP += MedicReward;
-        i = 0;
-        while ( i < HealedPlayers.Length && HealedPlayers[i] != Victim ) {
-            i++;
         }
-        if ( i == HealedPlayers.Length ) {
-            HealedPlayers[i] = Victim;
-        }
-
-        if ( KFPRI != None ) {
-            if ( MedicReward > 0 && Stats != none ) {
-                Stats.AddDamageHealed(MedicReward);
-            }
-
-            // Give the medic reward money as a percentage of how much of the person's health they healed
-            MedicReward = int((FMin(float(MedicReward),Victim.HealthMax)/Victim.HealthMax) * 60);
-
-            if ( class'ScrnBalance'.default.Mut.bMedicRewardFromTeam && Victim.PlayerReplicationInfo != none && Victim.PlayerReplicationInfo.Team != none ) {
-                // give money from team wallet
-                if ( Victim.PlayerReplicationInfo.Team.Score >= MedicReward ) {
-                    Victim.PlayerReplicationInfo.Team.Score -= MedicReward;
-                    KFPRI.Score += MedicReward;
-                    TotalEarnedDosh += MedicReward;
-                }
-            }
-            else {
-                KFPRI.Score += MedicReward;
-                TotalEarnedDosh += MedicReward;
-            }
-        }
-    }
-
-    if ( TotalEarnedDosh > 0 && KFHumanPawn(Instigator) != none ) {
-        KFHumanPawn(Instigator).AlphaAmount = 255;
     }
     bHurtEntry = false;
 }

@@ -2,6 +2,7 @@ class ScrnDualMK23Pistol extends DualMK23Pistol;
 
 var transient ScrnMK23Pistol SingleGun;
 var byte LeftGunAmmoRemaining;  // ammo in the left pistol. Left pistol always has more or equal bullets than the right one
+var protected bool bDoubleAmmo;
 var transient int OtherGunAmmoRemaining; // ammo remaining in the other gun while holding a single pistol
 var transient bool bFindSingleGun;
 var transient bool bBotControlled;
@@ -25,7 +26,7 @@ var transient int OutOfOrderShots;  // equalize ammo in case when a single pisto
 replication
 {
     reliable if ( Role == ROLE_Authority )
-        LeftGunAmmoRemaining;
+        LeftGunAmmoRemaining, bDoubleAmmo;
 
     reliable if ( Role == ROLE_Authority )
         ClientReplicateAmmo;
@@ -56,6 +57,11 @@ simulated function Destroyed()
         SingleGun.DualGuns = none;
         SingleGun.InventoryGroup = SingleGun.default.InventoryGroup;
         SingleGun = none;
+    }
+
+    if (bDoubleAmmo) {
+        // this code triggers only when selling weapon at the trader
+        bDoubleAmmo = class'ScrnDualMK23Laser'.static.CheckDoubleAmmo(Instigator, self);
     }
 
     super.Destroyed();
@@ -165,6 +171,82 @@ simulated function int RightGunAmmoRemaining()
     return MagAmmoRemaining - LeftGunAmmoRemaining;
 }
 
+simulated function float GetAmmoMulti()
+{
+    local KFPlayerReplicationInfo KFPRI;
+
+    if ( NextAmmoCheckTime > Level.TimeSeconds )
+        return LastAmmoResult;
+
+    NextAmmoCheckTime = Level.TimeSeconds + 0.1;
+    LastAmmoResult = 1.0 + int(bDoubleAmmo);
+    if ( Instigator != none )
+        KFPRI = KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo);
+    if ( KFPRI != none && KFPRI.ClientVeteranSkill != none ) {
+        LastAmmoResult *= KFPRI.ClientVeteranSkill.static.AddExtraAmmoFor(KFPRI, AmmoClass[0]);
+    }
+
+    return LastAmmoResult;
+}
+
+simulated function GetAmmoCount(out float MaxAmmoPrimary, out float CurAmmoPrimary)
+{
+    if ( AmmoClass[0] == None )
+        return;
+
+    if ( Ammo[0] != None ) {
+        MaxAmmoPrimary = int(Ammo[0].default.MaxAmmo * GetAmmoMulti());
+        CurAmmoPrimary = Ammo[0].AmmoAmount;
+    }
+    else {
+        MaxAmmoPrimary = int(AmmoClass[0].Default.MaxAmmo * GetAmmoMulti());
+        CurAmmoPrimary = AmmoCharge[0];
+    }
+}
+
+function bool IsDoubleAmmo() {
+    return bDoubleAmmo;
+}
+
+function SetDoubleAmmo(bool value) {
+    if (bDoubleAmmo == value)
+        return;
+    bDoubleAmmo = value;
+    NextAmmoCheckTime = Level.TimeSeconds - 1;
+    NetUpdateTime = Level.TimeSeconds - 1;
+    if (Ammo[0] != none) {
+        Ammo[0].AmmoAmount = clamp(Ammo[0].AmmoAmount, 0, MaxAmmo(0));
+        Ammo[0].NetUpdateTime = Level.TimeSeconds - 1;
+    }
+    if (ScrnHumanPawn(Instigator) != none) {
+        ScrnHumanPawn(Instigator).SetTraderUpdate();
+    }
+}
+
+function ClearDoubleAmmo()
+{
+    local Inventory Inv;
+    local int c;
+
+    if (!bDoubleAmmo)
+        return;
+    SetDoubleAmmo(false);
+
+    if (Instigator == none)
+        return;
+
+    for (Inv = Instigator.Inventory; Inv != none && ++c < 1000; Inv = Inv.Inventory) {
+        if (Inv != self) {
+            if (ScrnMK23Pistol(Inv) != none) {
+                ScrnMK23Pistol(Inv).SetDoubleAmmo(false);
+            }
+            else if (ScrnDualMK23Pistol(Inv) != none) {
+                ScrnDualMK23Pistol(Inv).SetDoubleAmmo(false);
+            }
+        }
+    }
+}
+
 function bool ConsumeAmmo( int Mode, float Load, optional bool bAmountNeededIsMax )
 {
     if ( !super(Weapon).ConsumeAmmo(Mode, Load, bAmountNeededIsMax) )
@@ -197,12 +279,68 @@ function bool ConsumeAmmo( int Mode, float Load, optional bool bAmountNeededIsMa
  */
 simulated function BringUp(optional Weapon PrevWeapon)
 {
-    if ( Role == ROLE_Authority && SingleGun != none ) {
+    local int i;
+    local KFHumanPawn KFP;
+    local bool bQuick;
+
+    KFP = KFHumanPawn(Instigator);
+
+    if (Role == ROLE_Authority && SingleGun != none) {
         SyncDualFromSingle();
         ReplicateAmmo();
     }
 
-    Super.BringUp(PrevWeapon);
+    //--- KFWeapon BEGIN
+    HandleSleeveSwapping();
+
+    if (KFP != none ) {
+        KFP.SetAiming(false);
+        bQuick = ClientGrenadeState == GN_BringUp || KFP.bIsQuickHealing > 0
+                || (PrevWeapon == SingleGun && SingleGun != none);
+    }
+
+    bAimingRifle = false;
+    bIsReloading = false;
+    IdleAnim = default.IdleAnim;
+
+    if (ClientState == WS_Hidden || ClientGrenadeState == GN_BringUp || (KFP != none && KFP.bIsQuickHealing > 0)) {
+        PlayOwnedSound(SelectSound, SLOT_Interact,,,,, false);
+        ClientPlayForceFeedback(SelectForce);  // jdf
+
+        if (Instigator.IsLocallyControlled() && Mesh != none && HasAnim(SelectAnim)) {
+            if (bQuick) {
+                PlayAnim(SelectAnim, SelectAnimRate * BringUpTime / QuickBringUpTime, 0.0);
+            }
+            else {
+                PlayAnim(SelectAnim, SelectAnimRate, 0.0);
+            }
+        }
+
+        ClientState = WS_BringUp;
+        if (bQuick) {
+            ClientGrenadeState = GN_None;
+            SetTimer(QuickBringUpTime, false);
+        }
+        else {
+            SetTimer(BringUpTime, false);
+        }
+    }
+
+    for (i = 0; i < NUM_FIRE_MODES; ++i) {
+        FireMode[i].bIsFiring = false;
+        FireMode[i].HoldTime = 0.0;
+        FireMode[i].bServerDelayStartFire = false;
+        FireMode[i].bServerDelayStopFire = false;
+        FireMode[i].bInstantStop = false;
+    }
+
+    if (PrevWeapon != none && PrevWeapon.HasAmmo() && !PrevWeapon.bNoVoluntarySwitch) {
+        OldWeapon = PrevWeapon;
+    }
+    else {
+        OldWeapon = None;
+    }
+    //--- KFWeapon END
 
     if ( Instigator.IsLocallyControlled() ) {
         SetSlidePositions();
@@ -211,13 +349,85 @@ simulated function BringUp(optional Weapon PrevWeapon)
 
 simulated function bool PutDown()
 {
-    if ( super(KFWeapon).PutDown() ) {
-        if ( SingleGun != none ) {
-            SyncSingleFromDual();
-        }
-        return true;
+    local int i;
+    local KFPawn KFP;
+    local bool bQuick;
+
+//--- KFWeapon BEGIN
+    InterruptReload();
+
+    if ( bIsReloading )
+        return false;
+
+    if( bAimingRifle )
+        ZoomOut(False);
+
+    KFP = KFPawn(Instigator);
+    if (KFP != none) {
+        bQuick = ClientGrenadeState == GN_TempDown || KFP.bIsQuickHealing > 0
+                || (Instigator.PendingWeapon == SingleGun && SingleGun != none);
     }
-    return false;
+
+    // From Weapon.uc
+    if (ClientState == WS_BringUp || ClientState == WS_ReadyToFire) {
+        if ( Instigator.PendingWeapon != none && !Instigator.PendingWeapon.bForceSwitch) {
+            for (i = 0; i < NUM_FIRE_MODES; ++i) {
+                if (FireMode[i].bFireOnRelease && FireMode[i].bIsFiring)
+                    return false;
+                if (FireMode[i].NextFireTime > Level.TimeSeconds + FireMode[i].FireRate * (1.f - MinReloadPct)) {
+                    DownDelay = FMax(DownDelay, FireMode[i].NextFireTime - Level.TimeSeconds
+                            - FireMode[i].FireRate * (1.f - MinReloadPct));
+                }
+            }
+        }
+
+        if (Instigator.IsLocallyControlled()) {
+            for (i = 0; i < NUM_FIRE_MODES; ++i) {
+                if (FireMode[i].bIsFiring)
+                    ClientStopFire(i);
+            }
+
+            if (DownDelay <= 0 || bQuick) {
+                if (ClientState == WS_BringUp || KFP.bIsQuickHealing > 0) {
+                    TweenAnim(SelectAnim, PutDownTime);
+                }
+                else if (HasAnim(PutDownAnim)) {
+                    if (bQuick) {
+                        PlayAnim(PutDownAnim, PutDownAnimRate * PutDownTime / QuickPutDownTime, 0.0);
+                    }
+                    else {
+                        PlayAnim(PutDownAnim, PutDownAnimRate, 0.0);
+                    }
+
+                }
+            }
+        }
+        ClientState = WS_PutDown;
+        if (Level.GRI.bFastWeaponSwitching)
+            DownDelay = 0;
+        if (DownDelay > 0) {
+            SetTimer(DownDelay, false);
+        }
+        else if (bQuick) {
+            SetTimer(QuickPutDownTime, false);
+        }
+        else {
+            SetTimer(PutDownTime, false);
+        }
+    }
+
+    for (i = 0; i < NUM_FIRE_MODES; ++i) {
+        FireMode[i].bServerDelayStartFire = false;
+        FireMode[i].bServerDelayStopFire = false;
+    }
+    Instigator.AmbientSound = None;
+    OldWeapon = None;
+//--- KFWeapon END
+
+    if (SingleGun != none) {
+        SyncSingleFromDual();
+    }
+    return true;
 }
 
 // sync the Single gun state based on Duals
@@ -260,7 +470,7 @@ simulated function SetPistolFireOrder()
 
 function AttachToPawn(Pawn P)
 {
-    super(Dualies).AttachToPawn(P); // skip code duplication in Dual44Magnum
+    super(Dualies).AttachToPawn(P);
 }
 
 function bool HandlePickupQuery( pickup Item )
@@ -282,8 +492,10 @@ function KFWeapon DetachSingle()
 {
     local KFWeapon OldGun;
 
-    if ( SingleGun == none )
+    if (SingleGun == none) {
+        ClearDoubleAmmo();
         return none;
+    }
 
     SingleGun.DualGuns = none;
     SingleGun.SellValue = SellValue / 2;
@@ -387,15 +599,6 @@ function GiveTo(Pawn Other, optional Pickup Pickup)
     }
     else {
         // bought at the trader
-        if (KFPRI != none && KFPRI.ClientVeteranSkill != none ) {
-            SellValue = ceil(class<KFWeaponPickup>(PickupClass).default.Cost * 0.375
-                * KFPRI.ClientVeteranSkill.static.GetCostScaling(KFPRI, PickupClass));
-        }
-        else {
-            // half of 3/4 of the price
-            SellValue = class<KFWeaponPickup>(PickupClass).default.Cost * 3 / 8;
-        }
-        SellValue += SingleGun.SellValue;
         OtherGunAmmoRemaining = max(MagAmmoRemaining - SingleGun.MagAmmoRemaining, 0);
         OldAmmo += SingleGun.Ammo[0].InitialAmount;
     }
@@ -407,8 +610,9 @@ function GiveTo(Pawn Other, optional Pickup Pickup)
     // this workaround required to properly display weight in the trader
     Weight = default.Weight;
     SingleGun.Weight = 0;
-
+    SingleGun.SellValue = 0;
     Ammo[0].AmmoAmount = clamp(OldAmmo, 0, MaxAmmo(0));
+    class'ScrnDualMK23Laser'.static.CheckDoubleAmmo(Other);
 }
 
 // === fx ====================================================================
@@ -679,6 +883,7 @@ defaultproperties
     InventoryGroup=3
     PickupClass=class'ScrnDualMK23Pickup'
     ItemName="Dual MK23 SE"
+    Description="Two match grade .45 ACP caliber pistols featuring a good balance between power, ammo count, and rate of fire. Damage is near to .44 Magnum but has no bullet overpenetration."
     ShortReloadFrameSkip=75
     Priority=120
 }

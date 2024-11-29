@@ -107,7 +107,7 @@ defaultproperties
     QuickPutDownTime=0.01  // 0.15
     QuickBringUpTime=0.01  // 0.15
 
-    PutDownAnimRate=3.333333
+    PutDownAnimRate=2.2222
     SelectAnimRate=3.333333
     BringUpTime=0.10
     PutDownTime=0.10

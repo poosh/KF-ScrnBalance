@@ -5,9 +5,9 @@ var transient float PendingHealTime;
 Function Timer()
 {
     local KFPlayerReplicationInfo PRI;
-    local int MedicReward;
     local KFHumanPawn Healed;
     local float HealSum, HealPotency; // for modifying based on perks
+    local bool bHealed;
 
     PRI = KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo);
     Healed = CachedHealee;
@@ -22,55 +22,24 @@ Function Timer()
             HealPotency = PRI.ClientVeteranSkill.Static.GetHealPotency(PRI);
 
         if ( Weapon.Level.Game.NumPlayers == 1 )
-            HealSum = 50;
+            HealSum = 50;  // for healing NPC on Story Mode
         else
             HealSum = Syringe(Weapon).HealBoostAmount;
 
-        HealSum    *= HealPotency;
-        MedicReward = HealSum;
+        HealSum *= HealPotency;
 
-        if ( (Healed.Health + Healed.healthToGive + MedicReward) > Healed.HealthMax )
-        {
-            MedicReward = Healed.HealthMax - (Healed.Health + Healed.healthToGive);
-            if ( MedicReward < 0 )
-            {
-                MedicReward = 0;
-            }
+        if (ScrnHumanPawn(Healed) != none) {
+            bHealed =  ScrnHumanPawn(Healed).TakeHealing(ScrnHumanPawn(Instigator), HealSum, HealPotency,
+                    KFWeapon(Instigator.Weapon));
+        }
+        else {
+            bHealed = Healed.GiveHealth(HealSum, Healed.HealthMax);;
         }
 
-        if ( ScrnHumanPawn(Healed) != none )
-            ScrnHumanPawn(Healed).TakeHealing(ScrnHumanPawn(Instigator), HealSum, HealPotency, KFWeapon(Instigator.Weapon));
-        else
-            Healed.GiveHealth(HealSum, Healed.HealthMax);
-
-        // Tell them we're healing them
-        PlayerController(Instigator.Controller).Speech('AUTO', 5, "");
-        LastHealMessageTime = Level.TimeSeconds;
-
-        if ( PRI != None )
-        {
-            if ( MedicReward > 0 && KFSteamStatsAndAchievements(PRI.SteamStatsAndAchievements) != none )
-            {
-                KFSteamStatsAndAchievements(PRI.SteamStatsAndAchievements).AddDamageHealed(MedicReward);
-            }
-
-            // Give the medic reward money as a percentage of how much of the person's health they healed
-            MedicReward = int((FMin(float(MedicReward),Healed.HealthMax)/Healed.HealthMax) * 60); // Increased to 80 in Balance Round 6, reduced to 60 in Round 7
-
-            if ( class'ScrnBalance'.default.Mut.bMedicRewardFromTeam && Healed.PlayerReplicationInfo != none && Healed.PlayerReplicationInfo.Team != none ) {
-                // give money from team wallet
-                if ( Healed.PlayerReplicationInfo.Team.Score >= MedicReward ) {
-                    Healed.PlayerReplicationInfo.Team.Score -= MedicReward;
-                    PRI.Score += MedicReward;
-                }
-            }
-            else
-                PRI.Score += MedicReward;
-
-            if ( KFHumanPawn(Instigator) != none )
-            {
-                KFHumanPawn(Instigator).AlphaAmount = 255;
-            }
+        if (bHealed) {
+            // Tell them we're healing them
+            PlayerController(Instigator.Controller).Speech('AUTO', 5, "");
+            LastHealMessageTime = Level.TimeSeconds;
         }
     }
 }
@@ -101,9 +70,11 @@ function KFHumanPawn GetHealee()
 
 function float GetFireSpeed()
 {
-    if ( KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo) != none && KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo).ClientVeteranSkill != none )
-    {
-        return KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo).ClientVeteranSkill.Static.GetFireSpeedMod(KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo), Weapon);
+    local KFPlayerReplicationInfo KFPRI;
+
+    KFPRI = KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo);
+    if (KFPRI != none && KFPRI.ClientVeteranSkill != none) {
+        return KFPRI.ClientVeteranSkill.Static.GetFireSpeedMod(KFPRI, Weapon);
     }
 
     return 1;
@@ -157,4 +128,6 @@ function AttemptHeal()
 
 defaultproperties
 {
+    FireRate=1.45
+    FireAnimRate=2.0
 }

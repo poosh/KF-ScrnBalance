@@ -114,24 +114,20 @@ simulated function float GetAmmoMulti()
 {
     local KFPlayerReplicationInfo KFPRI;
 
+    if (DualGuns != none)
+        return DualGuns.GetAmmoMulti();
+
     if ( NextAmmoCheckTime > Level.TimeSeconds )
         return LastAmmoResult;
 
     NextAmmoCheckTime = Level.TimeSeconds + 1;
 
-    if ( DualGuns != none ) {
-        LastAmmoResult = 2.0;
-    }
-    else {
-        LastAmmoResult = 1.0;
-    }
-
+    LastAmmoResult = 1.0;
     if ( Instigator != none )
         KFPRI = KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo);
     if ( KFPRI != none && KFPRI.ClientVeteranSkill != none ) {
         LastAmmoResult *= KFPRI.ClientVeteranSkill.static.AddExtraAmmoFor(KFPRI, AmmoClass[0]);
     }
-
     return LastAmmoResult;
 }
 
@@ -322,9 +318,14 @@ function GiveTo( pawn Other, optional Pickup Pickup )
 
 defaultproperties
 {
-     FireModeClass(0)=class'ScrnMagnum44Fire'
-     PickupClass=class'ScrnMagnum44Pickup'
-     ItemName="44 Magnum SE"
-     Weight=2
-     Priority=70
+    FireModeClass(0)=class'ScrnMagnum44Fire'
+    PickupClass=class'ScrnMagnum44Pickup'
+    ItemName="Magnum .44 SE"
+    Weight=2
+    Priority=70
+
+    PutDownTime=0.15
+    BringUpTime=0.15
+    SelectAnimRate=3.5556
+    PutDownAnimRate=3.5556
 }

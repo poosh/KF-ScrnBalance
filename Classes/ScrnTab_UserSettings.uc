@@ -282,15 +282,7 @@ function ServerStatus()
         return; // wtf?
 
     s = ColorStringC(strServerInfoSeparator, lbl_ServerInfo.TextColor);
-    if ( m.bNoStartCashToss && m.bMedicRewardFromTeam && m.bSpawn0 )
-        cSpawnBalance = StatusColor[1];
-    else if ( m.bMedicRewardFromTeam ) {
-        cSpawnBalance.R = 255;
-        cSpawnBalance.G = 106;
-    }
-    else {
-        cSpawnBalance = StatusColor[0];
-    }
+    cSpawnBalance = StatusColor[1];
 
     if ( !m.bNoPerkChanges )
         cNoPerkChanges = StatusColor[0];

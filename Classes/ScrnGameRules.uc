@@ -73,8 +73,8 @@ struct MonsterInfo {
     var float BleedOutTime;  // time when zed should die from bleeding
 };
 var array<MonsterInfo> MonsterInfos;
-var private transient KFMonster LastSeachedMonster; //used to optimize GetMonsterIndex()
-var private transient int       LastFoundMonsterIndex;
+var protected transient KFMonster LastSeachedMonster; //used to optimize GetMonsterIndex()
+var protected transient int       LastFoundMonsterIndex;
 
 
 struct MapAlias {
@@ -90,7 +90,7 @@ var ScrnGameRulesMod Mods;
 
 var array<ScrnAchHandlerBase> AchHandlers;
 var transient ScrnPlayerInfo PlayerInfo;
-var private transient ScrnPlayerInfo BackupPlayerInfo;
+var protected transient ScrnPlayerInfo BackupPlayerInfo;
 var protected int WavePlayerCount, WaveDeadPlayers;
 
 var class<ScrnAchievements> AchClass;
@@ -222,6 +222,7 @@ function WaveStarted()
     local Controller P;
     local PlayerController PC;
     local ScrnPlayerInfo SPI;
+    local ScrnCustomPRI ScrnPRI;
 
     WaveDoom3Kills = 0;
     WaveTotalKills = 0;
@@ -232,8 +233,18 @@ function WaveStarted()
 
     ClearNonePlayerInfos();
     for ( P = Level.ControllerList; P != none; P = P.nextController ) {
+        if (P.PlayerReplicationInfo == none)
+            continue;
         PC = PlayerController(P);
-        if ( PC != none && PC.Pawn != none && PC.Pawn.Health > 0 ) {
+        if (PC == none)
+            continue;
+
+        ScrnPRI = class'ScrnCustomPRI'.static.FindMe(PC.PlayerReplicationInfo);
+        if (ScrnPRI != none) {
+            ScrnPRI.DoshRequestCounter = 0;
+        }
+
+        if (PC.Pawn != none && PC.Pawn.Health > 0 ) {
             ++WavePlayerCount;
             if ( ScrnPlayerController(PC) != none )
                 ScrnPlayerController(PC).ResetWaveStats();
@@ -284,6 +295,18 @@ function PlayerEntering(ScrnPlayerController PC)
     CreatePlayerInfo(PC, true);
 }
 
+function TransferDoshToTeam(ScrnPlayerInfo SPI)
+{
+    local byte t;
+
+    t = SPI.PRI_TeamIndex;
+    if (t < 2 && SPI.PRI_HadPawn && SPI.PRI_Score > 0) {
+        log("Transfer $" $ SPI.PRI_Score $ " from " $ SPI.PlayerName $ " to Team["$t$"] Wallet", 'ScrnBalance');
+        Mut.KF.Teams[t].Score += SPI.PRI_Score;
+        SPI.PRI_Score = 0;
+    }
+}
+
 function WaveEnded()
 {
     local int i;
@@ -314,6 +337,11 @@ function WaveEnded()
     for ( SPI=PlayerInfo; SPI!=none; SPI=SPI.NextPlayerInfo ) {
         SPI.WaveEnded(WaveNum);
         SPI.BackupPRI(); // just in case
+
+        if (SPI.PlayerOwner == none) {
+            TransferDoshToTeam(SPI);
+            continue;
+        }
 
         // broadcast players with high accuracy
         if ( bFinalWave || SPI.DecapsPerWave >= 30 ) {
@@ -649,6 +677,9 @@ static function ResetGameSquads(KFGameType Game, byte EventNum)
         case 3:
             DefaultCollection = class'DefaultMonstersCollectionXmas';
             break;
+        case 10:
+            DefaultCollection = class'DefaultMonstersCollectionZedPack';
+            break;
         default:
             return; // custom collection used, don't screw it
     }
@@ -894,12 +925,11 @@ function bool PreventDeath(Pawn Killed, Controller Killer, class<DamageType> dam
                 SPI.Died(Killer, DamageType);
             }
         }
-        if ( Mut.bSpawn0 || Mut.bStoryMode ) {
-            idx = Killed.Health;
-            Killed.Health = max(Killed.Health, 1); // requires health to spawn second pistol
-            class'ScrnHumanPawn'.static.DropAllWeapons(Killed, true); // toss all weapons after death, if bSpawn0=true or in Story Mode
-            Killed.Health = idx;
-        }
+        // Drop all weapons on death
+        idx = Killed.Health;
+        Killed.Health = max(Killed.Health, 1); // requires health to spawn second pistol
+        class'ScrnHumanPawn'.static.DropAllWeapons(Killed, true);
+        Killed.Health = idx;
     }
 
     return false;
@@ -1310,9 +1340,9 @@ function ProgressAchievementForAllPlayers(name AchID, int Inc, optional bool bOn
     }
 }
 
-final private function BackupOrDestroySPI(ScrnPlayerInfo SPI)
+final protected function BackupOrDestroySPI(ScrnPlayerInfo SPI)
 {
-    if ( SPI.SteamID32 > 0 && (SPI.PRI_Kills > 0 || SPI.PRI_Deaths > 0 || SPI.PRI_KillAssists > 0
+    if ( SPI.SteamID32 > 0 && (SPI.PRI_StarCash > 0 || SPI.PRI_Kills > 0 || SPI.PRI_Deaths > 0 || SPI.PRI_KillAssists > 0
             || SPI.HasCustomPlayerInfo() ) )
     {
         if ( BackupPlayerInfo == none ) {
@@ -1581,6 +1611,20 @@ function bool OverridePickupQuery(Pawn Other, Pickup item, out byte bAllowPickup
         }
     }
     return result;
+}
+
+function bool AllowDoshTransfer(ScrnHumanPawn Sender, PlayerReplicationInfo Receiver, int Amount)
+{
+    local ScrnPlayerInfo SPI;
+
+    SPI = GetPlayerInfo(Sender.ScrnPC);
+    if (SPI != none) {
+        if (Mods != none && !Mods.AllowDoshTransfer(SPI, Receiver, Amount))
+            return false;
+
+        SPI.TransferedCash(Receiver, Amount);
+    }
+    return true;
 }
 
 function bool CanBuyWeapon(ScrnHumanPawn P, class<KFWeaponPickup> WP)

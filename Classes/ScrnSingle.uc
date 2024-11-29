@@ -296,4 +296,9 @@ defaultproperties
     Weight=0
     DefaultHammerRotateRate = 0.02
     DefaultHammerRotateMult = 1.0
+
+    PutDownTime=0.15
+    BringUpTime=0.15
+    SelectAnimRate=3.3333
+    PutDownAnimRate=2.4444
 }

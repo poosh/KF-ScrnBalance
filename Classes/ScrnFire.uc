@@ -10,7 +10,8 @@ var transient int KillCountPerTrace;
 
 
 // should be called by the weapon when after the fire mode change (e.g., switch from full- to semi-auto)
-function FireModeChanged() { }
+function FireModeChanged() ;
+function AdjustZedDamage(KFMonster Zed, out float Damage);
 
 function DoTrace(Vector Start, Rotator Dir)
 {
@@ -20,9 +21,8 @@ function DoTrace(Vector Start, Rotator Dir)
     local float HitDamage, HitMomentum;
     local array<int>    HitPoints;
     local array<Actor>    IgnoreActors;
-    local Pawn DamagePawn;
     local KFPawn HitPawn;
-    local KFMonster Monster;
+    local KFMonster Zed;
     local int i;
     local bool bWasDecapitated;
 
@@ -47,8 +47,7 @@ function DoTrace(Vector Start, Rotator Dir)
     // HitCount isn't a number of max penetration. It is just to be sure we won't stuck in infinite loop
     while( ++HitCount < 127 && HitDamage >= DamageMin )
     {
-        DamagePawn = none;
-        Monster = none;
+        Zed = none;
         HitPawn = none;
 
         Other = Instigator.HitPointTrace(HitLocation, HitNormal, End, HitPoints, Start,, 1);
@@ -67,25 +66,23 @@ function DoTrace(Vector Start, Rotator Dir)
             break;
         }
 
-        Monster = KFMonster(Other);
-        if ( Monster != none ) {
+        Zed = KFMonster(Other);
+        if ( Zed != none ) {
             IgnoreActors[IgnoreActors.Length] = Other;
             Other.SetCollision(false);
-            DamagePawn = Monster;
         }
         else if( ExtendedZCollision(Other) != none && Other.Owner != none ) {
             IgnoreActors[IgnoreActors.Length] = Other;
             IgnoreActors[IgnoreActors.Length] = Other.Owner;
             Other.SetCollision(false);
             Other.Owner.SetCollision(false);
-            DamagePawn = Pawn(Other.Owner);
-            Monster = KFMonster(Other.Owner);
+            Zed = KFMonster(Other.Owner);
         }
         else {
             HitPawn = KFPawn(Other);
         }
 
-        if ( HitPawn != none ) {
+        if (HitPawn != none) {
             if(!HitPawn.bDeleteMe) {
                  HitPawn.ProcessLocationalDamage(int(HitDamage), Instigator, HitLocation, HitMomentum*X,DamageType,
                         HitPoints);
@@ -94,26 +91,29 @@ function DoTrace(Vector Start, Rotator Dir)
             IgnoreActors[IgnoreActors.Length] = HitPawn.AuxCollisionCylinder;
             Other.SetCollision(false);
             HitPawn.AuxCollisionCylinder.SetCollision(false);
-            DamagePawn = HitPawn;
         }
-        else {
-            bWasDecapitated = Monster != none && Monster.bDecapitated;
-            if( DamagePawn == none )
-                DamagePawn = Pawn(Other);
-
-            Other.TakeDamage(int(HitDamage), Instigator, HitLocation, HitMomentum*X, DamageType);
-            if ( DamagePawn != none && (DamagePawn.Health <= 0
-                    || (Monster != none && !bWasDecapitated && Monster.bDecapitated)) )
-            {
+        else if (Zed != none) {
+            bWasDecapitated = Zed.bDecapitated;
+            AdjustZedDamage(Zed, HitDamage);
+            Zed.TakeDamage(HitDamage, Instigator, HitLocation, HitMomentum*X, DamageType);
+            if (Zed == none || Zed.Health <= 0 || (!bWasDecapitated && Zed.bDecapitated)) {
                 ++KillCountPerTrace;
             }
+            else if (Zed != none && PenDmgReductionByHealth > 0) {
+                HitDamage *= 1.0 - PenDmgReductionByHealth * Zed.Health;
+                HitMomentum *= 1.0 - PenDmgReductionByHealth * Zed.Health;
+            }
+        }
+        else {
+            Other.TakeDamage(HitDamage, Instigator, HitLocation, HitMomentum*X, DamageType);
+            break;
         }
 
-        if( ++PenCounter > MaxPenetrations || DamagePawn == none )
+        if (++PenCounter > MaxPenetrations)
             break;
 
-        HitDamage *= PenDmgReduction - PenDmgReductionByHealth * DamagePawn.Health;
-        HitMomentum *= PenDmgReduction - PenDmgReductionByHealth * DamagePawn.Health;
+        HitDamage *= PenDmgReduction;
+        HitMomentum *= PenDmgReduction;
         Start = HitLocation;
     }
 

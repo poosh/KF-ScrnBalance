@@ -318,7 +318,8 @@ function int WDamagePerMagazine(ScrnPlayerInfo SPI, KFWeapon Weapon, class<KFWea
 
 
 /**
- * Triggers each time when one player healed another one. Doesn't trigger if player already had 100% hp.
+ * Triggers each time when one player healed another one.
+ * Doesn't trigger on self-healing or if player already had 100% HP.
  * @param HealAmount    the amount of health Patient received
  * @param Patient        player, who received healing
  * @param InstigatorSPI    Instigator's player info. Player, who made healing.

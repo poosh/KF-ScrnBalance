@@ -392,46 +392,11 @@ function DropFrom(vector StartLocation)
 
 function GiveTo( pawn Other, optional Pickup Pickup )
 {
-    local Inventory Inv;
-    local KFWeapon W;
-    local int AmmoToAdd;
-    local int count;
-
     // remember it once to stop calling the function on every tick
     bBotControlled = !Other.IsHumanControlled();
 
-    // when picking up laser dual-44, destroy all magnums (single or duals)
-    // found in inventory, saving their ammo first
-    Inv = Other.Inventory;
-    while ( Inv != none && ++count < 1000 ) {
-        W = KFWeapon(Inv);
-        if ( W!= none && (Magnum44Pistol(W) != none || Dual44Magnum(W) != none) ) {
-            AmmoToAdd += W.AmmoAmount(0);
-            // first get next inventory, next - destroy
-            Inv = W.Inventory;
-            W.Destroyed();
-            W.Destroy();
-        }
-        else {
-            Inv = Inv.Inventory;
-        }
-    }
-
-    if ( WeaponPickup(Pickup) != none ) {
-        WeaponPickup(Pickup).AmmoAmount[0] += AmmoToAdd;
-        AmmoToAdd = 0;
-    }
-
     Super(KFWeapon).GiveTo(Other, Pickup);
 
-    if ( Ammo[0] != none ) {
-        // double guns = double initial ammo
-        AmmoToAdd += Ammo[0].InitialAmount;
-    }
-
-    if ( AmmoToAdd > 0 ) {
-        AddAmmo(AmmoToAdd, 0);
-    }
     LeftGunAmmoRemaining = (MagAmmoRemaining + 1) / 2;
 }
 
@@ -442,15 +407,17 @@ defaultproperties
     LaserRecoilReduction=0.3
     LaserAttachmentClass=class'ScrnLaserAttachmentFirstPerson'
     LaserDotClass=class'ScrnLocalLaserDot'
-    Weight=5.000000
+    Weight=5
     bIsTier3Weapon=True
-    Description="Yeah! One in each hand! Now with laser attachment."
+    Description="Yeah! One in each hand! These Magnums have Laser Sights and .44 Armor-Piercing rounds featuring great bullet overpenetration and piercing Fleshpound armor."
     DemoReplacement=None
     InventoryGroup=4
     PickupClass=class'ScrnDual44MagnumLaserPickup'
     AttachmentClass=class'ScrnDual44MagnumLaserAttachment'
-    ItemName="Laser Dual 44 Magnums"
+    ItemName="Laser Dual .44 AP Magnums"
+    FireModeClass(0)=class'ScrnDual44MagnumLaserFire'
     FireSpotRenrerTime=1.0
     MagAmmoRemaining=12
+    bDoubleAmmo=false
     Priority=150
 }

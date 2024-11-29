@@ -562,18 +562,23 @@ function GiveTo( pawn Other, optional Pickup Pickup )
 
 defaultproperties
 {
-     MagCapacity=7  // +1 in chamber in case of a tactical reload
-     ReloadShortRate=1.66
-     ReloadShortAnim="Reload"
-     ReloadRate=2.2
-     PistolSlideOffset=(X=0.01970,Y=0.0,Z=0.0)
-     PistolHammerRotation=(Pitch=120,Yaw=0,Roll=0) //tripwire why did you do this
-     FireModeClass(0)=class'ScrnDeagleFire'
-     PickupClass=class'ScrnDeaglePickup'
-     ItemName="Handcannon SE"
-     Weight=4
-     DefaultSlideMoveMult = 1.4
-     DefaultSlideReturnStartMult=0.84848 //for timing slide release with empty reload
-     DefaultSlideReturnEndMult=0.87878 //for timing slide release with empty reload
-     Priority=100
+    MagCapacity=7  // +1 in chamber in case of a tactical reload
+    ReloadShortRate=1.66
+    ReloadShortAnim="Reload"
+    ReloadRate=2.2
+    PistolSlideOffset=(X=0.01970,Y=0.0,Z=0.0)
+    PistolHammerRotation=(Pitch=120,Yaw=0,Roll=0) //tripwire why did you do this
+    FireModeClass(0)=class'ScrnDeagleFire'
+    PickupClass=class'ScrnDeaglePickup'
+    ItemName="Handcannon SE"
+    Weight=4
+    DefaultSlideMoveMult = 1.4
+    DefaultSlideReturnStartMult=0.84848 //for timing slide release with empty reload
+    DefaultSlideReturnEndMult=0.87878 //for timing slide release with empty reload
+    Priority=100
+
+    PutDownTime=0.15
+    BringUpTime=0.15
+    SelectAnimRate=4.0
+    PutDownAnimRate=4.0
 }

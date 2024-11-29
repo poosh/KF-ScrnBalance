@@ -394,53 +394,73 @@ function bool HandlePickupQuery( pickup Item )
 
 function DropFrom(vector StartLocation)
 {
+    ClearDoubleAmmo();
     //just drop this weapon, don't split it on single guns
     super(KFWeapon).DropFrom(StartLocation);
 }
 
 function GiveTo( pawn Other, optional Pickup Pickup )
 {
-    local Inventory Inv;
-    local KFWeapon W;
-    local int AmmoToAdd;
-    local int count;
-
     // remember it once to stop calling the function on every tick
     bBotControlled = !Other.IsHumanControlled();
 
-    // when picking up laser pistols, destroy all normlal mk23 (single or duals)
-    // found in inventory, saving their ammo first
-    Inv = Other.Inventory;
-    while ( Inv != none && ++count < 1000 ) {
-        W = KFWeapon(Inv);
-        if ( W!= none && (MK23Pistol(W) != none || DualMK23Pistol(W) != none) ) {
-            AmmoToAdd += W.AmmoAmount(0);
-            // first get next inventory, next - destroy
-            Inv = W.Inventory;
-            W.Destroyed();
-            W.Destroy();
-        }
-        else {
-            Inv = Inv.Inventory;
-        }
-    }
-
-    if ( WeaponPickup(Pickup) != none ) {
-        WeaponPickup(Pickup).AmmoAmount[0] += AmmoToAdd;
-        AmmoToAdd = 0;
-    }
-
     Super(KFWeapon).GiveTo(Other, Pickup);
 
-    if ( Ammo[0] != none ) {
-        // double guns = double initial ammo
-        AmmoToAdd += Ammo[0].InitialAmount;
+    LeftGunAmmoRemaining = MagAmmoRemaining / 2;
+    CheckDoubleAmmo(Other);
+}
+
+// double ammo capacity if carrying both laser + non-laser mk23
+static function bool CheckDoubleAmmo(Pawn Owner, optional KFWeapon IgnoreWeapon)
+{
+    local ScrnDualMK23Laser myself;
+    local Inventory Inv;
+    local int c;
+    local bool bOthers, bDoubleAmmo;
+
+    if (Owner == none) {
+        return false;  // wtf?
     }
 
-    if ( AmmoToAdd > 0 ) {
-        AddAmmo(AmmoToAdd, 0);
+    for (Inv = Owner.Inventory; Inv != none && ++c < 1000; Inv = Inv.Inventory) {
+        if (Inv == IgnoreWeapon)
+            continue;
+
+        if (ScrnMK23Pistol(Inv) != none) {
+            bOthers = true;
+        }
+        else if (ScrnDualMK23Pistol(Inv) != none) {
+            if (ScrnDualMK23Laser(Inv) != none) {
+                myself = ScrnDualMK23Laser(Inv);
+            }
+            else {
+                bOthers = true;
+            }
+        }
+        if (bOthers && myself != none)
+            break;  // found everything we've been looking for
     }
-    LeftGunAmmoRemaining = MagAmmoRemaining / 2;
+
+    if (!bOthers) {
+        if (myself != none) {
+            myself.SetDoubleAmmo(false);
+        }
+        return false;
+    }
+
+    bDoubleAmmo = myself != none;
+    for (Inv = Owner.Inventory; Inv != none && ++c < 1000; Inv = Inv.Inventory) {
+        if (Inv == IgnoreWeapon)
+            continue;
+
+        if (ScrnMK23Pistol(Inv) != none) {
+            ScrnMK23Pistol(Inv).SetDoubleAmmo(bDoubleAmmo);
+        }
+        else if (ScrnDualMK23Pistol(Inv) != none) {
+            ScrnDualMK23Pistol(Inv).SetDoubleAmmo(bDoubleAmmo);
+        }
+    }
+    return bDoubleAmmo;
 }
 
 

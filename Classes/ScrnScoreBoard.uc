@@ -92,7 +92,7 @@ static function float DrawCountryNameSE( Canvas C, PlayerReplicationInfo PRI, fl
     return Offset;
 }
 
-simulated static function TextSizeCountrySE( Canvas C, PlayerReplicationInfo PRI, out float XL, out float YL )
+static function TextSizeCountrySE( Canvas C, PlayerReplicationInfo PRI, out float XL, out float YL )
 {
     local byte OriginalStyle;
 

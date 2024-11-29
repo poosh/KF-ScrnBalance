@@ -190,7 +190,8 @@ function UpdateMyBuyables()
 
         if ( (ScrnDeagle(CurInv) != none && ScrnDeagle(CurInv).DualGuns != none)
                 || (ScrnMK23Pistol(CurInv) != none && ScrnMK23Pistol(CurInv).DualGuns != none)
-                || (ScrnMagnum44Pistol(CurInv) != none && ScrnMagnum44Pistol(CurInv).DualGuns != none) )
+                || (ScrnMagnum44Pistol(CurInv) != none && ScrnMagnum44Pistol(CurInv).DualGuns != none)
+                || (ScrnFlareRevolver(CurInv) != none && ScrnFlareRevolver(CurInv).DualGuns != none) )
             continue;
 
         // weapons can be derived from another even if they aren't of the same type, e.g. Shotgun -> LAW
@@ -445,6 +446,15 @@ function UpdateMyBuyables()
     OnBuyablesLoaded(self);
 }
 
+function GUIBuyable FindVest()
+{
+    if (MyBuyables.Length == 0)
+        return none;
+    if (MyBuyables[MyBuyables.Length-1].bIsVest)
+        return MyBuyables[MyBuyables.Length-1];
+    return none;
+}
+
 function SellAll(bool offperkOnly)
 {
     local GUIBuyable MyBuyable;
@@ -529,40 +539,221 @@ function OnEnterKey()
     }
 }
 
+function DrawInvItem(Canvas Canvas, int CurIndex, float X, float Y, float Width, float Height, bool bSelected, bool bPending)
+{
+    local float IconBGSize, ItemBGWidth, AmmoBGWidth, ClipButtonWidth, FillButtonWidth;
+    local float TempX, TempY;
+    local float StringHeight, StringWidth;
+    local ScrnHumanPawn ScrnPawn;
+    local int Dosh;
+
+    ScrnPawn = ScrnHumanPawn(PlayerOwner().Pawn);
+    Dosh = ScrnPawn.GetAvailableDosh();
+
+    OnClickSound=CS_Click;
+
+    // Initialize the Canvas
+    Canvas.Style = 1;
+    // Canvas.Font = class'ROHUD'.Static.GetSmallMenuFont(Canvas);
+    Canvas.SetDrawColor(255, 255, 255, 255);
+
+    if ( MyBuyables[CurIndex]==None )
+    {
+        if( MyBuyables.Length==(CurIndex+1) || MyBuyables[CurIndex+1]==None )
+            return;
+
+        Canvas.SetPos(X + EquipmentBGXOffset, Y + Height - EquipmentBGYOffset - EquipmentBGHeightScale * Height);
+        Canvas.DrawTileStretched(AmmoBackground, EquipmentBGWidthScale * Width, EquipmentBGHeightScale * Height);
+
+        Canvas.SetDrawColor(175, 176, 158, 255);
+        Canvas.StrLen(EquipmentString, StringWidth, StringHeight);
+        Canvas.SetPos(X + EquipmentBGXOffset + ((EquipmentBGWidthScale * Width - StringWidth) / 2.0), Y + Height - EquipmentBGYOffset - EquipmentBGHeightScale * Height + ((EquipmentBGHeightScale * Height - StringHeight) / 2.0));
+        Canvas.DrawText(EquipmentString);
+    }
+    else
+    {
+        // Calculate Widths for all components
+        IconBGSize = Height;
+        ItemBGWidth = (Width * ItemBGWidthScale) - IconBGSize;
+        AmmoBGWidth = Width * AmmoBGWidthScale;
+
+        if ( !MyBuyables[CurIndex].bIsVest )
+        {
+            FillButtonWidth = ((1.0 - ItemBGWidthScale - AmmoBGWidthScale) * Width) - ButtonSpacing;
+            ClipButtonWidth = FillButtonWidth * ClipButtonWidthScale;
+            FillButtonWidth -= ClipButtonWidth;
+        }
+        else
+        {
+            FillButtonWidth = ((1.0 - ItemBGWidthScale - AmmoBGWidthScale) * Width);
+        }
+
+        // Offset for the Background
+        TempX = X;
+        TempY = Y;
+
+        // Draw Item Background
+        Canvas.SetPos(TempX, TempY);
+
+        if ( bSelected )
+        {
+            Canvas.DrawTileStretched(SelectedItemBackgroundLeft, IconBGSize, IconBGSize);
+            Canvas.SetPos(TempX + 4, TempY + 4);
+            Canvas.DrawTile(PerkTextures[CurIndex], IconBGSize - 8, IconBGSize - 8, 0, 0, 256, 256);
+
+            TempX += IconBGSize;
+            Canvas.SetPos(TempX, TempY + ItemBGYOffset);
+            Canvas.DrawTileStretched(SelectedItemBackgroundRight, ItemBGWidth, IconBGSize - (2.0 * ItemBGYOffset));
+        }
+        else
+        {
+            Canvas.DrawTileStretched(ItemBackgroundLeft, IconBGSize, IconBGSize);
+            Canvas.SetPos(TempX + 4, TempY + 4);
+            Canvas.DrawTile(PerkTextures[CurIndex], IconBGSize - 8, IconBGSize - 8, 0, 0, 256, 256);
+
+            TempX += IconBGSize;
+            Canvas.SetPos(TempX, TempY + ItemBGYOffset);
+            Canvas.DrawTileStretched(ItemBackgroundRight, ItemBGWidth, IconBGSize - (2.0 * ItemBGYOffset));
+        }
+
+        // Select Text color
+        if ( CurIndex == MouseOverIndex && MouseOverXIndex == 0 )
+            Canvas.SetDrawColor(255, 255, 255, 255);
+        else Canvas.SetDrawColor(0, 0, 0, 255);
+
+        // Draw the item's name
+        Canvas.StrLen(NameStrings[CurIndex], StringWidth, StringHeight);
+        Canvas.SetPos(TempX + ItemNameSpacing, Y + ((Height - StringHeight) / 2.0));
+        Canvas.DrawText(NameStrings[CurIndex]);
+
+        // Draw the item's ammo status if it is not a melee weapon
+        if ( !MyBuyables[CurIndex].bMelee )
+        {
+            TempX += ItemBGWidth + AmmoSpacing;
+
+            Canvas.SetDrawColor(255, 255, 255, 255);
+            Canvas.SetPos(TempX, TempY + ((Height - AmmoBGHeightScale * Height) / 2.0));
+            Canvas.DrawTileStretched(AmmoBackground, AmmoBGWidth, AmmoBGHeightScale * Height);
+
+            Canvas.SetDrawColor(175, 176, 158, 255);
+            Canvas.StrLen(AmmoStrings[CurIndex], StringWidth, StringHeight);
+            Canvas.SetPos(TempX + ((AmmoBGWidth - StringWidth) / 2.0), TempY + ((Height - StringHeight) / 2.0));
+            Canvas.DrawText(AmmoStrings[CurIndex]);
+
+            TempX += AmmoBGWidth + AmmoSpacing;
+
+            Canvas.SetDrawColor(255, 255, 255, 255);
+            Canvas.SetPos(TempX, TempY + ((Height - ButtonBGHeightScale * Height) / 2.0));
+
+            if ( !MyBuyables[CurIndex].bIsVest )
+            {
+                if ( MyBuyables[CurIndex].ItemAmmoCurrent >= MyBuyables[CurIndex].ItemAmmoMax ||
+                     (Dosh < MyBuyables[CurIndex].ItemFillAmmoCost && Dosh < MyBuyables[CurIndex].ItemAmmoCost) )
+                {
+                    Canvas.DrawTileStretched(DisabledButtonBackground, ClipButtonWidth, ButtonBGHeightScale * Height);
+                    Canvas.SetDrawColor(0, 0, 0, 255);
+                }
+                else if ( CurIndex == MouseOverIndex && MouseOverXIndex == 1 )
+                {
+                    Canvas.DrawTileStretched(HoverButtonBackground, ClipButtonWidth, ButtonBGHeightScale * Height);
+                }
+                else
+                {
+                    Canvas.DrawTileStretched(ButtonBackground, ClipButtonWidth, ButtonBGHeightScale * Height);
+                    Canvas.SetDrawColor(0, 0, 0, 255);
+                }
+
+                Canvas.StrLen(ClipPriceStrings[CurIndex], StringWidth, StringHeight);
+                Canvas.SetPos(TempX + ((ClipButtonWidth - StringWidth) / 2.0), TempY + ((Height - StringHeight) / 2.0));
+                Canvas.DrawText(ClipPriceStrings[CurIndex]);
+
+                TempX += ClipButtonWidth + ButtonSpacing;
+
+                Canvas.SetDrawColor(255, 255, 255, 255);
+                Canvas.SetPos(TempX, TempY + ((Height - ButtonBGHeightScale * Height) / 2.0));
+
+                if ( MyBuyables[CurIndex].ItemAmmoCurrent >= MyBuyables[CurIndex].ItemAmmoMax ||
+                     (Dosh < MyBuyables[CurIndex].ItemFillAmmoCost && Dosh < MyBuyables[CurIndex].ItemAmmoCost) )
+                {
+                    Canvas.DrawTileStretched(DisabledButtonBackground, FillButtonWidth, ButtonBGHeightScale * Height);
+                    Canvas.SetDrawColor(0, 0, 0, 255);
+                }
+                else if ( CurIndex == MouseOverIndex && MouseOverXIndex == 2 )
+                {
+                    Canvas.DrawTileStretched(HoverButtonBackground, FillButtonWidth, ButtonBGHeightScale * Height);
+                }
+                else
+                {
+                    Canvas.DrawTileStretched(ButtonBackground, FillButtonWidth, ButtonBGHeightScale * Height);
+                    Canvas.SetDrawColor(0, 0, 0, 255);
+                }
+            }
+            else
+            {
+                if ( (PlayerOwner().Pawn.ShieldStrength > 0 && Dosh < MyBuyables[CurIndex].ItemAmmoCost) ||
+                     (PlayerOwner().Pawn.ShieldStrength <= 0 && Dosh < MyBuyables[CurIndex].ItemCost) ||
+                     MyBuyables[CurIndex].ItemAmmoCurrent >= MyBuyables[CurIndex].ItemAmmoMax )
+                {
+                    Canvas.DrawTileStretched(DisabledButtonBackground, FillButtonWidth, ButtonBGHeightScale * Height);
+                    Canvas.SetDrawColor(0, 0, 0, 255);
+                }
+                else if ( CurIndex == MouseOverIndex && MouseOverXIndex >= 1 )
+                {
+                    Canvas.DrawTileStretched(HoverButtonBackground, FillButtonWidth, ButtonBGHeightScale * Height);
+                }
+                else
+                {
+                    Canvas.DrawTileStretched(ButtonBackground, FillButtonWidth, ButtonBGHeightScale * Height);
+                    Canvas.SetDrawColor(0, 0, 0, 255);
+                }
+            }
+
+            Canvas.StrLen(FillPriceStrings[CurIndex], StringWidth, StringHeight);
+            Canvas.SetPos(TempX + ((FillButtonWidth - StringWidth) / 2.0), TempY + ((Height - StringHeight) / 2.0));
+            Canvas.DrawText(FillPriceStrings[CurIndex]);
+        }
+        Canvas.SetDrawColor(255, 255, 255, 255);
+    }
+}
+
 function bool InternalOnClick(GUIComponent Sender)
 {
     local int NewIndex;
     local float RelativeMouseX;
+    local ScrnHumanPawn ScrnPawn;
+    local int Dosh;
 
-    if ( IsInClientBounds() )
-    {
-        //  Figure out which Item we're clicking on
-        NewIndex = CalculateIndex();
-        RelativeMouseX = Controller.MouseX - ClientBounds[0];
-        if ( RelativeMouseX < ActualWidth() * ItemBGWidthScale )
-        {
-            SetIndex(NewIndex);
-            MouseOverXIndex = 0;
-            return true;
-        }
-        else
-        {
-            RelativeMouseX -= ActualWidth() * (ItemBGWidthScale + AmmoBGWidthScale);
+    if (!IsInClientBounds())
+        return false;
 
-            if ( RelativeMouseX > 0 )
-            {
-                if ( MyBuyables[NewIndex].bIsVest )
-                {
-                    if ( (PlayerOwner().Pawn.ShieldStrength > 0 && PlayerOwner().PlayerReplicationInfo.Score >= MyBuyables[NewIndex].ItemAmmoCost) || PlayerOwner().PlayerReplicationInfo.Score >= MyBuyables[NewIndex].ItemCost )
-                        OnBuyVestClick();
+    ScrnPawn = ScrnHumanPawn(PlayerOwner().Pawn);
+    if (ScrnPawn == none)
+        return false;
+    Dosh = ScrnPawn.GetAvailableDosh();
+
+    //  Figure out which Item we're clicking on
+    NewIndex = CalculateIndex();
+    RelativeMouseX = Controller.MouseX - ClientBounds[0];
+    if  (RelativeMouseX < ActualWidth() * ItemBGWidthScale) {
+        SetIndex(NewIndex);
+        MouseOverXIndex = 0;
+        return true;
+    }
+    else {
+        RelativeMouseX -= ActualWidth() * (ItemBGWidthScale + AmmoBGWidthScale);
+
+        if (RelativeMouseX > 0) {
+            if (MyBuyables[NewIndex].bIsVest) {
+                if (Dosh >= MyBuyables[NewIndex].ItemCost || (ScrnPawn.ShieldStrength > 0
+                        && Dosh >= MyBuyables[NewIndex].ItemAmmoCost)) {
+                    OnBuyVestClick();
                 }
-                else if ( !MyBuyables[NewIndex].bMelee )
-                {
-                    if ( RelativeMouseX < ActualWidth() * (1.0 - ItemBGWidthScale - AmmoBGWidthScale) * ClipButtonWidthScale )
-                        OnBuyClipClick(MyBuyables[NewIndex]); // Buy Clip
-                    else
-                        OnFillAmmoClick(MyBuyables[NewIndex]); // Fill Ammo
-                }
+            }
+            else if (!MyBuyables[NewIndex].bMelee) {
+                if ( RelativeMouseX < ActualWidth() * (1.0 - ItemBGWidthScale - AmmoBGWidthScale) * ClipButtonWidthScale )
+                    OnBuyClipClick(MyBuyables[NewIndex]); // Buy Clip
+                else
+                    OnFillAmmoClick(MyBuyables[NewIndex]); // Fill Ammo
             }
         }
     }
@@ -584,7 +775,13 @@ function bool InternalOnKeyEvent(out byte Key, out byte State, float delta)
 
         switch (Key) {
             case 0x08: // IK_Backspace
-                OnSellClick(GetSelectedBuyable()); // sell item
+                Controller.PlayInterfaceSound(CS_Click);
+                if (Controller.CtrlPressed) {
+                    SellAll(!Controller.ShiftPressed);
+                }
+                else {
+                    OnSellClick(GetSelectedBuyable()); // sell item
+                }
                 return true;
 
             case 13: // enter

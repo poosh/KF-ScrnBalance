@@ -1469,6 +1469,10 @@ simulated function CalculateLeftGunAmmo()
         bHasLeftGun = true;
         CurLeftGunAmmo = ScrnDual44Magnum(OwnerWeapon).LeftGunAmmoRemaining;
     }
+    else if ( ScrnDualFlareRevolver(OwnerWeapon) != none ) {
+        bHasLeftGun = true;
+        CurLeftGunAmmo = ScrnDualFlareRevolver(OwnerWeapon).LeftGunAmmoRemaining;
+    }
 }
 
 simulated function CalculateAmmo()
@@ -1803,7 +1807,7 @@ simulated function ScrnDrawPlayerInfoClassic(Canvas C, Pawn P, float ScreenLocX,
         }
         // Armor
         if ( P.ShieldStrength > 0 )
-            DrawKFBarEx(C, ScreenLocX - Offset, (ScreenLocY - YL) - 1.5 * BarHeight, FClamp(P.ShieldStrength / 100.f, 0, 3), BeaconAlpha, true);
+            DrawKFBarEx(C, ScreenLocX - Offset, (ScreenLocY - YL) - 1.5 * BarHeight, FClamp(P.ShieldStrength / 100.f, 0, 2), BeaconAlpha, true);
     }
     else
         TempX = ScreenLocX + ((BarLength + HealthIconSize) * 0.5) - (TempSize * 0.25) - Offset;
@@ -2098,14 +2102,18 @@ simulated function DrawBar(Canvas C, float X, float Y, float W, float H, float P
     }
 }
 
-simulated function DrawKFBarEx(Canvas C, float XCentre, float YCentre, float BarPercentage, byte BarAlpha, optional bool bArmor, optional float BarPercentage2)
+simulated function DrawKFBarEx(Canvas C, float XCentre, float YCentre, float BarPercentage, byte BarAlpha,
+        optional bool bArmor, optional float BarPercentage2)
 {
+    local Color BarColor2;
+
+    BarColor2 = HealingBarColor;
+
     C.SetDrawColor(92, 92, 92, BarAlpha);
     C.SetPos(XCentre - 0.5 * BarLength, YCentre - 0.5 * BarHeight);
     C.DrawTileStretched(WhiteMaterial, BarLength, BarHeight);
 
-    if ( bArmor )
-    {
+    if (bArmor) {
         C.SetDrawColor(255, 255, 255, BarAlpha);
         C.SetPos(XCentre - (0.5 * BarLength) - ArmorIconSize - 2.0, YCentre - (ArmorIconSize * 0.5));
         C.DrawTile(ArmorIcon.WidgetTexture, ArmorIconSize, ArmorIconSize, 0, 0, ArmorIcon.WidgetTexture.MaterialUSize(), ArmorIcon.WidgetTexture.MaterialVSize());
@@ -2114,12 +2122,14 @@ simulated function DrawKFBarEx(Canvas C, float XCentre, float YCentre, float Bar
         if ( BarPercentage > 1.0 ) {
             C.DrawColor = BigArmorColor;
             BarPercentage -= 1.0;
+            BarPercentage2 = 1.0 - BarPercentage;
+            BarColor2 = ArmorBarColor;
         }
-        else
+        else {
             C.DrawColor = ArmorBarColor;
+        }
     }
-    else
-    {
+    else {
         C.SetDrawColor(255, 255, 255, BarAlpha);
         C.SetPos(XCentre - (0.5 * BarLength) - HealthIconSize - 2.0, YCentre - (HealthIconSize * 0.5));
         C.DrawTile(HealthIcon.WidgetTexture, HealthIconSize, HealthIconSize, 0, 0, HealthIcon.WidgetTexture.MaterialUSize(), HealthIcon.WidgetTexture.MaterialVSize());
@@ -2135,7 +2145,7 @@ simulated function DrawKFBarEx(Canvas C, float XCentre, float YCentre, float Bar
     C.DrawTileStretched(WhiteMaterial, (BarLength - 2.0) * BarPercentage, BarHeight - 2.0);
 
     if ( BarPercentage2 > 0 ) {
-        C.SetDrawColor(255, 128, 128, BarAlpha);
+        C.DrawColor = BarColor2;
         C.SetPos(XCentre - (0.5 * BarLength) + 1.0 + (BarLength - 2.0) * BarPercentage, YCentre - (0.5 * BarHeight) + 1.0);
         C.DrawTileStretched(WhiteMaterial, (BarLength - 2.0) * BarPercentage2, BarHeight - 2.0);
     }

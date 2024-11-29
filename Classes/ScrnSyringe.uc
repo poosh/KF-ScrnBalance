@@ -22,4 +22,9 @@ defaultproperties
     TraderInfoTexture=Texture'KillingFloorHUD.WeaponSelect.Syringe'
     HealBoostAmount=20
     SoloHealBoostAmount=50
+
+    PutDownAnimRate=2.2222
+    SelectAnimRate=2.4444
+    BringUpTime=0.15
+    PutDownTime=0.15
 }

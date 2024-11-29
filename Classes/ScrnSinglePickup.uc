@@ -8,7 +8,7 @@ function inventory SpawnCopy( pawn Other ) {
 
     For( CurInv=Other.Inventory; CurInv!=None; CurInv=CurInv.Inventory ) {
         PistolInInventory = KFWeapon(CurInv);
-        if( PistolInInventory != None && (PistolInInventory.class == default.InventoryType 
+        if( PistolInInventory != None && (PistolInInventory.class == default.InventoryType
                 || ClassIsChildOf(default.InventoryType, PistolInInventory.class)) )
         {
             // destroy the inventory to force parent SpawnCopy() to make a new instance of class
@@ -44,7 +44,7 @@ function bool CheckCanCarry(KFHumanPawn Hm) {
                 LastCantCarryTime = Level.TimeSeconds + 0.5;
                 PlayerController(Hm.Controller).ReceiveLocalizedMessage(Class'KFMainMessages', 2);
             }
-            return false; 
+            return false;
         }
         else if ( CurInv.class == default.InventoryType ) {
             bHasSinglePistol = true;
@@ -67,10 +67,10 @@ function bool CheckCanCarry(KFHumanPawn Hm) {
 
 defaultproperties
 {
-     DualInventoryType=class'ScrnDualies'
-     ItemName="9mm Pistol SE"
-     ItemShortName="9mm Pistol SE"
-     InventoryType=class'ScrnSingle'
-     Weight=0
-     Cost=75
+    DualInventoryType=class'ScrnDualies'
+    ItemName="9mm Pistol SE"
+    ItemShortName="9mm Pistol SE"
+    InventoryType=class'ScrnSingle'
+    Weight=0
+    Cost=0
 }
