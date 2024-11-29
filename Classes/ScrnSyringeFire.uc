@@ -128,6 +128,6 @@ function AttemptHeal()
 
 defaultproperties
 {
-    FireRate=1.45
-    FireAnimRate=2.0
+    FireRate=2.0
+    FireAnimRate=1.45
 }
