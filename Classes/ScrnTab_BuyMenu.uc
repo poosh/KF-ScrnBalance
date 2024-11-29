@@ -520,7 +520,7 @@ function DoSell()
 
 function bool RequestDoshClick(GUIComponent Sender)
 {
-    PlayerOwner().Speech('SUPPORT', 2);  // v13
+    PlayerOwner().Speech('SUPPORT', 2, "");  // v13
     return true;
 }
 
