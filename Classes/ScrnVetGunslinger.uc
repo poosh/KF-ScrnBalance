@@ -134,8 +134,7 @@ static function bool CheckCowboyMode(KFPlayerReplicationInfo KFPRI, class<Weapon
 // Modify fire speed
 static function float GetFireSpeedModStatic(KFPlayerReplicationInfo KFPRI, class<Weapon> Other)
 {
-    if ( ClassIsChildOf(Other, class'Winchester') ||  Other.name == 'Colt'
-            || ClassIsChildOf(Other, class'FlareRevolver') || ClassIsChildOf(Other, class'DualFlareRevolver'))
+    if (ClassIsChildOf(Other, class'Winchester') ||  Other.name == 'Colt')
         return 1.6;
 
     //increase fire only with full-automatic pistols
@@ -144,6 +143,9 @@ static function float GetFireSpeedModStatic(KFPlayerReplicationInfo KFPRI, class
     {
         return 1.6;
     }
+
+    if (ClassIsChildOf(Other, class'FlareRevolver') || ClassIsChildOf(Other, class'DualFlareRevolver'))
+        return 1.3;
 
     return 1.0;
 }

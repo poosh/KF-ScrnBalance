@@ -27,6 +27,7 @@ var config float PlayerInfoScale, PlayerInfoOffset;  // BarScale
 
 var config int                  MinMagCapacity; //don't show low ammo warning, if weapon magazine smaller than this
 var config float                LowAmmoPercent;
+var config bool                 bLowAmmoColorSwitch;
 // set inside CalculateAmmo()
 var transient bool              bLowAmmo;
 var transient float             WeaponChargePct; //0..1
@@ -95,7 +96,12 @@ var config byte PerkStarsMax;
 var config bool bShowLeftGunAmmo;
 var Material CoolBarBase,CoolBarOverlay;
 var int CoolBarSize, CoolHealthBarTop, CoolHealthBarHeight;
-var color HealthBarColor, HealingBarColor, FullHealthColor, OverchargeHealthColor, LowHealthColor, ArmorBarColor, BigArmorColor;
+var color HealthBarColor, HealingBarColor, FullHealthColor, OverchargeHealthColor;
+var color LowHealthColor, PoisonHealthColor, FullHealingColor;
+var color SwitchDigitColors[2];
+var transient byte SwitchDigitColorIndex;
+var color ArmorBarColor, BigArmorColor;
+var color ItemNotReadyColor, ItemChargingColor;
 var float CoolPerkToBarSize, CoolStarToBarSize, CoolStarAngleRad, CoolPerkOffsetY, CoolPerkLevelOffsetY;
 var float CoolIconToBarSize;
 var transient bool bHealthFadeOut;
@@ -1248,7 +1254,10 @@ simulated function DrawWeaponName(Canvas C)
 
 simulated function SetLowAmmoColor(out Color C, int ammo)
 {
-    if ( ammo > 0 ) {
+    if (bLowAmmoColorSwitch) {
+        C = SwitchDigitColors[SwitchDigitColorIndex];
+    }
+    else if (ammo > 0) {
         C = LowAmmoColor;
     }
     else {
@@ -1405,25 +1414,15 @@ simulated function UpdateHud()
     }
 
     // "Poison" the health meter
-    if ( VomitHudTimer > Level.TimeSeconds ) {
-        HealthDigits.Tints[0].R = 196;
-        HealthDigits.Tints[0].G = 206;
-        HealthDigits.Tints[0].B = 0;
+    if (VomitHudTimer > Level.TimeSeconds) {
+        HealthDigits.Tints[0] = PoisonHealthColor;
     }
-    else if ( PawnOwner.Health < 50 ) {
-        if ( Level.TimeSeconds < SwitchDigitColorTime )    {
-            HealthDigits.Tints[0].R = 255;
-            HealthDigits.Tints[0].G = 200;
-            HealthDigits.Tints[0].B = 0;
-        }
-        else {
-            HealthDigits.Tints[0].R = 255;
-            HealthDigits.Tints[0].G = 0;
-            HealthDigits.Tints[0].B = 0;
-
-            if ( Level.TimeSeconds > SwitchDigitColorTime + 0.2 )
-                SwitchDigitColorTime = Level.TimeSeconds + 0.2;
-        }
+    else if (PawnOwner.Health < 50) {
+        HealthDigits.Tints[0] =  SwitchDigitColors[SwitchDigitColorIndex];
+    }
+    else if (ScrnPawnOwner.Health < int(ScrnPawnOwner.HealthMax)
+            && ScrnPawnOwner.ClientHealthToGive +  ScrnPawnOwner.Health >= int(ScrnPawnOwner.HealthMax)) {
+        HealthDigits.Tints[0] = FullHealingColor;
     }
     else {
         HealthDigits.Tints[0] = TeamColors[TeamIndex];
@@ -1435,15 +1434,10 @@ simulated function UpdateHud()
     WelderDigits.Value = 100 * CurAmmoPrimary/MaxAmmoPrimary;
     SyringeDigits.Value = WelderDigits.Value;
     if ( SyringeDigits.Value < 50 ) {
-        SyringeDigits.Tints[0].R = 128;
-        SyringeDigits.Tints[0].G = 128;
-        SyringeDigits.Tints[0].B = 128;
-
+        SyringeDigits.Tints[0]= ItemNotReadyColor;
     }
     else if ( SyringeDigits.Value < 100 ) {
-        SyringeDigits.Tints[0].R = 192;
-        SyringeDigits.Tints[0].G = 96;
-        SyringeDigits.Tints[0].B = 96;
+        SyringeDigits.Tints[0]= ItemChargingColor;
     }
     else {
         SyringeDigits.Tints[0] = TeamColors[TeamIndex];
@@ -2391,6 +2385,11 @@ simulated function Tick(float deltaTime)
         BlinkPhase = 512;
     }
     BlinkAlpha = clamp(BlinkPhase, 0, 255);
+
+    if (Level.TimeSeconds > SwitchDigitColorTime) {
+        SwitchDigitColorIndex = 1 - SwitchDigitColorIndex;
+        SwitchDigitColorTime = Level.TimeSeconds + 0.2;
+    }
 
     if ( bXPBonusFadingOut ) {
         CoolPerkAlpha -= XPBonusFadeRate * deltaTime;
@@ -4000,6 +3999,7 @@ defaultproperties
 {
     MinMagCapacity=5
     LowAmmoPercent=0.250
+    bLowAmmoColorSwitch=true
     texCowboy=Texture'ScrnTex.HUD.CowboyMode'
     CowboyTileY=0.02
     CowboyTileWidth=0.250
@@ -4151,6 +4151,12 @@ defaultproperties
     OverchargeHealthColor=(R=0,G=255,B=255,A=200)
     FullHealthColor=(R=0,G=192,B=0,A=200)
     LowHealthColor=(R=210,G=50,B=0,A=200)
+    FullHealingColor=(R=128,G=255,B=128,A=200)
+    PoisonHealthColor=(R=196,G=206,B=0,A=200)
+    SwitchDigitColors[0]=(R=255,G=200,B=0,A=200)
+    SwitchDigitColors[1]=(R=255,G=0,B=0,A=200)
+    ItemNotReadyColor=(R=128,G=128,B=128,A=200)
+    ItemChargingColor=(R=192,G=96,B=96,A=200)
     ArmorBarColor=(R=0,G=0,B=200,A=200)
     BigArmorColor=(R=0,G=255,B=255,A=200)
     CoolHudColor=(R=255,G=255,B=255,A=255)

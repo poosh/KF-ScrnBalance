@@ -123,6 +123,14 @@ var(Display) Combiner GlowCmb;
 var float GlowCheckTime;
 var transient bool bGlowInited;
 
+struct SZedInfo {
+    var KFMonster Zed;
+    var float ThreatRating;
+    var float ThreatValidTime;
+};
+var array<SZedInfo> ZedInfo;
+var class<ScrnPawnFunc> MyFunc;
+
 replication
 {
     reliable if( bNetOwner && bNetDirty && Role == ROLE_Authority )
@@ -2547,7 +2555,6 @@ exec function SwitchToLastWeapon()
     2)  Distance between monster and player will always be in place.
     3)  AssessThreatTo will always return value > 0. Because zeds should not ignore players.
     4)  Added randomization - zeds can choose different targets in the same circumstances.
-    5)  Blood smell. Wounded players will attract zeds slightly more than their healthy teammates.
 
     * @param    Monster         Monster's controller, for which we are calculating the threat level
     * @param    CheckDistance   Not used!
@@ -2555,15 +2562,14 @@ exec function SwitchToLastWeapon()
     *
     * @author   PooSH
 */
-function  float AssessThreatTo(KFMonsterController  Monster, optional bool CheckDistance)
+function  float AssessThreatTo(KFMonsterController MC, optional bool CheckDistance)
 {
-    local float DistancePart, RandomPart, TacticalPart;
-    local float DistanceSquared; // squared distance is calculated faster
-    local bool bAttacker, bSeeMe; // this player attacks zed
-    local int i;
+    local KFMonster Zed;
+    local int i, miIndex;
 
+    Zed = KFMonster(MC.Pawn);
     if( bHidden || bDeleteMe || Health <= 0
-            || Monster == none || KFMonster(Monster.Pawn) == none)
+            || MC == none || Zed == none)
     {
         return -1.f;
     }
@@ -2576,66 +2582,45 @@ function  float AssessThreatTo(KFMonsterController  Monster, optional bool Check
 
     // Gorefasts love Baron :D
     // https://www.youtube.com/watch?v=vytEYKpFAwk
-    if ( bAmIBaron && ZombieGorefast(Monster.Pawn) != none && TSCGameReplicationInfo(Level.GRI) == none ) {
+    if ( bAmIBaron && ZombieGorefast(MC.Pawn) != none && TSCGameReplicationInfo(Level.GRI) == none ) {
         if ( class'ScrnCustomPRI'.static.FindMe(PlayerReplicationInfo).BlameCounter >= 5 )
             return 100.f;
     }
 
-    if ( LastThreatMonster == Monster && Level.TimeSeconds - LastThreatTime < 2.0 )
-        return LastThreat; // keep threat level for next 2 seconds
+    if (LastThreatMonster == MC && Level.TimeSeconds - LastThreatTime < 2.0)
+        return LastThreat;
 
-
-    DistanceSquared = VSizeSquared(Monster.Pawn.Location - Location);
-    bSeeMe = DistanceSquared < 1562500 && Monster.CanSee(self); // check line of sight only withing 25 meters
-    // v7.52: if monster is on different floor (5+ meters), then give additional 20 meters of distance
-    if ( abs(Monster.Pawn.Location.Z - Location.Z) > 250 && !bSeeMe )
-        DistanceSquared += 1000000;
-    // v7.52: check KillAssistants instead of LastDamagedBy
-    for ( i=0; i<Monster.KillAssistants.length; ++i ) {
-        if ( Monster.KillAssistants[i].PC == Controller ) {
-            bAttacker = Monster.KillAssistants[i].Damage > 100;
+    miIndex = ZedInfo.Length;
+    for (i = 0; i < ZedInfo.Length; ++i) {
+        if (ZedInfo[i].Zed == Zed) {
+            if (Level.TimeSeconds < ZedInfo[i].ThreatValidTime) {
+                return ZedInfo[i].ThreatRating;
+            }
+            miIndex = i;
             break;
         }
+        else if (miIndex == ZedInfo.Length && ZedInfo[i].Zed == none) {
+            miIndex = i;  // reuse an emty entry
+        }
     }
-
-    DistancePart = 50.0;
-    RandomPart = 100.0 - DistancePart;
-    // let zeds smell blood within 15m radius - wounded players attract more zeds
-    if ( Health < 80 && DistanceSquared < 562500.0 )
-        TacticalPart += RandomPart * 0.30 * (1.0 - Health/100.0);
-    // more chance to attack the same enemy multiple times
-    if ( Monster.Enemy == self || Monster.Target == self ) {
-        if ( bAttacker )
-            TacticalPart += RandomPart * 0.80;
-        else if ( bSeeMe )
-            TacticalPart += RandomPart * 0.70;
-        else
-            TacticalPart += RandomPart * 0.60;
+    if (miIndex == ZedInfo.length) {
+        ZedInfo.insert(miIndex, 1);
     }
-    else if ( bAttacker )
-        TacticalPart += RandomPart * 0.50; // more chance to focus on the player, who are attacking the monster
-    else if ( bSeeMe )
-        TacticalPart += RandomPart * 0.30; // zed can see player
-    RandomPart -= TacticalPart;
-
-
-    // If target is closer than 1 meter, max DistancePart value will be used,
-    // otherwise DistancePart is lowering by 10% per meter
-    // 1 meter = 50 ups (2500 squared)
-    if ( DistanceSquared > 2500.0 )
-        DistancePart /= 1.0 + DistanceSquared / 250000.0;
-    RandomPart *= frand();
 
     // save threat level for this tick
-    LastThreatMonster = Monster;
+    LastThreatMonster = MC;
     LastThreatTime = Level.TimeSeconds;
-    LastThreat = DistancePart + TacticalPart + RandomPart;
-    // less chance to attach jsut-spawned players
+    LastThreat = MyFunc.static.AssessThreatTo(self, MC);
+    // less chance to attach just-spawned players
     if ( Level.TimeSeconds - SpawnTime < 30 )
         LastThreat *= lerp( (Level.TimeSeconds - SpawnTime) / 30.0, 1.0, 0.01 );
 
     if ( KFStoryGameInfo(Level.Game) != none )
         LastThreat *= InventoryThreatModifier();
+
+    ZedInfo[miIndex].Zed = Zed;
+    ZedInfo[miIndex].ThreatRating = LastThreat;
+    ZedInfo[miIndex].ThreatValidTime = 2.0 + 2.0*frand();
     return LastThreat;
 }
 
@@ -3351,6 +3336,7 @@ simulated function DisableGlow()
 
 defaultproperties
 {
+    MyFunc=class'ScrnPawnFunc'
     DoshPerHeal=0.6  // the same as in vanilla
     HealthRestoreRate=7.0  // 10
     HealthSpeedModifier=0.15
@@ -3361,8 +3347,8 @@ defaultproperties
     ShieldStrengthMax=0.000000
     bCheckHorzineArmorAch=true
     strNoSpawnCashToss="Can not drop starting cash"
-    strDoshTransferToPlayer="^r$$%$ ^w$transfered to ^g$%p"
-    strDoshTransferToTeam="^r$$%$ ^w$transfered to the Team Wallet"
+    strDoshTransferToPlayer="^g$$%$ ^w$transfered to ^g$%p"
+    strDoshTransferToTeam="^g$$%$ ^w$transfered to the ^g$Team Wallet"
     TossedCashClass=class'ScrnCashPickup'
     HeadshotSound=sound'ProjectileSounds.impact_metal09'
     AccelRate=1500
@@ -3383,4 +3369,5 @@ defaultproperties
     GlowCheckTime=0.35
     DyingMessageDelay=8.0
     bBlockHitPointTraces=true
+    RagdollLifeSpan=120
 }

@@ -170,6 +170,44 @@ simulated function Explode(vector HitLocation, vector HitNormal)
     Destroy();
 }
 
+simulated function ProcessTouch( actor Other, vector HitLocation )
+{
+    local Pawn P;
+
+    if (KFBulletWhipAttachment(Other) != none)
+        return;
+
+    P = Pawn(Other);
+    if (Instigator != none && P != none) {
+        if (Other == Instigator || Other.Base == Instigator)
+            return;
+
+        // dead bodies must not stop nades to prevent blowup on a net lag
+        if (P.Health <= 0)
+            return;
+
+        // don't hit teammates
+        if (Instigator.GetTeamNum() == P.GetTeamNum())
+            return;
+
+        // fall down when hitting an enemy
+        Velocity = Vect(0,0,0);
+    }
+    else if (Other.IsA('NetKActor')) {
+        KAddImpulse(Velocity, HitLocation);
+    }
+    else if (!Other.bWorldGeometry) {
+        // XXX: do we need this?
+        Velocity = Vect(0,0,0);
+    }
+}
+
+simulated function ClientSideTouch(Actor Other, Vector HitLocation)
+{
+    // prevent blowing dead bodies with nade impact damage
+    // Other.TakeDamage(Damage, instigator, Location, MomentumTransfer * Normal(Velocity), MyDamageType);
+}
+
 defaultproperties
 {
      ScrakeUnstunDamageThreshold=50

@@ -28,7 +28,7 @@
 ## VERSION 9
 
 -------------------------------------------------------------------------------
-## v9.70.20
+## v9.70.32
 #### DO$H
 - New feature: **Digital Dosh Transfer (DDT)**. Allows transfering dosh to other players from the Trader Menu.
 - DDT allows sharing dosh with the team by sending dosh to the Team Walletm when everybody can use it.
@@ -59,7 +59,8 @@
 - Laser and non-laser pistols of the same kind can be carried together.
 - Laser .44 Magnums have a separate ammo pool from regular ones due to ammo difference (.44 AP vs. .44)
 - **Laser MK23** share the ammo pool with regulal MK23(-s), doubling the ammo capacity.
-- Fire rate bonus on **Flare Revolvers**
+- 30% Fire rate bonus on **Flare Revolvers**
+- Flare impact kills grant Gunslinger XP (not iDoT kills)
 - Discount and reload bonus on **Medic Pistol**
 - Extra +10% damage bonus on **LAR** to kill HoE Clots with one body shots. Previously, it left a Clot with 3HP.
 - **LAR** in Gunslinger's hands can flinch-lock Scrakes like HC.
@@ -96,12 +97,15 @@ TraderTimeHoE=60
 - New: `StartDosh`, `StartDoshPerWave`, `StartDoshMin`, `StartDoshMax`
 
 #### Other Changes
-- **Syringe**: both healing mods made twice faster. Pro players are using macros to skip healing animations anyway, while newbies were unnecessarily struggling for too long.
+- **Syringe**: both healing modes made twice faster. Pro players are using macros to skip healing animations anyway, while newbies were unnecessarily struggling for too long.
+- Classic HUD shows health in green when the player is healing up to the max health (current health + healing bar = max health)
 - **MP5M**: Removed tactical reload as being unrealistic.
 - **MP5M**: Regular reload made faster to compensate for tactical reload removal.
 - Blocked weapons (*ScrnGames.ini*) do not spawn on the map anymore (thanks [nmmblez])
 - **ScrN Objective Mode** now uses **ScrN Zed Pack** (see `bStoryZedPack` in *ScrnBalanceSrv.ini*)
 - If a player has >100 armor, the cyan bar is drawn on the blue background. It fixes the issue where players with slightly above 100 armor looked like they did not have armor at all.
+- `bLowAmmoColorSwitch` added to *ScrnUser.ini* - low ammo counter blinks between red to yellow like the low HP counter.
+- Fixed an issue where dead players bodies could stay forever on the map
 
 #### Known Issues
 - Trader Menu shows the full price of dual pistols despite the single exists in the inventory. Only half of the cost is actually charged, though.
@@ -109,6 +113,11 @@ TraderTimeHoE=60
 
 #### Code Changes
 - Refactored the healing code. Medic reward calculation moved to `ScrnHumanPawn.TakeHealing()`. Make sure to check your custom medic guns for ScrN compatibility.
+- `ScrnHumanPawn.AssessThreatTo()` logic moved to `ScrnPawnFunc`, allowing easy ovverides.
+
+#### ScrN Zed Pack
+- Pat dead body stays longer on the map
+- SC/FP dead bodies stay longer at high quality physics settings.
 
 #### ScrN Weapon Pack
 - Faster selection of **Medic Pistol** and **Colt**
@@ -116,7 +125,7 @@ TraderTimeHoE=60
 - **Colt** price incereased to 1750 (up from 1250)
 
 #### Horzine Technicial
-- **Cryo Thrower**: tactical reload gives +1 ammo (3 in the magazine + 1 in the barrel)
+- **Cryo Harpoon Bomber**: tactical reload gives +1 ammo (3 in the magazine + 1 in the barrel)
 
 
 ## v9.70.18
