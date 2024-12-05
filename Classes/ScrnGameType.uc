@@ -2670,6 +2670,9 @@ function GiveStartingCash(PlayerController PC)
     if (ScrnPC == none)
         return;
 
+    if (ScrnPC.PlayerReplicationInfo.bOnlySpectator)
+        return;
+
     if (ScrnPC.StartCash > 0)
         return;  // starting cash is given only once per game
 
@@ -4094,6 +4097,12 @@ State MatchInProgress
 
 State MatchOver
 {
+    function BeginState()
+    {
+        super.BeginState();
+        UnlockTeams();
+    }
+
     function Timer()
     {
         super.Timer();
@@ -4102,7 +4111,25 @@ State MatchOver
             class'ScrnSuicideBomb'.static.DisintegrateAll(Level);
         }
     }
+
+    // allow spectators join for the next game
+    function RestartPlayer( Controller aPlayer )
+    {
+        local PlayerController PC;
+
+        if (aPlayer.Pawn != none && aPlayer.Pawn.Health > 0)
+            return;  // wtf? Already alive.
+
+        PC = PlayerController(aPlayer);
+        if (PC == none)
+            return;
+
+        PC.PlayerReplicationInfo.bOutOfLives = true;
+        PC.PlayerReplicationInfo.NumLives = 1;  // NumDeaths
+        PC.GoToState('Spectating');
+    }
 }
+
 
 defaultproperties
 {

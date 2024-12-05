@@ -86,8 +86,13 @@ call :MakeUz2 Textures\ScrnTex.utx
 call :MakeUz2 Textures\ScrnAch_T.utx
 call :MakeUz2 Textures\TSC_T.utx
 call :MakeUz2 System\%KFPACKAGE%.u
+call :MakeUz2 System\ScrnShared.u
+call :MakeUz2 System\ScrnSP.u
+call :MakeUz2 System\ScrnVotingHandler.u
+
 echo %RELEASEDIR%\uz2:
 dir /B %RELEASEDIR%\uz2
+xcopy /F /I /Y %RELEASEDIR%\Uz2\*.uz2               %BUNDLEUZ2%\
 
 echo Release is ready!
 

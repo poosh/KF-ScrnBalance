@@ -219,7 +219,7 @@ function PostLogin()
         SetName(PlayerName);
 
     Mut.GameRules.PlayerEntering(self);
-    if (bForcedSpectator && PlayerReplicationInfo.bOnlySpectator && PlayerReplicationInfo.Kills > 0) {
+    if (bForcedSpectator && PlayerReplicationInfo.bOnlySpectator && bHadPawn) {
         // reconnected player - try to rejoin the game
         BecomeActivePlayer();
     }

@@ -393,6 +393,10 @@ function bool CanLockTeam()
     return CurWave >= MinLockWave;
 }
 
+function bool ShouldAutoBlame(ScrnPlayerController BlamedPlayer) {
+    return BlamedPlayer != none && BlamedPlayer.BeggingForMoney >= 3;
+}
+
 function int GetVoteIndex(PlayerController Sender, string Key, out string Value, out string VoteInfo)
 {
     local int result, v, i;
@@ -514,6 +518,7 @@ function int GetVoteIndex(PlayerController Sender, string Key, out string Value,
                 VoteInfo = "Blame " $ Value;
             }
         }
+        VotingHandler.bVotedPlayerAutoVote = ShouldAutoBlame(ScrnPlayerController(VotingHandler.VotedPlayer));
         LastBlameVoteTime = Level.TimeSeconds;
         result = VOTE_BLAME;
     }

@@ -28,10 +28,10 @@
 ## VERSION 9
 
 -------------------------------------------------------------------------------
-## v9.70.32
+## v9.71
 #### DO$H
 - New feature: **Digital Dosh Transfer (DDT)**. Allows transfering dosh to other players from the Trader Menu.
-- DDT allows sharing dosh with the team by sending dosh to the Team Walletm when everybody can use it.
+- DDT allows sharing dosh with the team by sending dosh to the Team Wallet, where everybody can use it.
 - New Trader button: "Request Dosh" - allows doing "v13 - I Need Money" without exiting the Trader.
 - A dosh request puts the player on top of the DDT player list and marks it so the teammates can identify those in need.
 - If a player abuses dosh requests, blame them (`MVOTE BLAME`). Blame vote clears the dosh request mark.
@@ -39,11 +39,11 @@
 - Blame message (poop) display time reduced to one minute - to match the communication ban.
 - New Trader button: "F7 Armor" - quickly repairs the current armor or buys a new one.
 - New Trader button: "F9 Share Dosh" - share all dosh with the team.
-- The "F10 Exit" button received a new hotkey. Esc also works.
-- Players can quickly refill everyhing, share spare dosh, then exit the trader by ressing buttons: **F7, F8, F8, F9, F10**.
+- The "F10 Exit" button received a new hotkey. Esc works, too.
+- Players can quickly refill everyhing, share spare dosh, then exit the trader by pressing buttons: **F7, F8, F8, F9, F10**.
 - There is no typo in the line above. The first F8 fills weapon ammo without resupplying nades or pipebombs. The second click restocks nades and pipebombs.
 - "Sell Offperk" / "Sell ALL" button hotkeys changed to `Ctrl+Backspace` / `Ctrl+Shift+Backspace`
-- Improved netcode in Trader Menu
+- Improved netcode in the Trader Menu
 - The default dropped dosh amount is set to $100 (up from $50). Players can still drop $50 by executing `TossCash 50`
 - Dropped dosh objects combine on touching each other.
 - Dosh object size scales by the dosh amount.
@@ -62,14 +62,14 @@
 - 30% Fire rate bonus on **Flare Revolvers**
 - Flare impact kills grant Gunslinger XP (not iDoT kills)
 - Discount and reload bonus on **Medic Pistol**
-- Extra +10% damage bonus on **LAR** to kill HoE Clots with one body shots. Previously, it left a Clot with 3HP.
+- Extra +10% damage bonus on **LAR** to kill HoE Clots with one body shots. Previously, it left a Clot with 3hp.
 - **LAR** in Gunslinger's hands can flinch-lock Scrakes like HC.
 - Fixed incorrect sell price of dual pistols
-- **Handcannon** starting and max ammo adjutested to match full magazines (7, 14)
+- **Handcannon** starting and max ammo adjusted to match full magazines (7, 14)
 - **MK23** lowered ammo cost to 14 per magazine (down from 16)
 
 #### ScrnBalanceSrv.ini
-- New: `bStoryZedPack`
+- New: `bStoryZedPack` - replaces vanilla Zeds with their ScrnZedPack counterparts
 - `AutoLoadMutators=ScrnBalanceSrv.ScrnSpeedMut` enabled by default
 - Trader time and starting dosh can be adjusted in *ScrnGames.ini* and *ScrnWaves.ini*
 - The config options below are deprecated and hardcoded to the given values:
@@ -97,7 +97,7 @@ TraderTimeHoE=60
 - New: `StartDosh`, `StartDoshPerWave`, `StartDoshMin`, `StartDoshMax`
 
 #### Other Changes
-- **Syringe**: both healing modes made twice faster. Pro players are using macros to skip healing animations anyway, while newbies were unnecessarily struggling for too long.
+- **Syringe**: both healing modes made faster. Pro players are using macros to skip healing animations anyway, while newbies were unnecessarily struggling for too long.
 - Classic HUD shows health in green when the player is healing up to the max health (current health + healing bar = max health)
 - **MP5M**: Removed tactical reload as being unrealistic.
 - **MP5M**: Regular reload made faster to compensate for tactical reload removal.
@@ -105,7 +105,8 @@ TraderTimeHoE=60
 - **ScrN Objective Mode** now uses **ScrN Zed Pack** (see `bStoryZedPack` in *ScrnBalanceSrv.ini*)
 - If a player has >100 armor, the cyan bar is drawn on the blue background. It fixes the issue where players with slightly above 100 armor looked like they did not have armor at all.
 - `bLowAmmoColorSwitch` added to *ScrnUser.ini* - low ammo counter blinks between red to yellow like the low HP counter.
-- Fixed an issue where dead players bodies could stay forever on the map
+- Fixed an issue where dead player bodies could stay forever on the map
+- Spectators may join after the game has ended to participate in the next map voting.
 
 #### Known Issues
 - Trader Menu shows the full price of dual pistols despite the single exists in the inventory. Only half of the cost is actually charged, though.
@@ -113,11 +114,13 @@ TraderTimeHoE=60
 
 #### Code Changes
 - Refactored the healing code. Medic reward calculation moved to `ScrnHumanPawn.TakeHealing()`. Make sure to check your custom medic guns for ScrN compatibility.
-- `ScrnHumanPawn.AssessThreatTo()` logic moved to `ScrnPawnFunc`, allowing easy ovverides.
+- `ScrnHumanPawn.AssessThreatTo()` logic moved to `ScrnPawnFunc`, allowing easy overides.
+- Added `ScrnVotingHandlerMut.bVotedPlayerAutoVote`
+- Moved global functions from `ScrnBalanceSrv.ScrnFunctions` to `ScrnShared.ScrnF`
 
 #### ScrN Zed Pack
 - Pat dead body stays longer on the map
-- SC/FP dead bodies stay longer at high quality physics settings.
+- SC/FP/JS/FFP/BR dead bodies stay longer at high-quality physics settings.
 
 #### ScrN Weapon Pack
 - Faster selection of **Medic Pistol** and **Colt**

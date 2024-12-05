@@ -8,6 +8,7 @@ set STEAMEXE=c:\Steam\steam.exe
 set STEAMDIR=C:\Steam\steamapps\common\KillingFloor
 set RELEASEDIR=C:\Games\KFOut\%KFPACKAGE%
 set BUNDLEDIR=C:\Games\KFOut\ScrnBundlePart2
+set BUNDLEUZ2=C:\Games\KFOut\ScrnBundlePartUZ2
 set WEBDIR=C:\Users\%USERNAME%\Dropbox\KFWeb
 
 echo -------------------------------------------------------------------------
