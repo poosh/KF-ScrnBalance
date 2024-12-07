@@ -28,6 +28,18 @@
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+## v9.71.01
+- **Support Specialist** gained extra damage bonus against Gorefasts.
+- **Pump** and **Combat Shotguns** now have higher body damage while retaining the original headshot damage
+- **KSG** restored the original fire rate
+- Fixed an where in **Boomstick** sometimes didn't reload due to netcode.
+- Fixed an issue when dead zeds continued blocking players for a fraction of a second.
+- Team Wallet gets emptied at the beginning of earn/grab dosh waves to prevent cheating (thanks [nmmblez])
+- Fixed an issue in **XCM Duel** where Human Damage was enabled in Wave 1.
+
+#### ScrN Weapon Pack
+- **SPAS** now have higher body damage while retaining the original headshot damage
+
 ## v9.71
 #### DO$H
 - New feature: **Digital Dosh Transfer (DDT)**. Allows transfering dosh to other players from the Trader Menu.

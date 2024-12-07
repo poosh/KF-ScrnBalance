@@ -1,9 +1,8 @@
 Total rebalance of the game. Added new guns, Gunslinger perk, and server-side achievements.
-Version [b]9.70[/b].
+Version [b]9.71.01[/b].
 
 → [URL=http://steamcommunity.com/groups/ScrNBalance]OFFICIAL STEAM GROUP[/URL] ←
 → [URL=https://steamcommunity.com/groups/ScrNBalance/discussions/2/483368526570475472/]DOWNLOAD[/URL] ←
-→ [URL=https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=VFARLRAL7CNJ4&lc=LV&item_name=Scrake%20Naders%20Community&item_number=ScrnBalance&currency_code=EUR&bn=PP%2dDonationsBF%3abtn_donateCC_LG%2egif%3aNonHosted]DONATE[/URL] ←
 
 [h1]Main Features[/h1]
 [list]

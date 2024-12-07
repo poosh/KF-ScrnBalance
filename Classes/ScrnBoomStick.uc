@@ -378,14 +378,16 @@ simulated state ReloadPhase2 extends Reloading
         }
     }
 
+    function EndState()
+    {
+        MagAmmoRemaining = min(MagCapacity, AmmoAmount(0));
+        NetUpdateTime = Level.TimeSeconds - 1;
+    }
+
     simulated function WeaponTick(float dt)
     {
         global.WeaponTick(dt);
         if ( Level.TimeSeconds > NextReloadPhase) {
-            if ( Role == ROLE_Authority ) {
-                MagAmmoRemaining = min(MagCapacity, AmmoAmount(0));
-                NetUpdateTime = Level.TimeSeconds - 1;
-            }
             GotoState('ReloadPhase3');
         }
     }

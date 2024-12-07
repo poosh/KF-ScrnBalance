@@ -957,7 +957,7 @@ function SetupWave()
 
     CalcDoshDifficultyMult();
 
-    TSCGRI.bHumanDamageEnabled = HumanDamageMode > HDMG_None;
+    TSCGRI.bHumanDamageEnabled = WaveNum > 0 && HumanDamageMode > HDMG_None;
     if( WaveNum == FinalWave && bUseEndGameBoss ) {
         StartWaveBoss();
         return;
@@ -977,7 +977,6 @@ function SetupWave()
         }
     }
     else if ( WaveNum == 0 ) {
-        TSCGRI.bHumanDamageEnabled = false;
         BroadcastLocalizedMessage(class'TSCMessages', 230); // human damage disabled
     }
     else if ( HumanDamageMode > HDMG_None ) {

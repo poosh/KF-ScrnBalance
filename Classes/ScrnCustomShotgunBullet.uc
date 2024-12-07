@@ -176,6 +176,7 @@ defaultproperties
     MediumZedMinHealth=500
     MaxPenetrations=3
     PenDamageReduction=0.700000
-    Damage=35.000000
+    Damage=35
+    HeadShotDamageMult=1.5
     MinDamage=10
 }

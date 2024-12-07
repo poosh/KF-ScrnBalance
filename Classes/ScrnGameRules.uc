@@ -924,6 +924,8 @@ function bool PreventDeath(Pawn Killed, Controller Killer, class<DamageType> dam
                 SPI.KilledMonster(KFMonster(Killed), KFDamType);
             }
         }
+        // dead zeds must not block players
+        Killed.SetCollision(true, false);
     }
     else if ( KFHumanPawn(Killed) != none && PlayerController(Killed.Controller) != none ) {
         ++WaveDeadPlayers;

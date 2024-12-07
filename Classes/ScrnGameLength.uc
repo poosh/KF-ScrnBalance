@@ -808,6 +808,15 @@ function RunWave()
     if ( Doom3DisableSuperMonstersFromWave > 1 && Game.WaveNum + 1 == Doom3DisableSuperMonstersFromWave ) {
         Mut.DisableDoom3Monsters();
     }
+
+    switch (Wave.EndRule) {
+        case RULE_EarnDosh:
+        case RULE_GrabDosh:
+        case RULE_GrabDoshZed:
+            // Make sure the Team Wallet is empty when the goal is dosh earning
+            Game.RewardAlivePlayers();
+            break;
+    }
 }
 
 function SetWaveInfo()
