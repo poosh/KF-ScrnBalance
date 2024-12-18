@@ -28,6 +28,20 @@ var int MouseOverIndex;
 
 delegate OnPlayerSelected(PlayerReplicationInfo PRI);
 
+function MyInit()
+{
+    KFGRI = KFGameReplicationInfo(PlayerOwner().GameReplicationInfo);
+}
+
+function MyFree()
+{
+    SetIndex(-1);
+    SetTimer(0, false);
+
+    KFGRI = none;
+    Players.length = 0;
+    ItemCount = 0;
+}
 event InitComponent(GUIController MyController, GUIComponent MyOwner)
 {
     Super.InitComponent(MyController, MyOwner);
@@ -36,19 +50,13 @@ event InitComponent(GUIController MyController, GUIComponent MyOwner)
 event Opened(GUIComponent Sender)
 {
     super.Opened(Sender);
-
-    KFGRI = KFGameReplicationInfo(PlayerOwner().GameReplicationInfo);
+    MyInit();
 }
 
 event Closed(GUIComponent Sender, bool bCancelled)
 {
-    SetIndex(-1);
-    SetTimer(0, false);
-
     super.Closed(Sender, bCancelled);
-
-    KFGRI = none;
-    Players.length = 0;
+    MyFree();
 }
 
 event SetVisibility(bool bIsVisible)
@@ -56,12 +64,12 @@ event SetVisibility(bool bIsVisible)
     super.SetVisibility(bIsVisible);
 
     if (bVisible) {
+        MyInit();
         SetTimer(0.1, true);
         Timer();
     }
     else {
-        SetTimer(0, false);
-        Players.length = 0;
+        MyFree();
     }
 }
 
@@ -74,7 +82,6 @@ function Timer()
 
 function bool NeedUpdate()
 {
-    // local int i;
     if (!bVisible)
         return false;
     if (Players.length == 0)
@@ -96,24 +103,26 @@ function UpdateList()
     Players.length = 0;
     MyTeam = PlayerOwner().PlayerReplicationInfo.Team;
 
-    for (i = 0; i < KFGRI.PRIArray.Length; ++i) {
-        KFPRI = KFPlayerReplicationInfo(KFGRI.PRIArray[i]);
-        if (KFPRI == none || KFPRI.PlayerID <= 0 || KFPRI.PlayerHealth <= 0 || KFPRI == myPRI || KFPRI.Team != myTeam)
-            continue;
-        ScrnPRI = class'ScrnCustomPRI'.static.FindMe(KFPRI);
-        if (ScrnPRI == none) continue;
-        if (ScrnPRI.DoshRequestCounter == 0) {
-            j = Players.length;
-        }
-        else {
-            for (j = 0; j < Players.length; ++j) {
-                if (ScrnPRI.DoshRequestCounter > Players[j].DoshRequestCounter)
-                    break;
+    if (KFPRI != none) {
+        for (i = 0; i < KFGRI.PRIArray.Length; ++i) {
+            KFPRI = KFPlayerReplicationInfo(KFGRI.PRIArray[i]);
+            if (KFPRI == none || KFPRI.PlayerID <= 0 || KFPRI.PlayerHealth <= 0 || KFPRI == myPRI || KFPRI.Team != myTeam)
+                continue;
+            ScrnPRI = class'ScrnCustomPRI'.static.FindMe(KFPRI);
+            if (ScrnPRI == none) continue;
+            if (ScrnPRI.DoshRequestCounter == 0) {
+                j = Players.length;
             }
+            else {
+                for (j = 0; j < Players.length; ++j) {
+                    if (ScrnPRI.DoshRequestCounter > Players[j].DoshRequestCounter)
+                        break;
+                }
+            }
+            Players.insert(j, 1);
+            Players[j].PlayerID = KFPRI.PlayerID;
+            Players[j].DoshRequestCounter = ScrnPRI.DoshRequestCounter;
         }
-        Players.insert(j, 1);
-        Players[j].PlayerID = KFPRI.PlayerID;
-        Players[j].DoshRequestCounter = ScrnPRI.DoshRequestCounter;
     }
 
     ItemCount = Players.Length;
@@ -170,7 +179,7 @@ function DrawPlayerItem(Canvas C, int CurIndex, float X, float Y, float Width, f
         return;
 
     KFPRI = KFPlayerReplicationInfo(KFGRI.FindPlayerByID(Players[CurIndex].PlayerID));
-    if (KFPRI == none)
+    if (KFPRI == none || KFGRI == none)
         return;
     ScrnPRI = class'ScrnCustomPRI'.static.FindMe(KFPRI);
 

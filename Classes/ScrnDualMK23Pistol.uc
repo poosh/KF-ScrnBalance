@@ -2,6 +2,7 @@ class ScrnDualMK23Pistol extends DualMK23Pistol;
 
 var transient ScrnMK23Pistol SingleGun;
 var byte LeftGunAmmoRemaining;  // ammo in the left pistol. Left pistol always has more or equal bullets than the right one
+var bool bConsumeLeft;
 var protected bool bDoubleAmmo;
 var transient int OtherGunAmmoRemaining; // ammo remaining in the other gun while holding a single pistol
 var transient bool bFindSingleGun;
@@ -20,7 +21,7 @@ var vector PistolSlideOffset; //for tactical reload
 var float ShortReloadFrameSkip; //for tactical reload
 
 var transient int FiringRound;
-var transient int OutOfOrderShots;  // equalize ammo in case when a single pistol was used before
+var deprecated int OutOfOrderShots;  // equalize ammo in case when a single pistol was used before
 
 
 replication
@@ -253,7 +254,7 @@ function bool ConsumeAmmo( int Mode, float Load, optional bool bAmountNeededIsMa
         return false;
 
     if ( Load > 0 && (Mode == 0 || bReduceMagAmmoOnSecondaryFire) ) {
-        if (LeftGunAmmoRemaining >= RightGunAmmoRemaining() && LeftGunAmmoRemaining > 0 ) {
+        if (bConsumeLeft && LeftGunAmmoRemaining > 0 ) {
             // LeftGunAmmoRemaining is byte (unsigned). Make sure to not overlap.
             --LeftGunAmmoRemaining;
         }
@@ -459,7 +460,6 @@ simulated function SyncDualFromSingle()
     // Because the half-empty reload animation assumes that the right gun still has ammo.
     // this is opposite to Dual HC
     LeftGunAmmoRemaining = min(OtherGunAmmoRemaining, SingleGun.MagAmmoRemaining);
-    OutOfOrderShots = max(0, RightGunAmmoRemaining() - LeftGunAmmoRemaining - 1);
     SetPistolFireOrder();
 }
 
@@ -838,6 +838,7 @@ function ReplicateAmmo()
 
     a = AmmoAmount(0);
     ClientReplicateAmmo(MagAmmoRemaining, LeftGunAmmoRemaining, a, a >> 8);
+    SetPistolFireOrder();
 }
 
 simulated protected function ClientReplicateAmmo(byte SrvMagAmmoRemaining, byte SrvLeftGunAmmoRemaining,
@@ -875,6 +876,7 @@ defaultproperties
 {
     MagAmmoRemaining=24
     LeftGunAmmoRemaining=12
+    bConsumeLeft=true
     ReloadShortRate = 2.57 //no slides locked back
     ReloadHalfShortRate = 3.35 //left slide locked back
     PistolSlideOffset=(X=0,Y=-0.0235000,Z=0.0)

@@ -15,6 +15,7 @@
 [ImmortalNub]: https://steamcommunity.com/id/ImmortalNub
 [ivanmagadan]: https://steamcommunity.com/id/ivanmagadan
 [Broski]: https://steamcommunity.com/id/broski270
+[That1Guy]: https://steamcommunity.com/id/defenciveguy121
 <!-- add other peaople too!!! -->
 
 # Version History
@@ -28,11 +29,25 @@
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+## v9.71.02
+- **Predictable Zed Time** - see `ZedTimeTrigger` in *ScrnBalanceSrc.ini*
+- Per-game Zed Time settings: `ZedTimeTrigger`, `ZedTimeChanceMult`, `ZedTimeDuration` in *ScrnGames.ini*
+- Default Zed Time duration incereased to 4s (up from 3s) to allow weapon switch within ZT
+- The original ZT duration can be restored by setting `ZedTimeDuration` in *ScrnBalanceSrv.ini* or *ScrnGames.ini*
+- New perk function `ScrnVeterancyTypes.GetZedTimeChance()` - can be ovverrided by custom ScrN perks to modify ZT chance on a zed kill.
+- Fixed M4-203 burst fire during Zed Time
+- Changed dual pistol fire order when switched from the single pistol
+- Restored S/A fire mode of Tommy Gun SP & RS (community request)
+- Fixed `ScrnTraderPlayerList.KFGRI` null reference warning (thatnks [That1Guy])
+- New map alias: `KF-Steamland_Fogged` => `KF-Steamland` (*ScrnBalanceSrv.ini*)
+- **Escape The Hunter v1.02** - "Finish them off" waves changed to "Kill half zeds"
+- Circus Husk disabled by default due to similarity to Tesla Husk. It still can be restored in *ScrnZeds.ini*
+
 ## v9.71.01
 - **Support Specialist** gained extra damage bonus against Gorefasts.
 - **Pump** and **Combat Shotguns** now have higher body damage while retaining the original headshot damage
 - **KSG** restored the original fire rate
-- Fixed an where in **Boomstick** sometimes didn't reload due to netcode.
+- Fixed an issue where **Boomstick** sometimes didn't reload due to netcode.
 - Fixed an issue when dead zeds continued blocking players for a fraction of a second.
 - Team Wallet gets emptied at the beginning of earn/grab dosh waves to prevent cheating (thanks [nmmblez])
 - Fixed an issue in **XCM Duel** where Human Damage was enabled in Wave 1.

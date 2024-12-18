@@ -9,7 +9,6 @@ var Texture Boxes[2];
 // 2 - both survived
 // 3 - wiped
 var Material EndGameMaterials[4];
-var Material WaveGB[4];
 
 var TSCGameReplicationInfo   TSCGRI;
 var TSCTeam TSCTeams[2];
@@ -291,10 +290,7 @@ simulated function DrawKFHUDTextElements(Canvas C)
     // Countdown Text
     if( !KFGRI.bWaveInProgress || TSCGRI.WaveEndRule == 2 /*RULE_Timeout*/ )
     {
-        C.SetDrawColor(255, 255, 255, 255);
-        C.SetPos(C.ClipX - CircleSize, 2);
-
-        C.DrawTile(WaveGB[TeamIndex], CircleSize, CircleSize, 0, 0, 256, 256);
+        DrawWaveCircle(C, WaveCircleClockBG[TeamIndex], CircleSize);
 
         Min = KFGRI.TimeToNextWave / 60;
         NumZombies = KFGRI.TimeToNextWave - (Min * 60);
@@ -308,9 +304,7 @@ simulated function DrawKFHUDTextElements(Canvas C)
     }
     else
     {
-        C.SetDrawColor(255, 255, 255, 255);
-        C.SetPos(C.ClipX - CircleSize, 2);
-        C.DrawTile(WaveGB[2+TeamIndex], CircleSize, CircleSize, 0, 0, 256, 256);
+        DrawWaveCircle(C, WaveCircleClockBG[TeamIndex], CircleSize);
 
         if ( MyTeam != none && MyTeam.GetCurWaveKills() < TSCGRI.WaveKillReq ) {
             NumZombies = TSCGRI.WaveKillReq - MyTeam.GetCurWaveKills();
@@ -1216,10 +1210,10 @@ defaultproperties
     EndGameMaterials(1)=Texture'TSC_T.End.BlueWin'
     EndGameMaterials(2)=Texture'TSC_T.End.Win'
     EndGameMaterials(3)=Shader'TSC_T.End.WipedShader'
-    WaveGB[0]=Material'KillingFloorHUD.HUD.Hud_Bio_Clock_Circle'
-    WaveGB[1]=Material'TSC_T.HUD.Hud_Bio_Clock_Circle'
-    WaveGB[2]=Material'KillingFloorHUD.HUD.Hud_Bio_Circle'
-    WaveGB[3]=Material'TSC_T.HUD.Hud_Bio_Circle'
+    WaveCircleClockBG[0]=Material'KillingFloorHUD.HUD.Hud_Bio_Clock_Circle'
+    WaveCircleClockBG[1]=Material'TSC_T.HUD.Hud_Bio_Clock_Circle'
+    WaveCircleBG[0]=Material'KillingFloorHUD.HUD.Hud_Bio_Circle'
+    WaveCircleBG[1]=Material'TSC_T.HUD.Hud_Bio_Circle'
 
     strBase="Base: "
     strOurBase="Our Base: "

@@ -95,21 +95,9 @@ simulated function HurtRadius( float DamageAmount, float DamageRadius, class<Dam
         }
     }
 
-    if( Role == ROLE_Authority )
-    {
-        if ( bBlewInHands && NumKilled >= 5 )
-            class'ScrnAchCtrl'.static.Ach2Pawn(Instigator, 'SuicideBomber', 1);
-
-        if ( NumKilled >= 4 )
-        {
-            KFGameType(Level.Game).DramaticEvent(0.05);
-        }
-        else if ( NumKilled >= 2 )
-        {
-            KFGameType(Level.Game).DramaticEvent(0.03);
-        }
+    if (Role == ROLE_Authority && bBlewInHands && NumKilled >= 5) {
+        class'ScrnAchCtrl'.static.Ach2Pawn(Instigator, 'SuicideBomber', 1);
     }
-
     bHurtEntry = false;
 }
 

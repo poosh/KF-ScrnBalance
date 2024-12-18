@@ -45,12 +45,12 @@ simulated event RenderOverlays( Canvas Canvas )
     bDrawingFirstPerson = false;
 }
 
-    
+
 simulated function bool StartFire(int Mode)
 {
     if ( Mode > 0 ) {
         if ( FireMode[0].IsInState('WaitingForFireButtonRelease') )
-            FireMode[0].GotoState(''); 
+            FireMode[0].GotoState('');
         if ( AmmoAmount(1) > 1 ) {
             KFShotgunFire(FireMode[1]).FireAimedAnim='Fire_Iron_Secondary';
             FireMode[1].FireAnim='Fire_Secondary';
@@ -71,9 +71,9 @@ simulated function bool StartFire(int Mode)
        return false;
 
     //AnimStopLooping();
-                                                                         //prevent fire button spam-clicking
-    if( !FireMode[0].IsInState('FireBurst') && (AmmoAmount(0) > 0) && Level.TimeSeconds > PrevFireTime + 0.2 )
-    {   
+    //prevent fire button spam-clicking
+    if (!FireMode[0].IsInState('FireBurst') && (AmmoAmount(0) > 0)
+            && Level.TimeSeconds > PrevFireTime + 0.2 * Level.TimeDilation/1.1) {
         PrevFireTime = Level.TimeSeconds;
         bTriggerReleased = false;
         FireMode[0].GotoState('FireBurst');
@@ -83,7 +83,7 @@ simulated function bool StartFire(int Mode)
     return false;
 }
 
-simulated function ReallyStopFire(int Mode) 
+simulated function ReallyStopFire(int Mode)
 {
     super.StopFire(Mode);
 }
@@ -93,8 +93,8 @@ simulated function StopFire(int Mode)
     //log("StopFire("$Mode$")", 'ScrnBalance');
     if ( Mode > 0 ) {
         if ( FireMode[0].IsInState('WaitingForFireButtonRelease') ) //this shouldn't happed, but just to be sure
-            FireMode[0].GotoState('');    
-            
+            FireMode[0].GotoState('');
+
         super.StopFire(Mode);
         return;
     }
@@ -111,8 +111,8 @@ simulated function StopFire(int Mode)
         // FireMode[0].GotoState('');
     // else if ( !FireMode[0].IsInState('FireBurst') )
         // super.StopFire(0);
-        
-    // Allows stopping fire 
+
+    // Allows stopping fire
     super.StopFire(Mode);
     if (FireMode[Mode].IsInState('WaitingForFireButtonRelease'))
         FireMode[Mode].GotoState('');
@@ -135,11 +135,11 @@ simulated function bool AllowReload()
 exec function ReloadMeNow()
 {
     local float ReloadMulti;
-    
+
     // tbs burst fire won't screw reload
     if ( FireMode[0].IsInState('FireBurst') || FireMode[0].IsInState('WaitingForFireButtonRelease') )
         FireMode[0].GotoState('');
-        
+
     if(!AllowReload())
         return;
     if ( bHasAimingMode && bAimingRifle )
@@ -150,12 +150,12 @@ exec function ReloadMeNow()
         if( Role < ROLE_Authority)
             ServerZoomOut(false);
     }
-    
+
     if ( KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo) != none && KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo).ClientVeteranSkill != none )
         ReloadMulti = KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo).ClientVeteranSkill.Static.GetReloadSpeedModifier(KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo), self);
     else
         ReloadMulti = 1.0;
-        
+
     bIsReloading = true;
     ReloadTimer = Level.TimeSeconds;
     bShortReload = MagAmmoRemaining > 0;
@@ -163,7 +163,7 @@ exec function ReloadMeNow()
         ReloadRate = Default.ReloadShortRate / ReloadMulti;
     else
         ReloadRate = Default.ReloadRate / ReloadMulti;
-        
+
     if( bHoldToReload )
     {
         NumLoadedThisReload = 0;
@@ -189,12 +189,12 @@ simulated function ClientReload()
         if( Role < ROLE_Authority)
             ServerZoomOut(false);
     }
-    
+
     if ( KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo) != none && KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo).ClientVeteranSkill != none )
         ReloadMulti = KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo).ClientVeteranSkill.Static.GetReloadSpeedModifier(KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo), self);
     else
         ReloadMulti = 1.0;
-        
+
     bIsReloading = true;
     if (MagAmmoRemaining <= 0)
     {
@@ -209,13 +209,13 @@ simulated function ClientReload()
 function AddReloadedAmmo()
 {
     local int a;
-    
+
     UpdateMagCapacity(Instigator.PlayerReplicationInfo);
 
     a = MagCapacity;
     if ( bShortReload )
         a++; // 1 bullet already bolted
-    
+
     if ( AmmoAmount(0) >= a )
         MagAmmoRemaining = a;
     else

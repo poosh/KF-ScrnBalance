@@ -262,17 +262,6 @@ simulated function HurtRadius( float DamageAmount, float DamageRadius, class<Dam
             NumKilled++;
         }
     }
-
-    if( Role == ROLE_Authority )
-    {
-        if( NumKilled >= 10 )
-            KFGameType(Level.Game).DramaticEvent(0.20);
-        else if( NumKilled >= 4 )
-            KFGameType(Level.Game).DramaticEvent(0.05);
-        else if( NumKilled >= 2 )
-            KFGameType(Level.Game).DramaticEvent(0.03);
-    }
-
     bHurtEntry = false;
 }
 

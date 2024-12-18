@@ -31,7 +31,7 @@ simulated function HurtRadius( float DamageAmount, float DamageRadius, class<Dam
         P = none;
         KFMonsterVictim = none;
         KFP = none;
-        
+
         // don't let blast damage affect fluid - VisibleCollisingActors doesn't really work for them - jag
         if( (Victims != self) && (Hurtwall != Victims) && (Victims.Role == ROLE_Authority) && !Victims.IsA('FluidSurfaceInfo')
          && ExtendedZCollision(Victims)==None )
@@ -149,18 +149,6 @@ simulated function HurtRadius( float DamageAmount, float DamageRadius, class<Dam
             Vehicle(Victims).DriverRadiusDamage(DamageAmount, DamageRadius, InstigatorController, DamageType, Momentum, HitLocation);
     }
     */
-
-    if( Role == ROLE_Authority )
-    {
-        if( NumKilled >= 4 )
-        {
-            KFGameType(Level.Game).DramaticEvent(0.05);
-        }
-        else if( NumKilled >= 2 )
-        {
-            KFGameType(Level.Game).DramaticEvent(0.03);
-        }
-    }
 
     bHurtEntry = false;
 }

@@ -210,6 +210,17 @@ static function bool OverridePerkIndex( class<KFWeaponPickup> Pickup )
             || super.OverridePerkIndex(Pickup);
 }
 
+static function float GetZedTimeChance(KFPlayerReplicationInfo KFPRI, KFMonster Zed, float Chance)
+{
+    if (Zed.IsA('Bloat') && Zed.DECAP && Zed.DecapTime == Zed.Level.TimeSeconds) {
+        // double zed time chance on decapitating kill shots on a Bloat.
+        // Since this function is called only from ScrnGameType.Killed() and does not scale DramaticEvent() call from
+        // KFMonster.TakeDamage(), we add +3% manually
+        return 2.0 * Chance + 0.03;
+    }
+    return Chance;
+}
+
 static function string GetCustomLevelInfo( byte Level )
 {
     local string S;

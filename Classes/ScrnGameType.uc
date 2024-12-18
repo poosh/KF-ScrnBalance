@@ -1,5 +1,6 @@
 // the core GameInfo class for ScrN gameplay
-class ScrnGameType extends KFGameType;
+class ScrnGameType extends KFGameType
+    dependson(ScrnTypes);
 
 var ScrnBalance ScrnBalanceMut;
 var ScrnGameReplicationInfo ScrnGRI;
@@ -116,6 +117,9 @@ enum EDropKind {
 
 var int ExtraZedTimeExtensions;  // extra zed time extentions for all players
 var bool bZedTimeEnabled;  // set it to false to completely disable the Zed Time in the game
+var ScrnTypes.EZedTimeTrigger ZedTimeTrigger;
+var float ZedTimeChanceMult, ZedTimeChance, ZedTimeChanceBigZed, ZedTimeChanceMultiKill, ZedTimeChancePointBlank;
+var float ZedTimeValue;
 var transient byte PlayerSpawnTraderTeleportIndex;
 var name PlayerStartEvent;
 var bool bSuicideTimer;
@@ -266,6 +270,10 @@ function InitGameReplicationInfo()
         ScrnGRI.FakedPlayers = FakedPlayers;
         ScrnGRI.FakedAlivePlayers = FakedAlivePlayers;
         ScrnGRI.bStopCountDown = !bSuicideTimer;
+        ScrnGRI.ZedTimeDuration = ZEDTimeDuration;
+        if (ZedTimeTrigger == ZT_Bucket) {
+            ScrnGRI.ZedTimeValue = 0;
+        }
     }
 }
 
@@ -791,30 +799,49 @@ function Killed(Controller Killer, Controller Killed, Pawn KilledPawn, class<Dam
 {
     local KFPlayerReplicationInfo KFPRI;
     local KFSteamStatsAndAchievements StatsAndAchievements;
+    local class<ScrnVeterancyTypes> ScrnPerk;
     local class<KFWeaponDamageType> KFDamType;
     local KFMonster KilledMonster;
+    local float f;
 
     KFDamType = class<KFWeaponDamageType>(damageType);
     KilledMonster = KFMonster(KilledPawn);
 
     if ( PlayerController(Killer) != none ) {
         KFPRI = KFPlayerReplicationInfo(Killer.PlayerReplicationInfo);
-        if ( KilledMonster != None && Killed != Killer ) {
-            if ( bZEDTimeActive && KFPRI != none && KFPRI.ClientVeteranSkill != none
-                    && KFPRI.ClientVeteranSkill.static.ZedTimeExtensions(KFPRI) > ZedTimeExtensionsUsed )
+        if (KFPRI != none) {
+            ScrnPerk =  class<ScrnVeterancyTypes>(KFPRI.ClientVeteranSkill);
+        }
+
+        if (KilledMonster != None && Killed != Killer) {
+            if (bZEDTimeActive && ScrnPerk != none && ScrnPerk.static.ZedTimeExtensions(KFPRI) > ZedTimeExtensionsUsed)
             {
                 // Force Zed Time extension for every kill as long as the Player's Perk has Extensions left
-                if ( Level.TimeSeconds - LastZedTimeEvent > 0.05 ) {
+                if (Level.TimeSeconds - LastZedTimeEvent > 0.05) {
                     DramaticEvent(1.0);
                     ZedTimeExtensionsUsed++;
                 }
             }
-            else if ( Level.TimeSeconds - LastZedTimeEvent > 10.0 ) {
-                // Possibly do a slomo event when a zombie dies, with a higher chance if the zombie is closer to a player
-                if( Killer.Pawn != none && VSizeSquared(Killer.Pawn.Location - KilledPawn.Location) < 22500 ) // 3 meters
-                    DramaticEvent(0.05);
-                else
-                    DramaticEvent(0.025);
+            else {
+                if (KilledMonster.default.Health >= 1000) {
+                    f = ZedTimeChanceBigZed;
+                }
+                else {
+                    f = ZedTimeChance;
+                }
+
+                if (Level.TimeSeconds - LastZedKillTime < 0.01) {
+                    f += ZedTimeChanceMultiKill;
+                }
+                if (Killer.Pawn != none && VSizeSquared(Killer.Pawn.Location - KilledPawn.Location) < 22500) {
+                    // higher ZT chance at point-blank kill (within 3m)
+                    f += ZedTimeChancePointBlank;
+                }
+
+                if (ScrnPerk != none) {
+                    f = ScrnPerk.static.GetZedTimeChance(KFPRI, KilledMonster, f);
+                }
+                DramaticEvent(f);
             }
 
             StatsAndAchievements = KFSteamStatsAndAchievements(PlayerController(Killer).SteamStatsAndAchievements);
@@ -887,27 +914,52 @@ function DramaticEvent(float Chance, optional float DesiredZedTimeDuration)
     if (!bZedTimeEnabled || Chance <= 0)
         return;
 
-    if (Chance < 1.0) {
-        TimeSinceLastEvent = Level.TimeSeconds - LastZedTimeEvent;
-
-        // Don't go in slomo if we were just IN slomo
-        if (TimeSinceLastEvent < 10.0) {
-            return;
-        }
-
-        if( TimeSinceLastEvent > 60.0 ) {
-            Chance *= 4.0;
-        }
-        else if( TimeSinceLastEvent > 30.0 ) {
-            Chance *= 2.0;
-        }
-
-        if (frand() > Chance) {
-            return;
-        }
+    if (Chance >= 1.0) {
+        StartZedTime(DesiredZedTimeDuration);
+        return;
     }
 
-    StartZedTime(DesiredZedTimeDuration);
+    Chance *= ZedTimeChanceMult;
+
+    switch (ZedTimeTrigger) {
+        case ZT_Disabled:
+            return;
+
+        case ZT_Bucket:
+        case ZT_HiddenBucket:
+            ZedTimeValue += Chance;
+            if (ZedTimeTrigger != ZT_HiddenBucket) {
+                ScrnGRI.ZedTimeValue = ZedTimeValue * ScrnGRI.ZedTimeValueScale;
+            }
+            // class'ScrnF'.static.dbg(self, "ZedTimeValue=" $ ZedTimeValue $ " (+" $ Chance$ ")");
+            if (ZedTimeValue >= 1.0) {
+                StartZedTime(DesiredZedTimeDuration);
+            }
+            break;
+
+        // ZT_Default
+        // ZT_Random
+        default:
+            TimeSinceLastEvent = Level.TimeSeconds - LastZedTimeEvent;
+
+            // Don't go in slomo if we were just IN slomo
+            if (TimeSinceLastEvent < 10.0) {
+                return;
+            }
+
+            if( TimeSinceLastEvent > 60.0 ) {
+                Chance *= 4.0;
+            }
+            else if( TimeSinceLastEvent > 30.0 ) {
+                Chance *= 2.0;
+            }
+
+            if (frand() < Chance) {
+               StartZedTime(DesiredZedTimeDuration);
+            }
+            break;
+    }
+
 }
 
 function StartZedTime(optional float DesiredZedTimeDuration) {
@@ -924,6 +976,10 @@ function StartZedTime(optional float DesiredZedTimeDuration) {
         CurrentZEDTimeDuration = ZEDTimeDuration;
     }
 
+    ZedTimeValue = 0;
+    if (ZedTimeTrigger == ZT_Bucket) {
+        ScrnGRI.ZedTimeValue = 0;
+    }
     SetGameSpeed(ZedTimeSlomoScale);
 
     for (C = Level.ControllerList; C != none; C = C.NextController) {
@@ -4176,8 +4232,14 @@ defaultproperties
 
     bKillMessages=true
     bZedTimeEnabled=true
+    ZedTimeChanceMult=1.0
+    ZedTimeChance=0.02
+    ZedTimeChanceBigZed=0.07
+    ZedTimeChanceMultiKill=0.03
+    ZedTimeChancePointBlank=0.03
     bAntiBlocker=true
     MAX_DIST_SQ=1.0e37
+    ZedTimeTrigger=ZT_Random
 
     LogZedSpawnLevel=4  // LOG_INFO
     MaxSpawnAttempts=3

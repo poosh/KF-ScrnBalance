@@ -1,4 +1,5 @@
 Class ScrnGameLength extends Object
+    dependson(ScrnTypes)
     dependson(ScrnWaveInfo)
     PerObjectConfig
     Config(ScrnGames);
@@ -31,6 +32,9 @@ var config bool bAllowZedEvents;
 var config byte ForceZedEvent, FallbackZedEvent;
 var config bool bLogStats;
 var config bool bDebug, bTest;
+var config ScrnTypes.EZedTimeTrigger ZedTimeTrigger;
+var config float ZedTimeChanceMult;
+var config byte ZedTimeDuration;
 var config bool bRandomTrader;
 var config int TraderSpeedBoost;
 var config int SuicideTime;
@@ -268,6 +272,12 @@ function LoadGame(ScrnGameType MyGame)
 
     if ( ZedVotes.length > 0 )
         AddVoting();
+
+    if (ZedTimeTrigger != ZT_Default) {
+        Game.ZedTimeTrigger = ZedTimeTrigger;
+        Game.ZedTimeChanceMult = fmax(ZedTimeChanceMult, 0.0);
+        Game.ZedTimeDuration = clamp(ZedTimeDuration, 3, 240);
+    }
 
     Game.StartingCash = 0;  // the game must call CalcStartingCash() instead
     if (StartDoshMax <= 0) {
@@ -1656,6 +1666,9 @@ defaultproperties
     BountyScale=1.0
     bLogStats=true
     bRandomTrader=true
+    ZedTimeTrigger=ZT_Default
+    ZedTimeChanceMult=1.0
+    ZedTimeDuration=4
     FtgSpawnRateMod=0.8
     FtgSpawnDelayOnPickup=10.0
     MinBonusLevel=255

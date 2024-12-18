@@ -26,7 +26,7 @@ simulated function BringUp(optional Weapon PrevWeapon)
 
 simulated function AltFire(float F)
 {
-    // disable semi-auto mode
+    DoToggle();
 }
 
 simulated function ResetBoltPosition()

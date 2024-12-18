@@ -43,6 +43,7 @@ var byte PathDestination; // 0 - trader, 255 - TSC base
 
 var byte MaxVoiceMsgIn10s; // maximum number of voice messages during 10 seconds
 var bool bZEDTimeActive;
+var float ZedTimeStart;
 
 var bool bHadArmor; //player had armor during the game
 
@@ -1815,6 +1816,7 @@ simulated function ClientEnterZedTime()
 {
     super.ClientEnterZedTime();
     bZEDTimeActive = true;
+    ZedTimeStart = Level.TimeSeconds;
 }
 
 simulated function ClientExitZedTime()
@@ -1826,6 +1828,7 @@ simulated function ClientExitZedTime()
 function EnterZedTime()
 {
     bZEDTimeActive = true;
+    ZedTimeStart = Level.TimeSeconds;
     ClientEnterZedTime();
 }
 

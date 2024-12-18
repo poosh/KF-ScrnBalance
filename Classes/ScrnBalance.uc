@@ -7,6 +7,7 @@
  *****************************************************************************/
 
 class ScrnBalance extends ScrnMutator
+    dependson(ScrnTypes)
     Config(ScrnBalanceSrv);
 
 #exec OBJ LOAD FILE=ScrnAnims.ukx
@@ -207,6 +208,8 @@ var transient byte CurrentEventNum;
 var globalconfig bool bForceEvent;
 var globalconfig bool bResetSquadsAtStart; // calls ScrnGameRules.ResetSquads() at map start
 var globalconfig bool bStoryZedPack;
+var globalconfig ScrnTypes.EZedTimeTrigger ZedTimeTrigger;
+var globalconfig byte ZedTimeDuration;
 
 var globalconfig bool bAutoKickOffPerkPlayers;
 var String strAutoKickOffPerk;
@@ -2442,6 +2445,10 @@ function PostBeginPlay()
         }
         ScrnGT.ScrnBalanceMut = self;
         MaxDifficulty = ScrnGT.DIFF_MAX;
+        if (ZedTimeTrigger != ZT_Default) {
+            ScrnGT.ZedTimeTrigger = ZedTimeTrigger;
+            ScrnGT.ZEDTimeDuration = clamp(ZedTimeDuration, 3, 240);
+        }
     }
     else if ( ScrnStoryGameInfo(KF) != none ) {
         ScrnStoryGameInfo(KF).ScrnBalanceMut = self;
@@ -2575,6 +2582,9 @@ function PostBeginPlay()
 
 function SetTestMap()
 {
+    if (!bTestMap) {
+        class'ScrnF'.static.EnableDebug();
+    }
     bTestMap = true;
     ServerPerksMut.GotoState('TestMap');
     bAllowAlwaysPerkChanges = true;
@@ -3086,6 +3096,10 @@ function ServerTraveling(string URL, bool bItems)
         LockManager.Destroy();
         LockManager = none;
     }
+
+    if (!bTestMap) {
+        class'ScrnF'.static.DisableDebug();
+    }
 }
 
 // Limits placed pipebomb count to perk's capacity
@@ -3209,7 +3223,7 @@ function RegisterVersion(string ItemName, int Version)
 
 defaultproperties
 {
-    VersionNumber=97101
+    VersionNumber=97102
     GroupName="KF-Scrn"
     FriendlyName="ScrN Balance"
     Description="Total rework of KF1 to make it modern and the best tactical coop in the world while sticking to the roots of the original."
@@ -3270,6 +3284,8 @@ defaultproperties
     bForceEvent=true
     bResetSquadsAtStart=false
     bStoryZedPack=true
+    ZedTimeTrigger=ZT_Bucket
+    ZedTimeDuration=4
 
     ForcedMaxPlayers=0
     bBroadcastPickups=true

@@ -570,6 +570,17 @@ static function bool OverridePerkIndex( class<KFWeaponPickup> Pickup )
             || ClassIsInArray(default.PerkedPickups, Pickup);
 }
 
+/** Allows overriding the chance to trigger a Zed Time when a player kills a zed.
+ *  @param KFPRI Killer's PRI
+ *  @param Zed Killed Zed
+ *  @param Chance Pre-calculated chance to trigger the Zed Time (0.01 = 1%, 1.0 = 100%)
+ *  @return chance to trigger ZT
+ */
+static function float GetZedTimeChance(KFPlayerReplicationInfo KFPRI, KFMonster Zed, float Chance)
+{
+    return Chance;
+}
+
 
 defaultproperties
 {

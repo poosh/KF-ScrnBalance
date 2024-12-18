@@ -7,6 +7,8 @@ var int WaveCounter;
 var int EndGameCounter;
 var byte WaveEndRule;
 var bool bTraderArrow;
+var byte ZedTimeValue, ZedTimeDuration;
+var const float ZedTimeValueScale;
 
 var byte FakedPlayers, FakedAlivePlayers;
 var byte NewDifficulty;  // allows changing difficulty mid-game
@@ -17,13 +19,13 @@ var transient float LastBeepTime;
 replication
 {
     reliable if( bNetInitial && Role == ROLE_Authority )
-        GameTitle, GameAuthor, GameVersion;
+        GameTitle, GameAuthor, GameVersion, ZedTimeDuration;
 
     reliable if( (bNetInitial || bNetDirty) && Role == ROLE_Authority )
         WaveHeader, WaveTitle, WaveMessage, WaveEndRule, bTraderArrow;
 
     reliable if( (bNetInitial || bNetDirty) && Role == ROLE_Authority )
-        WaveCounter;
+        WaveCounter, ZedTimeValue;
 
     reliable if( (bNetInitial || bNetDirty) && Role == ROLE_Authority )
         FakedPlayers, FakedAlivePlayers, NewDifficulty;
@@ -162,4 +164,6 @@ defaultproperties
     RemainingTimeMsg=class'ScrnSuicideMsg'
     WaveEndRule=0 // RULE_KillEmAll
     bTraderArrow=True
+    ZedTimeValue=255
+    ZedTimeValueScale=200.0
 }

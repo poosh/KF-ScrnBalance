@@ -1,5 +1,7 @@
 class ScrnM4203BulletFire extends ScrnM4Fire;
 
+var ScrnM4203AssaultRifle ScrnWeap; // avoid typecasting
+
 var int BurstSize;
 var transient int BurstShotCount;       //how many bullets were fired in the current burst?
 var transient float FireBurstEndTime;   //this is just to be sure we don't stuck inside FireBurst state, if shit happens
@@ -9,8 +11,14 @@ function PlayFiring() { }
 function PlayFireEnd() { }
 function ServerPlayFiring() { }
 
+function PostBeginPlay()
+{
+    super.PostBeginPlay();
+    ScrnWeap = ScrnM4203AssaultRifle(Weapon);
+}
 
 
+// client-side state
 state WaitingForFireButtonRelease
 {
     ignores PlayFiring, ServerPlayFiring, PlayFireEnd, ModeDoFire;
@@ -18,8 +26,7 @@ state WaitingForFireButtonRelease
     function ModeTick(float dt)
     {
         // allow fire as soon as player releases a fire button
-        if ( Weapon.Instigator == none || Weapon.Instigator.Controller == none
-                || Weapon.Instigator.Controller.bFire == 0 )
+        if (Instigator == none || Instigator.Controller == none || Instigator.Controller.bFire == 0)
             GotoState('');
     }
 }
@@ -31,8 +38,6 @@ state FireBurst
 
     function BeginState()
     {
-        //log ("ScrnM4Fire.FireBurst BEGIN STATE", 'ScrnBalance');
-
         BurstShotCount = 0;
         NextFireTime = Level.TimeSeconds - 0.000001; //fire now!
         FireBurstEndTime = Level.TimeSeconds + ( FireRate * BurstSize ) + 0.1; // if shit happens - get us out of this state when this time hits
@@ -51,8 +56,6 @@ state FireBurst
 
     function EndState()
     {
-        //log ("ScrnM4Fire.FireBurst END STATE", 'ScrnBalance');
-
         super.PlayFireEnd();
         Weapon.AnimStopLooping();
         PlayAmbientSound(none);
@@ -67,7 +70,7 @@ state FireBurst
             Weapon.PlayOwnedSound(FireEndSound,SLOT_None,AmbientFireVolume/127,,AmbientFireSoundRadius);
         }
 
-        ScrnM4203AssaultRifle(Weapon).ReallyStopFire(ThisModeNum);
+        ScrnWeap.ReallyStopFire(ThisModeNum);
         bIsFiring = false; // tbs
     }
 
@@ -87,9 +90,10 @@ state FireBurst
         //log ("ScrnM4Fire.FireBurst.ModeTick()", 'ScrnBalance');
         Super.ModeTick(dt);
 
-        if ( !bIsFiring || !AllowFire() )
+        if (!bIsFiring || !AllowFire()) {
             GotoState('');
-        else if ( Level.TimeSeconds > FireBurstEndTime ) {
+        }
+        else if (Level.TimeSeconds > FireBurstEndTime) {
             GotoState('');
             log("ScrnM4203BulletFire stuck inside FireBurst state after making "$BurstShotCount$" shots! Getting us out of it.", 'ScrnBalance');
         }
@@ -145,21 +149,18 @@ state FireBurst
         Super(WeaponFire).ModeDoFire();
 
         // client
-        if (Instigator.IsLocallyControlled())
-        {
-            if( bDoClientRagdollShotFX && Weapon.Level.NetMode == NM_Client )
-            {
+        if (Instigator.IsLocallyControlled()) {
+            if (bDoClientRagdollShotFX && Weapon.Level.NetMode == NM_Client) {
                 DoClientOnlyFireEffect();
             }
             HandleRecoil(Rec);
         }
 
-        if ( ++BurstShotCount >= BurstSize ) {
+        if (++BurstShotCount >= BurstSize) {
             //log ("ScrnM4203BulletFire.ChangeFireBurstState", 'ScrnBalance');
             //don't go to WaitingForFireButtonRelease state on server
-            if ( Weapon.Instigator == none || Weapon.Instigator.Controller == none
-                    || !Weapon.Instigator.IsLocallyControlled() || Weapon.Instigator.Controller.bFire == 0
-                    || KFWeapon(Weapon).MagAmmoRemaining < 1 || ScrnM4203AssaultRifle(Weapon).bTriggerReleased )
+            if (!Instigator.IsLocallyControlled() || Instigator.Controller.bFire == 0
+                    || ScrnWeap.MagAmmoRemaining < 1 || ScrnWeap.bTriggerReleased)
                 GotoState('');
             else
                 GotoState('WaitingForFireButtonRelease');

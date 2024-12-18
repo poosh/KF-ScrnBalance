@@ -22,6 +22,7 @@ var automated ScrnTraderRequirementsListBox ItemRequirements;
 var automated ScrnTraderGiveDoshPanel GiveDoshPanel;
 var localized string strSelectedItemRequirements;
 var localized string strIntoScrnLocked;
+var transient string LastInfoText;
 var byte InfoPageNum, ForceInfoPageNum, InfoPageCount;
 var localized string SaleButtonCaption, strSale0, strNoSale;
 var localized string PurchaseButtonCaption;
@@ -73,6 +74,7 @@ function ShowPanel(bool bShow)
     super(UT2K4TabPanel).ShowPanel(bShow);
 
     if ( !bShow ) {
+        SetCustomInfoText("");
         SetTimer(0, false);
         return;
     }
@@ -138,7 +140,7 @@ function SetInfoText()
     // if (OldPickupClass == TheBuyable.ItemPickupClass)
     //     return;
 
-    if ( InfoPageNum == 1 ) {
+    if (InfoPageNum == INFOPAGE_ITEM_REQUIREMENTS) {
         // Custom lock
         SetCustomInfoText(strIntoScrnLocked);
     }
@@ -423,7 +425,14 @@ function UpdateAll()
 {
     if ( PerkLink != none )
         PerkLink.ParseLocks();
-    super.UpdateAll();
+
+    InvSelect.List.UpdateMyBuyables();
+    SaleSelect.List.UpdateForSaleBuyables();
+
+    RefreshSelection();
+    // GetUpdatedBuyable();
+    UpdatePanel();
+
     LastShopUpdateCounter = ScrnPawn.ShopUpdateCounter;
     LastDosh = int(KFPRI.Score);
     LastTeamDosh = int(KFPRI.Team.Score);
@@ -438,7 +447,7 @@ function UpdateAmmo()
 {
     ScrnBuyMenuInvList(InvSelect.List).UpdateMyAmmo();
 
-    RefreshSelection();
+    // RefreshSelection();
     GetUpdatedBuyable();
     UpdatePanel();
 }
@@ -541,11 +550,22 @@ function OnPlayerDoshRequest(PlayerReplicationInfo SenderPRI, string Msg)
     if (ScrnPC.bAutoOpenGiveDosh && ForceInfoPageNum != INFOPAGE_GIVE_DOSH) {
         GiveDoshClick(none);
     }
-    SetCustomInfoText(class'ScrnF'.static.ColoredPlayerName(SenderPRI) $ ": " $ Msg);
+    SetCustomInfoText(class'ScrnF'.static.ColoredPlayerName(SenderPRI) $ ": " $ Msg, true);
 }
 
-function SetCustomInfoText(string Text)
+function SetCustomInfoText(string Text, optional bool bClearSelection)
 {
+    if (LastInfoText == Text)
+        return;
+
+    if (bClearSelection) {
+        InvSelect.List.Index = -1;
+        SaleSelect.List.Index = -1;
+        TheBuyable = none;
+        bDidBuyableUpdate = true;
+    }
+
+    LastInfoText = Text;
     InfoScrollText.SetContent(class'ScrnF'.static.ParseColorTags(Text));
 }
 

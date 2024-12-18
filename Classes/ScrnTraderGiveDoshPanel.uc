@@ -54,10 +54,11 @@ function onGiveDoshDialogClose(ScrnMessageBox msg, bool bCancel)
     if (ScrnPC.GUI_PRI != none) {
         BuyMenu.SetCustomInfoText(Repl(Repl(ScrnPC.ScrnPawn.strDoshTransferToPlayer,
             "%$", string(dialog.Dosh)),
-            "%p", class'ScrnF'.static.ColoredPlayerName(ScrnPC.GUI_PRI)));
+            "%p", class'ScrnF'.static.ColoredPlayerName(ScrnPC.GUI_PRI))
+            , true);
     }
     else {
-        BuyMenu.SetCustomInfoText(Repl(ScrnPC.ScrnPawn.strDoshTransferToTeam, "%$", string(dialog.Dosh)));
+        BuyMenu.SetCustomInfoText(Repl(ScrnPC.ScrnPawn.strDoshTransferToTeam, "%$", string(dialog.Dosh)), true);
     }
 }
 
@@ -67,7 +68,7 @@ function GiveDoshTo(PlayerReplicationInfo PRI)
     local ScrnTraderGiveDoshDialog dialog;
 
     if (int(PlayerOwner().PlayerReplicationInfo.Score) <= 0) {
-        BuyMenu.SetCustomInfoText(strNoDosh);
+        BuyMenu.SetCustomInfoText(strNoDosh, true);
     }
 
     dialog = class'ScrnTraderGiveDoshDialog'.static.ShowMe(ScrnPlayerController(PlayerOwner()), PRI);

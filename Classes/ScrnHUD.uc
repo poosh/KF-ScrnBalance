@@ -184,6 +184,9 @@ var color TextColors[2];
 var localized string strPendingItems;
 var material ChatIcon;
 
+var Material WaveCircleClockBG[2];
+var Material WaveCircleBG[2];
+
 var bool bZedHealthShow;
 var bool bDebugSpectatingHUD;
 
@@ -2941,6 +2944,38 @@ simulated function DrawSpectatingHud(Canvas C)
         DrawDamage(C);
 }
 
+simulated function DrawWaveCircle(Canvas C, Material M, float CircleSize)
+{
+    local float alpha;
+    local int alphaSize, matSize;
+
+    if (ScrnGRI != none && ScrnGRI.ZedTimeValue < ScrnGRI.ZedTimeValueScale && ScrnPC != none) {
+        if (ScrnPC.bZEDTimeActive) {
+            alpha = (Level.TimeSeconds - ScrnPC.ZedTimeStart) * 1.1/Level.TimeDilation / ScrnGRI.ZEDTimeDuration;
+        }
+        else {
+            alpha = 1.0 - ScrnGRI.ZedTimeValue / ScrnGRI.ZedTimeValueScale;
+        }
+        alphaSize = CircleSize * alpha;
+        matSize = 256 * alpha;
+    }
+
+    if (alphaSize > 0 && matSize > 0) {
+        C.SetDrawColor(255, 255, 255, 128);
+        C.SetPos(C.ClipX - CircleSize, 2);
+        C.DrawTile(M, CircleSize, alphaSize, 0, 0, 256, matSize);
+
+        C.SetDrawColor(255, 255, 255, 255);
+        C.SetPos(C.ClipX - CircleSize, 2 + alphaSize);
+        C.DrawTile(M, CircleSize, CircleSize - alphaSize, 0, matSize, 256, 256 - matSize);
+    }
+    else {
+        C.SetDrawColor(255, 255, 255, KFHUDAlpha);
+        C.SetPos(C.ClipX - CircleSize, 2);
+        C.DrawTile(M, CircleSize, CircleSize, 0, 0, 256, 256);
+    }
+}
+
 simulated function DrawKFHUDTextElements(Canvas C)
 {
     local float    XL, YL;
@@ -2963,9 +2998,7 @@ simulated function DrawKFHUDTextElements(Canvas C)
     // Countdown Text
     if( !KFGRI.bWaveInProgress || (ScrnGRI != none && ScrnGRI.WaveEndRule == 2 /*RULE_Timeout*/ ) )
     {
-        C.SetDrawColor(255, 255, 255, 255);
-        C.SetPos(C.ClipX - CircleSize, 2);
-        C.DrawTile(Material'KillingFloorHUD.HUD.Hud_Bio_Clock_Circle', CircleSize, CircleSize, 0, 0, 256, 256);
+        DrawWaveCircle(C, WaveCircleClockBG[TeamIndex], CircleSize);
 
         Counter = KFGRI.TimeToNextWave / 60;
         NumZombies = KFGRI.TimeToNextWave - (Counter * 60);
@@ -2978,9 +3011,7 @@ simulated function DrawKFHUDTextElements(Canvas C)
         C.DrawText(S, False);
     }
     else {
-        C.SetDrawColor(255, 255, 255, 255);
-        C.SetPos(C.ClipX - CircleSize, 2);
-        C.DrawTile(Material'KillingFloorHUD.HUD.Hud_Bio_Circle', CircleSize, CircleSize, 0, 0, 256, 256);
+        DrawWaveCircle(C, WaveCircleBG[TeamIndex], CircleSize);
 
         Counter = KFGRI.MaxMonsters;
         if (ScrnGRI != none) {
@@ -4202,4 +4233,9 @@ defaultproperties
     MARK_WEAPON=49          // 0x31
     MARK_ARMOR=50           // 0x32
     MARK_HEALTH=51          // 0x33
+
+    WaveCircleClockBG[0]=Material'KillingFloorHUD.HUD.Hud_Bio_Clock_Circle'
+    WaveCircleClockBG[1]=Material'KillingFloorHUD.HUD.Hud_Bio_Clock_Circle'
+    WaveCircleBG[0]=Material'KillingFloorHUD.HUD.Hud_Bio_Circle'
+    WaveCircleBG[1]=Material'KillingFloorHUD.HUD.Hud_Bio_Circle'
 }

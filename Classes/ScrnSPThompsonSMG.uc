@@ -9,7 +9,7 @@ var transient bool bTweeningBolt;
 var transient bool bBoltClosed;
 var float TweenEndTime;
 var vector ChargingHandleOffset; //for tactical reload
-    
+
 replication
 {
     reliable if(Role < ROLE_Authority)
@@ -22,10 +22,10 @@ simulated function BringUp(optional Weapon PrevWeapon)
     if (bBoltClosed)
         MoveBoltForward();
 }
-    
-simulated function AltFire(float F) 
+
+simulated function AltFire(float F)
 {
-    // disable semi-auto mode
+    DoToggle();
 }
 
 simulated function ResetBoltPosition()

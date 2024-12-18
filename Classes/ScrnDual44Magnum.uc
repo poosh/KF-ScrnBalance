@@ -2,8 +2,9 @@ class ScrnDual44Magnum extends Dual44Magnum;
 
 var transient ScrnMagnum44Pistol SingleGun;
 var byte LeftGunAmmoRemaining;  // ammo in the left pistol. Left pistol always has more or equal bullets than the right one
+var bool bConsumeLeft;
 var transient int OtherGunAmmoRemaining; // ammo remaining in the other gun while holding a single pistol
-var transient int OutOfOrderShots;  // equalize ammo in case when a single pistol was used before
+var deprecated int OutOfOrderShots;  // equalize ammo in case when a single pistol was used before
 var transient bool bFindSingleGun;
 var transient bool bBotControlled;
 var bool bDoubleAmmo;
@@ -181,7 +182,7 @@ function bool ConsumeAmmo( int Mode, float Load, optional bool bAmountNeededIsMa
         return false;
 
     if ( Load > 0 && (Mode == 0 || bReduceMagAmmoOnSecondaryFire) ) {
-        if (LeftGunAmmoRemaining > RightGunAmmoRemaining() && LeftGunAmmoRemaining > 0 ) {
+        if (bConsumeLeft && LeftGunAmmoRemaining > 0 ) {
             // LeftGunAmmoRemaining is byte (unsigned). Make sure to not overlap.
             --LeftGunAmmoRemaining;
         }
@@ -382,7 +383,6 @@ simulated function SyncDualFromSingle()
     // left gun ammo must be >= right gun. If not - silently swap magazines
     // Because the short reload animation assumes that the left gun is full
     LeftGunAmmoRemaining = max(OtherGunAmmoRemaining, SingleGun.MagAmmoRemaining);
-    OutOfOrderShots = max(0, LeftGunAmmoRemaining - RightGunAmmoRemaining() - 1);
     SetPistolFireOrder();
 }
 
@@ -654,6 +654,7 @@ function ReplicateAmmo()
 
     a = AmmoAmount(0);
     ClientReplicateAmmo(MagAmmoRemaining, LeftGunAmmoRemaining, a, a >> 8);
+    SetPistolFireOrder();
 }
 
 simulated protected function ClientReplicateAmmo(byte SrvMagAmmoRemaining, byte SrvLeftGunAmmoRemaining,

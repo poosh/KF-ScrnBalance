@@ -240,10 +240,6 @@ simulated function HurtRadius( float DamageAmount, float DamageRadius, class<Dam
             if ( bDamagedInstigator && (Instigator == none || Instigator.Health <= 0) )
                 class'ScrnAchCtrl'.static.ProgressAchievementByID(Stats.Rep, 'MadeinChina', 1);
         }
-
-        if( NumKilled >= 2 ) {
-            KFGameType(Level.Game).DramaticEvent(0.02 * NumKilled);
-        }
     }
 
     bHurtEntry = false;

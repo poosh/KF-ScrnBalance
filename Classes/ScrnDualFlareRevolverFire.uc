@@ -12,6 +12,7 @@ function PostBeginPlay()
 function SetPistolFireOrder(bool bNextFireLeft)
 {
     bFireLeft = bNextFireLeft;
+    ScrnWeap.bConsumeLeft = bFireLeft;
 
     if (bFireLeft)
     {
@@ -46,11 +47,7 @@ event ModeDoFire()
     super(KFShotgunFire).ModeDoFire();
 
     InitEffects();
-    if (ScrnWeap.OutOfOrderShots > 0) {
-        ScrnWeap.OutOfOrderShots--;
-        bFireLeft = false;  // gets swaped below
-    }
-    SetPistolFireOrder(!bFireLeft);
+    SetPistolFireOrder(!bFireLeft || ScrnWeap.RightGunAmmoRemaining() == 0);
 }
 
 defaultproperties
