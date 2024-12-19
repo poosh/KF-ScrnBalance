@@ -38,7 +38,7 @@ static function float GetFireSpeedModStatic(KFPlayerReplicationInfo KFPRI, class
 
 static function int ZedTimeExtensions(KFPlayerReplicationInfo KFPRI)
 {
-    return Min(GetClientVeteranSkillLevel(KFPRI), 6);
+    return clamp(GetClientVeteranSkillLevel(KFPRI), 1, 5);
 }
 
 static function float GetWeaponMovementSpeedBonus(KFPlayerReplicationInfo KFPRI, Weapon Weap)
@@ -116,7 +116,7 @@ static function string GetCustomLevelInfo( byte Level )
     S = Repl(S,"%x",GetPercentStr(0.30 + 0.05*Level), true);
     S = Repl(S,"%a",GetPercentStr(0.05*Level), true);
     S = Repl(S,"%v",GetPercentStr(fmin(0.60, 0.30 + 0.05*Level)), true);
-    S = Repl(S,"%z",string(clamp(Level,1,6)), true);
+    S = Repl(S,"%z",string(clamp(Level,1,5)), true);
     S = Repl(S,"%$",GetPercentStr(fmin(0.90, 0.30 + 0.05*Level)), true);
     return S;
 }

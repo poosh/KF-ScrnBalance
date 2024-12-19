@@ -39,6 +39,7 @@ var transient int               CurLeftGunAmmo; // for dual wield: ammo in the l
 var transient bool              bLeftGunLowAmmo;
 var transient bool              bRightGunLowAmmo;
 
+var config bool                 bShowCowboyMode;
 var() texture                   texCowboy;
 var() config float              CowboyTileWidth;
 var() float                     CowboyTileY;
@@ -456,8 +457,9 @@ simulated function DrawHudPassA (Canvas C)
 {
     DrawStoryHUDInfo(C);
     DrawDoorHealthBars(C);
-    if ( ScrnPawnOwner != none && ScrnPawnOwner.bCowboyMode && !bShowScoreBoard && !bSpectating )
+    if (bShowCowboyMode && ScrnPawnOwner != none && ScrnPawnOwner.bCowboyMode && !bShowScoreBoard && !bSpectating) {
         DrawCowboyMode(C);
+    }
 
     if ( bCoolHudActive ) {
         // draw new HUD
@@ -4031,6 +4033,7 @@ defaultproperties
     MinMagCapacity=5
     LowAmmoPercent=0.250
     bLowAmmoColorSwitch=true
+    bShowCowboyMode=true
     texCowboy=Texture'ScrnTex.HUD.CowboyMode'
     CowboyTileY=0.02
     CowboyTileWidth=0.250

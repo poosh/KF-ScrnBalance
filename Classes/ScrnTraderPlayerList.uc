@@ -100,10 +100,10 @@ function UpdateList()
     local TeamInfo myTeam;
 
     myPRI = PlayerOwner().PlayerReplicationInfo;
-    Players.length = 0;
     MyTeam = PlayerOwner().PlayerReplicationInfo.Team;
+    Players.length = 0;
 
-    if (KFPRI != none) {
+    if (KFGRI != none) {
         for (i = 0; i < KFGRI.PRIArray.Length; ++i) {
             KFPRI = KFPlayerReplicationInfo(KFGRI.PRIArray[i]);
             if (KFPRI == none || KFPRI.PlayerID <= 0 || KFPRI.PlayerHealth <= 0 || KFPRI == myPRI || KFPRI.Team != myTeam)

@@ -3800,7 +3800,7 @@ exec function DebugButtons() {
 
 defaultproperties
 {
-    bManualReload=True
+    bManualReload=False
     DamageAck=1  // make show the default value is the same as ScrnHUD.ShowDamages
     DamageNumbersClass=class'ScrnDamageNumbers'
     AchievementDisplayCooldown=5.000000

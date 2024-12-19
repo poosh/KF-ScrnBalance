@@ -67,6 +67,7 @@ var class<ScrnCashPickup> TossedCashClass;
 var localized string strNoSpawnCashToss;
 var localized string strDoshTransferToPlayer;
 var localized string strDoshTransferToTeam;
+var localized string strDoshReceivedFromPlayer;
 
 struct SWeaponFlashlight {
     var class<KFWeapon> WeaponClass;
@@ -156,7 +157,7 @@ replication
         ServerBuyShield, ServerSellShield, ServerDoshTransfer;
 
     reliable if(Role < ROLE_Authority)
-        ServerReload, ServerFire;
+        ServerReload, ServerFire, ServerRequestAutoReload;
 }
 
 simulated function PostBeginPlay()
@@ -2166,6 +2167,16 @@ simulated function ThrowGrenadeFinished()
     bThrowingNade = false;
 }
 
+function ServerRequestAutoReload()
+{
+    local KFWeapon W;
+
+    W = KFWeapon(Weapon);
+    if (W != none && W.MagAmmoRemaining < W.GetFireMode(0).AmmoPerFire && W.AllowReload()) {
+        W.ReloadMeNow();
+    }
+}
+
 // disable automatic reloading
 simulated function Fire( optional float F )
 {
@@ -2175,15 +2186,20 @@ simulated function Fire( optional float F )
         return;
 
     W = KFWeapon(Weapon);
-    if ( ScrnPC != none && ScrnPC.bManualReload && W != none && !W.bMeleeWeapon && W.bConsumesPhysicalAmmo
-            && !W.bIsReloading && !W.bHoldToReload
-            && W.MagCapacity > 1 && W.MagAmmoRemaining < W.GetFireMode(0).AmmoPerFire ) {
-        if ( W.AmmoAmount(0) == 0 )
-            ScrnPC.ReceiveLocalizedMessage(class'ScrnPlayerWarningMessage',1);
-        else
-            ScrnPC.ReceiveLocalizedMessage(class'ScrnPlayerWarningMessage',0);
-        W.PlayOwnedSound(W.GetFireMode(0).NoAmmoSound, SLOT_None,2.0,,,,false); //play weapon's no ammo sound
-        W.GetFireMode(0).ModeDoFire(); //force weapon's mode do fire
+    if (W != none && !W.bMeleeWeapon && W.MagAmmoRemaining < W.GetFireMode(0).AmmoPerFire
+            && W.MagCapacity > 1 && W.bConsumesPhysicalAmmo && !W.bIsReloading && !W.bHoldToReload)
+    {
+        if (ScrnPC != none && ScrnPC.bManualReload) {
+            if ( W.AmmoAmount(0) == 0 )
+                ScrnPC.ReceiveLocalizedMessage(class'ScrnPlayerWarningMessage',1);
+            else
+                ScrnPC.ReceiveLocalizedMessage(class'ScrnPlayerWarningMessage',0);
+            W.PlayOwnedSound(W.GetFireMode(0).NoAmmoSound, SLOT_None,2.0,,,,false); //play weapon's no ammo sound
+            W.GetFireMode(0).ModeDoFire(); //force weapon's mode do fire
+        }
+        else {
+            ServerRequestAutoReload();
+        }
         return;
     }
 
@@ -2893,6 +2909,11 @@ function ServerDoshTransfer(int Amount, optional PlayerReplicationInfo Receiver)
         ClientMessage(Repl(Repl(strDoshTransferToPlayer,
                 "%$", string(Amount)),
                 "%p", class'ScrnF'.static.ColoredPlayerName(Receiver)));
+
+        if (PlayerController(Receiver.Owner) != none) {
+            PlayerController(Receiver.Owner).TeamMessage(PlayerReplicationInfo, Repl(strDoshReceivedFromPlayer,
+                    "%$", string(Amount)), 'TeamSay');
+        }
     }
     else if (PlayerReplicationInfo.Team != none) {
         PlayerReplicationInfo.Team.Score += Amount;
@@ -3347,8 +3368,9 @@ defaultproperties
     ShieldStrengthMax=0.000000
     bCheckHorzineArmorAch=true
     strNoSpawnCashToss="Can not drop starting cash"
-    strDoshTransferToPlayer="^g$$%$ ^w$transfered to ^g$%p"
-    strDoshTransferToTeam="^g$$%$ ^w$transfered to the ^g$Team Wallet"
+    strDoshTransferToPlayer="^y$$%$ ^w$transfered to ^g$%p"
+    strDoshTransferToTeam="^y$$%$ ^w$transfered to the ^g$Team Wallet"
+    strDoshReceivedFromPlayer="transfered to you ^g$$%$"
     TossedCashClass=class'ScrnCashPickup'
     HeadshotSound=sound'ProjectileSounds.impact_metal09'
     AccelRate=1500

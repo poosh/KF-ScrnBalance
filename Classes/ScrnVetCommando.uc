@@ -121,7 +121,7 @@ static function float GetReloadSpeedModifierStatic(KFPlayerReplicationInfo KFPRI
 // Set number times Zed Time can be extended
 static function int ZedTimeExtensions(KFPlayerReplicationInfo KFPRI)
 {
-    return min(10, 2 + GetClientVeteranSkillLevel(KFPRI)/3); // 2 base + 1 extention per 3 levels
+    return min(6, 2 + GetClientVeteranSkillLevel(KFPRI)/3); // 2 base + 1 extension per 3 levels
 }
 
 // Change the cost of particular items
@@ -155,7 +155,7 @@ static function string GetCustomLevelInfo( byte Level )
     S = Default.CustomLevelInfo;
     S = Repl(S, "%L", string(Level), true);
     S = Repl(S, "%x", GetPercentStr(0.30 + 0.05*Level), true);
-    S = Repl(S, "%z", string(min(10, 2 + Level/3)), true);
+    S = Repl(S, "%z", string(min(6, 2 + Level/3)), true);
     S = Repl(S, "%$", GetPercentStr(fmin(0.90, 0.30 + 0.05*Level)), true);
     return S;
 }
