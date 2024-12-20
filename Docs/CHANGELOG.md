@@ -30,15 +30,15 @@
 
 -------------------------------------------------------------------------------
 ## v9.71.03
-- **Predictable Zed Time** - see `ZedTimeTrigger` in *ScrnBalanceSrc.ini*
+- **Predictable Zed Time** - see `ZedTimeTrigger` in *ScrnBalanceSrv.ini*
 - Per-game Zed Time settings: `ZedTimeTrigger`, `ZedTimeChanceMult`, `ZedTimeDuration` in *ScrnGames.ini*
 - Default Zed Time duration incereased to 4s (up from 3s) to allow weapon switch within ZT
 - The original ZT duration can be restored by setting `ZedTimeDuration` in *ScrnBalanceSrv.ini* or *ScrnGames.ini*
 - New perk function `ScrnVeterancyTypes.GetZedTimeChance()` - can be ovverrided by custom ScrN perks to modify ZT chance on a zed kill.
 - **Combat Medic**: reduced Zed Time extensions to 5 (down from 6) to compensate for ZT duration increase
-- Fixed M4-203 burst fire during Zed Time
+- Fixed **M4-203** burst fire during Zed Time
 - Changed dual pistol fire order when switched from the single pistol
-- Restored S/A fire mode of Tommy Gun SP & RS (community request)
+- Restored S/A fire mode of **Tommy Gun** SP & RS (community request)
 - **Manual Reload** disabled by default (community request). ScrN veterans already have it enabled, while newcomers may struggle to find R on the keyboard. I cannot believe I'm doing this :facepalm:
 - Fixed the double reload bug where a tactical reload could trigger immediately after the full reload when Manual Reload disabled.
 - Added `bShowCowboyMode` to *ScrnUser.ini* (enabled by default)
@@ -46,7 +46,7 @@
 - **DDT**: Fixed `ScrnTraderPlayerList.KFGRI` null reference warning (thanks [That1Guy])
 - New map alias: `KF-Steamland_Fogged` => `KF-Steamland` (*ScrnBalanceSrv.ini*)
 - **Escape The Hunter v1.02** - "Finish them off" waves changed to "Kill half zeds"
-- Circus Husk disabled by default due to similarity to Tesla Husk. It still can be restored in *ScrnZeds.ini*
+- **Circus Husk** disabled by default due to similarity to Tesla Husk. It still can be restored in *ScrnZeds.ini*
 
 ## v9.71.01
 - **Support Specialist** gained extra damage bonus against Gorefasts.
