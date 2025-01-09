@@ -531,11 +531,10 @@ function GiveMapAchievements(optional String MapName)
     }
     else if ( !Mut.bTSCGame ) {
         bGiveHardAch = HardcoreLevel >= 5 && HasCustomZeds();
-        bGiveSuiAch = HardcoreLevel >= 10 && ( Mut.KF.IsA('TurboGame')
-                || Mut.KF.KFGameLength == 9     // Nightmare
+        bGiveSuiAch = HardcoreLevel >= 10 && (Mut.KF.IsA('FtgGame')
+                || Mut.KF.KFGameLength == 52    //  Escape the Hunter
                 || Mut.KF.KFGameLength >= 60);  // SocIso +
-        bGiveHoeAch = HardcoreLevel >= 15 && ( Mut.KF.IsA('FtgGame')
-                || GameDoom3Kills > 0           // any doom game
+        bGiveHoeAch = HardcoreLevel >= 15 && (GameDoom3Kills > 0  // any doom game
                 || Mut.KF.KFGameLength == 7     // XCM
                 || Mut.KF.KFGameLength == 9);   // Nightmare
     }

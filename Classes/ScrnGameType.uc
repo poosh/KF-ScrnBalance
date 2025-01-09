@@ -130,6 +130,8 @@ var protected transient ZombieVolume DebugZVols[5];
 var protected transient Color DebugZVolColors[5];
 var protected transient int NextDebugZVolIndex;
 
+delegate CustomDramaticEvent(float Chance, optional float DesiredZedTimeDuration);
+
 // InitGame() gets called before PreBeginPlay()! Therefore, GameReplicationInfo does not exist yet.
 event InitGame( string Options, out string Error )
 {
@@ -275,6 +277,8 @@ function InitGameReplicationInfo()
             ScrnGRI.ZedTimeValue = 0;
         }
     }
+
+    log("ZedTimeTrigger=" $ ZedTimeTrigger $ " ChanceMult=" $ ZedTimeChanceMult $ " Duration=" $ ZEDTimeDuration, class.name);
 }
 
 function InitLevelRules()
@@ -911,20 +915,19 @@ function DramaticEvent(float Chance, optional float DesiredZedTimeDuration)
 {
     local float TimeSinceLastEvent;
 
-    if (!bZedTimeEnabled || Chance <= 0)
+    if (!bZedTimeEnabled || Chance <= 0 || ZedTimeTrigger == ZT_Disabled)
         return;
 
     if (Chance >= 1.0) {
         StartZedTime(DesiredZedTimeDuration);
         return;
     }
+    if (bZEDTimeActive)
+        return;
 
     Chance *= ZedTimeChanceMult;
 
     switch (ZedTimeTrigger) {
-        case ZT_Disabled:
-            return;
-
         case ZT_Bucket:
         case ZT_HiddenBucket:
             ZedTimeValue += Chance;
@@ -935,6 +938,10 @@ function DramaticEvent(float Chance, optional float DesiredZedTimeDuration)
             if (ZedTimeValue >= 1.0) {
                 StartZedTime(DesiredZedTimeDuration);
             }
+            break;
+
+        case ZT_Custom:
+            CustomDramaticEvent(Chance, DesiredZedTimeDuration);
             break;
 
         // ZT_Default
@@ -4232,6 +4239,8 @@ defaultproperties
 
     bKillMessages=true
     bZedTimeEnabled=true
+    ZedTimeTrigger=ZT_Bucket
+    ZedTimeDuration=4
     ZedTimeChanceMult=1.0
     ZedTimeChance=0.02
     ZedTimeChanceBigZed=0.07
@@ -4239,7 +4248,6 @@ defaultproperties
     ZedTimeChancePointBlank=0.03
     bAntiBlocker=true
     MAX_DIST_SQ=1.0e37
-    ZedTimeTrigger=ZT_Random
 
     LogZedSpawnLevel=4  // LOG_INFO
     MaxSpawnAttempts=3

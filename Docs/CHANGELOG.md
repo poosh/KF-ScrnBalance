@@ -29,6 +29,15 @@
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+## v9.71.04
+- Adjusted game modes for map achievement requirements:
+  - Suicidal: FTG, ESC (Escape The Hunter), Social Isolation, or any custom game (GameLength >= 60)
+  - HoE: XCM, Nightmare, Doom3
+- Players cannot fill the next Zed Time Bucket while the Zed Time is active.
+- Fixed `ZedTimeTrigger` in *ScrnBalanceSrv.ini*
+- Added `ZedTimeChanceMult` to *ScrnBalanceSrv.ini*, too. Previously, it was available only in *ScrnGames.ini*
+- Added `ZT_Custom` for modders to override Zed Time behavior.
+
 ## v9.71.03
 - **Predictable Zed Time** - see `ZedTimeTrigger` in *ScrnBalanceSrv.ini*
 - Per-game Zed Time settings: `ZedTimeTrigger`, `ZedTimeChanceMult`, `ZedTimeDuration` in *ScrnGames.ini*

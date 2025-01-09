@@ -2958,6 +2958,7 @@ simulated function DrawWaveCircle(Canvas C, Material M, float CircleSize)
         else {
             alpha = 1.0 - ScrnGRI.ZedTimeValue / ScrnGRI.ZedTimeValueScale;
         }
+        alpha = fclamp(alpha, 0.0, 1.0);
         alphaSize = CircleSize * alpha;
         matSize = 256 * alpha;
     }

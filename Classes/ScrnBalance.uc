@@ -208,7 +208,18 @@ var transient byte CurrentEventNum;
 var globalconfig bool bForceEvent;
 var globalconfig bool bResetSquadsAtStart; // calls ScrnGameRules.ResetSquads() at map start
 var globalconfig bool bStoryZedPack;
-var globalconfig ScrnTypes.EZedTimeTrigger ZedTimeTrigger;
+
+// Ensure the enum values are sunced with ScrnTypes!
+enum EZedTimeTriggerCopyCuzUnrealScriptSucksDicks {
+    ZT_Default,
+    ZT_Random,
+    ZT_Bucket,
+    ZT_HiddenBucket,
+    ZT_Disabled,
+    ZT_Custom
+};
+var globalconfig EZedTimeTriggerCopyCuzUnrealScriptSucksDicks ZedTimeTrigger;
+var globalconfig float ZedTimeChanceMult;
 var globalconfig byte ZedTimeDuration;
 
 var globalconfig bool bAutoKickOffPerkPlayers;
@@ -2446,7 +2457,9 @@ function PostBeginPlay()
         ScrnGT.ScrnBalanceMut = self;
         MaxDifficulty = ScrnGT.DIFF_MAX;
         if (ZedTimeTrigger != ZT_Default) {
-            ScrnGT.ZedTimeTrigger = ZedTimeTrigger;
+            // ZTT =
+            ScrnGT.ZedTimeTrigger = EZedTimeTrigger(ZedTimeTrigger);
+            ScrnGT.ZedTimeChanceMult = fmax(ZedTimeChanceMult, 0.0);
             ScrnGT.ZEDTimeDuration = clamp(ZedTimeDuration, 3, 240);
         }
     }
@@ -3223,7 +3236,7 @@ function RegisterVersion(string ItemName, int Version)
 
 defaultproperties
 {
-    VersionNumber=97103
+    VersionNumber=97104
     GroupName="KF-Scrn"
     FriendlyName="ScrN Balance"
     Description="Total rework of KF1 to make it modern and the best tactical coop in the world while sticking to the roots of the original."
@@ -3284,7 +3297,8 @@ defaultproperties
     bForceEvent=true
     bResetSquadsAtStart=false
     bStoryZedPack=true
-    ZedTimeTrigger=ZT_Bucket
+    ZedTimeTrigger=ZT_Default
+    ZedTimeChanceMult=1.0
     ZedTimeDuration=4
 
     ForcedMaxPlayers=0
