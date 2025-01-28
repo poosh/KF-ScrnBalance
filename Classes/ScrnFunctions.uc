@@ -2,6 +2,14 @@ class ScrnFunctions extends ScrnF
     abstract;
 
 
+/** Calculates the multiplier to act at real-time speed during a Zed Time.
+ *  @return the action speed multiplier.
+ */
+static function float RealTimeFactor(LevelInfo Level)
+{
+    return fmax(1.1 / Level.TimeDilation, 1.0);
+}
+
 static function class<ScrnVeterancyTypes> FindPerkByName(ClientPerkRepLink L, string VeterancyNameOrIndex)
 {
     local int i;

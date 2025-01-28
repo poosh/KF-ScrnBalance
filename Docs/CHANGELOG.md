@@ -29,6 +29,9 @@
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+## v9.71.05
+- Fixed and issue where **DDT** did not increase the "Donated Cash" stat
+
 ## v9.71.04
 - Adjusted game modes for map achievement requirements:
   - Suicidal: FTG, ESC (Escape The Hunter), Social Isolation, or any custom game (GameLength >= 60)

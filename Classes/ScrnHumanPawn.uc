@@ -2892,12 +2892,17 @@ exec function TossCash( int Amount )
 function ServerDoshTransfer(int Amount, optional PlayerReplicationInfo Receiver)
 {
     local ScrnCustomPRI ScrnPRI;
+    local KFSteamStatsAndAchievements SteamStats;
+
+    if (PlayerReplicationInfo == Receiver)
+        return;  // wtf? Transfering dosh to ourselves?
 
     Amount = min(Amount, PlayerReplicationInfo.Score);
     if (Amount <= 0)
         return;
 
     ScrnPRI = class'ScrnCustomPRI'.static.FindMe(PlayerReplicationInfo);
+    SteamStats = KFSteamStatsAndAchievements(ScrnPC.SteamStatsAndAchievements);
 
     if (Receiver != none) {
         if (!ScrnPC.Mut.GameRules.AllowDoshTransfer(self, Receiver, Amount)) {
@@ -2914,12 +2919,19 @@ function ServerDoshTransfer(int Amount, optional PlayerReplicationInfo Receiver)
             PlayerController(Receiver.Owner).TeamMessage(PlayerReplicationInfo, Repl(strDoshReceivedFromPlayer,
                     "%$", string(Amount)), 'TeamSay');
         }
+
+        if (SteamStats != none) {
+            SteamStats.AddDonatedCash(Amount);
+        }
     }
     else if (PlayerReplicationInfo.Team != none) {
         PlayerReplicationInfo.Team.Score += Amount;
         PlayerReplicationInfo.Score -= Amount;
         ClientMessage(Repl(strDoshTransferToTeam, "%$", string(Amount)));
         PlayerReplicationInfo.Team.NetUpdateTime = Level.TimeSeconds - 1;
+        if (SteamStats != none &&  PlayerReplicationInfo.Team.Size > 1) {
+            SteamStats.AddDonatedCash(Amount);
+        }
     }
     PlayerReplicationInfo.NetUpdateTime = Level.TimeSeconds - 1;
     if (ScrnPRI != none && ScrnPRI.DoshRequestCounter > 0) {
