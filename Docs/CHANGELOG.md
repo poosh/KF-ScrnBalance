@@ -29,6 +29,9 @@
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+## v9.71.06
+- Yet another **QuickMelee** fix
+
 ## v9.71.05
 - Fixed and issue where **DDT** did not increase the "Donated Cash" stat
 

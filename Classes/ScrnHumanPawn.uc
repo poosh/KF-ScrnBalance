@@ -377,11 +377,31 @@ function CalcCarriedInventorySpeed()
     }
 }
 
+// Machete-sprinting. Available only in casual survival game modes (not TSC, Tourney, or Story)
+function DoMacheteBoost()
+{
+    local ScrnBalance mut;
+
+    mut = class'ScrnBalance'.default.Mut;
+    if (mut == none || mut.SrvTourneyMode != 0 || mut.bTSCGame || mut.bStoryMode)
+        return;
+
+    if (bAllowMacheteBoost && MacheteBoost < 120 && VSizeSquared(Velocity) > 10000) {
+        if ( MacheteBoost < 60 )
+            MacheteBoost += 3;
+        else if ( MacheteBoost < 100 )
+            MacheteBoost += 2;
+        else
+            MacheteBoost++;
+    }
+    MacheteResetTime = Level.TimeSeconds + 3.0;
+    bMacheteDamageBoost = true;
+}
+
 // executes only server-side
 function bool AddInventory( inventory NewItem )
 {
     local KFWeapon weap;
-    local ScrnBalance mut;
 
     weap = KFWeapon(NewItem);
     if( weap != none ) {
@@ -399,20 +419,7 @@ function bool AddInventory( inventory NewItem )
         }
 
         if ( CheckQuickMeleeWeapon(KFMeleeGun(weap)) && ScrnMachete(weap) != none ) {
-            // Machete-sprinting. Available only in casual survival game modes (not TSC, Tourney, or Story)
-            mut = class'ScrnBalance'.default.Mut;
-            if ( mut.SrvTourneyMode == 0 && !mut.bTSCGame && !mut.bStoryMode ) {
-                if ( bAllowMacheteBoost && MacheteBoost < 120 && VSizeSquared(Velocity) > 10000 ) {
-                    if ( MacheteBoost < 60 )
-                        MacheteBoost += 3;
-                    else if ( MacheteBoost < 100 )
-                        MacheteBoost += 2;
-                    else
-                        MacheteBoost++;
-                }
-                MacheteResetTime = Level.TimeSeconds + 3.0;
-                bMacheteDamageBoost = true;
-            }
+            DoMacheteBoost();
         }
     }
     CalcCarriedInventorySpeed();
@@ -427,7 +434,7 @@ function DeleteInventory( inventory Item )
     super.DeleteInventory(Item);
     if ( Item == QuickMeleeWeapon ) {
         QuickMeleeWeapon = none;
-        SetBestQuickMeleeWeapon();
+        SetBestQuickMeleeWeapon(Item);
         // for machete-walking
         if ( QuickMeleeWeapon != none )
             PendingWeapon = QuickMeleeWeapon;
@@ -484,13 +491,16 @@ function bool CheckQuickMeleeWeapon(KFMeleeGun W)
     return true;
 }
 
-function SetBestQuickMeleeWeapon()
+function SetBestQuickMeleeWeapon(optional Inventory IgnoreItem)
 {
     local inventory inv;
     local KFMeleeGun W;
     local int c;
 
     for ( inv = Inventory; inv != none && ++c < 1000; inv = inv.Inventory) {
+        if (inv == IgnoreItem)
+            continue;
+
         W = KFMeleeGun(inv);
         if ( W != none )
             CheckQuickMeleeWeapon(W);

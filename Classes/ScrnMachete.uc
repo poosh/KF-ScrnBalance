@@ -3,6 +3,19 @@ class ScrnMachete extends Machete;
 var transient bool bRestoreAltFire;
 var transient float RestoreAltFireTime;
 
+simulated function PostNetBeginPlay() {
+    local ScrnHumanPawn ScrnPawn;
+
+    super.PostNetBeginPlay();
+
+    ScrnPawn = ScrnHumanPawn(Instigator);
+    if (ScrnPawn != none) {
+        // The server may replicate ScrnHumanPawn.QuickMeleeWeapon before the actual weapon, making in none on the
+        // client side. So we need to double-check it here.
+        ScrnPawn.CheckQuickMeleeWeapon(self);
+    }
+}
+
 simulated state QuickMelee
 {
     simulated function Timer()
