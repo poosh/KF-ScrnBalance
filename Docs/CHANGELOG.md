@@ -16,6 +16,7 @@
 [ivanmagadan]: https://steamcommunity.com/id/ivanmagadan
 [Broski]: https://steamcommunity.com/id/broski270
 [That1Guy]: https://steamcommunity.com/id/defenciveguy121
+[FishFlop_The_CatSlap]: https://steamcommunity.com/id/FishFlop_The_CatSlap/
 <!-- add other peaople too!!! -->
 
 # Version History
@@ -29,6 +30,10 @@
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+## v9.71.07
+- Duplicate votes result into `MVOTE YES`. For instance, when two players did `MVOTE END TRADE`, it results into a single vote with two YES votes instead of failing the second vote (thanks [FishFlop_The_CatSlap])
+- Fixed an issue where "v22 - No" sometimes didn't trigger `MVOTE NO` (thanks [FishFlop_The_CatSlap])
+
 ## v9.71.06
 - Yet another **QuickMelee** fix
 

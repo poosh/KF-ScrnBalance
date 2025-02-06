@@ -80,4 +80,4 @@ For other ScrN based packages you can check this dependency diagram.
 
 -------------------------------------------------------------------------------
 
-*Copyright (c) 2012-2024 PU Developing IK, Latvia, All Rights Reserved.*
+*Copyright (c) 2012-2025 PU Developing IK, Latvia, All Rights Reserved.*

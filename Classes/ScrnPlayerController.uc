@@ -1598,7 +1598,7 @@ function ServerSpeech(name msgtype, int msgid, string Callsign)
 {
     switch (msgtype) {
         case 'ACK':
-            if (bSpeechVote && msgid < 1) {
+            if (bSpeechVote && msgid <= 1) {
                 ServerMutate(eval(msgid == 0, "VOTE TRYYES", "VOTE TRYNO"));
             }
             break;
