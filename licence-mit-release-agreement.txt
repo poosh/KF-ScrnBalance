@@ -3,7 +3,7 @@ the repository under the MIT Licence. The license text is listed below.
 Each contributor confirms their agreement by committing the line with the
 "I AGREE" text next to their name.
 
-poosh           :
+poosh           : I AGREE
 Scrndles        :
 Shtoyan         :
 Duckbuster      :
