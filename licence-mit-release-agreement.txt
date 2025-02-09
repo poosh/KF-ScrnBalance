@@ -4,7 +4,7 @@ Each contributor confirms their agreement by committing the line with the
 "I AGREE" text next to their name.
 
 poosh           : I AGREE
-Scrndles        :
+Scrndles        : I AGREE
 Shtoyan         :
 Duckbuster      : I AGREE
 nmmblez         :
