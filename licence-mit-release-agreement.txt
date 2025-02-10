@@ -5,7 +5,7 @@ Each contributor confirms their agreement by committing the line with the
 
 poosh           : I AGREE
 Scrndles        : I AGREE
-Shtoyan         :
+Shtoyan         : I AGREE
 Duckbuster      : I AGREE
 nmmblez         : I AGREE
 
