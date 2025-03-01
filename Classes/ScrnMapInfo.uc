@@ -17,6 +17,7 @@ struct SPath {
 };
 
 var config int MaxZombiesOnce;
+var config bool bFastTrack;
 var config float WaveSpawnPeriod;
 var config float XPBonusMult;
 var config byte ZedEventNum; // use event zeds for this map. 0 - don't force

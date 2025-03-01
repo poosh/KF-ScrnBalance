@@ -38,6 +38,7 @@ enum EZedSpawnLocation {
     ZSLOC_VANILLA     // Same as in Vanilla KF
 };
 var EZedSpawnLocation ZedSpawnLoc;
+var bool bFastTrack;
 var protected int ZVolVisibleCount;  // number of ZombieVolumes in ZedSpawnList that require player visibility checks
 var transient int ZVolCheckIndex; // the index of ZedSpawnList to start visibility check at
 var float ZVolVisibilityCheckPeriod;  // Time to check all zombie volumes.
@@ -1690,18 +1691,21 @@ function ZombieVolume FindSpawningVolumeForSquad(out array< class<KFMonster> > S
     }
      // do not lower actual boring stage
     BoringLocal = clamp(BoringLocal, BoringStage, BoringStages.length - 1);
+    bFastTrack = BoringLocal >= ScrnBalanceMut.BoringFastTrack || ScrnBalanceMut.MapInfo.bFastTrack;
 
     switch (ZSL) {
         case ZSLOC_CLOSER:
             wDist = 0.50;
             wUsage = 0.30;
             wDesire = 0.10;
+            bFastTrack = true;
             break;
 
         case ZSLOC_RANDOM:
             wDist = 0.15 * min(3, 1 + BoringLocal);
             wUsage = 0.30;
             wDesire = 0.15;
+            bFastTrack = false;
             break;
 
         case ZSLOC_VANILLA:

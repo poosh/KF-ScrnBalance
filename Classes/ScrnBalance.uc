@@ -162,6 +162,7 @@ var globalconfig int BlameVoteCoolDown;
 var globalconfig bool bBlameFart;
 var transient int BlameCounter;
 var globalconfig bool bAllowPauseVote, bAllowLockPerkVote, bAllowBoringVote;
+var byte BoringFastTrack;
 var globalconfig int MaxPauseTime, MaxPauseTimePerWave;
 var transient int PauseTimeRemaining;
 var globalconfig byte MaxVoteKillMonsters;
@@ -511,6 +512,7 @@ function MessageStatus(PlayerController PC)
     msg = strStatus2;
     msg = Repl(msg, "%a", String(bAltBurnMech), true);
     msg = Repl(msg, "%m", String(KF.MaxZombiesOnce), true);
+    msg = Repl(msg, "%f", String(ScrnGT != none && ScrnGT.bFastTrack), true);
     PC.ClientMessage(msg, 'Log');
 
     R = SRStatsBase(PC.SteamStatsAndAchievements).Rep;
@@ -2211,9 +2213,13 @@ function bool CheckReplacement(Actor Other, out byte bSuperRelevant)
 
 
     // classes below do not need replacement
-    if ( PlayerController(Other)!=None ) {
-        if ( ScrnPlayerController(Other) != none )
+    if (Controller(Other) != none) {
+        if (KFMonsterController(Other) != none) {
+            SetupMonsterController(KFMonsterController(Other));
+        }
+        else if (ScrnPlayerController(Other) != none) {
             ScrnPlayerController(Other).SetMut(self);
+        }
     }
     else if ( KFMonster(Other) != none ) {
         SetupMonster(KFMonster(Other));
@@ -2258,6 +2264,13 @@ function SetupMonster(KFMonster M)
         M.SoundRadius = max(m.SoundRadius, 100);
     }
     GameRules.RegisterMonster(M);
+}
+
+function SetupMonsterController(KFMonsterController MC)
+{
+    if (ScrnGT != none && ScrnGT.bFastTrack) {
+        MC.PathFindState = 2;
+    }
 }
 
 function SetupRepLink(ClientPerkRepLink R)
@@ -3236,7 +3249,7 @@ function RegisterVersion(string ItemName, int Version)
 
 defaultproperties
 {
-    VersionNumber=97107
+    VersionNumber=97108
     GroupName="KF-Scrn"
     FriendlyName="ScrN Balance"
     Description="Total rework of KF1 to make it modern and the best tactical coop in the world while sticking to the roots of the original."
@@ -3251,7 +3264,7 @@ defaultproperties
     BonusCapGroup="ScrnBalance"
     strBonusLevel="Your effective perk bonus level is [%s]"
     strStatus="Your perk level: Visual=%v, Effective=[%b]. Server perk range is [%n..%x]."
-    strStatus2="Alt.Burn=%a. MaxZombiesOnce=%m."
+    strStatus2="Alt.Burn=%a. MaxZombiesOnce=%m. FastTrack=%f."
     strBetaOnly="Only avaliable during Beta testing (bBeta=true)"
     strXPInitial="^G$Initial Perk Stats:"
     strXPProgress="^G$Perk Progression:"
@@ -3469,6 +3482,7 @@ defaultproperties
     BlameVoteCoolDown=60
     bBlameFart=true
     bAllowBoringVote=true
+    BoringFastTrack=1
     MaxVoteKillMonsters=9
     MaxVoteKillBounty=49
     bVoteKillCheckVisibility=true

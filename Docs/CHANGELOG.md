@@ -30,6 +30,30 @@
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+## v9.71.08
+#### FastTrack
+- Zeds go to a random place on the map after spawn. Only then do they move to the player. It may add variety to the zed attack paths. However, it increases the time between spawning and engaging (slower spawns) on big maps. Zed may also get stuck on small maps with narrow corridors.
+- **FastTrack** eliminates the initial random roam and redirects Zeds straight to the players after spawning.
+- FastTrack can be configured per-map - see `bFastTrack` in *ScrnMapInfo.ini*
+- By default, FastTrack is enabled for Aperture, Farm, Hell Ride, Hospital Horrors, Mountain Pass, and Transit.
+- Players can force FastTrack via `MVOTE BORING` (see `BoringFastTrack` in *ScrnBalanceSrv.ini*)
+- Setting `BoringFastTrack=0` forces FastTrack on all maps
+- `bRandomSpawnLoc=true` in *ScrnWaves.ini* disables FastTrack.
+- FastTrack is disabled in **FTG** or during a Boss wave.
+
+#### ScrN Zed Pack
+- Fixed HardPat's head hitbox while firing minigun or multiple rockets.
+- ScrnZedPack.ini: `bCommandoRevealsStalkers=true` by default (you can still change it)
+- ScrnZedPack.ini: added `bLegacyHusk` and `bLegacyFleshpound`
+- Legacy Fleshpound starts raging immediately after taking enough damage, while the new one tries to attack the player first if the latter is in melee range.
+- **Grittier Fleshpound** always has the new behaviour, regardless of the `bLegacyFleshpound` setting.
+- The New FP behaviour was hardcoded since v9.69.39. Now, it is configurable.
+- The New **Husk** has the same fireballs as the Grittier Husk, but the former fires only one at a time (thanks *Mortimer*).
+- New Husk fireballs have collision and can hit players or zeds. Legacy fireballs rely on the splash damage only.
+- **Grittier Scrake** unstuns from 150+ explosive damage. Don't nade Scrakes!
+- **Grittier Scrake** no longer has the slomo rage exploit.
+- **Jason** code cleanup.
+-
 ## v9.71.07
 - Duplicate votes result into `MVOTE YES`. For instance, when two players did `MVOTE END TRADE`, it results into a single vote with two YES votes instead of failing the second vote (thanks [FishFlop_The_CatSlap])
 - Fixed an issue where "v22 - No" sometimes didn't trigger `MVOTE NO` (thanks [FishFlop_The_CatSlap])
