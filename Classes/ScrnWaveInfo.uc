@@ -51,7 +51,7 @@ var config float SuicideTimePerPlayerMult;
 var config bool bSuicideTimeReset;
 var config bool bMoreAmmoBoxes;
 
-var config bool bRandomSpawnLoc;
+var config bool bRandomSpawnLoc, bForceFastTrack;
 var config float SpecialSquadHealthMod;
 var config int ZedsBeforeSpecialSquad, ZedsPerSpecialSquad;
 var config bool bRandomSquads;

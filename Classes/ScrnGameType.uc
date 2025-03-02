@@ -1734,6 +1734,10 @@ function ZombieVolume FindSpawningVolumeForSquad(out array< class<KFMonster> > S
     // The higher boring stage, the closer zeds may spawn to the players
     BoringDistMult = 1.0 - 0.20 * BoringLocal;
 
+    if (ScrnGameLength != none && ScrnGameLength.Wave.bForceFastTrack) {
+        bFastTrack = true;
+    }
+
     // Second pass, figure out best spawning point.
     // Usually, ZombieVolume can fit 4-8 zeds. If volume can spawn 4 zeds, it is already good enough,
     // so do not lower its rating to favor a huge volume 200m away

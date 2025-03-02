@@ -30,7 +30,7 @@
 ## VERSION 9
 
 -------------------------------------------------------------------------------
-## v9.71.08
+## v9.71.09
 #### FastTrack
 - Zeds go to a random place on the map after spawn. Only then do they move to the player. It may add variety to the zed attack paths. However, it increases the time between spawning and engaging (slower spawns) on big maps. Zed may also get stuck on small maps with narrow corridors.
 - **FastTrack** eliminates the initial random roam and redirects Zeds straight to the players after spawning.
@@ -40,8 +40,10 @@
 - Setting `BoringFastTrack=0` forces FastTrack on all maps
 - `bRandomSpawnLoc=true` in *ScrnWaves.ini* disables FastTrack.
 - FastTrack is disabled in **FTG** or during a Boss wave.
+- FastTrack can be forced per-wave by setting `bForceFastTrack=true` in *ScrnWaves.ini*
 
 #### ScrN Zed Pack
+- Fixed **Tesla Husk** ability to *unweld* doors
 - Fixed HardPat's head hitbox while firing minigun or multiple rockets.
 - ScrnZedPack.ini: `bCommandoRevealsStalkers=true` by default (you can still change it)
 - ScrnZedPack.ini: added `bLegacyHusk` and `bLegacyFleshpound`
