@@ -711,6 +711,10 @@ simulated function ApplyWeaponStats(Weapon NewWeapon)
         }
         // ScrN Armor can slow down players (or even boost) -- PooSH
         InventorySpeedModifier -= default.GroundSpeed * CurrentVestClass.default.SpeedModifier;
+
+        if (QuickMeleeWeapon == none) {
+            CheckQuickMeleeWeapon(KFMeleeGun(Weap));
+        }
     }
     CalcGroundSpeed();
 }

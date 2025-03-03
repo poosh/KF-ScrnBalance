@@ -221,15 +221,20 @@ function SetupWave()
             bTeamWiped = true;
             t = 1; // skip team 0
         }
-        while ( t < 2 ) {
-            if ( !TeamBases[t].bActive ) {
-                // if players have lost base during the Trader Time
-                TeamBases[t].MoveToShop(TeamShops[t]);
-                TeamBases[t].ScoreOrHome();
-            }
-            ++t;
+        if (bNoBases) {
+            NextStinkySpawnTime = Level.TimeSeconds + 600;
         }
-        NextStinkySpawnTime = Level.TimeSeconds + 10;
+        else {
+            while ( t < 2 ) {
+                if ( !TeamBases[t].bActive ) {
+                    // if players have lost base during the Trader Time
+                    TeamBases[t].MoveToShop(TeamShops[t]);
+                    TeamBases[t].ScoreOrHome();
+                }
+                ++t;
+            }
+            NextStinkySpawnTime = Level.TimeSeconds + 10;
+        }
     }
 }
 
@@ -489,13 +494,15 @@ function StinkyControllerCompeledAction(StinkyController SC, int CompletedAction
 // show path to base instead of shop
 function ShowPathTo(PlayerController P, int DestinationIndex)
 {
-    ShowPathToBase(P);
+    if (!bNoBases)
+        ShowPathToBase(P);
+    else
+        super.ShowPathTo(P, DestinationIndex);
 }
 
 function ShowPathToBase(PlayerController P)
 {
     local TSCBaseGuardian gnome;
-    local Actor Dest;
 
     gnome = TeamBases[P.PlayerReplicationInfo.Team.TeamIndex];
     if ( gnome == none || gnome.bHidden || TSCGRI.AtOwnBase(P.Pawn) )
@@ -504,13 +511,7 @@ function ShowPathToBase(PlayerController P)
         return;
     }
 
-    if (gnome.bHeld && gnome.Holder != none) {
-        Dest = gnome.Holder;
-    }
-    else {
-        Dest = gnome;
-    }
-    if ( P.FindPathToward(Dest, false) != None ) {
+    if ( P.FindPathToward(gnome.GetWorldActor(), false) != None ) {
         Spawn(BaseWhisp, P,, P.Pawn.Location);
     }
 }
@@ -558,6 +559,12 @@ State MatchInProgress
 
         if ( ScrnGameLength.Wave.bOpenTrader ) {
             KillAllStinkyClots();
+            if (bNoBases ) {
+                if (TeamBases[0] != none) {
+                    TeamBases[0].SendHome();
+                }
+                TeamBases[1].SendHome();
+            }
         }
         else {
             // Wave ended but trader doors are closed.
@@ -574,14 +581,14 @@ State MatchInProgress
     {
         super.BattleTimer();
 
-        if ( NextStinkySpawnTime < Level.TimeSeconds
-                && (bWaveBossInProgress || TotalMaxMonsters > 0)
-                && ( (StinkyControllers[1] == none && TeamBases[1].bActive)
-                    || (!bSingleTeamGame && StinkyControllers[0] == none && TeamBases[0].bActive) )
-           )
-        {
-            SpawnStinkyClot();
+        if (NextStinkySpawnTime < Level.TimeSeconds) {
             NextStinkySpawnTime = Level.TimeSeconds + 5; // if failed to spawn, try again in 5 seconds
+            if ((bWaveBossInProgress || TotalMaxMonsters > 0) && ScrnGameLength.IsStinkyClotAllowed()
+                    && ((StinkyControllers[1] == none && TeamBases[1].bActive)
+                        || (!bSingleTeamGame && StinkyControllers[0] == none && TeamBases[0].bActive)))
+            {
+                SpawnStinkyClot();
+            }
         }
     }
 

@@ -957,7 +957,7 @@ function SetupWave()
 
     CalcDoshDifficultyMult();
 
-    TSCGRI.bHumanDamageEnabled = WaveNum > 0 && HumanDamageMode > HDMG_None;
+    TSCGRI.bHumanDamageEnabled = WaveNum > 0 && HumanDamageMode > HDMG_None && !bNoBases;
     if( WaveNum == FinalWave && bUseEndGameBoss ) {
         StartWaveBoss();
         return;
@@ -976,7 +976,7 @@ function SetupWave()
             BroadcastLocalizedMessage(class'TSCMessages', 201); // overtime
         }
     }
-    else if ( WaveNum == 0 ) {
+    else if ( WaveNum == 0 || bNoBases ) {
         BroadcastLocalizedMessage(class'TSCMessages', 230); // human damage disabled
     }
     else if ( HumanDamageMode > HDMG_None ) {
@@ -1108,7 +1108,7 @@ protected function StartTourney()
 
 function ShowPathTo(PlayerController P, int DestinationIndex)
 {
-    if ( DestinationIndex == 1 )
+    if (!bNoBases && DestinationIndex == 1)
         ShowPathToBase(P);
     else
         super.ShowPathTo(P, DestinationIndex); // show path to shop

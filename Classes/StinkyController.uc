@@ -425,7 +425,7 @@ state MoveToShop extends Moving
         local TSCBaseGuardian gnome;
 
         gnome = FtgGame.TeamBases[TeamIndex];
-        if ( FtgGame.TotalMaxMonsters <= 0 ) {
+        if (FtgGame.TotalMaxMonsters <= 0 && !FtgGame.bWaveBossInProgress) {
             if ( FtgGame.NumMonsters < 10 )
                 return StinkyClot.MaxBoostSpeed;
             else if (gnome.SameTeamCounter < gnome.default.SameTeamCounter)
@@ -435,7 +435,7 @@ state MoveToShop extends Moving
         }
         else if (gnome.SameTeamCounter < gnome.default.SameTeamCounter)
             return StinkyClot.OutOfBaseSpeed; // slowdown when nobody at the base to give team a chance to reach the base
-        else if ( FtgGame.TotalMaxMonsters < 50 )
+        else if (FtgGame.TotalMaxMonsters < 50  && !FtgGame.bWaveBossInProgress)
             return StinkyClot.OriginalGroundSpeed * (2.0 - FtgGame.TotalMaxMonsters/50.0);
         else
             return StinkyClot.OriginalGroundSpeed;

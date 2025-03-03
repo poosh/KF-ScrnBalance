@@ -712,6 +712,10 @@ protected function bool LoadNextWave()
     Game.bZedGiveBounty = !Game.bZedDropDosh && (Wave.EndRule == RULE_EarnDosh || !Wave.bNoBounty);
     SetWaveInfo();
 
+    if (FTG != none) {
+        LoadFtgWave();
+    }
+
     if ( Wave.TraderMessage != "" ) {
         for ( C = Game.Level.ControllerList; C != none; C = C.NextController ) {
             KFPC = KFPlayerController(C);
@@ -726,6 +730,23 @@ protected function bool LoadNextWave()
     DoorControl(Wave.DoorControl);
 
     return true;
+}
+
+protected function LoadFtgWave()
+{
+    local class<DamageType> WipeOnBaseLost;
+
+    FTG.bNoBases = Wave.FtgRule == FTG_NoBase;
+    if (Wave.FtgRule != FTG_TSCBase) {
+        WipeOnBaseLost = class'FtgBaseGuardian'.default.WipeOnBaseLost;
+    }
+
+    if (FTG.TeamBases[0] != none) {
+        FTG.TeamBases[0].WipeOnBaseLost = WipeOnBaseLost;
+    }
+    if (FTG.TeamBases[1] != none) {
+        FTG.TeamBases[1].WipeOnBaseLost = WipeOnBaseLost;
+    }
 }
 
 function bool LoadWave(int WaveNum)
@@ -1653,6 +1674,11 @@ function SetupRandomItemSpawn(ScrnRandomItemSpawn Items)
         Items.bPermanentlyDisabled = true;
         Items.DisableMe();
     }
+}
+
+function bool IsStinkyClotAllowed()
+{
+    return Wave.FtgRule == FTG_Standard;
 }
 
 defaultproperties

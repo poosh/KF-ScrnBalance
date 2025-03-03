@@ -77,6 +77,7 @@ var config bool bTSCAdvancedKeyBindings; // pressing altfire while carrying the 
 var config bool bTSCAutoDetectKeys; // turns off bTSCAdvancedKeyBindings if a dedicated key is bound for SetupBase
 var config string RedCharacter, BlueCharacter;
 var config Color GlowColorSingleTeam, GlowColorRed, GlowColorBlue;
+var transient float LastBaseMarkTime;
 
 // not replicated yet
 // todo: find an efficient way to replicate

@@ -227,13 +227,14 @@ var const int MARK_AMMO;
 var const int MARK_WEAPON;
 var const int MARK_ARMOR;
 var const int MARK_HEALTH;
+var const int MARK_BASE;
 var array<Color> MarkColors;
 var Material MarkIcon;
 var float MaxMarks;
 var Color MarkEnemyColor;
 var Color MarkPlayerColor;
 var float MarkLifeDefault, MarkLifeNoTarget, MarkLifePlayer, MarkLifeLocation;
-
+var localized string strBaseMark;
 
 function PostBeginPlay()
 {
@@ -3929,6 +3930,11 @@ function MarkTarget(KFPlayerReplicationInfo Sender, Actor Target, vector Locatio
                 break;
             }
             // else fall-through
+        case MARK_ITEMS:
+            if (MarkType == MARK_BASE) {
+                Caption = strBaseMark;
+            }
+            // fallthrough
         default:
             if (Target == none) {
                 MarkLife = MarkLifeNoTarget;
@@ -4237,6 +4243,8 @@ defaultproperties
     MARK_WEAPON=49          // 0x31
     MARK_ARMOR=50           // 0x32
     MARK_HEALTH=51          // 0x33
+    MARK_BASE=52            // 0x34
+    strBaseMark="Base"
 
     WaveCircleClockBG[0]=Material'KillingFloorHUD.HUD.Hud_Bio_Clock_Circle'
     WaveCircleClockBG[1]=Material'KillingFloorHUD.HUD.Hud_Bio_Clock_Circle'

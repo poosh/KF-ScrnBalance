@@ -27,6 +27,13 @@ enum EDoorControl {
     DOOR_Randomize
 };
 
+enum EFtgRule {
+    FTG_Standard,
+    FTG_NoStinky,
+    FTG_TSCBase,
+    FTG_NoBase
+};
+
 var config int GameVersion;
 var config string Header, Title, Message, TraderMessage;
 var config int TraderTime;
@@ -36,6 +43,8 @@ var config bool bStartAtTrader;
 var config bool bTraderArrow;
 var config EDoorControl DoorControl, DoorControl2;
 var config EWaveEndRule EndRule;
+var config EFtgRule FtgRule;
+
 var config int Counter, MaxCounter;
 var config float PerPlayerMult;
 var config int PerPlayerExclude;
@@ -69,6 +78,7 @@ defaultproperties
     bTraderArrow=true
     DoorControl=DOOR_Default
     EndRule=RULE_KillEmAll
+    FtgRule=FTG_Standard
     Counter=30
     PerPlayerExclude=1
     SpecialSquadHealthMod=1.0

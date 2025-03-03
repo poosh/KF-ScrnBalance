@@ -30,7 +30,7 @@
 ## VERSION 9
 
 -------------------------------------------------------------------------------
-## v9.71.09
+## v9.71.10
 #### FastTrack
 - Zeds go to a random place on the map after spawn. Only then do they move to the player. It may add variety to the zed attack paths. However, it increases the time between spawning and engaging (slower spawns) on big maps. Zed may also get stuck on small maps with narrow corridors.
 - **FastTrack** eliminates the initial random roam and redirects Zeds straight to the players after spawning.
@@ -41,6 +41,10 @@
 - `bRandomSpawnLoc=true` in *ScrnWaves.ini* disables FastTrack.
 - FastTrack is disabled in **FTG** or during a Boss wave.
 - FastTrack can be forced per-wave by setting `bForceFastTrack=true` in *ScrnWaves.ini*
+#### FTG
+- *ScrnWaves.ini*: added `FtgRule`
+- Fixed Stinky CLot movement speed in a boss wave.
+- The base gets marked when the player is outside it.
 
 #### ScrN Zed Pack
 - Fixed **Tesla Husk** ability to *unweld* doors

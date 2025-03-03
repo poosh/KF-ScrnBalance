@@ -100,6 +100,14 @@ simulated function vector GetLocation()
     return Location;
 }
 
+simulated function Actor GetWorldActor()
+{
+    if (bHeld && Holder != none) {
+        return Holder;
+    }
+    return self;
+}
+
 function bool ShouldWipeOnBaseLost()
 {
     return false;
@@ -613,10 +621,19 @@ state Guarding
                         ScrnHumanPawn(C.Pawn).NextEnemyBaseDamageMsg = Level.TimeSeconds + 6.0;
                     }
                 }
-                else if ( bNobodyAtBase && C.PlayerReplicationInfo.Team == Team ) {
+                else if (C.PlayerReplicationInfo.Team == Team) {
                     bNobodyAlive = false;
-                    if ( TSCGRI.AtBase(C.Pawn.Location, self) )
+                    if (TSCGRI.AtBase(C.Pawn.Location, self)) {
                         bNobodyAtBase = false;
+                    }
+                    else {
+                        SC = ScrnPlayerController(C);
+                        if (SC != none && Level.TimeSeconds > SC.LastBaseMarkTime + 5.0) {
+                            SC.ClientMark(KFPlayerReplicationInfo(SC.PlayerReplicationInfo), GetWorldActor(),
+                                    GetLocation(), "", class'ScrnHUD'.default.MARK_BASE);
+                            SC.LastBaseMarkTime = Level.TimeSeconds;
+                        }
+                    }
                 }
             }
         }
