@@ -50,6 +50,7 @@ var float FloorHeight, BasementZ;
 var float FloorPenalty;
 var float ElevatedSpawnMinZ, ElevatedSpawnMaxZ;
 var bool bHighGround;
+var array<ScrnTypes.ZVolInfo> ZVolInfos;
 
 // Telemetry data of all living player pawns. Updates every tick.
 struct STelemetry {
@@ -128,8 +129,9 @@ var transient bool bRestartPlayersTriggered;
 
 var protected transient bool bDebugZedSpawn;
 var protected transient ZombieVolume DebugZVols[5];
-var protected transient Color DebugZVolColors[5];
+var protected Color DebugZVolColors[5];
 var protected transient int NextDebugZVolIndex;
+var protected transient int DebugZedSpawnIndex;
 
 delegate CustomDramaticEvent(float Chance, optional float DesiredZedTimeDuration);
 
@@ -358,9 +360,13 @@ function CheckZedSpawnList()
     local NavigationPoint N;
 
     MapInfo = ScrnBalanceMut.MapInfo;
+    if (MapInfo.bDebug) {
+        LogZedSpawnLevel = LOG_DEBUG;
+        LogZedSpawn(LOG_DEBUG, "Map Debug Mode enabled");
+    }
 
     // first pass: remove bad volumes
-    for ( i = 0; i < ZedSpawnList.Length; ++i ) {
+    for (i = 0; i < ZedSpawnList.Length; ++i)  {
         ZVol = ZedSpawnList[i];
         if ( ZVol == none ) {
             ZedSpawnList.remove(i--, 1);
@@ -377,6 +383,9 @@ function CheckZedSpawnList()
         // We reuse bHasInitSpawnPoints to mark elevated spawns.
         // The original bHasInitSpawnPoints is redundant because we can simply check SpawnPos.length
         ZVol.bHasInitSpawnPoints = false;
+        if (MapInfo.bDebug) {
+            LogZedSpawn(LOG_DEBUG, ZVol.name $ " has " $ ZVol.SpawnPos.length $ " spawn places");
+        }
     }
 
     // second pass: load ZVol map config
@@ -400,7 +409,9 @@ function CheckZedSpawnList()
     ZVolDisableTime = MapInfo.ZVolDisableTime;
     ZVolDisableTimeMax = MapInfo.ZVolDisableTimeMax;
     bVanillaVisibilityCheck = MapInfo.bVanillaVisibilityCheck;
-    MapInfo.ProcessZombieVolumes(ZedSpawnList);
+
+    ZVolInfos.Length = ZedSpawnList.Length;
+    MapInfo.ProcessZombieVolumes(ZedSpawnList, ZVolInfos);
 
     // third pass: precalc stuff
     ZVolVisibleCount = 0;
@@ -474,6 +485,10 @@ function CheckZedSpawnList()
     LogZedSpawn(LOG_INFO,   "bHighGround=" $ bHighGround);
     LogZedSpawn(LOG_INFO,   "ElevatedSpawnMinZ=" $ ElevatedSpawnMinZ);
     LogZedSpawn(LOG_INFO,   "ElevatedSpawnMaxZ=" $ ElevatedSpawnMaxZ);
+
+    if (MapInfo.bDebug) {
+        ZVolDrawDebug();
+    }
 }
 
 function bool IsPathTargetValid(Actor PathTarget)
@@ -612,6 +627,33 @@ function LoadTelemetry()
     Telemetry.length = i;
 }
 
+function ZVolDrawDebug()
+{
+    local int i, j;
+    local ZombieVolume ZVol;
+    local Vector x, y, z;
+    local float r, h;
+
+    if (Level.NetMode == NM_DedicatedServer)
+        return;
+
+    x = vect(1, 0, 0);
+    y = vect(0, 1, 0);
+    z = vect(0, 0, 1);
+    r = class'VolumeColTester'.default.CollisionRadius;
+    h = class'VolumeColTester'.default.CollisionHeight;
+
+    for (i = 0; i < ZedSpawnList.Length; ++i)  {
+        ZVol = ZedSpawnList[i];
+        if (ZVol.bDebugZombieSpawning)
+            continue;
+        ZVol.bDebugZombieSpawning = true;
+        for (j = 0; j < ZVol.SpawnPos.length; ++j) {
+            ZVol.DrawDebugCylinder(ZVol.SpawnPos[j], x, y, z, r, h, 5, 0, 255, 0);
+        }
+    }
+}
+
 // called each time when all zombie volumes got checked
 function ZVolCheckNewCycle()
 {
@@ -627,12 +669,13 @@ function protected bool ZVolCheckTrace(ZombieVolume ZVol, vector PlayerPos, vect
 
 function ZVolCheckPlayers(int count)
 {
-    local ZombieVolume ZVol;
+    local ZombieVolume ZVol, ZvolOther;
+    local KFDoorMover Door;
     local int i, x;
     local Vector EyeLoc;
     local Pawn P;
     local float CheckBegin, MaxDistSq, MinDistSq;
-    local bool bSecondLoop;
+    local bool bSecondLoop, bValid;
 
     // start validating volumes half-way before they become valid.
     CheckBegin = Level.TimeSeconds + ZVolDisableTime * 0.5;
@@ -640,7 +683,22 @@ function ZVolCheckPlayers(int count)
     while ( count > 0 ) {
         ZVol = ZedSpawnList[ZVolCheckIndex];
         // LastCheckTime actually is the time until ZVol is invalid
-        if ( CheckBegin > ZVol.LastCheckTime ) {
+        if (CheckBegin > ZVol.LastCheckTime && ZVolInfos[ZVolCheckIndex].Links.Length != 0) {
+            bValid = false;
+            for (i = 0; i < ZVolInfos[ZVolCheckIndex].Links.Length; ++i) {
+                ZvolOther = ZVolInfos[ZVolCheckIndex].Links[i].Src;
+                Door = ZVolInfos[ZVolCheckIndex].Links[i].Door;
+                if (!IsZombieVolumeDisabled(ZvolOther) && (Door == none || !Door.bSealed)) {
+                    bValid = true;
+                    break;
+                }
+            }
+            if (!bValid) {
+                DisableZombieVolume(ZVol);
+            }
+        }
+
+        if (CheckBegin > ZVol.LastCheckTime) {
             MinDistSq = MAX_DIST_SQ;
             x = ZVol.SpawnPos.length;
             for ( i = 0; i < Telemetry.length; ++i ) {
@@ -1844,6 +1902,8 @@ function bool LogZedSquadSpawn(int severity, coerce string str, out array< class
 
 function bool AddSquad()
 {
+    local int Count;
+
     if ( bDisableZedSpawning )
         return false;
 
@@ -1876,9 +1936,10 @@ function bool AddSquad()
         return false;
     }
 
-    if ( SpawnSquad(LastZVol, NextSpawnSquad) > 0 ) {
+    Count = SpawnSquad(LastZVol, NextSpawnSquad);
+    if (Count > 0) {
         if ( bDebugZedSpawn ) {
-            DebugDrawZVol(LastZVol);
+            DebugDrawZVol(LastZVol, Count);
         }
         if ( ScrnGameLength.bLoadedSpecial )
             MaxSpawnAttempts = MaxSpecialSpawnAttempts;
@@ -1902,6 +1963,7 @@ function ToggleDebugZedSpawn()
         return;
 
     bDebugZedSpawn = !bDebugZedSpawn;
+    DebugZedSpawnIndex = 0;
     if ( !bDebugZedSpawn ) {
         for ( i = 0; i < ARRAYCOUNT(DebugZVols); ++i ) {
             DebugZVols[i].bHidden = true;
@@ -1910,21 +1972,32 @@ function ToggleDebugZedSpawn()
     Level.GetLocalPlayerController().ClientMessage("DebugZedSpawn " $ eval(bDebugZedSpawn, "ENABLED", "DISABLED"));
 }
 
-function DebugDrawZVol(ZombieVolume ZVol)
+function DebugDrawZVol(ZombieVolume ZVol, int SpawnedCount)
 {
+    local ScrnPlayerController PC;
+
     if ( !bDebugZedSpawn )
         return;
+
+    ++DebugZedSpawnIndex;
+
     if ( DebugZVols[NextDebugZVolIndex] != none ) {
         DebugZVols[NextDebugZVolIndex].bHidden = true;
     }
     DebugZVols[NextDebugZVolIndex] = ZVol;
-    ZVol.BrushColor = DebugZVolColors[NextDebugZVolIndex];
+    ZVol.BrushColor = DebugZVolColors[NextDebugZVolIndex];  // does nothing
     ZVol.bColored = true;
     ZVol.bHidden = false;
+
+    PC = ScrnPlayerController(Level.GetLocalPlayerController());
+    PC.ClientMark(KFPlayerReplicationInfo(PC.PlayerReplicationInfo), none, ZVol.SpawnPos[rand(SpawnedCount)],
+            class'ScrnF'.static.ColorStringC(
+                "Zed Spawn #" $ DebugZedSpawnIndex $ " (x" $ SpawnedCount $ ")", DebugZVolColors[NextDebugZVolIndex])
+            , 34);
+
     if ( ++NextDebugZVolIndex >= ARRAYCOUNT(DebugZVols) )
         NextDebugZVolIndex = 0;
 }
-
 
 function BuildNextSquad()
 {
@@ -3058,6 +3131,7 @@ function SetupWave()
     //Now build the first squad to use
     SquadsToUse.Length = 0; // force BuildNextSquad() to rebuild squad list
     SpecialListCounter = 0;
+    DebugZedSpawnIndex = 0;
     BuildNextSquad();
 
     // moved here from TraderTimer
@@ -4243,7 +4317,7 @@ defaultproperties
     DebugZVolColors[1]=(R=1,G=255,B=1,A=255)
     DebugZVolColors[2]=(R=1,G=1,B=255,A=255)
     DebugZVolColors[3]=(R=255,G=255,B=1,A=255)
-    DebugZVolColors[4]=(R=,G=255,B=255,A=255)
+    DebugZVolColors[4]=(R=1,G=255,B=255,A=255)
 
     bKillMessages=true
     bZedTimeEnabled=true

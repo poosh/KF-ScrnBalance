@@ -1319,6 +1319,12 @@ function ClientLocationalVoiceMessage(PlayerReplicationInfo Sender,
     }
 
     switch (msgtype) {
+        case 'SUPPORT':
+        case 'ALERT':
+        case 'DIRECTION':
+            MsgTag = 'TeamSay';
+            break;
+
         case 'TRADER':
             MsgTag = 'TRADER';
             if ( Pawn != none && msgid >= 4 ) {
@@ -1362,6 +1368,7 @@ function ClientLocationalVoiceMessage(PlayerReplicationInfo Sender,
             Msg2 = " (" $ msgid $ "%)";
             msgtype = 'SUPPORT';
             msgid = 0;
+            MsgTag = 'TeamSay';
             break;
     }
 

@@ -4,7 +4,7 @@ defaultproperties
 {
      cost=1750
      BuyClipSize=1
-     AmmoCost=10
+     AmmoCost=15
      Description="An assault rifle with an attached grenade launcher. Shoots in 3-bullet fixed-burst mode."
      ItemName="M4 203 SE"
      ItemShortName="M4 203 SE"

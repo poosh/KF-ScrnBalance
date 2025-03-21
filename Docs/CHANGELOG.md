@@ -30,6 +30,29 @@
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+## v9.71.11
+- **Pipebomb** alt-fire displays the placed pipebomb count (thanks [FishFlop_The_CatSlap])
+- *ScrnBalanceSrv.ini*: added map aliases for *KF-SunnyLandSanitarium-SE*
+- *ScrnMapInfo.ini*: added `BoringStage`, `bOnlyInvisibleZVol`, `ZVolLinks`, and `bDebug`
+- `DebugZedSpawn` console command now marks spawn locations (withs only in solo or listen server mode)
+- HUD: Perk Bonus Level is not drawn if it is equal to 6 and the XP level >= 6.
+- HUD: XP Progress Bar is drawn only in the Scoreboard mode.
+- SUPPORT, ALERT, and DIRECTION messages use team messages (TeamSay)
+- **M203** grenade cost raised to $15 (up from $10)
+
+#### Heavy Machinegunner
+- **M41A** restored the original 3rd person mode (experimental). Fixed bugs.
+- **M41A** now has laser sights
+- **M41A** primary damage reduced to 75 (down from 82)
+- **M41A** grenade type chaged to M203 (from M32)
+- **M41A** grenade capacity raised to 12 (up from 8)
+- **Stinger Minigun** weight raised to 14kg (up from 13) to prevent carrying it along with PKM.
+- **Stinger Minigun** fire rate reduced to 1800 RPM (down from 2000)
+- **Stinger Minigun** cost raised to $7500 (up from $5000)
+- **PKM** weight raised to 12kg (up from 11)
+- **M249** weight raised to 12kg (up from 11)
+
+
 ## v9.71.10
 #### FastTrack
 - Zeds go to a random place on the map after spawn. Only then do they move to the player. It may add variety to the zed attack paths. However, it increases the time between spawning and engaging (slower spawns) on big maps. Zed may also get stuck on small maps with narrow corridors.

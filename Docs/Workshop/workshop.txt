@@ -1,5 +1,5 @@
 Total rebalance of the game. Added new guns, Gunslinger perk, and server-side achievements.
-Version [b]9.71.01[/b].
+Version [b]9.71.11[/b].
 
 → [URL=http://steamcommunity.com/groups/ScrNBalance]OFFICIAL STEAM GROUP[/URL] ←
 → [URL=https://steamcommunity.com/groups/ScrNBalance/discussions/2/483368526570475472/]DOWNLOAD[/URL] ←
@@ -44,4 +44,4 @@ Most features are configurable (turn on only what you like).
 [/list]
 
 [h1]IMPORTANT NOTICE[/h1]
-[b][i]Make a backup of your Scrn*.ini and ServerPerks.ini config files[/i][/b] if you made any changes there! Otherwise, they will be overwritten by future releases.
+[b][i]Make a backup of your Scrn*.ini config files[/i][/b] if you made any changes there! Otherwise, they will be overwritten by future releases.

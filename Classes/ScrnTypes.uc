@@ -9,3 +9,12 @@ enum EZedTimeTrigger {
     ZT_Disabled,
     ZT_Custom
 };
+
+struct ZVolLink {
+    var ZombieVolume Src;
+    var KFDoorMover Door;
+};
+struct ZVolInfo {
+    var array<ZVolLink> Links;
+    var bool bBoss;  // TODO
+};

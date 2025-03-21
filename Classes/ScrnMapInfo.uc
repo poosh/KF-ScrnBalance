@@ -1,5 +1,6 @@
 // moved from ScrnBalanceSrv to avoid in-game changes to ScrnBalanceSrv.ini
 class ScrnMapInfo extends Object
+    dependson(ScrnTypes)
     PerObjectConfig
     Config(ScrnMapInfo);
 
@@ -10,21 +11,31 @@ struct SZVolDoor {
     var config name Door;
 };
 
+struct SZVolLink {
+    var config name Src;
+    var config name Dst;
+    var config name Door;
+};
+
 struct SPath {
     var config name From;
     var config name To;
     var config name Via[3];
 };
 
+var config bool bDebug;
+
 var config int MaxZombiesOnce;
 var config bool bFastTrack;
 var config float WaveSpawnPeriod;
+var config byte BoringStage;
 var config float XPBonusMult;
 var config byte ZedEventNum; // use event zeds for this map. 0 - don't force
 var config bool bTestMap;
 
 var config float ZVolDisableTime, ZVolDisableTimeMax;
 var config bool bVanillaVisibilityCheck;
+var config bool bOnlyInvisibleZVol;
 var config float ZedSpawnMaxDist;
 var config float ZedSpawnMinDistWeight;
 var config float FloorHeight, BasementZ;
@@ -38,6 +49,7 @@ var config array<name> ZVolClose;
 var config array<name> ZVolElevated;
 var config array<name> ZVolJumpable;
 var config array<SZVolDoor> ZVolDoors;
+var config array<SZVolLink> ZVolLinks;
 
 var config byte GuardianLight, GuardianHue;
 var config byte FTGTargetsPerWave;
@@ -67,9 +79,19 @@ function bool IsBadAmmo(name n)
     return FindNameInArray(FTGBadAmmo, n) != -1;
 }
 
-function ProcessZombieVolumes(out array<ZombieVolume> ZList)
+static function int FindZVolByName(out array<ZombieVolume> ZList, name n) {
+    local int i;
+
+    for (i = 0; i < ZList.length; ++i) {
+        if (ZList[i].name == n)
+            return i;
+    }
+    return -1;
+}
+
+function ProcessZombieVolumes(out array<ZombieVolume> ZList, array<ScrnTypes.ZVolInfo> ZVolInfos)
 {
-    local int i, j, k;
+    local int i, j, k, L, ZVolHiddenCount;
     local ZombieVolume ZVol;
     local name n;
     local KFDoorMover Door;
@@ -79,7 +101,9 @@ function ProcessZombieVolumes(out array<ZombieVolume> ZList)
         n = ZVol.name;
         if ( FindNameInArray(ZVolBad, n) != -1 ) {
             log(n $ " marked bad", class.name);
-            ZList.remove(i--, 1);
+            ZList.remove(i, 1);
+            ZVolInfos.remove(i, 1);
+            --i;
             continue;
         }
         if ( bResetSpawnDesirability ) {
@@ -95,6 +119,9 @@ function ProcessZombieVolumes(out array<ZombieVolume> ZList)
             log(n $ " marked hidden", class.name);
             ZVol.bAllowPlainSightSpawns = true;
         }
+        if (ZVol.bAllowPlainSightSpawns) {
+            ++ZVolHiddenCount;
+        }
         if ( FindNameInArray(ZVolClose, n) != -1 ) {
             log(n $ " marked close", class.name);
             ZVol.MinDistanceToPlayer = 1;
@@ -109,21 +136,81 @@ function ProcessZombieVolumes(out array<ZombieVolume> ZList)
             log(n $ " marked jumpable", class.name);
             ZVol.bNoZAxisDistPenalty = true;
         }
-        for ( j = 0; j < ZVolDoors.length; ++j ) {
-            if ( ZVolDoors[j].ZVol == n ) {
-                Door = Mut.FindDoorByName(ZVolDoors[j].Door);
-                if ( Door == none ) {
-                    log(ZVolDoors[j].Door $ " - door not found", class.name);
-                }
-                else {
-                    k = ZVol.RoomDoorsList.length;
-                    ZVol.RoomDoorsList.insert(k, 1);
-                    ZVol.RoomDoorsList[k].DoorActor = Door;
-                    ZVol.RoomDoorsList[k].bOnlyWhenWelded = true;
-                    log(n $ " disabled while " $ Door.name $ " welded", class.name);
+
+        for (j = 0; j < ZVolDoors.length; ++j) {
+            if (ZVolDoors[j].ZVol != n)
+                continue;
+
+            Door = Mut.FindDoorByName(ZVolDoors[j].Door);
+            if (Door == none) {
+                log(ZVolDoors[j].Door $ " - door not found", class.name);
+            }
+            else {
+                k = ZVol.RoomDoorsList.length;
+                ZVol.RoomDoorsList.insert(k, 1);
+                ZVol.RoomDoorsList[k].DoorActor = Door;
+                ZVol.RoomDoorsList[k].bOnlyWhenWelded = true;
+                log(n $ " disabled while " $ Door.name $ " welded", class.name);
+            }
+        }
+    }
+
+    if (bOnlyInvisibleZVol) {
+        if (ZVolHiddenCount < 5) {
+            log("Cannot enforce bOnlyInvisibleZVol due to low invisible ZVol count: " $ ZVolHiddenCount, class.name);
+        }
+        else {
+            for ( i = 0; i < ZList.length; ++i ) {
+                ZVol = ZList[i];
+                if (!ZVol.bAllowPlainSightSpawns) {
+                    log(n $ " marked bad (visible)", class.name);
+                    ZList.remove(i, 1);
+                    ZVolInfos.remove(i, 1);
+                    --i;
+                    continue;
                 }
             }
         }
+    }
+
+    for (j = 0; j < ZVolLinks.length; ++j) {
+        if (ZVolLinks[j].Src == '' || ZVolLinks[j].Dst == '' || ZVolLinks[j].Src == ZVolLinks[j].Dst) {
+            log("ZVolLinks["$j$"] - invalid entry", class.name);
+            continue;
+        }
+
+        i = FindZVolByName(ZList, ZVolLinks[j].Dst);
+        if (i == -1) {
+            log("ZVolLinks["$j$"] - '" $ ZVolLinks[j].Dst $ "' ZVol not found", class.name);
+            continue;
+        }
+
+        k = FindZVolByName(ZList, ZVolLinks[j].Src);
+        if (k == -1) {
+            log("ZVolLinks["$j$"] - '" $ ZVolLinks[j].Src $ "' ZVol not found", class.name);
+            continue;
+        }
+
+        if (ZList[k].bAllowPlainSightSpawns) {
+            log("ZVolLinks["$j$"] - Src cannot be hidden", class.name);
+            continue;
+        }
+
+        Door = none;
+        if (ZVolLinks[j].Door != '') {
+            Door = Mut.FindDoorByName(ZVolLinks[j].Door);
+            if (Door == none) {
+                log("ZVolLinks["$j$"] - '" $ ZVolLinks[j].Door $ "' - door not found", class.name);
+            }
+            continue;
+        }
+
+        L = ZVolInfos[i].Links.Length;
+        ZVolInfos[i].Links.insert(L, 1);
+        ZVolInfos[i].Links[L].Src = ZList[k];
+        ZVolInfos[i].Links[L].Door = Door;
+        log("ZVolLink " $ ZVolInfos[i].Links[L].Src $ eval(Door == none, "", " => " $ Door.name)
+                $ " => " $ ZList[i].name, class.name);
     }
 }
 

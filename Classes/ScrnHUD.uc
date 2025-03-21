@@ -222,6 +222,7 @@ var const int MARK_PLAYER;
 var const int MARK_MEDIC;
 var const int MARK_CAMP;
 var const int MARK_LOBBY;
+var const int MARK_DEBUGLOC;
 var const int MARK_PICKUP;
 var const int MARK_AMMO;
 var const int MARK_WEAPON;
@@ -868,7 +869,7 @@ simulated function DrawOldHudItems(Canvas C)
     C.DrawColor = WhiteColor;
 
     TempLevel = KFPRI.ClientVeteranSkillLevel;
-    if( ClientRep!=None && (TempLevel+1)<ClientRep.MaximumLevel ) {
+    if (bShowScoreboard && ClientRep != none && (TempLevel+1)<ClientRep.MaximumLevel) {
         // Draw progress bar.
         bDisplayingProgress = true;
         if( NextLevelTimer<Level.TimeSeconds ) {
@@ -901,9 +902,10 @@ simulated function DrawOldHudItems(Canvas C)
     BonusPerkX = TempX + VetStarSize;
     TempX = BonusPerkX + (TempSize - VetStarSize);
     TempY = C.ClipY * 0.93 - TempSize;
-    // bonus level
-    if ( KFPRI != none && ScrnPerk.static.GetClientVeteranSkillLevel(KFPRI) != KFPRI.ClientVeteranSkillLevel ) {
-        TempLevel = ScrnPerk.static.GetClientVeteranSkillLevel(KFPRI);
+    // Bonus level. Show only if it doesn't match XP level and it is not the default 6.
+    TempLevel = ScrnPerk.static.GetClientVeteranSkillLevel(KFPRI);
+    if (KFPRI != none && TempLevel != KFPRI.ClientVeteranSkillLevel
+            && (bShowScoreboard || TempLevel != 6 || KFPRI.ClientVeteranSkillLevel < 6)) {
         Counter = 0;
         TempLevel = ScrnPerk.Static.PreDrawPerk(C,TempLevel,TempMaterial,TempStarMaterial);
         C.SetPos(BonusPerkX, TempY);
@@ -3454,6 +3456,62 @@ function AddTextMessage(string M, class<LocalMessage> MessageClass, PlayerReplic
         TextMessages[i].PRI = None;
 }
 
+simulated function Message(PlayerReplicationInfo PRI, coerce string Msg, name MsgType)
+{
+    local Class<LocalMessage> LocalMessageClass;
+    local string s;
+
+    if (PRI != None && MsgType == 'Say' || MsgType == 'TeamSay') {
+        DisplayPortrait(PRI);
+    }
+
+    switch( MsgType )
+    {
+        case 'Trader':
+            Msg = TraderString$":" @ Msg;
+            LocalMessageClass = class'SayMessagePlus';
+            PRI = None;
+            break;
+        case 'Voice':
+        case 'Say':
+            if ( PRI == None )
+                return;
+            Msg = ": " $ Msg;
+            LocalMessageClass = class'SayMessagePlus';
+            break;
+        case 'TeamSay':
+            if (PRI == None)
+                return;
+            s = PRI.GetLocationName();
+            if (s == "" || s == " ") {
+                Msg = ": " $ Msg;
+            }
+            else {
+                if (Right(s, 1) == " ") {
+                    // "@VehicleString" bug
+                    s = left(s, len(s) - 1);
+                }
+                Msg = " (" $ s $ "): " $ Msg;
+            }
+            LocalMessageClass = class'TeamSayMessagePlus';
+            break;
+        case 'CriticalEvent':
+            LocalMessageClass = class'KFCriticalEventPlus';
+            LocalizedMessage(LocalMessageClass, 0, None, None, None, Msg);
+            return;
+        case 'DeathMessage':
+            LocalMessageClass = class'xDeathMessage';
+            break;
+        case 'Msg_CashReward':
+            LocalMessageClass = class'Msg_CashReward';
+            break;
+        default:
+            LocalMessageClass = class'StringMessagePlus';
+            break;
+    }
+    AddTextMessage(Msg, LocalMessageClass, PRI);
+}
+
 
 // added support of color messages
 function DisplayMessages(Canvas C)
@@ -3913,7 +3971,10 @@ function MarkTarget(KFPlayerReplicationInfo Sender, Actor Target, vector Locatio
             // never link location to an actor
             Target = none;
             MarkLife = MarkLifeLocation;
-            Description = class'ScrnBalance'.default.Mut.ColoredPlayerName(Sender);
+            if (MarkType != MARK_DEBUGLOC) {
+                Description = class'ScrnBalance'.default.Mut.ColoredPlayerName(Sender);
+            }
+
             if (MarkType == MARK_CAMP) {
                 // camp spot stays active untill the end of end of the trader time
                 MarkLife = fclamp(KFGRI.TimeToNextWave, MarkLifeLocation, 60);
@@ -3948,7 +4009,7 @@ function MarkTarget(KFPlayerReplicationInfo Sender, Actor Target, vector Locatio
     }
 
     i = Marks.Length;
-    if (i > 0) {
+    if (i > 0 && MarkType != MARK_DEBUGLOC) {
         if (MarkGroup == MARK_PLAYERS || MarkGroup == MARK_LOCATIONS) {
             // first iteration - a player can mark only one location or self
             for (i = 0; i < Marks.Length; ++i) {
@@ -4239,6 +4300,7 @@ defaultproperties
     MARK_MEDIC=17           // 0x11
     MARK_CAMP=32            // 0x20
     MARK_LOBBY=33           // 0x21
+    MARK_DEBUGLOC=34        // 0x22
     MARK_AMMO=48            // 0x30
     MARK_WEAPON=49          // 0x31
     MARK_ARMOR=50           // 0x32
