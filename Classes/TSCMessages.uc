@@ -116,7 +116,7 @@ defaultproperties
     WarningColor=(R=255,G=128,B=0,A=255)
     DrawColor=(R=225,G=200,B=64,A=255)
     PosX=0.500000
-    PosY=0.65
+    PosY=0.60
     FontSize=3
     Lifetime=5
 

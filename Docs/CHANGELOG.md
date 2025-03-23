@@ -30,6 +30,13 @@
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+## v9.71.12
+- **TSC** fixed a bug where doors respawned at the beginning of a wave instead of trader time.
+- Adjusted **TSC** message position to avoid overlaps with player death messages.
+
+#### Heavy Machinegunner
+- **M41A** 3rd person model replaced by the M4-M203 placehold due to crashes
+
 ## v9.71.11
 - **Pipebomb** alt-fire displays the placed pipebomb count (thanks [FishFlop_The_CatSlap])
 - *ScrnBalanceSrv.ini*: added map aliases for *KF-SunnyLandSanitarium-SE*

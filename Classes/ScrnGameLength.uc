@@ -727,7 +727,7 @@ protected function bool LoadNextWave()
         }
     }
 
-    DoorControl(Wave.DoorControl);
+    DoorControl(Wave.DoorControl, Mut.bRespawnDoors || Mut.bTSCGame);
 
     return true;
 }
@@ -817,7 +817,7 @@ function RunWave()
     local string s;
 
     SetWaveInfo();
-    DoorControl(Wave.DoorControl2);
+    DoorControl(Wave.DoorControl2, false);
     Game.ScrnGRI.bTraderArrow = Wave.bTraderArrow;
 
     if ( Wave.bRandomSpawnLoc ) {
@@ -970,11 +970,11 @@ function WaveEnded()
     }
 }
 
-function DoorControl(ScrnWaveInfo.EDoorControl dc)
+function DoorControl(ScrnWaveInfo.EDoorControl dc, bool bRespawnDefault)
 {
     switch (dc) {
         case DOOR_Default:
-            if (Mut.bRespawnDoors || Mut.bTSCGame) {
+            if (bRespawnDefault) {
                 Mut.RespawnDoors();
             }
             break;
