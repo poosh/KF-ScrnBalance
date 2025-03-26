@@ -13,4 +13,5 @@ defaultproperties
     SelectSoundRef="KF_AxeSnd.Axe_Select"
     MeshRef="KF_Weapons_Trip.Axe_Trip"
     SkinRefs(0)="KF_Weapons_Trip_T.melee.axe_cmb"
+    BloodyMaterialRef="KF_Weapons_Trip_T.melee.axe_bloody_cmb"
 }
