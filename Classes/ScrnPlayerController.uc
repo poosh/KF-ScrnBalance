@@ -3947,6 +3947,10 @@ defaultproperties
     RedCharacters(27)="Trooper_Clive_Jenkins"
     RedCharacters(28)="Mr_Magma"
     RedCharacters(29)="Ms_Clamley"
+    RedCharacters(30)="Namvet"  // L4D1 Bill
+    RedCharacters(31)="Manager"  // L4D1 Louis
+    RedCharacters(32)="Teenangst"  // L4D1 Zoey
+    RedCharacters(33)="Biker"  // L4D1 Francis
 
     BlueCharacters(0)="Pyro_Blue"
     BlueCharacters(1)="Baddest_Santa"
@@ -3974,4 +3978,8 @@ defaultproperties
     BlueCharacters(23)="Steampunk_Sharpshooter"
     BlueCharacters(24)="Steampunk_Support_Specialist"
     BlueCharacters(25)="Voltage"
+    BlueCharacters(26)="Gambler"  // L4D2 Nick
+    BlueCharacters(27)="Mechanic"  // L4D2 Ellis
+    BlueCharacters(28)="Coach"  // L4D2 Coach
+    BlueCharacters(29)="Producer"  // L4D2 Rochelle
 }

@@ -112,6 +112,8 @@ simulated function bool PutDown()
 
 defaultproperties
 {
+    FireModeClass(0)=Class'ScrnKnifeFire'
+    FireModeClass(1)=Class'ScrnKnifeFireB'
     PickupClass=class'ScrnKnifePickup'
     ItemName="Knife SE"
     Description="Military Combat Knife"
@@ -124,4 +126,10 @@ defaultproperties
     SelectAnimRate=3.333333
     BringUpTime=0.10
     PutDownTime=0.10
+
+    HudImageRef="KillingFloorHUD.WeaponSelect.knife_unselected"
+    SelectedHudImageRef="KillingFloorHUD.WeaponSelect.knife"
+    SelectSoundRef="KF_KnifeSnd.Knife_Select"
+    MeshRef="KF_Weapons_Trip.Knife_Trip"
+    SkinRefs(0)="KF_Weapons_Trip_T.melee.knife_cmb"
 }

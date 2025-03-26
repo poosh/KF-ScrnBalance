@@ -421,6 +421,10 @@ function string GetMapAchName(String FileName)
 {
     local int i;
 
+    if (Mut.MapInfo.AchName != "" && FileName == Mut.MapName) {
+        return Mut.MapInfo.AchName;
+    }
+
     for ( i = 0; i < MapAliases.length; ++i ) {
         if ( FileName ~= MapAliases[i].FileName ) {
             if ( MapAliases[i].AchName != "" )

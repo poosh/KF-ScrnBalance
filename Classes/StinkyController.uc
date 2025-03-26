@@ -8,7 +8,10 @@ var array<Actor> MoveTargets;
 
 var array<KFAmmoPickup> AmmoCandidates;
 var transient KFAmmoPickup CurrentAmmoCandidate;
-var int AmmoSpawnCount;
+var int AmmoSpawnCount, MaxAmmoSpawnCount;
+var transient int AmmoSpawned, AmmoExisted;
+var float AmmoPPPM; // Ammo spawned Per Player Per Minute
+var transient float LastAmmoSpawnTime;
 
 var transient Actor LastAlternatePathTarget;
 var transient NavigationPoint LastAlternatePathPoint;
@@ -27,6 +30,7 @@ function PostBeginPlay()
 {
     FtgGame = FtgGame(Level.Game);
     AmmoCandidates = FtgGame.StinkyAmmoPickups;
+    LastAmmoSpawnTime = Level.TimeSeconds;
     super.PostBeginPlay();
 }
 
@@ -414,7 +418,11 @@ state MoveToShop extends Moving
                 if ( ammo.bSleeping ) {
                     CurrentAmmoCandidate = ammo;
                     GotoState( 'MoveToAmmo', 'Begin' ); // go for ammo
-                } // else ammo is already spawned
+                }
+                else {
+                    // ammo is already spawned
+                    ++AmmoExisted;
+                }
                 return;
             }
         }
@@ -454,7 +462,16 @@ state MoveToAmmo extends Moving
     {
         super.BeginState();
         SetTimer(30, false);
-        AmmoSpawnCount = default.AmmoSpawnCount + FtgGame.AliveTeamPlayerCount[TeamIndex] / 3;
+
+        AmmoSpawned = 0;
+        AmmoSpawnCount = default.AmmoSpawnCount;
+        if (AmmoPPPM < 1.1 * default.AmmoPPPM) {
+            // extra ammo box per 3 players
+            AmmoSpawnCount += FtgGame.AliveTeamPlayerCount[TeamIndex] / 3;
+            // If AmmoPPPM drastically drops, spawn more ammo even in 1-2 player games
+            AmmoSpawnCount = max(AmmoSpawnCount, 1.5 * default.AmmoPPPM / AmmoPPPM);
+            AmmoSpawnCount = min(AmmoSpawnCount, MaxAmmoSpawnCount);
+        }
     }
 
     function EndState()
@@ -487,8 +504,19 @@ state MoveToAmmo extends Moving
 
     function CompleteAction()
     {
+        local float dt;
+
         CurrentAmmoCandidate.GotoState('Pickup');
-        if (--AmmoSpawnCount <= 0) {
+
+        if (++AmmoSpawned >= AmmoSpawnCount) {
+            dt = Level.TimeSeconds - LastAmmoSpawnTime;
+            class'ScrnFunctions'.static.lpf(AmmoPPPM,
+                    (AmmoSpawned + AmmoExisted) * 60.0 / dt / fmax(1.0, FtgGame.AliveTeamPlayerCount[TeamIndex]),
+                    dt, 60.0);
+            // class'ScrnF'.static.dbg(self, "Sinky Spawned " $ AmmoSpawned $ " ammo in " $ dt $ "s. AmmoPPPM=" $ AmmoPPPM);
+            LastAmmoSpawnTime = Level.TimeSeconds;
+            AmmoSpawned = 0;
+            AmmoExisted = 0;
             WhatToDoNext();
         }
     }
@@ -514,4 +542,6 @@ defaultproperties
     TeamIndex=1
     BlameStr="%p blamed for setting the base in a glitch spot!"
     AmmoSpawnCount=1
+    MaxAmmoSpawnCount=5
+    AmmoPPPM=1.0
 }

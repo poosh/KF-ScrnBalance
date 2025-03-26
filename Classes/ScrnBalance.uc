@@ -2526,7 +2526,7 @@ function PostBeginPlay()
         SetMaxZombiesOnce();
     }
 
-    if ( MapInfo.bTestMap )
+    if (MapInfo.bTestMap || MapInfo.bDebug)
         SetTestMap();
 
     if ( !ClassIsChildOf(KF.PlayerControllerClass, class'ScrnPlayerController') ) {
@@ -3249,7 +3249,7 @@ function RegisterVersion(string ItemName, int Version)
 
 defaultproperties
 {
-    VersionNumber=97112
+    VersionNumber=97114
     GroupName="KF-Scrn"
     FriendlyName="ScrN Balance"
     Description="Total rework of KF1 to make it modern and the best tactical coop in the world while sticking to the roots of the original."

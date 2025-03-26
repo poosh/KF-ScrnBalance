@@ -59,24 +59,14 @@ static function float AddExtraAmmoFor(KFPlayerReplicationInfo KFPRI, Class<Ammun
     return 1.0;
 }
 
-// Make zerker extremely slow while healing
-// (c) PooSH, 2012
-// v1.74: 15% speed penalty while holding a non-melee gun
-// v1.74: 30% speed penalty while holding a Syringe
-// v2.26: 50% of MeleeMovementSpeedModifier is aplied on chainsaw too
-// v4.39: Test try to give full speed bonus to chainsaw
 static function float GetWeaponMovementSpeedBonus(KFPlayerReplicationInfo KFPRI, Weapon Weap)
 {
-    // Syringe is a child of KFMeleeGun, so need to check it first!
-    if ( Syringe(Weap) != none ) {
-        if ( class'ScrnBalance'.default.Mut.bHardcore )
-            return -0.30;
-        return -0.15;
+    if (KFMeleeGun(Weap) == none)
+        return -0.10;  // 10% slower movement while holding  a non-melee gun
+
+    if (Weap.IsA('Chainsaw')) {
+        return 0.3;  // 30% faster movement while holding a chansaw (GetMeleeMovementSpeedModifier is not applied)
     }
-    else if ( KFMeleeGun(Weap) == none )
-        return -0.15;
-    else if ( Chainsaw(Weap) != none )
-        return GetMeleeMovementSpeedModifier(KFPRI);
     return 0.0;
 }
 

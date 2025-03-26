@@ -301,4 +301,10 @@ defaultproperties
     BringUpTime=0.15
     SelectAnimRate=3.3333
     PutDownAnimRate=2.4444
+
+    HudImageRef="KillingFloorHUD.WeaponSelect.single_9mm_unselected"
+    SelectedHudImageRef="KillingFloorHUD.WeaponSelect.single_9mm"
+    SelectSoundRef="KF_9MMSnd.9mm_Select"
+    MeshRef="KF_Weapons_Trip.9mm_Trip"
+    SkinRefs(0)="KF_Weapons_Trip_T.Pistols.Ninemm_cmb"
 }

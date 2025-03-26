@@ -24,6 +24,7 @@ struct SPath {
 };
 
 var config bool bDebug;
+var config bool bTestMap;
 
 var config int MaxZombiesOnce;
 var config bool bFastTrack;
@@ -31,7 +32,7 @@ var config float WaveSpawnPeriod;
 var config byte BoringStage;
 var config float XPBonusMult;
 var config byte ZedEventNum; // use event zeds for this map. 0 - don't force
-var config bool bTestMap;
+var config string AchName;
 
 var config float ZVolDisableTime, ZVolDisableTimeMax;
 var config bool bVanillaVisibilityCheck;

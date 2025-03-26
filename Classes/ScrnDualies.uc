@@ -457,19 +457,25 @@ function AddReloadedAmmo()
 
 defaultproperties
 {
-     MagAmmoRemaining=30
-     ClientMagAmmoRemaining=30
-     ReloadShortRate = 2.93 //no slides locked back
-     ReloadHalfShortRate = 3.23 //right slide locked back
-     //ReloadRate=3.500000 //both
-     Weight=2
-     ModeSwitchAnim="LightOn"
-     FireModeClass(0)=class'ScrnDualiesFire'
-     DemoReplacement=class'ScrnSingle'
-     PickupClass=class'ScrnDualiesPickup'
-     ItemName="Dual 9mms SE"
-     PistolSlideOffset=(X=0.02330,Y=0.0,Z=0.0)
-     PistolHammerRotation=(Pitch=145,Yaw=0,Roll=0) //tripwire why did you do this
-     DefaultHammerRotateMult=1
-     DefaultHammerRotateRate=0.02
+    MagAmmoRemaining=30
+    ClientMagAmmoRemaining=30
+    ReloadShortRate = 2.93 //no slides locked back
+    ReloadHalfShortRate = 3.23 //right slide locked back
+    //ReloadRate=3.500000 //both
+    Weight=2
+    ModeSwitchAnim="LightOn"
+    FireModeClass(0)=class'ScrnDualiesFire'
+    DemoReplacement=class'ScrnSingle'
+    PickupClass=class'ScrnDualiesPickup'
+    ItemName="Dual 9mms SE"
+    PistolSlideOffset=(X=0.02330,Y=0.0,Z=0.0)
+    PistolHammerRotation=(Pitch=145,Yaw=0,Roll=0) //tripwire why did you do this
+    DefaultHammerRotateMult=1
+    DefaultHammerRotateRate=0.02
+
+    HudImageRef="KillingFloorHUD.WeaponSelect.dual_9mm_unselected"
+    SelectedHudImageRef="KillingFloorHUD.WeaponSelect.dual_9mm"
+    SelectSoundRef="KFPlayerSound.getweaponout"
+    MeshRef="KF_Weapons_Trip.Dual9mm"
+    SkinRefs(0)="KF_Weapons_Trip_T.Pistols.Ninemm_cmb"
 }

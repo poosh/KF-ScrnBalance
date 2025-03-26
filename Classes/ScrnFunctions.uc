@@ -2,6 +2,27 @@ class ScrnFunctions extends ScrnF
     abstract;
 
 
+// TODO: Move to ScrnF on the next ScrnShared update
+
+/**
+ * @brief Applies a Low-Pass Filter to the input samples, adding inertia to the system.
+ * @param y [in] previous/initial result of the function
+ *          [out] new result
+ * @param x new sample value
+ * @oaram dt time between the previous and the new sample
+ * @param rc time constant - the reference measurement time.
+ *  The higher rc, the more inertia (less impact of a single x on y)
+ */
+static function lpf(out float y, float x, float dt, float rc)
+{
+    local float a;
+
+    a = dt / (rc + dt);
+    y = a * x + (1 - a) * y;
+}
+
+
+
 /** Calculates the multiplier to act at real-time speed during a Zed Time.
  *  @return the action speed multiplier.
  */
@@ -9,6 +30,8 @@ static function float RealTimeFactor(LevelInfo Level)
 {
     return fmax(1.1 / Level.TimeDilation, 1.0);
 }
+
+// MOVE SECTION END
 
 static function class<ScrnVeterancyTypes> FindPerkByName(ClientPerkRepLink L, string VeterancyNameOrIndex)
 {

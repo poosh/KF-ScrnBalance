@@ -358,14 +358,9 @@ simulated function int GetCurrentSpeed()
 
 simulated function int GetMaxSpeed()
 {
-    local vector Velocity2D;
-
     // GroundSpeed is replicated to owner pawn only
     if (PawnOwner == none || PlayerOwner.Pawn != PawnOwner)
         return 0;
-
-    Velocity2D = PawnOwner.Velocity;
-    Velocity2D.Z = 0;
     return round(PawnOwner.GroundSpeed);
 }
 

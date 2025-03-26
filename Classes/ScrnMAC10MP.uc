@@ -97,7 +97,7 @@ simulated function ClientFinishReloading()
 exec function ReloadMeNow()
 {
     local float ReloadMulti;
-    
+
     if(!AllowReload())
         return;
     if ( bHasAimingMode && bAimingRifle )
@@ -108,12 +108,12 @@ exec function ReloadMeNow()
         if( Role < ROLE_Authority)
             ServerZoomOut(false);
     }
-    
+
     if ( KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo) != none && KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo).ClientVeteranSkill != none )
         ReloadMulti = KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo).ClientVeteranSkill.Static.GetReloadSpeedModifier(KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo), self);
     else
         ReloadMulti = 1.0;
-        
+
     bIsReloading = true;
     ReloadTimer = Level.TimeSeconds;
     bShortReload = !bBoltClosed; //short reload now depends on if bolt is closed or not
@@ -121,7 +121,7 @@ exec function ReloadMeNow()
         ReloadRate = Default.ReloadShortRate / ReloadMulti;
     else
         ReloadRate = Default.ReloadRate / ReloadMulti;
-        
+
     if( bHoldToReload )
     {
         NumLoadedThisReload = 0;
@@ -147,19 +147,19 @@ simulated function ClientReload()
         if( Role < ROLE_Authority)
             ServerZoomOut(false);
     }
-    
+
     if ( KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo) != none && KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo).ClientVeteranSkill != none )
         ReloadMulti = KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo).ClientVeteranSkill.Static.GetReloadSpeedModifier(KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo), self);
     else
         ReloadMulti = 1.0;
-        
+
     bIsReloading = true;
     if (bBoltClosed)
     {
         bShortReload = false;
         PlayAnim(ReloadAnim, ReloadAnimRate*ReloadMulti, 0.001);
         SetAnimFrame(1, 0, 1); //skip frame 0 because it has the bolt back for some reason
-        
+
         SetBoneLocation( 'MAC11_Bolt', ChargingHandleOffset, 0 ); //reset bolt so that the animation's Bolt position gets used
     }
     else if (MagAmmoRemaining >= 1 || !bBoltClosed)
@@ -172,7 +172,7 @@ simulated function ClientReload()
 }
 
 simulated function StartTweeningBolt()
-{   
+{
     bTweeningBolt = true; //start Bolt tweening
     TweenEndTime = Level.TimeSeconds + 0.2;
 }
@@ -180,14 +180,14 @@ simulated function StartTweeningBolt()
 function AddReloadedAmmo()
 {
     local int a;
-    
+
     UpdateMagCapacity(Instigator.PlayerReplicationInfo);
 
     a = MagCapacity;
     //if ( bShortReload )
     //    a++; // 1 bullet already bolted
     //removed +1 on tactical reload because MAC10 is an open bolt weapon
-    
+
     if ( AmmoAmount(0) >= a )
         MagAmmoRemaining = a;
     else
@@ -209,10 +209,10 @@ function AddReloadedAmmo()
 
 defaultproperties
 {
-     ReloadShortAnim="Reload"
-     ReloadShortRate=2.13 //2.1
-     FireModeClass(0)=class'ScrnMAC10Fire'
-     PickupClass=class'ScrnMAC10Pickup'
-     ItemName="MAC10 SE"
-     ChargingHandleOffset=(X=-0.035,Y=0.000,Z=0)
+    ReloadShortAnim="Reload"
+    ReloadShortRate=2.13 //2.1
+    FireModeClass(0)=class'ScrnMAC10Fire'
+    PickupClass=class'ScrnMAC10Pickup'
+    ItemName="MAC10 SE"
+    ChargingHandleOffset=(X=-0.035,Y=0.000,Z=0)
 }
