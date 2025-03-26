@@ -132,4 +132,5 @@ defaultproperties
     SelectSoundRef="KF_KnifeSnd.Knife_Select"
     MeshRef="KF_Weapons_Trip.Knife_Trip"
     SkinRefs(0)="KF_Weapons_Trip_T.melee.knife_cmb"
+    BloodyMaterialRef="KF_Weapons_Trip_T.melee.knife_bloody_cmb"
 }
