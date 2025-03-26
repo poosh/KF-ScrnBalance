@@ -30,17 +30,21 @@
 ## VERSION 9
 
 -------------------------------------------------------------------------------
-## v9.71.14
+## v9.71.15
 - Fixed headshot detection of wide melee swings.
 - Melee weapons now properly play flesh hit sounds on dedicated servers (thanks [Broski])
 - Fixed custom gun skins for spawn weapons (thanks[Duckbuster] and [That1Guy])
+- Last 16 zeds in a wave spawn closer to players with forced **FastTrack**
 - **FTG**: Tweaked the ammo production rate to approximately one box per player per minute.
 - Stinky Clot doesn't produce additional ammo boxes if a lot of ammo is produced shortly. It prevents an overwhelming amount of ammo on maps with many ammo boxes.
 - Stinky Clot may produce additional ammo boxes even in the Solo game if he hasn't spawned them for a while.
+- Fixed `ZVolLinks` in *ScrnMapInfo.ini*
 - *ScrnMapInfo.ini*: added `AchName` to override map achievement for a custom map/version
+- *ScrnMapInfo.ini*: added map definition for the upcomming **KF-BioticsLab-SE**
 - **TSC**: allowed L4D character selection. L4D1 survivors can be picked on the red team, L4D2 - blue.
 - **Berserker** range weapon movement penalty reduced to -10% (from -15%).
 - **Speed Boost**: Player base movement speed reduced to 250 (down from 260). Now, players have +25% speed over the regular game, like zeds.
+- `DebugClear` console command - clear debug lines from the screen (e.g., clear zed spawn cylinders when bDebug=true)
 
 ### ScrN Zed Pack
 - Fixed **Brute**'s pushing force to properly include the target's mass. Heavy zeds are harder to push.

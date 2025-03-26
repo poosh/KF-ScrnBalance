@@ -3700,13 +3700,19 @@ exec function DebugZedSpawn()
     }
 }
 
-exec function DebugButtons() {
+exec function DebugButtons()
+{
     ClientMessage("bFire=" $ bFire
             @ "bAltFire=" $ bAltFire
             @ "bRun=" $ bRun
             @ "bSprint=" $ bSprint
             @ "bDuck=" $ bDuck
     );
+}
+
+exec function DebugClear()
+{
+    ClearStayingDebugLines();
 }
 
 // ======================== COMMENT BEFORE RELEASE !!! =====================

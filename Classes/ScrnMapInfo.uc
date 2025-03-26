@@ -90,12 +90,13 @@ static function int FindZVolByName(out array<ZombieVolume> ZList, name n) {
     return -1;
 }
 
-function ProcessZombieVolumes(out array<ZombieVolume> ZList, array<ScrnTypes.ZVolInfo> ZVolInfos)
+function ProcessZombieVolumes(out array<ZombieVolume> ZList, out array<ScrnTypes.ZVolInfo> ZVolInfos)
 {
     local int i, j, k, L, ZVolHiddenCount;
     local ZombieVolume ZVol;
     local name n;
     local KFDoorMover Door;
+    local string s;
 
     for ( i = 0; i < ZList.length; ++i ) {
         ZVol = ZList[i];
@@ -175,6 +176,7 @@ function ProcessZombieVolumes(out array<ZombieVolume> ZList, array<ScrnTypes.ZVo
     }
 
     for (j = 0; j < ZVolLinks.length; ++j) {
+        // log("ZVolLinks["$j$"] Src="$ZVolLinks[j].Src $ " Dst="$ZVolLinks[j].Dst $ " Door=" $ ZVolLinks[j].Door, class.name);
         if (ZVolLinks[j].Src == '' || ZVolLinks[j].Dst == '' || ZVolLinks[j].Src == ZVolLinks[j].Dst) {
             log("ZVolLinks["$j$"] - invalid entry", class.name);
             continue;
@@ -191,7 +193,6 @@ function ProcessZombieVolumes(out array<ZombieVolume> ZList, array<ScrnTypes.ZVo
             log("ZVolLinks["$j$"] - '" $ ZVolLinks[j].Src $ "' ZVol not found", class.name);
             continue;
         }
-
         if (ZList[k].bAllowPlainSightSpawns) {
             log("ZVolLinks["$j$"] - Src cannot be hidden", class.name);
             continue;
@@ -203,15 +204,19 @@ function ProcessZombieVolumes(out array<ZombieVolume> ZList, array<ScrnTypes.ZVo
             if (Door == none) {
                 log("ZVolLinks["$j$"] - '" $ ZVolLinks[j].Door $ "' - door not found", class.name);
             }
-            continue;
         }
 
         L = ZVolInfos[i].Links.Length;
         ZVolInfos[i].Links.insert(L, 1);
         ZVolInfos[i].Links[L].Src = ZList[k];
         ZVolInfos[i].Links[L].Door = Door;
-        log("ZVolLink " $ ZVolInfos[i].Links[L].Src $ eval(Door == none, "", " => " $ Door.name)
-                $ " => " $ ZList[i].name, class.name);
+
+        s = "ZVolLinks["$j$"] " $ ZVolInfos[i].Links[L].Src;
+        if (Door != none) {
+            s $= " | " $ ZVolInfos[i].Links[L].Door.name $ " | ";
+        }
+        s $= " => " $ ZList[i].name;
+        log(s, class.name);
     }
 }
 

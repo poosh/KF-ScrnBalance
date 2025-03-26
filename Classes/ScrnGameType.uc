@@ -1716,6 +1716,10 @@ function EZedSpawnLocation GetSpawnLocation()
         // not enough zeds on the map - spawn them closer
         return ZSLOC_CLOSER;
     }
+    if (!bWaveBossInProgress && TotalMaxMonsters <= 16) {
+        // spawn last squads next to the players, so they don't have to look for them forever
+        return ZSLOC_CLOSER;
+    }
     return ZedSpawnLoc;
 }
 
