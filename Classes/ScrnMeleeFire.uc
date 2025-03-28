@@ -71,11 +71,13 @@ function Timer()
 
             if (Zed != none) {
                 Zed.bBackstabbed = bBackStabbed;
-                Zed.TakeDamage(MyDamage, Instigator, HitLocation, vector(PointRot), hitDamageClass) ;
+                Zed.TakeDamage(MyDamage, Instigator, HitLocation, vector(PointRot), hitDamageClass);
+                // Zed can be already dead here
                 if (MeleeHitSounds.Length > 0) {
                     Weapon.PlaySound(MeleeHitSounds[Rand(MeleeHitSounds.length)],SLOT_None,MeleeHitVolume,,,,false);
                 }
-                if (Zed.Mass <= Instigator.Mass && VSizeSquared(Instigator.Velocity) > 90000) {
+                if (Zed != none && Zed.Health > 0 && Zed.Mass <= Instigator.Mass
+                        && VSizeSquared(Instigator.Velocity) > 90000) {
                     Zed.FlipOver();
                 }
             }

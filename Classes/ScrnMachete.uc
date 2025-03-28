@@ -114,7 +114,7 @@ defaultproperties
     SelectedHudImageRef="KillingFloorHUD.WeaponSelect.machette"
     SelectSoundRef="KF_MacheteSnd.Machete_Select"
     MeshRef="KF_Weapons_Trip.Machete_Trip"
-    SkinsRef(0)="KF_Weapons_Trip_T.melee.Machete_cmb"
-    SkinsRef(1)="KF_Weapons_Trip_T.hands.hands_1stP_military_cmb"
+    SkinRefs(0)="KF_Weapons_Trip_T.melee.Machete_cmb"
+    SkinRefs(1)="KF_Weapons_Trip_T.hands.hands_1stP_military_cmb"
     BloodyMaterialRef="KF_Weapons_Trip_T.melee.machete_bloody_cmb"
 }

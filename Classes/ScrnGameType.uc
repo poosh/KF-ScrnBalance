@@ -1624,8 +1624,9 @@ function float RateZombieVolume(ZombieVolume ZVol, Pawn SpawnCloseTo, float MaxU
         PlayerDistScore *= 1.0 - FloorPenalty;
         if ( !bBasementDiff ) {
             f = abs(SpawnCloseTo.Location.Z - ZVolLoc.Z);
-            if ( f < 50 ) {
-                // prevents crouching or jumping players to mess up the rating
+            if (f < 90) {
+                // Some levels have 256uu-tall zombie volumes, where ZVolLoc.Z is 128uu above the ground or 88uu above
+                // the player's location. Consider them on the same floor.
                 PlayerDistScore += FloorPenalty;
             }
             else if ( f < FloorHeight ) {
@@ -4359,21 +4360,21 @@ defaultproperties
     KFHints[ 2]="ScrN: You can reload a single shell into Boomstick"
     KFHints[ 3]="ScrN: Combat Shotgun is made much better. Give it a try"
     KFHints[ 4]="ScrN: Shotguns, except Combat and Boomstick, penetrate fat bodies worse than small enemies"
-    KFHints[ 5]="ScrN: M99 cannot stun Scrake with a body-shot. Crossbow has no fire speed bonus as in the original game before v1035"
-    KFHints[ 6]="ScrN: M14EBR has different laser sights."
-    KFHints[ 7]="ScrN: Hand grenades can be 'cooked'. Enable/disable that on 'Scrn Features' page in the Main Menu."
+    KFHints[ 5]="ScrN: M99 cannot stun Scrake with a body-shot. Crossbow has no fire speed bonus as in the original game before 2012"
+    KFHints[ 6]="ScrN: M14EBR has different laser sights"
+    KFHints[ 7]="ScrN: Hand grenades can be 'cooked'"
     KFHints[ 8]="ScrN: Gunslinger has bonuses both for single and dual pistols. But real Cowboys use only dualies."
-    KFHints[ 9]="ScrN: Gunslinger becomes a Cowboy while using dual pistols without wearing heavy armor. Cowboy moves and shoots much faster. On the other hand, he dies faster too."
+    KFHints[ 9]="ScrN: Gunslinger can sprint while holding dual pistols."
     KFHints[10]="ScrN: Berserker, while holding non-melee weapons, moves slower than other perks."
-    KFHints[11]="ScrN: Chainsaw makes more damage but consumes fuel. Also, the alternate attack stuns Scrakes."
+    KFHints[11]="ScrN: Chainsaw makes more damage but consumes fuel. The alternate attack stuns Scrakes."
     KFHints[12]="ScrN: Support Spec. may use Chainsaw. Remember Evil Dead? Try the Chainsaw+Boomstick loadout."
     KFHints[13]="ScrN: Medics have regular frag nades. Do not blow yourself up!"
-    KFHints[14]="ScrN: Medic, while holding a syringe, runs same fast as while holding a knife."
-    KFHints[15]="ScrN: Medics can heal much faster than other perks. If you aren't a Medic, don't screw up the healing process with your lame injection."
+    KFHints[14]="ScrN: Medic can sprint while holding the Syringe."
+    KFHints[15]="ScrN: Medics can heal much faster than other perks. If you aren't a Medic, don't interfere with the healing process with your dull injection."
     KFHints[16]="ScrN: Medic gets XP for shooting zeds with Medic Guns. But do not forget to heal your teammates!"
-    KFHints[17]="ScrN: Medic nades are for healing only. Zeds are not taking damage neither fear them."
+    KFHints[17]="ScrN: Medic nades are for healing only. Zeds are not taking damage from nades nor fear them."
     KFHints[18]="ScrN: Combat Medic is more 'combat' than 'medic'"
-    KFHints[19]="ScrN: FN-FAL has armor-piercing bullets and 2-round fixed burst mode."
+    KFHints[19]="ScrN: Armor-Piercing (AP) rounds do increased damage to Fleshpounds."
     KFHints[20]="ScrN: MK23 has no bullet penetration but double size of magazine, comparing to .44 Magnum"
     KFHints[21]="ScrN: Your experience and perk bonus levels may be different. If they are, you see two perk icons on the HUD."
     KFHints[22]="ScrN: If you see two perk icons on the HUD, the left one shows your experience level, the right - actual level of perk bonuses that you gain."
@@ -4384,8 +4385,6 @@ defaultproperties
     KFHints[27]="Social Isolation: The Virus gets spread by a close contact. Keep distance!"
     KFHints[28]="Social Isolation: Infected players should keep a distance from other infected as well. Increased Virus concentration in the air leads to severe symptoms."
     KFHints[29]="Social Isolation: Epidemic safety rules prohibit picking up items of infected players, even if you are already infected."
-    KFHints[30]="Social Isolation: The Trader keeps her shop clean. Players get charged for coughing in the shop area - to cover the disinfection costs."
-    KFHints[31]="Social Isolation: Rumors say that Toilet Paper can protect you from the Virus. At least you will die with a clean butt."
-    KFHints[32]="Social Isolation: 'I can feel it coming in the air tonight, oh Lord!' Yes, it is the Virus in the air. And it is gonna kill you!"
-    KFHints[33]="Social Isolation: The shop is a high-risk area for spreading the Virus. Keep distance and wait in line for shopping."
+    KFHints[30]="Social Isolation: Rumors say that Toilet Paper can protect you from the Virus. At least you will die with a clean butt."
+    KFHints[31]="Social Isolation: The shop is a high-risk area for spreading the Virus. Keep distance and wait in line for shopping."
 }

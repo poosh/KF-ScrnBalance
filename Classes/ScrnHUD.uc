@@ -4096,7 +4096,7 @@ defaultproperties
     MinMagCapacity=5
     LowAmmoPercent=0.250
     bLowAmmoColorSwitch=true
-    bShowCowboyMode=true
+    bShowCowboyMode=false
     texCowboy=Texture'ScrnTex.HUD.CowboyMode'
     CowboyTileY=0.02
     CowboyTileWidth=0.250

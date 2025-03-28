@@ -107,27 +107,8 @@ static function float ModifyRecoilSpread(KFPlayerReplicationInfo KFPRI, WeaponFi
     Return Recoil;
 }
 
-// Starting from level 3 Gunslinger can enter Cowboy mode
-// Cowboys use only dual-pistols, wears no armor and don't use advanced features like lasers
-// Cowboy mode is switched automatically when all the requirements are met
-// v2.30 - Allow Cowboy Mode, if Armor depletes below 25%
-// v5.05 - Allow Cowboy Mode along with using laser sights
 static function bool CheckCowboyMode(KFPlayerReplicationInfo KFPRI, class<Weapon> WeapClass)
 {
-    // local Controller C;
-
-    if ( WeapClass == none )
-        return false;
-
-    // C = Controller(KFPRI.Owner);  // server-side
-    // if ( C == none ) {
-    //     C = KFPRI.Level.GetLocalPlayerController();  // client-side
-    // }
-    // if ( C == none || C.Pawn == none || int(C.Pawn.ShieldStrength) > 25 ) {
-    //     return false;
-    // }
-
-    // if custom weapon has "*" bonus switch
     return ClassIsChildOf(WeapClass, class'Dualies') || ClassIsInArray(default.SpecialWeapons, WeapClass );
 }
 

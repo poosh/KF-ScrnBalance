@@ -30,6 +30,12 @@
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+## v9.71.16
+- ZombieVolumes within 90uu of Z distance from the player is considered on the same floor (no FloorPenalty applied)
+
+### ScrN Zed Pack
+- Fixed an issue where decapitated zed chunks may never disapper client-side
+
 ## v9.71.15
 - Fixed headshot detection of wide melee swings.
 - Melee weapons now properly play flesh hit sounds on dedicated servers (thanks [Broski])
