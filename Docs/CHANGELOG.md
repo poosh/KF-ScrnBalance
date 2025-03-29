@@ -30,6 +30,9 @@
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+## v9.71.17
+- **FTG**: `StinkyClot` extends `ZombieClotMix`. The latter is an unused legacy zed that can be referenced on maps to block Stinky Clot path (e.g., `ZombiePathNode.DisallowedZombies`)
+
 ## v9.71.16
 - ZombieVolumes within 90uu of Z distance from the player is considered on the same floor (no FloorPenalty applied)
 

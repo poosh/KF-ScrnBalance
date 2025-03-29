@@ -1,5 +1,12 @@
 // Zed (enemy) version of Stinky Clot
-class StinkyClotZed extends ZombieClot;
+// Extended from ZombieClotMix to allow blocking Stinky paths
+// by adding Class'ZombieClotMix' to BlockingVolume.BlockedClasses
+class StinkyClotZed extends ZombieClotMix;
+
+simulated function BeginPlay()
+{
+	Super(ZombieClot).BeginPlay();
+}
 
 defaultproperties
 {
@@ -41,4 +48,6 @@ defaultproperties
     AmbientSound=Sound'KF_BaseClot.Clot_Idle1Loop'
     Mesh=SkeletalMesh'KF_Freaks_Trip.CLOT_Freak'
     Skins(0)=Combiner'KF_Specimens_Trip_T.clot_cmb'
+    Skins(1)=none
+    KFRagdollName="Clot_Trip"
 }
