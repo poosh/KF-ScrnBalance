@@ -1245,7 +1245,8 @@ function MsgEnemies(PlayerController Sender)
 
 function bool IsAdmin(PlayerController Sender)
 {
-    return (Sender.PlayerReplicationInfo != none && Sender.PlayerReplicationInfo.bAdmin)
+    return (Sender.PlayerReplicationInfo != none && (Sender.PlayerReplicationInfo.bAdmin
+                || Sender.PlayerReplicationInfo.bSilentAdmin))
             || Level.NetMode == NM_Standalone
             || (Level.NetMode == NM_ListenServer && NetConnection(Sender.Player) == none);
 }
@@ -3249,7 +3250,7 @@ function RegisterVersion(string ItemName, int Version)
 
 defaultproperties
 {
-    VersionNumber=97117
+    VersionNumber=97200
     GroupName="KF-Scrn"
     FriendlyName="ScrN Balance"
     Description="Total rework of KF1 to make it modern and the best tactical coop in the world while sticking to the roots of the original."

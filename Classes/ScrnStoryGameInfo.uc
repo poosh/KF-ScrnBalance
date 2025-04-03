@@ -3,7 +3,6 @@ class ScrnStoryGameInfo extends KFStoryGameInfo;
 var ScrnBalance ScrnBalanceMut;
 var protected transient int ObjTraderIndex;
 
-var globalconfig string VotingHandlerOverride;  // override VotingHandlerType with this one
 var bool bZedTimeEnabled;  // set it to false to completely disable the Zed Time in the game
 
 event InitGame( string Options, out string Error )
@@ -18,9 +17,18 @@ event InitGame( string Options, out string Error )
     if( InOpt != "" ) {
         log("VotingHandlerType="$InOpt, class.name);
     }
-    else if ( VotingHandlerOverride != "" ) {
-        log("Override VotingHandlerType with " $ VotingHandlerOverride, class.name);
-        Options $= "?VotingHandler=" $ VotingHandlerOverride;
+    else if (class'ScrnInit'.default.bVotingHandlerOverride) {
+        if (class'ScrnInit'.default.CustomVotingHandler != "") {
+            InOpt = class'ScrnInit'.default.CustomVotingHandler;
+        }
+        else {
+            InOpt = class'ScrnInit'.default.DefaultVotingHandler;
+        }
+
+        if (InOpt != "") {
+            log("Override VotingHandlerType with " $ InOpt, class.name);
+            Options $= "?VotingHandler=" $ InOpt;
+        }
     }
 
     super.InitGame(Options, Error);
@@ -48,6 +56,16 @@ protected function CheckScrnBalance()
         if ( ScrnBalanceMut == none )
             log("Unable to spawn ScrnBalance!", class.name);
     }
+}
+
+event Broadcast( Actor Sender, coerce string Msg, optional name Type )
+{
+    super.Broadcast(Sender, class'ScrnF'.static.ParseColorTags(Msg), Type);
+}
+
+function BroadcastTeam( Controller Sender, coerce string Msg, optional name Type )
+{
+    super.BroadcastTeam(Sender, class'ScrnF'.static.ParseColorTags(Msg), Type);
 }
 
 event PostLogin( PlayerController NewPlayer )
@@ -527,7 +545,6 @@ State MatchInProgress
 defaultproperties
 {
     GameName="ScrN Objective Mode"
-    VotingHandlerOverride="KFMapVoteV2.KFVotingHandler"
     HUDType="ScrnBalanceSrv.ScrnHUD"
     ScoreBoardType="ScrnBalanceSrv.ScrnScoreBoard"
     LoginMenuClass="ScrnBalanceSrv.ScrnInvasionLoginMenu"

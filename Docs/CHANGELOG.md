@@ -30,6 +30,18 @@
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+## v9.72
+- The default map voting handler switched to `"KFMapVoteV3SE.KFVotingHandler`
+- Deprecated `VotingHandlerOverride`
+- *ScrnBalanceSrv.ini*: added `[ScrnBalanceSrv.ScrnInit]` section to override the map voting handler.
+- *KFMapVote.ini*: switched to `[KFMapVoteV3SE.KFVotingHandler]
+- New game mode - **53. Follow or Escape**, where the players need to either Follow The Guardian or Escape The Hunter.
+- *ScrnGames.ini*: Added random wave dependency, where a random wave is followed a specific wave (e.g., `Wave2A => Wave3A | Wave2B => Wave3B`).
+- **52. Escape The Hunter v1.03** - added the Hunter to the boss wave. Players need to kill Pat while escaping the Hunter.
+- **XCM**: a player can get the "Suicide Bomber" achievement by killing 10 zeds with the "ass pipe" explosion
+- Player paths avoid `ZombiePathNode` (path to the trader or base)
+- Chat spam prevention switched to "5 messages per 10 seconds" instead of "1 message per 2 seconds"
+
 ## v9.71.17
 - **FTG**: `StinkyClot` extends `ZombieClotMix`. The latter is an unused legacy zed that can be referenced on maps to block Stinky Clot path (e.g., `ZombiePathNode.DisallowedZombies`)
 

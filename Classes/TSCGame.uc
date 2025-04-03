@@ -1127,7 +1127,7 @@ function ShowPathToBase(PlayerController P)
         return;
     }
 
-    if ( P.FindPathToward(gnome, false) != None ) {
+    if (FindPlayerPath(P, gnome) != None) {
         Spawn(BaseWhisp, P,, P.Pawn.Location);
     }
 }

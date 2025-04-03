@@ -9,7 +9,6 @@ var ScrnGameLength ScrnGameLength;
 // Min numbers of players to be used in calculation of zed count in wave
 // Those values are for configurations only. Set ScrnGRI.FakedPlayers to make in-game effect
 var globalconfig protected byte FakedPlayers, FakedAlivePlayers;
-var globalconfig string VotingHandlerOverride;  // override VotingHandlerType with this one
 var config int DefaultGameLength;
 var config bool bAntiBlocker;
 var globalconfig byte LogZedSpawnLevel;
@@ -51,6 +50,7 @@ var float FloorPenalty;
 var float ElevatedSpawnMinZ, ElevatedSpawnMaxZ;
 var bool bHighGround;
 var array<ScrnTypes.ZVolInfo> ZVolInfos;
+var transient array<ZombiePathNode> ZombiePathNodes;
 
 // Telemetry data of all living player pawns. Updates every tick.
 struct STelemetry {
@@ -155,9 +155,18 @@ event InitGame( string Options, out string Error )
     if( InOpt != "" ) {
         log("VotingHandlerType="$InOpt, class.name);
     }
-    else if ( VotingHandlerOverride != "" ) {
-        log("Override VotingHandlerType with " $ VotingHandlerOverride, class.name);
-        Options $= "?VotingHandler=" $ VotingHandlerOverride;
+    else if (class'ScrnInit'.default.bVotingHandlerOverride) {
+        if (class'ScrnInit'.default.CustomVotingHandler != "") {
+            InOpt = class'ScrnInit'.default.CustomVotingHandler;
+        }
+        else {
+            InOpt = class'ScrnInit'.default.DefaultVotingHandler;
+        }
+
+        if (InOpt != "") {
+            log("Override VotingHandlerType with " $ InOpt, class.name);
+            Options $= "?VotingHandler=" $ InOpt;
+        }
     }
 
     // bypass KFGameType
@@ -2167,6 +2176,25 @@ function ShopVolume TeamShop(byte TeamIndex)
     return ScrnGRI.CurrentShop;
 }
 
+function Actor FindPlayerPath(PlayerController PC, Actor Destination)
+{
+    local Actor result;
+    local int i;
+
+    if (PC == none || Destination == none)
+        return none;
+
+    for (i = 0; i < ZombiePathNodes.Length; ++i) {
+        // avoid ZombiePathNodes in player path finding
+        ZombiePathNodes[i].ExtraCost += 1000000;
+    }
+    result = PC.FindPathToward(Destination, false);
+    for (i = 0; i < ZombiePathNodes.Length; ++i) {
+        ZombiePathNodes[i].ExtraCost -= 1000000;
+    }
+    return result;
+}
+
 function ShowPathTo(PlayerController CI, int DestinationIndex)
 {
     local ShopVolume shop;
@@ -2189,7 +2217,7 @@ function ShowPathTo(PlayerController CI, int DestinationIndex)
     if ( !shop.bTelsInit )
         shop.InitTeleports();
 
-    if ( shop.TelList[0] != None && CI.FindPathToward(shop.TelList[0], false) != None ) {
+    if (shop.TelList[0] != None && FindPlayerPath(CI, shop.TelList[0]) != None) {
         WWclass = class<WillowWhisp>(DynamicLoadObject(PathWhisps[TeamNum], class'Class'));
         Spawn(WWclass, CI,, CI.Pawn.Location);
     }
@@ -2515,6 +2543,7 @@ function InitNavigationPoints()
 {
     local NavigationPoint N;
     local PlayerStart P;
+    local ZombiePathNode Z;
     local bool bLookForPlayerStartEvent;
 
     bLookForPlayerStartEvent = true;
@@ -2532,10 +2561,25 @@ function InitNavigationPoints()
                     bLookForPlayerStartEvent = false;
                 }
             }
+            continue;
+        }
+        Z = ZombiePathNode(N);
+        if (Z != none) {
+            ZombiePathNodes[ZombiePathNodes.length] = Z;
+            continue;
         }
     }
 }
 
+event Broadcast( Actor Sender, coerce string Msg, optional name Type )
+{
+    super.Broadcast(Sender, class'ScrnF'.static.ParseColorTags(Msg), Type);
+}
+
+function BroadcastTeam( Controller Sender, coerce string Msg, optional name Type )
+{
+    super.BroadcastTeam(Sender, class'ScrnF'.static.ParseColorTags(Msg), Type);
+}
 
 function NavigationPoint FindPlayerStart( Controller Player, optional byte InTeam, optional string incomingName )
 {
@@ -4287,7 +4331,6 @@ defaultproperties
     Description="ScrN Edition of Killing Floor game mode (KFGameType)."
 
     GameReplicationInfoClass=class'ScrnGameReplicationInfo'
-    VotingHandlerOverride="KFMapVoteV2.KFVotingHandler"
 
     PathWhisps(0)="KFMod.RedWhisp"
     PathWhisps(1)="KFMod.RedWhisp"

@@ -1,6 +1,7 @@
 class ScrnPipeBombProjectile extends PipeBombProjectile;
 
 var() bool bDetectEnemies;
+var transient int NumKilled;
 
 static function PreloadAssets()
 {
@@ -109,7 +110,6 @@ simulated function HurtRadius( float DamageAmount, float DamageRadius, class<Dam
     local actor Victims;
     local float damageScale, dist;
     local vector dir;
-    local int NumKilled;
     local KFMonster KFMonsterVictim;
     local Pawn P;
     local KFPawn KFP;

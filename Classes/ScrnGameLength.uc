@@ -779,15 +779,33 @@ function bool LoadWave(int WaveNum)
 
 function string PickWaveName(array<string> Candidates) {
     local int i;
+    local string ReqWave, NewWave;
+    local bool bOK;
 
-    i = rand(Candidates.Length);
-    if (bUniqueWaves) {
-        while (Candidates.Length > 1 && class'ScrnFunctions'.static.SearchStr(UsedWaves, Candidates[i]) != -1) {
-            Candidates.remove(i, 1);
-            i = rand(Candidates.Length);
+    while (Candidates.Length > 0) {
+        i = rand(Candidates.Length);
+        if (Divide(Candidates[i], "=>", ReqWave, NewWave)) {
+            bOk = ReqWave == UsedWaves[UsedWaves.Length-1];
         }
+        else if (Divide(Candidates[i], ">>", ReqWave, NewWave)) {
+            bOk = class'ScrnF'.static.SearchStr(UsedWaves, ReqWave) != -1;
+        }
+        else {
+            NewWave = Candidates[i];
+            bOk = true;
+        }
+
+        if (bOk && bUniqueWaves && class'ScrnF'.static.SearchStr(UsedWaves, NewWave) != -1) {
+            // not unique
+            bOk = false;
+        }
+
+        if (bOK) {
+            return NewWave;
+        }
+        Candidates.remove(i, 1);
     }
-    return Candidates[i];
+    return "";
 }
 
 function ScrnWaveInfo CreateWave(string WaveDefinition)
@@ -804,6 +822,16 @@ function ScrnWaveInfo CreateWave(string WaveDefinition)
         WaveName = PickWaveName(Parts);
         bRandomlyPicked = true;
     }
+    else {
+        Parts[0] = WaveName;
+        WaveName = PickWaveName(Parts);
+    }
+
+    if (WaveName == "") {
+        log("Failed to create wave " $ WaveName $ ": '"$WaveDefinition$"'", class.name);
+        return none;
+    }
+
     log("Creating wave " $ WaveName, class.name);
     UsedWaves[UsedWaves.Length] = WaveName;
     NewWave = new(none, WaveName) WaveInfoClass;

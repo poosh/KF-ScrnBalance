@@ -24,6 +24,8 @@ if %ERR% NEQ 0 goto error
 
 echo Exporting .int file...
 %KFDIR%\System\ucc dumpint %KFPACKAGE%.u
+%KFDIR%\System\ucc dumpint ScrnVotingHandler.u
+%KFDIR%\System\ucc dumpint KFMapVoteV3SE.u
 
 echo.
 echo Copying release files...
@@ -39,6 +41,7 @@ xcopy /F /I /Y %KFDIR%\System\%KFPACKAGE%.ucl %RELEASEDIR%\System\
 xcopy /F /I /Y %KFDIR%\System\ScrnShared.* %RELEASEDIR%\System\
 xcopy /F /I /Y %KFDIR%\System\ScrnSP.* %RELEASEDIR%\System\
 xcopy /F /I /Y %KFDIR%\System\ScrnVotingHandler.* %RELEASEDIR%\System\
+xcopy /F /I /Y %KFDIR%\System\KFMapVoteV3SE.* %RELEASEDIR%\System\
 
 mkdir %RELEASEDIR%\Animations 2>nul
 xcopy /F /I /Y %STEAMDIR%\Animations\ScrnAnims.ukx %RELEASEDIR%\Animations\
@@ -89,6 +92,7 @@ call :MakeUz2 System\%KFPACKAGE%.u
 call :MakeUz2 System\ScrnShared.u
 call :MakeUz2 System\ScrnSP.u
 call :MakeUz2 System\ScrnVotingHandler.u
+call :MakeUz2 System\KFMapVoteV3SE.u
 
 echo %RELEASEDIR%\uz2:
 dir /B %RELEASEDIR%\uz2

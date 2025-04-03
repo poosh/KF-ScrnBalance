@@ -41,7 +41,7 @@ var transient byte BeggingForMoney; // how many times player asked for money dur
 var transient bool bShoppedThisWave;
 var byte PathDestination; // 0 - trader, 255 - TSC base
 
-var byte MaxVoiceMsgIn10s; // maximum number of voice messages during 10 seconds
+var byte MaxTextMsgIn10s, MaxVoiceMsgIn10s; // maximum number of voice messages during 10 seconds
 var bool bZEDTimeActive;
 var float ZedTimeStart;
 
@@ -1882,6 +1882,29 @@ function bool AllowVoiceMessage(name msgtype)
         else
             MaxVoiceMsgIn10s = default.MaxVoiceMsgIn10s;
     }
+    return true;
+}
+
+function bool AllowTextMessage(string Msg)
+{
+    local float TimeSinceLastMsg;
+
+    if (Mut.IsAdmin(self))
+        return true;
+
+    TimeSinceLastMsg = Level.TimeSeconds - LastBroadcastTime;
+    if (TimeSinceLastMsg > 10.0) {
+        MaxTextMsgIn10s = default.MaxTextMsgIn10s;
+    }
+    else if (MaxTextMsgIn10s > 0) {
+        --MaxTextMsgIn10s;
+    }
+    else {
+        ClientMessage(repl(strShutUp, "%s", string(int(ceil(10.0-TimeSinceLastMsg)))));
+        return false;
+    }
+
+    LastBroadcastTime = Level.TimeSeconds;
     return true;
 }
 
@@ -3834,6 +3857,7 @@ defaultproperties
     FlareCloudClass=class'ScrnFlareCloud'
     bSpeechVote=true
     bAlwaysDisplayAchProgression=true
+    MaxTextMsgIn10s=5
     MaxVoiceMsgIn10s=5
     strLocked="Weapon pickups LOCKED"
     strUnlocked="Weapon pickups UNLOCKED"

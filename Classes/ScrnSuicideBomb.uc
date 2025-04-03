@@ -91,6 +91,14 @@ simulated function HitWall( vector HitNormal, actor Wall )
 {
 }
 
+simulated function HurtRadius( float DamageAmount, float DamageRadius, class<DamageType> DamageType, float Momentum, vector HitLocation )
+{
+    super.HurtRadius(DamageAmount, DamageRadius, DamageType, Momentum, HitLocation);
+    if(Role == ROLE_Authority && NumKilled >= 10) {
+        class'ScrnAchCtrl'.static.Ach2Pawn(Instigator, 'SuicideBomber', 1);
+    }
+}
+
 defaultproperties
 {
     Physics=PHYS_None

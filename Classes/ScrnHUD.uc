@@ -3411,22 +3411,17 @@ function AddTextMessage(string M, class<LocalMessage> MessageClass, PlayerReplic
     local int i;
     local bool bSetPRI;
 
-    if ( class'ScrnBalance'.default.Mut != none ) {
-        M = class'ScrnFunctions'.static.ParseColorTags(M, PRI);
-        if ( MessageClass==class'SayMessagePlus' ) {
-            MessageClass = class'ScrnSayMessagePlus';
-            bSetPRI = true;
-        }
-        else if ( MessageClass==class'TeamSayMessagePlus' ) {
-            MessageClass = class'ScrnTeamSayMessagePlus';
-            bSetPRI = true;
-        }
-        else if ( MessageClass==class'xDeathMessage' )
-            MessageClass = class'ScrnDeathMessage';
+    M = class'ScrnFunctions'.static.ParseColorTags(M, PRI);
+    if ( MessageClass==class'SayMessagePlus' ) {
+        MessageClass = class'ScrnSayMessagePlus';
+        bSetPRI = true;
     }
-    else {
-        bSetPRI = MessageClass==class'SayMessagePlus' || MessageClass==class'TeamSayMessagePlus';
+    else if ( MessageClass==class'TeamSayMessagePlus' ) {
+        MessageClass = class'ScrnTeamSayMessagePlus';
+        bSetPRI = true;
     }
+    else if ( MessageClass==class'xDeathMessage' )
+        MessageClass = class'ScrnDeathMessage';
 
 
     if( bMessageBeep && MessageClass.Default.bBeep )
