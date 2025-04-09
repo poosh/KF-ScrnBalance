@@ -2,6 +2,7 @@
 
 <!-- some link shortcuts -->
 [ScrN Brutal KF Bundle]: https://steamcommunity.com/groups/ScrNBalance/discussions/2/483368526570475472/
+[Discord]: https://discord.com/invite/Y3W5crSXA5
 
 # KF ScrN Balance
 
@@ -42,6 +43,17 @@ Most features are configurable (turn on only what you like).
 * Voting to end trader time, boost zed spawn, etc.
 * Configurable max zeds at once on the map. Now you can raise the previously hardcoded value of 32 zeds and fight against a 100-zed crowd!
 
+## Modding
+READ THIS before forking this repo to change "two code lines" and live with the burden of downmerging forever.
+
+* You don't need to change the code to create or modify **game modes**. It can be done via the [config file](Configs/ScrnGames.ini). Modify waves, zeds, spawnrate, trader time, dosh, etc. - all that can be done via the INI file.
+* You don't need to change ScrnBalance to modify perks, weapons, or add new ones. Create a separate package with ScrN-extended classes and make your changes there. For example, `class MyGunslinger extends ScrnVetGunslinger`. Then, replace `ScrnBalanceSrv.ScrnVetGunslinger` with `MyPackage.MyGunslinger` in [ScrnServerPerks.ini](Configs/ScrnServerPerks.ini) and [ScrnBalanceSrv.ini](Configs/ScrnBalanceSrv.ini), and you will have your own version of Gunslinger! Moreover, you won't be required to recompile your package on every ScrN update thanks to dynamic linkage.
+* The above technique also applies to creating custom achievements or game rules. Those can be done in a separate package, too.
+* Join our [Discord] for assistance.
+* If you still have to fork the ScrnBalance repo, **RENAME** your forked package to avoid version mismatches with the original one. For example, `MyScrnBalance.u`
+* Please submit pull requests with the changed code if the changes can be useful for other users. You have access to this code thanks to chain of developers that haven't behaved like dicks to the community. Join the chain!
+
+
 ## Building
 
 Requirements:
@@ -73,10 +85,9 @@ For other ScrN based packages you can check this dependency diagram.
 
 ## Links
 
-* Download [ScrN Brutal KF Bundle].
-* Detailed info on the [ScrN Balance News Page](https://steamcommunity.com/groups/ScrNBalance/discussions/2/).
+* [Discord]
+* Steam: [ScrN Brutal KF Bundle].
 * A [guide](http://steamcommunity.com/sharedfiles/filedetails/?id=124250783) on how to use custom weapons with this mutator.
-* Any questions about this mod should be posted on [ScrN Balance Steam Group Forums](https://steamcommunity.com/groups/ScrNBalance/discussions/1/). Your feedback is more than welcome!
 
 -------------------------------------------------------------------------------
 

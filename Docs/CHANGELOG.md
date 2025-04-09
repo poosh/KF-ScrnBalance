@@ -31,10 +31,10 @@
 
 -------------------------------------------------------------------------------
 ## v9.72
-- The default map voting handler switched to `"KFMapVoteV3SE.KFVotingHandler`
+- The default map voting handler switched to `KFMapVoteV3SE.KFVotingHandler`
 - Deprecated `VotingHandlerOverride`
 - *ScrnBalanceSrv.ini*: added `[ScrnBalanceSrv.ScrnInit]` section to override the map voting handler.
-- *KFMapVote.ini*: switched to `[KFMapVoteV3SE.KFVotingHandler]
+- *KFMapVote.ini*: switched to `[KFMapVoteV3SE.KFVotingHandler]`
 - New game mode - **53. Follow or Escape**, where the players need to either Follow The Guardian or Escape The Hunter.
 - *ScrnGames.ini*: Added random wave dependency, where a random wave is followed a specific wave (e.g., `Wave2A => Wave3A | Wave2B => Wave3B`).
 - **52. Escape The Hunter v1.03** - added the Hunter to the boss wave. Players need to kill Pat while escaping the Hunter.
