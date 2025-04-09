@@ -46,7 +46,7 @@ Most features are configurable (turn on only what you like).
 ## Modding
 READ THIS before forking this repo to change "two code lines" and live with the burden of downmerging forever.
 
-* You don't need to change the code to create or modify **game modes**. It can be done via the [config file](Configs/ScrnGames.ini). Modify waves, zeds, spawnrate, trader time, dosh, etc. - all that can be done via the INI file.
+* You don't need to change the code to create or modify **game modes**. It can be done via the [ScrnGames.ini](Configs/ScrnGames.ini). Modify waves, zeds, spawnrate, trader time, dosh, etc. - all that can be done simply by modifying config files.
 * You don't need to change ScrnBalance to modify perks, weapons, or add new ones. Create a separate package with ScrN-extended classes and make your changes there. For example, `class MyGunslinger extends ScrnVetGunslinger`. Then, replace `ScrnBalanceSrv.ScrnVetGunslinger` with `MyPackage.MyGunslinger` in [ScrnServerPerks.ini](Configs/ScrnServerPerks.ini) and [ScrnBalanceSrv.ini](Configs/ScrnBalanceSrv.ini), and you will have your own version of Gunslinger! Moreover, you won't be required to recompile your package on every ScrN update thanks to dynamic linkage.
 * The above technique also applies to creating custom achievements or game rules. Those can be done in a separate package, too.
 * Join our [Discord] for assistance.
