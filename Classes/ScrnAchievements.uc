@@ -102,7 +102,8 @@ simulated function InitData()
     local byte offset;
 
     if ( Role == ROLE_Authority )
-        log(GetItemName(String(class.name)) $ " - loading achievement data for "$PlayerController(Owner).PlayerReplicationInfo.PlayerName, 'ScrnBalance');
+        log(GetItemName(String(class.name)) $ " - loading achievement data for "
+                $ class'ScrnF'.static.PlainPlayerName(PlayerController(Owner).PlayerReplicationInfo), 'ScrnBalance');
     else
         log(GetItemName(String(class.name)) $ " - loading achievement my data", 'ScrnBalance');
     StopWatch(false); // reset timer

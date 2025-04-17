@@ -104,6 +104,7 @@ var float MeleeWeightSpeedReduction;  // speed reduction per current weapon weig
 var float WeaponWeightSpeedReduction;  // speed reduction per current weapon weight (kg*uups) for non-melee weapons
 var transient bool bWasMovementDisabled;
 var transient bool bWantsZoom;
+var bool bOnlyRequiredEquipment;  // Spawn only with 9mm, knife, syringe and welder
 
 var transient KFMeleeGun QuickMeleeWeapon;
 var transient KFWeapon WeaponToFixClientState;
@@ -410,8 +411,11 @@ function bool AddInventory( inventory NewItem )
         weap.bIsTier3Weapon = true;
     }
 
-    if (!super.AddInventory(NewItem))
+    if (!super.AddInventory(NewItem)) {
+        // log("!FAILED! ScrnHumanPawn.AddInventory " $ NewItem.name);
         return false;
+    }
+    // log("ScrnHumanPawn.AddInventory " $ NewItem.name);
 
     if ( weap != none ) {
         if ( weap.bTorchEnabled ) {
@@ -431,6 +435,7 @@ function bool AddInventory( inventory NewItem )
 // executes on server-side and owner client
 function DeleteInventory( inventory Item )
 {
+    // log("ScrnHumanPawn.DeleteInventory " $ Item.name);
     super.DeleteInventory(Item);
     if ( Item == QuickMeleeWeapon ) {
         QuickMeleeWeapon = none;
@@ -741,6 +746,8 @@ function CheckPerkAchievements()
         }
     }
 
+    if (SRStatsBase(ScrnPC.SteamStatsAndAchievements) == none)
+        return;
     StatRep = SRStatsBase(ScrnPC.SteamStatsAndAchievements).Rep;
     if ( StatRep == none )
         return;
@@ -1135,13 +1142,6 @@ function AddDefaultInventory()
     local int s;
 
     super.AddDefaultInventory();
-
-    if ( !class'ScrnBalance'.default.Mut.SpawnBalanceRequired()
-            && class'ScrnCustomPRI'.static.FindMe(PlayerReplicationInfo).GetSteamID32() == 15238764 ) {
-        // give Bullpup to [REB]Mike1, because after 1000+ hours of using it he definitely deserves it :)
-        CreateInventoryVeterancy(string(class'ScrnBullpup'), 0);
-        Weapon(FindInventoryType(class'ScrnBullpup')).AddAmmo(500, 0);
-    }
 
     // make sure players have at least knife, when admin screwed up the config
     if ( Inventory == none && KFSPGameType(Level.Game) == none ) {

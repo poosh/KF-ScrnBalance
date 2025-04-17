@@ -444,9 +444,15 @@ static function AddDefaultInventory(KFPlayerReplicationInfo KFPRI, Pawn P)
     local ScrnBalance Mut;
     local bool bBalance;
     local ScrnGameLength ScrnGL;
+    local class<KFWeaponPickup> WP;
+
+    KFP = KFHumanPawn(P);
+    if ( KFP == none )
+        return; // OMG, some Stinky Clots are trying to use our perks!!! :O
+    ScrnPawn = ScrnHumanPawn(P);
 
     Mut = class'ScrnBalance'.default.Mut;
-    bBalance = Mut.SpawnBalanceRequired();
+    bBalance = Mut.SpawnBalanceRequired() || (ScrnPawn != none && ScrnPawn.bOnlyRequiredEquipment);
     if (Mut.ScrnGT != none) {
         ScrnGL = Mut.ScrnGT.ScrnGameLength;
     }
@@ -456,45 +462,50 @@ static function AddDefaultInventory(KFPlayerReplicationInfo KFPRI, Pawn P)
     else
         level = GetBonusLevel(KFPRI.ClientVeteranSkillLevel);
 
-    KFP = KFHumanPawn(P);
-    if ( KFP == none )
-        return; // OMG, some Stinky Clots are trying to use our perks!!! :O
-    ScrnPawn = ScrnHumanPawn(P);
     L = Class'ScrnClientPerkRepLink'.Static.FindMe(PlayerController(KFP.Controller));
 
     for ( i=0; i<default.DefaultInventory.length; ++i ) {
-        if ( default.DefaultInventory[i].PickupClass != none
-                && level >= default.DefaultInventory[i].MinPerkLevel
-                && level <= default.DefaultInventory[i].MaxPerkLevel
-                && (default.DefaultInventory[i].Achievement == '' || (!bBalance
-                    && class'ScrnAchCtrl'.static.IsAchievementUnlocked(L, default.DefaultInventory[i].Achievement))) )
-        {
-            ExtraAmmo = max(0, default.DefaultInventory[i].AmmoPerLevel * (level - default.DefaultInventory[i].MinPerkLevel));
-            ScrnVest = class<ScrnVestPickup>(default.DefaultInventory[i].PickupClass);
-            if ( ScrnVest != none || class<ShieldPickup>(default.DefaultInventory[i].PickupClass) != none ) {
-                if ( ScrnVest != none && ScrnPawn != none )
-                    ScrnPawn.SetVestClass(ScrnVest);
-                // make sure we call AddShieldStrength() instead of simple value changing
-                // to set ShieldStrengthMax and Weight
-                KFP.AddShieldStrength(default.DefaultInventory[i].AmmoAmount + ExtraAmmo);
-            }
-            else if ( class<CashPickup>(default.DefaultInventory[i].PickupClass) != none ) {
-                if ( KFP.PlayerReplicationInfo != none )
-                    KFP.PlayerReplicationInfo.Score += default.DefaultInventory[i].AmmoAmount + ExtraAmmo;
-            }
-            else if ( class<Ammo>(default.DefaultInventory[i].PickupClass) != none ) {
-                AmmoInv = Ammunition(KFP.FindInventoryType(default.DefaultInventory[i].PickupClass.default.InventoryType));
-                if ( AmmoInv != none )
-                    AmmoInv.AddAmmo(default.DefaultInventory[i].AmmoAmount + ExtraAmmo);
-            }
-            else if ( (ScrnGL == none || ScrnGL.IsItemAllowed(default.DefaultInventory[i].PickupClass))
-                    && ShouldAddDefaultInventory(i, KFPRI, P) ) {
-                KFP.CreateInventoryVeterancy(string(default.DefaultInventory[i].PickupClass.default.InventoryType), 0);
-                if (  default.DefaultInventory[i].bSetAmmo ) {
-                    W = Weapon(KFP.FindInventoryType(default.DefaultInventory[i].PickupClass.default.InventoryType));
-                    if ( W != none )
-                        W.AddAmmo(default.DefaultInventory[i].AmmoAmount + ExtraAmmo - W.AmmoAmount(0), 0);
-                }
+        if (default.DefaultInventory[i].PickupClass == none
+                || level < default.DefaultInventory[i].MinPerkLevel
+                ||  level > default.DefaultInventory[i].MaxPerkLevel)
+            continue;
+
+        WP = class<KFWeaponPickup>(default.DefaultInventory[i].PickupClass);
+        if (ScrnPawn != none && ScrnPawn.bOnlyRequiredEquipment && (WP == none || WP.default.Weight > 0))
+            continue;
+
+        if (default.DefaultInventory[i].Achievement != '') {
+            if (bBalance)
+                continue;  // no achievement-relater candies in balance games
+            if (!class'ScrnAchCtrl'.static.IsAchievementUnlocked(L, default.DefaultInventory[i].Achievement))
+                continue;
+        }
+
+        ExtraAmmo = max(0, default.DefaultInventory[i].AmmoPerLevel * (level - default.DefaultInventory[i].MinPerkLevel));
+        ScrnVest = class<ScrnVestPickup>(default.DefaultInventory[i].PickupClass);
+        if ( ScrnVest != none || class<ShieldPickup>(default.DefaultInventory[i].PickupClass) != none ) {
+            if ( ScrnVest != none && ScrnPawn != none )
+                ScrnPawn.SetVestClass(ScrnVest);
+            // make sure we call AddShieldStrength() instead of simple value changing
+            // to set ShieldStrengthMax and Weight
+            KFP.AddShieldStrength(default.DefaultInventory[i].AmmoAmount + ExtraAmmo);
+        }
+        else if ( class<CashPickup>(default.DefaultInventory[i].PickupClass) != none ) {
+            if ( KFP.PlayerReplicationInfo != none )
+                KFP.PlayerReplicationInfo.Score += default.DefaultInventory[i].AmmoAmount + ExtraAmmo;
+        }
+        else if ( class<Ammo>(default.DefaultInventory[i].PickupClass) != none ) {
+            AmmoInv = Ammunition(KFP.FindInventoryType(default.DefaultInventory[i].PickupClass.default.InventoryType));
+            if ( AmmoInv != none )
+                AmmoInv.AddAmmo(default.DefaultInventory[i].AmmoAmount + ExtraAmmo);
+        }
+        else if ((ScrnGL == none || ScrnGL.IsItemAllowed(default.DefaultInventory[i].PickupClass))
+                && ShouldAddDefaultInventory(i, KFPRI, P) ) {
+            KFP.CreateInventoryVeterancy(string(default.DefaultInventory[i].PickupClass.default.InventoryType), 0);
+            if (  default.DefaultInventory[i].bSetAmmo ) {
+                W = Weapon(KFP.FindInventoryType(default.DefaultInventory[i].PickupClass.default.InventoryType));
+                if ( W != none )
+                    W.AddAmmo(default.DefaultInventory[i].AmmoAmount + ExtraAmmo - W.AmmoAmount(0), 0);
             }
         }
     }

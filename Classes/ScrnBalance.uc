@@ -119,6 +119,7 @@ var transient bool bPickupSetupReduced;
 var ScrnMapInfo MapInfo;
 var ScrnGameRules GameRules;
 var ScrnSrvReplInfo SrvInfo;
+var ScrnPauseHandler PauseHandler;
 
 var string strAchEarn;
 var globalconfig bool bBroadcastAchievementEarn; //tell other players that somebody earned an achievement (excluding map achs)
@@ -225,6 +226,10 @@ var globalconfig byte ZedTimeDuration;
 
 var globalconfig bool bAutoKickOffPerkPlayers;
 var String strAutoKickOffPerk;
+var globalconfig bool bMidWaveRespawnReconnetedPlayers;
+var globalconfig bool bPauseOnDisconnect;
+var globalconfig int PauseTimeOnDisconnect;
+var globalconfig int ResumeDelayOnReconnect;
 
 struct SSquadConfig {
     var String SquadName;
@@ -369,6 +374,8 @@ replication
         CustomWeaponLink, SrvTourneyMode, bTSCGame, bTestMap, SrvMarkDistance, SrvMarkZedBounty;
 
 }
+
+delegate OnSetupPickup(Pickup P);
 
 // ======================================= FUNCTIONS =======================================
 static function class<GameInfo> GameByMapPrefix( string MapPrefix, class<GameInfo> DefaultGame )
@@ -628,15 +635,17 @@ function SetupPickups(optional bool bReduceAmount, optional bool bBoostAmount)
     bPickupSetupReduced = bReduceAmount;
 
     // Except the beginner, where all pickups are still spawned
-    if ( KF.GameDifficulty < 2 ) {
-        for ( i = 0; i < KF.WeaponPickups.Length ; i++ )
-            KF.WeaponPickups[i].EnableMe();
-        for ( i = 0; i < KF.AmmoPickups.Length ; i++ )
+    if (KF.GameDifficulty < 2 || (MapInfo.bDebug && KF.WaveNum == 0)) {
+        for ( i = 0; i < KF.WeaponPickups.Length ; i++ ) {
+            KF.WeaponPickups[i].TurnOn();
+            KF.WeaponPickups[i].SetTimer(0, false);
+        }
+        for ( i = 0; i < KF.AmmoPickups.Length ; i++ ) {
             KF.AmmoPickups[i].GotoState('Pickup');
+        }
         return;
     }
 
-    // Randomize Available Ammo Pickups
     if ( bReduceAmount ) {
         W = 0.10;
         A = 0.10;
@@ -1097,6 +1106,11 @@ function RecalculatePlayerSpeed()
     }
 }
 
+function bool AllowMidWaveRespawn(ScrnPlayerController PC)
+{
+    return bMidWaveRespawnReconnetedPlayers && GameRules.AllowMidWaveRespawn(PC);
+}
+
 
 auto simulated state WaitingForTick
 {
@@ -1141,6 +1155,11 @@ auto simulated state WaitingForTick
         }
         if ( ColoredServerName != "" ) {
             Level.GRI.ServerName = class'ScrnFunctions'.static.ParseColorTags(ColoredServerName);
+        }
+
+        if (MapInfo.bDebug) {
+            // spawn all pickups for debug purposes
+            SetupPickups();
         }
     }
 
@@ -2176,19 +2195,24 @@ function SetupStoryRules(KFLevelRules_Story StoryRules)
     }
 }
 
+function ModifyPlayer(Pawn Other)
+{
+    GameRules.ModifyPlayer(Other);
+    super.ModifyPlayer(Other);
+}
+
 function bool CheckReplacement(Actor Other, out byte bSuperRelevant)
 {
-    local int i;
     //Log("CheckReplacement: " $ String(Other), 'ScrnBalance');
 
     // first check classes that need to be replaced
-    if ( Other.class == class'KFRandomItemSpawn' ) {
+    if (Other.class == class'KFRandomItemSpawn') {
         if ( !bReplacePickups )
             return true;
         ReplaceWith(Other, string(class'ScrnRandomItemSpawn'));
         return false;
     }
-    else if ( Other.class == class'KFAmmoPickup' ) {
+    if (Other.class == class'KFAmmoPickup') {
         AmmoBoxName = Other.name;
         AmmoBoxMesh = Other.StaticMesh;
         AmmoBoxDrawScale = Other.DrawScale;
@@ -2196,22 +2220,11 @@ function bool CheckReplacement(Actor Other, out byte bSuperRelevant)
         ReplaceWith(Other, string(class'ScrnAmmoPickup'));
         return false;
     }
-    else if ( Other.class == class'KFRandomAmmoSpawn' ) {
+    if (Other.class == class'KFRandomAmmoSpawn') {
         // KFRandomAmmoSpawn is a leftover from UT2004's KFMod and does not work in KF1.
         warn("KFRandomAmmoSpawn is deprecated. Update the map.");
         return false;
     }
-    else if ( bReplacePickups && Pickup(Other) != none && KF.IsInState('MatchInProgress') ) {
-        // don't replace pickups placed on the map by the author - replace only dropped ones
-        // or spawned by KFRandomItemSpawn
-        i = FindPickupReplacementIndex(Pickup(Other));
-        if ( i != -1 ) {
-            ReplaceWith(Other, string(pickupReplaceArray[i].NewClass));
-            return false;
-        }
-        return true; // no need to replace
-    }
-
 
     // classes below do not need replacement
     if (Controller(Other) != none) {
@@ -2234,6 +2247,9 @@ function bool CheckReplacement(Actor Other, out byte bSuperRelevant)
         Other.SetDrawScale(AmmoBoxDrawScale);
         Other.SetDrawScale3D(AmmoBoxDrawScale3D);
     }
+    else if (Pickup(Other) != none) {
+        OnSetupPickup(Pickup(Other));
+    }
     else if ( bStoryMode ) {
         if ( KFLevelRules_Story(Other) != none  ) {
             if ( bReplacePickupsStory )
@@ -2246,7 +2262,6 @@ function bool CheckReplacement(Actor Other, out byte bSuperRelevant)
                 KF_StoryNPC(Other).BaseAIThreatRating = 40;
         }
     }
-
     return true;
 }
 
@@ -3247,10 +3262,54 @@ function RegisterVersion(string ItemName, int Version)
     Versions[i].v = Version;
 }
 
+function bool IsGamePaused()
+{
+    return Level.Pauser != none;
+}
+
+function PauseGame(PlayerReplicationInfo Pauser, int Duration)
+{
+    if (Pauser == none || Duration <= 0)
+        return;
+
+    if (PauseHandler == none) {
+        PauseHandler = spawn(class'ScrnPauseHandler', self);
+        PauseHandler.Mut = self;
+    }
+    else {
+        PauseTimeRemaining += PauseHandler.PauseTimeRemaining;
+    }
+
+    if (!Pauser.bAdmin) {
+        PauseTimeRemaining -= Duration;
+    }
+    PauseHandler.PauseTimeRemaining = Duration;
+    PauseHandler.GotoState('GamePaused');
+    Level.Pauser = Pauser;
+}
+
+function ResumeGame(optional int Delay)
+{
+    if (Delay > 0 && PauseHandler != none && PauseHandler.PauseTimeRemaining > 0) {
+        PauseHandler.PauseTimeRemaining = Delay;
+    }
+    else {
+        Level.Pauser = none;
+    }
+}
+
+function GameResumed()
+{
+    if (PauseHandler != none) {
+        PauseTimeRemaining += PauseHandler.PauseTimeRemaining;
+        PauseHandler.Destroy();
+        PauseHandler = none;
+    }
+}
 
 defaultproperties
 {
-    VersionNumber=97200
+    VersionNumber=97201
     GroupName="KF-Scrn"
     FriendlyName="ScrN Balance"
     Description="Total rework of KF1 to make it modern and the best tactical coop in the world while sticking to the roots of the original."
@@ -3321,6 +3380,10 @@ defaultproperties
     bAllowWeaponLock=true
     bAutoKickOffPerkPlayers=true
     strAutoKickOffPerk="You have been auto kicked from the server for playing without a perk. Type RECONNECT in the console to join the server again and choose a perk."
+    bMidWaveRespawnReconnetedPlayers=true
+    bPauseOnDisconnect=false
+    PauseTimeOnDisconnect=30
+    ResumeDelayOnReconnect=6
     bNoTeamSkins=false
     bForceSteamNames=true
     bPlayerZEDTime=true

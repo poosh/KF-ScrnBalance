@@ -6,6 +6,8 @@ class ScrnPlayerController extends KFPCServ
 var ScrnHumanPawn ScrnPawn;
 var ScrnBalance Mut;
 var transient bool bHadPawn;
+var transient vector LastValidClientLocation;
+var transient float LastValidClientTime;
 
 var byte VeterancyChangeWave; // last wave number when the player has changed a perk
 var byte DeathWave; // last wave number when the player died
@@ -527,6 +529,43 @@ simulated function ClientFlareDamage(KFMonster Victim, byte DamageX4, byte BurnT
     cloud = Spawn(FlareCloudClass, Victim,, Victim.Location, rotator(vect(0,0,1)));
     cloud.SetDamage(DamageX4 * 4);
     cloud.SetLifeSpan(BurnTime);
+}
+
+function ServerMove
+(
+    float TimeStamp,
+    vector InAccel,
+    vector ClientLoc,
+    byte NewActions,
+    eDoubleClickDir DoubleClickMove,
+    byte ClientRoll,
+    int View,
+    optional int FreeAimRot,
+    optional byte OldTimeDelta,
+    optional int OldAccel
+)
+{
+    if (CurrentTimeStamp >= TimeStamp)
+        return;  // outdated move
+
+    super.ServerMove(
+        TimeStamp,
+        InAccel,
+        ClientLoc,
+        NewActions,
+        DoubleClickMove,
+        ClientRoll,
+        View,
+        FreeAimRot,
+        OldTimeDelta,
+        OldAccel
+    );
+
+    if (PendingAdjustment.TimeStamp == 0) {
+        // zero timestamp means no client adjustment needed, i.e., the client's position is valid
+        LastValidClientLocation = ClientLoc;
+        LastValidClientTime = Level.TimeSeconds;
+    }
 }
 
 function ServerAcknowledgeDamages(byte WantDamage)
@@ -1763,10 +1802,13 @@ function Possess(Pawn aPawn)
     super.Possess(aPawn);
     OnPawnChanged();
 
-    // show path to trader if respawned during the trader time
-    if ( Role == ROLE_Authority && Pawn != none && Mut != none && Mut.KF.bTradingDoorsOpen )
-        SetShowPathToTrader(true);
-
+    if (Role == ROLE_Authority && Pawn != none && Mut != none) {
+        // show path to trader if respawned during the trader time
+        if (Mut.KF.bTradingDoorsOpen) {
+            SetShowPathToTrader(true);
+        }
+        Mut.GameRules.PlayerSpawned(self);
+    }
     bHadPawn = bHadPawn || Pawn != none;
 }
 
@@ -3832,6 +3874,44 @@ exec function DebugClear()
 //         return;
 //
 //     class'ScrnSuicideBomb'.static.ExplodeAll(Level);
+// }
+//
+// exec function DebugNav(optional float m)
+// {
+//     local NavigationPoint N;
+//     local float NDistSquared, MaxDist;
+//     local bool bFastTrace;
+//     local Actor aTrace, aTraceAct;
+//     local Vector HitLocation, HitNormal, Loc;
+
+//     if (Pawn == none)
+//         return;
+//     Loc = Pawn.Location;
+
+//     if (m == 0) {
+//         MaxDist = 262144;  // 512uu squared (roughly 10m)
+//     }
+//     else {
+//         MaxDist = (m * 50.0) ** 2;
+//     }
+
+//     ConsoleMessage("=== Navigation Debug ===================================================");
+//     for (N = Level.NavigationPointList; N != none; N = N.nextNavigationPoint) {
+//         NDistSquared = VSizeSquared(Loc - N.Location);
+//         if (NDistSquared > MaxDist )
+//             continue;
+
+//         bFastTrace = FastTrace(Loc, N.Location);
+//         aTrace = Trace(HitLocation, HitNormal, Loc, N.Location, false, vect(1,1,1));
+//         aTraceAct = Trace(HitLocation, HitNormal, Loc, N.Location, true, vect(1,1,1));
+
+//         ConsoleMessage(class'ScrnF'.static.ParseColorTags("^w$" $ N.name
+//             @ "^w$bFastTrace=" $ eval(bFastTrace, "^g$TRUE", "^r$FALSE")
+//             @ "^w$aTrace=" $ eval(aTrace != none, "^g$" $ aTrace.name, "^r$none")
+//             @ "^w$aTraceAct=" $ eval(aTraceAct != none, "^g$" $ aTrace.name, "^r$none")
+//         ));
+//     }
+//     ConsoleMessage("========================================================================");
 // }
 
 

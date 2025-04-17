@@ -30,6 +30,21 @@
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+## v9.72.01
+### Mid-Wave Respawn
+- Allows crashed or disconnected players to reconnect and respawn mid-wave.
+- A workaround for STEAMAUTH kick
+- Only those who were alive while disconnected are allowed to respawn mid-wave.
+- Mid-wave respawned players restore their previous health, armor, and weapons.
+- *ScrnBalanceSrv.ini*: added `bMidWaveRespawnReconnetedPlayers`, `bPauseOnDisconnect`, `PauseTimeOnDisconnect`, and `ResumeDelayOnReconnect`.
+
+### Other Changes
+- *ScrnGames.ini*: fixed an issue with the boss wave when `bUniqueWaves=true`
+- *ScrnMapInfo.ini*: Added map definition for **KF-Chthon-SE**
+- *ScrnMapInfo.ini*: Setting `bDebug=True` spawns all weapons and ammo on the map (for placement testing)
+- *ScrnMapInfo.ini*: Fixed `Door` in `ZVolLinks`
+- **FTG:OTC v2.53**: Re-enabled Stinky respawn on TP waves
+
 ## v9.72
 - The default map voting handler switched to `KFMapVoteV3SE.KFVotingHandler`
 - Deprecated `VotingHandlerOverride`

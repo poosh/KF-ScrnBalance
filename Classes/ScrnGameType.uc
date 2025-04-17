@@ -126,6 +126,8 @@ var transient byte PlayerSpawnTraderTeleportIndex;
 var name PlayerStartEvent;
 var bool bSuicideTimer;
 var transient bool bRestartPlayersTriggered;
+var transient bool bAllowPlayerStartAlter;
+var transient bool bPlayerStartAltered;
 
 var protected transient bool bDebugZedSpawn;
 var protected transient ZombieVolume DebugZVols[5];
@@ -318,6 +320,8 @@ function InitGameVolumes()
 {
     local ShopVolume SH;
     local ZombieVolume ZVol;
+    local KFZombieZoneVolume BVol;
+    local NavigationPoint N;
 
     foreach AllActors(class'ShopVolume', SH) {
         if (!SH.bObjectiveModeOnly || bUsingObjectiveMode) {
@@ -328,6 +332,15 @@ function InitGameVolumes()
     foreach DynamicActors(class'ZombieVolume', ZVol) {
         if (!ZVol.bObjectiveModeOnly || bUsingObjectiveMode) {
             ZedSpawnList[ZedSpawnList.Length] = ZVol;
+        }
+    }
+
+    foreach DynamicActors(class'KFZombieZoneVolume', BVol) {
+        for (N = Level.NavigationPointList; N != none; N = N.nextNavigationPoint) {
+            if (N.class == class'PathNode' && BVol.Encompasses(N)) {
+                log(BVol.name $ " encompasses " $ N.name);
+                InvalidatePathTarget(N);
+            }
         }
     }
 }
@@ -524,12 +537,20 @@ function InvalidatePathTarget(Actor PathTarget, optional bool bForceAdd)
 
 function NavigationPoint FindClosestPathNode(Actor anActor, optional float MaxDist)
 {
+    if ( anActor == none )
+        return none;
+
+    return FindClosestPathNodeToLocation(anActor.Location, MaxDist, NavigationPoint(anActor));
+}
+
+function NavigationPoint FindClosestPathNodeToLocation(vector Loc, optional float MaxDist,
+        optional NavigationPoint IgnoreMe, optional bool bVisibleOnly)
+{
     local NavigationPoint N, BestN;
     local float NDistSquared, BestDistSquared;
     local bool bNVisible, bBestVisible;
-
-    if ( anActor == none )
-        return none;
+    local Vector HitLocation, HitNormal;
+    local Actor A;
 
     if ( MaxDist == 0 ) {
         MaxDist = 262144;  // 512uu squared (roughly 10m)
@@ -539,19 +560,29 @@ function NavigationPoint FindClosestPathNode(Actor anActor, optional float MaxDi
     }
 
     for (N = Level.NavigationPointList; N != none; N = N.nextNavigationPoint) {
-        if ( !N.IsA('PathNode') || N == anActor )
+        if (N.class != class'PathNode' || N == IgnoreMe || N.bOneWayPath)
             continue; // ignore teleporters, jumpads etc.
-        NDistSquared = VSizeSquared(anActor.Location - N.Location);
-        if ( NDistSquared < MaxDist ) {
-            bNVisible = FastTrace(anActor.Location, N.Location);
-            if ( bBestVisible && !bNVisible )
-                continue; // ignore invisible points if there are visible alteratives
-            else if ( BestN == none || (bNVisible && !bBestVisible) || NDistSquared < BestDistSquared ) {
-                if ( IsPathTargetValid(N) ) {
-                    BestN = N;
-                    BestDistSquared = NDistSquared;
-                    bBestVisible = bNVisible;
-                }
+        NDistSquared = VSizeSquared(Loc - N.Location);
+        if (NDistSquared > MaxDist )
+            continue;
+
+        bNVisible = FastTrace(N.Location, Loc);
+        if (bNVisible) {
+            A = Trace(HitLocation, HitNormal, N.Location, Loc, false, vect(1,1,1));
+            if (BlockingVolume(A) != none) {
+                // most-=likeley it is a KFZombieZoneVolume
+                bNVisible = false;
+            }
+        }
+
+        if (!bNVisible && (bBestVisible || bVisibleOnly))
+            continue; // ignore invisible points if there are visible alteratives
+
+        if (BestN == none || (bNVisible && !bBestVisible) || NDistSquared < BestDistSquared) {
+            if (IsPathTargetValid(N)) {
+                BestN = N;
+                BestDistSquared = NDistSquared;
+                bBestVisible = bNVisible;
             }
         }
     }
@@ -697,7 +728,7 @@ function ZVolCheckPlayers(int count)
             for (i = 0; i < ZVolInfos[ZVolCheckIndex].Links.Length; ++i) {
                 ZvolOther = ZVolInfos[ZVolCheckIndex].Links[i].Src;
                 Door = ZVolInfos[ZVolCheckIndex].Links[i].Door;
-                if (!IsZombieVolumeDisabled(ZvolOther) && (Door == none || !Door.bSealed)) {
+                if (!IsZombieVolumeDisabled(ZvolOther) && (Door == none || Door.KeyNum != 0)) {
                     bValid = true;
                     break;
                 }
@@ -2583,8 +2614,19 @@ function BroadcastTeam( Controller Sender, coerce string Msg, optional name Type
 
 function NavigationPoint FindPlayerStart( Controller Player, optional byte InTeam, optional string incomingName )
 {
+    local NavigationPoint N;
     local byte TeamIndex;
     local ShopVolume shop;
+    local GameRules OriginalGameRulesModifiers;
+
+    bPlayerStartAltered = false;
+    if (bAllowPlayerStartAlter && GameRulesModifiers != none) {
+        N = GameRulesModifiers.FindPlayerStart(Player,InTeam,incomingName);
+        if (N != None) {
+            bPlayerStartAltered = true;
+            return N;
+        }
+    }
 
     TeamIndex = InTeam;
     if ( Player != None && Player.PlayerReplicationInfo != None )
@@ -2609,7 +2651,11 @@ function NavigationPoint FindPlayerStart( Controller Player, optional byte InTea
         }
     }
 
-    return super.FindPlayerStart(Player, TeamIndex, incomingName);
+    OriginalGameRulesModifiers = GameRulesModifiers;
+    GameRulesModifiers = none;  // prevent duplicate query of GameRulesModifiers
+    N = super.FindPlayerStart(Player, TeamIndex, incomingName);
+    GameRulesModifiers = OriginalGameRulesModifiers;
+    return N;
 }
 
 function StartMatch()
@@ -2629,11 +2675,19 @@ function StartMatch()
     super.StartMatch();
 }
 
+// Prevent Deathmatch from messing up with player inventory
+function AcceptInventory(pawn PlayerPawn);
+
 function bool PlayerCanRestart(PlayerController PC)
 {
     local PlayerReplicationInfo PRI;
+    local ScrnPlayerController ScrnPC;
 
     PRI = PC.PlayerReplicationInfo;
+    ScrnPC = ScrnPlayerController(PC);
+    if (ScrnPC == none) {
+        return false;
+    }
 
     if ( ScrnBalanceMut.bTeamsLocked && !IsInvited(PC) ) {
         PC.ReceiveLocalizedMessage(class'ScrnGameMessages', 243);
@@ -2649,8 +2703,14 @@ function bool PlayerCanRestart(PlayerController PC)
         return false;
     }
 
-    if ( bWaveInProgress )
-        return false;
+    if ( bWaveInProgress ) {
+        if (!ScrnBalanceMut.AllowMidWaveRespawn(ScrnPC)) {
+            return false;
+        }
+        PRI.bOutOfLives = false;
+        PRI.NumLives = 0;
+        return true;
+    }
 
     if ( PC.Pawn != none && PC.Pawn.Health > 0 )
         return false;  // wtf? Already alive.
@@ -2682,7 +2742,13 @@ function RestartPlayer( Controller aPlayer )
         return;
     }
 
-    super(Invasion).RestartPlayer(aPlayer);
+    bAllowPlayerStartAlter = true;
+    super(GameInfo).RestartPlayer(aPlayer);
+    if (PC != none && PC.Pawn == none && bPlayerStartAltered) {
+        log("Try the default player start", class.name);
+        bAllowPlayerStartAlter = false;
+        super(GameInfo).RestartPlayer(aPlayer);
+    }
 
     if ( aPlayer.Pawn != none ) {
         if ( KFHumanPawn(aPlayer.Pawn) != none ) {
@@ -2773,8 +2839,9 @@ function bool RespawnDeadPlayer(ScrnPlayerController PC)
     if (SPI == none)
         return false;
 
+    SPI.ResetDisconnectStats();
     KFPRI.bOutOfLives = false;
-    KFPRI.NumLives = 0;
+    KFPRI.NumLives = 0;  // NumDeaths
 
     PC.GotoState('PlayerWaiting');
     PC.SetViewTarget(PC);

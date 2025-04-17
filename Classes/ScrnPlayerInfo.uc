@@ -75,6 +75,12 @@ var bool bDied;  // did player died during the wave. Valid also during the next 
 var byte Deaths; // how many times player died in the game (excluding suicides at trader time)
 var byte DeathsByMonster; // how many times player died in the game (excluding suicides at trader time)
 var Controller LastKilledBy; // enemy who killed player last time
+var bool bCrashed;
+var int HealthBeforeDisconnect;  // if > 0, the player was alive during the disconnect
+var int ArmorBeforeDisconnect;
+var int NadeCount, PipeBombCount;
+var array<KFWeaponPickup> DroppedWeapons;
+var vector LocationBeforeDisconnect;
 
 var float LastDmgTime, LastKillTime;
 var float LastDamage; // last damage value
@@ -954,15 +960,19 @@ function Died(Controller Killer, class<DamageType> DamType)
 {
     local int i;
 
-    if ( !bDied ) {
-        bDied = true;
-        Deaths++;
-        LastKilledBy = Killer;
-        if ( Killer != none && KFMonster(Killer.Pawn) != none )
-            DeathsByMonster++;
-        for ( i=0; i<GameRules.AchHandlers.length; ++i ) {
-            GameRules.AchHandlers[i].PlayerDied(self, Killer, DamType);
-        }
+    if (HealthBeforeDisconnect > 0)
+        return;  // Pawn killed due to disconnect
+
+    if (bDied)
+        return;  // wtf? already dead
+
+    bDied = true;
+    Deaths++;
+    LastKilledBy = Killer;
+    if ( Killer != none && KFMonster(Killer.Pawn) != none )
+        DeathsByMonster++;
+    for ( i=0; i<GameRules.AchHandlers.length; ++i ) {
+        GameRules.AchHandlers[i].PlayerDied(self, Killer, DamType);
     }
 }
 
@@ -1014,6 +1024,15 @@ function WaveStarted(byte WaveNum)
 
 function WaveEnded(byte WaveNum)
 {
+    ResetDisconnectStats();
+}
+
+function ResetDisconnectStats()
+{
+    bCrashed = false;
+    HealthBeforeDisconnect = 0;
+    ArmorBeforeDisconnect = 0;
+    DroppedWeapons.Length = 0;
 }
 
 // backup vital player data from KFPRI
@@ -1094,6 +1113,11 @@ function RestorePRI()
         ScrnPC.DeathWave = PRI_DeathWave;
         ScrnPC.bHadPawn = ScrnPC.bHadPawn || PRI_HadPawn;
         ScrnPC.StartCash = max(ScrnPC.StartCash, PRI_StarCash);
+
+        if (PRI_DeathWave == GameRules.Mut.KF.WaveNum) {
+            // died this wave
+            KFPRI.NumLives = 1;  // NumDeaths
+        }
     }
     else {
         // should not happen

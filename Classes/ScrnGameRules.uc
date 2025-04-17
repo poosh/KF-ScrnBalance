@@ -92,6 +92,9 @@ var array<ScrnAchHandlerBase> AchHandlers;
 var transient ScrnPlayerInfo PlayerInfo;
 var protected transient ScrnPlayerInfo BackupPlayerInfo;
 var protected int WavePlayerCount, WaveDeadPlayers;
+var protected ScrnPlayerInfo MySPI;
+var float GameEndDelayNoPlayers;
+var ScrnPauser Pauser;
 
 var class<ScrnAchievements> AchClass;
 var class<ScrnMapAchievements> MapAchClass;
@@ -278,6 +281,7 @@ function WaveStarted()
 function PlayerLeaving(ScrnPlayerController PC)
 {
     local ScrnPlayerInfo SPI;
+    local KFAmmunition ammo;
 
     if ( Level.Game.bGameEnded )
         return; // game over
@@ -286,14 +290,71 @@ function PlayerLeaving(ScrnPlayerController PC)
             $ " SteamID64=" $ PC.ScrnCustomPRI.GetSteamID64()
             $ " SteamID32=" $ PC.ScrnCustomPRI.GetSteamID32()
             $ " Dosh=$" $ PC.PlayerReplicationInfo.Score
+            $ " NumPlayers=" $ Level.Game.NumPlayers
             , 'ScrnBalance');
+
     SPI = GetPlayerInfo(PC);
-    if ( SPI != none ) {
-        SPI.BackupPRI();
-        SPI.PlayerOwner = none;
+    if (SPI == none ) {
+        log(class'ScrnFunctions'.static.PlainPlayerName(PC.PlayerReplicationInfo) $ " has no SPI", 'ScrnBalance');
+        return;
+    }
+
+    SPI.BackupPRI();
+    SPI.ResetDisconnectStats();
+    if (PC.bDestroying && PC.Pawn != none &&  PC.Pawn.Health > 0) {
+        if (Level.TimeSeconds - PC.LastValidClientTime > 1.0) {
+            log("Last frame received from the player " $ string(Level.TimeSeconds - PC.LastValidClientTime) $ "s ago",
+                    'ScrnBalance');
+            SPI.bCrashed = true;
+        }
+        GameEndDelayNoPlayers = Level.TimeSeconds + Mut.PauseTimeOnDisconnect;
+        SPI.HealthBeforeDisconnect = PC.Pawn.Health;
+        SPI.ArmorBeforeDisconnect = PC.Pawn.ShieldStrength;
+        SPI.LocationBeforeDisconnect = PC.LastValidClientLocation;
+        ammo = KFAmmunition(PC.ScrnPawn.FindInventoryType(class'FragAmmo'));
+        if (ammo != none) {
+            SPI.NadeCount = ammo.AmmoAmount;
+        }
+        ammo = KFAmmunition(PC.ScrnPawn.FindInventoryType(class'PipeBombAmmo'));
+        if (ammo != none) {
+            SPI.PipeBombCount = ammo.AmmoAmount;
+        }
+
+        // reference dropped pickups
+        MySPI = SPI;
+        Mut.OnSetupPickup = AddSPIWeapon;
+        class'ScrnHumanPawn'.static.DropAllWeapons(PC.Pawn, false);
+        Mut.OnSetupPickup = none;
+        MySPI = none;
+
+        log("Player "$SPI.PlayerName$" disconnected alive: " $ SPI.HealthBeforeDisconnect $ "HP, "
+                $ SPI.ArmorBeforeDisconnect $ "AP, "
+                $ SPI.NadeCount $ " nades, "
+                $ SPI.DroppedWeapons.Length $ " weapons."
+                , 'ScrnBalance');
+
+        if (Mut.PauseTimeOnDisconnect > 0 && SPI.PRI_Kills > 0
+                && (Mut.bPauseOnDisconnect || Level.Game.NumPlayers == 1)) {
+            if (Pauser == none) {
+                Pauser = spawn(class'ScrnPauser');
+            }
+            Mut.PauseGame(Pauser, Mut.PauseTimeOnDisconnect);
+        }
     }
     else {
-        log(class'ScrnFunctions'.static.PlainPlayerName(PC.PlayerReplicationInfo) $ " has no SPI", 'ScrnBalance');
+        GameEndDelayNoPlayers = 0;
+    }
+    SPI.PlayerOwner = none;
+}
+
+function AddSPIWeapon(Pickup P)
+{
+    local KFWeaponPickup KFP;
+
+    log("AddSPIWeapon " $ P);
+    KFP = KFWeaponPickup(P);
+    if (MySPI != none && KFP != none && P != none) {
+        MySPI.DroppedWeapons[MySPI.DroppedWeapons.Length] = KFP;
     }
 }
 
@@ -301,6 +362,7 @@ function PlayerLeaving(ScrnPlayerController PC)
 function PlayerEntering(ScrnPlayerController PC)
 {
     local ScrnPlayerInfo SPI;
+
     log("Player Entering: " $ class'ScrnFunctions'.static.PlainPlayerName(PC.PlayerReplicationInfo)
             $ " SteamID64=" $ PC.ScrnCustomPRI.GetSteamID64()
             $ " SteamID32=" $ PC.ScrnCustomPRI.GetSteamID32()
@@ -308,6 +370,138 @@ function PlayerEntering(ScrnPlayerController PC)
             , 'ScrnBalance');
     SPI = CreatePlayerInfo(PC, true, true);
     SPI.RestorePRI();
+
+    if (SPI.HealthBeforeDisconnect > 0 && !PC.PlayerReplicationInfo.bOnlySpectator && PC.IsInState('PlayerWaiting')) {
+        log("Player Reconnected: " $ SPI.PlayerName, 'ScrnBalance');
+        PC.PlayerReplicationInfo.bOutOfLives = false;
+        PC.PlayerReplicationInfo.NumLives = 0;
+        PC.PlayerReplicationInfo.bReadyToPlay = true;
+        PC.SendSelectedVeterancyToServer(true);
+        Level.Game.RestartPlayer(PC);
+    }
+}
+
+function NavigationPoint FindPlayerStart(Controller Player, optional byte InTeam, optional string incomingName)
+{
+    local NavigationPoint N;
+    local ScrnPlayerInfo SPI;
+
+    SPI = GetPlayerInfo(PlayerController(Player));
+    if (SPI != none && SPI.HealthBeforeDisconnect > 0 && Mut.ScrnGT != none) {
+        N = Mut.ScrnGT.FindClosestPathNodeToLocation(SPI.LocationBeforeDisconnect,,,true);
+        if (N != none) {
+            log(SPI.PlayerName $ " player start at " $ N.name $ " near " $ SPI.LocationBeforeDisconnect, 'ScrnBalance');
+            return N;
+        }
+    }
+
+    if ( NextGameRules != None )
+        return NextGameRules.FindPlayerStart(Player,InTeam,incomingName);
+    return None;
+}
+
+function bool AllowMidWaveRespawn(ScrnPlayerController PC)
+{
+    local ScrnPlayerInfo SPI;
+
+    SPI = GetPlayerInfo(PC);
+    if (SPI == none)
+        return false;
+
+    return SPI.HealthBeforeDisconnect > 0;
+}
+
+// The player doesn't have the default inventory yet
+function PlayerSpawned(ScrnPlayerController PC)
+{
+    local ScrnPlayerInfo SPI;
+    local int i, c;
+    local KFWeaponPickup WP;
+    local Inventory Copy;
+    local KFWeapon W;
+
+    SPI = GetPlayerInfo(PC);
+    if (SPI == none)
+        return; // wtf?
+
+    if (SPI.HealthBeforeDisconnect > 0) {
+        // guns
+        for (i = 0; i < SPI.DroppedWeapons.Length; ++i) {
+            WP = SPI.DroppedWeapons[i];
+            if (WP == none || WP.bDeleteMe)
+                continue;  // somebody stole our gun!
+            Copy = WP.SpawnCopy(PC.ScrnPawn);
+            if (Copy != none) {
+                Copy.PickupFunction(PC.ScrnPawn);
+                W = KFWeapon(Copy);
+                if (W != none) {
+                    W.SellValue = WP.SellValue;
+                }
+            }
+            WP.AnnouncePickup(PC.ScrnPawn);
+            WP.SetRespawn();
+            ++c;
+        }
+        if (c > 0) {
+            PC.ScrnPawn.bOnlyRequiredEquipment = true;
+        }
+        log("Player Respawned: " $ SPI.PlayerName @ SPI.HealthBeforeDisconnect$"HP, "
+                $ SPI.ArmorBeforeDisconnect $ "AP, and "$c$" weapons", 'ScrnBalance');
+        SPI.DroppedWeapons.Length = 0;
+    }
+}
+
+// called after the player received the default inventory
+function ModifyPlayer(Pawn Other)
+{
+    local ScrnHumanPawn ScrnPawn;
+    local ScrnPlayerInfo SPI;
+    local KFAmmunition ammo;
+
+    ScrnPawn = ScrnHumanPawn(Other);
+    if (ScrnPawn == none)
+        return;
+
+    SPI = GetPlayerInfo(ScrnPawn.ScrnPC);
+    if (SPI == none)
+        return;
+
+    if (SPI.HealthBeforeDisconnect > 0) {
+        ScrnPawn.Health = SPI.HealthBeforeDisconnect;
+        if (SPI.ArmorBeforeDisconnect > 0) {
+            if (SPI.ArmorBeforeDisconnect > 100) {
+                ScrnPawn.SetVestClass(class'ScrnHorzineVestPickup');
+            }
+            ScrnPawn.ShieldStrength = 0;
+            ScrnPawn.AddShieldStrength(SPI.ArmorBeforeDisconnect);
+        }
+
+        ammo = KFAmmunition(ScrnPawn.FindInventoryType(class'FragAmmo'));
+        if (ammo != none) {
+            log("Restore " $ SPI.NadeCount $ " nades to " $ SPI.PlayerName, 'ScrnBalance');
+            ammo.AddAmmo(SPI.NadeCount - ammo.AmmoAmount);
+            SPI.NadeCount = 0;
+        }
+        if (SPI.PipeBombCount > 0) {
+            ammo = KFAmmunition(ScrnPawn.FindInventoryType(class'PipeBombAmmo'));
+            if (ammo == none) {
+                ScrnPawn.CreateInventoryVeterancy(string(class'ScrnPipeBombExplosive'), 0);
+                ammo = KFAmmunition(ScrnPawn.FindInventoryType(class'PipeBombAmmo'));
+            }
+            if (ammo != none) {
+                log("Restore " $ SPI.PipeBombCount $ " pipebombs to " $ SPI.PlayerName, 'ScrnBalance');
+                ammo.AddAmmo(SPI.PipeBombCount - ammo.AmmoAmount);
+                SPI.PipeBombCount = 0;
+            }
+        }
+        if (Level.Pauser != none && Level.Pauser == Pauser) {
+            GameEndDelayNoPlayers = 0;
+            Mut.ResumeGame(Mut.ResumeDelayOnReconnect);
+        }
+        ScrnPawn.ScrnPC.ClientSwitchToBestWeapon();
+        Level.Game.BaseMutator.Mutate("VOTE BLAME \"TRIPWIRE\" FOR THE BROKEN GAME", ScrnPawn.ScrnPC);
+    }
+    SPI.ResetDisconnectStats();
 }
 
 function TransferDoshToTeam(ScrnPlayerInfo SPI)
@@ -452,6 +646,10 @@ function bool CheckEndGame(PlayerReplicationInfo Winner, string Reason)
 
     if ( NextGameRules != None && !NextGameRules.CheckEndGame(Winner,Reason) )
         return false;
+
+    if (Level.TimeSeconds < GameEndDelayNoPlayers) {
+        return false;
+    }
 
     // KFStoryGameInfo first call GameRules.CheckEndGame() and only then sets EndGameType
     if ( Mut.bStoryMode )

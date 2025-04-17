@@ -28,7 +28,7 @@ const VOTE_RKILL        = 100;
 
 var localized string strCantEndTrade;
 var localized string strTooLate;
-var localized string strGamePaused, strSecondsLeft, strGameUnPaused, strPauseTraderOnly;
+var localized string strPauseTraderOnly;
 var localized string viResume, viEndTrade, viDifficulty;
 var localized string strZedSpawnsDoubled;
 var localized string strSquadNotFound, strCantSpawnSquadNow, strSquadList;
@@ -39,10 +39,6 @@ var localized string strBlamed, strBlamedBaron;
 var localized string strWrongPerk;
 var localized string strMapNameTooShort, strMapNotFound, strWrongGameConfig;
 
-//variables for GamePaused state
-var int PauseTime;
-var transient bool bPauseable;
-var transient string msgPause;
 var transient array< class<ScrnVeterancyTypes> > VotedPerks;
 var transient byte VotedDiff;
 var transient int VotedGameConfig;
@@ -479,7 +475,7 @@ function int GetVoteIndex(PlayerController Sender, string Key, out string Value,
             Sender.ClientMessage(strOptionDisabled);
             return VOTE_NOEFECT;
         }
-        if ( Level.TimeSeconds - LastBlameVoteTime < Mut.BlameVoteCoolDown ) {
+        if ( LastBlameVoteTime > 0 && Level.TimeSeconds - LastBlameVoteTime < Mut.BlameVoteCoolDown ) {
             Sender.ClientMessage(strNotAvaliableATM);
             return VOTE_LOCAL;
         }
@@ -793,23 +789,19 @@ function ApplyVoteValue(int VoteIndex, string VoteValue)
             }
             break;
         case VOTE_PAUSE:
-            if (Level.Pauser == none ) {
-                //pause game
-                if ( Mut.bPauseTraderOnly && !Mut.KF.bTradingDoorsOpen && Mut.KF.IsInState('MatchInProgress') ) {
-                    VotingHandler.BroadcastMessage(strPauseTraderOnly);
-                    return;
-                }
-                PauseTime = int(VoteValue);
-                if ( PauseTime <= 0 )
-                    PauseTime = 60;
-                GotoState('GamePaused', 'Begin');
-                //Enable('Tick');
+            if (Level.Pauser != none ) {
+                Mut.ResumeGame();
+            }
+            else if ( Mut.bPauseTraderOnly && !Mut.KF.bTradingDoorsOpen && Mut.KF.IsInState('MatchInProgress') ) {
+                VotingHandler.BroadcastMessage(strPauseTraderOnly);
+                return;
             }
             else {
-                //resume game
-                Level.Pauser = none;
-                VotingHandler.BroadcastMessage(strGameUnpaused);
-                //Disable('Tick');
+                i = int(VoteValue);
+                if (i <= 0) {
+                    i = 60;
+                }
+                Mut.PauseGame(VotingHandler.VoteInitiator.PlayerReplicationInfo, i);
             }
             break;
         case VOTE_ENDTRADE:
@@ -1191,42 +1183,8 @@ function byte GetDifficulty(out string DiffStr)
     return 255;
 }
 
-state GamePaused
-{
-Begin:
-    Level.Pauser = VotingHandler.VoteInitiator.PlayerReplicationInfo;
-
-    if ( Level.Pauser != none ) {
-        // tell players that game is paused
-        msgPause = strGamePaused;
-        msgPause = Repl(msgPause, "%s", string(PauseTime));
-        VotingHandler.BroadcastMessage(msgPause);
-        Mut.PauseTimeRemaining -= PauseTime;
-
-        // wait for pause time ends or game resumes by other source (e.g. admin)
-        while ( PauseTime > 0 && Level.Pauser != none ) {
-            if ( PauseTime <= 5 )
-                VotingHandler.BroadcastMessage(String(PauseTime));
-            else if ( (PauseTime%30 == 0) || (PauseTime < 30 && PauseTime%10 == 0) )
-                VotingHandler.BroadcastMessage(PauseTime @ strSecondsLeft);
-            //log(Level.TimeSeconds @ "Sleep", 'ScrnBalance');
-            sleep(1.0);
-            PauseTime--;
-        }
-        // resume game after pause time ends
-        if ( Level.Pauser != none ) {
-            Level.Pauser = none;
-            VotingHandler.BroadcastMessage(strGameUnpaused);
-        }
-        Mut.PauseTimeRemaining += PauseTime;
-    }
-    GotoState('');
-}
-
 defaultproperties
 {
-    bAlwaysTick=True // tick during game pause
-
     HelpInfo(00)="%gLOCKPERK%w|%gUNLOCKPERK %y[!] <perk1> [<perk2> ...]%w Disables/Enables perk at the end of the wave"
     HelpInfo(01)="%gLOCKTEAM%w|%gUNLOCKTEAM %w Locks/Unlocks teams. Only invited players may join locked team."
     HelpInfo(02)="%gPAUSE %yX %w Pause the game for X seconds"
@@ -1249,9 +1207,6 @@ defaultproperties
 
     strCantEndTrade="Can not end trade time at the current moment"
     strTooLate="Too late"
-    strGamePaused="Game paused for %s seconds"
-    strSecondsLeft="seconds left"
-    strGameUnpaused="Game resumed"
     strPauseTraderOnly="Game can be paused only during trader time!"
     strZedSpawnsDoubled="ZED spawn rate doubled!"
     strSquadNotFound="Monster squad with a given name not found"

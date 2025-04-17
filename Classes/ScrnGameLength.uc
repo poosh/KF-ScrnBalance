@@ -296,8 +296,9 @@ function LoadGame(ScrnGameType MyGame)
     else {
         Wave = CreateWave(Waves[Waves.length-1]);
         Game.bUseEndGameBoss = Wave.EndRule == RULE_KillBoss;
-        Wave = CreateWave(Waves[0]);
+        UsedWaves.Length = 0;
 
+        Wave = CreateWave(Waves[0]);
         if (StartDosh == 0 && StartDoshPerWave == 0) {
             StartDoshPerWave = RecommendedStartDosh / Waves.length / 25 * 25;
             StartDosh = StartDoshPerWave;
@@ -795,7 +796,7 @@ function string PickWaveName(array<string> Candidates) {
             bOk = true;
         }
 
-        if (bOk && bUniqueWaves && class'ScrnF'.static.SearchStr(UsedWaves, NewWave) != -1) {
+        if (bOk && bUniqueWaves && Candidates.Length > 1 && class'ScrnF'.static.SearchStr(UsedWaves, NewWave) != -1) {
             // not unique
             bOk = false;
         }
