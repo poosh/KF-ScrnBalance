@@ -30,6 +30,9 @@
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+## v9.72.02
+- **FTG**: Fixed `FtgRule` in the boss wave
+
 ## v9.72.01
 ### Mid-Wave Respawn
 - Allows crashed or disconnected players to reconnect and respawn mid-wave.

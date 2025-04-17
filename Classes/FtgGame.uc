@@ -599,16 +599,20 @@ State MatchInProgress
         if ( bSingleTeamGame )
             t = 1; // skip red team
 
-        while ( t < 2 ) {
-            if ( !TeamBases[t].bActive ) {
-                // if players have lost base during the Trader Time
-                TeamBases[t].MoveToShop(TeamShops[t]);
-                TeamBases[t].ScoreOrHome();
-            }
-            ++t;
+        if (bNoBases) {
+            NextStinkySpawnTime = Level.TimeSeconds + 600;
         }
-
-        NextStinkySpawnTime = Level.TimeSeconds + 30; // give enough time for Boss to spawn
+        else {
+            while ( t < 2 ) {
+                if ( !TeamBases[t].bActive ) {
+                    // if players have lost base during the Trader Time
+                    TeamBases[t].MoveToShop(TeamShops[t]);
+                    TeamBases[t].ScoreOrHome();
+                }
+                ++t;
+            }
+            NextStinkySpawnTime = Level.TimeSeconds + 30; // give enough time for Boss to spawn
+        }
         super.StartWaveBoss();
     }
 }
