@@ -1900,8 +1900,8 @@ function LoadCustomWeapons()
         j = InStr(S,":");
         if ( j > 0 ) {
             PerkIndex = int(Left(S, j));
-            if ( PerkIndex < 10 || PerkIndex > 255 ) {
-                log("Custom Perk index must be between 10 and 255! Perk '"$S$"' ignored", 'ScrnBalance');
+            if (PerkIndex < 0 || PerkIndex > 255) {
+                log("Custom Perk index must be between 0 and 255! Perk '"$S$"' ignored", 'ScrnBalance');
                 continue;
             }
             S = Mid(S, j+1);
@@ -3309,7 +3309,7 @@ function GameResumed()
 
 defaultproperties
 {
-    VersionNumber=97202
+    VersionNumber=97203
     GroupName="KF-Scrn"
     FriendlyName="ScrN Balance"
     Description="Total rework of KF1 to make it modern and the best tactical coop in the world while sticking to the roots of the original."

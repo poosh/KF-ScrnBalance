@@ -30,6 +30,12 @@
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+## v9.72.03
+- Added a workaround for misconfigured MusicTrigger to play music
+- Fixed an issue when payer paths still could go via `ZombiePathNode`
+- *ScrnMapInfo.ini*: added `DebugShop` and `DebugZVol`
+- *ScrnBalanceSrv.ini*: `CustomPerks` now can be used to override the original perks
+
 ## v9.72.02
 - **FTG**: Fixed `FtgRule` in the boss wave
 

@@ -906,6 +906,7 @@ function PlayDefaultMusic(class<KFMusicTrigger> M)
 function string GetSongFromMusicTrigger(class<KFMusicTrigger> M)
 {
     local KFGameReplicationInfo KFGRI;
+    local ScrnGameReplicationInfo ScrnGRI;
     local string sng;
     local int w;
 
@@ -915,22 +916,56 @@ function string GetSongFromMusicTrigger(class<KFMusicTrigger> M)
     if ( KF_StoryGRI(KFGRI) != none )
         return sng; // story music must be set explicitly by L.D.
 
+    ScrnGRI = ScrnGameReplicationInfo(KFGRI);
     w = KFGRI.WaveNumber;
-    if ( KFGRI.bWaveInProgress ) {
-        if ( w == KFGRI.FinalWave && M.default.WaveBasedSongs.length > 10 && TSCGameReplicationInfo(KFGRI) == none )
+    if (KFGRI.bWaveInProgress) {
+        if (ScrnGRI != none && ScrnGRI.WaveEndRule == 4 && M.default.WaveBasedSongs.length > 10) {
+            sng = M.default.WaveBasedSongs[10].CombatSong; // boss battle song for RULE_KillBoss
+        }
+        else if (w == KFGRI.FinalWave && M.default.WaveBasedSongs.length > 10 && TSCGameReplicationInfo(KFGRI) == none) {
             sng = M.default.WaveBasedSongs[10].CombatSong; // boss battle song
-        else if ( w < M.default.WaveBasedSongs.length )
+        }
+        else if (w < M.default.WaveBasedSongs.length) {
             sng = M.default.WaveBasedSongs[w].CombatSong;
-        else
+        }
+        else if (M.default.WaveBasedSongs.length > 10) {
+            sng = M.default.WaveBasedSongs[rand(M.default.WaveBasedSongs.length)].CombatSong;
+        }
+        else {
             sng = M.default.CombatSong;
+        }
+
+        if (sng == "") {
+            if (M.default.WaveBasedSongs.length > 0) {
+                sng = M.default.WaveBasedSongs[rand(M.default.WaveBasedSongs.length)].CombatSong;
+            }
+            if (sng == "") {
+                sng = M.default.CombatSong;
+            }
+        }
     }
     else {
-        if ( KFGRI.TimeToNextWave > 10 )
+        if (KFGRI.TimeToNextWave > 10)
             w++; // KFGRI.WaveNumber is updated only at the end of the trader time
-        if ( w < M.default.WaveBasedSongs.length )
+
+        if (w < M.default.WaveBasedSongs.length) {
             sng = M.default.WaveBasedSongs[w].CalmSong;
-        else
+        }
+        else if (M.default.WaveBasedSongs.length > 10) {
+            sng = M.default.WaveBasedSongs[rand(M.default.WaveBasedSongs.length)].CalmSong;
+        }
+        else {
             sng = M.default.Song;
+        }
+
+        if (sng == "") {
+            if (M.default.WaveBasedSongs.length > 0) {
+                sng = M.default.WaveBasedSongs[rand(M.default.WaveBasedSongs.length)].CalmSong;
+            }
+            if (sng == "") {
+                sng = M.default.Song;
+            }
+        }
     }
     return sng;
 }

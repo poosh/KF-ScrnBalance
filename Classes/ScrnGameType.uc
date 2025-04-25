@@ -434,6 +434,9 @@ function CheckZedSpawnList()
 
     ZVolInfos.Length = ZedSpawnList.Length;
     MapInfo.ProcessZombieVolumes(ZedSpawnList, ZVolInfos);
+    if (ZVolInfos.Length != ZedSpawnList.Length) {
+        warn("ZVolInfos do NOT match ZedSpawnList");
+    }
 
     // third pass: precalc stuff
     ZVolVisibleCount = 0;
@@ -509,7 +512,7 @@ function CheckZedSpawnList()
     LogZedSpawn(LOG_INFO,   "ElevatedSpawnMaxZ=" $ ElevatedSpawnMaxZ);
 
     if (MapInfo.bDebug) {
-        ZVolDrawDebug();
+        MapInfo.InitDebug();
     }
 }
 
@@ -665,33 +668,6 @@ function LoadTelemetry()
         }
     }
     Telemetry.length = i;
-}
-
-function ZVolDrawDebug()
-{
-    local int i, j;
-    local ZombieVolume ZVol;
-    local Vector x, y, z;
-    local float r, h;
-
-    if (Level.NetMode == NM_DedicatedServer)
-        return;
-
-    x = vect(1, 0, 0);
-    y = vect(0, 1, 0);
-    z = vect(0, 0, 1);
-    r = class'VolumeColTester'.default.CollisionRadius;
-    h = class'VolumeColTester'.default.CollisionHeight;
-
-    for (i = 0; i < ZedSpawnList.Length; ++i)  {
-        ZVol = ZedSpawnList[i];
-        if (ZVol.bDebugZombieSpawning)
-            continue;
-        ZVol.bDebugZombieSpawning = true;
-        for (j = 0; j < ZVol.SpawnPos.length; ++j) {
-            ZVol.DrawDebugCylinder(ZVol.SpawnPos[j], x, y, z, r, h, 5, 0, 255, 0);
-        }
-    }
 }
 
 // called each time when all zombie volumes got checked
@@ -2215,13 +2191,19 @@ function Actor FindPlayerPath(PlayerController PC, Actor Destination)
     if (PC == none || Destination == none)
         return none;
 
+    // Avoid ZombiePathNodes in player path finding
     for (i = 0; i < ZombiePathNodes.Length; ++i) {
-        // avoid ZombiePathNodes in player path finding
-        ZombiePathNodes[i].ExtraCost += 1000000;
+        // Disable bSpecialForced because ZombiePathNode.SpecialCost() ignores TransientCost
+        ZombiePathNodes[i].bSpecialForced = false;
+        // TransientCost gets auto-cleared on FindPathToward() call
+        ZombiePathNodes[i].TransientCost = 9999999;
     }
+
     result = PC.FindPathToward(Destination, false);
+
+    // restore the original settings
     for (i = 0; i < ZombiePathNodes.Length; ++i) {
-        ZombiePathNodes[i].ExtraCost -= 1000000;
+        ZombiePathNodes[i].bSpecialForced = true;
     }
     return result;
 }

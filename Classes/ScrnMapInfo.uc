@@ -25,6 +25,7 @@ struct SPath {
 
 var config bool bDebug;
 var config bool bTestMap;
+var config name DebugShop, DebugZVol;
 
 var config int MaxZombiesOnce;
 var config bool bFastTrack;
@@ -98,6 +99,21 @@ function ProcessZombieVolumes(out array<ZombieVolume> ZList, out array<ScrnTypes
     local KFDoorMover Door;
     local string s;
 
+    if (bDebug && DebugZVol != '') {
+        i = FindZVolByName(ZList, DebugZVol);
+        if (i >= 0) {
+            if (i > 0) {
+                ZList[0] = ZList[i];
+                ZVolInfos[0] = ZVolInfos[i];
+            }
+            ZList.Length = 1;
+            ZVolInfos.Length = 1;
+            ZList[0].bAllowPlainSightSpawns = true;
+            log("DebugZVol " $ ZList[0].name, class.name);
+            return;
+        }
+    }
+
     for ( i = 0; i < ZList.length; ++i ) {
         ZVol = ZList[i];
         n = ZVol.name;
@@ -110,7 +126,7 @@ function ProcessZombieVolumes(out array<ZombieVolume> ZList, out array<ScrnTypes
         }
         if ( bResetSpawnDesirability ) {
             if ( abs(ZVol.SpawnDesirability - ZVol.default.SpawnDesirability) > 30 ) {
-                log(n $ " SpawnDesirability reset " $ ZVol.SpawnDesirability $ " => " $ ZVol.default.SpawnDesirability,                        class.name);
+                log(n $ " SpawnDesirability reset " $ ZVol.SpawnDesirability $ " => " $ ZVol.default.SpawnDesirability, class.name);
             }
             ZVol.SpawnDesirability = class'ZombieVolume'.default.SpawnDesirability;
         }
@@ -217,6 +233,56 @@ function ProcessZombieVolumes(out array<ZombieVolume> ZList, out array<ScrnTypes
         }
         s $= " => " $ ZList[i].name;
         log(s, class.name);
+    }
+}
+
+function InitDebug()
+{
+    local int i;
+
+    if (DebugShop != '') {
+        for (i = 0; i < Mut.KF.ShopList.length; ++i) {
+            if (Mut.KF.ShopList[i].name == DebugShop) {
+                if (i > 0) {
+                    Mut.KF.ShopList[0] = Mut.KF.ShopList[i];
+                }
+                Mut.KF.ShopList.length = 1;
+                log("DebugShop " $ Mut.KF.ShopList[i].name, class.name);
+                break;
+            }
+        }
+        if (i == Mut.KF.ShopList.length) {
+            log("DebugShop " $ DebugShop $ " not found!", class.name);
+        }
+    }
+
+    ZVolDrawDebug();
+}
+
+function ZVolDrawDebug()
+{
+    local int i, j;
+    local ZombieVolume ZVol;
+    local Vector x, y, z;
+    local float r, h;
+
+    if (Mut.Level.NetMode == NM_DedicatedServer)
+        return;
+
+    x = vect(1, 0, 0);
+    y = vect(0, 1, 0);
+    z = vect(0, 0, 1);
+    r = class'VolumeColTester'.default.CollisionRadius;
+    h = class'VolumeColTester'.default.CollisionHeight;
+
+    for (i = 0; i < Mut.KF.ZedSpawnList.Length; ++i)  {
+        ZVol = Mut.KF.ZedSpawnList[i];
+        if (ZVol.bDebugZombieSpawning)
+            continue;
+        ZVol.bDebugZombieSpawning = true;
+        for (j = 0; j < ZVol.SpawnPos.length; ++j) {
+            ZVol.DrawDebugCylinder(ZVol.SpawnPos[j], x, y, z, r, h, 5, 0, 255, 0);
+        }
     }
 }
 
