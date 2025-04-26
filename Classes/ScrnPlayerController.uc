@@ -57,6 +57,9 @@ var localized string strAlreadySpectating;
 var transient float OriginalSpectateSpeed;
 var float SpectateSpeedSprintMod;
 var transient bool bForcedSpectator;  // players wanted to play but forced to be spectator
+var class<LocalMessage> DelayedRestartMsg;
+var bool bForceDelayedRestart;
+var transient int DelayedRestartPhase;
 
 var globalconfig bool bPrioritizePerkedWeapons, bPrioritizeBoomstick;
 
@@ -186,6 +189,9 @@ replication
         ServerTourneyCheck, ServerKillMut, ServerKillRules,
         ServerSwitchViewMode, ServerSetViewTarget,
         ServerCrap;
+
+    reliable if ( bNetOwner && (bNetDirty || bNetInitial) && Role == ROLE_Authority )
+        bForceDelayedRestart;
 
     reliable if ( bNetOwner && (bNetDirty || bNetInitial) && Role < ROLE_Authority )
         bPrioritizePerkedWeapons, StartCash;
@@ -2063,6 +2069,8 @@ function ServerReStartPlayer()
 
     KF = KFGameType(Level.Game);
 
+    bForceDelayedRestart = false;
+
     if (PlayerReplicationInfo.bOnlySpectator)
         return;  // wtf?
 
@@ -2084,6 +2092,7 @@ function ServerReStartPlayer()
 
 exec function Ready()
 {
+    bForceDelayedRestart = false;
     if ( PlayerReplicationInfo.bOnlySpectator ) {
         BecomeActivePlayer();
         return;
@@ -3602,6 +3611,68 @@ auto state PlayerWaiting
     {
         global.ServerRestartPlayer();
     }
+
+    function Timer()
+    {
+        if (bDemoOwner) {
+            SetTimer(0, false);
+            return;
+        }
+
+        if (!bRequestedSteamData && SteamStatsAndAchievements == none) {
+            if (Level.NetMode == NM_Standalone) {
+                SteamStatsAndAchievements = Spawn(SteamStatsAndAchievementsClass, self);
+                if (!SteamStatsAndAchievements.Initialize(self)) {
+                    SteamStatsAndAchievements.Destroy();
+                    SteamStatsAndAchievements = none;
+                    bRequestedSteamData = true;
+                }
+            }
+            else {
+                bRequestedSteamData = true;
+            }
+        }
+        else if (SteamStatsAndAchievements != none && !SteamStatsAndAchievements.bInitialized && ++ForceShowLobby <= 10) {
+            if (!bRequestedSteamData) {
+                ForceShowLobby = 0;
+                SteamStatsAndAchievements.GetStatsAndAchievements();
+                bRequestedSteamData = true;
+            }
+        }
+        else if (!bForceDelayedRestart && Player != None && GameReplicationInfo != none
+                && GUIController(Player.GUIController) != None && !GUIController(Player.GUIController).bActive) {
+            // ScrN players do not need legacy crap hints
+            UpdateHintManagement(false);
+            if (bPendingLobbyDisplay) {
+                ShowLobbyMenu();
+            }
+            SetTimer(0, false);
+        }
+
+        if (bForceDelayedRestart) {
+            ClientCloseMenu(true, true);
+            ForceShowLobby = 0;
+            if (DelayedRestartPhase < 5) {
+                if (DelayedRestartPhase > 0) {
+                    ReceiveLocalizedMessage(DelayedRestartMsg, 5 - DelayedRestartPhase);
+                }
+                SetTimer(1.0, true);
+                ++DelayedRestartPhase;
+            }
+            else {
+                SetTimer(0, false);
+                Ready();
+                ReceiveLocalizedMessage(DelayedRestartMsg, 0);
+            }
+        }
+    }
+
+    function ShowLobbyMenu()
+    {
+        if (!bForceDelayedRestart) {
+            global.ShowLobbyMenu();
+        }
+    }
 }
 
 
@@ -3966,6 +4037,7 @@ defaultproperties
     ScrnLoginMenuClass=class'ScrnInvasionLoginMenu'
     ShopMenuClass=Class'ScrnGUIBuyMenu'
     bAutoOpenGiveDosh=true
+    DelayedRestartMsg=class'ScrnPrepareToFightMsg'
 
     PawnClass=class'ScrnHumanPawn'
     CustomPlayerReplicationInfoClass=class'ScrnCustomPRI'

@@ -1,0 +1,1 @@
+class ScrnWaitingFontMsg extends CriticalEventPlus;

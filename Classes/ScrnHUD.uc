@@ -3356,6 +3356,9 @@ simulated function LocalizedMessage( class<LocalMessage> Message, optional int S
 
             if( LocalMessages[i].Message == Message )
                 break;
+
+            if (Message == class'ScrnFakedAchMsg' && LocalMessages[i].Message == class'ScrnAchievementEarnedMsg')
+                break;
         }
     }
     else if ( Message.default.bIsPartiallyUnique || PlayerOwner.bDemoOwner )
@@ -3798,9 +3801,10 @@ simulated function LayoutMessage( out HudLocalizedMessage Message, Canvas C )
     super.LayoutMessage(Message, C);
 
     FontSize = Message.Message.static.GetFontSize(Message.Switch, Message.RelatedPRI, Message.RelatedPRI2, PlayerOwner.PlayerReplicationInfo);
-    if (class<WaitingMessage>(Message.Message) != none
-            && (Message.Switch <= 3 || Message.Switch == 5))
-    {
+    if (class<WaitingMessage>(Message.Message) != none && (Message.Switch <= 3 || Message.Switch == 5)) {
+        Message.StringFont = GetWaitingFontSizeIndex(C, FontSize);
+    }
+    else if (class<ScrnWaitingFontMsg>(Message.Message) != none) {
         Message.StringFont = GetWaitingFontSizeIndex(C, FontSize);
     }
 }

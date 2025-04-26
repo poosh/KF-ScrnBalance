@@ -30,6 +30,10 @@
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+## v9.72.04
+- Added a 5-second delay before mid-wave respawing a reconnected player.
+- Removed the **Machete** weapon priority boost if Machete-sprinting is disabled.
+
 ## v9.72.03
 - Added a workaround for misconfigured MusicTrigger to play music
 - Fixed an issue when payer paths still could go via `ZombiePathNode`

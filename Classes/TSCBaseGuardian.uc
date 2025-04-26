@@ -639,6 +639,10 @@ state Guarding
         }
         if ( bNobodyAtBase ) {
             if ( bNobodyAlive || --SameTeamCounter <= 0 ) {
+                if (ScrnGameType(Level.Game).ScrnBalanceMut.GameRules.IsEndGameDelayed()) {
+                    // player crashed an might return
+                    return;
+                }
                 BroadcastLocalizedMessage(class'TSCMessages', 2+Team.TeamIndex*100);
                 SendHome();
             }

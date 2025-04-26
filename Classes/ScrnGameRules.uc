@@ -93,7 +93,7 @@ var transient ScrnPlayerInfo PlayerInfo;
 var protected transient ScrnPlayerInfo BackupPlayerInfo;
 var protected int WavePlayerCount, WaveDeadPlayers;
 var protected ScrnPlayerInfo MySPI;
-var float GameEndDelayNoPlayers;
+var float GameEndDelayNoPlayers, GameEndDelay;
 var ScrnPauser Pauser;
 
 var class<ScrnAchievements> AchClass;
@@ -307,7 +307,12 @@ function PlayerLeaving(ScrnPlayerController PC)
                     'ScrnBalance');
             SPI.bCrashed = true;
         }
-        GameEndDelayNoPlayers = Level.TimeSeconds + Mut.PauseTimeOnDisconnect;
+        if (Level.Game.NumPlayers <= 1) {
+            GameEndDelayNoPlayers = Level.TimeSeconds + fmax(Mut.PauseTimeOnDisconnect, 10.0);
+        }
+        else {
+            GameEndDelayNoPlayers = Level.TimeSeconds + 10.0;
+        }
         SPI.HealthBeforeDisconnect = PC.Pawn.Health;
         SPI.ArmorBeforeDisconnect = PC.Pawn.ShieldStrength;
         SPI.LocationBeforeDisconnect = PC.LastValidClientLocation;
@@ -373,11 +378,16 @@ function PlayerEntering(ScrnPlayerController PC)
 
     if (SPI.HealthBeforeDisconnect > 0 && !PC.PlayerReplicationInfo.bOnlySpectator && PC.IsInState('PlayerWaiting')) {
         log("Player Reconnected: " $ SPI.PlayerName, 'ScrnBalance');
+        if (Level.Pauser != none && Level.Pauser == Pauser) {
+            GameEndDelayNoPlayers = 0;
+            Mut.ResumeGame(Mut.ResumeDelayOnReconnect);
+        }
         PC.PlayerReplicationInfo.bOutOfLives = false;
         PC.PlayerReplicationInfo.NumLives = 0;
-        PC.PlayerReplicationInfo.bReadyToPlay = true;
-        PC.SendSelectedVeterancyToServer(true);
-        Level.Game.RestartPlayer(PC);
+        PC.bForceDelayedRestart = true;
+        PC.SetLocation(SPI.LocationBeforeDisconnect);
+        GameEndDelay = Level.TimeSeconds + 8.0;
+        Spawn(class'ScrnPrepareToFightAvoidMarker', PC,, SPI.LocationBeforeDisconnect);
     }
 }
 
@@ -494,11 +504,6 @@ function ModifyPlayer(Pawn Other)
                 SPI.PipeBombCount = 0;
             }
         }
-        if (Level.Pauser != none && Level.Pauser == Pauser) {
-            GameEndDelayNoPlayers = 0;
-            Mut.ResumeGame(Mut.ResumeDelayOnReconnect);
-        }
-        ScrnPawn.ScrnPC.ClientSwitchToBestWeapon();
         Level.Game.BaseMutator.Mutate("VOTE BLAME \"TRIPWIRE\" FOR THE BROKEN GAME", ScrnPawn.ScrnPC);
     }
     SPI.ResetDisconnectStats();
@@ -631,6 +636,11 @@ function string GetMapAchName(String FileName)
     return FileName;
 }
 
+function bool IsEndGameDelayed()
+{
+    return Level.TimeSeconds < GameEndDelay || Level.TimeSeconds < GameEndDelayNoPlayers;
+}
+
 function bool CheckEndGame(PlayerReplicationInfo Winner, string Reason)
 {
     local bool bWin;
@@ -644,12 +654,12 @@ function bool CheckEndGame(PlayerReplicationInfo Winner, string Reason)
         return false;
     }
 
-    if ( NextGameRules != None && !NextGameRules.CheckEndGame(Winner,Reason) )
-        return false;
-
-    if (Level.TimeSeconds < GameEndDelayNoPlayers) {
+    if (IsEndGameDelayed()) {
         return false;
     }
+
+    if (NextGameRules != None && !NextGameRules.CheckEndGame(Winner,Reason))
+        return false;
 
     // KFStoryGameInfo first call GameRules.CheckEndGame() and only then sets EndGameType
     if ( Mut.bStoryMode )

@@ -1895,6 +1895,10 @@ simulated function Tick(float DeltaTime)
             HealthBonus = ClientHealthBonus;
             CalcHealthMax();
         }
+        if (ScrnPC != none && !bThrowingNade && Frag(Weapon) != none) {
+            // Frag should not be equipped
+            ScrnPC.ClientSwitchToBestWeapon();
+        }
     }
 
     if ( KFPRI != none && ( PrevPerkClass != KFPRI.ClientVeteranSkill || PrevPerkLevel != KFPRI.ClientVeteranSkillLevel) )

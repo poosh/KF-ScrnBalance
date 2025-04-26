@@ -92,7 +92,14 @@ simulated state QuickMelee
 
 simulated function float RateSelf()
 {
-    return 1000;  // for machete-sprinting
+    local ScrnHumanPawn ScrnPawn;
+
+    ScrnPawn = ScrnHumanPawn(Instigator);
+    if (ScrnPawn != none && ScrnPawn.bAllowMacheteBoost && ScrnPawn.ScrnPC != none
+            && !ScrnPawn.ScrnPC.bNeverSwitchOnPickup) {
+        return 1000;  // for machete-sprinting
+    }
+    return super.RateSelf();
 }
 
 defaultproperties

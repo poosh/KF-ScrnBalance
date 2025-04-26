@@ -7,6 +7,15 @@ var bool bNetInit;
 
 function Timer()
 {
+    local ScrnPlayerController ScrnPC;
+
+    ScrnPC = ScrnPlayerController(PlayerOwner());
+    if (ScrnPC != none && ScrnPC.bForceDelayedRestart) {
+        ScrnPC.SetTimer(1.0, true);
+        ScrnPC.ClientCloseMenu(true, true);
+        return;
+    }
+
     super.Timer();
 
     if (!bNetInit && PlayerOwner() != none && PlayerOwner().PlayerReplicationInfo != none
