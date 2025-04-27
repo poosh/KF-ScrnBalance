@@ -8,6 +8,6 @@ function PostBeginPlay()
 
 defaultproperties
 {
-    CollisionRadius=250
+    CollisionRadius=400
     LifeSpan=8.0
 }

@@ -2321,7 +2321,8 @@ function SetupRepLink(ClientPerkRepLink R)
 
     ScrnRep.OwnerPC = ScrnPlayerController(R.Owner);
     ScrnRep.OwnerPRI = KFPlayerReplicationInfo(ScrnRep.OwnerPC.PlayerReplicationInfo);
-    log("Creating ScrnClientPerkRepLink for player " $ ScrnRep.OwnerPRI.PlayerName, 'ScrnBalance');
+    log("Creating ScrnClientPerkRepLink for player " $ class'ScrnF'.static.PlainPlayerName(ScrnRep.OwnerPRI)
+            , 'ScrnBalance');
 
     R.GotoState('');
     R.Destroy();
@@ -3309,7 +3310,7 @@ function GameResumed()
 
 defaultproperties
 {
-    VersionNumber=97204
+    VersionNumber=97205
     GroupName="KF-Scrn"
     FriendlyName="ScrN Balance"
     Description="Total rework of KF1 to make it modern and the best tactical coop in the world while sticking to the roots of the original."

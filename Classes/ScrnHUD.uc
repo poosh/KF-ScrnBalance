@@ -3797,16 +3797,29 @@ simulated function SetHUDAlpha()
 simulated function LayoutMessage( out HudLocalizedMessage Message, Canvas C )
 {
     local int FontSize;
+    local class<ScrnCustomFontMsg> ScrnFontMsg;
 
-    super.LayoutMessage(Message, C);
+    Message.StringMessage = class'KFGameType'.static.ParseLoadingHintNoColor(Message.StringMessage, PlayerOwner);
 
-    FontSize = Message.Message.static.GetFontSize(Message.Switch, Message.RelatedPRI, Message.RelatedPRI2, PlayerOwner.PlayerReplicationInfo);
-    if (class<WaitingMessage>(Message.Message) != none && (Message.Switch <= 3 || Message.Switch == 5)) {
-        Message.StringFont = GetWaitingFontSizeIndex(C, FontSize);
+    ScrnFontMsg = class<ScrnCustomFontMsg>(Message.Message);
+    if (ScrnFontMsg != none) {
+        Message.StringFont = ScrnFontMsg.static.GetFont(self, C, Message.Switch, Message.RelatedPRI,
+                Message.RelatedPRI2, PlayerOwner.PlayerReplicationInfo);
     }
-    else if (class<ScrnWaitingFontMsg>(Message.Message) != none) {
-        Message.StringFont = GetWaitingFontSizeIndex(C, FontSize);
+    else {
+        FontSize = Message.Message.static.GetFontSize(Message.Switch, Message.RelatedPRI, Message.RelatedPRI2,
+                PlayerOwner.PlayerReplicationInfo);
+        if (class<WaitingMessage>(Message.Message) != none && (Message.Switch <= 3 || Message.Switch == 5)) {
+            Message.StringFont = GetWaitingFontSizeIndex(C, FontSize);
+        }
+        else {
+            Message.StringFont = GetFontSizeIndex(C, FontSize);
+        }
     }
+    Message.DrawColor = Message.Message.static.GetColor(Message.Switch, Message.RelatedPRI, Message.RelatedPRI2);
+    Message.Message.static.GetPos(Message.Switch, Message.DrawPivot, Message.StackMode, Message.PosX, Message.PosY);
+    C.Font = Message.StringFont;
+    C.TextSize(Message.StringMessage, Message.DX, Message.DY);
 }
 
 function SelectWeapon()

@@ -131,7 +131,7 @@ var string PlayerName;
 var int SteamID32;
 var int PRI_Score, PRI_Kills, PRI_KillAssists, PRI_Deaths, PRI_StartTime;
 var byte PRI_BlameCounter;
-var class<KFVeterancyTypes> PRI_ClientVeteranSkill;
+var class<ScrnVeterancyTypes> PRI_ClientVeteranSkill;
 var byte PRI_TeamIndex;
 var byte PRI_DeathWave;
 var bool PRI_HadPawn;
@@ -1056,7 +1056,7 @@ function BackupPRI()
     PRI_KillAssists = KFPRI.KillAssists;
     PRI_Deaths = KFPRI.Deaths;
     PRI_StartTime = KFPRI.StartTime;
-    PRI_ClientVeteranSkill = KFPRI.ClientVeteranSkill;
+    PRI_ClientVeteranSkill = class<ScrnVeterancyTypes>(KFPRI.ClientVeteranSkill);
 
     if ( KFPRI.Team == none )
         PRI_TeamIndex = 255;
@@ -1092,8 +1092,10 @@ function RestorePRI()
 
     if (ScrnPC != none && !ScrnPC.bHadPawn) {
         // player reconnecting
-        if (PRI_ClientVeteranSkill != none)
+        if (PRI_ClientVeteranSkill != none) {
+            ScrnPC.SelectedVeterancy = PRI_ClientVeteranSkill;
             KFPRI.ClientVeteranSkill = PRI_ClientVeteranSkill;
+        }
 
         if ( PRI_TeamIndex < 2 && ( KFPRI.Team == none || KFPRI.Team.TeamIndex != PRI_TeamIndex ) )
             Level.Game.ChangeTeam( PlayerOwner, PRI_TeamIndex, true );

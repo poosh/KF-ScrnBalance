@@ -30,8 +30,11 @@
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+## v9.72.05
+- Fixed an issue when mid-wave reconnected players could respawn with a wrong perk.
+
 ## v9.72.04
-- Added a 5-second delay before mid-wave respawing a reconnected player.
+- Added a 5-second delay before mid-wave respawning a reconnected player.
 - Removed the **Machete** weapon priority boost if Machete-sprinting is disabled.
 
 ## v9.72.03

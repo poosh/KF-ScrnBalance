@@ -175,7 +175,7 @@ simulated function ClientPerkLevel( int Index, byte NewLevel )
     }
 }
 
-function ServerSelectPerkSE(Class<ScrnVeterancyTypes> VetType)
+function ServerSelectPerkSE(class<ScrnVeterancyTypes> VetType)
 {
     local KFGameType KF;
     local bool bDifferentPerk;
@@ -185,7 +185,7 @@ function ServerSelectPerkSE(Class<ScrnVeterancyTypes> VetType)
     if ( VetType == none || VetType.default.bLocked )
         OwnerPC.ClientMessage(OwnerPC.strPerkLocked);
     else if ( OwnerPC == none || KF == none || KF.bWaitingToStartMatch || OwnerPC.Mut.bAllowAlwaysPerkChanges )
-        StatObject.ServerSelectPerk(VetType); // shouldn't happen, but just to be sure...
+        StatObject.ServerSelectPerk(VetType);
     else {
         if ( OwnerPC.Mut.bNoPerkChanges && OwnerPC.bHadPawn
                 && (!OwnerPC.Mut.bPerkChangeBoss || OwnerPC.Mut.bTSCGame || KF.WaveNum < KF.FinalWave)
@@ -205,6 +205,30 @@ function ServerSelectPerkSE(Class<ScrnVeterancyTypes> VetType)
         if ( bDifferentPerk && VetType == OwnerPRI.ClientVeteranSkill )
             OwnerPC.PerkChangeWave = KF.WaveNum;
     }
+}
+
+function bool ForcePerk(class<ScrnVeterancyTypes> Perk, optional bool bDisableNotify)
+{
+    local int i;
+    local ScrnHumanPawn ScrnPawn;
+
+    for (i = 0; i < CachePerks.Length; ++i) {
+        if (CachePerks[i].PerkClass == Perk) {
+            if (CachePerks[i].CurrentLevel == 0)
+                return false;
+            OwnerPC.SelectedVeterancy = Perk;
+            OwnerPRI.ClientVeteranSkill = Perk;
+            OwnerPRI.ClientVeteranSkillLevel = CachePerks[i].CurrentLevel - 1;
+            if (!bDisableNotify) {
+                ScrnPawn = ScrnHumanPawn(OwnerPC.Pawn);
+                if (ScrnPawn != none) {
+                    ScrnPawn.VeterancyChanged();
+                }
+            }
+            return true;
+        }
+    }
+    return false;
 }
 
 // this is triggered every time client receives any item from the server

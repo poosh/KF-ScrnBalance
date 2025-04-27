@@ -367,6 +367,8 @@ function AddSPIWeapon(Pickup P)
 function PlayerEntering(ScrnPlayerController PC)
 {
     local ScrnPlayerInfo SPI;
+    local NavigationPoint PlayerStart;
+    local vector SpawnLoc;
 
     log("Player Entering: " $ class'ScrnFunctions'.static.PlainPlayerName(PC.PlayerReplicationInfo)
             $ " SteamID64=" $ PC.ScrnCustomPRI.GetSteamID64()
@@ -374,10 +376,9 @@ function PlayerEntering(ScrnPlayerController PC)
             $ " Dosh=$" $ PC.PlayerReplicationInfo.Score
             , 'ScrnBalance');
     SPI = CreatePlayerInfo(PC, true, true);
-    SPI.RestorePRI();
 
     if (SPI.HealthBeforeDisconnect > 0 && !PC.PlayerReplicationInfo.bOnlySpectator && PC.IsInState('PlayerWaiting')) {
-        log("Player Reconnected: " $ SPI.PlayerName, 'ScrnBalance');
+        log("Player Reconnected: " $ SPI.PlayerName $ " perk " $ SPI.PRI_ClientVeteranSkill, 'ScrnBalance');
         if (Level.Pauser != none && Level.Pauser == Pauser) {
             GameEndDelayNoPlayers = 0;
             Mut.ResumeGame(Mut.ResumeDelayOnReconnect);
@@ -385,9 +386,18 @@ function PlayerEntering(ScrnPlayerController PC)
         PC.PlayerReplicationInfo.bOutOfLives = false;
         PC.PlayerReplicationInfo.NumLives = 0;
         PC.bForceDelayedRestart = true;
-        PC.SetLocation(SPI.LocationBeforeDisconnect);
         GameEndDelay = Level.TimeSeconds + 8.0;
-        Spawn(class'ScrnPrepareToFightAvoidMarker', PC,, SPI.LocationBeforeDisconnect);
+        PlayerStart = FindPlayerStart(PC, SPI.PRI_TeamIndex);
+        if (PlayerStart != none) {
+            SpawnLoc = PlayerStart.Location;
+            PC.SetLocation(SpawnLoc);
+            PC.SetRotation(PlayerStart.Rotation);
+        }
+        else {
+            SpawnLoc = SPI.LocationBeforeDisconnect;
+            PC.SetLocation(SpawnLoc);
+        }
+        Spawn(class'ScrnPrepareToFightAvoidMarker', PC,, SpawnLoc);
     }
 }
 
@@ -477,6 +487,8 @@ function ModifyPlayer(Pawn Other)
         return;
 
     if (SPI.HealthBeforeDisconnect > 0) {
+        ScrnPawn.ScrnPC.PerkChangeWave = KF.WaveNum;  // just in case - to prevent cheating
+        ScrnPawn.OnVeterancyChanged = ForcePerkOnVeterancyChanged;
         ScrnPawn.Health = SPI.HealthBeforeDisconnect;
         if (SPI.ArmorBeforeDisconnect > 0) {
             if (SPI.ArmorBeforeDisconnect > 100) {
@@ -507,6 +519,30 @@ function ModifyPlayer(Pawn Other)
         Level.Game.BaseMutator.Mutate("VOTE BLAME \"TRIPWIRE\" FOR THE BROKEN GAME", ScrnPawn.ScrnPC);
     }
     SPI.ResetDisconnectStats();
+}
+
+function ForcePerkOnVeterancyChanged(ScrnHumanPawn ScrnPawn)
+{
+    local ScrnPlayerInfo SPI;
+    local ScrnClientPerkRepLink Rep;
+
+    ScrnPawn.OnVeterancyChanged = none;
+
+    SPI = GetPlayerInfo(ScrnPawn.ScrnPC);
+    if (SPI == none)
+        return;
+
+    // Player stats could be overwritten with the remote stat DB. Restore it again.
+    SPI.RestorePRI();
+
+    if (SPI.PRI_ClientVeteranSkill != none && ScrnPawn.KFPRI.ClientVeteranSkill != SPI.PRI_ClientVeteranSkill) {
+        Rep = class'ScrnClientPerkRepLink'.Static.FindMe(ScrnPawn.ScrnPC);
+        if (Rep != none) {
+            log("Force Perk from " $ ScrnPawn.KFPRI.ClientVeteranSkill $ " to " $ SPI.PRI_ClientVeteranSkill
+                    , 'ScrnBalance');
+            Rep.ForcePerk(SPI.PRI_ClientVeteranSkill, true);
+        }
+    }
 }
 
 function TransferDoshToTeam(ScrnPlayerInfo SPI)

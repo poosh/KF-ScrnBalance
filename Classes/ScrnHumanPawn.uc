@@ -133,6 +133,8 @@ struct SZedInfo {
 var array<SZedInfo> ZedInfo;
 var class<ScrnPawnFunc> MyFunc;
 
+delegate OnVeterancyChanged(ScrnHumanPawn P);
+
 replication
 {
     reliable if( bNetOwner && bNetDirty && Role == ROLE_Authority )
@@ -784,12 +786,15 @@ simulated function VeterancyChanged()
     local int c;
 
     MaxCarryWeight = Default.MaxCarryWeight;
-
     if ( KFPRI == none )
         return;
 
-    if ( KFPRI != none && KFPRI.ClientVeteranSkill != none )
-        MaxCarryWeight += KFPRI.ClientVeteranSkill.Static.AddCarryMaxWeight(KFPRI);
+    OnVeterancyChanged(self);
+
+    ScrnPerk = class<ScrnVeterancyTypes>(KFPRI.ClientVeteranSkill);
+    if (ScrnPerk != none) {
+        MaxCarryWeight += ScrnPerk.Static.AddCarryMaxWeight(KFPRI);
+    }
 
     if ( CurrentWeight > MaxCarryWeight )   {
         // drop extra weight
@@ -802,7 +807,6 @@ simulated function VeterancyChanged()
         }
     }
 
-    ScrnPerk = class<ScrnVeterancyTypes>(KFPRI.ClientVeteranSkill);
     CalcHealthMax();
     ApplyWeaponStats(Weapon);
     RecalcAmmo();

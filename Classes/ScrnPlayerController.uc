@@ -2104,15 +2104,12 @@ exec function Ready()
     if (Pawn != none && Pawn.Health > 0)
         return;
 
-    // if ( Level.NetMode == NM_Standalone || !PlayerReplicationInfo.bReadyToPlay ) {
-        SendSelectedVeterancyToServer(true);
-
-        //Set Ready
-        ServerRestartPlayer();
-        PlayerReplicationInfo.bReadyToPlay = True;
-        if ( Level.GRI.bMatchHasBegun )
-            ClientCloseMenu(true, false);
-    // }
+    //Set Ready
+    ServerRestartPlayer();
+    PlayerReplicationInfo.bReadyToPlay = True;
+    if ( Level.GRI.bMatchHasBegun ) {
+        ClientCloseMenu(true, false);
+    }
 }
 
 exec function Spectate()
@@ -2542,7 +2539,7 @@ exec function Perk(coerce string PerkName)
 {
     local class<ScrnVeterancyTypes> newPerk;
     local KFPlayerReplicationInfo KFPRI;
-    local class<ScrnVeterancyTypes> myPerk;
+    local ScrnClientPerkRepLink Rep;
 
     if (PerkName == "") {
         class'ScrnFunctions'.static.SendPerkList(self);
@@ -2550,16 +2547,16 @@ exec function Perk(coerce string PerkName)
     }
 
     KFPRI = KFPlayerReplicationInfo(PlayerReplicationInfo);
-    if (KFPRI == none)
+    Rep = class'ScrnClientPerkRepLink'.Static.FindMe(self);
+    if (KFPRI == none || Rep == none)
         return;
-    myPerk = class<ScrnVeterancyTypes>(KFPRI.ClientVeteranSkill);
 
-    newPerk = class'ScrnFunctions'.static.FindPerkByName(class'ScrnClientPerkRepLink'.Static.FindMe(self), PerkName);
+    newPerk = class'ScrnFunctions'.static.FindPerkByName(Rep, PerkName);
     if (newPerk == none) {
         ConsoleMessage(strPerkNotAvailable);
         return;
     }
-    SelectVeterancy(newPerk);
+    Rep.ServerSelectPerkSE(newPerk);
 }
 
 exec final function TourneyCheck()

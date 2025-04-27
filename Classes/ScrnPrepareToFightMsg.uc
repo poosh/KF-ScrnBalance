@@ -17,6 +17,7 @@ static function string GetString(
 defaultproperties
 {
     DrawColor=(R=200,G=0,B=0,A=255)
+    DrawPivot=DP_MiddleMiddle
     PosX=0.500000
     PosY=0.70
     FontSize=0
