@@ -270,7 +270,7 @@ simulated function UpdateTeamHud()
 simulated function DrawKFHUDTextElements(Canvas C)
 {
     local float    XL, YL;
-    local int      NumZombies, Min;
+    local int      NumZombies, Counter;
     local string   S;
     local float    CircleSize;
     local float    ResScale;
@@ -288,22 +288,22 @@ simulated function DrawKFHUDTextElements(Canvas C)
     C.FontScaleY = FMin(ResScale,1.f);
 
     // Countdown Text
-    if( !KFGRI.bWaveInProgress || TSCGRI.WaveEndRule == 2 /*RULE_Timeout*/ )
-    {
+    if (!KFGRI.bWaveInProgress || (ScrnGRI != none && (ScrnGRI.WaveEndRule == 2 || ScrnGRI.WaveEndRule == 9))) {
         DrawWaveCircle(C, WaveCircleClockBG[TeamIndex], CircleSize);
 
-        Min = KFGRI.TimeToNextWave / 60;
-        NumZombies = KFGRI.TimeToNextWave - (Min * 60);
+        if (KFGRI.TimeToNextWave >= 0) {
+            Counter = KFGRI.TimeToNextWave / 60;
+            NumZombies = KFGRI.TimeToNextWave - (Counter * 60);
 
-        S = Eval((Min >= 10), string(Min), "0" $ Min) $ ":" $ Eval((NumZombies >= 10), string(NumZombies), "0" $ NumZombies);
-        C.Font = LoadFont(2);
-        C.Strlen(S, XL, YL);
-        C.DrawColor = TextColors[TeamIndex];
-        C.SetPos(C.ClipX - CircleSize/2 - (XL / 2), CircleSize/2 - YL / 2);
-        C.DrawText(S, False);
+            S = Eval((Counter >= 10), string(Counter), "0" $ Counter) $ ":" $ Eval((NumZombies >= 10), string(NumZombies), "0" $ NumZombies);
+            C.Font = LoadFont(2);
+            C.Strlen(S, XL, YL);
+            C.DrawColor = TextColors[TeamIndex];
+            C.SetPos(C.ClipX - CircleSize/2 - (XL / 2), CircleSize/2 - YL / 2);
+            C.DrawText(S, False);
+        }
     }
-    else
-    {
+    else {
         DrawWaveCircle(C, WaveCircleClockBG[TeamIndex], CircleSize);
 
         if ( MyTeam != none && MyTeam.GetCurWaveKills() < TSCGRI.WaveKillReq ) {
@@ -314,7 +314,34 @@ simulated function DrawKFHUDTextElements(Canvas C)
             PulseColorIf(C.DrawColor, KFGRI.MaxMonsters < NumZombies*2);
         }
         else {
-            S = string(KFGRI.MaxMonsters);
+            Counter = KFGRI.MaxMonsters;
+            if (ScrnGRI != none) {
+                switch (ScrnGRI.WaveEndRule) {
+                    case 3:  // RULE_EarnDosh
+                    case 5:  // RULE_GrabDosh
+                    case 6:  // RULE_GrabDoshZed
+                        C.SetPos(C.ClipX - CircleSize/2 - CircleSize/8, 8);
+                        if ( KFPRI != none && KFPRI.Team != none ) {
+                            C.DrawColor = TeamColors[KFPRI.Team.TeamIndex];
+                            C.DrawColor.A = 255;
+                        }
+                        C.DrawTile(Texture'ScrnTex.HUD.Hud_Pound_Symbol_BW', CircleSize/4, CircleSize/4, 0, 0, 64, 64);
+                        Counter = ScrnGRI.WaveCounter;
+                        break;
+
+                    case 7:  // RULE_GrabAmmo
+                        C.SetPos(C.ClipX - CircleSize/2 - CircleSize/8, 8);
+                        C.SetDrawColor(255, 255, 255, 255);
+                        C.DrawTile(ClipsIcon.WidgetTexture, CircleSize/4, CircleSize/4, 0, 0, ClipsIcon.TextureCoords.X2, ClipsIcon.TextureCoords.Y2);
+                        Counter = ScrnGRI.WaveCounter;
+                        break;
+
+                    case 8:  // RULE_KillSpecial
+                        Counter = ScrnGRI.WaveCounter;
+                        break;
+                }
+            }
+            S = eval(Counter >= 0, string(Counter), "?");
             C.Font = LoadFont(1);
             C.DrawColor = TextColors[TeamIndex];
         }
@@ -368,6 +395,10 @@ simulated function DrawKFHUDTextElements(Canvas C)
         else {
             ShopDirPointer.bHidden = true;
         }
+    }
+
+    if (ScrnGRI != none && ScrnPRI != none && ScrnGRI.bWaveInProgress) {
+        DrawScrnObjectives(C);
     }
 
     if ( TSCGRI != none )

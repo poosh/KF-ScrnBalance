@@ -11,7 +11,8 @@ enum EWaveEndRule {
     RULE_GrabDosh,
     RULE_GrabDoshZed,
     RULE_GrabAmmo,
-    RULE_KillSpecial
+    RULE_KillSpecial,
+    RULE_ReachTrader,
 };
 
 enum EDoorControl {
@@ -48,11 +49,13 @@ var config EFtgRule FtgRule;
 var config int Counter, MaxCounter;
 var config float PerPlayerMult;
 var config int PerPlayerExclude;
+var config int Timelimit;
 var config float SpawnRateMod;
 var config float SpecialSquadCooldown;
 var config byte MaxZombiesOnce;
 var config float BountyScale;
 var config bool bNoBounty;
+var config int NoBountyTimeout;
 var config int CashBonus;
 var config float XP_Bonus, XP_BonusAlive;
 var config int SuicideTime;

@@ -265,9 +265,9 @@ simulated event UpdateScoreBoard(Canvas Canvas)
                 s @= class'ScrnF'.static.VersionStr(ScrnGRI.GameVersion);
             }
         }
-        if ( ScrnGRI.WaveTitle != "" )
+        if (ScrnGRI.WaveTitle != "" && ScrnGRI.WaveTitle != " ")
             S $= " | " $ ScrnGRI.WaveTitle;
-        if ( ScrnGRI.WaveMessage != "" )
+        if (ScrnGRI.WaveMessage != "" && ScrnGRI.WaveMessage != " ")
             S $= " | " $ ScrnGRI.WaveMessage;
     }
     Canvas.TextSize(S, XL,YL);

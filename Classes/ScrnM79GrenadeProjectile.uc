@@ -1,12 +1,14 @@
 class ScrnM79GrenadeProjectile extends M79GrenadeProjectile;
 
 var class<PanzerfaustTrail> SmokeTrailClass;
+var transient bool bBegunPlay;
 
 //overrided to change smoke emiter
 simulated function PostBeginPlay()
 {
     local rotator SmokeRotation;
 
+    bBegunPlay = true;
     BCInverse = 1 / BallisticCoefficient;
 
     if ( Level.NetMode != NM_DedicatedServer)
@@ -73,7 +75,7 @@ simulated function ProcessTouch(Actor Other, Vector HitLocation)
         {
             AmbientSound=none;
             PlaySound(Sound'ProjectileSounds.PTRD_deflect04',,2.0);
-            Other.TakeDamage( ImpactDamage, Instigator, HitLocation,X, ImpactDamageType );
+            Other.TakeDamage(ImpactDamage, Instigator, HitLocation, X, ImpactDamageType);
         }
         bDud = true;
         Velocity = vect(0,0,0);

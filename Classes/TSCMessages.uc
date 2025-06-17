@@ -17,6 +17,7 @@ var(Message) localized string strBaseZ;
 var(Message) localized string strBaseShop;
 var(Message) localized string strTeamLocked;
 var(Message) localized string strTeamUnlocked;
+var(Message) localized string strNoDosh;
 
 var(Message) localized string strBaseEstablished[2];
 var(Message) localized string strBaseLost[2];
@@ -74,6 +75,7 @@ static function string GetString(
         // warning messages
         switch (sw) {
             case 300:    return default.strEnemyShop;
+            case 301:    return default.strNoDosh;
             case 302:    return default.strSuddenDeath;
             case 310:    return default.strBaseZ;
             case 311:    return default.strGetBackToBaseOrDie;
@@ -140,6 +142,7 @@ defaultproperties
     strTeamShuffle="Teams shuffled"
     strTeamLocked="Teams locked. New players can join only by invite."
     strTeamUnlocked="Teams unlocked. Everybody can join the game."
+    strNoDosh="Trader is out of dosh. No more bounty for killing zeds."
 
     strBaseEstablished(0)="British Base established"
     strBaseEstablished(1)="Steampunk Base established"

@@ -11,8 +11,10 @@ var deprecated bool bStartingCashRelative;
 
 
 var ScrnGameType Game;
+var TscGame TSC;
 var FtgGame FTG;
 var ScrnBalance Mut;
+var ScrnWaveRule Rule;
 
 var class<ScrnWaveInfo> WaveInfoClass;
 var class<ScrnZedInfo> ZedInfoClass;
@@ -23,6 +25,7 @@ var config string Author;
 var config int StartDosh, StartDoshPerWave, StartDoshMin, StartDoshMax;
 var int RecommendedStartDosh;
 var config float BountyScale;
+var float NoBountyTime;
 var config array<string> ServerPackages;
 var config array<string> Mutators;
 var config array<string> Waves;
@@ -118,6 +121,9 @@ var transient array<string> UsedWaves;
 
 var transient float WaveEndTime;
 var transient int WaveCounter;
+var transient float Timelimit;
+var transient bool bTimelimit30;
+
 
 struct SZedCmdCache {
     var string Alias;
@@ -135,6 +141,7 @@ function LoadGame(ScrnGameType MyGame)
     local byte HardcoreDifficulty;
 
     Game = MyGame;
+    TSC = TscGame(MyGame);
     FTG = FtgGame(MyGame);
     Mut = Game.ScrnBalanceMut;
 
@@ -644,6 +651,9 @@ protected function bool LoadNextWave()
     Squads.length = 0;
     SpecialSquads.length = 0;
     PendingNextSpawnSquad.length = 0;
+    NoBountyTime = 0;
+    bTimelimit30 = false;
+    TimeLimit = Game.Level.TimeSeconds + 99999; // will be set later in RunWave
 
     NumPlayers = max(Game.NumPlayers + Game.NumBots, Game.ScrnGRI.FakedPlayers);
 
@@ -710,7 +720,20 @@ protected function bool LoadNextWave()
     Game.ScrnGRI.WaveEndRule = Wave.EndRule;
     Game.bZedPickupDosh = Wave.EndRule == RULE_GrabDoshZed;
     Game.bZedDropDosh = Wave.EndRule == RULE_GrabDoshZed || Wave.EndRule == RULE_GrabDosh;
-    Game.bZedGiveBounty = !Game.bZedDropDosh && (Wave.EndRule == RULE_EarnDosh || !Wave.bNoBounty);
+    if (Game.bZedDropDosh) {
+        Game.bZedGiveBounty = false;
+    }
+    else if (Wave.EndRule == RULE_EarnDosh) {
+        Game.bZedGiveBounty = true;
+    }
+    else if (Wave.NoBountyTimeout > 0) {
+        Game.bZedGiveBounty = true;
+        NoBountyTime = Game.Level.TimeSeconds + Wave.NoBountyTimeout + Wave.TraderTime;
+    }
+    else {
+        Game.bZedGiveBounty = !Wave.bNoBounty;
+    }
+
     SetWaveInfo();
 
     if (FTG != none) {
@@ -729,6 +752,19 @@ protected function bool LoadNextWave()
     }
 
     DoorControl(Wave.DoorControl, Mut.bRespawnDoors || Mut.bTSCGame);
+
+    switch (Wave.EndRule) {
+        case RULE_ReachTrader:
+            Rule = new class'ScrnWaveRule_ReachTrader';
+            break;
+        default:
+            Rule = none;
+    }
+
+    if (Rule != none) {
+        Rule.GL = self;
+        Rule.Load();
+    }
 
     return true;
 }
@@ -844,20 +880,27 @@ function ScrnWaveInfo CreateWave(string WaveDefinition)
 function RunWave()
 {
     local string s;
+    local bool bHasTitle, bHasMsg;
 
     SetWaveInfo();
     DoorControl(Wave.DoorControl2, false);
     Game.ScrnGRI.bTraderArrow = Wave.bTraderArrow;
+    if (Wave.TimeLimit > 0 && Wave.EndRule != RULE_Timeout) {
+        TimeLimit = Game.Level.TimeSeconds + Wave.TimeLimit - class'TSCGame'.default.WaveEndingCountDown;
+    }
 
     if ( Wave.bRandomSpawnLoc ) {
         Game.ZedSpawnLoc = ZSLOC_RANDOM;
     }
 
-    if ( Game.ScrnGRI.WaveTitle != "" || Game.ScrnGRI.WaveMessage != "" ) {
-        if ( Game.ScrnGRI.WaveTitle != "" ) {
+    bHasTitle = Game.ScrnGRI.WaveTitle != "" && Game.ScrnGRI.WaveTitle != " ";
+    bHasMsg = Game.ScrnGRI.WaveMessage != "" && Game.ScrnGRI.WaveMessage != " ";
+
+    if (bHasTitle || bHasMsg) {
+        if (bHasTitle) {
             s = class'ScrnFunctions'.static.ColorString(Game.ScrnGRI.WaveTitle, 255, 204, 1);
         }
-        if ( Game.ScrnGRI.WaveMessage != "" ) {
+        if (bHasMsg) {
             if ( s != "" )
                 s $= ": ";
             s $= Game.ScrnGRI.WaveMessage;
@@ -876,6 +919,14 @@ function RunWave()
             // Make sure the Team Wallet is empty when the goal is dosh earning
             Game.RewardAlivePlayers();
             break;
+
+        case RULE_GrabAmmo:
+            Mut.GameRules.WaveAmmoPickups = 0;
+            break;
+    }
+
+    if (Rule != none) {
+        Rule.Run();
     }
 }
 
@@ -929,13 +980,34 @@ function SetWaveInfo()
         Game.ScrnGRI.WaveTitle = class'ScrnFunctions'.static.ParseColorTags(Wave.Title);
         Game.ScrnGRI.WaveMessage = class'ScrnFunctions'.static.ParseColorTags(
                 Repl(Wave.Message, "%c", string(WaveCounter), true));
+        if (Game.ScrnGRI.WaveHeader == "-") {
+            Game.ScrnGRI.WaveHeader = " ";
+        }
+        if (Game.ScrnGRI.WaveTitle == "-") {
+            Game.ScrnGRI.WaveTitle = " ";
+        }
+        if (Game.ScrnGRI.WaveMessage == "-") {
+            Game.ScrnGRI.WaveMessage = " ";
+        }
     }
     Game.ScrnGRI.WaveCounter = 0;
+    Game.ScrnGRI.WaveCounterMax = 0;
     WaveTimer();
 }
 
 function WaveTimer()
 {
+    if (Game.bZedGiveBounty && NoBountyTime > 0 && Game.Level.TimeSeconds > NoBountyTime) {
+        Game.bZedGiveBounty = false;
+        NoBountyTime = 0;
+        Game.BroadcastLocalizedMessage(class'ScrnGameMessages', 301);
+    }
+
+    if (Rule != none) {
+        Rule.WaveTimer();
+        return;
+    }
+
     switch (Wave.EndRule) {
         case RULE_Timeout:
             Game.WaveEndTime = WaveEndTime;
@@ -960,8 +1032,13 @@ function WaveTimer()
             }
             else {
                 Game.ScrnGRI.WaveCounter = -1;  // Show "?" on HUD
+                Game.ScrnGRI.WaveCounterMax = -1;  // Show "?" on HUD
             }
             break;
+    }
+
+    if (Game.ScrnGRI.WaveCounterMax < Game.ScrnGRI.WaveCounter) {
+        Game.ScrnGRI.WaveCounterMax = Game.ScrnGRI.WaveCounter;
     }
 }
 
@@ -1073,6 +1150,21 @@ function int AliveZedCount(out array<KFMonster> ZedList)
 
 function bool CheckWaveEnd()
 {
+    if (Game.Level.TimeSeconds > TimeLimit) {
+        if (bTimelimit30) {
+            TimeLimit = Game.Level.TimeSeconds + 99999;
+            return true;
+        }
+
+        TimeLimit = Game.Level.TimeSeconds + class'TSCGame'.default.WaveEndingCountDown;
+        bTimelimit30 = true;
+        Game.BroadcastLocalizedMessage(class'ScrnGameMessages', 200);
+    }
+
+    if (Rule != none) {
+        return Rule.CheckWaveEnd();
+    }
+
     switch ( Wave.EndRule ) {
         case RULE_KillEmAll:
             return Game.TotalMaxMonsters <= 0 && Game.NumMonsters <= 0;
@@ -1112,6 +1204,7 @@ function int GetWaveZedCount()
         case RULE_GrabDosh:
         case RULE_GrabDoshZed:
         case RULE_GrabAmmo:
+        case RULE_ReachTrader:
             return 999;
     }
     return WaveCounter;

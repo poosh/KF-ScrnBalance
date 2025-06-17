@@ -117,6 +117,8 @@ function TakeDamage( int Damage, Pawn InstigatedBy, Vector Hitlocation, Vector M
 
 simulated function ProcessTouch( actor Other, vector HitLocation )
 {
+    local vector X;
+
     // Don't let it hit this player, or blow up on another player
     if ( Other == none || Other == Instigator || Other.Base == Instigator )
         return;
@@ -125,7 +127,15 @@ simulated function ProcessTouch( actor Other, vector HitLocation )
     if( KFBulletWhipAttachment(Other) != none )
         return;
 
-    Other.TakeDamage( ImpactDamage, Instigator, HitLocation, Normal(Velocity), ImpactDamageType );
+    if (bBegunPlay) {
+        X = Normal(Velocity);
+    }
+    else {
+        // touch on spawn; PostBeginPlay() hasn't been called yet, and, therefore, Velocity is not set
+        X = Vector(Rotation);
+    }
+
+    Other.TakeDamage(ImpactDamage, Instigator, HitLocation, X, ImpactDamageType);
 
     // more realistic interactions with karma objects.
     if (Other.IsA('NetKActor')) {

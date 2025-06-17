@@ -293,9 +293,9 @@ function DoTeleport()
 
 function TakeDamage(int Damage, Pawn instigatedBy, Vector hitlocation, Vector momentum, class<DamageType> damageType, optional int HitIndex )
 {
-    if ( bBlockActors )
+    // Stinky Clot takes damage only when blocking (not green) or when hit by a Mover
+    if (bBlockActors || damageType == class'Crushed')
         super.TakeDamage(Damage, instigatedBy, hitlocation, momentum, damageType, HitIndex);
-    // stinky clot does not take damage
 }
 
 function Died(Controller Killer, class<DamageType> damageType, vector HitLocation)

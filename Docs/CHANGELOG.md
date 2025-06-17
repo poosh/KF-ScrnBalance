@@ -30,6 +30,35 @@
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+## v9.72.07
+### New Survival
+- A new game mode inspired by New Doom but without Doom mosnters.
+- When all the zeds in a wave are spawned, players need to push through them to the trader.
+- Zeds keep spawning until all players reach the trader or die.
+
+### New Doom v6.66
+- The "Trader Path" waves require reaching the trader instead of timeout (like in New Survival)
+- Removed `Doom3Mutator` as being redundant.
+- **Cherub** health lowered 150 => 110 (HoE 262 => 192)
+- **Imp** health lowered 320 => 200 (HoE 560 => 350)
+- **Revenant** may shoot only one rocket at a time when not raged.
+- **Revenant** explosive damage resistance lowered 50% => 20%
+- **Revenant** projectiles slowed down by 20%
+
+### Other Changes
+- Fixed the point-blank headshot detection bug with medic grenades (**M79M**, **M203M**)
+- Added objective descriptions to the HUD for waves that require doing something else besides killing zeds (reach trader, earn dosh, gram ammo, etc.)
+- *ScrnWaves.ini*: Setting `Header` or `Title` to "-" clears them (does not display on the HUD and Scoreboard).
+- *ScrnWaves.ini*: new EndRule - `RULE_ReachTrader`
+- *ScrnWaves.ini*: new config options: `Timelimit` and `NoBountyTimeout`
+- **FTG**: Stinky Clot now can be killed by movers (thanks [nmmblez])
+- Fixed glowing skins of custom characters (thanks [That1Guy])
+- Fixed an issue where `RULE_GrabAmmo` counted ammo from the perious wave if `bOpenTrader=false` (thanks [nmmblez])
+- **72. Mystery Game v2.10**: switched to `RULE_ReachTrader` for trader path waves.
+
+### ScrN Weapon Pack
+- Added the "AP" prefix to **Hunting Rifle** to indicate that it is good against Fleshpounds.
+
 ## v9.72.05
 - Fixed an issue when mid-wave reconnected players could respawn with a wrong perk.
 

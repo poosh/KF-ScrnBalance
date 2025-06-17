@@ -3,7 +3,7 @@ class ScrnGameReplicationInfo extends KFGameReplicationInfo;
 var string GameTitle, GameAuthor;
 var int GameVersion;
 var string WaveHeader, WaveTitle, WaveMessage;
-var int WaveCounter;
+var int WaveCounter, WaveCounterMax;
 var int EndGameCounter;
 var byte WaveEndRule;
 var bool bTraderArrow;
@@ -11,6 +11,8 @@ var byte ZedTimeValue, ZedTimeDuration;
 var const float ZedTimeValueScale;
 
 var byte FakedPlayers, FakedAlivePlayers;
+var byte AlivePlayers[2];
+var byte ScoredPlayers[2];
 var byte NewDifficulty;  // allows changing difficulty mid-game
 
 var class<LocalMessage> RemainingTimeMsg;
@@ -22,13 +24,16 @@ replication
         GameTitle, GameAuthor, GameVersion, ZedTimeDuration;
 
     reliable if( (bNetInitial || bNetDirty) && Role == ROLE_Authority )
-        WaveHeader, WaveTitle, WaveMessage, WaveEndRule, bTraderArrow;
+        WaveHeader, WaveTitle, WaveMessage, WaveEndRule, bTraderArrow, WaveCounterMax;
 
     reliable if( (bNetInitial || bNetDirty) && Role == ROLE_Authority )
         WaveCounter, ZedTimeValue;
 
     reliable if( (bNetInitial || bNetDirty) && Role == ROLE_Authority )
         FakedPlayers, FakedAlivePlayers, NewDifficulty;
+
+    reliable if( (bNetInitial || bNetDirty) && Role == ROLE_Authority )
+        AlivePlayers, ScoredPlayers;
 }
 
 simulated function PostBeginPlay()

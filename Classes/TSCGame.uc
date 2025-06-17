@@ -904,26 +904,18 @@ function SetupWave()
 
     UpdateMonsterCount();
 
-    bWaveInProgress = true;
-    TSCGRI.bWaveInProgress = true;
-
-    if ( (WaveNum+1) == RelativeWaveNum(ScrnBalanceMut.LockTeamAutoWave) )
-        LockTeams();
-
-    NextMonsterTime = Level.TimeSeconds + 2.0 + 2.0 * frand();
-    TraderProblemLevel = 0;
-    rewardFlag=false;
-    ZombiesKilled=0;
-    WaveMonsters = 0;
-    WaveNumClasses = 0;
     bWaveEnding = false;
     NextSquadTarget[0] = rand(AliveTeamPlayerCount[0]);
     NextSquadTarget[1] = rand(AliveTeamPlayerCount[1]);
-    // reset spawn volumes
-    LastZVol = none;
-    LastSpawningVolume = none;
+    NextSquadTeam = rand(2); // pickup random team for the next special squad
 
-    SetupPickups();
+    WaveMinuteTimer = 0;
+    TSCTeams[0].WaveKills = TSCTeams[0].ZedKills;
+    TSCTeams[1].WaveKills = TSCTeams[1].ZedKills;
+    TSCTeams[0].PrevMinKills = TSCTeams[0].ZedKills;
+    TSCTeams[1].PrevMinKills = TSCTeams[1].ZedKills;
+    TSCTeams[0].LastMinKills = TSCTeams[0].ZedKills;
+    TSCTeams[1].LastMinKills = TSCTeams[1].ZedKills;
 
     i = rand(2);
     TeamBases[i].ScoreOrHome();
@@ -937,12 +929,12 @@ function SetupWave()
         BaseInvulTime = Level.TimeSeconds + 100000; // never trigger
     }
 
-
-    WavePlayerCount = AlivePlayerCount;
     BigTeamSize = max(AliveTeamPlayerCount[0], AliveTeamPlayerCount[1]);
     SmallTeamSize = min(AliveTeamPlayerCount[0], AliveTeamPlayerCount[1]);
     bSingleTeam = AliveTeamPlayerCount[0] == 0 || AliveTeamPlayerCount[1] == 0;
     bTeamWiped = bSingleTeam;
+
+    super.SetupWave();
 
     if ( bSingleTeam || AliveTeamPlayerCount[0] == AliveTeamPlayerCount[1] ) {
         BalanceTeams(2, 1.0); // remove bonuses
@@ -953,14 +945,13 @@ function SetupWave()
     else if ( AliveTeamPlayerCount[0] > AliveTeamPlayerCount[1] )
         BalanceTeams(1, float(AliveTeamPlayerCount[0])/AliveTeamPlayerCount[1]);
 
-    ScrnGameLength.RunWave();
-
-    CalcDoshDifficultyMult();
-
     TSCGRI.bHumanDamageEnabled = WaveNum > 0 && HumanDamageMode > HDMG_None && !bNoBases;
-    if( WaveNum == FinalWave && bUseEndGameBoss ) {
-        StartWaveBoss();
-        return;
+
+    if (bSingleTeam || bWaveBossInProgress) {
+        TSCGRI.WaveKillReq = 0;
+    }
+    else {
+        TSCGRI.WaveKillReq = TSCGRI.MaxMonsters * WaveKillReqPct;
     }
 
     if ( WaveNum >= OriginalFinalWave ) {
@@ -985,34 +976,6 @@ function SetupWave()
         else
             BroadcastLocalizedMessage(class'TSCMessages', 232); // enemy fire enabled
     }
-
-    TotalMaxMonsters = ScrnGameLength.GetWaveZedCount() + NumMonsters;
-    WaveEndTime = ScrnGameLength.GetWaveEndTime();
-
-    MaxMonsters = min(TotalMaxMonsters, MaxZombiesOnce); // max monsters that can be spawned
-    TSCGRI.MaxMonsters = TotalMaxMonsters; // num monsters in wave replicated to clients
-    TSCGRI.MaxMonstersOn = true; // I've no idea what is this for
-    if (bSingleTeam) {
-        TSCGRI.WaveKillReq = 0;
-    }
-    else {
-        TSCGRI.WaveKillReq = TSCGRI.MaxMonsters * WaveKillReqPct;
-    }
-
-    NextSquadTeam = rand(2); // pickup random team for the next special squad
-
-    //Now build the first squad to use
-    SquadsToUse.Length = 0; // force BuildNextSquad() to rebuild squad list
-    SpecialListCounter = 0;
-    BuildNextSquad();
-
-    WaveMinuteTimer = 0;
-    TSCTeams[0].WaveKills = TSCTeams[0].ZedKills;
-    TSCTeams[1].WaveKills = TSCTeams[1].ZedKills;
-    TSCTeams[0].PrevMinKills = TSCTeams[0].ZedKills;
-    TSCTeams[1].PrevMinKills = TSCTeams[1].ZedKills;
-    TSCTeams[0].LastMinKills = TSCTeams[0].ZedKills;
-    TSCTeams[1].LastMinKills = TSCTeams[1].ZedKills;
 }
 
 function HandleRemainingZeds() {}

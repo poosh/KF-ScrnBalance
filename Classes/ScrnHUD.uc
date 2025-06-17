@@ -78,6 +78,8 @@ var protected transient bool bSpectating; // are we spectating?
 var protected transient bool bSpectatingScrn; // are we spectating ScrnHumanPawn
 var protected transient bool bSpectatingZED; // are we spectating KFMonster
 var protected transient bool bCoolHudActive; // is new hud active atm?
+var protected transient byte WaveEndRule;
+var private transient int ResSizeX, ResSizeY;
 
 var HudOverlay PerkOverlay;
 var Material   CriticalOverlay;
@@ -85,8 +87,9 @@ var transient float CriticalOverlayTimer;
 
 var config byte SpecHeaderFont;
 var localized string strFollowing;
-var localized string strTrader;
+var localized string strTrader, strReachTrader1, strReachTrader2;
 var localized string strMax;
+var localized string strEarnDosh, strGrabDosh, strGrabAmmo, strKillBoss, strReachTrader, strStayAtTrader;
 
 var bool bCoolHud, bCoolHudLeftAlign;
 var config float CoolHudScale;
@@ -229,13 +232,20 @@ var const int MARK_WEAPON;
 var const int MARK_ARMOR;
 var const int MARK_HEALTH;
 var const int MARK_BASE;
+var const int MARK_TRADER;
 var array<Color> MarkColors;
 var Material MarkIcon;
 var float MaxMarks;
 var Color MarkEnemyColor;
 var Color MarkPlayerColor;
 var float MarkLifeDefault, MarkLifeNoTarget, MarkLifePlayer, MarkLifeLocation;
-var localized string strBaseMark;
+var localized string strBaseMark, strTraderMark;
+
+var Material ObjBackground;
+var Material ObjProgressBar;
+var Material ObjStrike;
+var transient int ObjFontSize;
+var transient float ObjLeft, ObjTop, ObjWidth, ObjHeight;
 
 function PostBeginPlay()
 {
@@ -2358,6 +2368,43 @@ simulated function LinkActors()
             PrevPerk = none;
         }
     }
+
+    if (ScrnGRI != none) {
+        if (WaveEndRule != ScrnGRI.WaveEndRule) {
+            WaveRuleChanged(WaveEndRule, ScrnGRI.WaveEndRule);
+            WaveEndRule = ScrnGRI.WaveEndRule;
+        }
+    }
+
+}
+
+simulated event PostRender(Canvas C)
+{
+    if (C.SizeX != ResSizeX || C.SizeY != ResSizeY) {
+        LinkActors();
+        ResolutionChanged(C);
+        ResSizeX = C.SizeX;
+        ResSizeY = C.SizeY;
+
+    }
+    super.PostRender(C);
+}
+
+simulated function ResolutionChanged(Canvas C)
+{
+    ObjFontSize = ResolveFontResolution(C, 1);
+    C.Font = LoadFont(ObjFontSize);
+    C.FontScaleX = 1.0;
+    C.FontScaleY = 1.0;
+    C.StrLen("MAXIMUM OBJECTIVE WIDTH   [100/200]", ObjWidth, ObjHeight);
+    ObjWidth += 4.0;
+    ObjHeight *= 1.5;
+    ObjLeft = C.SizeX - ObjWidth - 2;
+    ObjTop = 16.0 + 128.0 * fmin(1.0, C.SizeX / 1024.0);  // Wave Circle
+}
+
+simulated function WaveRuleChanged(byte OldRule, byte NewRule)
+{
 }
 
 simulated function Tick(float deltaTime)
@@ -2979,7 +3026,7 @@ simulated function DrawWaveCircle(Canvas C, Material M, float CircleSize)
 
 simulated function DrawKFHUDTextElements(Canvas C)
 {
-    local float    XL, YL;
+    local float    XL, YL, Y;
     local int      NumZombies, Counter;
     local string   S;
     local float    CircleSize;
@@ -2997,19 +3044,38 @@ simulated function DrawKFHUDTextElements(Canvas C)
     C.FontScaleY = FMin(ResScale,1.f);
 
     // Countdown Text
-    if( !KFGRI.bWaveInProgress || (ScrnGRI != none && ScrnGRI.WaveEndRule == 2 /*RULE_Timeout*/ ) )
-    {
+    if (!KFGRI.bWaveInProgress || (ScrnGRI != none && (ScrnGRI.WaveEndRule == 2 || ScrnGRI.WaveEndRule == 9))) {
         DrawWaveCircle(C, WaveCircleClockBG[TeamIndex], CircleSize);
 
-        Counter = KFGRI.TimeToNextWave / 60;
-        NumZombies = KFGRI.TimeToNextWave - (Counter * 60);
+        if (KFGRI.TimeToNextWave >= 0) {
+            Counter = KFGRI.TimeToNextWave / 60;
+            NumZombies = KFGRI.TimeToNextWave - (Counter * 60);
 
-        S = Eval((Counter >= 10), string(Counter), "0" $ Counter) $ ":" $ Eval((NumZombies >= 10), string(NumZombies), "0" $ NumZombies);
-        C.Font = LoadFont(2);
-        C.Strlen(S, XL, YL);
-        C.SetDrawColor(255, 50, 50, KFHUDAlpha);
-        C.SetPos(C.ClipX - CircleSize/2 - (XL / 2), CircleSize/2 - YL / 2);
-        C.DrawText(S, False);
+            S = Eval((Counter >= 10), string(Counter), "0" $ Counter) $ ":" $ Eval((NumZombies >= 10), string(NumZombies), "0" $ NumZombies);
+            C.Font = LoadFont(2);
+            C.Strlen(S, XL, YL);
+            C.SetDrawColor(255, 50, 50, KFHUDAlpha);
+            C.SetPos(C.ClipX - CircleSize/2 - (XL / 2), CircleSize/2 - YL / 2);
+            C.DrawText(S, False);
+        }
+        else if (ScrnGRI != none && ScrnGRI.WaveEndRule == 9) {
+            // RULE_ReachTrader
+            C.SetDrawColor(255, 50, 50, KFHUDAlpha);
+
+            C.Font = LoadFont(4);
+            S = strReachTrader2;
+            C.Strlen(S, XL, YL);
+            Y = CircleSize/2 - YL/2;
+            C.SetPos(C.ClipX - CircleSize/2 - (XL / 2), Y);
+            C.DrawText(S, False);
+
+            C.Font = LoadFont(5);
+            S = strReachTrader1;
+            C.Strlen(S, XL, YL);
+            Y -= YL;
+            C.SetPos(C.ClipX - CircleSize/2 - (XL / 2), Y);
+            C.DrawText(S, False);
+        }
     }
     else {
         DrawWaveCircle(C, WaveCircleBG[TeamIndex], CircleSize);
@@ -3067,9 +3133,7 @@ simulated function DrawKFHUDTextElements(Canvas C)
 
 
     if ( KFPRI == none || KFPRI.Team == none || KFPRI.bOnlySpectator || PawnOwner == none )
-    {
         return;
-    }
 
     // Draw the shop pointer
     if ( KFGRI.CurrentShop != none && (ScrnGRI == none || ScrnGRI.bTraderArrow) ) {
@@ -3080,8 +3144,46 @@ simulated function DrawKFHUDTextElements(Canvas C)
         C.DrawColor = TextColors[TeamIndex];
         DrawDirPointer(C, ShopDirPointer,  KFGRI.CurrentShop.Location, 0, 0, false, strTrader);
     }
+
+    if (ScrnGRI != none && ScrnPRI != none && ScrnGRI.bWaveInProgress) {
+        DrawScrnObjectives(C);
+    }
 }
 
+simulated function DrawScrnObjectives(Canvas C)
+{
+    switch (ScrnGRI.WaveEndRule) {
+        case 3: // RULE_EarnDosh
+            C.SetDrawColor(92, 192, 92, KFHUDAlpha);
+            DisplayObjectiveWaveCounter(C, 0, strEarnDosh);
+            break;
+
+        case 5: // RULE_GrabDosh
+        case 6: // RULE_GrabDoshZed
+            C.SetDrawColor(92, 192, 92, KFHUDAlpha);
+            DisplayObjectiveWaveCounter(C, 0, strGrabDosh);
+            break;
+
+        case 7: // RULE_GrabAmmo
+            C.SetDrawColor(0, 128, 192, KFHUDAlpha);
+            DisplayObjectiveWaveCounter(C, 0, strGrabAmmo);
+            break;
+
+        case 8:  // RULE_KillSpecial
+            C.DrawColor = TextColors[TeamIndex];
+            DisplayObjectiveWaveCounter(C, 0, strKillBoss);
+            break;
+
+        case 9:  // RULE_ReachTrader
+            C.DrawColor = TextColors[TeamIndex];
+            DisplayObjectiveBool(C, 0, strReachTrader, ScrnPRI.bReachedGoal);
+            if (ScrnGRI.AlivePlayers[TeamIndex] > 1) {
+                C.SetDrawColor(192, 192, 92, KFHUDAlpha);
+                DisplayObjective(C, 1, strStayAtTrader, ScrnGRI.ScoredPlayers[TeamIndex], ScrnGRI.AlivePlayers[TeamIndex], true);
+            }
+            break;
+    }
+}
 
 // C&P to add CriticalOverlayTimer
 simulated function DrawModOverlay( Canvas C )
@@ -3933,6 +4035,9 @@ function DrawMarks(Canvas C)
             else if (!Marks[i].bIgnoreTarget) {
                 bValid = A != none && !A.bDeleteMe && !A.bHidden && (Pawn(A) == none || Pawn(A).Health > 0);
             }
+            else if (Marks[i].MarkType == MARK_TRADER) {
+                bValid = ScrnPRI != none && !ScrnPRI.bReachedGoal && KFGRI.bWaveInProgress;
+            }
         }
 
         if (bValid) {
@@ -4002,7 +4107,11 @@ function MarkTarget(KFPlayerReplicationInfo Sender, Actor Target, vector Locatio
             if (MarkType == MARK_BASE) {
                 Caption = strBaseMark;
             }
-            // fallthrough
+            else if (MarkType == MARK_TRADER) {
+                Caption = strTraderMark;
+                MarkLife = 600;
+                break;
+            }
         default:
             if (Target == none) {
                 MarkLife = MarkLifeNoTarget;
@@ -4102,6 +4211,71 @@ function bool IsMarked(Actor Target)
     return false;
 }
 
+function DrawObjective(Canvas C, float X, float Y, float W, float H, string Caption, int Value, optional int MaxValue)
+{
+    local float XL, YL;
+
+    if (Caption != "") {
+        C.Font = LoadFont(ObjFontSize);
+        C.StrLen(Caption, XL, YL);
+        if (XL > W) {
+            C.FontScaleX = W / XL;
+            C.StrLen(Caption, XL, YL);
+        }
+        else {
+            C.FontScaleX = 1.0;
+        }
+        C.FontScaleY = C.FontScaleX;
+    }
+
+    C.Style = ERenderStyle.STY_Alpha;
+    C.DrawColor.A = KFHUDAlpha;
+
+    C.SetPos(X, Y);
+    C.DrawTileStretched(ObjBackground, W, H);
+
+    if (MaxValue > 0 && Value > 0) {
+        C.SetPos(X, Y);
+        C.DrawTileStretched(ObjProgressBar, W * fmin(1.0, float(Value) / MaxValue), H);
+    }
+
+    if (Value > 0 && Value >= MaxValue) {
+        C.DrawColor.A = KFHUDAlpha / 2;
+        C.SetPos(X, Y);
+        C.DrawTileStretched(ObjStrike, W, H);
+        C.DrawColor.A = KFHUDAlpha;
+    }
+
+    if (Caption != "") {
+        C.SetPos(X + (W - XL)/2, Y + (H - YL)/2);
+        C.DrawText(Caption);
+        C.FontScaleX = 1.0;
+        C.FontScaleY = 1.0;
+    }
+}
+
+function DisplayObjective(Canvas C, int index, string Caption, int Value, optional int MaxValue,
+        optional bool bTextProgress)
+{
+    if (bTextProgress && MaxValue > 0) {
+        Caption $= " [" $ min(Value, MaxValue) $ "/" $ MaxValue $ "]";
+    }
+    DrawObjective(C, ObjLeft, ObjTop + Index * (ObjHeight + 4), ObjWidth, ObjHeight, Caption, Value, MaxValue);
+}
+
+function DisplayObjectiveBool(Canvas C, int index, string Caption, bool bComplete)
+{
+    DisplayObjective(C, index, Caption, int(bComplete), 1, false);
+}
+
+function DisplayObjectiveWaveCounter(Canvas C, int index, string Caption)
+{
+    if (ScrnGRI.WaveCounterMax > 0) {
+        DisplayObjective(C, index, Caption, max(ScrnGRI.WaveCounterMax - ScrnGRI.WaveCounter, 0),
+                ScrnGRI.WaveCounterMax, ScrnGRI.WaveCounterMax > 1);
+    }
+}
+
 
 defaultproperties
 {
@@ -4141,8 +4315,16 @@ defaultproperties
 
     strFollowing="FOLLOWING:"
     strTrader="Trader: "
+    strReachTrader1="GO TO"
+    strReachTrader2="TRADER"
     strPendingItems="Waiting for shop items from server: "
     strMax="MAX"
+    strEarnDosh="Earn dosh"
+    strGrabDosh="Grab dosh"
+    strGrabAmmo="Pick ammo boxes"
+    strKillBoss="Kill boss"
+    strReachTrader="Reach the trader"
+    strStayAtTrader="Stay at the trader"
 
     DigitsSmall=(DigitTexture=Texture'KillingFloorHUD.Generic.HUD',TextureCoords[0]=(X1=8,Y1=6,X2=32,Y2=38),TextureCoords[1]=(X1=50,Y1=6,X2=68,Y2=38),TextureCoords[2]=(X1=83,Y1=6,X2=113,Y2=38),TextureCoords[3]=(X1=129,Y1=6,X2=157,Y2=38),TextureCoords[4]=(X1=169,Y1=6,X2=197,Y2=38),TextureCoords[5]=(X1=206,Y1=6,X2=235,Y2=38),TextureCoords[6]=(X1=241,Y1=6,X2=269,Y2=38),TextureCoords[7]=(X1=285,Y1=6,X2=315,Y2=38),TextureCoords[8]=(X1=318,Y1=6,X2=348,Y2=38),TextureCoords[9]=(X1=357,Y1=6,X2=388,Y2=38),TextureCoords[10]=(X1=390,Y1=6,X2=428,Y2=38))
 
@@ -4313,10 +4495,16 @@ defaultproperties
     MARK_ARMOR=50           // 0x32
     MARK_HEALTH=51          // 0x33
     MARK_BASE=52            // 0x34
+    MARK_TRADER=53          // 0x35
     strBaseMark="Base"
+    strTraderMark="Trader"
 
     WaveCircleClockBG[0]=Material'KillingFloorHUD.HUD.Hud_Bio_Clock_Circle'
     WaveCircleClockBG[1]=Material'KillingFloorHUD.HUD.Hud_Bio_Clock_Circle'
     WaveCircleBG[0]=Material'KillingFloorHUD.HUD.Hud_Bio_Circle'
     WaveCircleBG[1]=Material'KillingFloorHUD.HUD.Hud_Bio_Circle'
+
+    ObjBackground=Texture'KFStoryGame_Tex.HUD.Hud_Rectangel_W_Stroke_Neutral'
+    ObjProgressBar=Texture'KFStoryGame_Tex.HUD.Hud_Rectangle_W_Stroke_Fill'
+    ObjStrike=Texture'KFStoryGame_Tex.HUD.Objective_Strikethrough'
 }

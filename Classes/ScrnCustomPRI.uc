@@ -16,10 +16,12 @@ var private transient byte SteamID64Attempts;
 const SteamUID_Part1 = 76561197;
 const SteamUID_Part2 =         960265728;
 
+var bool bReachedGoal;
+
 replication
 {
-    reliable if ( bNetDirty && Role == Role_Authority )
-        DoshRequestCounter, BlameCounter, SteamID32;
+    reliable if ( (bNetDirty || bNetInitial) && Role == Role_Authority )
+        DoshRequestCounter, BlameCounter, SteamID32, bReachedGoal;
 }
 
 function PostBeginPlay()

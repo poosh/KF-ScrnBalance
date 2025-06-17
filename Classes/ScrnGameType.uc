@@ -3168,6 +3168,8 @@ function SetupWave()
     local byte WaveIndex;
     local bool bOneMessage;
     local Controller C;
+    local ScrnCustomPRI ScrnPRI;
+    local ScrnPlayerController ScrnPC;
     local InvasionBot B;
 
     UpdateMonsterCount();
@@ -3211,7 +3213,7 @@ function SetupWave()
     }
 
     if ( ScrnGameLength != none ) {
-        TotalMaxMonsters = ScrnGameLength.GetWaveZedCount();
+        TotalMaxMonsters = ScrnGameLength.GetWaveZedCount() + NumMonsters;;
         WaveEndTime = ScrnGameLength.GetWaveEndTime();
     }
     else {
@@ -3221,9 +3223,11 @@ function SetupWave()
         TotalMaxMonsters = max(8, ScaleMonsterCount(TotalMaxMonsters));  // num monsters in wave
     }
 
-    MaxMonsters = min(TotalMaxMonsters + NumMonsters, MaxZombiesOnce); // max monsters that can be spawned
-    ScrnGRI.MaxMonsters = TotalMaxMonsters + NumMonsters; // num monsters in wave replicated to clients
+    MaxMonsters = min(TotalMaxMonsters, MaxZombiesOnce); // max monsters that can be spawned
+    ScrnGRI.MaxMonsters = TotalMaxMonsters; // num monsters in wave replicated to clients
     ScrnGRI.MaxMonstersOn = true; // I've no idea what is this for
+    ScrnGRI.ScoredPlayers[0] = 0;
+    ScrnGRI.ScoredPlayers[1] = 0;
     ScrnGRI.NetUpdateTime = Level.TimeSeconds - 1;
 
     //Now build the first squad to use
@@ -3233,9 +3237,21 @@ function SetupWave()
     BuildNextSquad();
 
     // moved here from TraderTimer
-    for ( C = Level.ControllerList; C != none; C = C.NextController ) {
+    for (C = Level.ControllerList; C != none; C = C.NextController) {
+        if (!C.bIsPlayer) continue;
+        ScrnPC = ScrnPlayerController(C);
+        if (ScrnPC != none) {
+            ScrnPRI = class'ScrnCustomPRI'.static.FindMe(C.PlayerReplicationInfo);
+            if (ScrnPRI != none) {
+                ScrnPRI.bReachedGoal = false;
+            }
+            ScrnPC.LastPlaySpeech = 0;
+            ScrnPC.bHasHeardTraderWelcomeMessage = false;
+            continue;
+        }
+
         B = InvasionBot(C);
-        if ( B != none ) {
+        if (B != none) {
             B.bDamagedMessage = false;
             B.bInitLifeMessage = false;
 
@@ -3246,11 +3262,6 @@ function SetupWave()
                     B.bInitLifeMessage = false;
                 }
             }
-        }
-        else if ( PlayerController(C) != none ) {
-            PlayerController(C).LastPlaySpeech = 0;
-            if ( KFPlayerController(C) != none )
-                KFPlayerController(C).bHasHeardTraderWelcomeMessage = false;
         }
     }
 }
@@ -3281,6 +3292,8 @@ function bool UpdateMonsterCount()
         }
     }
     AlivePlayerCount = AliveTeamPlayerCount[0] + AliveTeamPlayerCount[1];
+    ScrnGRI.AlivePlayers[0] = AliveTeamPlayerCount[0];
+    ScrnGRI.AlivePlayers[1] = AliveTeamPlayerCount[1];
     return AlivePlayerCount > 0;
 }
 
@@ -3600,7 +3613,7 @@ function OverrideMonsterHealth(KFMonster M)
         M.HeadHealth = M.Health;
     }
     else if ( M.PlayerNumHeadHealthScale > 0 ) {
-        M.HeadHealth = M.default.HeadHealth * M.DifficultyHealthModifer()
+        M.HeadHealth = M.default.HeadHealth * M.DifficultyHeadHealthModifer()
             * (1.0 + (UsedNumPlayers-1.0) * M.PlayerNumHeadHealthScale );
     }
 
@@ -4200,6 +4213,8 @@ State MatchInProgress
                 SetupPickups();
                 ScrnBalanceMut.SetupPickups(false, true); // no trader = people need more ammo
                 ScrnBalanceMut.bPickupSetupReduced = true; // don't let ScrnBalance to reduce pickups again
+                ScrnBalanceMut.GameRules.WaveEnded();
+                ScrnBalanceMut.GameRules.WaveStarted();
             }
         }
         else {
