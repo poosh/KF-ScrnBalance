@@ -107,7 +107,8 @@ function UpdateStats()
                 ++ReachedPlayers[t];
             }
         }
-        else if (dist < ReachDistSq && abs(C.Pawn.Location.Z - ReachLocations[t].Z) < ReachDistZ) {
+        else if (dist < ReachDistSq && abs(C.Pawn.Location.Z - ReachLocations[t].Z) < ReachDistZ
+                && C.Pawn.FastTrace(ReachLocations[t], C.Pawn.Location)) {
             ScrnPRI.bReachedGoal = true;
             ++ReachedPlayers[t];
         }
@@ -172,7 +173,7 @@ function bool CheckWaveEnd() {
 
 defaultproperties
 {
-    ReachDistSq=62500  // 5m
+    ReachDistSq=250000  // 10m
     ReachDistZ=50
     StayDistSq=1000000  // 20m
     FinalCountdown=5

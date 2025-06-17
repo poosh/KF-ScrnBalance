@@ -4036,7 +4036,9 @@ function DrawMarks(Canvas C)
                 bValid = A != none && !A.bDeleteMe && !A.bHidden && (Pawn(A) == none || Pawn(A).Health > 0);
             }
             else if (Marks[i].MarkType == MARK_TRADER) {
-                bValid = ScrnPRI != none && !ScrnPRI.bReachedGoal && KFGRI.bWaveInProgress;
+                // do not invalidate mark in first second in case ScrnPRI or KFGRI has not replicated yet
+                bValid = Level.TimeSeconds < Marks[i].PulseUntil
+                        || (ScrnPRI != none && !ScrnPRI.bReachedGoal && KFGRI.bWaveInProgress);
             }
         }
 
