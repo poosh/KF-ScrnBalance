@@ -30,6 +30,9 @@
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+## v9.72.10
+- Fixed a bug where Sudden Death was enabled on the boss wave in FTG
+
 ## v9.72.09
 - Fixed Counter calculation for `RULE_ReachTrader`
 

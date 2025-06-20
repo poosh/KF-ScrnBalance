@@ -954,7 +954,7 @@ function SetupWave()
         TSCGRI.WaveKillReq = TSCGRI.MaxMonsters * WaveKillReqPct;
     }
 
-    if ( WaveNum >= OriginalFinalWave ) {
+    if (WaveNum >= OriginalFinalWave && !bWaveBossInProgress) {
         TSCGRI.bOverTime = true;
         if ( bLockTeamsOnSuddenDeath )
             LockTeams();
