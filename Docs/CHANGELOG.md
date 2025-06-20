@@ -30,9 +30,12 @@
 ## VERSION 9
 
 -------------------------------------------------------------------------------
-## v9.72.07
+## v9.72.09
+- Fixed Counter calculation for `RULE_ReachTrader`
+
+## v9.72.08
 ### New Survival
-- A new game mode inspired by New Doom but without Doom mosnters.
+- A new game mode inspired by New Doom but without Doom monsters.
 - When all the zeds in a wave are spawned, players need to push through them to the trader.
 - Zeds keep spawning until all players reach the trader or die.
 
@@ -53,7 +56,7 @@
 - *ScrnWaves.ini*: new config options: `Timelimit` and `NoBountyTimeout`
 - **FTG**: Stinky Clot now can be killed by movers (thanks [nmmblez])
 - Fixed glowing skins of custom characters (thanks [That1Guy])
-- Fixed an issue where `RULE_GrabAmmo` counted ammo from the perious wave if `bOpenTrader=false` (thanks [nmmblez])
+- Fixed an issue where `RULE_GrabAmmo` counted ammo from the previous wave if `bOpenTrader=false` (thanks [nmmblez])
 - **72. Mystery Game v2.10**: switched to `RULE_ReachTrader` for trader path waves.
 
 ### ScrN Weapon Pack

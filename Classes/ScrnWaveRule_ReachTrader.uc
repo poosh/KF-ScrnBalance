@@ -151,7 +151,7 @@ function WaveTimer()
         Counter = GL.Wave.Counter;
         MissingPlayers = AlivePlayers[t] - ReachedPlayers[t] - GL.Wave.PerPlayerExclude;
         if (MissingPlayers > 0) {
-            Counter *= 1.0 * GL.Wave.PerPlayerMult * MissingPlayers;
+            Counter *= 1.0 + GL.Wave.PerPlayerMult * MissingPlayers;
         }
         if (GL.Wave.MaxCounter > 0) {
             Counter = min(Counter, GL.Wave.MaxCounter);
