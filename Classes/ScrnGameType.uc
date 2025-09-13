@@ -123,6 +123,7 @@ var ScrnTypes.EZedTimeTrigger ZedTimeTrigger;
 var float ZedTimeChanceMult, ZedTimeChance, ZedTimeChanceBigZed, ZedTimeChanceMultiKill, ZedTimeChancePointBlank;
 var float ZedTimeValue;
 var transient byte PlayerSpawnTraderTeleportIndex;
+var transient array<ShopVolume> PlayerSpawnShopList;
 var name PlayerStartEvent;
 var bool bSuicideTimer;
 var transient bool bRestartPlayersTriggered;
@@ -941,37 +942,6 @@ function Killed(Controller Killer, Controller Killed, Pawn KilledPawn, class<Dam
 
         if ( bZedDropDosh ) {
             ZedTossCashFromDamage(KilledMonster, KFDamType);
-        }
-
-        if ( !bDidTraderMovingMessage )
-        {
-            if ( PlayerController(Killer) != none && float(ZombiesKilled) / float(ZombiesKilled + TotalMaxMonsters + NumMonsters - 1) >= 0.20 )
-            {
-                if ( WaveNum < FinalWave - 1 || (WaveNum < FinalWave && bUseEndGameBoss) )
-                {
-                    // Have Trader tell players that the Shop's Moving
-                    PlayerController(Killer).ServerSpeech('TRADER', 0, "");
-                }
-
-                bDidTraderMovingMessage = true;
-            }
-        }
-        else if ( !bDidMoveTowardTraderMessage )
-        {
-            if ( PlayerController(Killer) != none && float(ZombiesKilled) / float(ZombiesKilled + TotalMaxMonsters + NumMonsters - 1) >= 0.80 )
-            {
-                if ( WaveNum < FinalWave - 1 || (WaveNum < FinalWave && bUseEndGameBoss) )
-                {
-                    if ( Level.NetMode != NM_Standalone || Killer.Pawn == none || ScrnGRI.CurrentShop == none ||
-                         VSizeSquared(Killer.Pawn.Location - ScrnGRI.CurrentShop.Location) > 2250000 ) // 30 meters
-                    {
-                        // Have Trader tell players that the Shop's Almost Open
-                        PlayerController(Killer).Speech('TRADER', 1, "");
-                    }
-                }
-
-                bDidMoveTowardTraderMessage = true;
-            }
         }
     }
     else if (PlayerController(Killed) != none) {
@@ -2594,11 +2564,48 @@ function BroadcastTeam( Controller Sender, coerce string Msg, optional name Type
     super.BroadcastTeam(Sender, class'ScrnF'.static.ParseColorTags(Msg), Type);
 }
 
+function NavigationPoint FindPlayerStartShop(Controller Player, byte TeamIndex)
+{
+    local ShopVolume shop;
+    local int i;
+
+    if ( ScrnGameLength.Wave.bOpenTrader ) {
+        shop = TeamShop(TeamIndex);
+    }
+    else {
+        if (PlayerSpawnShopList.Length == 0) {
+            PlayerSpawnShopList = ShopList;
+            ++PlayerSpawnTraderTeleportIndex;
+        }
+
+        i = rand(PlayerSpawnShopList.length);
+        shop = PlayerSpawnShopList[i];
+        if (ScrnGameLength.Wave.bTraderArrow && ShopList.Length > 3 && shop == TeamShop(TeamIndex)) {
+            // do not offer the next trader if the map has more than 3 shops
+            PlayerSpawnShopList.remove(i, 1);
+            return FindPlayerStartShop(Player, TeamIndex);
+        }
+    }
+
+    if (shop == none)
+        return none;
+
+    if ( !shop.bTelsInit )
+        shop.InitTeleports();
+
+    if (shop.TelList.Length == 0)
+        return none;
+
+    if (PlayerSpawnTraderTeleportIndex >= shop.TelList.Length)
+        PlayerSpawnTraderTeleportIndex = 0;
+
+    return shop.TelList[PlayerSpawnTraderTeleportIndex];
+}
+
 function NavigationPoint FindPlayerStart( Controller Player, optional byte InTeam, optional string incomingName )
 {
     local NavigationPoint N;
     local byte TeamIndex;
-    local ShopVolume shop;
     local GameRules OriginalGameRulesModifiers;
 
     bPlayerStartAltered = false;
@@ -2615,22 +2622,9 @@ function NavigationPoint FindPlayerStart( Controller Player, optional byte InTea
         TeamIndex = Player.PlayerReplicationInfo.Team.TeamIndex;
 
     if ( ScrnGameLength != none && ScrnGameLength.Wave.bStartAtTrader ) {
-        if ( ScrnGameLength.Wave.bOpenTrader ) {
-            shop = TeamShop(TeamIndex);
-        }
-        else {
-            shop = ShopList[rand(ShopList.length)];
-        }
-        if ( shop != none ) {
-            if ( !shop.bTelsInit ) {
-                shop.InitTeleports();
-            }
-            if ( shop.TelList.Length > 0 ) {
-                if ( PlayerSpawnTraderTeleportIndex >= shop.TelList.Length )
-                    PlayerSpawnTraderTeleportIndex = 0;
-                return shop.TelList[PlayerSpawnTraderTeleportIndex++];
-            }
-        }
+        N = FindPlayerStartShop(Player, TeamIndex);
+        if (N != none)
+            return N;
     }
 
     OriginalGameRulesModifiers = GameRulesModifiers;
@@ -3181,6 +3175,8 @@ function SetupWave()
     if ( (WaveNum+1) == RelativeWaveNum(ScrnBalanceMut.LockTeamAutoWave) )
         LockTeams();
 
+    // prevent zed time in the very beginning of the wave
+    LastZedTimeEvent = Level.TimeSeconds;
     NextMonsterTime = Level.TimeSeconds + 2.0 + 2.0 * frand();
     TraderProblemLevel = 0;
     rewardFlag=false;
@@ -3199,6 +3195,13 @@ function SetupWave()
     // Which affects KFMonsterController.Skill (and more important - Doom3Controller's aiming)
     AdjustedDifficulty = GameDifficulty;
 
+    if (ScrnBalanceMut.GameStartCountDown > 0) {
+        // sync timers and game state
+        ScrnBalanceMut.GameStartCountDown = 0;
+        ScrnBalanceMut.GameTimer();
+        ScrnBalanceMut.SetTimer(1, true);
+    }
+
     SetupPickups();
 
     if (ScrnGameLength != none ) {
@@ -3213,7 +3216,7 @@ function SetupWave()
     }
 
     if ( ScrnGameLength != none ) {
-        TotalMaxMonsters = ScrnGameLength.GetWaveZedCount() + NumMonsters;;
+        TotalMaxMonsters = ScrnGameLength.GetWaveZedCount() + NumMonsters;
         WaveEndTime = ScrnGameLength.GetWaveEndTime();
     }
     else {
@@ -3321,6 +3324,7 @@ function SetupPickups()
             SleepingAmmo[j++] = AmmoPickups[i];
     }
     SleepingAmmo.length = j;
+    // log("SetupPickups. Ammo spawned: " $ (AmmoPickups.Length - SleepingAmmo.Length) $ "/" $ AmmoPickups.length, class.name);
 }
 
 function InitMapWaveCfg()
@@ -3342,6 +3346,21 @@ function DestroyDroppedPickups()
         if ( Pickup.bDropped ) {
             Pickup.LifeSpan = 3.0;
         }
+    }
+}
+
+function AmmoInit()
+{
+    local int i;
+    local float t;
+
+    if (AmmoPickups.length >= 10)
+        return;
+
+    // reduce RespawnRate to compensate for lower ammo count
+    t = 3 * AmmoPickups.length;
+    for (i = 0; i < AmmoPickups.length; ++i) {
+        AmmoPickups[i].RespawnTime = t;
     }
 }
 
@@ -3371,6 +3390,11 @@ function AmmoPickedUp(KFAmmoPickup PickedUp)
     local KFAmmoPickup AmmoBox;
 
     ScrnBalanceMut.GameRules.WaveAmmoPickups++;
+
+    if (AmmoPickups.length == 1) {
+        // a tupid map with just one ammo box - respawn the same pickup again
+        PickedUp.GotoState('Sleeping', 'DelayedSpawn');
+    }
 
     // CurrentAmmoBoxCount is set in ScrnAmmoPickup
     // DesiredAmmoBoxCount is set in ScrnBalance
@@ -3403,9 +3427,6 @@ function AmmoPickedUp(KFAmmoPickup PickedUp)
             return;
         }
     }
-
-    // nothing else to respawn - respawn the same pickup again
-    PickedUp.GotoState('Sleeping', 'DelayedSpawn');
 }
 
 function StartWaveBoss()
@@ -3871,6 +3892,7 @@ State MatchInProgress
     function BeginState()
     {
         SelectShop(); // shop must be selected in case players need to spawn next to it
+        AmmoInit();
 
         Super.BeginState();
 
@@ -3923,13 +3945,10 @@ State MatchInProgress
     {
         WaveTimeElapsed += 1.0;
 
-        // Close Trader doors
         if (bTradingDoorsOpen) {
             CloseShops();
-            TraderProblemLevel = 0;
-            // prevent zed time in the very beginning of the wave
-            LastZedTimeEvent = Level.TimeSeconds;
         }
+
         if ( TraderProblemLevel < 4 ) {
             if( BootShopPlayers() )
                 TraderProblemLevel = 0;
@@ -4064,6 +4083,9 @@ State MatchInProgress
                     BroadcastLocalizedMessage(class'ScrnWaitingMessage', 1);
             }
             else if (WaveCountDown <= 1) {
+                if (bTradingDoorsOpen) {
+                    CloseShops();
+                }
                 SetupWave();
             }
         }
@@ -4209,9 +4231,7 @@ State MatchInProgress
                 return;
             }
             if ( !ScrnGameLength.Wave.bOpenTrader ) {
-                // SelectShop(); // change shop for every wave, even if trader stays closed
                 SetupPickups();
-                ScrnBalanceMut.SetupPickups(false, true); // no trader = people need more ammo
                 ScrnBalanceMut.bPickupSetupReduced = true; // don't let ScrnBalance to reduce pickups again
                 ScrnBalanceMut.GameRules.WaveEnded();
                 ScrnBalanceMut.GameRules.WaveStarted();
@@ -4277,7 +4297,9 @@ State MatchInProgress
 
         bTradingDoorsOpen = True;
 
-        if ( WaveNum < FinalWave )
+        if (ScrnGameLength != none && ScrnGameLength.Wave.TraderMessage != "")
+            TraderMessageIndex = -1;  // do not display, as we will show TraderMessage instead
+        if (WaveNum < FinalWave)
             TraderMessageIndex = 2;
         else
             TraderMessageIndex = 3;
@@ -4303,20 +4325,22 @@ State MatchInProgress
                 KFPC = KFPlayerController(C);
                 if( KFPC != none ) {
                     KFPC.SetShowPathToTrader(true);
-                    KFPC.ClientLocationalVoiceMessage(C.PlayerReplicationInfo, none, 'TRADER', TraderMessageIndex);
+                    if (TraderMessageIndex >= 0) {
+                        KFPC.ClientLocationalVoiceMessage(C.PlayerReplicationInfo, none, 'TRADER', TraderMessageIndex);
+                    }
                 }
             }
         }
         ScrnBalanceMut.GameTimer();
     }
 
-    // C&P to replace AllActors with DynamicActors - performance tweak
     function CloseShops()
     {
         local int i;
         local Controller C;
         local KFPlayerController KFPC;
 
+        TraderProblemLevel = 0;
         bTradingDoorsOpen = False;
         for( i=0; i<ShopList.Length; i++ ) {
             if( ShopList[i].bCurrentlyOpen )

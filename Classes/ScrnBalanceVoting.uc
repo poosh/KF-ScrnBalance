@@ -609,13 +609,18 @@ function int GetVoteIndex(PlayerController Sender, string Key, out string Value,
         }
 
         Value = "";
-        VoteInfo = "Game is BORING";
+        VoteInfo = "BORING / BOOST ZEDS";
         result = VOTE_BORING;
     }
     else if ( Key == "ENDWAVE" || (Key == "END" && Value == "WAVE") ) {
         VotingHandler.VotedTeam = Sender.PlayerReplicationInfo.Team;
         if ( VotingHandler.VotedTeam == none )
             return VOTE_ILLEGAL;
+
+        if (Mut.ScrnGT != none && Mut.ScrnGT.ScrnGRI.WaveEndRule == 10) {
+            // RULE_Dialogue
+            return VOTE_ENDWAVE;
+        }
 
         if ( Mut.KF.NumMonsters == 0 )
             return VOTE_NOEFECT;
@@ -630,7 +635,22 @@ function int GetVoteIndex(PlayerController Sender, string Key, out string Value,
             Sender.ClientMessage(strCantEndWaveNow);
             return VOTE_NOEFECT;
         }
+        Value = "";
+        VoteInfo = "END WAVE";
         return VOTE_ENDWAVE;
+    }
+    else if (Key == "SKIP") {
+        if (Mut.KF.bTradingDoorsOpen) {
+            return GetVoteIndex(Sender, "ENDTRADE", Value, VoteInfo);
+        }
+        else if (Mut.ScrnGT != none && Mut.ScrnGT.ScrnGRI.WaveEndRule == 10) {
+            // skip dialogue
+            return GetVoteIndex(Sender, "ENDWAVE", Value, VoteInfo);
+        }
+        else if (Mut.KF.TotalMaxMonsters > 0) {
+            return GetVoteIndex(Sender, "BORING", Value, VoteInfo);
+        }
+        return GetVoteIndex(Sender, "ENDWAVE", Value, VoteInfo);
     }
     else if ( Key == "READY" ) {
         if ( !Level.Game.bWaitingToStartMatch )
@@ -845,6 +865,11 @@ function ApplyVoteValue(int VoteIndex, string VoteValue)
             break;
 
         case VOTE_ENDWAVE:
+            if (Mut.ScrnGT != none && Mut.ScrnGT.ScrnGRI.WaveEndRule == 10) {
+                //RULE_Dialogue
+                Mut.ScrnGT.ScrnGameLength.SkipDialogue();
+                break;
+            }
             if ( Mut.KF.TotalMaxMonsters > 0 || Mut.KF.NumMonsters > Mut.MaxVoteKillMonsters
                     || Mut.GameRules.bFinalWave )
             {
@@ -852,6 +877,7 @@ function ApplyVoteValue(int VoteIndex, string VoteValue)
             }
             DoEndWave();
             break;
+
         case VOTE_READY:
             SetReady(VotingHandler.VotedTeam.TeamIndex, true);
             break;

@@ -2,8 +2,6 @@ class TSCHUD extends ScrnHUD;
 
 #exec OBJ LOAD FILE=TSC_T.utx
 
-var Texture Boxes[2];
-
 // 0 - red win
 // 1 - blue win
 // 2 - both survived
@@ -269,7 +267,7 @@ simulated function UpdateTeamHud()
 
 simulated function DrawKFHUDTextElements(Canvas C)
 {
-    local float    XL, YL;
+    local float    XL, YL, Y;
     local int      NumZombies, Counter;
     local string   S;
     local float    CircleSize;
@@ -300,6 +298,24 @@ simulated function DrawKFHUDTextElements(Canvas C)
             C.Strlen(S, XL, YL);
             C.DrawColor = TextColors[TeamIndex];
             C.SetPos(C.ClipX - CircleSize/2 - (XL / 2), CircleSize/2 - YL / 2);
+            C.DrawText(S, False);
+        }
+        else if (ScrnGRI != none && ScrnGRI.WaveEndRule == 9) {
+            // RULE_ReachTrader
+            C.DrawColor = TextColors[TeamIndex];
+
+            C.Font = LoadFont(4);
+            S = strReachTrader2;
+            C.Strlen(S, XL, YL);
+            Y = CircleSize/2 - YL/2;
+            C.SetPos(C.ClipX - CircleSize/2 - (XL / 2), Y);
+            C.DrawText(S, False);
+
+            C.Font = LoadFont(5);
+            S = strReachTrader1;
+            C.Strlen(S, XL, YL);
+            Y -= YL;
+            C.SetPos(C.ClipX - CircleSize/2 - (XL / 2), Y);
             C.DrawText(S, False);
         }
     }
@@ -1235,8 +1251,6 @@ exec function TeamStats()
 
 defaultproperties
 {
-    Boxes(0)=Texture'KillingFloorHUD.HUD.Hud_Box_128x64'
-    Boxes(1)=Texture'TSC_T.HUD.Hud_Box_128x64'
     EndGameMaterials(0)=Texture'TSC_T.End.RedWin'
     EndGameMaterials(1)=Texture'TSC_T.End.BlueWin'
     EndGameMaterials(2)=Texture'TSC_T.End.Win'
@@ -1255,7 +1269,7 @@ defaultproperties
 
     titleWelcome="TEAM SURVIVAL COMPETITION"
     titleSuddenDeath="SUDDEN DEATH"
-    titleSetupBase="SET UP BASE"
+    titleSetupBase="BASE SETUP"
     titleBaseLost="BASE LOST"
     titlePvP="PLAYER-VS-PLAYER"
     titleStunned="GUARDIAN STUNNED"

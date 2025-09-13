@@ -614,11 +614,10 @@ state Guarding
             {
                 if ( C.PlayerReplicationInfo.Team != Team && TSCGRI.AtBase(C.Pawn.Location, self) ) {
                     C.Pawn.TakeDamage(Damage, none, C.Pawn.Location, vect(0,0,0), class'DamTypeEnemyBase');
-                    if ( PlayerController(C) != none && ScrnHumanPawn(C.Pawn) != none
-                            && ScrnHumanPawn(C.Pawn).NextEnemyBaseDamageMsg < Level.TimeSeconds )
-                    {
-                        PlayerController(C).ReceiveLocalizedMessage(class'TSCMessages', 312);
-                        ScrnHumanPawn(C.Pawn).NextEnemyBaseDamageMsg = Level.TimeSeconds + 6.0;
+                    SC = ScrnPlayerController(C);
+                    if (SC != none && SC.ScrnPawn != none && Level.TimeSeconds > SC.ScrnPawn.NextEnemyBaseDamageMsg) {
+                        SC.ReceiveLocalizedMessage(class'TSCMessages', 312);
+                        SC.ScrnPawn.NextEnemyBaseDamageMsg = Level.TimeSeconds + 6.0;
                     }
                 }
                 else if (C.PlayerReplicationInfo.Team == Team) {
@@ -628,15 +627,23 @@ state Guarding
                     }
                     else {
                         SC = ScrnPlayerController(C);
-                        if (SC != none && Level.TimeSeconds > SC.LastBaseMarkTime + 5.0) {
+                        if (SC != none && Level.TimeSeconds > SC.LastBaseMarkTime + 6.0) {
                             SC.ClientMark(KFPlayerReplicationInfo(SC.PlayerReplicationInfo), GetWorldActor(),
                                     GetLocation(), "", class'ScrnHUD'.default.MARK_BASE);
                             SC.LastBaseMarkTime = Level.TimeSeconds;
+
+                            if (SameTeamCounter == default.SameTeamCounter
+                                    && Level.TimeSeconds > SC.ScrnPawn.NextEnemyBaseDamageMsg) {
+                                // Tell the player to return back to base, unless bNobodyAtBase triggered
+                                // Or the player is at the enemy base (and received a different warning)
+                                SC.ReceiveLocalizedMessage(class'TSCMessages', 211);
+                            }
                         }
                     }
                 }
             }
         }
+
         if ( bNobodyAtBase ) {
             if ( bNobodyAlive || --SameTeamCounter <= 0 ) {
                 if (ScrnGameType(Level.Game).ScrnBalanceMut.GameRules.IsEndGameDelayed()) {
@@ -759,7 +766,7 @@ defaultproperties
     WakeUpDuration=10
     StunFadeoutRate=50
     StunFadeoutTime=2.0
-    SameTeamCounter=13
+    SameTeamCounter=14
     bCanBeDamaged=False
     ClientState=CS_Home
 

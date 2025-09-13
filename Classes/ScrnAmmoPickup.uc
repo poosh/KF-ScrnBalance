@@ -1,6 +1,9 @@
 class ScrnAmmoPickup extends KFAmmoPickup;
 
 var localized string ItemName;
+var float MinRespawnTime;
+var transient float LastPickTime;
+
 
 var name OriginalName;  // original name of KFAmmoPickup placed in the map
 
@@ -25,17 +28,7 @@ function Destroyed()
 
 function float GetRespawnTime()
 {
-    local ScrnGameType ScrnGT;
-    local float MinRespawnTime;
-
-    MinRespawnTime = RespawnTime;
-    ScrnGT = ScrnGameType(Level.Game);
-    if ( ScrnGT != none && ScrnGT.AmmoPickups.length <= ScrnGT.DesiredAmmoBoxCount ) {
-        // not anough ammo on the map - boost the spawn rate
-        MinRespawnTime *= 0.7 * float(ScrnGT.AmmoPickups.length) /  ScrnGT.DesiredAmmoBoxCount;
-        MinRespawnTime = fmax(MinRespawnTime, 5.0);
-    }
-    return fmin(MinRespawnTime, RespawnTime / clamp(Level.Game.NumPlayers, 1, 6));
+    return fmax(MinRespawnTime, RespawnTime - (Level.TimeSeconds - LastPickTime));
 }
 
 static function bool AddPerkedAmmo(KFAmmunition Ammo, KFPlayerReplicationInfo KFPRI, optional int Amount)
@@ -129,6 +122,7 @@ state Pickup
         if (GiveAmmoTo(P)) {
             AnnouncePickup(P);
             GotoState('Sleeping', 'Begin');
+            LastPickTime = Level.TimeSeconds;
             if ( KFGameType(Level.Game) != none ) {
                 KFGameType(Level.Game).AmmoPickedUp(self);
             }
@@ -216,6 +210,7 @@ Respawn:
 defaultproperties
 {
     ItemName="Ammo"
+    MinRespawnTime=5
     RespawnTime=30
     RespawnEffectTime=0.5
     RotationRate=(Yaw=0)

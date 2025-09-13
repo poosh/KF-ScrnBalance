@@ -86,7 +86,7 @@ static function float GetMagCapacityModStatic(KFPlayerReplicationInfo KFPRI, cla
             || ClassIsChildOf(Other, class'M7A3MMedicGun') || ClassIsChildOf(Other, class'KrissMMedicGun')
             || ClassIsChildOf(Other, class'ScrnM4203MMedicGun')
             || ClassIsInArray(default.PerkedAmmo, Other.default.FiremodeClass[0].default.AmmoClass) ) //v3 - custom weapon support
-        return 2.0; // up to 100% increase in Medic weapon ammo carry
+        return 2.0; // double magazine size
     return 1.0;
 }
 

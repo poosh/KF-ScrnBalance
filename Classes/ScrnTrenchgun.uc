@@ -37,10 +37,10 @@ simulated function ClientFinishReloading()
 
 defaultproperties
 {
-     ReloadAnimRate=0.9 //synced to reloadrate
-     FireModeClass(0)=class'ScrnTrenchgunFire'
-     PickupClass=class'ScrnTrenchgunPickup'
-     ItemName="Dragon's Breath Trenchgun SE"
-     PlayerViewPivot=(Pitch=0,Roll=0,Yaw=-5) //fix to make sight centered
-     Weight=6
+    ReloadAnimRate=0.9 //synced to reloadrate
+    FireModeClass(0)=class'ScrnTrenchgunFire'
+    PickupClass=class'ScrnTrenchgunPickup'
+    ItemName="Dragon's Breath Trenchgun SE"
+    PlayerViewPivot=(Pitch=0,Roll=0,Yaw=-5) //fix to make sight centered
+    Weight=5
 }

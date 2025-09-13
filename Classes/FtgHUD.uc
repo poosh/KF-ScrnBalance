@@ -122,7 +122,7 @@ simulated function DrawTSCHUDTextElements(Canvas C)
     }
     else if ( TSCGRI.bWaveInProgress ) {
         bFoundStinkyClot = bFoundStinkyClot || ( StinkyTime < Level.TimeSeconds && CheckForStinkyClot() );
-        if ( TSCGRI.WaveNumber == 0 )
+        if ( TSCGRI.WaveNumber == 0 && TSCGRI.WaveEndRule == 0 )
             aHint = hintFirstWave;
         else if ( TSCGRI.bSuddenDeath ) {
             aHint = hintSuddenDeath;
@@ -179,7 +179,7 @@ simulated function DrawTSCHUDTextElements(Canvas C)
             else
                 aHint = hintShopping; // others can do shopping while somebody sets up the base
         }
-        else if ( TSCGRI.TeamCarrier[TeamIndex] == none || TSCGRI.TeamCarrier[TeamIndex] == KFPRI ) {
+        else if (!TeamBase.bHidden && (TSCGRI.TeamCarrier[TeamIndex] == none || TSCGRI.TeamCarrier[TeamIndex] == KFPRI)) {
                 aTitle = titleSetupBase;
                 aHint = hintGetGnome;
         }
@@ -242,7 +242,7 @@ defaultproperties
     titleStinkyClot="STINKY CLOT"
 
     hintWelcome=" Welcome to FTG! Watch this place for useful hints. "
-    hintFirstWave="First wave is a usual KF wave. Kill all zeds and dont die :)"
+    hintFirstWave="First wave is a usual KF wave. Kill all zeds and dont die."
     hintGotoBase="Get to your Base and protect the Guardian!"
     hintGetGnome="Take the Guardian from your Trader to set up the Base"
     hintBaseLostTrader="You lost your Guardian and now you are dead!"

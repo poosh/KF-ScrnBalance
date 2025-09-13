@@ -612,7 +612,15 @@ simulated function SwitchWeapon(byte F)
 
 simulated function ChangedWeapon()
 {
+    local KFWeapon W;
+
     super(KFPawn).ChangedWeapon();
+
+    W = KFWeapon(Weapon);
+    if (W != none && W.bAimingRifle) {
+        W.ZoomOut(false);
+        W.ServerZoomOut(false);
+    }
 
     if (Role < ROLE_Authority) {
         ApplyWeaponStats(Weapon);
@@ -1718,18 +1726,27 @@ function bool TakeHealing(ScrnHumanPawn Healer, int HealAmount, float HealPotenc
             KFPRI.Team.Score -= MedicReward;
             Healer.PlayerReplicationInfo.Score += MedicReward;
             Healer.AlphaAmount = 255;
-
         }
     }
 
     Healer.LastHealed = self;
-    if ( PlayerController(Healer.Controller) != none &&  GameRules != none) {
-        SPI = GameRules.GetPlayerInfo(PlayerController(Healer.Controller));
+    if (Healer.ScrnPC != none && GameRules != none) {
+        SPI = GameRules.GetPlayerInfo(Healer.ScrnPC);
         if ( SPI != none )
             SPI.Healed(LastHealAmount, self, MedicGun);
     }
-    if ( KFMonster(LastDamagedBy) != none && Healer.IsMedic() ) {
+    if (KFMonster(LastDamagedBy) != none && Healer.IsMedic()) {
         CombatMedicTarget = KFMonster(LastDamagedBy);
+    }
+
+    // Don't show healing messages from healing nades
+    if (MedicGun != none && (MedicGun.IsA('KFMedicGun') || MedicGun.IsA('Syringe') || MedicGun.IsA('MedicPistol'))) {
+        if (Healer.ScrnPC != none && Healer.ScrnPC.bHealMessages) {
+            Healer.ScrnPC.ReceiveLocalizedMessage(Class'ScrnHealMessage', 0, PlayerReplicationInfo);
+        }
+        if (ScrnPC != none && ScrnPC.bHealedByMessages) {
+            ScrnPC.ReceiveLocalizedMessage(Class'ScrnHealMessage', 1, Healer.PlayerReplicationInfo);
+        }
     }
     return true;
 }
@@ -3213,7 +3230,8 @@ function CheckZoom()
         return;
 
     W = KFWeapon(Weapon);
-    if (W != none && W.bHasAimingMode && !W.bAimingRifle && !W.bZoomingIn) {
+    if (W != none && W.bHasAimingMode && !W.bAimingRifle && !W.bZoomingIn
+            && W.ClientState == WS_ReadyToFire && W.ClientGrenadeState == GN_None) {
         W.IronSightZoomIn();
     }
 }

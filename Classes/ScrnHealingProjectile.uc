@@ -71,7 +71,8 @@ simulated function ProcessTouch(Actor Other, Vector HitLocation)
                 else {
                     Healed.GiveHealth(HealSum, Healed.HealthMax);
                 }
-                ClientSuccessfulHeal(Healed.GetPlayerName());
+                // Replaced by ScrnHealMessage
+                // ClientSuccessfulHeal(Healed.GetPlayerName());
             }
         }
         else {
@@ -87,8 +88,9 @@ simulated function ProcessTouch(Actor Other, Vector HitLocation)
 
 function ClientSuccessfulHeal(String PlayerName)
 {
-    if( KFMedicGun(Instigator.Weapon) != none )
-        KFMedicGun(Instigator.Weapon).ClientSuccessfulHeal(PlayerName);
+    // Replaced by ScrnHealMessage
+    // if( KFMedicGun(Instigator.Weapon) != none )
+    //     KFMedicGun(Instigator.Weapon).ClientSuccessfulHeal(PlayerName);
 }
 
 simulated function Timer()

@@ -93,6 +93,7 @@ var transient ScrnPlayerInfo PlayerInfo;
 var protected transient ScrnPlayerInfo BackupPlayerInfo;
 var protected int WavePlayerCount, WaveDeadPlayers;
 var protected ScrnPlayerInfo MySPI;
+var protected array<ScrnPlayerInfo> DialoguePlayerInfos;
 var float GameEndDelayNoPlayers, GameEndDelay;
 var ScrnPauser Pauser;
 
@@ -145,6 +146,7 @@ event Destroyed()
 
     log("ScrnGameRules destroyed", 'ScrnBalance');
     // clear all ScrnPlayerInfo objects
+    DialoguePlayerInfos.length = 0;
     while ( PlayerInfo != none ) {
         SPI = PlayerInfo;
         PlayerInfo = SPI.NextPlayerInfo;
@@ -1784,6 +1786,84 @@ function DebugSPI(PlayerController Sender)
         else
             Sender.ClientMessage(SPI.SteamID32 @ "none" @  SPI.PRI_Kills );
     }
+}
+
+function ScrnPlayerInfo FindRandomDialogueSPI(bool bUnique, ScrnPlayerInfo ExcludeSPI, PlayerReplicationInfo ExcludePRI)
+{
+    local ScrnPlayerInfo SPI;
+    local array<ScrnPlayerInfo> Candidates;
+    local int i;
+
+    for (SPI = PlayerInfo; SPI != none; SPI = SPI.NextPlayerInfo) {
+        if (!SPI.IsAlive() || SPI == ExcludeSPI || SPI.PlayerOwner.PlayerReplicationInfo == ExcludePRI)
+            continue;
+
+        if (!bUnique) {
+            Candidates[Candidates.length] = SPI;
+        }
+        else {
+            for (i = 0; i < DialoguePlayerInfos.Length; ++i) {
+                if (DialoguePlayerInfos[i] == SPI)
+                    break;
+            }
+            if (i == DialoguePlayerInfos.Length) {
+                Candidates[Candidates.length] = SPI;
+            }
+        }
+    }
+
+    if (Candidates.length > 0) {
+        return Candidates[rand(Candidates.length)];
+    }
+    return none;
+}
+
+function ScrnPlayerInfo FindDialogueSPI(int PlayerIndex, PlayerReplicationInfo ExcludePRI)
+{
+    local ScrnPlayerInfo SPI;
+
+    if (PlayerIndex == 0) {
+        return FindRandomDialogueSPI(false, none, ExcludePRI);
+    }
+
+    if (PlayerIndex < 0) {
+        // random but not the indexed player
+        PlayerIndex = 1 - PlayerIndex;
+        if (PlayerIndex >= AlivePlayerCount())
+            return none;
+        if (PlayerIndex < DialoguePlayerInfos.Length) {
+            SPI = DialoguePlayerInfos[PlayerIndex];
+        }
+        return FindRandomDialogueSPI(false, SPI, ExcludePRI);
+    }
+
+    if (--PlayerIndex < DialoguePlayerInfos.Length) {
+        SPI = DialoguePlayerInfos[PlayerIndex];
+        if (SPI != none && SPI.PlayerOwner != none) {
+            if (SPI.IsAlive())
+                return SPI;
+            return none; // dead but existing player
+        }
+    }
+
+    if (PlayerIndex >= AlivePlayerCount())
+        return none;
+    SPI = FindRandomDialogueSPI(true, none, ExcludePRI);
+    if (SPI != none) {
+        DialoguePlayerInfos[PlayerIndex] = SPI;
+    }
+    return SPI;
+}
+
+function PlayerReplicationInfo FindDialoguePlayer(int PlayerIndex, PlayerReplicationInfo ExcludePRI)
+{
+    local ScrnPlayerInfo SPI;
+
+    SPI = FindDialogueSPI(PlayerIndex, ExcludePRI);
+    if (SPI != none) {
+        return SPI.PlayerOwner.PlayerReplicationInfo;
+    }
+    return none;
 }
 
 

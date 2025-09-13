@@ -78,7 +78,7 @@ var array<SPickupReplacement> pickupReplaceArray;
 var const int FragReplacementIndex;
 var globalconfig bool bReplacePickups, bReplacePickupsStory;
 
-var protected  byte GameStartCountDown;
+var byte GameStartCountDown;
 
 //v3
 /**
@@ -425,6 +425,10 @@ simulated function ClientInitSettings()
     LoadReplicationData();
     InitSettings();
 
+    if (bTestMap && !class'ScrnF'.static.IsDebugEnabled()) {
+        class'ScrnF'.static.EnableDebug();
+    }
+
     LocalPlayer = ScrnPlayerController(Level.GetLocalPlayerController());
     if ( LocalPlayer != none && LocalPlayer.Mut == none ) {
         LocalPlayer.SetMut(self);
@@ -665,8 +669,9 @@ function SetupPickups(optional bool bReduceAmount, optional bool bBoostAmount)
         A = 0.50;
     }
 
-    if ( KF.NumPlayers > 6 ) {
+    if ( A < 0.7 && KF.NumPlayers > 6 ) {
         A *= 1.0 + float(KF.NumPlayers - 6)*0.2;
+        A = fmin(A, 0.7);
     }
 
     if ( KF.WeaponPickups.Length > 0 ) {
@@ -2626,6 +2631,7 @@ function PostBeginPlay()
 function SetTestMap()
 {
     if (!bTestMap) {
+        log("*** TEST MAP ***", 'ScrnBalance');
         class'ScrnF'.static.EnableDebug();
     }
     bTestMap = true;
@@ -3310,7 +3316,7 @@ function GameResumed()
 
 defaultproperties
 {
-    VersionNumber=97210
+    VersionNumber=97212
     GroupName="KF-Scrn"
     FriendlyName="ScrN Balance"
     Description="Total rework of KF1 to make it modern and the best tactical coop in the world while sticking to the roots of the original."

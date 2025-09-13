@@ -160,11 +160,6 @@ static function string GetCustomLevelInfo( byte Level )
     return S;
 }
 
-static function bool OverridePerkIndex( class<KFWeaponPickup> Pickup )
-{
-    return Pickup == class'ScrnM4203Pickup' || super.OverridePerkIndex(Pickup);
-}
-
 
 defaultproperties
 {
@@ -186,6 +181,8 @@ defaultproperties
     OnHUDIcons(4)=(PerkIcon=Texture'ScrnTex.Perks.Perk_Commando_Purple',StarIcon=Texture'ScrnTex.Perks.Hud_Perk_Star_Purple',DrawColor=(B=255,G=255,R=255,A=255))
     OnHUDIcons(5)=(PerkIcon=Texture'ScrnTex.Perks.Perk_Commando_Orange',StarIcon=Texture'ScrnTex.Perks.Hud_Perk_Star_Orange',DrawColor=(B=255,G=255,R=255,A=255))
     OnHUDIcons(6)=(PerkIcon=Texture'ScrnTex.Perks.Perk_Commando_Blood',StarIcon=Texture'ScrnTex.Perks.Hud_Perk_Star_Blood',DrawColor=(B=255,G=255,R=255,A=255))
+
+    PerkedPickups[0]= class'ScrnM4203Pickup'
 
     VeterancyName="Commando"
     ShortName="CMD"

@@ -74,12 +74,20 @@ static function int AddDamage(KFPlayerReplicationInfo KFPRI, KFMonster Injured, 
         return InDamage;
 
     if ( ClassIsChildOf(DmgType, default.DefaultDamageType)
+            || ClassIsChildOf(DmgType, class'DamTypeMAC10MP')
             || ClassIsInArray(default.PerkedDamTypes, DmgType) )
     {
         // 30% base bonus + 5% per level
         InDamage *= 1.3001 + 0.05 * GetClientVeteranSkillLevel(KFPRI);
     }
     return InDamage;
+}
+
+static function float GetMagCapacityModStatic(KFPlayerReplicationInfo KFPRI, class<KFWeapon> Other)
+{
+    if (ClassIsChildOf(Other, class'MAC10MP'))
+        return 2.0; // double magazine size
+    return super.GetMagCapacityModStatic(KFPRI, Other);
 }
 
 static function float AddExtraAmmoFor(KFPlayerReplicationInfo KFPRI, Class<Ammunition> AmmoType)
@@ -93,6 +101,7 @@ static function float AddExtraAmmoFor(KFPlayerReplicationInfo KFPRI, Class<Ammun
             || ClassIsChildOf(AmmoType, class'KrissMAmmo')
             || ClassIsChildOf(AmmoType, class'BlowerThrowerAmmo')
             || ClassIsChildOf(AmmoType, class'M4203Ammo')
+            || ClassIsChildOf(AmmoType, class'MAC10Ammo')
             || ClassIsInArray(default.PerkedAmmo, AmmoType) )
     {
         return 1.0 + 0.05 * float(GetClientVeteranSkillLevel(KFPRI)); // +5% per level
@@ -146,6 +155,7 @@ defaultproperties
     OnHUDIcons(6)=(PerkIcon=Texture'ScrnTex.Perks.Perk_CombatMedic_Blood',StarIcon=Texture'ScrnTex.Perks.Hud_Perk_Star_Blood',DrawColor=(B=255,G=255,R=255,A=255))
 
     PerkedPickups[0]= class'ScrnKatanaPickup'
+    PerkedPickups[1]= class'ScrnMAC10Pickup'
 
     VeterancyName="Combat Medic"
     ShortName="CBT"

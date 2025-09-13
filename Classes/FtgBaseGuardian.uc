@@ -114,7 +114,7 @@ defaultproperties
     CollisionHeight=12
     DrawScale=0.5
     PrePivot=(Z=23)
-    SameTeamCounter=28
+    SameTeamCounter=30
     Damage=2 // do less damage to enemies due to moving
     StunThreshold=0 // cannot be stunned
 

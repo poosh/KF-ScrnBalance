@@ -115,4 +115,5 @@ simulated function LoadWeaponBonuses()
 
 defaultproperties
 {
+    bNetTemporary=true
 }

@@ -18,6 +18,16 @@ var byte NewDifficulty;  // allows changing difficulty mid-game
 var class<LocalMessage> RemainingTimeMsg;
 var transient float LastBeepTime;
 
+const DT_NONE = 0;
+const DT_PLAYER = 1;
+const DT_TRADER = 2;
+var byte DialogueType;
+var byte DialogueCounter, DialogueDuration, SrvDialogueDuration;
+var StringReplicationInfo DialogueText;
+var PlayerReplicationInfo DialoguePRI;
+
+var byte PendingDialogueType, PendingDialogueCountdown;
+
 replication
 {
     reliable if( bNetInitial && Role == ROLE_Authority )
@@ -34,6 +44,46 @@ replication
 
     reliable if( (bNetInitial || bNetDirty) && Role == ROLE_Authority )
         AlivePlayers, ScoredPlayers;
+
+    reliable if( (bNetInitial || bNetDirty) && Role == ROLE_Authority )
+        DialogueType, DialogueCounter, DialogueDuration, DialogueText, DialoguePRI;
+}
+
+function DisplayDialogue(byte Type, String Text, optional PlayerReplicationInfo PRI, optional int Duration)
+{
+    if (Level.NetMode == NM_Standalone) {
+        DialogueType = Type;
+        if (++DialogueCounter == 255)
+            DialogueCounter = 1;
+    }
+    else {
+        // Give time to replicate all Dialogueue values before diplaying it.
+        DialogueType = DT_NONE;
+        PendingDialogueType = Type;
+        PendingDialogueCountdown = 2;
+    }
+
+    if (Text != "") {
+        if (DialogueText == none) {
+            DialogueText = spawn(class'StringReplicationInfo', self);
+        }
+        DialogueText.SetString(Text);
+    }
+    else if (DialogueText != none) {
+        DialogueText.SetString(Text);
+    }
+    DialoguePRI = PRI;
+    DialogueDuration = Duration;
+
+    if (DialogueDuration == 0) {
+        DialogueDuration = clamp(class'ScrnFunctions'.static.TextReadTime(Text), 5, 30);
+    }
+    SrvDialogueDuration = DialogueDuration;
+}
+
+function ClearDialogue()
+{
+    DisplayDialogue(DT_NONE, "");
 }
 
 simulated function PostBeginPlay()
@@ -111,13 +161,23 @@ simulated function Timer()
             if ( (PRIArray[i].HasFlag != None) && (PRIArray[i].Team != None) )
                 FlagHolder[PRIArray[i].Team.TeamIndex] = PRIArray[i];
 
-        for ( i=0; i<2; i++ )
+        for ( i=0; i<2; i++ ) {
             if ( OldHolder[i] != FlagHolder[i] )
             {
                 for ( C=Level.ControllerList; C!=None; C=C.NextController )
                     if ( PlayerController(C) != None )
                         PlayerController(C).ClientUpdateFlagHolder(FlagHolder[i],i);
             }
+        }
+
+        if (PendingDialogueCountdown > 0 && --PendingDialogueCountdown == 0) {
+            DialogueType = PendingDialogueType;
+            if (++DialogueCounter == 255)
+                DialogueCounter = 1;
+        }
+        else if (SrvDialogueDuration > 0 && --SrvDialogueDuration == 0) {
+            DialogueType = DT_NONE;
+        }
     }
 }
 

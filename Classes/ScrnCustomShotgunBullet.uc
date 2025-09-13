@@ -19,6 +19,8 @@ var() int   MediumZedMinHealth;         // If zed's base Health >= this value, z
 var     String         StaticMeshRef;
 var     String         AmbientSoundRef;
 
+var EDetailMode DetailFilter;  // Drop detail if Level.DetailMode <= this value
+
 var transient Pawn OldVictim;
 var transient bool bHeadshot;
 var transient int SameVictimCounter;
@@ -48,6 +50,18 @@ simulated function PostBeginPlay()
     Super.PostBeginPlay();
 
     MinDamage = default.Damage * (default.PenDamageReduction ** MaxPenetrations) + 0.0001;
+}
+
+simulated function PostNetBeginPlay()
+{
+    if (Level.NetMode == NM_DedicatedServer || !bDynamicLight)
+        return;
+
+    if (Level.bDropDetail || Level.DetailMode <= DetailFilter) {
+        bDynamicLight = false;
+        LightType = LT_None;
+        return;
+    }
 }
 
 simulated function ProcessTouch (Actor Other, vector HitLocation)
@@ -179,4 +193,5 @@ defaultproperties
     Damage=35
     HeadShotDamageMult=1.5
     MinDamage=10
+    DetailFilter=DM_Low
 }

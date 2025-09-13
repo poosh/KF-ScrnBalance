@@ -702,6 +702,10 @@ function ScrnHumanPawn AlivePawn()
     return ScrnHumanPawn(PlayerOwner.Pawn);
 }
 
+function bool IsAlive()
+{
+    return AlivePawn() != none;
+}
 
 /** Locates WeapInfos record by a given damage type. If there are multiple records with the same
  * damage type, looks for a match with LastFiredWeapon. If such not found, returns last record with

@@ -60,6 +60,7 @@ var config array<string> AllowWeaponLists;
 var config array<string> BlockWeaponLists;
 var config array<name> AllowPerks;
 var config array<name> BlockPerks;
+
 // Doom3
 var config bool Doom3DisableSuperMonsters;
 var config byte Doom3DisableSuperMonstersFromWave;
@@ -124,12 +125,15 @@ var transient int WaveCounter;
 var transient float Timelimit;
 var transient bool bTimelimit30;
 
-
 struct SZedCmdCache {
     var string Alias;
     var int LastCmdIdx;
 };
 var transient array<SZedCmdCache> ZedCmdCache;
+
+var class<ScrnGameDialogueHandler> DialogueHandlerClass;
+var ScrnGameDialogueHandler DialogueHandler;
+var transient bool bSkipDialogue;
 
 // Called from InitGame()
 // WARNING! GameReplicationInfo does not yet exist at this moment
@@ -667,6 +671,11 @@ protected function bool LoadNextWave()
     Wave = NextWave;
     NextWave = none;
 
+    if (Wave.EndRule == RULE_Dialogue && bSkipDialogue) {
+        log("Skip dialogue wave", class.name);
+        return false;
+    }
+
     for ( i = 0; i < ActiveZeds.length; ++i ) {
         ActiveZeds[i].WaveSpawns = 0;
     }
@@ -750,6 +759,8 @@ protected function bool LoadNextWave()
             }
         }
     }
+    LoadDialogues(Wave.TraderDialogues);
+    bSkipDialogue = false;
 
     DoorControl(Wave.DoorControl, Mut.bRespawnDoors || Mut.bTSCGame);
 
@@ -907,6 +918,7 @@ function RunWave()
         }
         Game.Broadcast(Game, s);
     }
+    LoadDialogues(Wave.CombatDialogues);
 
     if ( Doom3DisableSuperMonstersFromWave > 1 && Game.WaveNum + 1 == Doom3DisableSuperMonstersFromWave ) {
         Mut.DisableDoom3Monsters();
@@ -964,7 +976,8 @@ function SetWaveInfo()
     switch (Wave.EndRule) {
         case RULE_GrabAmmo:
             if ( Game.DesiredAmmoBoxCount < WaveCounter ) {
-                Mut.AdjustAmmoBoxCount(max(WaveCounter, Game.AmmoPickups.length * 0.8));
+                Mut.AdjustAmmoBoxCount(clamp(WaveCounter, Game.AmmoPickups.length * 0.7, Game.AmmoPickups.length * 0.9));
+                Game.DesiredAmmoBoxCount = max(6, ceil(Game.AmmoPickups.length * 0.7));
             }
             break;
     }
@@ -1035,6 +1048,11 @@ function WaveTimer()
                 Game.ScrnGRI.WaveCounterMax = -1;  // Show "?" on HUD
             }
             break;
+
+        case RULE_Dialogue:
+            Game.ScrnGRI.WaveCounter = -1;  // Show "?" on HUD
+            Game.ScrnGRI.WaveCounterMax = -1;  // Show "?" on HUD
+            break;
     }
 
     if (Game.ScrnGRI.WaveCounterMax < Game.ScrnGRI.WaveCounter) {
@@ -1073,6 +1091,10 @@ function WaveEnded()
                 SPI.BonusStats(SPI.GameStartStats, Wave.XP_BonusAlive);
             }
         }
+    }
+
+    if (DialogueHandler != none && DialogueHandler.IsRunning()) {
+        DialogueHandler.EndDialogue();
     }
 }
 
@@ -1186,6 +1208,9 @@ function bool CheckWaveEnd()
 
         case RULE_GrabAmmo:
             return Mut.GameRules.WaveAmmoPickups >= WaveCounter;
+
+        case RULE_Dialogue:
+            return DialogueHandler == none || !DialogueHandler.IsRunning();
     }
 
     // fallback scenario
@@ -1205,6 +1230,7 @@ function int GetWaveZedCount()
         case RULE_GrabDoshZed:
         case RULE_GrabAmmo:
         case RULE_ReachTrader:
+        case RULE_Dialogue:
             return 999;
     }
     return WaveCounter;
@@ -1803,10 +1829,34 @@ function bool IsStinkyClotAllowed()
     return Wave.FtgRule == FTG_Standard;
 }
 
+function bool LoadDialogues(out array<string> Dialogues)
+{
+    if (Dialogues.Length == 0)
+        return false;
+
+    if (DialogueHandler == none) {
+        DialogueHandler = Game.spawn(DialogueHandlerClass, Game);
+        if (DialogueHandler == none)
+            return false;
+        DialogueHandler.Game = Game;
+    }
+
+    return DialogueHandler.Load(Dialogues);
+}
+
+function SkipDialogue()
+{
+    bSkipDialogue = true;
+    if (DialogueHandler != none && DialogueHandler.IsRunning()) {
+        DialogueHandler.EndDialogue();
+    }
+}
+
 defaultproperties
 {
     WaveInfoClass=class'ScrnWaveInfo'
     ZedInfoClass=class'ScrnZedInfo'
+    DialogueHandlerClass=class'ScrnGameDialogueHandler'
     Waves(0)="Wave1"
     Zeds(0)="NormalZeds"
     FallbackZed=class'KFChar.ZombieClot_STANDARD'

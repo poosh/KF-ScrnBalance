@@ -30,6 +30,59 @@
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+## v9.72.12
+### Follow The Guardian: Special Ops (FTGSO)
+- A new game mode by [nmmblez] that allows to play the Story Mode on regular survival maps.
+- FTGSO takes place the next day after the KFO-Transit fight. Kevin 'Patriarch' Clamely didn't escape to Paris, and the remaining members of the DRF squads returned to the UK, searching for him.
+- FTGSO is a prequel to **Follow The Guardian: On The Clock**.
+### Game Modes
+- New game mode - **54. Follow The Guardian: Special Ops**
+- "04. ScrN Zeds Medium" and "52. Escape the Hunter" removed from the official rotation. You can still restore them via *KFMapVote.ini*.
+- *ScrnWaves.ini*: added `TraderDialogues`, `CombatDialogues`, and `FtgDialogues` for story-telling.
+- *ScrnWaves.ini*: added `RULE_Dialogue`.
+- Adjusted ammo box spawn for `RULE_GrabAmmo` waves.
+- Players are spawned separately if possible when `bStartAtTrader=true` and `bOpenTrader=false`. Previously, they were spawned near random traders, and it was possible for 5 players to spawn together while the last one was split from the team. Now all players are split if the map has enough shops.
+- Fixed an issue when `bMoreAmmoBoxes=true` was forced for all waves with `bOpenTrader=false`, not only `RULE_GrabAmmo`.
+- `TraderMessage` overrides the default "The shop is now open for business!" message instead of showing both (thanks [nmmblez])
+### Burning Performance Optimization
+- Significantly improved rendering performance of different flames (Flamethrower, Husk Gun, burning zeds, etc.)
+- Fire projectiles and burning zeds do not cast dynamic light if World Detail is set to Low, or the framerate is below `MinDesiredFrameRate` (*KillingFloor.ini*)
+- Reduced the number of dynamic lights for World Detail = Normal.
+- World Detail = High has also been optimized, but without sacrificing visual fidelity.
+- Burning Zed optimization currently applies to ScrN Weapon Pak only.
+### Follow The Guardian
+- Players outside the base receive the "Get back to the base" warning even when others are still at the base.
+- `MVOTE END WAVE` is allowed now.
+- Last zeds in the wave get marked as in the regular survival.
+- Fixed missing "GO TO TRADER" text on the HUD durint `RULE_ReachTrader`
+- Wave Header/Title/Message is displayed in blue to match the HUD theme.
+- The "BASE SETUP" hint is not displayed if the wave has no Guardian (`FtgRule=FTG_NoBase`)
+### Weapon Balance
+- **Trenchgun** weight lowered 6 => 5kg, allowing it to be carried alongside a Flamethrower or a Husk Gun.
+- **MAC10** is a crossperk weapon for Firebug and **Combat Medic**. The latter has no incendiary mags but has bigger magazines and impact damage bonus.
+- **HK417** weight raised 7 => 8kg to prevent carrying it alongside an FN FAL, unless sacrificing armor.
+- **HK417** damage lowered 80 => 75 (Lv6: 128 => 120) to prevent one-body-shot killing Crawlers.
+- **HK417** headshot multiplier increased x1.75 => x2.0 to compensate for its damage and weight nerfs.
+- **VSS Vintorez** can always switch fire modes.
+### Other Changes
+- `MVOTE SKIP` a single command to invote BORING, END WAVE, or END TRADE depending on the current phase. Added to ScrN key binding. Old commands still work.
+- **Patriarch** can be marked (pinged) while visible.
+- Healed players receive the message telling who has healed them (thanks *resonant*)
+- *ScrnUser.ini*: added `bHealMessages` and `bHealedByMessages`
+- *ScrnMapInfo.ini*: Added map definition for **KF-Oakview**
+- **LAR** is no longer considered a "pistol" despite being a Gunslinger's perked weapon.
+- An ammo box cannot respawn for 30 seconds after being picked up. That should discourage players from camping near ammo boxes waiting for them to respawn in `RULE_GrabAmmo` waves.
+- The minimum ammo respawn cooldown is proportionally lowered for maps with fewer than 10 ammo boxes.
+- Fixed **Flamethrower** bug where it continued firing after a nade throw, ignoring the fire trigger's release.
+- (Probably) Fixed a bug where a scoped weapon could get stuck at the aiming animation after weapon switching.
+- Yet another gun recoil fix during Zed Time.
+## ScrN Weapon Pak
+- Burning Zed performance optimization
+- **Brute** base health lowered 1000 => 990 to stop considering him a big zed.
+## Horzine Technician
+- Fixed **Cryo Thrower** bug where it continued firing after a nade throw, ignoring the fire trigger's release.
+
+
 ## v9.72.10
 - Fixed a bug where Sudden Death was enabled on the boss wave in FTG
 

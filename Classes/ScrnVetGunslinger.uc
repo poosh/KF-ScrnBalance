@@ -185,12 +185,6 @@ static function float GetCostScaling(KFPlayerReplicationInfo KFPRI, class<Pickup
     return 1.0;
 }
 
-static function bool OverridePerkIndex( class<KFWeaponPickup> Pickup )
-{
-    return Pickup == class'ScrnWinchesterPickup' || Pickup == class'ScrnDualFlareRevolverPickup'
-            || super.OverridePerkIndex(Pickup);
-}
-
 static function float GetZedTimeChance(KFPlayerReplicationInfo KFPRI, KFMonster Zed, float Chance)
 {
     if (Zed.IsA('Bloat') && Zed.DECAP && Zed.DecapTime == Zed.Level.TimeSeconds) {
@@ -220,7 +214,7 @@ defaultproperties
     DefaultDamageTypeNoBonus=class'ScrnDamTypeDefaultGunslingerBase'
     SamePerkAch="OP_Gunslinger"
 
-    SkillInfo="PERK SKILLS:|100% faster reload with Revolvers|60% faster reload with Pistols|50% less recoil with Pistols|+50% damage to Bloats||COWBOY MODE:|20% increase in movement speed|9mm Machine-Pistols"
+    SkillInfo="PERK SKILLS:|100% faster reload with Revolvers|60% faster reload with Pistols|50% less recoil with Pistols/Revolvers|+50% damage to Bloats||COWBOY MODE:|20% increase in movement speed|9mm Machine-Pistols"
     CustomLevelInfo="PERK BONUSES (LEVEL %L):|%x more damage with Pistols|%$ discount on Pistols|%a extra Pistol magazines"
 
     NumRequirements=1 // removed damage req. in v5.30 Beta 18
@@ -234,6 +228,9 @@ defaultproperties
     OnHUDIcons(4)=(PerkIcon=Texture'ScrnTex.Perks.Perk_Gunslinger_Purple',StarIcon=Texture'ScrnTex.Perks.Hud_Perk_Star_Purple',DrawColor=(B=255,G=255,R=255,A=255))
     OnHUDIcons(5)=(PerkIcon=Texture'ScrnTex.Perks.Perk_Gunslinger_Orange',StarIcon=Texture'ScrnTex.Perks.Hud_Perk_Star_Orange',DrawColor=(B=255,G=255,R=255,A=255))
     OnHUDIcons(6)=(PerkIcon=Texture'ScrnTex.Perks.Perk_Gunslinger_Blood',StarIcon=Texture'ScrnTex.Perks.Hud_Perk_Star_Blood',DrawColor=(B=255,G=255,R=255,A=255))
+
+    PerkedPickups[0]= class'ScrnWinchesterPickup'
+    PerkedPickups[1]= class'ScrnDualFlareRevolverPickup'
 
     VeterancyName="Gunslinger"
     ShortName="GS"

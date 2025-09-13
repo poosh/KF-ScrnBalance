@@ -213,7 +213,6 @@ function SetupWave()
 
     if (ScrnGameLength.Wave.bOpenTrader) {
         ZedSpawnLoc = default.ZedSpawnLoc;
-        //TotalMaxMonsters *= 0.75; // reduce amount of zeds in wave
         FriendlyFireScale = HDmgScale;
 
         if ( bSingleTeamGame ) {
@@ -482,6 +481,7 @@ function StinkyControllerCompeledAction(StinkyController SC, int CompletedAction
             if (!bWaveBossInProgress) {
                 NextMonsterTime += ScrnGameLength.FtgSpawnDelayOnPickup;
             }
+            ScrnGameLength.LoadDialogues(ScrnGameLength.Wave.FtgDialogues);
         }
         if ( bDebugStinkyPathCheat ) {
             log("Next Stinky Path: " $ SC.MoveTargets[CompletedActionNum] $ " => " $ SC.MoveTargets[SC.ActionNum],

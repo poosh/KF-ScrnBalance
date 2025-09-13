@@ -12,6 +12,12 @@
 
 ## Improvements
 - Custom dialogs in ScrnWaves.ini
+? Healing message to patient
+? Xbow / VSS scope zoom when gun switching
+- Suicide Timer for FTG
+- AssessThreatTo - target first attacker
+- Pat RotationRate faster when meleeing
+? Fire Effects - dynamic lights
 - Teamwork: ARAP - decapitate FP with 2+ Armor-Piercing Assault Rifles
 - HMG cheevos
 

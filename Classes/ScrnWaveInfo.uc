@@ -13,6 +13,7 @@ enum EWaveEndRule {
     RULE_GrabAmmo,
     RULE_KillSpecial,
     RULE_ReachTrader,
+    RULE_Dialogue,
 };
 
 enum EDoorControl {
@@ -70,6 +71,8 @@ var config bool bRandomSquads;
 var config bool bRandomSpecialSquads;
 var config array<string> SpecialSquads;
 var config array<string> Squads;
+
+var config array<string> TraderDialogues, CombatDialogues, FtgDialogues;
 
 var transient bool bRandomlyPicked;
 

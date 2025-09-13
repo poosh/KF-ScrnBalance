@@ -176,5 +176,5 @@ defaultproperties
     ReachDistSq=250000  // 10m
     ReachDistZ=50
     StayDistSq=1000000  // 20m
-    FinalCountdown=5
+    FinalCountdown=3
 }

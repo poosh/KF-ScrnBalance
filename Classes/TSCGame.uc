@@ -130,7 +130,10 @@ event InitGame( string Options, out string Error )
     }
 
     // hard-code some ScrN features
-    ScrnBalanceMut.MaxVoteKillMonsters = 0; // no vote end wave since it is auto-ended in 30 seconds
+    if (!bSingleTeamGame) {
+        // no vote end wave since it is auto-ended in 30 seconds
+        ScrnBalanceMut.MaxVoteKillMonsters = 0;
+    }
     if ( ScrnBalanceMut.ForcedMaxPlayers < 12 )
         ScrnBalanceMut.ForcedMaxPlayers = 0;
 
@@ -978,7 +981,10 @@ function SetupWave()
     }
 }
 
-function HandleRemainingZeds() {}
+function HandleRemainingZeds() {
+    if (bSingleTeamGame)
+        super.HandleRemainingZeds();
+}
 
 function bool HasEnoughZeds()
 {

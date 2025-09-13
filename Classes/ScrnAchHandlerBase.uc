@@ -105,7 +105,8 @@ static function bool IsPistolDamage(ScrnPlayerInfo InstigatorSPI, class<KFWeapon
         return false;
     // Gunslinger gets damage bonus on all pistols (even level 0).
     // So if output damage > input damage, DamageType is pistol damage
-    return  class'ScrnVetGunslinger'.static.AddDamage(KFPRI, none, none, 100, DamageType) > 100;
+    return class'ScrnVetGunslinger'.static.AddDamage(KFPRI, none, none, 100, DamageType) > 100
+            && !ClassIsChildOf(DamageType, class'DamTypeWinchester');
 }
 
 static function bool IsAssaultRifleDamage(ScrnPlayerInfo InstigatorSPI, class<KFWeaponDamageType> DamageType)

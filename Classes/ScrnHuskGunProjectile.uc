@@ -1,6 +1,42 @@
 class ScrnHuskGunProjectile extends HuskGunProjectile;
 
+var class<Emitter> FlameTrailClass;
+var class<xEmitter> TrailClass;
+
 var bool bAppliedCharge;
+
+simulated function PostNetBeginPlay()
+{
+    local ScrnHuskGunProjectile Other;
+    local float DistSq;
+
+    Super.PostNetBeginPlay();
+
+    if (Level.NetMode == NM_DedicatedServer || !bDynamicLight)
+        return;
+
+    //  Level.DetailMode = "World Detail" in the game settings
+    if (Level.bDropDetail || Level.DetailMode == DM_Low) {
+        bDynamicLight = false;
+        LightType = LT_None;
+        return;
+    }
+
+    if (Level.DetailMode == DM_SuperHigh) {
+        DistSq = 62500;  // 5m
+    }
+    else {
+        DistSq = 160000;  // 8m
+    }
+
+    foreach DynamicActors(class'ScrnHuskGunProjectile', Other) {
+        if (Other != self && Other.bDynamicLight && VSizeSquared(Other.Location - Location) < DistSq) {
+            bDynamicLight = false;
+            LightType = LT_None;
+            return;
+        }
+    }
+}
 
 //overrided to use alternate burning mechanism
 simulated function HurtRadius( float DamageAmount, float DamageRadius, class<DamageType> DamageType, float Momentum, vector HitLocation )
@@ -185,6 +221,8 @@ defaultproperties
 {
     ImpactDamage=65
     ImpactDamageType=class'ScrnDamTypeHuskGunProjectileImpact'
+    FlameTrailEmitterClass=Class'ScrnHuskGunTrail'
+    LightRadius=12
 
     Damage=30.000000
     DamageRadius=150.000000

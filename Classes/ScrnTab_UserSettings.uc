@@ -531,13 +531,7 @@ function InternalOnLoadINI(GUIComponent Sender, string s)
             break;
 
         case sl_3DScopeSensScale:
-            if ( H == none ) {
-                sl_3DScopeSensScale.DisableMe();
-                sl_3DScopeSensScale.DisableMe();
-            }
-            else {
-                sl_3DScopeSensScale.EnableMe();
-            }
+            sl_3DScopeSensScale.SetValue(PC.Custom3DScopeSens);
             break;
     }
 }

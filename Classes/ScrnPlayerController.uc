@@ -62,6 +62,7 @@ var bool bForceDelayedRestart;
 var transient int DelayedRestartPhase;
 
 var globalconfig bool bPrioritizePerkedWeapons, bPrioritizeBoomstick;
+var globalconfig bool bHealMessages, bHealedByMessages;
 
 var int StartCash; // amount of cash given to this pawn on game/wave start
 
@@ -173,12 +174,12 @@ delegate OnTraderDoshRequest(PlayerReplicationInfo Sender, string Msg);
 replication
 {
     reliable if ( Role == ROLE_Authority )
-        ClientMonsterBlamed, ClientPostLogin;
+        ClientMonsterBlamed, ClientPostLogin, ClientMark;
 
     unreliable if ( Role == ROLE_Authority )
-        ClientPlayerDamaged, ClientFlareDamage, ClientMark;
+        ClientPlayerDamaged, ClientFlareDamage;
 
-    unreliable if ( Role < ROLE_Authority )
+    reliable if ( Role < ROLE_Authority )
         ServerMark, ServerLobbyMark;
 
     reliable if ( Role < ROLE_Authority )
@@ -194,7 +195,7 @@ replication
         bForceDelayedRestart;
 
     reliable if ( bNetOwner && (bNetDirty || bNetInitial) && Role < ROLE_Authority )
-        bPrioritizePerkedWeapons, StartCash;
+        bPrioritizePerkedWeapons, StartCash, bHealMessages, bHealedByMessages;
 
     // TSC stuff
     reliable if ( Role < ROLE_Authority )
@@ -1908,6 +1909,7 @@ simulated function ClientEnterZedTime()
     super.ClientEnterZedTime();
     bZEDTimeActive = true;
     ZedTimeStart = Level.TimeSeconds;
+    LastRecoilTime = 0;  // recoil is bugged in ZT. Disable it.
 }
 
 simulated function ClientExitZedTime()
@@ -1920,6 +1922,7 @@ function EnterZedTime()
 {
     bZEDTimeActive = true;
     ZedTimeStart = Level.TimeSeconds;
+    LastRecoilTime = 0;  // recoil is bugged in ZT. Disable it.
     ClientEnterZedTime();
 }
 
@@ -3270,13 +3273,8 @@ function bool IsMarkableZed(KFMonster Zed, out String caption, out byte MarkType
     // default Zed Visibility is 128
     // Spotted Stalkers and Pat have Visibility = 120
     // Cloacked Stalkers and Pat have KFMonster = 1
-    // Visibility is not replicated to clients. Hence, the client always has ZombieBoss.Visibility = 128.
-    // That's why marking ZombieBoss is prohibited in all cases.
 
     if (!IsMarkableActor(Zed) || Zed.Health <= 0 || Zed.ScoringValue < Mut.SrvMarkZedBounty || Zed.Visibility < 120)
-        return false;
-
-    if (Zed.IsA('ZombieBoss'))
         return false;
 
     caption = Zed.MenuName;
@@ -3285,6 +3283,9 @@ function bool IsMarkableZed(KFMonster Zed, out String caption, out byte MarkType
     }
     else if (Zed.IsA('ZombieScrake')) {
         MarkType = class'ScrnHUD'.default.MARK_SCRAKE;
+    }
+    else if (Zed.IsA('ZombieBoss')) {
+        MarkType = class'ScrnHUD'.default.MARK_BOSS;
     }
     else {
         MarkType = class'ScrnHUD'.default.MARK_ENEMY;
@@ -3474,6 +3475,10 @@ function ClientMark(KFPlayerReplicationInfo Sender, Actor A, vector ALocation, s
             case hud.MARK_SCRAKE:
                 MsgType = 'AUTO';
                 MsgID = 14;
+                break;
+            case hud.MARK_BOSS:
+                MsgType = 'AUTO';
+                MsgID = 8 + rand(3);
                 break;
             case hud.MARK_LASTZED:
                 Caption = "";
@@ -4017,6 +4022,22 @@ exec function DebugClear()
 //     ConsoleMessage("========================================================================");
 // }
 
+// exec function TestDialog(coerce string text)
+// {
+//     local ScrnGameReplicationInfo ScrnGRI;
+
+//     if ( Role != ROLE_Authority )
+//         return;
+
+//     ScrnGRI = ScrnGameReplicationInfo(Level.GRI);
+//     if (ScrnGRI == none)
+//         return;
+
+//     ScrnGRI.DisplayDialogue(ScrnGRI.DT_PLAYER, Text, PlayerReplicationInfo);
+
+//     class'ScrnSuicideBomb'.static.ExplodeAll(Level);
+// }
+
 
 defaultproperties
 {
@@ -4053,6 +4074,8 @@ defaultproperties
     strShutUp="Keep quiet for %s seconds"
     bWaveGarbageCollection=False
     bOtherPlayerLasersBlue=true
+    bHealMessages=true
+    bHealedByMessages=true
 
     DualWieldables(0)=(Single=class'KFMod.Single',Dual=class'KFMod.Dualies')
     DualWieldables(1)=(Single=class'KFMod.Deagle',Dual=class'KFMod.DualDeagle')

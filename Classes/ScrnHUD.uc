@@ -184,6 +184,7 @@ var Color WhiteAlphaColor; // white color with applied KFHUDAlpha. It is safe to
 var array<color> PerkColors;
 var color TeamColors[2]; // moved from TSCHUD
 var color TextColors[2];
+var Texture Boxes[2];
 
 var localized string strPendingItems;
 var material ChatIcon;
@@ -221,6 +222,7 @@ var const int MARK_ENEMY;
 var const int MARK_FLESHPOUND;
 var const int MARK_SCRAKE;
 var const int MARK_LASTZED;
+var const int MARK_BOSS;
 var const int MARK_PLAYER;
 var const int MARK_MEDIC;
 var const int MARK_CAMP;
@@ -246,6 +248,8 @@ var Material ObjProgressBar;
 var Material ObjStrike;
 var transient int ObjFontSize;
 var transient float ObjLeft, ObjTop, ObjWidth, ObjHeight;
+var transient byte LastDialogueCounter;
+var transient bool bDialogueFading;
 
 function PostBeginPlay()
 {
@@ -459,12 +463,215 @@ simulated function DrawEndGameHUD(Canvas C, bool bVictory)
     DisplayLocalMessages(C);
 }
 
+simulated function DrawStoryHUDInfo(Canvas C)
+{
+    if (ScrnGRI == none) {
+        if (KF_StoryGRI(Level.GRI) != none) {
+            super(HUD_StoryMode).DrawStoryHUDInfo(C);
+        }
+        return;
+    }
 
-simulated function DrawHudPassA (Canvas C)
+    if (ScrnGRI.DialogueType == ScrnGRI.DT_NONE && Dialogues.Length == 0)
+        return;
+
+    if (ScrnGRI.DialogueType == ScrnGRI.DT_NONE) {
+        if (!bDialogueFading) {
+            bDialogueFading = true;
+            Dialogues[0].FirstDisplayedTime = Level.TimeSeconds;  // fade out
+        }
+    }
+    else if (LastDialogueCounter != ScrnGRI.DialogueCounter && ScrnGRI.DialogueText != none) {
+        LastDialogueCounter = ScrnGRI.DialogueCounter;
+
+        if (Dialogues.Length == 0) {
+            Dialogues.insert(0, 1);
+            Dialogues[0].ScreenPos.Horizontal = 0.01;
+            Dialogues[0].ScreenPos.Vertical = 0.01;
+            Dialogues[0].ScreenAlignment = Left;
+            Dialogues[0].ScreenScaleStyle = Stretched;
+            Dialogues[0].BackGroundMat = Boxes[TeamIndex];
+
+        }
+        CurrentDlgIndex = 0;
+        bDialogueFading = false;
+        FillScrnDialogue(C, Dialogues[0]);
+        CalculateDialogueWrappingData(C);
+        Dialogues[0].bWrapped = true;
+    }
+
+    if (!DrawScrnDialogue(C, Dialogues[0])) {
+        Dialogues.remove(0, 1);
+    }
+}
+
+simulated function FillScrnDialogue(Canvas C, out SDialogueRenderInfo Dlg)
+{
+    Dlg.bFirstDisplay = true;
+    Dlg.Duration = ScrnGRI.DialogueDuration;
+    Dlg.FirstDisplayedTime = Level.TimeSeconds + Dlg.Duration;  // display until
+
+    Dlg.Opacity = KFHUDAlpha;
+    Dlg.Message = class'ScrnF'.static.StripColorTags(ScrnGRI.DialogueText.GetString());
+
+    Dlg.Speaker = "";
+    Dlg.Portrait = none;
+    switch (ScrnGRI.DialogueType) {
+        case ScrnGRI.DT_PLAYER:
+            if (ScrnGRI.DialoguePRI != none)  {
+                Dlg.Speaker = class'ScrnF'.static.PlainPlayerName(ScrnGRI.DialoguePRI);
+                Dlg.Portrait = ScrnGRI.DialoguePRI.GetPortrait();
+            }
+            break;
+
+        case ScrnGRI.DT_TRADER:
+            Dlg.Speaker = TraderString;
+            Dlg.Portrait = TraderPortrait;
+            break;
+    }
+}
+
+simulated function bool DrawScrnDialogue(Canvas C, out SDialogueRenderInfo Dlg)
+{
+    local float HeaderX,HeaderY;
+    local float BackgroundOffset;
+    local int i;
+    local AbsoluteCoordsInfo coords;
+    local float XL,YL;
+    local float BGSizeX,BGSizeY;
+    local float PortraitSizeX,PortraitSizeY;
+    local float PortraitAspect;
+
+    if (Level.TimeSeconds > Dlg.FirstDisplayedTime) {
+        Dlg.Opacity = min(250 - 125 * (Level.TimeSeconds - Dlg.FirstDisplayedTime), KFHUDAlpha);
+    }
+
+    if (Dlg.Opacity <= 0)
+        return false;
+
+    C.Font = GetFontSizeIndex(C,-2);
+    C.StrLen(Dlg.Speaker,HeaderX,HeaderY);
+    C.SetPos(0, 0);
+
+    C.Style = ERenderStyle.STY_Alpha;
+
+    // Calculate background offset in relation to text
+    backgroundOffset = DialogueBackground.PosY * C.ClipY;
+
+    // Calculate absolute drawing coordinates (mostly for text widget)
+    DialogueCoords.X = Dlg.ScreenPos.Horizontal;
+    DialogueCoords.Y = Dlg.ScreenPos.Vertical;
+
+    coords.PosX = DialogueCoords.X * C.ClipX;
+    coords.PosY = DialogueCoords.Y * C.ClipY;
+    coords.height = DialogueCoords.YL * C.ClipY;
+
+    BGSizeY = coords.height + backgroundOffset * 2;
+
+    if (Dlg.Portrait != none) {
+        PortraitAspect = float(Dlg.Portrait.MaterialUSize()) / float(Dlg.Portrait.MaterialVsize());
+        // make sure the protrait is scaled to the background widget
+        PortraitSizeY = FMin(Dlg.Portrait.MaterialVsize(), BGSizeY);
+        PortraitSizeX = PortraitSizeY * PortraitAspect;
+    }
+
+    coords.width = DialogueCoords.XL * C.ClipX;
+
+    // Draw the background
+    C.DrawColor = WhiteColor;
+    C.DrawColor.A = Dlg.Opacity;
+
+    BGSizeX = coords.width + backgroundOffset * 2;
+    coords.PosX -= PortraitSizeX/2;
+    coords.PosY -= BGSizeY/2;
+    coords.PosX = FClamp(coords.PosX, FMax(coords.PosX, PortraitSizeX), C.ClipX - BGSizeX);
+    coords.PosY = FClamp(coords.PosY, 0, C.ClipY - BGSizeY);
+
+    C.SetPos(coords.PosX, coords.PosY);
+
+    if(Dlg.ScreenScaleStyle == Stretched) {
+        C.DrawTileStretched(Dlg.BackGroundMat, BGSizeX, BGSizeY);
+    }
+    else {
+        C.DrawTileScaled(Dlg.BackGroundMat, BGSizeX / Dlg.BackGroundMat.MaterialUSize(),
+                BGSizeY / Dlg.BackGroundMat.MaterialVSize());
+    }
+
+    // Draw title
+    C.Font = GetFontSizeIndex(C,-2);
+    DialogueTitleWidget.text = Dlg.Speaker;
+    DialogueTitleWidget.Tints[0] = TextColors[TeamIndex];
+    DialogueTitleWidget.Tints[0].A = Dlg.Opacity;
+    DialogueTitleWidget.Tints[1] = DialogueTitleWidget.Tints[0];
+    DrawTextWidgetClipped(C, DialogueTitleWidget, coords, XL, YL);
+
+    // Draw each line individually
+    DialogueTextWidget.OffsetY = 1.5*YL + DialogueTitleWidget.OffsetY;
+    YL = 0;
+    for (i = 0; i < WrappedDialogue.Length; ++i) {
+        DialogueTextWidget.text = WrappedDialogue[i];
+        DialogueTextWidget.Tints[0] = TextColors[TeamIndex];
+        DialogueTextWidget.Tints[0].A = Dlg.Opacity;
+        DialogueTextWidget.Tints[1] =  DialogueTextWidget.Tints[0];
+
+        if (WrappedDialogue[i] != "") {
+            DrawTextWidgetClipped(C, DialogueTextWidget, coords, XL, YL);
+        }
+        else {
+            YL /= 2;
+        }
+        DialogueTextWidget.OffsetY += YL;
+    }
+
+    C.Style = ERenderStyle.STY_Normal;
+    C.DrawColor = WhiteColor;
+    C.DrawColor.A = Dlg.Opacity;
+    C.SetPos(coords.PosX - PortraitSizeX, coords.PosY);
+    if (Dlg.BinkPortrait != none && Dlg.BinkPortrait.MenuMovie != none && Dlg.BinkPortrait.MenuMovie.IsPlaying()) {
+        C.DrawTileScaled(Dlg.BinkPortrait.MenuMovie, PortraitSizeX / Dlg.BinkPortrait.MenuMovie.GetWidth(),
+                PortraitSizeY / Dlg.BinkPortrait.MenuMovie.GetHeight());
+    }
+    else if (Dlg.Portrait != none) {
+        C.DrawTileScaled(Dlg.Portrait,PortraitSizeX / Dlg.Portrait.MaterialUSize(),
+                PortraitSizeY / Dlg.Portrait.MaterialVSize());
+    }
+
+    return true;
+}
+
+simulated function DrawDialogue(Canvas C)
+{
+    if (CurrentDlgIndex >= Dialogues.length)
+        return;
+
+    if (Dialogues[CurrentDlgIndex].Opacity < 3) {
+        // The dialogue is about to be removed.
+        // Remove it here and fix the next one.
+        Dialogues.Remove(CurrentDlgIndex, 1);
+        // See, Tripwire, it is called "recursion".
+        // It prevents writing the same code multiple times.
+        DrawDialogue(C);
+        return;
+    }
+
+    if (!Dialogues[CurrentDlgIndex].bFirstDisplay) {
+        Dialogues[CurrentDlgIndex].Speaker = class'ScrnF'.static.StripColorTags(Dialogues[CurrentDlgIndex].Speaker);
+    }
+
+    super.DrawDialogue(C);
+}
+
+simulated function bool IsStoryDialogActive()
+{
+    return !bShowScoreBoard && CurrentDlgIndex < Dialogues.Length && Dialogues[CurrentDlgIndex].Opacity > 0;
+}
+
+simulated function DrawHudPassA(Canvas C)
 {
     DrawStoryHUDInfo(C);
     DrawDoorHealthBars(C);
-    if (bShowCowboyMode && ScrnPawnOwner != none && ScrnPawnOwner.bCowboyMode && !bShowScoreBoard && !bSpectating) {
+    if (bShowCowboyMode && ScrnPawnOwner != none && ScrnPawnOwner.bCowboyMode && !bShowScoreBoard && !bSpectating
+            && !IsStoryDialogActive()) {
         DrawCowboyMode(C);
     }
 
@@ -1618,6 +1825,15 @@ exec function SetHudStyle(byte value)
     bCoolHudLeftAlign = HudStyle == HUDSTL_COOL_LEFT;
     bCoolHud = bCoolHudLeftAlign || HudStyle == HUDSTL_COOL;
     class'ScrnVeterancyTypes'.default.bOldStyleIcons = HudStyle == HUDSTL_CLASSIC;
+
+    if (bCoolHudLeftAlign) {
+        class'ScrnHealMessage'.default.DrawPivot = DP_MiddleMiddle;
+        class'ScrnHealMessage'.default.PosX = 0.50;
+    }
+    else {
+        class'ScrnHealMessage'.default.DrawPivot = class'ScrnHealMessage'.default.OriginalDrawPivot;
+        class'ScrnHealMessage'.default.PosX = class'ScrnHealMessage'.default.OriginalPosX;
+    }
 }
 
 exec function ToggleHudStyle()
@@ -2606,6 +2822,11 @@ simulated function DrawDirPointer(Canvas C, KFShopDirectionPointer DirPointer, V
     if ( bHideHud ) {
         DirPointer.bHidden = true;
         return;
+    }
+
+    if (IsStoryDialogActive()) {
+        // Shift the arrow down due to story dialog display.
+        ++Col;
     }
 
     OldDrawColor = C.DrawColor;
@@ -4023,7 +4244,7 @@ function DrawMarks(Canvas C)
         A = Marks[i].Target;
         bValid = Level.TimeSeconds < Marks[i].MarkLife;
 
-        if (bValid && KFGRI.bMatchHasBegun) {
+        if (bValid && KFGRI.bMatchHasBegun && Level.TimeSeconds > Marks[i].PulseUntil) {
             if (Marks[i].MarkGroup == MARK_PLAYERS || Marks[i].MarkGroup == MARK_LOCATIONS) {
                 // A player mark is valid until the player is alive.
                 // Medic mark disappers once the player reaches 100hp.
@@ -4033,12 +4254,12 @@ function DrawMarks(Canvas C)
                 Marks[i].bIgnoreTarget = (A == none);
             }
             else if (!Marks[i].bIgnoreTarget) {
-                bValid = A != none && !A.bDeleteMe && !A.bHidden && (Pawn(A) == none || Pawn(A).Health > 0);
+                bValid = A != none && !A.bDeleteMe && !A.bHidden && (Pawn(A) == none
+                        || (Pawn(A).Health > 0 && Pawn(A).Visibility >= 120));
             }
             else if (Marks[i].MarkType == MARK_TRADER) {
                 // do not invalidate mark in first second in case ScrnPRI or KFGRI has not replicated yet
-                bValid = Level.TimeSeconds < Marks[i].PulseUntil
-                        || (ScrnPRI != none && !ScrnPRI.bReachedGoal && KFGRI.bWaveInProgress);
+                bValid = ScrnPRI != none && !ScrnPRI.bReachedGoal && KFGRI.bWaveInProgress;
             }
         }
 
@@ -4386,6 +4607,8 @@ defaultproperties
 
     WhiteAlphaColor=(R=255,G=255,B=255,A=255)
 
+    Boxes(0)=Texture'KillingFloorHUD.HUD.Hud_Box_128x64'
+    Boxes(1)=Texture'TSC_T.HUD.Hud_Box_128x64'
     TeamColors(0)=(R=255,G=64,B=64,A=255)
     TeamColors(1)=(R=90,G=153,B=198,A=255)
     TextColors(0)=(R=255,G=50,B=50,A=255)
@@ -4487,6 +4710,7 @@ defaultproperties
     MARK_FLESHPOUND=1       // 0x01
     MARK_SCRAKE=2           // 0x02
     MARK_LASTZED=3          // 0x03
+    MARK_BOSS=4             // 0x04
     MARK_PLAYER=16          // 0x10
     MARK_MEDIC=17           // 0x11
     MARK_CAMP=32            // 0x20
@@ -4509,4 +4733,5 @@ defaultproperties
     ObjBackground=Texture'KFStoryGame_Tex.HUD.Hud_Rectangel_W_Stroke_Neutral'
     ObjProgressBar=Texture'KFStoryGame_Tex.HUD.Hud_Rectangle_W_Stroke_Fill'
     ObjStrike=Texture'KFStoryGame_Tex.HUD.Objective_Strikethrough'
+    HintDesiredAspectRatio=30
 }
