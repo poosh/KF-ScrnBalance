@@ -30,6 +30,12 @@
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+## v9.72.14
+- **FTGSO v2.02**: adjusted dialogues; dead players spawn at the trader.
+- Fixed an issue where Combat Medic received a discount on MAC10.
+- Healing messages moved back to the middle.
+- Removed duplicate healing messages.
+
 ## v9.72.12
 ### Follow The Guardian: Special Ops (FTGSO)
 - A new game mode by [nmmblez] that allows to play the Story Mode on regular survival maps.
@@ -76,7 +82,7 @@
 - Fixed **Flamethrower** bug where it continued firing after a nade throw, ignoring the fire trigger's release.
 - (Probably) Fixed a bug where a scoped weapon could get stuck at the aiming animation after weapon switching.
 - Yet another gun recoil fix during Zed Time.
-## ScrN Weapon Pak
+## ScrN Weapon Pack
 - Burning Zed performance optimization
 - **Brute** base health lowered 1000 => 990 to stop considering him a big zed.
 ## Horzine Technician

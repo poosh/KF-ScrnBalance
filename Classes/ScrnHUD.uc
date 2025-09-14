@@ -1825,15 +1825,6 @@ exec function SetHudStyle(byte value)
     bCoolHudLeftAlign = HudStyle == HUDSTL_COOL_LEFT;
     bCoolHud = bCoolHudLeftAlign || HudStyle == HUDSTL_COOL;
     class'ScrnVeterancyTypes'.default.bOldStyleIcons = HudStyle == HUDSTL_CLASSIC;
-
-    if (bCoolHudLeftAlign) {
-        class'ScrnHealMessage'.default.DrawPivot = DP_MiddleMiddle;
-        class'ScrnHealMessage'.default.PosX = 0.50;
-    }
-    else {
-        class'ScrnHealMessage'.default.DrawPivot = class'ScrnHealMessage'.default.OriginalDrawPivot;
-        class'ScrnHealMessage'.default.PosX = class'ScrnHealMessage'.default.OriginalPosX;
-    }
 }
 
 exec function ToggleHudStyle()

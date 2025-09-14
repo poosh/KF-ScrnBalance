@@ -2,9 +2,6 @@ class ScrnHealMessage extends CriticalEventPlus;
 
 var localized string strHeal, strHealedBy;
 
-var EDrawPivot OriginalDrawPivot;
-var float OriginalPosX, OriginalPosY;
-
 static function string GetString(
         optional int Switch,
         optional PlayerReplicationInfo RelatedPRI_1,
@@ -31,12 +28,7 @@ defaultproperties
     FontSize=0
     Lifetime=5
 
-    DrawPivot=DP_LowerLeft
-    PosX=0.09
-    PosY=0.93
-
-    // Ensure the Original* values match the default ones
-    OriginalDrawPivot=DP_LowerLeft
-    OriginalPosX=0.09
-    OriginalPosY=0.93
+    DrawPivot=DP_MiddleMiddle
+    PosX=0.50
+    PosY=0.75
 }

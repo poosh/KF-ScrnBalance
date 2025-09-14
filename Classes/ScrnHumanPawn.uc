@@ -614,6 +614,12 @@ simulated function ChangedWeapon()
 {
     local KFWeapon W;
 
+    W = KFWeapon(Weapon);
+    if (W != none && W.bAimingRifle) {
+        W.ZoomOut(false);
+        W.ServerZoomOut(false);
+    }
+
     super(KFPawn).ChangedWeapon();
 
     W = KFWeapon(Weapon);
@@ -3230,8 +3236,7 @@ function CheckZoom()
         return;
 
     W = KFWeapon(Weapon);
-    if (W != none && W.bHasAimingMode && !W.bAimingRifle && !W.bZoomingIn
-            && W.ClientState == WS_ReadyToFire && W.ClientGrenadeState == GN_None) {
+    if (W != none && W.bHasAimingMode && !W.bAimingRifle && !W.bZoomingIn && PendingWeapon == none) {
         W.IronSightZoomIn();
     }
 }

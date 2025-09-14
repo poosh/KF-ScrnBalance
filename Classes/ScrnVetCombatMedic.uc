@@ -111,8 +111,12 @@ static function float AddExtraAmmoFor(KFPlayerReplicationInfo KFPRI, Class<Ammun
 
 static function float GetCostScaling(KFPlayerReplicationInfo KFPRI, class<Pickup> Item)
 {
+    if ( Item == class'ScrnMAC10Pickup' )
+        return 1.0; // price lowered to $200, no discount needed
+
     if ( ClassIsChildOf(Item, class'KatanaPickup') )
         return class'ScrnVetBerserker'.static.GetCostScaling(KFPRI, Item);
+
     return super.GetCostScaling(KFPRI, Item);
 }
 

@@ -12,6 +12,15 @@ simulated function PostBeginPlay()
     AmmoCharge[0]=0; // prevent dropping exploit
 }
 
+simulated function ClientSuccessfulHeal(String HealedName)
+{
+    SyringeFire(FireMode[0]).SuccessfulHeal();
+    // Replaced by ScrnHealMessage
+    // if( PlayerController(Instigator.Controller) != none ) {
+    //     PlayerController(Instigator.controller).ClientMessage(SuccessfulHealMessage$HealedName, 'CriticalEvent');
+    // }
+}
+
 
 defaultproperties
 {
