@@ -30,11 +30,12 @@
 ## VERSION 9
 
 -------------------------------------------------------------------------------
-## v9.72.14
+## v9.72.15
 - **FTGSO v2.02**: adjusted dialogues; dead players spawn at the trader.
 - Fixed an issue where Combat Medic received a discount on MAC10.
 - Healing messages moved back to the middle.
 - Removed duplicate healing messages.
+- Fixed random player spawn when `bStartAtTrader=true` and `bOpenTrader=false`.
 
 ## v9.72.12
 ### Follow The Guardian: Special Ops (FTGSO)

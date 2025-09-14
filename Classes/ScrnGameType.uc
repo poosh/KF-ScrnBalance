@@ -329,6 +329,7 @@ function InitGameVolumes()
             ShopList[ShopList.Length] = SH;
         }
     }
+    log("The maps has " $ ShopList.Length $ " shops", class.name);
 
     foreach DynamicActors(class'ZombieVolume', ZVol) {
         if (!ZVol.bObjectiveModeOnly || bUsingObjectiveMode) {
@@ -339,7 +340,7 @@ function InitGameVolumes()
     foreach DynamicActors(class'KFZombieZoneVolume', BVol) {
         for (N = Level.NavigationPointList; N != none; N = N.nextNavigationPoint) {
             if (N.class == class'PathNode' && BVol.Encompasses(N)) {
-                log(BVol.name $ " encompasses " $ N.name);
+                log(BVol.name $ " encompasses " $ N.name, class.name);
                 InvalidatePathTarget(N);
             }
         }
@@ -2580,9 +2581,9 @@ function NavigationPoint FindPlayerStartShop(Controller Player, byte TeamIndex)
 
         i = rand(PlayerSpawnShopList.length);
         shop = PlayerSpawnShopList[i];
+        PlayerSpawnShopList.remove(i, 1);
         if (ScrnGameLength.Wave.bTraderArrow && ShopList.Length > 3 && shop == TeamShop(TeamIndex)) {
             // do not offer the next trader if the map has more than 3 shops
-            PlayerSpawnShopList.remove(i, 1);
             return FindPlayerStartShop(Player, TeamIndex);
         }
     }
