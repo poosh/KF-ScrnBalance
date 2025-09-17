@@ -18,8 +18,9 @@ function PostBeginPlay()
 
     mut = class'ScrnBalance'.default.Mut;
     if (mut.BurnMech != none) {
-        // faster speed => faster burning
+        // faster speed => faster burning, but keet the same overall duration
         mut.BurnMech.TimeScale = 1.0 / SpeedMod;
+        mut.BurnMech.BurnPeriod *= SpeedMod;
     }
 }
 

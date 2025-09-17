@@ -30,6 +30,22 @@
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+## v9.72.16
+- An attemt to fix New Doom occasional server crashes: last zeds remaining are killed in batches (4 zeds per game tick) instead of killing all at once.
+- Fixed an issue where last zeds were never auto-killed.
+- *ScrnBalanceSrv.ini*: Fixed `bVoteKillCheckVisibility`
+- **Speed Boost** - increased burn DoT to matched the base/slow game.
+### Code Changes
+- Optimized explosive damage code. Introduced `ScrnExplosiveFunc` class.
+- Indroduced base classes for all grenades and rockets: `ScrnGrenadeProjectile` and `ScrnRocketProjectile`
+### ScrN Weapon Pack
+- **Hopmine**: fixed speed calculation issue when flying to the target, which previously caused the target to be missed too often.
+- Hopmines still cannot catch enraged zeds.
+- **MTs-255**: fixed the point-blank headshot detection bug.
+- MTs-255 projectile now extends `ScrnRocketProjectile`.
+### Doom 3
+- Optimized buring Doom demon performance (the same fix as for ScrN Zed Pack)
+
 ## v9.72.15
 - **FTGSO v2.02**: adjusted dialogues; dead players spawn at the trader.
 - Fixed an issue where Combat Medic received a discount on MAC10.
@@ -56,7 +72,7 @@
 - Fire projectiles and burning zeds do not cast dynamic light if World Detail is set to Low, or the framerate is below `MinDesiredFrameRate` (*KillingFloor.ini*)
 - Reduced the number of dynamic lights for World Detail = Normal.
 - World Detail = High has also been optimized, but without sacrificing visual fidelity.
-- Burning Zed optimization currently applies to ScrN Weapon Pak only.
+- Burning Zed optimization currently applies to ScrN Zed Pack only.
 ### Follow The Guardian
 - Players outside the base receive the "Get back to the base" warning even when others are still at the base.
 - `MVOTE END WAVE` is allowed now.

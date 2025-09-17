@@ -1174,7 +1174,7 @@ State MatchInProgress
             if ( NumMonsters > 0 && NumMonsters < 10 ) {
                 if ( bWaveEnding ) {
                     if ( --WaveEndingCountDown <= 0) {
-                        KillRemainingZeds(true);
+                        KillZeds();
                         bWaveEnding = false;
                     }
                     // tell about disabling Human Damage 3 seconds after auto-end message

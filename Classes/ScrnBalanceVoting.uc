@@ -1152,8 +1152,8 @@ function bool CanEndWave()
             return false;
 
         if ( Mut.bVoteKillCheckVisibility ) {
-            foreach VisibleCollidingActors(class'KFHumanPawn', P, 1000) {
-                if ( P.Health > 0 && PlayerController(P.Controller) != none && MC.CanSee(P) )
+            foreach M.VisibleCollidingActors(class'KFHumanPawn', P, 1000, M.Location) {
+                if (P.Health > 0 && PlayerController(P.Controller) != none && P.Controller.CanSee(M))
                     return false;
             }
         }

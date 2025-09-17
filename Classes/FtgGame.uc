@@ -516,12 +516,10 @@ function ShowPathToBase(PlayerController P)
     }
 }
 
-function KillRemainingZeds(bool bForceKill)
+function KillZeds()
 {
-    super.KillRemainingZeds(bForceKill);
-    if (bForceKill) {
-        KillAllStinkyClots();
-    }
+    super.KillZeds();
+    KillAllStinkyClots();
 }
 
 function KillAllStinkyClots()

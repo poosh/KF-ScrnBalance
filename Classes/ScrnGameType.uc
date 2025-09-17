@@ -89,6 +89,8 @@ var transient float ZedLastSpawnTime, LastZedKillTime;
 var transient byte RemainingZedHandleCounter;
 var transient int NextSquadTarget[2];
 var float KillRemainingZedsCooldown;  // time after LastSpawnTime when games tries to kill the remaining zeds
+var int MaxSuicideAtOnce;
+var transient bool bKillZeds;
 var int MaxSpawnAttempts, MaxSpecialSpawnAttempts; // maximum spawn attempts before deleting the squad
 var float SpawnRatePlayerMod;  // per-player zed spawn rate increase
 var int WavePct;  // Current wave's percentage to the final wave.
@@ -972,10 +974,15 @@ function DramaticEvent(float Chance, optional float DesiredZedTimeDuration)
         return;
 
     Chance *= ZedTimeChanceMult;
+    TimeSinceLastEvent = Level.TimeSeconds - LastZedTimeEvent;
 
     switch (ZedTimeTrigger) {
         case ZT_Bucket:
         case ZT_HiddenBucket:
+            // disable bucket fill shortly after the last ZT
+            if (TimeSinceLastEvent < 5.0)
+                return;
+
             ZedTimeValue += Chance;
             if (ZedTimeTrigger != ZT_HiddenBucket) {
                 ScrnGRI.ZedTimeValue = ZedTimeValue * ScrnGRI.ZedTimeValueScale;
@@ -993,8 +1000,6 @@ function DramaticEvent(float Chance, optional float DesiredZedTimeDuration)
         // ZT_Default
         // ZT_Random
         default:
-            TimeSinceLastEvent = Level.TimeSeconds - LastZedTimeEvent;
-
             // Don't go in slomo if we were just IN slomo
             if (TimeSinceLastEvent < 10.0) {
                 return;
@@ -1396,40 +1401,70 @@ function ZedTossCash(KFMonster M, EDropKind DropKind, optional int Amount)
 
 exec function KillZeds()
 {
-    local KFMonster M;
-    local array <KFMonster> Monsters;
-    local int i;
+    local Controller C, Next;
+    local int count;
     local bool bZedDropDoshOriginal;
 
     bZedDropDoshOriginal = bZedDropDosh;
     bZedDropDosh = false;
-
-    // fill the array first, because direct M killing may screw up DynamicActors() iteration
-    // -- PooSH
-    foreach DynamicActors(class 'KFMonster', M) {
-        if(M.Health > 0 && !M.bDeleteMe)
-            Monsters[Monsters.length] = M;
+    for (C = Level.ControllerList; C != none; C = Next) {
+        // Killing a zed removes it from the controller list.
+        // Hence, we need to save the next reference.
+        Next = C.NextController;
+        if (KFMonster(C.Pawn) != none && C.Pawn.Health > 0) {
+            C.Pawn.Suicide();
+            if (++count >= MaxSuicideAtOnce) {
+                break;
+            }
+        }
     }
-    for ( i=0; i<Monsters.length; ++i ) {
-        Monsters[i].Died(Monsters[i].Controller, class'DamageType', Monsters[i].Location);
-    }
-
     bZedDropDosh = bZedDropDoshOriginal;
+    bKillZeds = count > 0;
 }
 
-function KillRemainingZeds(bool bForceKill)
+function TryKillRemainingZeds()
 {
-    local Controller C;
-    local array<KFMonster> SuicideSquad;
-    local int i;
+    local Controller C, Next;
+    local KFMonster M;
+    local KFMonsterController MC;
+    local KFHumanPawn Human;
+    local int count;
 
-    for ( C = Level.ControllerList; C != None; C = C.NextController ) {
-        if ( KFMonsterController(C)!=None && (bForceKill || KFMonsterController(C).CanKillMeYet()) )
-            SuicideSquad[SuicideSquad.length] = KFMonster(C.Pawn);
-    }
+    for (C = Level.ControllerList; C != None; C = Next) {
+        Next = C.NextController;
+        M = KFMonster(C.Pawn);
+        if (M == none || M.Health <= 0)
+            continue;
 
-    for ( i = 0; i < SuicideSquad.length; ++i ) {
-        SuicideSquad[i].Suicide();
+        MC = KFMonsterController(C);
+        if (MC == none)
+            continue;
+
+        // The KFMonsterController.CanKillMeYet doesn't work since it checks network relevance,
+        // but last marked zeds are always relevant.
+        // The exception is Doom3Controller which handles it properly.
+        if (!M.bAlwaysRelevant || MC.IsA('Doom3Controller') || MC.IsA('BossZombieController')) {
+            if (!MC.CanKillMeYet())
+                continue;
+        }
+
+        if (RemainingZedHandleCounter < 300) {
+            if (RemainingZedHandleCounter < 30 || (M.ScoringValue >= 50 && RemainingZedHandleCounter < 120))
+                continue;
+
+            foreach M.VisibleCollidingActors(class'KFHumanPawn', Human, 2000, M.Location) {
+                if (Human.Health > 0 && PlayerController(Human.Controller) != none
+                        && Human.Controller.LineOfSightTo(M)) {
+                    // players need to kill visible zeds first, then we continue with killing the rest
+                    return;
+                }
+            }
+        }
+
+        // if reached here, the zed can be killed
+        M.Suicide();
+        if (++count >= MaxSuicideAtOnce)
+            break;
     }
 }
 
@@ -1477,8 +1512,8 @@ function HandleRemainingZeds()
         // marking is unreliable, so repeat it multiple times
         MarkRemainingZeds();
     }
-    else if (RemainingZedHandleCounter >= 30) {
-        KillRemainingZeds(false);
+    else if (RemainingZedHandleCounter >= 15) {
+        TryKillRemainingZeds();
     }
 }
 
@@ -3976,7 +4011,7 @@ State MatchInProgress
                     DoWaveEnd();
                 }
                 else if (NumMonsters <= 5 && Level.TimeSeconds > ZedLastSpawnTime + KillRemainingZedsCooldown) {
-                    KillRemainingZeds(false);
+                    TryKillRemainingZeds();
                 }
 
             }
@@ -4154,7 +4189,11 @@ State MatchInProgress
             ZVolCheckPlayers(fmax(1.0, ceil(ZedSpawnList.length * dt / ZVolVisibilityCheckPeriod)));
         }
 
-        if ( Level.TimeSeconds > NextMonsterTime && bWaveInProgress && !bWaveBossInProgress
+        if (bKillZeds) {
+            KillZeds();
+            NextMonsterTime += 1.0;
+        }
+        else if (Level.TimeSeconds > NextMonsterTime && bWaveInProgress && !bWaveBossInProgress
                 && TotalMaxMonsters > 0 && NumMonsters < MaxMonsters
                 && (NumMonsters + 4 <= MaxMonsters
                     || (NextSpawnSquad.length > 0 && NumMonsters + NextSpawnSquad.length <= MaxMonsters)) )
@@ -4473,6 +4512,7 @@ defaultproperties
     MaxSpecialSpawnAttempts=10
     SpawnRatePlayerMod=0.25
     KillRemainingZedsCooldown=15.0
+    MaxSuicideAtOnce=4
     // SpawnPeriod may be further limited by KFLevelRules
     BoringStages[0]=(SpawnPeriod=3.0,MinSpawnTime=1.5,ZVolUsageTime=20)
     BoringStages[1]=(SpawnPeriod=1.0,MinSpawnTime=1.0,ZVolUsageTime=10)
