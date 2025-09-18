@@ -8,7 +8,7 @@ static function int HurtRadius(Projectile Proj, float Damage, float DamageRadius
     local float DamScale, dist;
     local vector dir;
 
-    if (Damage < 1.0)
+    if (Proj == none || Damage < 1.0)
         return 0;
     if (Proj.bHurtEntry)
         return 0;

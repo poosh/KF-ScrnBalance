@@ -30,7 +30,7 @@
 ## VERSION 9
 
 -------------------------------------------------------------------------------
-## v9.72.16
+## v9.72.17
 - An attemt to fix New Doom occasional server crashes: last zeds remaining are killed in batches (4 zeds per game tick) instead of killing all at once.
 - Fixed an issue where last zeds were never auto-killed.
 - *ScrnBalanceSrv.ini*: Fixed `bVoteKillCheckVisibility`
@@ -44,7 +44,8 @@
 - **MTs-255**: fixed the point-blank headshot detection bug.
 - MTs-255 projectile now extends `ScrnRocketProjectile`.
 ### Doom 3
-- Optimized buring Doom demon performance (the same fix as for ScrN Zed Pack)
+- Optimized buring demon performance (the same fix as for ScrN Zed Pack)
+- Optimized demon teleportation
 
 ## v9.72.15
 - **FTGSO v2.02**: adjusted dialogues; dead players spawn at the trader.
