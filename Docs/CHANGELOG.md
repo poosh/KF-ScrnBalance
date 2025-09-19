@@ -30,7 +30,7 @@
 ## VERSION 9
 
 -------------------------------------------------------------------------------
-## v9.72.17
+## v9.72.18
 - An attemt to fix New Doom occasional server crashes: last zeds remaining are killed in batches (4 zeds per game tick) instead of killing all at once.
 - Fixed an issue where last zeds were never auto-killed.
 - *ScrnBalanceSrv.ini*: Fixed `bVoteKillCheckVisibility`
@@ -43,6 +43,14 @@
 - Hopmines still cannot catch enraged zeds.
 - **MTs-255**: fixed the point-blank headshot detection bug.
 - MTs-255 projectile now extends `ScrnRocketProjectile`.
+### ScrN Horzine Technicial
+- Removed the workaround that prevented **ZED Gun MK2** from zapping zeds at point-blank.
+- Fixed a bug where **ZED Gun MK2** did double zap at point-blank.
+- Optimized primary projectiles of both ZED Guns.
+- ZED Gun primary projectiles deal extra headshot damage to FP.
+- Fixed an issue where bosses got incorrect zap threshold (they were too easy to zap).
+### ScrN Zed Pack
+- Adjusted zed zap thresholds.
 ### Doom 3
 - Optimized buring demon performance (the same fix as for ScrN Zed Pack)
 - Optimized demon teleportation

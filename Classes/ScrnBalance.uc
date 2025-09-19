@@ -2272,13 +2272,6 @@ function bool CheckReplacement(Actor Other, out byte bSuperRelevant)
 
 function SetupMonster(KFMonster M)
 {
-    if ( M.default.Health >= 1000 ) {
-        // harder zapping
-        if ( ZombieFleshPound(M) != none )
-            M.ZapThreshold = 3.75;
-        else
-            M.ZapThreshold = 1.75;
-    }
     if (bLouderZeds) {
         // KFMonster.default.SoundVolume=50, which is ridiculously low
         M.SoundVolume = max(m.SoundVolume, 150);
@@ -3316,7 +3309,7 @@ function GameResumed()
 
 defaultproperties
 {
-    VersionNumber=97217
+    VersionNumber=97218
     GroupName="KF-Scrn"
     FriendlyName="ScrN Balance"
     Description="Total rework of KF1 to make it modern and the best tactical coop in the world while sticking to the roots of the original."
