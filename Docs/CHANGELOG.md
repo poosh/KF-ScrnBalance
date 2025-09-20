@@ -30,12 +30,13 @@
 ## VERSION 9
 
 -------------------------------------------------------------------------------
-## v9.72.21
+## v9.72.22
 - An attemt to fix New Doom occasional server crashes.
 - Fixed an issue where last zeds were never auto-killed.
 - *ScrnBalanceSrv.ini*: Fixed `bVoteKillCheckVisibility`
 - **Speed Boost** - increased burn DoT to matched the base/slow game.
 - Console commands `svol` and `mvol` - shortcuts for `SoundVolume` and `MusicVolume`
+- Invited players (`mvote invite`) receive an invitation dialog to join the game.
 ### Code Changes
 - Optimized explosive damage code. Introduced `ScrnExplosiveFunc` class.
 - Indroduced base classes for all grenades and rockets: `ScrnGrenadeProjectile` and `ScrnRocketProjectile`
@@ -57,6 +58,7 @@
 ### Doom 3
 - Optimized buring demon performance (the same fix as for ScrN Zed Pack)
 - Optimized demon teleportation
+- Increased zap damage multiplier to demons who are invulnerable to burn (Imp, Archvile, Helltime)
 
 ## v9.72.15
 - **FTGSO v2.02**: adjusted dialogues; dead players spawn at the trader.

@@ -38,6 +38,7 @@ static function ScrnMessageBoxCheck ShowMe(ScrnPlayerController PC, string Title
     result.wasChecked = bChecked;
 
     if (CheckboxCaption != "") {
+        CheckboxCaption = class'ScrnF'.static.ParseColorTags(CheckboxCaption);
         result.ch.SetCaption(CheckboxCaption);
         result.ch.SetHint(CheckboxCaption);
     }

@@ -7,6 +7,7 @@ delegate onMsgClose(ScrnMessageBox msg, bool bCancel);
 static function ScrnMessageBox ShowMessage(ScrnPlayerController PC, string Title, string Message)
 {
     local GUIController guictrl;
+    local ScrnMessageBox msgbox;
 
     if (PC == none || PC.Player == none)
         return none;
@@ -15,14 +16,25 @@ static function ScrnMessageBox ShowMessage(ScrnPlayerController PC, string Title
     if (guictrl == none)
         return none;
 
+    Title = class'ScrnF'.static.ParseColorTags(Title);
+    Message = class'ScrnF'.static.ParseColorTags(Message);
+
     guictrl.OpenMenu(string(default.class), Title, Message);
-    return ScrnMessageBox(guictrl.FindMenuByClass(default.class));
+    msgbox = ScrnMessageBox(guictrl.FindMenuByClass(default.class));
+    if (msgbox == none)
+        return none;
+
+    msgbox.b_OK.Caption = class'ScrnF'.static.ParseColorTags(msgbox.b_OK.Caption);
+    msgbox.b_Cancel.Caption = class'ScrnF'.static.ParseColorTags(msgbox.b_Cancel.Caption);
+    return msgbox;
 }
 
 function Close(bool bCancel)
 {
     onMsgClose(self, bCancel);
-    Controller.CloseMenu(bCancel);
+    if (Controller.ActivePage == self) {
+        Controller.CloseMenu(bCancel);
+    }
 }
 
 function bool InternalOnClick(GUIComponent Sender)
@@ -63,6 +75,7 @@ defaultproperties
         WinLeft=0.1
         WinWidth=0.20
         bVisible=false
+        TabOrder=1
         OnClick=InternalOnClick
         OnKeyEvent=CancelButton.InternalOnKeyEvent
     End Object

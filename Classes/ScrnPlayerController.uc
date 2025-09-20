@@ -174,7 +174,7 @@ delegate OnTraderDoshRequest(PlayerReplicationInfo Sender, string Msg);
 replication
 {
     reliable if ( Role == ROLE_Authority )
-        ClientMonsterBlamed, ClientPostLogin, ClientMark;
+        ClientMonsterBlamed, ClientPostLogin, ClientMark, ClientInvite;
 
     unreliable if ( Role == ROLE_Authority )
         ClientPlayerDamaged, ClientFlareDamage;
@@ -3566,6 +3566,11 @@ function ServerMark(Actor A)
             PC.ClientMark(KFPRI, A, ALocation, Caption, MarkType);
         }
     }
+}
+
+function ClientInvite()
+{
+    class'ScrnGuiInvitedDialog'.static.ShowMe(self);
 }
 
 state Spectating

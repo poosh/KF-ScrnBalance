@@ -892,6 +892,10 @@ function ApplyVoteValue(int VoteIndex, string VoteValue)
             break;
         case VOTE_INVITE:
             Mut.ScrnGT.InvitePlayer(VotingHandler.VotedPlayer);
+            if (ScrnPlayerController(VotingHandler.VotedPlayer) != none
+                    && VotingHandler.VotedPlayer.PlayerReplicationInfo.bOnlySpectator) {
+                ScrnPlayerController(VotingHandler.VotedPlayer).ClientInvite();
+            }
             break;
         case VOTE_FF:
             Mut.KF.FriendlyFireScale = float(VoteValue)/100.0;
