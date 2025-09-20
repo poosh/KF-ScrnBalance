@@ -13,12 +13,12 @@ function Close(bool bCancel)
 {
     local ScrnPlayerController ScrnPC;
 
+    ScrnPC = ScrnPlayerController(PlayerOwner());
+
     Controller.CloseMenu(bCancel);
 
     if (!bCancel) {
-        ScrnPC = ScrnPlayerController(PlayerOwner());
-        ScrnPC.bForceDelayedRestart = false;
-        ScrnPC.BecomeActivePlayer();
+        ScrnPC.Ready();
         ScrnPC.ShowMenu();
     }
 }
