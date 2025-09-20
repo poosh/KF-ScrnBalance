@@ -21,8 +21,9 @@ defaultproperties
     Speed=1000.000000
     MaxSpeed=1000.000000
     bDoubleDamageOnImpact=false
-    Damage=1.5  // ZapAmount
+    Damage=150  // ZapAmount * 100
     DamageRadius=300.000000
+    ImpactDamage=0
     MyDamageType=Class'KFMod.DamTypeZEDGunMKII'
     ExplosionDecal=Class'KFMod.FlameThrowerBurnMark_Medium'
     LightType=LT_Steady

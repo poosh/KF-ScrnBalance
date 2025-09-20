@@ -1072,6 +1072,15 @@ exec function SoundVolume(coerce string vol)
     }
 }
 
+exec function mvol(coerce string vol)
+{
+    MusicVolume(vol);
+}
+
+exec function svol(coerce string vol)
+{
+    SoundVolume(vol);
+}
 
 function bool IsAimingToZedHead()
 {

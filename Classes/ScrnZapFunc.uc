@@ -8,7 +8,7 @@ static function DealDamage(Projectile Proj, Actor Victim, int Damage, vector Hit
     M = KFMonster(Victim);
     if (M != none) {
         // ignore damage scale and always apply full zap
-        M.SetZapped(Proj.Damage, Proj.Instigator);
+        M.SetZapped(Proj.Damage * 0.01, Proj.Instigator);
         if (M.bZapped) {
             // longer stay in zapped state after the explosion
             M.RemainingZap *= 1.50;

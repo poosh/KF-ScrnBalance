@@ -30,11 +30,12 @@
 ## VERSION 9
 
 -------------------------------------------------------------------------------
-## v9.72.20
+## v9.72.21
 - An attemt to fix New Doom occasional server crashes.
 - Fixed an issue where last zeds were never auto-killed.
 - *ScrnBalanceSrv.ini*: Fixed `bVoteKillCheckVisibility`
 - **Speed Boost** - increased burn DoT to matched the base/slow game.
+- Console commands `svol` and `mvol` - shortcuts for `SoundVolume` and `MusicVolume`
 ### Code Changes
 - Optimized explosive damage code. Introduced `ScrnExplosiveFunc` class.
 - Indroduced base classes for all grenades and rockets: `ScrnGrenadeProjectile` and `ScrnRocketProjectile`
@@ -45,8 +46,9 @@
 - MTs-255 projectile now extends `ScrnRocketProjectile`.
 ### ScrN Horzine Technicial
 - Fixed perk XP progress for zapping zeds.
-- Removed the workaround that prevented **ZED Gun MK2** from zapping zeds at point-blank.
-- Fixed a bug where **ZED Gun MK2** did double zap at point-blank.
+- **ZED Gun MK2**: Removed the workaround that prevented  from zapping zeds at point-blank.
+- **ZED Gun MK2**: Fixed a bug where the secondary fire did double zap at point-blank.
+- **ZED Gun MK2**: Increased zap radius 6 => 8m.
 - Optimized primary projectiles of both ZED Guns.
 - ZED Gun primary projectiles deal extra headshot damage to FP.
 - Fixed an issue where bosses got incorrect zap threshold (they were too easy to zap).
