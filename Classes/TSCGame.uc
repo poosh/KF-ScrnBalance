@@ -1075,6 +1075,25 @@ protected function StartTourney()
     bVoteHDmg = false;
 }
 
+function SetupRepLink(ScrnClientPerkRepLink R)
+{
+    local int i;
+    local string s;
+
+    super.SetupRepLink(R);
+
+    if (TSCGRI.bNoTeamSkins)
+        return;
+
+    for (i = R.CustomChars.length - 1; i >= 0; --i)  {
+        s = R.CustomChars[i];
+        if (!class'ScrnPlayerController'.static.IsRedCharacter(s) &&
+                !class'ScrnPlayerController'.static.IsBlueCharacter(s)) {
+            R.CustomChars.remove(i, 1);
+        }
+    }
+}
+
 function ShowPathTo(PlayerController P, int DestinationIndex)
 {
     if (!bNoBases && DestinationIndex == 1)

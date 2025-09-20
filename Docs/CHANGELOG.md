@@ -30,10 +30,13 @@
 ## VERSION 9
 
 -------------------------------------------------------------------------------
-## v9.72.22
+## v9.72.24
 - An attemt to fix New Doom occasional server crashes.
 - Fixed an issue where last zeds were never auto-killed.
 - *ScrnBalanceSrv.ini*: Fixed `bVoteKillCheckVisibility`
+- *ScrnMapInfo.ini*: Enhanced zed spawns on **FilthsCross**.
+- **TSC**: Fixed Left 4 Dead character availability.
+- **TSC**: Incompatible custom characters are not shown on the character selection list.
 - **Speed Boost** - increased burn DoT to matched the base/slow game.
 - Console commands `svol` and `mvol` - shortcuts for `SoundVolume` and `MusicVolume`
 - Invited players (`mvote invite`) receive an invitation dialog to join the game.

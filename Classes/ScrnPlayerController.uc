@@ -81,13 +81,11 @@ var string ProfilePageClassString;
 var string TSCLobbyMenuClassString;
 var config bool bTSCAdvancedKeyBindings; // pressing altfire while carrying the guardian gnome, sets up the base
 var config bool bTSCAutoDetectKeys; // turns off bTSCAdvancedKeyBindings if a dedicated key is bound for SetupBase
+var string DefaultRedCharacter, DefaultBlueCharacter;
 var config string RedCharacter, BlueCharacter;
 var config Color GlowColorSingleTeam, GlowColorRed, GlowColorBlue;
 var transient float LastBaseMarkTime;
-
-// not replicated yet
-// todo: find an efficient way to replicate
-var array<string> RedCharacters, BlueCharacters;
+var array<string> RedCharacters, BlueCharacters;  // MUST BE SORTED!
 
 var class<ScrnCustomPRI> CustomPlayerReplicationInfoClass;
 var ScrnCustomPRI ScrnCustomPRI;
@@ -2438,7 +2436,8 @@ simulated function bool IsTeamCharacter(string CharacterName)
     if ( CharacterName == "" )
         return false;
 
-    if ( Level.GRI.bNoTeamSkins || TSCGameReplicationInfo(Level.GRI) == none || PlayerReplicationInfo == none || PlayerReplicationInfo.Team == none )
+    if ( Level.GRI.bNoTeamSkins || TSCGameReplicationInfo(Level.GRI) == none || PlayerReplicationInfo == none
+            || PlayerReplicationInfo.Team == none )
         return true; // no team = any character can be used
 
     if ( PlayerReplicationInfo.Team.TeamIndex == 0 )
@@ -2449,32 +2448,14 @@ simulated function bool IsTeamCharacter(string CharacterName)
     return false;
 }
 
-simulated function bool IsRedCharacter(string CharacterName)
+static function bool IsRedCharacter(string CharacterName)
 {
-    local int i;
-
-    if ( CharacterName == "" )
-        return false;
-
-    for ( i=0; i<RedCharacters.Length; ++i )
-        if ( RedCharacters[i] ~= CharacterName )
-            return true;
-
-    return false;
+    return class'ScrnF'.static.BinarySearchStr(default.RedCharacters, caps(CharacterName)) != -1;
 }
 
-simulated function bool IsBlueCharacter(string CharacterName)
+static function bool IsBlueCharacter(string CharacterName)
 {
-    local int i;
-
-    if ( CharacterName == "" )
-        return false;
-
-    for ( i=0; i<BlueCharacters.Length; ++i )
-        if ( BlueCharacters[i] ~= CharacterName )
-            return true;
-
-    return false;
+    return class'ScrnF'.static.BinarySearchStr(default.BlueCharacters, caps(CharacterName)) != -1;
 }
 
 exec function ChangeCharacter(string newCharacter, optional string inClass)
@@ -2513,13 +2494,13 @@ simulated function bool ValidateCharacter(out string CharacterName)
         if ( RedCharacter != "" && IsRedCharacter(RedCharacter) )
             CharacterName = RedCharacter; // only on client side
         else
-            CharacterName = RedCharacters[0];
+            CharacterName = DefaultRedCharacter;
     }
     else if ( PlayerReplicationInfo.Team.TeamIndex == 1 ) {
         if ( BlueCharacter != "" && IsBlueCharacter(BlueCharacter) )
             CharacterName = BlueCharacter; // only on client side
         else
-            CharacterName = BlueCharacters[0];
+            CharacterName = DefaultBlueCharacter;
     }
     return false;
 }
@@ -4160,6 +4141,8 @@ defaultproperties
     MyMusic(39)=(PL=2,Wave=11,Song="EGT-SignOfEvil",Artist="elguitarTom",Title="Sign Of Evil")
 
     // TSC
+    DefaultRedCharacter="Pyro_Red"
+    DefaultBlueCharacter="Pyro_Blue"
     RedCharacter="Pyro_Red"
     BlueCharacter="Pyro_Blue"
     bNotifyLocalPlayerTeamReceived=True
@@ -4168,69 +4151,70 @@ defaultproperties
     GlowColorRed=(R=128,G=0,B=0)
     GlowColorBlue=(R=0,G=64,B=128)
 
-    RedCharacters(0)="Pyro_Red"
-    RedCharacters(1)="Agent_Wilkes"
-    RedCharacters(2)="Ash_Harding"
-    RedCharacters(3)="Chopper_Harris"
-    RedCharacters(4)="Corporal_Lewis"
-    RedCharacters(5)="Dave_The_Butcher_Roberts"
-    RedCharacters(6)="DJ_Scully"
-    RedCharacters(7)="Dr_Gary_Glover"
-    RedCharacters(8)="FoundryWorker_Aldridge"
-    RedCharacters(9)="Harold_Hunt"
-    RedCharacters(10)="Harold_Lott"
-    RedCharacters(11)="Kerry_Fitzpatrick"
-    RedCharacters(12)="Kevo_Chav"
-    RedCharacters(13)="KF_Soviet"
-    RedCharacters(14)="Lieutenant_Masterson"
-    RedCharacters(15)="Mrs_Foster"
-    RedCharacters(16)="Mr_Foster"
-    RedCharacters(17)="Paramedic_Alfred_Anderson"
-    RedCharacters(18)="Police_Constable_Briar"
-    RedCharacters(19)="Police_Sergeant_Davin"
-    RedCharacters(20)="Private_Schnieder"
-    RedCharacters(21)="Reverend_Alberts"
-    RedCharacters(22)="Ricky_Vegas"
-    RedCharacters(23)="Samuel_Avalon"
-    RedCharacters(24)="Security_Officer_Thorne"
-    RedCharacters(25)="Sergeant_Powers"
-    RedCharacters(26)="Shadow_Ferret"
-    RedCharacters(27)="Trooper_Clive_Jenkins"
-    RedCharacters(28)="Mr_Magma"
-    RedCharacters(29)="Ms_Clamley"
-    RedCharacters(30)="Namvet"  // L4D1 Bill
-    RedCharacters(31)="Manager"  // L4D1 Louis
-    RedCharacters(32)="Teenangst"  // L4D1 Zoey
-    RedCharacters(33)="Biker"  // L4D1 Francis
+    // MUST BE SORTED!
+    RedCharacters( 0)="AGENT_WILKES"
+    RedCharacters( 1)="ASH_HARDING"
+    RedCharacters( 2)="CHOPPER_HARRIS"
+    RedCharacters( 3)="CORPORAL_LEWIS"
+    RedCharacters( 4)="DAVE_THE_BUTCHER_ROBERTS"
+    RedCharacters( 5)="DJ_SCULLY"
+    RedCharacters( 6)="DR_GARY_GLOVER"
+    RedCharacters( 7)="FOUNDRYWORKER_ALDRIDGE"
+    RedCharacters( 8)="HAROLD_HUNT"
+    RedCharacters( 9)="HAROLD_LOTT"
+    RedCharacters(10)="KERRY_FITZPATRICK"
+    RedCharacters(11)="KEVO_CHAV"
+    RedCharacters(12)="KF_SOVIET"
+    RedCharacters(13)="L4D_SURVIVORS.BIKER"  // L4D1 Francis
+    RedCharacters(14)="L4D_SURVIVORS.MANAGER"  // L4D1 Louis
+    RedCharacters(15)="L4D_SURVIVORS.NAMVET"  // L4D1 Bill
+    RedCharacters(16)="L4D_SURVIVORS.TEENANGST"  // L4D1 Zoey
+    RedCharacters(17)="LIEUTENANT_MASTERSON"
+    RedCharacters(18)="MR_FOSTER"
+    RedCharacters(19)="MR_MAGMA"
+    RedCharacters(20)="MRS_FOSTER"
+    RedCharacters(21)="MS_CLAMLEY"
+    RedCharacters(22)="PARAMEDIC_ALFRED_ANDERSON"
+    RedCharacters(23)="POLICE_CONSTABLE_BRIAR"
+    RedCharacters(24)="POLICE_SERGEANT_DAVIN"
+    RedCharacters(25)="PRIVATE_SCHNIEDER"
+    RedCharacters(26)="PYRO_RED"
+    RedCharacters(27)="REVEREND_ALBERTS"
+    RedCharacters(28)="RICKY_VEGAS"
+    RedCharacters(29)="SAMUEL_AVALON"
+    RedCharacters(30)="SECURITY_OFFICER_THORNE"
+    RedCharacters(31)="SERGEANT_POWERS"
+    RedCharacters(32)="SHADOW_FERRET"
+    RedCharacters(33)="TROOPER_CLIVE_JENKINS"
 
-    BlueCharacters(0)="Pyro_Blue"
-    BlueCharacters(1)="Baddest_Santa"
-    BlueCharacters(2)="Captian_Wiggins"
-    BlueCharacters(3)="ChickenNator"
-    BlueCharacters(4)="Commando_Chicken"
-    BlueCharacters(5)="Dr_Jeffrey_Tamm"
-    BlueCharacters(6)="DAR"
-    BlueCharacters(7)="Harchier_Spebbington"
-    BlueCharacters(8)="Harchier_Spebbington_II"
-    BlueCharacters(9)="Hayato_Tanaka"
-    BlueCharacters(10)="KF_German"
-    BlueCharacters(11)="LanceCorporal_Lee_Baron"
-    BlueCharacters(12)="Mike_Noble"
-    BlueCharacters(13)="Reaper"
-    BlueCharacters(14)="Reggie"
-    BlueCharacters(15)="Steampunk_Berserker"
-    BlueCharacters(16)="Steampunk_Commando"
-    BlueCharacters(17)="Steampunk_Demolition"
-    BlueCharacters(18)="Steampunk_DJ_Scully"
-    BlueCharacters(19)="Steampunk_Firebug"
-    BlueCharacters(20)="Steampunk_Medic"
-    BlueCharacters(21)="Steampunk_MrFoster"
-    BlueCharacters(22)="Steampunk_Mrs_Foster"
-    BlueCharacters(23)="Steampunk_Sharpshooter"
-    BlueCharacters(24)="Steampunk_Support_Specialist"
-    BlueCharacters(25)="Voltage"
-    BlueCharacters(26)="Gambler"  // L4D2 Nick
-    BlueCharacters(27)="Mechanic"  // L4D2 Ellis
-    BlueCharacters(28)="Coach"  // L4D2 Coach
-    BlueCharacters(29)="Producer"  // L4D2 Rochelle
+    BlueCharacters( 0)="BADDEST_SANTA"
+    BlueCharacters( 1)="CAPTIAN_WIGGINS"
+    BlueCharacters( 2)="CHICKENNATOR"
+    BlueCharacters( 3)="COMMANDO_CHICKEN"
+    BlueCharacters( 4)="DAR"
+    BlueCharacters( 5)="DR_JEFFREY_TAMM"
+    BlueCharacters( 6)="HARCHIER_SPEBBINGTON_II"
+    BlueCharacters( 7)="HARCHIER_SPEBBINGTON"
+    BlueCharacters( 8)="HAYATO_TANAKA"
+    BlueCharacters( 9)="KF_GERMAN"
+    BlueCharacters(10)="L4D_SURVIVORS.COACH"  // L4D2 Coach
+    BlueCharacters(11)="L4D_SURVIVORS.GAMBLER"  // L4D2 Nick
+    BlueCharacters(12)="L4D_SURVIVORS.MECHANIC"  // L4D2 Ellis
+    BlueCharacters(13)="L4D_SURVIVORS.PRODUCER"  // L4D2 Rochelle
+    BlueCharacters(14)="LANCECORPORAL_LEE_BARON"
+    BlueCharacters(15)="MIKE_NOBLE"
+    BlueCharacters(16)="PYRO_BLUE"
+    BlueCharacters(17)="REAPER"
+    BlueCharacters(18)="REGGIE"
+    BlueCharacters(19)="STEAMPUNK_BERSERKER"
+    BlueCharacters(20)="STEAMPUNK_COMMANDO"
+    BlueCharacters(21)="STEAMPUNK_DEMOLITION"
+    BlueCharacters(22)="STEAMPUNK_DJ_SCULLY"
+    BlueCharacters(23)="STEAMPUNK_FIREBUG"
+    BlueCharacters(24)="STEAMPUNK_MEDIC"
+    BlueCharacters(25)="STEAMPUNK_MRFOSTER"
+    BlueCharacters(26)="STEAMPUNK_MRS_FOSTER"
+    BlueCharacters(27)="STEAMPUNK_SHARPSHOOTER"
+    BlueCharacters(28)="STEAMPUNK_SUPPORT_SPECIALIST"
+    BlueCharacters(29)="VOLTAGE"
 }
