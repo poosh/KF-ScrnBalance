@@ -4243,6 +4243,8 @@ State MatchInProgress
         local KFPlayerReplicationInfo KFPRI;
         local bool bRespawnDeadPlayers;
 
+        log("Wave "$(WaveNum+1)$" ended at " $ ScrnBalanceMut.GameTimeStr(), 'ScrnBalance');
+
         RewardSurvivingPlayers();
 
         // Clear Trader Message status

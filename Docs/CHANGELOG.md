@@ -30,8 +30,8 @@
 ## VERSION 9
 
 -------------------------------------------------------------------------------
-## v9.72.18
-- An attemt to fix New Doom occasional server crashes: last zeds remaining are killed in batches (4 zeds per game tick) instead of killing all at once.
+## v9.72.20
+- An attemt to fix New Doom occasional server crashes.
 - Fixed an issue where last zeds were never auto-killed.
 - *ScrnBalanceSrv.ini*: Fixed `bVoteKillCheckVisibility`
 - **Speed Boost** - increased burn DoT to matched the base/slow game.
@@ -44,6 +44,7 @@
 - **MTs-255**: fixed the point-blank headshot detection bug.
 - MTs-255 projectile now extends `ScrnRocketProjectile`.
 ### ScrN Horzine Technicial
+- Fixed perk XP progress for zapping zeds.
 - Removed the workaround that prevented **ZED Gun MK2** from zapping zeds at point-blank.
 - Fixed a bug where **ZED Gun MK2** did double zap at point-blank.
 - Optimized primary projectiles of both ZED Guns.

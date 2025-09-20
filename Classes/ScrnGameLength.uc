@@ -113,7 +113,6 @@ var ScrnWaveInfo Wave, NextWave;
 var protected int NextWaveNum;
 var transient int ZedsBeforeSpecial;
 var transient bool bLoadedSpecial;  // is the last loaded squad special
-var array<KFMonster> Bosses;
 var transient bool bBossSpawned;
 var transient int LoadedCount;  // loaded monster count (without squad breaks)
 var transient float PlayerCountOverrideForHealth;
@@ -634,7 +633,7 @@ function PrintAliases(PlayerController Sender)
 function ZedSpawned(KFMonster M)
 {
     if (bLoadedSpecial && Wave.EndRule == RULE_KillSpecial) {
-        Bosses[Bosses.Length] = M;
+        Game.Bosses[Game.Bosses.Length] = M;
         bBossSpawned = true;
     }
 }
@@ -649,7 +648,6 @@ protected function bool LoadNextWave()
 
     bLoadedSpecial = false;
     bBossSpawned = false;
-    Bosses.length = 0;
     PendingSquads.length = 0;
     PendingSpecialSquads.length = 0;
     Squads.length = 0;
@@ -1041,7 +1039,7 @@ function WaveTimer()
 
         case RULE_KillSpecial:
             if (bBossSpawned) {
-                Game.ScrnGRI.WaveCounter = AliveZedCount(Bosses);
+                Game.ScrnGRI.WaveCounter = AliveZedCount(Game.Bosses);
             }
             else {
                 Game.ScrnGRI.WaveCounter = -1;  // Show "?" on HUD
@@ -1196,7 +1194,7 @@ function bool CheckWaveEnd()
         case RULE_KillBoss:
             return Game.bBossSpawned && Game.bHasSetViewYet && AliveZedCount(Game.Bosses) == 0;
         case RULE_KillSpecial:
-            return bBossSpawned && AliveZedCount(Bosses) == 0;
+            return bBossSpawned && AliveZedCount(Game.Bosses) == 0;
 
         case RULE_Timeout:
             return Game.Level.TimeSeconds >= WaveEndTime;
