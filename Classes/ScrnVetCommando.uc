@@ -160,6 +160,10 @@ static function string GetCustomLevelInfo( byte Level )
     return S;
 }
 
+static function AddTourneyInventory(ScrnHumanPawn ScrnPawn)
+{
+    ScrnPawn.CreateWeapon(class'ScrnBullpup', 300);
+}
 
 defaultproperties
 {

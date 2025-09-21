@@ -741,10 +741,41 @@ simulated function ApplyWeaponStats(Weapon NewWeapon)
         InventorySpeedModifier -= default.GroundSpeed * CurrentVestClass.default.SpeedModifier;
 
         if (QuickMeleeWeapon == none) {
-            CheckQuickMeleeWeapon(KFMeleeGun(Weap));
+            SetBestQuickMeleeWeapon();
         }
     }
     CalcGroundSpeed();
+}
+
+function KFWeapon CreateWeapon(class<KFWeapon> WC, optional int OverrideAmmo, optional int SellValue)
+{
+    local KFWeapon W;
+
+    if (WC == none || Role < ROLE_Authority)
+        return none;
+
+    W = KFWeapon(FindInventoryType(WC));
+    if (W != none)
+        return W;
+
+    W = Spawn(WC);
+    if (W == none)
+        return none;
+
+    W.GiveTo(self);
+    if (W == none || W.bDeleteMe)
+        return none;
+    W.PickupFunction(self);
+    if (SellValue >= 0) {
+        W.SellValue = SellValue;
+    }
+    if (OverrideAmmo > 0) {
+        W.AddAmmo(OverrideAmmo - W.AmmoAmount(0), 0);
+    }
+    if (KFGameType(Level.Game) != none) {
+        KFGameType(Level.Game).WeaponSpawned(W);
+    }
+    return W;
 }
 
 function CheckPerkAchievements()
@@ -3257,7 +3288,7 @@ simulated function CheckGlow()
     }
 
     GlowCheckTime = Level.TimeSeconds + default.GlowCheckTime;
-    if (Health > 0 && TSCGRI.bHumanDamageEnabled && !TSCGRI.AtOwnBase(self)) {
+    if (Health > 0 && TSCGRI.bHumanDamageEnabled && !TSCGRI.AtOwnBase(self, true)) {
         EnableGlow();
     }
     else {

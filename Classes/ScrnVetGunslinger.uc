@@ -167,7 +167,8 @@ static function float GetWeaponMovementSpeedBonus(KFPlayerReplicationInfo KFPRI,
 static function float GetCostScaling(KFPlayerReplicationInfo KFPRI, class<Pickup> Item)
 {
     //reduced base price, so no discount on magnums
-    if ( Item == class'ScrnMagnum44Pickup' || Item == class'ScrnDual44MagnumPickup' )
+    if ( Item == class'ScrnMagnum44Pickup' || Item == class'ScrnDual44MagnumPickup'
+            || ClassIsChildOf(Item, class'WinchesterPickup'))
         return 1.0;
 
     if ( ClassIsChildOf(Item,  class'DeaglePickup') || ClassIsChildOf(Item,  class'DualDeaglePickup')
@@ -206,6 +207,11 @@ static function string GetCustomLevelInfo( byte Level )
     S = Repl(S,"%a",string(Level), true);
     S = Repl(S,"%$",GetPercentStr(fmin(0.90, 0.30 + 0.05*Level)), true);
     return S;
+}
+
+static function AddTourneyInventory(ScrnHumanPawn ScrnPawn)
+{
+    ScrnPawn.CreateWeapon(class'ScrnDual44Magnum', 120);
 }
 
 defaultproperties

@@ -30,16 +30,24 @@
 ## VERSION 9
 
 -------------------------------------------------------------------------------
-## v9.72.24
+## v9.72.25
 - An attemt to fix New Doom occasional server crashes.
 - Fixed an issue where last zeds were never auto-killed.
 - *ScrnBalanceSrv.ini*: Fixed `bVoteKillCheckVisibility`
 - *ScrnMapInfo.ini*: Enhanced zed spawns on **FilthsCross**.
+- *ScrnUser.ini*: fixed `bHealMessages` and `bHealedByMessages` (thanks [nmmblez])
+- **TSC**: Fixed an issue where players were not glowing at their own base if the guardian was stunned.
 - **TSC**: Fixed Left 4 Dead character availability.
 - **TSC**: Incompatible custom characters are not shown on the character selection list.
+- **Tourney Mode** doesn't use `SpawnInventory` anymore. Starting loadouts are hardcoded into the perk classes - `AddTourneyInventory()`.
 - **Speed Boost** - increased burn DoT to matched the base/slow game.
 - Console commands `svol` and `mvol` - shortcuts for `SoundVolume` and `MusicVolume`
 - Invited players (`mvote invite`) receive an invitation dialog to join the game.
+- The "Perfect Wave" achievement requires at least 50 kills in the wave (thanks [Duckbuster])
+- Fixed an issue where **Gunslinger** received discount on **LAR**.
+- **M79M** and **M203** base ammo count increased 5 => 6.
+- **Support Spec.** max ammo bonus increased 1.30 => 1.34 at level 6 to compensate for rounding.
+- Fix an issue where **Medic** received too much ammo from ammo boxes.
 ### Code Changes
 - Optimized explosive damage code. Introduced `ScrnExplosiveFunc` class.
 - Indroduced base classes for all grenades and rockets: `ScrnGrenadeProjectile` and `ScrnRocketProjectile`

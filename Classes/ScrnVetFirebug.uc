@@ -153,6 +153,11 @@ static function string GetCustomLevelInfo( byte Level )
     return S;
 }
 
+static function AddTourneyInventory(ScrnHumanPawn ScrnPawn)
+{
+    ScrnPawn.CreateWeapon(class'ScrnMAC10MP', 300);
+}
+
 defaultproperties
 {
     DefaultDamageType=Class'KFMod.DamTypeBurned'

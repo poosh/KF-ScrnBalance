@@ -3309,7 +3309,7 @@ function GameResumed()
 
 defaultproperties
 {
-    VersionNumber=97224
+    VersionNumber=97225
     GroupName="KF-Scrn"
     FriendlyName="ScrN Balance"
     Description="Total rework of KF1 to make it modern and the best tactical coop in the world while sticking to the roots of the original."
@@ -3446,16 +3446,16 @@ defaultproperties
     pickupReplaceArray(48)=(oldClass=Class'KFMod.KnifePickup',NewClass=class'ScrnKnifePickup')
     FragReplacementIndex=45
 
-    SpawnInventory(00)="*:ScrnBalanceSrv.ScrnKnifePickup:0-255::0"
-    SpawnInventory(01)="*:ScrnBalanceSrv.ScrnSyringePickup:0-255::0"
-    SpawnInventory(02)="*:ScrnBalanceSrv.ScrnWelderPickup:0-255::0"
-    SpawnInventory(03)="*:ScrnBalanceSrv.ScrnSinglePickup:0-255::0"
-    SpawnInventory(04)="*:ScrnBalanceSrv.ScrnFragPickup:0-255:2:0"
-    SpawnInventory(05)="0:ScrnBalanceSrv.ScrnCombatVestPickup:0-255:100"
-    SpawnInventory(06)="0:ScrnBalanceSrv.ScrnMP7MPickup:0-255:80+20:150"
-    SpawnInventory(07)="0:ScrnBalanceSrv.ScrnM79MPickup:0-255:3:0:OnlyHealer"
-    SpawnInventory(08)="0:ScrnBalanceSrv.ScrnM79MAmmoPickup:0-255:1:0:ExplosionLove"
-    SpawnInventory(09)="0:ScrnBalanceSrv.ScrnM79MAmmoPickup:0-255:1:0:TouchOfSavior"
+    SpawnInventory( 0)="*:ScrnBalanceSrv.ScrnKnifePickup:0-255::0"
+    SpawnInventory( 1)="*:ScrnBalanceSrv.ScrnSyringePickup:0-255::0"
+    SpawnInventory( 2)="*:ScrnBalanceSrv.ScrnWelderPickup:0-255::0"
+    SpawnInventory( 3)="*:ScrnBalanceSrv.ScrnSinglePickup:0-255::0"
+    SpawnInventory( 4)="*:ScrnBalanceSrv.ScrnFragPickup:0-255:2:0"
+    SpawnInventory( 5)="0:ScrnBalanceSrv.ScrnCombatVestPickup:0-255:100"
+    SpawnInventory( 6)="0:ScrnBalanceSrv.ScrnMP7MPickup:0-255:80+20:150"
+    SpawnInventory( 7)="0:ScrnBalanceSrv.ScrnM79MPickup:0-255:3:0:OnlyHealer"
+    SpawnInventory( 8)="0:ScrnBalanceSrv.ScrnM79MAmmoPickup:0-255:1:0:ExplosionLove"
+    SpawnInventory( 9)="0:ScrnBalanceSrv.ScrnM79MAmmoPickup:0-255:1:0:TouchOfSavior"
     SpawnInventory(10)="1:ScrnBalanceSrv.ScrnShotgunPickup:0-255:24+4:150"
     SpawnInventory(11)="1:ScrnBalanceSrv.ScrnBoomStickPickup:0-255:12:0:TW_SC_LAWHSG"
     SpawnInventory(12)="1:ScrnBalanceSrv.ScrnBoomStickPickup:0-255:12:0:EvilDeadCombo"

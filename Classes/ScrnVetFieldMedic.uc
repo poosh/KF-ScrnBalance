@@ -90,20 +90,10 @@ static function float GetMagCapacityModStatic(KFPlayerReplicationInfo KFPRI, cla
     return 1.0;
 }
 
-static function float GetAmmoPickupMod(KFPlayerReplicationInfo KFPRI, KFAmmunition Other)
-{
-    if ( MP7MAmmo(Other) != none || MP5MAmmo(Other) != none || M7A3MAmmo(Other) != none
-            || KrissMAmmo(Other) != none || BlowerThrowerAmmo(Other) != none
-            //|| ScrnM203MAmmo(Other) != none
-            || ClassIsInArray(default.PerkedAmmo, Other.class) ) //v3 - custom weapon support
-        return 2.0; // 100% increase in MP7 Medic weapon ammo carry
-    return 1.0;
-}
-
 static function float AddExtraAmmoFor(KFPlayerReplicationInfo KFPRI, Class<Ammunition> AmmoType)
 {
     if ( ClassIsChildOf(AmmoType, class'ScrnM79MAmmo') || ClassIsChildOf(AmmoType, class'ScrnM203MAmmo'))
-        return 1.0 + (0.20 * GetClientVeteranSkillLevel(KFPRI)); // one extra medic nade per level
+        return 1.0 + (0.1667 * GetClientVeteranSkillLevel(KFPRI)); // one extra medic nade per level
 
     if ( GetClientVeteranSkillLevel(KFPRI) > 6 &&
             (  ClassIsChildOf(AmmoType, class'MP7MAmmo')
@@ -207,6 +197,12 @@ static function bool OverridePerkIndex( class<KFWeaponPickup> Pickup )
 {
     // Field Medic and Combat medic share the same iventory
     return Pickup.default.CorrespondingPerkIndex == 9 || super.OverridePerkIndex(Pickup);
+}
+
+static function AddTourneyInventory(ScrnHumanPawn ScrnPawn)
+{
+    ScrnPawn.CreateWeapon(class'ScrnMP7MMedicGun', 200);
+    ScrnPawn.AddShieldStrength(100);
 }
 
 defaultproperties

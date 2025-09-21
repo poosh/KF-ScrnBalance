@@ -143,6 +143,11 @@ static function string GetCustomLevelInfo( byte Level )
     return S;
 }
 
+static function AddTourneyInventory(ScrnHumanPawn ScrnPawn)
+{
+    ScrnPawn.CreateWeapon(class'ScrnM79GrenadeLauncher', 15);
+}
+
 defaultproperties
 {
     DefaultDamageType=Class'KFMod.DamTypeLAW'

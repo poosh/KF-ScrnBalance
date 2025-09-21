@@ -79,11 +79,12 @@ var transient float LastBlamedTime;
 // TSC
 var string ProfilePageClassString;
 var string TSCLobbyMenuClassString;
-var config bool bTSCAdvancedKeyBindings; // pressing altfire while carrying the guardian gnome, sets up the base
-var config bool bTSCAutoDetectKeys; // turns off bTSCAdvancedKeyBindings if a dedicated key is bound for SetupBase
+var globalconfig bool bTSCAdvancedKeyBindings; // pressing altfire while carrying the guardian gnome, sets up the base
+var globalconfig bool bTSCAutoDetectKeys; // turns off bTSCAdvancedKeyBindings if a dedicated key is bound for SetupBase
 var string DefaultRedCharacter, DefaultBlueCharacter;
-var config string RedCharacter, BlueCharacter;
-var config Color GlowColorSingleTeam, GlowColorRed, GlowColorBlue;
+var globalconfig string RedCharacter, BlueCharacter;
+var globalconfig Color GlowColorSingleTeam;
+var Color GlowColorRed, GlowColorBlue;
 var transient float LastBaseMarkTime;
 var array<string> RedCharacters, BlueCharacters;  // MUST BE SORTED!
 
@@ -178,7 +179,7 @@ replication
         ClientPlayerDamaged, ClientFlareDamage;
 
     reliable if ( Role < ROLE_Authority )
-        ServerMark, ServerLobbyMark;
+        ServerMark, ServerLobbyMark, ServerSetHealMessages;
 
     reliable if ( Role < ROLE_Authority )
         SrvAchReset, ResetMyAchievements, ResetMapAch,
@@ -193,7 +194,7 @@ replication
         bForceDelayedRestart;
 
     reliable if ( bNetOwner && (bNetDirty || bNetInitial) && Role < ROLE_Authority )
-        bPrioritizePerkedWeapons, StartCash, bHealMessages, bHealedByMessages;
+        bPrioritizePerkedWeapons, StartCash;
 
     // TSC stuff
     reliable if ( Role < ROLE_Authority )
@@ -244,6 +245,16 @@ simulated function ClientPostLogin()
         ServerAcknowledgeDamages(DamageAck);
     }
     OriginalSpectateSpeed = SpectateSpeed;
+
+    if (!bHealMessages || !bHealedByMessages) {
+        ServerSetHealMessages(bHealMessages, bHealedByMessages);
+    }
+}
+
+function ServerSetHealMessages(bool bNewHealMessages, bool bNewHealedByMessages)
+{
+    bHealMessages = bNewHealMessages;
+    bHealedByMessages = bNewHealedByMessages;
 }
 
 function SetMut(ScrnBalance value)

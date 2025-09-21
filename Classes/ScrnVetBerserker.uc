@@ -153,6 +153,11 @@ static function string GetCustomLevelInfo( byte Level )
     return S;
 }
 
+static function AddTourneyInventory(ScrnHumanPawn ScrnPawn)
+{
+    ScrnPawn.CreateWeapon(class'ScrnAxe');
+}
+
 defaultproperties
 {
     DefaultDamageType=Class'KFMod.DamTypeMelee'

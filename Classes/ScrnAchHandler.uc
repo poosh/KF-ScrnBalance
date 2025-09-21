@@ -148,7 +148,7 @@ function WaveStarted(byte WaveNum)
     }
     else {
         bPerfectGame = bPerfectGame && TotalPlayers >= 2; // each wave must have 2+ players for perfect game
-        bPerfectWave = WaveNum > 0; // can't score perfect wave in wave 1
+        bPerfectWave = WaveNum > 0 && GameRules.WaveTotalKills >= 50;
     }
 }
 

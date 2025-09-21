@@ -93,7 +93,7 @@ static function float GetMagCapacityModStatic(KFPlayerReplicationInfo KFPRI, cla
 static function float AddExtraAmmoFor(KFPlayerReplicationInfo KFPRI, Class<Ammunition> AmmoType)
 {
     if ( ClassIsChildOf(AmmoType, class'ScrnM79MAmmo') || ClassIsChildOf(AmmoType, class'ScrnM203MAmmo'))
-        return 1.0 + (0.20 * GetClientVeteranSkillLevel(KFPRI)); // one extra medic nade per level
+        return 1.0 + (0.1667 * GetClientVeteranSkillLevel(KFPRI)); // one extra medic nade per level
 
     if ( ClassIsChildOf(AmmoType, class'MP7MAmmo')
             || ClassIsChildOf(AmmoType, class'MP5MAmmo')
@@ -104,7 +104,7 @@ static function float AddExtraAmmoFor(KFPlayerReplicationInfo KFPRI, Class<Ammun
             || ClassIsChildOf(AmmoType, class'MAC10Ammo')
             || ClassIsInArray(default.PerkedAmmo, AmmoType) )
     {
-        return 1.0 + 0.05 * float(GetClientVeteranSkillLevel(KFPRI)); // +5% per level
+        return 0.95 + 0.05 * float(GetClientVeteranSkillLevel(KFPRI)); // +5% per level
     }
     return 1.0;
 }
@@ -127,7 +127,7 @@ static function string GetCustomLevelInfo( byte Level )
     S = Default.CustomLevelInfo;
     S = Repl(S,"%L",string(Level), true);
     S = Repl(S,"%x",GetPercentStr(0.30 + 0.05*Level), true);
-    S = Repl(S,"%a",GetPercentStr(0.05*Level), true);
+    S = Repl(S,"%a",GetPercentStr(0.05*Level - 0.05), true);
     S = Repl(S,"%v",GetPercentStr(fmin(0.60, 0.30 + 0.05*Level)), true);
     S = Repl(S,"%z",string(clamp(Level,1,5)), true);
     S = Repl(S,"%$",GetPercentStr(fmin(0.90, 0.30 + 0.05*Level)), true);
@@ -140,6 +140,11 @@ static function bool ShowEnemyHealthBars(KFPlayerReplicationInfo KFPRI, KFPlayer
     return false;
 }
 
+static function AddTourneyInventory(ScrnHumanPawn ScrnPawn)
+{
+    ScrnPawn.CreateWeapon(class'ScrnMP7MMedicGun', 300);
+    ScrnPawn.AddShieldStrength(25);
+}
 
 defaultproperties
 {

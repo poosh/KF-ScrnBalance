@@ -4239,7 +4239,6 @@ State MatchInProgress
     {
         local Controller C;
         local ScrnPlayerController ScrnPC;
-
         local KFPlayerReplicationInfo KFPRI;
         local bool bRespawnDeadPlayers;
 
@@ -4514,7 +4513,7 @@ defaultproperties
     MaxSpecialSpawnAttempts=10
     SpawnRatePlayerMod=0.25
     KillRemainingZedsCooldown=15.0
-    MaxSuicideAtOnce=4
+    MaxSuicideAtOnce=8
     // SpawnPeriod may be further limited by KFLevelRules
     BoringStages[0]=(SpawnPeriod=3.0,MinSpawnTime=1.5,ZVolUsageTime=20)
     BoringStages[1]=(SpawnPeriod=1.0,MinSpawnTime=1.0,ZVolUsageTime=10)

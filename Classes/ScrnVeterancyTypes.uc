@@ -452,6 +452,10 @@ static function AddDefaultInventory(KFPlayerReplicationInfo KFPRI, Pawn P)
     ScrnPawn = ScrnHumanPawn(P);
 
     Mut = class'ScrnBalance'.default.Mut;
+    if (ScrnPawn != none && Mut.ScrnGT != none && Mut.ScrnGT.IsTourney()) {
+        AddTourneyInventory(ScrnPawn);
+        return;
+    }
     bBalance = Mut.SpawnBalanceRequired() || (ScrnPawn != none && ScrnPawn.bOnlyRequiredEquipment);
     if (Mut.ScrnGT != none) {
         ScrnGL = Mut.ScrnGT.ScrnGameLength;
@@ -510,6 +514,8 @@ static function AddDefaultInventory(KFPlayerReplicationInfo KFPRI, Pawn P)
         }
     }
 }
+
+static function AddTourneyInventory(ScrnHumanPawn ScrnPawn);
 
 static function float GetMagCapacityMod(KFPlayerReplicationInfo KFPRI, KFWeapon Other)
 {
