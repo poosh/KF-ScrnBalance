@@ -598,6 +598,9 @@ function MonsterDamaged(int Damage, KFMonster Victim, ScrnPlayerInfo InstigatorI
                 }
             }
             else if ( Damage >= Victim.default.Health/1.5 ) {
+                if (GameRules.MonsterInfos[index].FirstStunTime == 0)
+                    GameRules.MonsterInfos[index].FirstStunTime = Level.TimeSeconds;
+
                 if ( DamType.default.bIsMeleeDamage && ClassIsChildOf(DamType, class'KFMod.DamTypeMachete') )
                     InstigatorInfo.ProgressAchievement('MacheteStunSC', 1);
 
@@ -611,10 +614,10 @@ function MonsterDamaged(int Damage, KFMonster Victim, ScrnPlayerInfo InstigatorI
                     else
                         GameRules.MonsterInfos[index].DamageFlags1 = DF_STUNNED;
                 }
-                else if ( GameRules.MonsterInfos[index].DamType1.default.bSniperWeapon ) {
-                    // Instant Kill can be achieved by 3 snipers, if they all had shot in the same time
-                    if ( DamType.default.bSniperWeapon && bIsHeadshot
-                            && Level.TimeSeconds < GameRules.MonsterInfos[index].FirstHitTime + InstantKillTime ) {
+                else if (GameRules.MonsterInfos[index].DamageFlags1 == (DF_STUNNED | DF_HEADSHOT)) {
+                    // Instant Kill can be achieved by 3 snipers, if they all shot at the same time
+                    if (bIsHeadshot
+                            && Level.TimeSeconds < GameRules.MonsterInfos[index].FirstStunTime + InstantKillTime ) {
                         GameRules.MonsterInfos[index].KillAss2 = InstigatorInfo;
                         GameRules.MonsterInfos[index].DamType2 = DamType;
                         GameRules.MonsterInfos[index].DamageFlags2 = DF_STUNNED | DF_HEADSHOT;
@@ -905,9 +908,8 @@ function MonsterKilled(KFMonster Victim, ScrnPlayerInfo KillerInfo, class<KFWeap
                 KillerInfo.ProgressAchievement('Snipe250SC', 1);
                 // Teamwork: InstantKill
                 if ( GameRules.MonsterInfos[index].KillAss1 != KillerInfo
-                    && GameRules.MonsterInfos[index].DamType1 != none && GameRules.MonsterInfos[index].DamType1.default.bSniperWeapon
-                    && (GameRules.MonsterInfos[index].DamageFlags1 & DF_STUNNED) > 0
-                    && Level.TimeSeconds - GameRules.MonsterInfos[index].FirstHitTime < InstantKillTime )
+                        && GameRules.MonsterInfos[index].DamageFlags1 == (DF_STUNNED | DF_HEADSHOT)
+                        && Level.TimeSeconds - GameRules.MonsterInfos[index].FirstStunTime < InstantKillTime )
                 {
                     GameRules.RewardTeamwork(KillerInfo, index, 'TW_SC_Instant');
                 }

@@ -373,7 +373,7 @@ function UpdateMyBuyables()
         ScrnPawn.CalcVestCost(DesiredVestClass, Cost, AmountToBuy, Price1p);
 
         MyBuyable.ItemName          = VestClass.default.ItemShortName;
-        MyBuyable.ItemDescription   = VestClass.default.Description;
+        MyBuyable.ItemDescription   = VestClass.default.LocalizedDescription;
         MyBuyable.ItemWeight        = VestClass.default.Weight;
         MyBuyable.ItemImage         = VestClass.default.TraderInfoTexture;
         MyBuyable.ItemPerkIndex     = VestClass.default.CorrespondingPerkIndex;
@@ -385,7 +385,7 @@ function UpdateMyBuyables()
     }
     else {
         MyBuyable.ItemName        = class'ScrnVestPickup'.default.ItemShortName;
-        MyBuyable.ItemDescription = class'ScrnVestPickup'.default.Description;
+        MyBuyable.ItemDescription = class'ScrnVestPickup'.default.LocalizedDescription;
         MyBuyable.ItemWeight      = class'ScrnVestPickup'.default.Weight;
         MyBuyable.ItemImage       = class'BuyableVest'.default.ItemImage;
         MyBuyable.ItemPerkIndex   = class'BuyableVest'.default.CorrespondingPerkIndex;

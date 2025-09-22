@@ -46,6 +46,7 @@ struct MonsterInfo {
     var ZombieVolume ZVol;  // ZombieVolume where the zed got spawned
     var float SpawnTime;
     var float FirstHitTime; // time when Monster took first damage
+    var float FirstStunTime; // time when Monster got stunned or raged for the first time
     var int HitCount; // how many hits monster received
 
     var byte PlayerKillCounter; // how many players this monster killed
@@ -1237,13 +1238,13 @@ function ClearMonsterInfo(int index)
     MonsterInfos[index].ZVol = none;
     MonsterInfos[index].SpawnTime = 0;
     MonsterInfos[index].FirstHitTime = 0;
+    MonsterInfos[index].FirstStunTime = 0;
     MonsterInfos[index].HitCount = 0;
 
     MonsterInfos[index].PlayerKillCounter = 0;
     MonsterInfos[index].DamageCounter = 0;
     MonsterInfos[index].PlayerKillTime = 0;
 
-    MonsterInfos[index].FirstHitTime = 0;
     MonsterInfos[index].KillAss1 = none;
     MonsterInfos[index].DamType1 = none;
     MonsterInfos[index].DamageFlags1 = 0;

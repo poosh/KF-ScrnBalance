@@ -30,8 +30,8 @@
 ## VERSION 9
 
 -------------------------------------------------------------------------------
-## v9.72.25
-- An attemt to fix New Doom occasional server crashes.
+## v9.72.26
+- Fixed server crash after killing a mid-game boss when `EndRule=RULE_KillSpecial`.
 - Fixed an issue where last zeds were never auto-killed.
 - *ScrnBalanceSrv.ini*: Fixed `bVoteKillCheckVisibility`
 - *ScrnMapInfo.ini*: Enhanced zed spawns on **FilthsCross**.
@@ -39,24 +39,27 @@
 - **TSC**: Fixed an issue where players were not glowing at their own base if the guardian was stunned.
 - **TSC**: Fixed Left 4 Dead character availability.
 - **TSC**: Incompatible custom characters are not shown on the character selection list.
-- **Tourney Mode** doesn't use `SpawnInventory` anymore. Starting loadouts are hardcoded into the perk classes - `AddTourneyInventory()`.
-- **Speed Boost** - increased burn DoT to matched the base/slow game.
+- **Tourney Mode** doesn't use `SpawnInventory` anymore. Starting loadouts are hardcoded into the perk classes.
+- **Speed Boost**: increased burn DoT duration to match the base/slow game.
 - Console commands `svol` and `mvol` - shortcuts for `SoundVolume` and `MusicVolume`
 - Invited players (`mvote invite`) receive an invitation dialog to join the game.
 - The "Perfect Wave" achievement requires at least 50 kills in the wave (thanks [Duckbuster])
+- Fixed localization of shop item descriptions. Added `LocalizedDescription` to `ScrnVestPickup` and descendants.
+### Weapon Balance
 - Fixed an issue where **Gunslinger** received discount on **LAR**.
-- **M79M** and **M203** base ammo count increased 5 => 6.
+- **M79M** and **M203** total ammo count increased 5 => 6.
 - **Support Spec.** max ammo bonus increased 1.30 => 1.34 at level 6 to compensate for rounding.
+- **Shotgun** price raised $200 => $300 to give a better value for its weight, when found on the map.
 - Fix an issue where **Medic** received too much ammo from ammo boxes.
-### Code Changes
-- Optimized explosive damage code. Introduced `ScrnExplosiveFunc` class.
-- Indroduced base classes for all grenades and rockets: `ScrnGrenadeProjectile` and `ScrnRocketProjectile`
 ### ScrN Weapon Pack
 - **Hopmine**: fixed speed calculation issue when flying to the target, which previously caused the target to be missed too often.
 - Hopmines still cannot catch enraged zeds.
 - **MTs-255**: fixed the point-blank headshot detection bug.
 - MTs-255 projectile now extends `ScrnRocketProjectile`.
-### ScrN Horzine Technicial
+- **HRL-1**: lowered rocket count received from an ammo boxes: 5 => 4.
+- **Saiga12**: Increased fire rate by 20%
+- **Saiga12**: Total ammo count increased to 60 (80 at Support lv6)
+### ScrN Horzine Technician
 - Fixed perk XP progress for zapping zeds.
 - **ZED Gun MK2**: Removed the workaround that prevented  from zapping zeds at point-blank.
 - **ZED Gun MK2**: Fixed a bug where the secondary fire did double zap at point-blank.
@@ -66,10 +69,15 @@
 - Fixed an issue where bosses got incorrect zap threshold (they were too easy to zap).
 ### ScrN Zed Pack
 - Adjusted zed zap thresholds.
+- **Shiver**: Fixed zep overlay (thanks [nmmblez])
 ### Doom 3
 - Optimized buring demon performance (the same fix as for ScrN Zed Pack)
 - Optimized demon teleportation
 - Increased zap damage multiplier to demons who are invulnerable to burn (Imp, Archvile, Helltime)
+### Code Changes
+- Optimized explosive damage code. Introduced `ScrnExplosiveFunc` class.
+- Introduced base classes for all grenades and rockets: `ScrnGrenadeProjectile` and `ScrnRocketProjectile`
+- `ScrnVeterancyTypes.AddTourneyInventory()` - sets weapons in **Tourney Mode**.
 
 ## v9.72.15
 - **FTGSO v2.02**: adjusted dialogues; dead players spawn at the trader.

@@ -1281,10 +1281,19 @@ static function bool CalcAmmoCost(Pawn P, Class<Ammunition> AClass,
         }
     }
 
-    if ( KW == none )
-        KW = KW2;
-    if ( KW == none || MyAmmo == none )
+    if (MyAmmo == none)
         return false;
+
+    MyAmmo.MaxAmmo = MyAmmo.default.MaxAmmo;
+    if (KW == none)
+        KW = KW2;
+    if (KW == none) {
+        if (Perk != none)
+            MyAmmo.MaxAmmo *= Perk.static.AddExtraAmmoFor(KFPRI, AClass);
+        if ( MyAmmo.AmmoAmount > MyAmmo.MaxAmmo )
+            MyAmmo.AmmoAmount = MyAmmo.MaxAmmo;
+        return false;
+    }
 
     KWPickupClass = class<KFWeaponPickup>(KW.PickupClass);
     if ( KWPickupClass == none )
@@ -1293,11 +1302,10 @@ static function bool CalcAmmoCost(Pawn P, Class<Ammunition> AClass,
                         && AClass != KW.FireModeClass[0].default.AmmoClass
                         && AClass == KW.FireModeClass[1].default.AmmoClass;
 
-    MyAmmo.MaxAmmo = MyAmmo.default.MaxAmmo;
     if ( bSecondaryAmmo && Perk != none)
-        MyAmmo.MaxAmmo = MyAmmo.default.MaxAmmo * Perk.static.AddExtraAmmoFor(KFPRI, AClass);
+        MyAmmo.MaxAmmo *= Perk.static.AddExtraAmmoFor(KFPRI, AClass);
     else
-        MyAmmo.MaxAmmo  = MyAmmo.default.MaxAmmo * KW.GetAmmoMulti(); // allow weapons to hande ammo bonuses
+        MyAmmo.MaxAmmo *= KW.GetAmmoMulti(); // allow weapons to hande ammo bonuses
     if ( MyAmmo.AmmoAmount > MyAmmo.MaxAmmo )
         MyAmmo.AmmoAmount = MyAmmo.MaxAmmo;
 

@@ -261,7 +261,6 @@ function UpdateForSaleBuyables()
             ForSaleBuyable = AllocateEntry(CPRL);
 
             ForSaleBuyable.ItemName             = ForSalePickup.default.ItemName;
-            ForSaleBuyable.ItemDescription      = ForSalePickup.default.Description;
             ForSaleBuyable.ItemCategorie        = "Melee"; // Dummy stuff..
             ForSaleBuyable.ItemAmmoCost         = 0;
             ForSaleBuyable.ItemFillAmmoCost     = 0;
@@ -270,12 +269,20 @@ function UpdateForSaleBuyables()
             ForSaleBuyable.ItemWeight           = ForSalePickup.default.Weight;
             ForSaleBuyable.bIsVest              = bVest;
             if ( bVest ) {
+                ForSaleBuyable.ItemDescription  = class<ScrnVestPickup>(ForSalePickup).default.LocalizedDescription;
                 ForSaleBuyable.ItemImage        = class<ScrnVestPickup>(ForSalePickup).default.TraderInfoTexture;
                 ScrnPawn.CalcVestCost(class<ScrnVestPickup>(ForSalePickup), Cost, AmountToBuy, Price1p);
                 ForSaleBuyable.ItemCost         = Cost;
                 ForSaleBuyable.ItemWeight -= ScrnPawn.GetCurrentVestClass().default.Weight;
             }
             else {
+                if (ForSaleWeapon != none) {
+                    // Weapon.Description is localized while KFWeaponPickup's - isn't
+                    ForSaleBuyable.ItemDescription = ForSaleWeapon.default.Description;
+                }
+                else {
+                    ForSaleBuyable.ItemDescription = ForSalePickup.default.Description;
+                }
                 ForSaleBuyable.ItemCost         = ceil( float(ForSalePickup.default.Cost)
                                                         * Perk.static.GetCostScaling(KFPRI, ForSalePickup)
                                                         * DualCoef );
