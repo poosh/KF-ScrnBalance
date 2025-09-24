@@ -58,7 +58,7 @@
 - Hopmines still cannot catch enraged zeds.
 - **MTs-255**: fixed the point-blank headshot detection bug.
 - MTs-255 projectile now extends `ScrnRocketProjectile`.
-- **HRL-1**: lowered rocket count received from an ammo boxes: 5 => 4.
+- **HRL-1**: lowered rocket count received from an ammo box: 5 => 4.
 - **Saiga12**: Increased fire rate by 20%
 - **Saiga12**: Total ammo count increased to 60 (80 perked)
 ### ScrN Horzine Technician
@@ -74,7 +74,8 @@
 - Fixed an issue where bosses got incorrect zap threshold (they were too easy to zap).
 ### ScrN Zed Pack
 - Adjusted zed zap thresholds.
-- **Shiver**: Fixed zep overlay (thanks [nmmblez])
+- **Shiver**: Fixed zap overlay (thanks [nmmblez])
+- **Shiver**: Fixed a rare possibility to telefrag players.
 ### Doom 3
 - Optimized buring demon performance (the same fix as for ScrN Zed Pack)
 - Optimized demon teleportation
@@ -137,12 +138,11 @@
 - Fixed **Flamethrower** bug where it continued firing after a nade throw, ignoring the fire trigger's release.
 - (Probably) Fixed a bug where a scoped weapon could get stuck at the aiming animation after weapon switching.
 - Yet another gun recoil fix during Zed Time.
-## ScrN Weapon Pack
+### ScrN Weapon Pack
 - Burning Zed performance optimization
 - **Brute** base health lowered 1000 => 990 to stop considering him a big zed.
-## Horzine Technician
+### Horzine Technician
 - Fixed **Cryo Thrower** bug where it continued firing after a nade throw, ignoring the fire trigger's release.
-
 
 ## v9.72.10
 - Fixed a bug where Sudden Death was enabled on the boss wave in FTG
