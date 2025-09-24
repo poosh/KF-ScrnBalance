@@ -3,21 +3,6 @@ class ScrnFunctions extends ScrnF
 
 
 // TODO: Move to ScrnF on the next ScrnShared update
-static function int WordCount(String str) {
-    if (str == "") return 0;
-
-    return Len(str) - Len(Repl(Repl(str, " ", "", true), "|", "", true)) + 1;
-}
-
-static function float TextReadTime(String str) {
-    local int wc;
-
-    wc = WordCount(str);
-    if (wc == 0)
-        return 0.0;
-
-    return wc * 0.5 * fmax(1.0, float(Len(str)) / (4 * wc));
-}
 // MOVE SECTION END
 
 static function class<ScrnVeterancyTypes> FindPerkByName(ClientPerkRepLink L, string VeterancyNameOrIndex)

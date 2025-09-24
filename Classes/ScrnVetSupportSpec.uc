@@ -43,7 +43,7 @@ static function float AddExtraAmmoFor(KFPlayerReplicationInfo KFPRI, Class<Ammun
             return 1.5 + 0.05 * float(GetClientVeteranSkillLevel(KFPRI)-6); // +5% ammo above level 6
     }
     else if ( !ClassIsChildOf(AmmoType, class'WelderAmmo') ) {
-        return 1.04 + (0.05 * float(GetClientVeteranSkillLevel(KFPRI)));
+        return 1.0334 + (0.05 * float(GetClientVeteranSkillLevel(KFPRI)));
     }
     return 1.0;
 }
@@ -147,7 +147,7 @@ static function string GetCustomLevelInfo( byte Level )
     S = Default.CustomLevelInfo;
     S = Repl(S,"%L",string(Level), true);
     S = Repl(S,"%x",GetPercentStr(0.30 + 0.05*Level), true);
-    S = Repl(S,"%a",GetPercentStr(0.04 + 0.05*Level), true);
+    S = Repl(S,"%a",GetPercentStr(0.03 + 0.05*Level), true);
     S = Repl(S,"%g",string(Level), true);
     S = Repl(S,"%$",GetPercentStr(fmin(0.90, 0.30 + 0.05*Level)), true);
     return S;

@@ -30,7 +30,7 @@
 ## VERSION 9
 
 -------------------------------------------------------------------------------
-## v9.72.26
+## v9.73
 - Fixed server crash after killing a mid-game boss when `EndRule=RULE_KillSpecial`.
 - Fixed an issue where last zeds were never auto-killed.
 - *ScrnBalanceSrv.ini*: Fixed `bVoteKillCheckVisibility`
@@ -45,11 +45,13 @@
 - Invited players (`mvote invite`) receive an invitation dialog to join the game.
 - The "Perfect Wave" achievement requires at least 50 kills in the wave (thanks [Duckbuster])
 - Fixed localization of shop item descriptions. Added `LocalizedDescription` to `ScrnVestPickup` and descendants.
+- Fixed *Instant Kill* achievement.
 ### Weapon Balance
 - Fixed an issue where **Gunslinger** received discount on **LAR**.
 - **M79M** and **M203** total ammo count increased 5 => 6.
-- **Support Spec.** max ammo bonus increased 1.30 => 1.34 at level 6 to compensate for rounding.
+- **Support Spec.** max ammo bonus increased +30% => +33% at level 6 to compensate for rounding.
 - **Shotgun** price raised $200 => $300 to give a better value for its weight, when found on the map.
+- **Scythe** price raised $1750 => $2000 ($800 perked).
 - Fix an issue where **Medic** received too much ammo from ammo boxes.
 ### ScrN Weapon Pack
 - **Hopmine**: fixed speed calculation issue when flying to the target, which previously caused the target to be missed too often.
@@ -58,10 +60,13 @@
 - MTs-255 projectile now extends `ScrnRocketProjectile`.
 - **HRL-1**: lowered rocket count received from an ammo boxes: 5 => 4.
 - **Saiga12**: Increased fire rate by 20%
-- **Saiga12**: Total ammo count increased to 60 (80 at Support lv6)
+- **Saiga12**: Total ammo count increased to 60 (80 perked)
 ### ScrN Horzine Technician
 - Fixed perk XP progress for zapping zeds.
-- **ZED Gun MK2**: Removed the workaround that prevented  from zapping zeds at point-blank.
+- **ZED Gun MK1**: Increased price $2000 => $3000 ($800 => $1200 perked)
+- **ZED Gun MK1**: Lowered damage 100 => 90 (160 => 144) to prevent flinch-locking Scrakes with body shots.
+- **ZED Gun MK1**: Increased headshot multiplier x1.65 => x2.0 to compensate for base damage reduction.
+- **ZED Gun MK2**: Removed the workaround that prevented from zapping zeds at point-blank.
 - **ZED Gun MK2**: Fixed a bug where the secondary fire did double zap at point-blank.
 - **ZED Gun MK2**: Increased zap radius 6 => 8m.
 - Optimized primary projectiles of both ZED Guns.

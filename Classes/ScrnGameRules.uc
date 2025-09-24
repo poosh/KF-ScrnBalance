@@ -69,6 +69,7 @@ struct MonsterInfo {
     var float LastHitTime; // time when Monster took last damage
     var int MaxHeadHealth;
     var int HeadHealth; // track head health to check headshots
+    var float DecapitationTime;
     var bool bWasDecapitated; // was the monster decapitated before last damage? If bWasDecapitated=true then bHeadshot=false
     var bool bWasBackstabbed; // previous hit was a melee backstab
     var float BleedOutTime;  // time when zed should die from bleeding
@@ -1002,7 +1003,12 @@ function int NetDamage( int OriginalDamage, int Damage, pawn injured, pawn insti
         if ( MonsterInfos[idx].FirstHitTime == 0 )
             MonsterInfos[idx].FirstHitTime = Level.TimeSeconds;
 
-        MonsterInfos[idx].bHeadshot = !MonsterInfos[idx].bWasDecapitated && KFDamType.default.bCheckForHeadShots
+        // Decapitation deals damage twice:
+        // 1. KFMonster.RemoveHead();
+        // 2. The original TakeDamage().
+        // We need to consider both damages a headshot for the achievement tracking
+        MonsterInfos[idx].bHeadshot = KFDamType.default.bCheckForHeadShots
+            && (!MonsterInfos[idx].bWasDecapitated || MonsterInfos[idx].DecapitationTime == Level.TimeSeconds)
             && (ZedVictim.bDecapitated || int(ZedVictim.HeadHealth) < MonsterInfos[idx].HeadHealth);
 
         if ( MonsterInfos[idx].bHeadshot ) {
@@ -1116,7 +1122,10 @@ function int NetDamage( int OriginalDamage, int Damage, pawn injured, pawn insti
             MonsterInfos[idx].LastHitTime = Level.TimeSeconds;
         }
         MonsterInfos[idx].HeadHealth = ZedVictim.HeadHealth;
-        MonsterInfos[idx].bWasDecapitated = ZedVictim.bDecapitated;
+        if (ZedVictim.bDecapitated && !MonsterInfos[idx].bWasDecapitated) {
+            MonsterInfos[idx].bWasDecapitated = true;
+            MonsterInfos[idx].DecapitationTime = Level.TimeSeconds;
+        }
         MonsterInfos[idx].bWasBackstabbed = ZedVictim.bBackstabbed;
     }
 
@@ -1262,6 +1271,7 @@ function ClearMonsterInfo(int index)
     MonsterInfos[index].LastHitTime = 0;
     MonsterInfos[index].MaxHeadHealth = 0;
     MonsterInfos[index].HeadHealth = 0;
+    MonsterInfos[index].DecapitationTime = 0;
     MonsterInfos[index].bWasDecapitated = false;
     MonsterInfos[index].bWasBackstabbed = false;
     MonsterInfos[index].BleedOutTime = 0;
