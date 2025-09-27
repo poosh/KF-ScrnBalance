@@ -32,7 +32,7 @@ var localized string strPauseTraderOnly;
 var localized string viResume, viEndTrade, viDifficulty;
 var localized string strZedSpawnsDoubled;
 var localized string strSquadNotFound, strCantSpawnSquadNow, strSquadList;
-var localized string strNotInStoryMode, strNotInTSC;
+var localized string strNotInStoryMode, strNotInTSC, strNotDead;
 var localized string strCantEndWaveNow, strEndWavePenalty;
 var localized string strRCommands;
 var localized string strBlamed, strBlamedBaron;
@@ -597,10 +597,18 @@ function int GetVoteIndex(PlayerController Sender, string Key, out string Value,
             Sender.ClientMessage(strNotInStoryMode);
             return VOTE_LOCAL;
         }
-        if ( !Mut.bAllowBoringVote && !Mut.IsAdmin(Sender) ) {
-            Sender.ClientMessage(strOptionDisabled);
-            return VOTE_LOCAL;
+
+        if (!Mut.IsAdmin(Sender)) {
+            if (!Mut.bAllowBoringVote) {
+                Sender.ClientMessage(strOptionDisabled);
+                return VOTE_LOCAL;
+            }
+            if (Sender.Pawn == none || Sender.Pawn.Health <= 0) {
+                Sender.ClientMessage(strNotDead);
+                return VOTE_LOCAL;
+            }
         }
+
         if ( Mut.KF.bTradingDoorsOpen || (Mut.ScrnGT != none && Mut.ScrnGT.BoringStageMaxed())
                     || (Mut.ScrnGT == none && Mut.KF.KFLRules.WaveSpawnPeriod < 0.5) )
         {
@@ -928,10 +936,10 @@ function ApplyVoteValue(int VoteIndex, string VoteValue)
             if ( VotingHandler.VotedPlayer != none && VotingHandler.VotedPlayer.Pawn != none ) {
                 VotingHandler.VotedPlayer.Pawn.Suicide();
                 if ( Reason == "" ) {
-                    VotingHandler.BroadcastMessage(VoteValue $ " killed by referee");
+                    VotingHandler.BroadcastMessage(VoteValue $ " killed by a referee");
                 }
                 else {
-                    VotingHandler.BroadcastMessage(VoteValue $ " killed by referee for " $Reason);
+                    VotingHandler.BroadcastMessage(VoteValue $ " killed by a referee for " $Reason);
                 }
             }
             break;
@@ -1244,6 +1252,7 @@ defaultproperties
     strSquadList="Avaliable Squads:"
     strNotInStoryMode="Not avaliable in Story Mode"
     strNotInTSC="Not avaliable in TSC"
+    strNotDead="Dead players cannot initial this vote"
     strCantEndWaveNow="Can't end the wave now"
     strEndWavePenalty="Team charged for premature wave end with $"
     strRCommands="R_* commands can be executed only by Referee (Spectator + Admin rights + Tourney Mode)"

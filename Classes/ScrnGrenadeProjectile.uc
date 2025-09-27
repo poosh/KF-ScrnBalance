@@ -232,6 +232,6 @@ defaultproperties
     SmokeTrailClass=class'ReducedGrenadeTrail'
     ExplosionClass=class'KFMod.KFNadeLExplosion'
     ExplosionSoundVolume=2.0
-    Health=100
+    Health=150
     bDoubleDamageOnImpact=True
 }

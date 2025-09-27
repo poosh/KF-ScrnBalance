@@ -266,9 +266,9 @@ simulated event UpdateScoreBoard(Canvas Canvas)
             }
         }
         if (ScrnGRI.WaveTitle != "" && ScrnGRI.WaveTitle != " ")
-            S $= " | " $ ScrnGRI.WaveTitle;
+            S $= " | " $ class'ScrnF'.static.StripColor(ScrnGRI.WaveTitle);
         if (ScrnGRI.WaveMessage != "" && ScrnGRI.WaveMessage != " ")
-            S $= " | " $ ScrnGRI.WaveMessage;
+            S $= " | " $ class'ScrnF'.static.StripColor(ScrnGRI.WaveMessage);
     }
     Canvas.TextSize(S, XL,YL);
     Canvas.SetPos( (Canvas.ClipX - XL)/2, HeaderOffsetY - YL);

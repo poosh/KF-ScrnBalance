@@ -30,6 +30,11 @@
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+## v9.73.01
+- Fixed **M79 Incendiary**
+- Dead players cannot initiate `mvote boring`
+- Stripped color tags from `WaveTitle` and `WaveMessage` when displayed on the Scoreboard.
+
 ## v9.73
 - Fixed server crash after killing a mid-game boss when `EndRule=RULE_KillSpecial`.
 - Fixed an issue where last zeds were never auto-killed.
@@ -77,7 +82,7 @@
 - **Shiver**: Fixed zap overlay (thanks [nmmblez])
 - **Shiver**: Fixed a rare possibility to telefrag players.
 ### Doom 3
-- Optimized buring demon performance (the same fix as for ScrN Zed Pack)
+- Optimized burning demon performance (the same fix as for ScrN Zed Pack)
 - Optimized demon teleportation
 - Increased zap damage multiplier to demons who are invulnerable to burn (Imp, Archvile, Helltime)
 ### Code Changes

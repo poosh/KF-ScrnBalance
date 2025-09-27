@@ -236,7 +236,7 @@ defaultproperties
     Func=class'ScrnExplosiveFunc'
     ExplosionClass=class'ScrnLawExplosion'
     ExplosionSoundVolume=2.0
-    Health=200
+    Health=300
     bDoubleDamageOnImpact=True
     Damage=1000.000000
     ImpactDamage=350
