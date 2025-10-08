@@ -15,6 +15,7 @@ var() float BigZedPenDmgReduction;      // Additional penetration  damage reduct
 var() int   BigZedMinHealth;            // If zed's base Health >= this value, zed counts as Big
 var() float MediumZedPenDmgReduction;   // Additional penetration  damage reduction after hitting medium-size zeds. 0.5 = 50% dmg. red.
 var() int   MediumZedMinHealth;         // If zed's base Health >= this value, zed counts as Medium-size
+var float PlayerDamageMult;  // damage multiplier against other player
 
 var     String         StaticMeshRef;
 var     String         AmbientSoundRef;
@@ -24,6 +25,7 @@ var EDetailMode DetailFilter;  // Drop detail if Level.DetailMode <= this value
 var transient Pawn OldVictim;
 var transient bool bHeadshot;
 var transient int SameVictimCounter;
+var transient array<Actor> IgnoreActors;
 
 static function PreloadAssets()
 {
@@ -70,7 +72,7 @@ simulated function ProcessTouch (Actor Other, vector HitLocation)
     local Vector TempHitLocation, HitNormal;
     local array<int>    HitPoints;
     local KFPlayerReplicationInfo KFPRI;
-    local KFPawn HitPawn;
+    local KFPawn Human;
     local Pawn Victim;
     local KFMonster KFM;
     local bool bNoDamageReduction;
@@ -91,14 +93,17 @@ simulated function ProcessTouch (Actor Other, vector HitLocation)
         if( Other == none || HitPoints.Length == 0 || Other.bDeleteMe )
             return; // bullet didn't hit a pawn
 
-        HitPawn = KFPawn(Other);
-        if ( HitPawn != none ) {
-            Victim = HitPawn;
+        Human = KFPawn(Other);
+        if ( Human != none ) {
+            if (class'ScrnF'.static.SearchObj(IgnoreActors, Human) != -1)
+                return;
+            Victim = Human;
             // cannot hit a player more than once
-            OldVictim = HitPawn;
+            OldVictim = Human;
             SameVictimCounter = 3;
             bNoDamageReduction = Victim.Health <= 0;
-            HitPawn.ProcessLocationalDamage(Damage, Instigator, TempHitLocation, MomentumTransfer * X, MyDamageType,HitPoints);
+            Human.ProcessLocationalDamage(Damage * PlayerDamageMult, Instigator, TempHitLocation, MomentumTransfer * X, MyDamageType,HitPoints);
+            IgnoreActors[IgnoreActors.Length] = Human;
         }
     }
     else {
@@ -107,9 +112,18 @@ simulated function ProcessTouch (Actor Other, vector HitLocation)
         else if ( Pawn(Other) != none )
             Victim = Pawn(Other);
 
-        KFM = KFMonster(Victim);
-
         if ( Victim != none ) {
+            KFM = KFMonster(Victim);
+            Human = KFPawn(Victim);
+
+            if (Human != none) {
+                // XXX: is this even possible?
+                // Can we hit a KFPawn without hitting its surrounding KFBulletWhipAttachment first?
+                if (class'ScrnF'.static.SearchObj(IgnoreActors, Human) != -1)
+                    return;
+                IgnoreActors[IgnoreActors.Length] = Human;
+            }
+
             // kick dead bodies for visual fx but no gameplay impact
             bNoDamageReduction = Victim.Health <= 0;
 
@@ -188,6 +202,7 @@ defaultproperties
     BigZedMinHealth=1000
     MediumZedPenDmgReduction=0.50
     MediumZedMinHealth=500
+    PlayerDamageMult=1.0
     MaxPenetrations=3
     PenDamageReduction=0.700000
     Damage=35

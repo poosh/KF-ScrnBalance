@@ -219,31 +219,39 @@ function UpdateForSaleBuyables()
                 continue;
 
             bVest = ClassIsChildOf(ForSalePickup, class'ScrnVestPickup');
-            if ( bVest ) {
-                //vest
-                if ( ScrnPawn == none || class<ScrnVestPickup>(ForSalePickup).default.ShieldCapacity <= 0
-                        || (ScrnPawn.GetCurrentVestClass() == ForSalePickup && ScrnPawn.ShieldStrength >= ScrnPawn.GetShieldStrengthMax() ) )
-                    continue;
+            if (ForSaleWeapon == none) {
+                if (bVest) {
+                    if ( ScrnPawn == none || class<ScrnVestPickup>(ForSalePickup).default.ShieldCapacity <= 0
+                            || (ScrnPawn.GetCurrentVestClass() == ForSalePickup
+                                && ScrnPawn.ShieldStrength >= ScrnPawn.GetShieldStrengthMax() ) )
+                        continue;
+                }
             }
-            else if (ForSaleWeapon != none && ForSalePickup.outer.name == 'KFMod') {
-                // Remove single weild. Legacy code.
-                //Scrn pistols are linked through DemoReplacement, so no need to look for chilldren here
+            else if (ForSalePickup.outer.name == 'KFMod') {
+                // Remove single-wield. Legacy code.
+                // Scrn pistols are linked through DemoReplacement, so no need to look for chilldren here
                 if ( (ForSalePickup == class'DeaglePickup' && IsInInventory(class'DualDeaglePickup'))
                      || (ForSalePickup == class'Magnum44Pickup' && IsInInventory(class'Dual44MagnumPickup'))
                      || (ForSalePickup == class'MK23Pickup' && IsInInventory(class'DualMK23Pickup'))
-                     || (ForSalePickup == class'FlareRevolverPickup' && IsInInventory(class'DualFlareRevolverPickup'))
-                     || DualIsInInventory(ForSaleWeapon) )
+                     || (ForSalePickup == class'FlareRevolverPickup' && IsInInventory(class'DualFlareRevolverPickup')) )
                     continue;
 
-                // Make cheaper.
                 if ( (ForSalePickup == class'DualDeaglePickup' && IsInInventory(class'DeaglePickup'))
                      || (ForSalePickup == class'Dual44MagnumPickup' && IsInInventory(class'Magnum44Pickup'))
                      || (ForSalePickup == class'DualMK23Pickup' && IsInInventory(class'MK23Pickup'))
-                     || (ForSalePickup == class'DualFlareRevolverPickup' && IsInInventory(class'FlareRevolverPickup'))
-                     || (ForSaleWeapon.Default.DemoReplacement!=None && IsInInventoryWep(ForSaleWeapon.Default.DemoReplacement)) ) {
-                    DualCoef = 0.5;
+                     || (ForSalePickup == class'DualFlareRevolverPickup' && IsInInventory(class'FlareRevolverPickup')) ) {
+                    DualCoef = 0.5;  // make dualies cheaper since the single is in the inventory
                     bHasDual = true;
                 }
+            }
+            else if (DualIsInInventory(ForSaleWeapon)) {
+                continue;
+            }
+            else if (ForSaleWeapon.Default.DemoReplacement != None
+                    && IsInInventoryWep(ForSaleWeapon.Default.DemoReplacement)) {
+                // Make cheaper.
+                DualCoef = 0.5;  // make dualies cheaper since the single is in the inventory
+                bHasDual = true;
             }
 
             // 9.19: removed perk query due to performance reasons

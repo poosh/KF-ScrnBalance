@@ -30,6 +30,62 @@
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+## v9.73.02
+### Game Optimization
+- *KillingFloor.ini*: Do NOT set `MaxPlayers` above 16, or it caps `MaxClientRate` to 10000 (a native limitation set from C++ code).
+- *ScrnBalanceSrv.ini*: it is safe to set `ForcedMaxPlayers` above 16, as it doesn't trigger the above limitation.
+- **ScrnGameType** - caps `MaxPlayers` at 16 to avoid the `MaxClientRate` issue. `ForcedMaxPlayers` has higher priority than this.
+- If a client's `ConfiguredInternetSpeed` is below the server's `MaxClientRate` value, a GUI dialog is displayed, offering to increase the netspeed.
+- The client can set `bNetSpeedCheck=false` in *ScrnUser.ini* to bypass the above dialog.
+- `FixLegacySettings` - a new client-side console command that applies the following configuration:
+  - *KillingFloor.ini*:
+```ini
+[Core.System]
+# Never delete downloaded packages
+PurgeCacheDays=0
+
+[Engine.GameEngine]
+# ScrN-recommended cache size. Cause the least number of crashes.
+CacheSizeMegs=128
+
+[WinDrv.WindowsClient]
+# The game reduces dynamic lights and visual effects when the actual framerate drops below MinDesiredFrameRate.
+# You may increase the value for even better performance.
+MinDesiredFrameRate=60
+
+[D3D9Drv.D3D9RenderDevice]
+# It "reduces" mouse lag by causing a rendering lag. A terrible option that must be disabled.
+ReduceMouseLag=False
+# A Legacy feature. Must be disabled.
+DesiredRefreshRate=0
+
+[Engine.LevelInfo]
+# Even on a 60Hz monitors, a higher framerate feels more responsive.
+# For GSync/FreeSync displays, change MaxClientFrameRate to your monitor's refresh rate.
+MaxClientFrameRate=240
+```
+  - *User.ini*:
+```ini
+[XInterface.GUIController]
+# Fixes the Server Browser at higher netspeed.
+MaxSimultaneousPings=200
+```
+  - *ScrnUser.ini*:
+```ini
+[Engine.PlayerController]
+bDynamicNetSpeed=False
+```
+- `FixLegacySettings` is automatically executed when a client joins an ScrN server for the first time.
+- A client can disabled the `FixLegacySettings` call by setting `LegacySettingsFix=-1` in *ScrnUser.ini*
+### Other Changes
+- **TSC**: Allow `mvote team shuffle` in Tourney games before the match has begun.
+- **TSC**: **Boomstick** damage to player lowered by 20% (200 => 160 perked damage when hit all pellets from dual shot)
+- Fixed dual pistol purchase when the single one is in the inventory.
+- Reverted to the classic zed enemy selection (`bUseThreatAssessment=false`) after the zed takes damage. It prevents zeds from "jumping" between targets for no reason at close distance.
+- **Baron's Game** forces `bUseThreatAssessment=true` to ensure all gorefasts are chasing Baron.
+- *ScrnWaves.ini*: when a wave with `EndRule=RULE_ReachTrader` is followed by a wave with `bOpenTrader=false`, a new trader is chosen for the next wave.
+- *ScrnUser.ini*: added "KFMod Soundtrack" music playlist for KFMod 2.5 music. The music tracks are not included.
+
 ## v9.73.01
 - Fixed **M79 Incendiary**
 - Dead players cannot initiate `mvote boring`

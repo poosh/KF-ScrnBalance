@@ -23,13 +23,17 @@ var string strCaptain, strCarrier, strHumanDamage, strInvite;
 function int GetGroupVoteIndex(PlayerController Sender, string Group, string Key, out string Value, out string VoteInfo)
 {
     if ( Key == "SHUFFLE" ) {
-        if ( TSC.IsTourney() || TSC.bClanGame ) {
+        if (TSC.bPendingShuffle) {
+            return VOTE_NOEFECT;
+        }
+        if (TSC.bSingleTeamGame || TSC.bClanGame) {
             Sender.ClientMessage(strOptionDisabled);
             return VOTE_LOCAL;
         }
-        if ( TSC.bPendingShuffle )
-            return VOTE_NOEFECT;
-
+        if (Level.GRI.bMatchHasBegun && TSC.IsTourney()) {
+            Sender.ClientMessage(strNotAvaliableATM);
+            return VOTE_LOCAL;
+        }
         return VOTE_SHUFFLE;
     }
     else if ( Key == "ABORTSHUFFLE" ) {

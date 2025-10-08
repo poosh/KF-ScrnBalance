@@ -2407,9 +2407,9 @@ function ProcessLocationalDamage(int Damage, Pawn instigatedBy, Vector hitlocati
                 KFHeadshotMult = 2.0;
             }
             KFHeadshotMult = fmax(KFHeadshotMult, KFDamType.default.HeadShotDamageMult);
-            if ( !KFDamType.default.bIsMeleeDamage && InstigatorPRI.ClientVeteranSkill != none ) {
-                KFHeadshotMult *= fmin(2.0, InstigatorPRI.ClientVeteranSkill.Static.GetHeadShotDamMulti(
-                        InstigatorPRI, KFPawn(instigatedBy), DamageType));
+            if (!KFDamType.default.bIsMeleeDamage && InstigatorPRI.ClientVeteranSkill != none) {
+                KFHeadshotMult *= InstigatorPRI.ClientVeteranSkill.Static.GetHeadShotDamMulti(
+                        InstigatorPRI, KFPawn(instigatedBy), DamageType);
             }
             Damage *= KFHeadshotMult;
             PlaySound(HeadshotSound, SLOT_None,2.0,true,500);

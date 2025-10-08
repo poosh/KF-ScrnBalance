@@ -82,6 +82,7 @@ defaultproperties
 {
     strNewBaron="%p is a Baron of the Wave! Protect him from Gorefasts!"
     strBaronDead="BARON IS DEAD. GAME OVER!"
+    bForceZEDThreatAssessment=true
 
     GameName="Baron's Game"
     Description="Every wave a random player is picked to be the Baron of the Wave. He gets blamed and all Gorefasts will chase him. If Baron dies, team gets wiped."

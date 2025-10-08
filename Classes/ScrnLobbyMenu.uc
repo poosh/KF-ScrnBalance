@@ -2,6 +2,7 @@ class ScrnLobbyMenu extends SRLobbyMenu;
 
 var localized string strBrokenGame;
 var localized string strWelcomeTitle, strWelcomeText;
+var localized string strNetspeedTitle, strNetspeedText;
 
 var bool bNetInit;
 
@@ -18,9 +19,8 @@ function Timer()
 
     super.Timer();
 
-    if (!bNetInit && PlayerOwner() != none && PlayerOwner().PlayerReplicationInfo != none
-            && PlayerOwner().GameReplicationInfo != none)
-    {
+    if (!bNetInit && ScrnPC != none && ScrnPC.PlayerReplicationInfo != none
+            && ScrnPC.GameReplicationInfo != none && ScrnPC.Mut != none) {
         OnNetInit();
         bNetInit = true;
     }
@@ -31,9 +31,30 @@ function OnNetInit()
     local ScrnPlayerController ScrnPC;
 
     ScrnPC = ScrnPlayerController(PlayerOwner());
-    if (ScrnPC != none && !ScrnPC.bWelcomed) {
+    if (ScrnPC == none)
+        return; // wtf?
+
+    ScrnPC.CheckLegacySettings();
+
+    if (!ScrnPC.bWelcomed) {
         ShowWelcome();
     }
+    else {
+        CheckNetSpeed();
+    }
+}
+
+function CheckNetSpeed()
+{
+    local ScrnPlayerController ScrnPC;
+
+    ScrnPC = ScrnPlayerController(PlayerOwner());
+    if (ScrnPC == none || ScrnPC.Player == none || !ScrnPC.bNetSpeedCheck
+            || ScrnPC.Player.ConfiguredInternetSpeed >= ScrnPC.Mut.SrvNetspeed
+            || ScrnPC.Player.ConfiguredInternetSpeed >= 100000)
+        return;
+
+    class'ScrnGuiNetspeedDialog'.static.ShowMe(ScrnPC);
 }
 
 function SetWelcomed(ScrnMessageBoxCheck msgbox)
@@ -61,9 +82,7 @@ function ShowWelcome()
         return;
 
     menu.ActivateScrnSettingsTab();
-    msgbox = class'ScrnMessageBoxCheck'.static.ShowMe(ScrnPC,
-            class'ScrnFunctions'.static.ParseColorTags(strWelcomeTitle),
-            class'ScrnFunctions'.static.ParseColorTags(strWelcomeText));
+    msgbox = class'ScrnMessageBoxCheck'.static.ShowMe(ScrnPC, strWelcomeTitle, strWelcomeText);
     msgbox.onCheckChange = SetWelcomed;
 }
 

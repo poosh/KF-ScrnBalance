@@ -455,6 +455,11 @@ function ShuffleTeams()
     }
 
     if ( GameReplicationInfo.bMatchHasBegun ) {
+        if (IsTourney()) {
+            bPendingShuffle = false;
+            return;
+        }
+
         if ( bWaveInProgress ) {
             bPendingShuffle = true;
             BroadcastLocalizedMessage(class'TSCMessages', 240);

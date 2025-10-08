@@ -32,10 +32,15 @@ static function ScrnMessageBox ShowMessage(ScrnPlayerController PC, string Title
 function Close(bool bCancel)
 {
     onMsgClose(self, bCancel);
+    if (!bCancel) {
+        ApplyChanges();
+    }
     if (Controller.ActivePage == self) {
         Controller.CloseMenu(bCancel);
     }
 }
+
+function ApplyChanges();
 
 function bool InternalOnClick(GUIComponent Sender)
 {

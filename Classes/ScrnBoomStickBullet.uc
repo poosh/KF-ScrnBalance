@@ -8,6 +8,7 @@ defaultproperties
     PenDamageReduction=0.800000
     Damage=60
     HeadShotDamageMult=1.25
+    PlayerDamageMult=0.80
     MomentumTransfer=60000.000000
     MyDamageType=Class'KFMod.DamTypeDBShotgun'
 }

@@ -145,6 +145,8 @@ var localized string strShutUp;
 
 var class<KFSettingsPage> SettingsMenuClass;
 var globalconfig bool bWelcomed;
+var globalconfig bool bNetSpeedCheck;
+var globalconfig int LegacySettingsFix;
 var class<ScrnInvasionLoginMenu> ScrnLoginMenuClass;
 var class<GUIBuyMenu> ShopMenuClass;
 var globalconfig bool bAutoOpenGiveDosh;
@@ -3565,6 +3567,70 @@ function ClientInvite()
     class'ScrnGuiInvitedDialog'.static.ShowMe(self);
 }
 
+function bool CheckLegacySettings()
+{
+   if (LegacySettingsFix >= 0 && LegacySettingsFix < 2) {
+        FixLegacySettings();
+        LegacySettingsFix = 2;
+        SaveConfig();
+        return true;
+   }
+   return false;
+}
+
+exec function FixLegacySettings()
+{
+    local GUIController guictrl;
+
+    guictrl = GUIController(Player.GUIController);
+
+    log("Apply Legacy Settings Fix", 'ScrnBalance');
+    if (bDynamicNetSpeed) {
+        bDynamicNetSpeed = false;
+        SaveConfig();
+        ClientMessage("bDynamicNetSpeed disabled (it was designed for dial-up)", 'Log');
+    }
+
+    if (bool(ConsoleCommand("get ini:Engine.Engine.RenderDevice ReduceMouseLag"))) {
+        ConsoleCommand("set ini:Engine.Engine.RenderDevice ReduceMouseLag false");
+        ClientMessage("Disable ReduceMouseLag (it sucks)", 'Log');
+    }
+
+    if (int(ConsoleCommand("get Core.System PurgeCacheDays")) == 30) {
+        ConsoleCommand("set Core.System PurgeCacheDays 0");
+        ClientMessage("Disable PurgeCacheDays (no more redownloading packages every month)", 'Log');
+    }
+
+    if (int(ConsoleCommand("get Engine.GameEngine CacheSizeMegs")) != 128) {
+        ConsoleCommand("set Engine.GameEngine CacheSizeMegs 128");
+        ClientMessage("Set CacheSizeMegs=128 (ScrN recommended)", 'Log');
+    }
+
+    if (int(ConsoleCommand("get D3D9Drv.D3D9RenderDevice DesiredRefreshRate")) != 0) {
+        ConsoleCommand("set D3D9Drv.D3D9RenderDevice DesiredRefreshRate 0");
+        ClientMessage("Disable DesiredRefreshRate (legacy crap)", 'Log');
+    }
+
+    if (class'LevelInfo'.default.MaxClientFrameRate < 120) {
+        class'LevelInfo'.default.MaxClientFrameRate = 240;
+        class'LevelInfo'.static.StaticSaveConfig();
+        ClientMessage("Set MaxClientFrameRate=240 (Keep it 120+ even for 60Hz monitors. You may adjust it to match GSync/FreeSync)", 'Log');
+    }
+
+    if (int(ConsoleCommand("get ini:Engine.Engine.ViewPortManager MinDesiredFrameRate")) < 60) {
+        ConsoleCommand("set ini:Engine.Engine.ViewPortManager MinDesiredFrameRate 60");
+        ClientMessage("Set MinDesiredFrameRate=60 (Dynamic Light and vfx are reduced below 60fps)", 'Log');
+    }
+
+    if (guictrl != none && guictrl.MaxSimultaneousPings == 0) {
+        // We need to limit max ping to compensate for the increased netspeed.
+        // Otherwise, the Server Browser will hang.
+        guictrl.MaxSimultaneousPings = 200;
+        guictrl.saveConfig();
+        ClientMessage("Set MaxSimultaneousPings=200 (Fixes the Server Browser)", 'Log');
+    }
+}
+
 state Spectating
 {
     function BeginState()
@@ -4062,6 +4128,7 @@ defaultproperties
     ShopMenuClass=Class'ScrnGUIBuyMenu'
     bAutoOpenGiveDosh=true
     DelayedRestartMsg=class'ScrnPrepareToFightMsg'
+    bNetSpeedCheck=true
 
     PawnClass=class'ScrnHumanPawn'
     CustomPlayerReplicationInfoClass=class'ScrnCustomPRI'
@@ -4108,6 +4175,7 @@ defaultproperties
     MusicPlaylistNames(0)="<DEFAULT>"
     MusicPlaylistNames(1)="KF1 Classic Soundtrack"
     MusicPlaylistNames(2)="DooM Metal Soundtrack"
+    MusicPlaylistNames(3)="KFMod Soundtrack"
 
     MyMusic( 0)=(PL=1,Wave=0,bTrader=True,Song="KF_Defection",Artist="zYnthetic",Title="Defection")
     MyMusic( 1)=(PL=1,Wave=0,bTrader=True,Song="KF_Harm",Artist="zYnthetic",Title="Harm Intended")
@@ -4150,6 +4218,28 @@ defaultproperties
     MyMusic(37)=(PL=2,Wave=9,Song="EGT-E1M1",Artist="elguitarTom",Title="E1M1")
     MyMusic(38)=(PL=2,Wave=10,Song="EGT-Shawn",Artist="elguitarTom",Title="Shawn's Got The Shotgun")
     MyMusic(39)=(PL=2,Wave=11,Song="EGT-SignOfEvil",Artist="elguitarTom",Title="Sign Of Evil")
+
+    MyMusic(40)=(PL=3,Wave=0,bTrader=True,Song="KF1",Artist="zYnthetic",Title="Bled Through")
+    MyMusic(41)=(PL=3,Wave=0,bTrader=False,Song="KF2",Artist="zYnthetic",Title="Decreplica")
+    MyMusic(42)=(PL=3,Wave=0,bTrader=False,Song="KF3",Artist="zYnthetic",Title="Bled Dry")
+    MyMusic(43)=(PL=3,Wave=0,bTrader=False,Song="KF4",Artist="Rattic",Title="Freak")
+    MyMusic(44)=(PL=3,Wave=0,bTrader=False,Song="KF5",Artist="Rattic",Title="Kill 'Em With Style")
+    MyMusic(45)=(PL=3,Wave=0,bTrader=False,Song="KF6",Artist="zYnthetic",Title="Spine")
+    MyMusic(46)=(PL=3,Wave=0,bTrader=True,Song="KFCIN",Artist="zYnthetic",Title="Restless Dreams")
+    MyMusic(47)=(PL=3,Wave=0,bTrader=False,Song="KFMenuOld",Artist="Rattic",Title="The End is Nigh")
+    MyMusic(48)=(PL=3,Wave=0,bTrader=False,Song="KFRock",Artist="zYnthetic",Title="Containment Breach")
+    MyMusic(49)=(PL=3,Wave=0,bTrader=True,Song="KFS1",Artist="zYnthetic",Title="Insect")
+    MyMusic(50)=(PL=3,Wave=0,bTrader=True,Song="KFS2",Artist="zYnthetic",Title="Smolder")
+    MyMusic(51)=(PL=3,Wave=0,bTrader=True,Song="KFS3",Artist="zYnthetic",Title="Mutagen")
+    MyMusic(52)=(PL=3,Wave=0,bTrader=True,Song="KFS4",Artist="zYnthetic",Title="Peripheral")
+    MyMusic(53)=(PL=3,Wave=0,bTrader=True,Song="KFS5",Artist="zYnthetic",Title="The Stitches Are A Reminder")
+    MyMusic(54)=(PL=3,Wave=0,bTrader=True,Song="KFSIN0",Artist="zYnthetic",Title="Treatments Are More Profitable Than Cures")
+    MyMusic(55)=(PL=3,Wave=0,bTrader=True,Song="KFSIN5",Artist="zYnthetic",Title="Sin Soma and the Masquerade")
+    MyMusic(56)=(PL=3,Wave=0,bTrader=False,Song="KFSIN6",Artist="Rattic",Title="Let's Play With Zombies")
+    MyMusic(57)=(PL=3,Wave=0,bTrader=False,Song="KFSIN7",Artist="zYnthetic",Title="Hunger")
+    MyMusic(58)=(PL=3,Wave=0,bTrader=False,Song="KFSIN8",Artist="Rattic",Title="Chainsaw Chaos")
+    MyMusic(59)=(PL=3,Wave=0,bTrader=True,Song="KFSIN9",Artist="zYnthetic",Title="Wading Through The Bodies")
+    MyMusic(60)=(PL=3,Wave=11,bTrader=False,Song="KF_Abandon",Artist="zYnthetic",Title="Abandon All")
 
     // TSC
     DefaultRedCharacter="Pyro_Red"

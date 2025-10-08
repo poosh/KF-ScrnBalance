@@ -999,9 +999,14 @@ function int NetDamage( int OriginalDamage, int Damage, pawn injured, pawn insti
     }
 
     if ( bP2M ) {
-        MonsterInfos[idx].HitCount++;
-        if ( MonsterInfos[idx].FirstHitTime == 0 )
+        if (++MonsterInfos[idx].HitCount == 1) {
             MonsterInfos[idx].FirstHitTime = Level.TimeSeconds;
+            if (Mut.bZedFights && !Mut.bStoryMode && (Mut.ScrnGT == none || !Mut.ScrnGT.bForceZEDThreatAssessment)
+                    && KFMonsterController(ZedVictim.Controller) != none ) {
+                // revert to the classic enemy selection after the first damage
+                KFMonsterController(ZedVictim.Controller).bUseThreatAssessment = false;
+            }
+        }
 
         // Decapitation deals damage twice:
         // 1. KFMonster.RemoveHead();
@@ -1075,7 +1080,8 @@ function int NetDamage( int OriginalDamage, int Damage, pawn injured, pawn insti
     else if ( ZedVictim != none ) {
         if (Damage > 1 && KFMonster(instigatedBy) != none && instigatedBy != ZedVictim) {
             // Monster2Monster damage
-            if ( Mut.bZedFights && !Mut.bStoryMode && DamageType != class'SirenScreamDamage'
+            if (Mut.bZedFights && !Mut.bStoryMode && DamageType != class'SirenScreamDamage'
+                    && (Mut.ScrnGT == none || !Mut.ScrnGT.bForceZEDThreatAssessment)
                     && KFMonsterController(ZedVictim.Controller) != none ) {
                 // allow monsters fighting each other
                 KFMonsterController(ZedVictim.Controller).bUseThreatAssessment = false;

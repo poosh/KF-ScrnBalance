@@ -40,8 +40,8 @@ event InitGame( string Options, out string Error )
         warn("No VotingHandler!");
     }
 
-    MaxPlayers = Clamp(GetIntOption( Options, "MaxPlayers", MaxPlayers ),0,32);
-    default.MaxPlayers = Clamp( ConfigMaxPlayers, 0, 32 );
+    MaxPlayers = Clamp(GetIntOption( Options, "MaxPlayers", MaxPlayers), 0, 16);
+    default.MaxPlayers = Clamp(ConfigMaxPlayers, 0, 16);
 
     CheckScrnBalance();
 

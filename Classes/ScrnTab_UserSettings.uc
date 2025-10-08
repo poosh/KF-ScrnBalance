@@ -721,7 +721,7 @@ function bool ButtonClicked(GUIComponent Sender)
             PC.Mutate("VOTE ENDTRADE");
             break;
         case b_MVOTE_EndWave:
-            PC.Mutate("VOTE END WAVE");
+            PC.Mutate("VOTE ENDWAVE");
             break;
         case b_Team_Lock:
             PC.Mutate("VOTE LOCKTEAM");

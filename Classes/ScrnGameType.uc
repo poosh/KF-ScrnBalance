@@ -96,6 +96,7 @@ var float SpawnRatePlayerMod;  // per-player zed spawn rate increase
 var int WavePct;  // Current wave's percentage to the final wave.
 var string EngGameSong;
 var byte ZedEventNum;
+var bool bForceZEDThreatAssessment;
 
 struct SBoringStage {
     var float SpawnPeriod;
@@ -154,7 +155,22 @@ event InitGame( string Options, out string Error )
     }
     KFGameLength = GetIntOption(Options, "GameLength", KFGameLength);
     ZedEventNum = GetIntOption(Options, "ZedEvent", ZedEventNum);
-    ConfigMaxPlayers = default.MaxPlayers;
+
+    // Setting MaxPlayers > 16 caps MaxClientRate to 10k (in native code)
+    // We limit MaxPlayers to 16 here to avoid the MaxClientRate cap.
+    // MaxPlayers can be increased later, in the first Tick().
+    // See ScrnBalance.ForceMaxPlayers()
+    if (default.MaxPlayers > 16 || MaxPlayers > 16) {
+        warn("Do not set MaxPlayers > 16!");
+        log("!!!!!!!!!! Do NOT set MaxPlayers > 16 !!!!!!!!!!", class.name);
+        log("The engine caps MaxClientRate to 10000 if MaxPlayers is set above 16 in KillingFloor.ini", class.name);
+        log("Set ForcedMaxPlayers in ScrnBalanceSrv.ini to safely increase MaxPlayers above 16.", class.name);
+        log("Override MaxPlayers=16", class.name);
+        default.MaxPlayers = 16;
+        MaxPlayers = 16;
+        SaveConfig();
+    }
+    ConfigMaxPlayers = Clamp(default.MaxPlayers, 0, 16);
 
     InOpt = ParseOption( Options, "VotingHandler");
     if( InOpt != "" ) {
@@ -192,8 +208,8 @@ event InitGame( string Options, out string Error )
         warn("No VotingHandler!");
     }
 
-    MaxPlayers = Clamp(GetIntOption(Options, "MaxPlayers", ConfigMaxPlayers),0,32);
-    default.MaxPlayers = Clamp(ConfigMaxPlayers, 0, 32);
+    MaxPlayers = Clamp(GetIntOption(Options, "MaxPlayers", ConfigMaxPlayers), 0, 16);
+    default.MaxPlayers = ConfigMaxPlayers;
 
     MinRespawnCash = 0;  // we use SocialTax instead
     CheckScrnBalance();

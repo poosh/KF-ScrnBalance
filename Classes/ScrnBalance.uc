@@ -61,6 +61,7 @@ var globalconfig int
 var transient int MinLevel, MaxLevel;
 // Changing default value of variable disables its replication, cuz engine thinks it wasn't changed
 var transient int SrvMinLevel, SrvMaxLevel;
+var transient int SrvNetSpeed;
 var transient bool bInitialized;
 
 var ScrnGameType ScrnGT;
@@ -371,7 +372,7 @@ replication
 
     // non-config vars and configs vars which seem to replicate fine
     reliable if ( bNetInitial && Role == ROLE_Authority )
-        CustomWeaponLink, SrvTourneyMode, bTSCGame, bTestMap, SrvMarkDistance, SrvMarkZedBounty;
+        CustomWeaponLink, SrvTourneyMode, bTSCGame, bTestMap, SrvMarkDistance, SrvMarkZedBounty, SrvNetSpeed;
 
 }
 
@@ -2706,6 +2707,17 @@ function SetGameDifficulty(byte HardcoreDifficulty)
     }
     SetLevels();
     SetReplicationData();
+    SetNetSpeed();
+}
+
+function SetNetSpeed()
+{
+    local int rate, inetRate;
+
+    rate = int(ConsoleCommand("get IpDrv.TcpNetDriver MaxClientRate"));
+    inetRate = int(ConsoleCommand("get IpDrv.TcpNetDriver MaxInternetClientRate"));
+    SrvNetspeed = min(rate, inetRate);
+    log("SrvNetspeed = " $ SrvNetspeed, class.name);
 }
 
 function SetupSrvInfo()
@@ -3309,7 +3321,7 @@ function GameResumed()
 
 defaultproperties
 {
-    VersionNumber=97301
+    VersionNumber=97302
     GroupName="KF-Scrn"
     FriendlyName="ScrN Balance"
     Description="Total rework of KF1 to make it modern and the best tactical coop in the world while sticking to the roots of the original."

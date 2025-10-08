@@ -666,6 +666,10 @@ protected function bool LoadNextWave()
         return false;
     }
     log("Loading wave #"$NextWaveNum @ NextWave.name, class.name);
+    if (Wave != none && Wave.EndRule == RULE_ReachTrader && !NextWave.bOpenTrader) {
+        // Players reached the trader by it is closed. Select another one.
+        Game.SelectShop();
+    }
     Wave = NextWave;
     NextWave = none;
 

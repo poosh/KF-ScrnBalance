@@ -9,18 +9,13 @@ static function ScrnGuiInvitedDialog ShowMe(ScrnPlayerController PC)
     return ScrnGuiInvitedDialog(ShowMessage(PC, default.strTitle, default.strText));
 }
 
-function Close(bool bCancel)
+function ApplyChanges()
 {
     local ScrnPlayerController ScrnPC;
 
     ScrnPC = ScrnPlayerController(PlayerOwner());
-
-    Controller.CloseMenu(bCancel);
-
-    if (!bCancel) {
-        ScrnPC.Ready();
-        ScrnPC.ShowMenu();
-    }
+    ScrnPC.Ready();
+    ScrnPC.ShowMenu();
 }
 
 defaultproperties
