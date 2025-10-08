@@ -1262,9 +1262,12 @@ function AdjustNextSpawnTime(out float NextSpawnTime, float MinSpawnTime)
     }
 
     if (Game.HasEnoughZeds()) {
-           // for maps with MaxZombiesOnce > 32: slower spawns if there are already 32+ zeds spawned
+        // for maps with MaxZombiesOnce > 32: slower spawns if there are already 32+ zeds spawned
         if (Game.NumMonsters >= 32) {
             NextSpawnTime *= 1.5;
+            if (Game.NumMonsters > 48) {
+                NextSpawnTime += 0.125 * (Game.NumMonsters - 48);
+            }
         }
         // slower spawns on Normal difficulty
         if (Game.BaseDifficulty < Game.DIFF_HARD) {

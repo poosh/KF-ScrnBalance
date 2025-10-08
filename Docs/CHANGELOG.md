@@ -30,7 +30,7 @@
 ## VERSION 9
 
 -------------------------------------------------------------------------------
-## v9.73.02
+## v9.73.03
 ### Game Optimization
 - *KillingFloor.ini*: Do NOT set `MaxPlayers` above 16, or it caps `MaxClientRate` to 10000 (a native limitation set from C++ code).
 - *ScrnBalanceSrv.ini*: it is safe to set `ForcedMaxPlayers` above 16, as it doesn't trigger the above limitation.
@@ -85,6 +85,7 @@ bDynamicNetSpeed=False
 - **Baron's Game** forces `bUseThreatAssessment=true` to ensure all gorefasts are chasing Baron.
 - *ScrnWaves.ini*: when a wave with `EndRule=RULE_ReachTrader` is followed by a wave with `bOpenTrader=false`, a new trader is chosen for the next wave.
 - *ScrnUser.ini*: added "KFMod Soundtrack" music playlist for KFMod 2.5 music. The music tracks are not included.
+- Slower zed spawn if there are more than 48 alive zeds already.
 
 ## v9.73.01
 - Fixed **M79 Incendiary**

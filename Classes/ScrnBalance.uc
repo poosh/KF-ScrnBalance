@@ -523,6 +523,7 @@ function MessageStatus(PlayerController PC)
 
     msg = strStatus2;
     msg = Repl(msg, "%a", String(bAltBurnMech), true);
+    msg = Repl(msg, "%n", String(KF.NumMonsters), true);
     msg = Repl(msg, "%m", String(KF.MaxZombiesOnce), true);
     msg = Repl(msg, "%f", String(ScrnGT != none && ScrnGT.bFastTrack), true);
     PC.ClientMessage(msg, 'Log');
@@ -3321,7 +3322,7 @@ function GameResumed()
 
 defaultproperties
 {
-    VersionNumber=97302
+    VersionNumber=97303
     GroupName="KF-Scrn"
     FriendlyName="ScrN Balance"
     Description="Total rework of KF1 to make it modern and the best tactical coop in the world while sticking to the roots of the original."
@@ -3336,7 +3337,7 @@ defaultproperties
     BonusCapGroup="ScrnBalance"
     strBonusLevel="Your effective perk bonus level is [%s]"
     strStatus="Your perk level: Visual=%v, Effective=[%b]. Server perk range is [%n..%x]."
-    strStatus2="Alt.Burn=%a. MaxZombiesOnce=%m. FastTrack=%f."
+    strStatus2="Alt.Burn=%a. Alive/MaxZeds=%n/%m. FastTrack=%f."
     strBetaOnly="Only avaliable during Beta testing (bBeta=true)"
     strXPInitial="^G$Initial Perk Stats:"
     strXPProgress="^G$Perk Progression:"
