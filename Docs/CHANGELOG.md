@@ -30,7 +30,7 @@
 ## VERSION 9
 
 -------------------------------------------------------------------------------
-## v9.73.03
+## v9.73.04
 ### Game Optimization
 - *KillingFloor.ini*: Do NOT set `MaxPlayers` above 16, or it caps `MaxClientRate` to 10000 (a native limitation set from C++ code).
 - *ScrnBalanceSrv.ini*: it is safe to set `ForcedMaxPlayers` above 16, as it doesn't trigger the above limitation.
