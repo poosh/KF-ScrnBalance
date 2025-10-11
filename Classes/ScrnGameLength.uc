@@ -33,6 +33,7 @@ var config array<string> Zeds;
 var config bool bUniqueWaves;
 var config bool bAllowZedEvents;
 var config byte ForceZedEvent, FallbackZedEvent;
+var config byte MaxZombiesOnce;
 var config bool bLogStats;
 var config bool bDebug, bTest;
 var config ScrnTypes.EZedTimeTrigger ZedTimeTrigger;
@@ -666,10 +667,6 @@ protected function bool LoadNextWave()
         return false;
     }
     log("Loading wave #"$NextWaveNum @ NextWave.name, class.name);
-    if (Wave != none && Wave.EndRule == RULE_ReachTrader && !NextWave.bOpenTrader) {
-        // Players reached the trader by it is closed. Select another one.
-        Game.SelectShop();
-    }
     Wave = NextWave;
     NextWave = none;
 
@@ -708,8 +705,14 @@ protected function bool LoadNextWave()
         return false;
     }
 
+    if (Wave.bChangeTrader && !Wave.bOpenTrader) {
+        Game.SelectShop();
+    }
+
     if ( Wave.MaxZombiesOnce > 0 )
         Game.MaxZombiesOnce = Wave.MaxZombiesOnce;
+    else if ( MaxZombiesOnce > 0 )
+        Game.MaxZombiesOnce = MaxZombiesOnce;
     else if ( Wave.EndRule == RULE_KillBoss )
         Game.MaxZombiesOnce = 16;
     else

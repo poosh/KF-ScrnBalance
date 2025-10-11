@@ -30,6 +30,11 @@
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+## v9.73.05
+- Fixed a bug in **FTG: Special Ops** where the trader changed for "Finish them off" waves (thanks [nmmblez])
+- *ScrnWaves.ini*: Added `bChangeTrader`
+- *ScrnGames.ini*: Added `MaxZombiesOnce`
+
 ## v9.73.04
 ### Game Optimization
 - *KillingFloor.ini*: Do NOT set `MaxPlayers` above 16, or it caps `MaxClientRate` to 10000 (a native limitation set from C++ code).
@@ -85,7 +90,7 @@ bDynamicNetSpeed=False
 - **Baron's Game** forces `bUseThreatAssessment=true` to ensure all gorefasts are chasing Baron.
 - *ScrnWaves.ini*: when a wave with `EndRule=RULE_ReachTrader` is followed by a wave with `bOpenTrader=false`, a new trader is chosen for the next wave.
 - *ScrnUser.ini*: added "KFMod Soundtrack" music playlist for KFMod 2.5 music. The music tracks are not included.
-- Slower zed spawn if there are more than 48 alive zeds already.
+- Zed spawn rate gets gradually reduced when there are already more than 32 alive zeds on the map.
 
 ## v9.73.01
 - Fixed **M79 Incendiary**

@@ -40,6 +40,7 @@ var config int GameVersion;
 var config string Header, Title, Message, TraderMessage;
 var config int TraderTime;
 var config bool bOpenTrader;
+var config bool bChangeTrader;
 var config bool bRespawnDeadPlayers;
 var config bool bStartAtTrader;
 var config bool bTraderArrow;
