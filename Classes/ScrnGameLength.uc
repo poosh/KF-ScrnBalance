@@ -756,10 +756,14 @@ protected function bool LoadNextWave()
 
     if ( Wave.TraderMessage != "" ) {
         for ( C = Game.Level.ControllerList; C != none; C = C.NextController ) {
+            if (C.PlayerReplicationInfo == none)
+                continue;
+
             KFPC = KFPlayerController(C);
-            if ( C.PlayerReplicationInfo != none && KFPC != none ) {
+            if (KFPC != none) {
                 // this is needed to show a trader portrait
-                KFPC.ClientLocationalVoiceMessage(C.PlayerReplicationInfo, none, 'TRADER', 0);
+                // KFPC.ClientLocationalVoiceMessage(C.PlayerReplicationInfo, none, 'TRADER', 0);
+
                 KFPC.TeamMessage(C.PlayerReplicationInfo, Wave.TraderMessage, 'TRADER');
             }
         }
@@ -1781,23 +1785,6 @@ function bool IsPerkAllowed(class<ScrnVeterancyTypes> Perk)
     return Perk != none
             && (AllowPerks.Length == 0 || f.static.SearchName(AllowPerks, Perk.name) != -1)
             && (BlockPerks.Length == 0 || f.static.SearchName(BlockPerks, Perk.name) == -1);
-}
-
-function SetupRepLink(ScrnClientPerkRepLink R)
-{
-    local int i;
-
-    for (i = R.ShopInventory.length-1; i >= 0; --i ) {
-        if (!IsItemAllowed( R.ShopInventory[i].PC)) {
-            R.ShopInventory.remove(i, 1);
-        }
-    }
-
-    for (i = R.CachePerks.length-1; i >= 0; --i ) {
-        if (!IsPerkAllowed(class<ScrnVeterancyTypes>((R.CachePerks[i].PerkClass)))) {
-            R.CachePerks.remove(i, 1);
-        }
-    }
 }
 
 function SetupRandomItemSpawn(ScrnRandomItemSpawn Items)

@@ -3,6 +3,7 @@ class ScrnAmmoPickup extends KFAmmoPickup;
 var localized string ItemName;
 var float MinRespawnTime;
 var transient float LastPickTime;
+var transient float LastMsgTime;
 
 
 var name OriginalName;  // original name of KFAmmoPickup placed in the map
@@ -126,6 +127,10 @@ state Pickup
             if ( KFGameType(Level.Game) != none ) {
                 KFGameType(Level.Game).AmmoPickedUp(self);
             }
+        }
+        else if (LastMsgTime < Level.TimeSeconds && PlayerController(P.Controller) != none) {
+            LastMsgTime = Level.TimeSeconds + 1.0;
+            PlayerController(P.Controller).ReceiveLocalizedMessage(Class'ScrnMainMessages', 10);
         }
     }
 }

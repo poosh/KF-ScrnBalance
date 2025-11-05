@@ -14,23 +14,9 @@ static function ScrnGuiNetspeedDialog ShowMe(ScrnPlayerController PC)
 function ApplyChanges()
 {
     local ScrnPlayerController ScrnPC;
-    local GUIController guictrl;
 
     ScrnPC = ScrnPlayerController(PlayerOwner());
-    guictrl = GUIController(ScrnPC.Player.GUIController);
-
-    ScrnPC.Player.ConfiguredInternetSpeed = max(ScrnPC.Player.ConfiguredInternetSpeed, ScrnPC.Mut.SrvNetSpeed);
-    ScrnPC.Player.ConfiguredLanSpeed = max(ScrnPC.Player.ConfiguredLanSpeed, ScrnPC.Mut.SrvNetSpeed);
-    ScrnPC.Player.SaveConfig();
-
-    if (guictrl != none && guictrl.MaxSimultaneousPings == 0) {
-        // We need to limit max ping to compensate for the increased netspeed.
-        // Otherwise, the Server Browser will hang.
-        guictrl.MaxSimultaneousPings = 200;
-        guictrl.saveConfig();
-    }
-
-    ScrnPC.ConsoleCommand("NETSPEED " $ ScrnPC.Mut.SrvNetSpeed);
+    ScrnPC.SetClientNetSpeed(ScrnPC.Mut.SrvNetSpeed);
 }
 
 defaultproperties

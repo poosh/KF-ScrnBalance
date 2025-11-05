@@ -1,6 +1,6 @@
 // Additional player info used in achievements
 class ScrnPlayerInfo extends Info
-    config(ScrnBalance);
+    config(ScrnBalanceSrv);
 
 // the variables below are initially set by ScrnGameRules
 var ScrnGameRules GameRules;

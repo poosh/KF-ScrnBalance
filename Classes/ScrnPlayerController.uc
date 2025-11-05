@@ -640,15 +640,8 @@ simulated function ClientMonsterBlamed(class<KFMonster> BlamedMonsterClass)
 
 exec function ScrnInit()
 {
-    local LinkedReplicationInfo L;
-
     // reload ScrnBalance settings
     Mut.InitSettings();
-
-    // reload custom weapon bonuses
-    for ( L = Mut.CustomWeaponLink; L != none; L = L.NextReplicationInfo ) {
-        ScrnCustomWeaponLink(L).LoadWeaponBonuses();
-    }
 }
 
 simulated function PlayerTick( float DeltaTime )
@@ -2197,7 +2190,7 @@ function LoadDualWieldables()
             AddDualWieldable(class<KFWeapon>(W.Default.DemoReplacement), W);
     }
 
-    bDualWieldablesLoaded = L.PendingWeapons == 0;
+    bDualWieldablesLoaded = L.bShopInited;
 }
 
 final function AddDualWieldable(class<KFWeapon> SingleWeapon, class<KFWeapon> DualWeapon)
@@ -3569,13 +3562,13 @@ function ClientInvite()
 
 function bool CheckLegacySettings()
 {
-   if (LegacySettingsFix >= 0 && LegacySettingsFix < 2) {
+    if (LegacySettingsFix >= 0 && LegacySettingsFix < 2) {
         FixLegacySettings();
         LegacySettingsFix = 2;
         SaveConfig();
         return true;
-   }
-   return false;
+    }
+    return false;
 }
 
 exec function FixLegacySettings()
@@ -3629,6 +3622,38 @@ exec function FixLegacySettings()
         guictrl.saveConfig();
         ClientMessage("Set MaxSimultaneousPings=200 (Fixes the Server Browser)", 'Log');
     }
+}
+
+function SetClientNetSpeed(int BytesPerSecond)
+{
+    local GUIController guictrl;
+
+    if (Level.NetMode != NM_Client)
+        return;  // must be called on the client side
+
+    if (bDynamicNetSpeed) {
+        bDynamicNetSpeed = false;
+        SaveConfig();
+    }
+
+    // UE caps framerate to 90 if netspeed <= 1000. Bypass that crap!
+    BytesPerSecond = max(BytesPerSecond, 15000);
+    if (Player.ConfiguredInternetSpeed == BytesPerSecond && Player.ConfiguredLanSpeed >= BytesPerSecond)
+        return;  // nothing to do
+
+    Player.ConfiguredInternetSpeed = BytesPerSecond;
+    Player.ConfiguredLanSpeed = max(Player.ConfiguredLanSpeed, BytesPerSecond);
+    Player.SaveConfig();
+
+    guictrl = GUIController(Player.GUIController);
+    if (guictrl != none && guictrl.MaxSimultaneousPings == 0) {
+        // We need to limit max ping to compensate for the increased netspeed.
+        // Otherwise, the Server Browser will hang.
+        guictrl.MaxSimultaneousPings = 200;
+        guictrl.saveConfig();
+    }
+
+    SetNetSpeed(BytesPerSecond);
 }
 
 state Spectating

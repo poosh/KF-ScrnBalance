@@ -30,6 +30,17 @@
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+## v9.73.07
+- Reworked gameplay data replication (perks, weapons, bonuses, etc.), achieving more than 10x faster replication while avoiding network channel oversaturation.
+- Player netspeed is set to at least 15k even if the player clicks "I'm on Dialup" button.
+- Blocked perks and weapons are no longer needlessly replicated to clients.
+- *ScrnMapInfo.ini*: added a map definition for **Spooky Manor**
+- Fixed an issue where the default trader message was displayed alongside TraderMessage (thanks [nmmblez])
+- The player receives the "Ammo Full" message when trying to pick an ammo boxes at maximum ammo capacity (thanks [nmmblez])
+- Dialogues stop once the team has wiped (thanks [nmmblez])
+### Code Changes
+- Removed `ScrnCustomWeaponLink`.
+
 ## v9.73.05
 - Fixed a bug in **FTG: Special Ops** where the trader changed for "Finish them off" waves (thanks [nmmblez])
 - *ScrnWaves.ini*: Added `bChangeTrader`

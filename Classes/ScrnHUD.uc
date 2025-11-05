@@ -542,6 +542,9 @@ simulated function bool DrawScrnDialogue(Canvas C, out SDialogueRenderInfo Dlg)
     local float PortraitSizeX,PortraitSizeY;
     local float PortraitAspect;
 
+    if (KFGRI != none && KFGRI.EndGameType > 0)
+        return false;  // game has ended
+
     if (Level.TimeSeconds > Dlg.FirstDisplayedTime) {
         Dlg.Opacity = min(250 - 125 * (Level.TimeSeconds - Dlg.FirstDisplayedTime), KFHUDAlpha);
     }
@@ -755,12 +758,6 @@ simulated function DrawHudPassA(Canvas C)
     else {
         if ( ScrnPawnOwner != none ) {
             DrawCookingBar(C);
-        }
-        if ( Level.NetMode == NM_Client && ScrnClientPerkRepLink(ClientRep) != none && ScrnClientPerkRepLink(ClientRep).PendingItems > 0 ) {
-            C.Font = GetConsoleFont(C);
-            C.SetPos(0, 0);
-            C.SetDrawColor(160, 160, 160, 255);
-            C.DrawText(strPendingItems @ ScrnClientPerkRepLink(ClientRep).PendingItems);
         }
     }
 }

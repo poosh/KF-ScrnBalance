@@ -2,6 +2,7 @@ class ScrnStoryGameInfo extends KFStoryGameInfo;
 
 var ScrnBalance ScrnBalanceMut;
 var protected transient int ObjTraderIndex;
+var private string CmdLine;
 
 var bool bZedTimeEnabled;  // set it to false to completely disable the Zed Time in the game
 
@@ -10,6 +11,7 @@ event InitGame( string Options, out string Error )
     local int ConfigMaxPlayers;
     local string InOpt;
 
+    CmdLine = Options;
     ObjTraderIndex = -1;
     ConfigMaxPlayers = default.MaxPlayers;
 
@@ -44,6 +46,7 @@ event InitGame( string Options, out string Error )
     default.MaxPlayers = Clamp(ConfigMaxPlayers, 0, 16);
 
     CheckScrnBalance();
+    ScrnBalanceMut.SetCmdLine(CmdLine);
 
     log("MonsterCollection = " $ MonsterCollection);
 }
@@ -56,6 +59,11 @@ protected function CheckScrnBalance()
         if ( ScrnBalanceMut == none )
             log("Unable to spawn ScrnBalance!", class.name);
     }
+}
+
+function final string GetCmdLine()
+{
+    return CmdLine;
 }
 
 event Broadcast( Actor Sender, coerce string Msg, optional name Type )

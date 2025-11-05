@@ -213,6 +213,7 @@ event InitGame( string Options, out string Error )
 
     MinRespawnCash = 0;  // we use SocialTax instead
     CheckScrnBalance();
+    ScrnBalanceMut.SetCmdLine(CmdLine);
     if ( bForceScrnWaves || ScrnBalanceMut.bScrnWaves ) {
         if (ScrnGameLength == none ) {  // mutators might already load this
             if (ScrnBalanceMut.bUserGames && KFGameLength >= 100 && KFGameLength < 200) {
@@ -275,9 +276,10 @@ event InitGame( string Options, out string Error )
             TourneyMode = TourneyMode | TOURNEY_ENABLED;
         }
         log("*** TOURNEY MODE ("$TourneyMode$")***", class.name);
-    }
-    if ( TourneyMode != 0 )
         StartTourney();
+    }
+
+    ScrnBalanceMut.LoadCustomWeapons();
 }
 
 // this one is called from PreBeginPlay() but AFTER (!) InitGame()
@@ -347,7 +349,7 @@ function InitGameVolumes()
             ShopList[ShopList.Length] = SH;
         }
     }
-    log("The maps has " $ ShopList.Length $ " shops", class.name);
+    log("The map has " $ ShopList.Length $ " shops", class.name);
 
     foreach DynamicActors(class'ZombieVolume', ZVol) {
         if (!ZVol.bObjectiveModeOnly || bUsingObjectiveMode) {
@@ -2360,75 +2362,93 @@ function final string GetCmdLine()
     return CmdLine;
 }
 
+function bool IsItemAllowed(class<Pickup> PC)
+{
+    if (PC == none)
+        return false;
+
+    if (TourneyMode != 0 && (TourneyMode & TOURNEY_ALL_WEAPONS) == 0) {
+        switch (PC.outer.name) {
+            case 'ScrnBalanceSrv':
+                // ZED guns are prohibited in Tourney.
+                if (PC == class'ScrnCrossbuzzsawPickup' || PC == class'ScrnM99Pickup' || PC == class'ScrnZEDMKIIPickup')
+                    return false;
+
+                // While Horzine Armor is inside the core ScrN package, we consider it a part of SWP
+                if (PC == class'ScrnHorzineVestPickup' && (TourneyMode & TOURNEY_SWP) == 0)
+                    return false;
+                break;
+            case 'KFMod':
+                if ((TourneyMode & TOURNEY_VANILLA) == 0)
+                    return false;
+                if (PC == class'ZEDGunPickup' || PC == class'ZEDMKIIPickup')
+                    return false;
+                break;
+            case 'ScrnWeaponPack':
+                if ((TourneyMode & TOURNEY_SWP) == 0)
+                    return false;
+                if (PC.name == 'RPGPickup' || PC.name == 'HRLPickup')
+                    return false;
+                break;
+            default:
+                return false;
+        }
+    }
+
+    if (ScrnGameLength != none)
+        return ScrnGameLength.IsItemAllowed(PC);
+    return true;
+}
+
+function bool IsPerkAllowed(class<ScrnVeterancyTypes> Perk)
+{
+    if (Perk == none)
+        return false;
+
+    if (TourneyMode != 0 && (TourneyMode & TOURNEY_ALL_PERKS) == 0) {
+        switch (Perk.outer.name) {
+            case 'ScrnBalanceSrv':
+                // allow all ScrN perks
+                break;
+            case 'ScrnHMG':
+                if ((TourneyMode & TOURNEY_HMG) == 0)
+                    return false;
+                break;
+            default:
+                return false;
+        }
+    }
+
+    if (ScrnGameLength != none)
+        return ScrnGameLength.IsPerkAllowed(Perk);
+    return true;
+}
+
+
 // this must be called after ServerPerksMut.SetupRepLink()
 function SetupRepLink(ScrnClientPerkRepLink R)
 {
     local int i;
-    local class<Pickup> PC;
-    local bool bVanilla, bSWP, bHMG;
-    local bool bAllow;
-    local name PackageName;
 
     if ( R == none )
         return; // wtf?
+
+    for (i = R.ShopInventory.length-1; i >= 0; --i) {
+        if (!IsItemAllowed(R.ShopInventory[i].PC)) {
+            R.ShopInventory.remove(i, 1);
+        }
+    }
+
+    for (i = R.CachePerks.length-1; i >= 0; --i ) {
+        if (!IsPerkAllowed(class<ScrnVeterancyTypes>((R.CachePerks[i].PerkClass)))) {
+            R.CachePerks.remove(i, 1);
+        }
+    }
 
     if ( ScrnGameLength != none ) {
         R.Zeds.length = ScrnGameLength.AllZeds.length;
         for ( i = 0; i < ScrnGameLength.AllZeds.length; ++i ) {
             R.Zeds[i] = ScrnGameLength.AllZeds[i];
-        }
-        ScrnGameLength.SetupRepLink(R);
-    }
-
-    if ( TourneyMode == 0 )
-        return;
-
-    bVanilla = (TourneyMode & TOURNEY_VANILLA) != 0;
-    bSWP = (TourneyMode & TOURNEY_SWP) != 0;
-    bHMG = (TourneyMode & TOURNEY_HMG) != 0;
-
-    if ( (TourneyMode & TOURNEY_ALL_WEAPONS) == 0 ) {
-        // trader inventory filter for tourney mode
-        for ( i= R.ShopInventory.length-1; i >= 0; --i ) {
-            PC = R.ShopInventory[i].PC;
-            if ( PC == none ) {
-                // shouldn't happen
-                R.ShopInventory.remove(i, 1);
-                continue;
-            }
-
-            PackageName = PC.outer.name;
-            if ( PackageName == 'ScrnBalanceSrv' ) {
-                // ZED guns are prohibited in Tourney.
-                // While Horzine Armor is inside the core ScrN package, we consider it a part of SWP
-                bAllow = PC != class'ScrnCrossbuzzsawPickup'
-                        && PC != class'ScrnM99Pickup'
-                        && PC != class'ScrnZEDMKIIPickup'
-                        && (bSWP || PC != class'ScrnHorzineVestPickup');
-            }
-            else if ( PackageName == 'KFMod' ) {
-                bAllow = bVanilla && PC != class'ZEDGunPickup' && PC != class'ZEDMKIIPickup';
-            }
-            else if ( PackageName == 'ScrnWeaponPack' ) {
-                bAllow = bSWP && PC.name != 'RPGPickup' && PC.name != 'HRLPickup';
-            }
-            else {
-                bAllow = false;
-            }
-
-            if ( !bAllow ) {
-                R.ShopInventory.remove(i, 1);
-            }
-        }
-    }
-
-    if ( (TourneyMode & TOURNEY_ALL_PERKS) == 0 ) {
-        // perk filter for tourney mode
-        for ( i = R.CachePerks.length-1; i >= 0; --i ) {
-            PackageName = R.CachePerks[i].PerkClass.outer.name;
-            bAllow = PackageName == 'ScrnBalanceSrv' || (bHMG && PackageName == 'ScrnHMG');
-            if ( !bAllow )
-                R.CachePerks.remove(i, 1);
         }
     }
 }
@@ -4111,7 +4131,7 @@ State MatchInProgress
             OpenShops();
         }
 
-        if ( WaveCountDown == 30 || WaveCountDown == 10 ) {
+        if (bTradingDoorsOpen && (WaveCountDown == 30 || WaveCountDown == 10)) {
             if ( WaveCountDown == 30 )
                 i = 4; // Have Trader tell players that they've got 30 seconds
             else
@@ -4356,7 +4376,7 @@ State MatchInProgress
 
         if (ScrnGameLength != none && ScrnGameLength.Wave.TraderMessage != "")
             TraderMessageIndex = -1;  // do not display, as we will show TraderMessage instead
-        if (WaveNum < FinalWave)
+        else if (WaveNum < FinalWave)
             TraderMessageIndex = 2;
         else
             TraderMessageIndex = 3;

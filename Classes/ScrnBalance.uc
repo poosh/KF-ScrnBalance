@@ -26,6 +26,8 @@ var deprecated int TraderTimeNormal, TraderTimeHard, TraderTimeSui, TraderTimeHo
 
 var ScrnBalance Mut; // pointer to self to use in static functions, i.e class'ScrnBalance'.default.Mut
 
+var string CmdLine;
+
 var const string BonusCapGroup;
 
 var string strBonusLevel;
@@ -145,8 +147,6 @@ var transient float NextStatSaveTime;
 
 var protected bool bTradingDoorsOpen; // used to check wave start / end
 var protected transient byte CurWave; // used to check wave start / end
-
-var ScrnCustomWeaponLink CustomWeaponLink;
 
 var transient bool bInitReplicationReceived;
 
@@ -299,6 +299,7 @@ struct SDLCLock {
 };
 var globalconfig bool bUseDLCLocks,bUseDLCLevelLocks;
 var ScrnLock LockManager;
+var ScrnGlobalRepLink GlobalRepLink;
 var globalconfig bool bBuyPerkedWeaponsOnly, bPickPerkedWeaponsOnly;
 
 struct SNameValuePair {
@@ -372,7 +373,7 @@ replication
 
     // non-config vars and configs vars which seem to replicate fine
     reliable if ( bNetInitial && Role == ROLE_Authority )
-        CustomWeaponLink, SrvTourneyMode, bTSCGame, bTestMap, SrvMarkDistance, SrvMarkZedBounty, SrvNetSpeed;
+        SrvTourneyMode, bTSCGame, bTestMap, SrvMarkDistance, SrvMarkZedBounty, SrvNetSpeed;
 
 }
 
@@ -1328,8 +1329,8 @@ function Mutate(string MutateString, PlayerController Sender)
             Sender.ClientMessage(FriendlyName);
             break;
         case MUTATE_CMDLINE:
-            if ( CheckAdmin(Sender) && CheckScrnGT(Sender) )
-                class'ScrnFunctions'.static.LongMessage(Sender, ScrnGT.GetCmdLine(), 80, "?");
+            if (CheckAdmin(Sender))
+                class'ScrnFunctions'.static.LongMessage(Sender, CmdLine, 80, "?");
             break;
         case MUTATE_DEBUGGAME:
             if ( CheckAdmin(Sender) )
@@ -1892,17 +1893,16 @@ simulated function ApplyWeaponFix()
 function LoadCustomWeapons()
 {
     local string S, WeaponClassStr, WeaponBonusStr, PriceStr;
-    local int i,j;
-    local int PerkIndex, MaxPerkIndex;
+    local int i, j;
+    local int PerkIndex, MaxPerkIndex, BonusMask;
     local bool AllBonuses;
     local class<KFWeapon> W;
     local class<ScrnVeterancyTypes> ScrnPerk;
-    local ScrnCustomWeaponLink ClientLink;
     local int ForcePrice;
 
     // Load custom perks first
     MaxPerkIndex = 9;
-    for( i = 0; i < CustomPerks.Length; i++ ) {
+    for (i = 0; i < CustomPerks.Length; ++i) {
         S = CustomPerks[i];
         j = InStr(S,":");
         if ( j > 0 ) {
@@ -1919,30 +1919,39 @@ function LoadCustomWeapons()
 
         ScrnPerk = class<ScrnVeterancyTypes>(DynamicLoadObject(S, Class'Class'));
         if( ScrnPerk != None ) {
-            Perks[PerkIndex] = ScrnPerk;
-            AddToPackageMap(String(ScrnPerk.Outer.Name));
-            MaxPerkIndex = max(MaxPerkIndex, PerkIndex);
-            log("Perk: '" $ S $"' loaded with index = " $ String(PerkIndex), 'ScrnBalance');
+            if (ScrnGT != none && !ScrnGT.IsPerkAllowed(ScrnPerk)) {
+                log("Prohibit perk #" $ PerkIndex @ S, 'ScrnBalance');
+            }
+            else {
+                Perks[PerkIndex] = ScrnPerk;
+                AddToPackageMap(String(ScrnPerk.Outer.Name));
+                MaxPerkIndex = max(MaxPerkIndex, PerkIndex);
+                log("Load perk #" $ PerkIndex @ S, 'ScrnBalance');
+            }
         }
         else
             log("Unable to load custom perk: '" $ S $"'.", 'ScrnBalance');
     }
 
     // Load weapon bonuses
-    for( i=0; i < PerkedWeapons.Length; i++ ) {
+    for (i=0; i < PerkedWeapons.Length; ++i) {
         PriceStr = "";
         WeaponBonusStr = "";
 
         S = PerkedWeapons[i];
         j = InStr(S,":");
-        if( j <= 0 ) {
+        if (j <= 0) {
             log("Illegal Custom Weapon definition: '" $ S $"'! Wrong perk index.", 'ScrnBalance');
             continue;
         }
 
         PerkIndex = int(Left(S, j));
-        if ( PerkIndex < 0 || PerkIndex >= Perks.length || Perks[PerkIndex] == none ) {
+        if (PerkIndex < 0) {
             log("Illegal Custom Weapon definition: '" $ S $"'! Wrong perk index.", 'ScrnBalance');
+        }
+
+        if (PerkIndex >= Perks.length || Perks[PerkIndex] == none) {
+            log("Prohibit weapon '" $ S $"' - no perk #" $ PerkIndex, 'ScrnBalance');
             continue;
         }
         ScrnPerk = Perks[PerkIndex];
@@ -1961,48 +1970,51 @@ function LoadCustomWeapons()
             }
         }
         AllBonuses = WeaponBonusStr == "";
-        ForcePrice = int(PriceStr);
+        ForcePrice = min(0xFFFF, int(PriceStr));
         //log("WeaponBonusStr="$WeaponBonusStr @ "ForcePrice="$ForcePrice  , 'ScrnBalance');
 
         W = class<KFWeapon>(DynamicLoadObject(WeaponClassStr, Class'Class'));
-        if( W == none ) {
+        if (W == none)  {
             log("Can't load Custom Weapon: '" $ WeaponClassStr $"'!", 'ScrnBalance');
             continue;
         }
-
-        ClientLink = spawn(class'ScrnCustomWeaponLink');
-        if ( ClientLink == none ) {
-            log("Can't load Client Replication Link for a Custom Weapon: '" $ W $"'!", 'ScrnBalance');
+        if (ScrnGT != none && !ScrnGT.IsItemAllowed(W.default.PickupClass)) {
+            Log("Prohibit weapon " $ W, 'ScrnBalance');
             continue;
         }
-        //add to the begining
-        ClientLink.NextReplicationInfo = CustomWeaponLink;
-        CustomWeaponLink = ClientLink;
 
-        ClientLink.Perk = ScrnPerk;
-        ClientLink.WeaponClass = W;
-        if ( AllBonuses ) {
-            ClientLink.bWeapon = true;
-            ClientLink.bDiscount = true;
-            ClientLink.bFire = true;
-            ClientLink.bFireAlt = true;
-            ClientLink.bAmmo = true;
-            ClientLink.bAmmoAlt = true;
+        if (AllBonuses) {
+            BonusMask = GlobalRepLink.WBONUSES_DEFAULT;
         }
         else {
-            ClientLink.bWeapon = InStr(WeaponBonusStr,"W") != -1;
-            ClientLink.bDiscount = InStr(WeaponBonusStr,"$") != -1;
-            ClientLink.bFire = InStr(WeaponBonusStr,"P") != -1;
-            ClientLink.bFireAlt = InStr(WeaponBonusStr,"S") != -1;
-            ClientLink.bAmmo = InStr(WeaponBonusStr,"A") != -1;
-            ClientLink.bAmmoAlt = InStr(WeaponBonusStr,"B") != -1;
+            BonusMask = 0;
+            TextToBitMask(WeaponBonusStr, "W", BonusMask, GlobalRepLink.WBONUS_WEAPON);
+            TextToBitMask(WeaponBonusStr, "$", BonusMask, GlobalRepLink.WBONUS_DISCOUNT);
+            TextToBitMask(WeaponBonusStr, "P", BonusMask, GlobalRepLink.WBONUS_FIRE0);
+            TextToBitMask(WeaponBonusStr, "S", BonusMask, GlobalRepLink.WBONUS_FIRE1);
+            TextToBitMask(WeaponBonusStr, "A", BonusMask, GlobalRepLink.WBONUS_AMMO0);
+            TextToBitMask(WeaponBonusStr, "B", BonusMask, GlobalRepLink.WBONUS_AMMO1);
+            TextToBitMask(WeaponBonusStr, "*", BonusMask, GlobalRepLink.WBONUS_SPECIAL);
+            TextToBitMask(WeaponBonusStr, "D", BonusMask, GlobalRepLink.WBONUS_DT0);
+            TextToBitMask(WeaponBonusStr, "d", BonusMask, GlobalRepLink.WBONUS_DT1);
         }
-        ClientLink.bOverrideDamType = InStr(WeaponBonusStr,"D") != -1;
-        ClientLink.bOverrideDamTypeAlt = InStr(WeaponBonusStr,"d") != -1;
-        ClientLink.bSpecial = InStr(WeaponBonusStr,"*") != -1;
-        ClientLink.ForcePrice = ForcePrice;
+        BonusMask = BonusMask | (ForcePrice << 16);
 
-        ClientLink.LoadWeaponBonuses();
+        j = GlobalRepLink.WeaponBonuses.Length;
+        GlobalRepLink.WeaponBonuses.insert(j, 1);
+        GlobalRepLink.WeaponBonuses[j].Perk = ScrnPerk;
+        GlobalRepLink.WeaponBonuses[j].Weapon = W;
+        GlobalRepLink.WeaponBonuses[j].BonusMask = BonusMask;
+        GlobalRepLink.AddWeaponBonuses(ScrnPerk, W, BonusMask);
+    }
+
+    LoadSpawnInventory();
+}
+
+function TextToBitMask(String TextMask, String Key, out int BitMask, int Bit)
+{
+    if (InStr(TextMask, Key) != -1) {
+        BitMask = BitMask | Bit;
     }
 }
 
@@ -2293,7 +2305,7 @@ function SetupRepLink(ClientPerkRepLink R)
 {
     local ScrnClientPerkRepLink ScrnRep;
     local class<ScrnVeterancyTypes> Perk;
-    local int i, j;
+    local int i;
 
     if ( R == none )
         return;
@@ -2302,61 +2314,75 @@ function SetupRepLink(ClientPerkRepLink R)
     if ( ScrnClientPerkRepLink(R) != none )
         return; // already set up
 
-    ScrnRep = Spawn(Class'ScrnClientPerkRepLink',R.Owner);
+    ScrnRep = Spawn(Class'ScrnClientPerkRepLink', R.Owner);
     ScrnRep.StatObject = R.StatObject;
     ScrnRep.StatObject.Rep = ScrnRep;
+    ScrnRep.OwnerPC = ScrnPlayerController(R.Owner);
+    ScrnRep.OwnerPRI = KFPlayerReplicationInfo(ScrnRep.OwnerPC.PlayerReplicationInfo);
 
     ScrnRep.ServerWebSite = R.ServerWebSite;
     // cannot go past level 70 to avoid int32 overflow
     ScrnRep.MaximumLevel = min(R.MaximumLevel, 70);
     ScrnRep.MinimumLevel = min(R.MinimumLevel, ScrnRep.MaximumLevel);
     ScrnRep.RequirementScaling = R.RequirementScaling;
-    ScrnRep.CachePerks = R.CachePerks;
-    // remove non-scrn perks
-    for( i=0; i<ScrnRep.CachePerks.Length; ++i) {
-        Perk = class<ScrnVeterancyTypes>(ScrnRep.CachePerks[i].PerkClass);
-        if ( Perk == none || (bHardcore && !Perk.default.bHardcoreReady) )
-            ScrnRep.CachePerks.remove(i--, 1);
+
+    if (!GlobalRepLink.bLoaded) {
+        ScrnRep.CachePerks = R.CachePerks;
+        if (ScrnRep.CachePerks.Length > 250)
+            ScrnRep.CachePerks.Length = 250; //wtf?
+        for (i = ScrnRep.CachePerks.length-1; i >= 0; --i ) {
+            Perk = class<ScrnVeterancyTypes>(ScrnRep.CachePerks[i].PerkClass);
+            if (Perk == none || (bHardcore && !Perk.default.bHardcoreReady))
+                ScrnRep.CachePerks.remove(i--, 1);
+        }
+
+        if (ScrnRep.ShopCategories.Length > 250)
+            ScrnRep.ShopCategories.Length = 250; //wtf?
+
+        if (ScrnGT != none)
+            ScrnGT.SetupRepLink(ScrnRep);
+
+        GlobalRepLink.LoadDefaults(ScrnRep);
     }
+    GlobalRepLink.SetupRepLink(ScrnRep);
 
-    ScrnRep.OwnerPC = ScrnPlayerController(R.Owner);
-    ScrnRep.OwnerPRI = KFPlayerReplicationInfo(ScrnRep.OwnerPC.PlayerReplicationInfo);
-    log("Creating ScrnClientPerkRepLink for player " $ class'ScrnF'.static.PlainPlayerName(ScrnRep.OwnerPRI)
-            , 'ScrnBalance');
-
-    R.GotoState('');
-    R.Destroy();
-    R = ScrnRep;
 
     class'ScrnAchCtrl'.static.InitLink(ScrnRep);
 
-    if ( LockManager != none && LockManager.GetDLCDLCLockCount() > 0 ) {
-        ScrnRep.Locks.Length = LockManager.GetDLCDLCLockCount();
-        for( i = 0; i < LockManager.DLCLocks.Length; ++i) {
-            if ( LockManager.DLCLocks[i].PickupClass != none
-                    && (bUseDLCLevelLocks || LockManager.DLCLocks[i].Type != LOCK_Level) )
-            {
-                ScrnRep.Locks[j].PickupClass = LockManager.DLCLocks[i].PickupClass;
-                ScrnRep.Locks[j].Group       = LockManager.DLCLocks[i].Group;
-                ScrnRep.Locks[j].Type        = LockManager.DLCLocks[i].Type;
-                ScrnRep.Locks[j].ID          = LockManager.DLCLocks[i].ID;
-                ScrnRep.Locks[j].MaxProgress = LockManager.DLCLocks[i].Value;
-                ++j;
-            }
-        }
-    }
-
-    if ( ScrnGT != none )
-        ScrnGT.SetupRepLink(ScrnRep);
-
     // used for client replication
-    if ( ScrnRep.ShopCategories.Length > 250 )
-        ScrnRep.ShopCategories.Length = 250; //wtf?
+    ScrnRep.TotalPerks = ScrnRep.CachePerks.Length;
+    ScrnRep.TotalWeaponBonuses = ScrnRep.WeaponBonuses.Length;
     ScrnRep.TotalCategories = ScrnRep.ShopCategories.Length;
     ScrnRep.TotalWeapons = ScrnRep.ShopInventory.Length;
     ScrnRep.TotalZeds = ScrnRep.Zeds.Length;
     ScrnRep.TotalLocks = ScrnRep.Locks.Length;
     ScrnRep.TotalChars = ScrnRep.CustomChars.Length;
+
+    R.GotoState('');
+    R.Destroy();
+}
+
+function LoadGlobalRepLinkLocks()
+{
+    local int i, j;
+
+    if (LockManager == none)
+        return;
+
+    GlobalRepLink.Locks.Length = LockManager.GetDLCDLCLockCount();
+    for (i = 0; i < LockManager.DLCLocks.Length; ++i) {
+        if (LockManager.DLCLocks[i].PickupClass != none
+                && (bUseDLCLevelLocks || LockManager.DLCLocks[i].Type != LOCK_Level))
+        {
+            GlobalRepLink.Locks[j].PickupClass = LockManager.DLCLocks[i].PickupClass;
+            GlobalRepLink.Locks[j].Group       = LockManager.DLCLocks[i].Group;
+            GlobalRepLink.Locks[j].Type        = LockManager.DLCLocks[i].Type;
+            GlobalRepLink.Locks[j].ID          = LockManager.DLCLocks[i].ID;
+            GlobalRepLink.Locks[j].MaxProgress = LockManager.DLCLocks[i].Value;
+            ++j;
+        }
+    }
+    GlobalRepLink.Locks.Length = j;
 }
 
 function ForceEvent()
@@ -2597,16 +2623,20 @@ function PostBeginPlay()
         PauseTimeRemaining = MaxPauseTimePerWave;
     }
 
-    LoadCustomWeapons();
+    GlobalRepLink = spawn(class'ScrnGlobalRepLink', self);
+    GlobalRepLink.Mut = self;
+    if (ScrnGT == none) {
+        LoadCustomWeapons();
+    }
     if ( bUseDLCLocks && !SpawnBalanceRequired() ) {
         LockManager = spawn(class'ScrnLock');
         LockManager.LoadDLCLocks(bUseDLCLevelLocks);
+        LoadGlobalRepLinkLocks();
     }
     else {
         log("DLC Locks disabled", 'ScrnBalance');
     }
     InitSettings();
-    LoadSpawnInventory();
     SetupSrvInfo();
 
     if ( bStoryMode ) {
@@ -2719,6 +2749,19 @@ function SetNetSpeed()
     inetRate = int(ConsoleCommand("get IpDrv.TcpNetDriver MaxInternetClientRate"));
     SrvNetspeed = min(rate, inetRate);
     log("SrvNetspeed = " $ SrvNetspeed, class.name);
+}
+
+function SetCmdLine(string s)
+{
+    CmdLine = s;
+}
+
+function int GetTickRate()
+{
+    // Assume  it is an internet server.
+    // LAN server is hosted by launching ucc with "-lanplay" argument,
+    // but I didn't find out the way to obtain the value in UnrealScript.
+    return int(ConsoleCommand("get IpDrv.TcpNetDriver NetServerMaxTickRate"));
 }
 
 function SetupSrvInfo()
@@ -3131,9 +3174,6 @@ function ServerTraveling(string URL, bool bItems)
         }
     }
 
-    DestroyLinkedInfo(CustomWeaponLink);
-    CustomWeaponLink = none;
-
     // destroy local objects
     if ( MapInfo != none ) {
         MapInfo.Mut = none;
@@ -3150,6 +3190,10 @@ function ServerTraveling(string URL, bool bItems)
     if ( LockManager != none ) {
         LockManager.Destroy();
         LockManager = none;
+    }
+    if (GlobalRepLink != none) {
+        GlobalRepLink.Destroy();
+        GlobalRepLink = none;
     }
 
     if (!bTestMap) {
@@ -3322,7 +3366,7 @@ function GameResumed()
 
 defaultproperties
 {
-    VersionNumber=97305
+    VersionNumber=97307
     GroupName="KF-Scrn"
     FriendlyName="ScrN Balance"
     Description="Total rework of KF1 to make it modern and the best tactical coop in the world while sticking to the roots of the original."
