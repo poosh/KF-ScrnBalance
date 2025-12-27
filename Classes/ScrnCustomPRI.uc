@@ -18,10 +18,15 @@ const SteamUID_Part2 =         960265728;
 
 var bool bReachedGoal;
 
+var int TotalDamageK, TotalHeal;
+
 replication
 {
     reliable if ( (bNetDirty || bNetInitial) && Role == Role_Authority )
-        DoshRequestCounter, BlameCounter, SteamID32, bReachedGoal;
+        SteamID32;
+
+    reliable if ( bNetDirty && Role == Role_Authority )
+        DoshRequestCounter, BlameCounter, bReachedGoal, TotalDamageK, TotalHeal;
 }
 
 function PostBeginPlay()

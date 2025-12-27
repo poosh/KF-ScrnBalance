@@ -349,4 +349,30 @@ defaultproperties
          RenderWeight=0.900000
      End Object
      CurrentMapLabel=CurrentMapL
+
+    Begin Object Class=GUIImage Name=WaveB
+        Image=Texture'KillingFloorHUD.HUD.Hud_Bio_Circle'
+        ImageStyle=ISTY_Scaled
+        ImageRenderStyle=MSTY_Normal
+        WinTop=0.043810
+        WinLeft=0.923238
+        WinWidth=0.051642
+        WinHeight=0.061783
+        RenderWeight=0.800000
+    End Object
+    WaveBG=WaveB
+
+    Begin Object Class=GUILabel Name=WaveL
+        Caption="1/4"
+        TextAlign=TXTA_Center
+        TextColor=(B=158,G=176,R=175)
+        VertAlign=TXTA_Center
+        FontScale=FNS_Small
+        WinTop=0.043810
+        WinLeft=0.923238
+        WinWidth=0.051642
+        WinHeight=0.061783
+        RenderWeight=0.900000
+    End Object
+    WaveLabel=WaveL
 }

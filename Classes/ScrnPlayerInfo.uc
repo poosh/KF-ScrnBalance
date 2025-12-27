@@ -95,7 +95,7 @@ var int DecapsPerWave, DecapsPerGame; // number of decapitations in the current 
 var int DamagePerWave, DamagePerGame;
 
 var int DamageReceivedPerWave, DamageReceivedPerGame; // damage received from monsters
-var int HealedPointsInWave;
+var int HealedPointsInWave, HealedPointsInGame;
 var int MedicDamage;
 var int MEDICXP_PER_1000DMG;
 
@@ -765,16 +765,19 @@ function MadeDamage(int Damage, KFMonster Injured, class<KFWeaponDamageType> Dam
     local float t;
     local KFWeapon Weapon;
     local KFPlayerReplicationInfo KFPRI;
+    local ScrnCustomPRI ScrnPRI;
 
     if ( PlayerOwner == none )
         return;
     KFPRI = KFPlayerReplicationInfo(PlayerOwner.PlayerReplicationInfo);
+    ScrnPRI = class'ScrnCustomPRI'.static.FindMe(KFPRI);
 
     LastDamage = Damage;
     LastDamageType = DamType;
     LastDamagedMonster = Injured;
     DamagePerWave += Damage;
     DamagePerGame += Damage;
+    ScrnPRI.TotalDamageK = (DamagePerGame >> 10);
 
     self.bHeadshot = bHeadshot;
     if ( bHeadshot ) {
@@ -988,8 +991,16 @@ function Died(Controller Killer, class<DamageType> DamType)
 function Healed(int HealAmount, ScrnHumanPawn Patient, KFWeapon MedicGun)
 {
     local int i;
+    local ScrnCustomPRI ScrnPRI;
+
+    if ( PlayerOwner == none )
+        return;
+
+    ScrnPRI = class'ScrnCustomPRI'.static.FindMe(PlayerOwner.PlayerReplicationInfo);
 
     HealedPointsInWave += HealAmount;
+    HealedPointsInGame += HealAmount;
+    ScrnPRI.TotalHeal = HealedPointsInGame;
 
     for ( i=0; i<GameRules.AchHandlers.length; ++i )
         GameRules.AchHandlers[i].HealingMade(HealAmount, Patient, self, MedicGun);

@@ -6,15 +6,23 @@ var     localized   string      strPingMax;
 var     localized   string      SpectatorsText;
 var     localized   string      SuicideTimeText;
 var     localized   string      TotalText;
+var     localized   string      DamageText;
+var     localized   string      HealText;
 
+var Material AdminIcon, BlameIcon, BigBlameIcon, DeathIcon;
+var Material WhiteMaterial;
 
-var     material                 AdminIcon, BlameIcon, BigBlameIcon;
-var     material                DeathIcon;
+var color AssColor, DoshColor, BestColor;
 
+var float BoxWidth;
+var transient float BoxX;
+var transient float VetX, NameX, KillsX, DamageX, HealX, DeathsX, CashX, HealthX, TimeX, NetX;
+var transient float StoryIconXPos, StoryIconS;
 
-var        Material                WhiteMaterial;
+var int PlayerFontIndex;
 
-var()     color                    AssColor, DoshColor;
+var transient float OldClipX, OldClipY;
+var transient float BoxHeight, BoxSpaceY;
 
 // SE - because DrawCountryName() is final :(
 static function float DrawCountryNameSE( Canvas C, PlayerReplicationInfo PRI, float X, float Y,
@@ -207,30 +215,86 @@ static function float DrawNamePostfixIcons(Canvas C, PlayerReplicationInfo PRI, 
     return X-OriginalX;
 }
 
+simulated function ResolutionChanged(Canvas Canvas)
+{
+    local float XL, YL, X0;
+
+    if ( Canvas.ClipX < 600 )
+        PlayerFontIndex = 4;
+    else if ( Canvas.ClipX < 800 )
+        PlayerFontIndex = 3;
+    else if ( Canvas.ClipX < 1300 )
+        PlayerFontIndex = 2;
+    else if ( Canvas.ClipX < 1900 )
+        PlayerFontIndex = 1;
+    else
+        PlayerFontIndex = 0;
+
+    Canvas.Font = class'ScrnHUD'.static.LoadMenuFontStatic(PlayerFontIndex);
+    Canvas.TextSize("0", X0, YL);
+    BoxHeight = 1.2 * YL;
+    BoxSpaceY = 0.25 * YL;
+
+    BoxWidth = default.BoxWidth * Canvas.ClipX;
+    BoxX = (Canvas.ClipX - BoxWidth) / 2;
+
+    VetX = BoxX + X0;
+    NameX = VetX + BoxHeight * 1.75;
+
+    NetX = BoxX + BoxWidth - X0;
+    Canvas.TextSize("00:00:00", XL, YL);
+    TimeX = NetX - 5*X0 - XL/2;
+
+    HealthX = TimeX - XL/2 - X0;
+    Canvas.TextSize("999 HP", XL, YL);
+    HealthX -= XL/2;
+
+    CashX = HealthX - XL/2 - X0;
+    Canvas.TextSize(class'ScrnUnicode'.default.Dosh $ "999999", XL, YL);
+    CashX -= XL/2;
+
+    DeathsX = CashX - XL/2 - X0;
+    DeathsX -= X0;  // Center align, two digits max
+
+    HealX = DeathsX - 2*X0; // right align
+
+    DamageX = HealX - 6*X0;
+
+    Canvas.TextSize(KillsAssSeparator $ "9999", XL, YL);
+    KillsX = DamageX - 8*X0 - XL;
+
+    StoryIconS = BoxHeight - 2;
+    StoryIconXPos = KillsX - StoryIconS - 6*X0;
+}
+
 simulated event UpdateScoreBoard(Canvas Canvas)
 {
     local PlayerReplicationInfo PRI, OwnerPRI;
     local KFPlayerReplicationInfo KFPRI;
+    local ScrnCustomPRI ScrnPRI;
     local KF_StoryPRI StoryPRI;
     local ScrnGameReplicationInfo ScrnGRI;
-    local int i, fi, FontReduction, NetXPos, PlayerCount, SpecCount, AliveCount, HeaderOffsetY,
-        HeadFoot, MessageFoot,
-        PlayerBoxSizeY, BoxSpaceY, NameXPos, BoxTextOffsetY, HealthXPos, BoxXPos,
-        KillsXPos, TitleYPos, BoxWidth, VetXPos, NotShownCount,
-        StoryIconXPos;
+    local int i, FontReduction, PlayerCount, SpecCount, AliveCount, HeaderOffsetY, HeadFoot, MessageFoot,BoxTextOffsetY,
+            TitleYPos, NotShownCount;
     local float XL,YL, y;
-    local float deathsXL, KillsXL, NetXL, HealthXL, MaxNamePos, DeathsXPos, KillWidthX, CashXPos, TimeXPos, PProgressXS;
+    local float deathsXL, KillsXL, NetXL, HealthXL, MaxNamePos, KillWidthX;
     local Material VeterancyBox,StarBox;
     local string S;
     local byte Stars;
     local KF_StoryObjective CurrentObj;
     local array<PlayerReplicationInfo> TeamPRIArray;
     local bool bStoryMode;
-    local float StoryIconS;
     local material StoryIcon;
     local String Spectators;
     local int TotalKills, TotalDeaths, TotalCash;
     local int LineHeight;
+    local int MaxKills, MaxAss, MaxDamage, MaxHeals;
+
+    if (OldClipX != Canvas.ClipX || OldClipY != Canvas.ClipY) {
+        ResolutionChanged(Canvas);
+        OldClipX = Canvas.ClipX;
+        OldClipY = Canvas.ClipY;
+    }
 
     OwnerPRI = KFPlayerController(Owner).PlayerReplicationInfo;
     bStoryMode = KF_StoryPRI(OwnerPRI) != none;
@@ -239,11 +303,18 @@ simulated event UpdateScoreBoard(Canvas Canvas)
     for ( i = 0; i < GRI.PRIArray.Length; i++) {
         PRI = GRI.PRIArray[i];
         KFPRI = KFPlayerReplicationInfo(PRI);
-        if ( !PRI.bOnlySpectator ) {
+        ScrnPRI = class'ScrnCustomPRI'.static.FindMe(PRI);
+        if (!PRI.bOnlySpectator) {
             if( !PRI.bOutOfLives && KFPRI != none && KFPRI.PlayerHealth > 0 )
                 ++AliveCount;
             PlayerCount++;
-            TeamPRIArray[ TeamPRIArray.Length ] = PRI;
+            TeamPRIArray[TeamPRIArray.Length] = PRI;
+            MaxKills = max(MaxKills, KFPRI.Kills);
+            MaxAss =  max(MaxAss, KFPRI.KillAssists);
+            if (ScrnPRI != none) {
+                MaxDamage = max(MaxDamage, ScrnPRI.TotalDamageK);
+                MaxHeals = max(MaxHeals, ScrnPRI.TotalHeal);
+            }
         }
         else if ( PRI.PlayerID != 0 || PRI.PlayerName != "WebAdmin" ) {
             ++SpecCount;
@@ -251,7 +322,7 @@ simulated event UpdateScoreBoard(Canvas Canvas)
         }
     }
 
-    Canvas.Font = class'ROHud'.static.GetSmallMenuFont(Canvas);
+    Canvas.Font = class'ScrnHUD'.static.GetSmallMenuFont(Canvas);
     Canvas.DrawColor = HUDClass.default.RedColor;
     Canvas.Style = ERenderStyle.STY_Normal;
     HeaderOffsetY = Canvas.ClipY * 0.11;
@@ -318,80 +389,45 @@ simulated event UpdateScoreBoard(Canvas Canvas)
     }
     HeaderOffsetY+=(YL*3.f);
 
-    // Select best font size and box size to fit as many players as possible on screen
-    if ( Canvas.ClipX < 600 )
-        fi = 4;
-    else if ( Canvas.ClipX < 800 )
-        fi = 3;
-    else if ( Canvas.ClipX < 1000 )
-        fi = 2;
-    else if ( Canvas.ClipX < 1200 )
-        fi = 1;
-    else
-        fi = 0;
-
-    Canvas.Font = class'ROHud'.static.LoadMenuFontStatic(fi);
-    Canvas.TextSize("Test", XL, YL);
-    PlayerBoxSizeY = 1.2 * YL;
-    BoxSpaceY = 0.25 * YL;
-
-    while( ((PlayerBoxSizeY+BoxSpaceY)*PlayerCount)>(Canvas.ClipY-HeaderOffsetY) )
-    {
-        if( ++fi>=5 || ++FontReduction>=3 ) // Shrink font, if too small then break loop.
-        {
+    Canvas.Font = class'ScrnHUD'.static.LoadMenuFontStatic(PlayerFontIndex);
+    while ((BoxHeight + BoxSpaceY) * PlayerCount > Canvas.ClipY - HeaderOffsetY) {
+        // Shrink font, if too small then break loop.
+        if (PlayerFontIndex + FontReduction >= 4) {
             // We need to remove some player names here to make it fit.
-            NotShownCount = PlayerCount-int((Canvas.ClipY-HeaderOffsetY)/(PlayerBoxSizeY+BoxSpaceY))+1;
-            PlayerCount-=NotShownCount;
+            NotShownCount = PlayerCount - int((Canvas.ClipY - HeaderOffsetY) / (BoxHeight + BoxSpaceY)) + 1;
+            PlayerCount -= NotShownCount;
             break;
         }
-        Canvas.Font = class'ROHud'.static.LoadMenuFontStatic(fi);
+        ++FontReduction;
+        Canvas.Font = class'ScrnHUD'.static.LoadMenuFontStatic(PlayerFontIndex + FontReduction);
         Canvas.TextSize("Test", XL, YL);
-        PlayerBoxSizeY = 1.2 * YL;
-        BoxSpaceY = 0.25 * YL;
+        BoxHeight = 1.2 * YL;
+        BoxSpaceY = 4;
     }
 
     HeadFoot = 7 * YL;
     MessageFoot = 1.5 * HeadFoot;
 
-    BoxWidth = 0.9 * Canvas.ClipX;
-    BoxXPos = 0.5 * (Canvas.ClipX - BoxWidth);
-
-    BoxWidth = Canvas.ClipX - 2 * BoxXPos;
-    VetXPos = BoxXPos + 0.0001 * BoxWidth;
-    NameXPos = VetXPos + PlayerBoxSizeY*1.75f;
-    KillsXPos = BoxXPos + 0.50 * BoxWidth;
-    DeathsXPos = BoxXPos + 0.57 * BoxWidth;
-    CashXPos = BoxXPos + 0.65 * BoxWidth;
-    HealthXpos = BoxXPos + 0.75 * BoxWidth;
-    TimeXPos = BoxXPos + 0.87 * BoxWidth;
-    NetXPos = BoxXPos + 0.996 * BoxWidth;
-    if ( bStoryMode ) {
-        StoryIconS = PlayerBoxSizeY - 2;
-    }
-    StoryIconXPos = 0.45 * BoxWidth - StoryIconS * 0.5;
-    PProgressXS = BoxWidth * 0.1f;
-
     // draw background boxes
     Canvas.Style = ERenderStyle.STY_Alpha;
-    for ( i = 0; i < PlayerCount; i++ )
-    {
+    for (i = 0; i < PlayerCount; ++i) {
         Canvas.DrawColor = HUDClass.default.WhiteColor;
         Canvas.DrawColor.A = 128;
-        Canvas.SetPos(BoxXPos, HeaderOffsetY + (PlayerBoxSizeY + BoxSpaceY) * i);
-        Canvas.DrawTileStretched( BoxMaterial, BoxWidth, PlayerBoxSizeY);
+        Canvas.SetPos(BoxX, HeaderOffsetY + (BoxHeight + BoxSpaceY) * i);
+        Canvas.DrawTileStretched( BoxMaterial, BoxWidth, BoxHeight);
 
         // highlight myself
         if ( TeamPRIArray[i] == OwnerPRI ) {
             Canvas.SetDrawColor(0, 255, 0, 48);
-            Canvas.SetPos(BoxXPos + 1, HeaderOffsetY + (PlayerBoxSizeY + BoxSpaceY) * i + 1);
-            Canvas.DrawTileStretched( WhiteMaterial, BoxWidth-2, PlayerBoxSizeY-2);
+            Canvas.SetPos(BoxX + 1, HeaderOffsetY + (BoxHeight + BoxSpaceY) * i + 1);
+            Canvas.DrawTileStretched( WhiteMaterial, BoxWidth-2, BoxHeight-2);
         }
     }
-    if( NotShownCount>0 ) // Add box for not shown players.
-    {
+
+    if (NotShownCount > 0) {
         Canvas.DrawColor = HUDClass.default.RedColor;
-        Canvas.SetPos(BoxXPos, HeaderOffsetY + (PlayerBoxSizeY + BoxSpaceY) * PlayerCount);
-        Canvas.DrawTileStretched( BoxMaterial, BoxWidth, PlayerBoxSizeY);
+        Canvas.SetPos(BoxX, HeaderOffsetY + (BoxHeight + BoxSpaceY) * PlayerCount);
+        Canvas.DrawTileStretched( BoxMaterial, BoxWidth, BoxHeight);
     }
 
     // Draw headers
@@ -402,32 +438,40 @@ simulated event UpdateScoreBoard(Canvas Canvas)
     Canvas.TextSize(NetText, NetXL, YL);
 
     Canvas.DrawColor = HUDClass.default.WhiteColor;
-    Canvas.SetPos(NameXPos, TitleYPos);
+    Canvas.SetPos(NameX, TitleYPos);
     Canvas.DrawTextClipped(PlayerText);
 
-    Canvas.SetPos(KillsXPos - KillsXL, TitleYPos);
+    Canvas.SetPos(KillsX - KillsXL, TitleYPos);
     Canvas.DrawTextClipped(KillsText);
-    Canvas.SetPos(KillsXPos, TitleYPos);
+    Canvas.SetPos(KillsX, TitleYPos);
     Canvas.DrawColor = AssColor;
     Canvas.DrawTextClipped(KillsAssSeparator $ AssHeaderText);
+
+    Canvas.TextSize(DamageText, XL, YL);
+    Canvas.SetPos(DamageX - XL, TitleYPos);
+    Canvas.DrawTextClipped(DamageText);
+
+    Canvas.TextSize(HealText, XL, YL);
+    Canvas.SetPos(HealX - XL, TitleYPos);
+    Canvas.DrawTextClipped(HealText);
 
     // death icon
     Canvas.Style = ERenderStyle.STY_Alpha;
     Canvas.DrawColor = HUDClass.default.WhiteColor;
-    Canvas.SetPos(DeathsXPos - PlayerBoxSizeY/2, TitleYPos);
-    Canvas.DrawTile(DeathIcon, PlayerBoxSizeY, PlayerBoxSizeY, 0, 0, DeathIcon.MaterialUSize(), DeathIcon.MaterialVSize());
+    Canvas.SetPos(DeathsX - BoxHeight/2, TitleYPos);
+    Canvas.DrawTile(DeathIcon, BoxHeight, BoxHeight, 0, 0, DeathIcon.MaterialUSize(), DeathIcon.MaterialVSize());
     Canvas.Style = ERenderStyle.STY_Normal;
 
 
     Canvas.TextSize(PointsText, XL, YL);
-    Canvas.SetPos(CashXPos - 0.5 * XL, TitleYPos);
+    Canvas.SetPos(CashX - 0.5 * XL, TitleYPos);
     Canvas.DrawTextClipped(PointsText);
 
     Canvas.TextSize(TimeText, XL, YL);
-    Canvas.SetPos(TimeXPos - 0.5 * XL, TitleYPos);
+    Canvas.SetPos(TimeX - 0.5 * XL, TitleYPos);
     Canvas.DrawTextClipped(TimeText);
 
-    Canvas.SetPos(HealthXPos - 0.5 * HealthXL, TitleYPos);
+    Canvas.SetPos(HealthX - 0.5 * HealthXL, TitleYPos);
     Canvas.DrawTextClipped(HealthText);
 
     Canvas.Style = ERenderStyle.STY_Normal;
@@ -435,51 +479,39 @@ simulated event UpdateScoreBoard(Canvas Canvas)
     Canvas.SetPos(0.5 * Canvas.ClipX, HeaderOffsetY + 4);
 
     Canvas.DrawColor = HUDClass.default.WhiteColor;
-    Canvas.SetPos(NetXPos - NetXL, TitleYPos);
+    Canvas.SetPos(NetX - NetXL, TitleYPos);
     Canvas.DrawTextClipped(NetText);
 
-    BoxTextOffsetY = HeaderOffsetY + 0.5 * (PlayerBoxSizeY - YL);
+    BoxTextOffsetY = HeaderOffsetY + 0.5 * (BoxHeight - YL);
 
     Canvas.DrawColor = HUDClass.default.WhiteColor;
     MaxNamePos = Canvas.ClipX;
-    Canvas.ClipX = KillsXPos - 4.f;
-
-    for ( i = 0; i < PlayerCount; i++ )
-    {
+    Canvas.ClipX = StoryIconXPos - StoryIconS;
+    for (i = 0; i < PlayerCount; ++i) {
         PRI = TeamPRIArray[i]; // For some reasons, GRI.PRIArray[i] has WebAdmin in Story Mode
         // draw myself in green, admins - red, others - white  -- PooSH
         if ( PRI.bAdmin )
             Canvas.DrawColor = Class'HudBase'.Default.RedColor;
         else
             Canvas.DrawColor = Class'HudBase'.Default.WhiteColor;
-        DrawCountryNameSE(Canvas,PRI,NameXPos,(PlayerBoxSizeY + BoxSpaceY)*i + BoxTextOffsetY);
+        DrawCountryNameSE(Canvas, PRI, NameX, (BoxHeight + BoxSpaceY)*i + BoxTextOffsetY);
     }
-
     Canvas.ClipX = MaxNamePos;
     Canvas.DrawColor = HUDClass.default.WhiteColor;
 
     Canvas.Style = ERenderStyle.STY_Normal;
 
     // Draw the player information
-    LineHeight = PlayerBoxSizeY + BoxSpaceY;
+    LineHeight = BoxHeight + BoxSpaceY;
     y = BoxTextOffsetY;
-    for ( i = 0; i < PlayerCount; i++ )
-    {
+    for (i = 0; i < PlayerCount; ++i) {
         //PRI = GRI.PRIArray[i];
         PRI = TeamPRIArray[i]; // For some reasons, GRI.PRIArray[i] has WebAdmin in Story Mode
         KFPRI = KFPlayerReplicationInfo(PRI);
         StoryPRI = KF_StoryPRI(PRI);
+        ScrnPRI = class'ScrnCustomPRI'.static.FindMe(PRI);
 
         Canvas.DrawColor = HUDClass.default.WhiteColor;
-
-        // Display admin. - moved to DrawNamePostfixIcons()
-        // if( PRI.bAdmin )
-        // {
-            // Canvas.SetPos(BoxXPos - PlayerBoxSizeY, y + PlayerBoxSizeY*0.25);
-            // XL = PlayerBoxSizeY*0.5;
-            // Canvas.DrawTile(AdminIcon, XL, XL, 0, 0, AdminIcon.MaterialUSize(), AdminIcon.MaterialVSize());
-        // }
-
         // display Story Icon
         if ( StoryPRI != none ){
             StoryIcon = StoryPRI.GetFloatingIconMat();
@@ -490,110 +522,146 @@ simulated event UpdateScoreBoard(Canvas Canvas)
         }
 
         // Display perks.
-        if ( KFPRI!=None && Class<SRVeterancyTypes>(KFPRI.ClientVeteranSkill)!=none )
-        {
-            Stars = Class<SRVeterancyTypes>(KFPRI.ClientVeteranSkill).Static.PreDrawPerk(Canvas
-                ,KFPRI.ClientVeteranSkillLevel,VeterancyBox,StarBox);
+        if (KFPRI!=None && Class<SRVeterancyTypes>(KFPRI.ClientVeteranSkill)!=none) {
+            Stars = Class<SRVeterancyTypes>(KFPRI.ClientVeteranSkill).Static.PreDrawPerk(Canvas,
+                    KFPRI.ClientVeteranSkillLevel, VeterancyBox, StarBox);
 
-            if ( VeterancyBox != None )
-                DrawPerkWithStars(Canvas,VetXPos,HeaderOffsetY+(PlayerBoxSizeY+BoxSpaceY)*i,PlayerBoxSizeY,min(Stars,25),VeterancyBox,StarBox);
-            Canvas.DrawColor = HUDClass.default.WhiteColor;
-
-            // Draw perk progress
-            /*
-            if( !PRI.bBot && KFPRI.ThreeSecondScore>=0 )
-            {
-                YL = float(KFPRI.ThreeSecondScore) / 10000.f;
-                DrawProgressBar(Canvas,StoryIconXPos-PProgressXS*1.5,HeaderOffsetY + (PlayerBoxSizeY + BoxSpaceY) * i + PlayerBoxSizeY*0.4,PProgressXS,PlayerBoxSizeY*0.2,FClamp(YL,0.f,1.f));
-                Canvas.DrawColor.A = 255;
-            }
-            */
+            if (VeterancyBox != None)
+                DrawPerkWithStars(Canvas, VetX, HeaderOffsetY + (BoxHeight + BoxSpaceY) * i, BoxHeight,
+                        min(Stars, 25), VeterancyBox, StarBox);
         }
 
         // draw kills
+        if (KFPRI.Kills == MaxKills && PlayerCount > 1) {
+            Canvas.DrawColor = BestColor;
+        }
+        else {
+            Canvas.DrawColor = HUDClass.default.WhiteColor;
+        }
         TotalKills += KFPRI.Kills;
         Canvas.TextSize(KFPRI.Kills, KillWidthX, YL);
-        Canvas.SetPos(KillsXPos - KillWidthX, y);
+        Canvas.SetPos(KillsX - KillWidthX, y);
         Canvas.DrawTextClipped(KFPRI.Kills);
+
         // draw Assists  -- PooSH
-        if ( KFPRI.KillAssists > 0) {
+        if (KFPRI.KillAssists > 0) {
             Canvas.DrawColor = AssColor;
-            Canvas.SetPos(KillsXPos, y);
-            Canvas.DrawTextClipped(KillsAssSeparator $ KFPRI.KillAssists);
-            Canvas.DrawColor = HUDClass.default.WhiteColor;
+            Canvas.SetPos(KillsX, y);
+            Canvas.TextSize(KillsAssSeparator, XL, YL);
+            Canvas.DrawTextClipped(KillsAssSeparator);
+            Canvas.SetPos(KillsX + XL, y);
+            if (KFPRI.KillAssists == MaxAss && PlayerCount > 1) {
+                Canvas.DrawColor = BestColor;
+            }
+            Canvas.DrawTextClipped(KFPRI.KillAssists);
+        }
+
+        if (ScrnPRI != none) {
+            if (ScrnPRI.TotalDamageK > 0) {
+                if (ScrnPRI.TotalDamageK == MaxDamage && PlayerCount > 1) {
+                    Canvas.DrawColor = BestColor;
+                }
+                else {
+                    Canvas.DrawColor = HUDClass.default.WhiteColor;
+                }
+                S = ScrnPRI.TotalDamageK $ "k";
+                Canvas.TextSize(S, XL, YL);
+                Canvas.SetPos(DamageX - XL, y);
+                Canvas.DrawTextClipped(S);
+            }
+            if (ScrnPRI.TotalHeal > 0) {
+                if (ScrnPRI.TotalHeal == MaxHeals  && PlayerCount > 1) {
+                    Canvas.DrawColor = BestColor;
+                }
+                else {
+                    Canvas.DrawColor = HUDClass.default.WhiteColor;
+                }
+                S = string(ScrnPRI.TotalHeal);
+                Canvas.TextSize(S, XL, YL);
+                Canvas.SetPos(HealX - XL, y);
+                Canvas.DrawTextClipped(S);
+            }
         }
 
         // deaths
         if ( PRI.Deaths > 0 ) {
+            Canvas.DrawColor = HUDClass.default.RedColor;
             TotalDeaths += PRI.Deaths;
             S = string(int(PRI.Deaths));
             Canvas.TextSize(S, XL, YL);
-            Canvas.SetPos(DeathsXPos - XL/2, y);
+            Canvas.SetPos(DeathsX - XL/2, y);
             Canvas.DrawTextClipped(S);
         }
 
         // draw cash
-        TotalCash += PRI.Score;
-        S = class'ScrnUnicode'.default.Dosh $ int(PRI.Score);
-        Canvas.TextSize(S, XL, YL);
-        Canvas.SetPos(CashXPos-XL*0.5f, y);
-        Canvas.DrawColor = DoshColor;
-        Canvas.DrawText(S,true);
-        Canvas.DrawColor = HUDClass.default.WhiteColor;
+        if (int(PRI.Score) != 0) {
+            TotalCash += PRI.Score;
+            S = class'ScrnUnicode'.default.Dosh $ int(PRI.Score);
+            Canvas.TextSize(S, XL, YL);
+            Canvas.SetPos(CashX-XL*0.5f, y);
+            Canvas.DrawColor = DoshColor;
+            Canvas.DrawText(S,true);
+        }
 
-        // draw time
-        if( GRI.ElapsedTime<PRI.StartTime ) // Login timer error, fix it.
+        // draw play time
+        Canvas.DrawColor = HUDClass.default.WhiteColor;
+        if (GRI.ElapsedTime<PRI.StartTime) // Login timer error, fix it.
             GRI.ElapsedTime = PRI.StartTime;
         S = FormatTime(GRI.ElapsedTime-PRI.StartTime);
         Canvas.TextSize(S, XL, YL);
-        Canvas.SetPos(TimeXPos-XL*0.5f, y);
-        Canvas.DrawText(S,true);
+        Canvas.SetPos(TimeX - XL*0.5f, y);
+        Canvas.DrawText(S, true);
 
         // Draw ping
         Canvas.DrawColor = Class'HudBase'.Default.WhiteColor;
-        if ( !GRI.bMatchHasBegun ) {
-            if ( PRI.bReadyToPlay )
-                S = ReadyText;
-            else {
-                Canvas.DrawColor = Class'HudBase'.Default.RedColor;
-                S = NotReadyText;
-            }
-        }
-        else if( PRI.bBot )
+        if (PRI.bBot) {
             S = BotText;
-        else if ( PRI.Ping == 255 ) {
+        }
+        else if (PRI.Ping == 255) {
             Canvas.DrawColor = HUDClass.default.RedColor;
             S = strPingMax;
         }
         else {
             S = string(PRI.Ping*4);
-            if ( PRI.Ping >= 50 ) // *4 = 200
+            if (PRI.Ping >= 50) // *4 = 200
                 Canvas.DrawColor = HUDClass.default.RedColor;
             else if ( PRI.Ping >= 25 ) // *4 = 100
                 Canvas.DrawColor = HUDClass.default.GoldColor;
         }
         Canvas.TextSize(S, XL, YL);
-        Canvas.SetPos(NetXPos-XL, y);
+        Canvas.SetPos(NetX-XL, y);
         Canvas.DrawTextClipped(S);
         Canvas.DrawColor = Class'HudBase'.Default.WhiteColor;
 
-        // draw healths
-        if ( PRI.bOutOfLives || KFPRI.PlayerHealth<=0 )
-        {
+        // draw health or ready status
+        if (!GRI.bMatchHasBegun) {
+            if (PRI.bReadyToPlay) {
+                Canvas.DrawColor = HUDClass.default.WhiteColor;
+                S = ReadyText;
+            }
+            else {
+                Canvas.DrawColor = HUDClass.Default.RedColor;
+                S = NotReadyText;
+            }
+        }
+        else if (PRI.bOutOfLives || KFPRI.PlayerHealth<=0) {
             Canvas.DrawColor = HUDClass.default.RedColor;
             S = OutText;
         }
-        else
-        {
-            if( KFPRI.PlayerHealth>=90 )
+        else {
+            if (KFPRI.PlayerHealth >= 90) {
                 Canvas.DrawColor = HUDClass.default.GreenColor;
-            else if( KFPRI.PlayerHealth>=50 )
+            }
+            else if (KFPRI.PlayerHealth >= 50) {
                 Canvas.DrawColor = HUDClass.default.GoldColor;
-            else Canvas.DrawColor = HUDClass.default.RedColor;
-            S = KFPRI.PlayerHealth@HealthyString;
+            }
+            else {
+                Canvas.DrawColor = HUDClass.default.RedColor;
+            }
+            S = KFPRI.PlayerHealth @ HealthyString;
         }
         Canvas.TextSize(S, XL, YL);
-        Canvas.SetPos(HealthXpos - 0.5 * XL, y);
+        Canvas.SetPos(HealthX - 0.5 * XL, y);
         Canvas.DrawTextClipped(S);
 
         y += LineHeight;
@@ -602,47 +670,46 @@ simulated event UpdateScoreBoard(Canvas Canvas)
     y -= BoxSpaceY;
     // totals
     if (NotShownCount == 0) {
-        Canvas.Font =  class'ROHud'.static.LoadMenuFontStatic(min(8, fi+1));
+        Canvas.Font = class'ScrnHUD'.static.LoadMenuFontStatic(PlayerFontIndex + FontReduction + 1);
         Canvas.DrawColor = HUDClass.default.WhiteColor;
 
-        Canvas.SetPos(NameXPos, y);
+        Canvas.SetPos(NameX, y);
         Canvas.DrawTextClipped(TotalText);
         // DOSH
         S = class'ScrnUnicode'.default.Dosh $ TotalCash;
         Canvas.TextSize(S, XL, YL);
-        Canvas.SetPos(CashXPos - XL/2, y);
+        Canvas.SetPos(CashX - XL/2, y);
         Canvas.DrawTextClipped(S);
         if ( TotalDeaths > 0) {
             S = string(TotalDeaths);
             Canvas.TextSize(S, XL, YL);
-            Canvas.SetPos(DeathsXPos - XL/2, y);
+            Canvas.SetPos(DeathsX - XL/2, y);
             Canvas.DrawTextClipped(S);
         }
         if ( TotalKills > 0 ) {
             Canvas.TextSize(TotalKills, XL, YL);
-            Canvas.SetPos(KillsXPos - XL, y);
+            Canvas.SetPos(KillsX - XL, y);
             Canvas.DrawTextClipped(TotalKills);
         }
         y += YL;
     }
 
-    Canvas.Font = class'ROHud'.static.LoadMenuFontStatic( min(8, fi+3) );
-    if( NotShownCount>0 ) // Draw not shown info
-    {
+    Canvas.Font = class'ScrnHUD'.static.LoadMenuFontStatic(4);
+    if (NotShownCount > 0) {
         Canvas.DrawColor = HUDClass.default.GreenColor;
-        Canvas.SetPos(NameXPos, y);
+        Canvas.SetPos(NameX, y);
         Canvas.DrawText(NotShownCount@NotShownInfo,true);
     }
-    else if ( Spectators != "" )
-    {
+    else if (Spectators != "") {
         Canvas.DrawColor = HUDClass.Default.GrayColor;
-        Canvas.SetPos(NameXPos, y);
+        Canvas.SetPos(NameX, y);
         Canvas.DrawText(SpectatorsText $ ": |" $ Spectators, true);
     }
 }
 
 defaultproperties
 {
+    BoxWidth = 0.95;
     TeamScoreString="Team Wallet:"
     AssHeaderText="Ass."
     KillsAssSeparator=" + "
@@ -650,6 +717,8 @@ defaultproperties
     SuicideTimeText="Suicide in"
     HealthText="Health"
     PointsText="Do$h"
+    DamageText="Damage"
+    HealText="Heal"
     TimeText="Time"
     strPingMax="N/A"
     TotalText="Total:"
@@ -658,6 +727,7 @@ defaultproperties
     BigBlameIcon=Texture'ScrnAch_T.Achievements.PoopTrain'
     AdminIcon=Texture'I_AdminShield'
     WhiteMaterial=Texture'KillingFloorHUD.HUD.WhiteTexture'
-    AssColor=(B=160,G=160,R=160,A=255)
-    DoshColor=(B=125,G=255,R=255,A=255)
+    AssColor=(R=160,G=160,B=160,A=255)
+    DoshColor=(R=255,G=255,B=125,A=255)
+    BestColor=(R=255,G=0,B=255,A=255)
 }

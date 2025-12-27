@@ -3235,7 +3235,7 @@ simulated function DrawWaveCircle(Canvas C, Material M, float CircleSize)
 
 simulated function DrawKFHUDTextElements(Canvas C)
 {
-    local float    XL, YL, Y;
+    local float    XL, YL, Y, Y2;
     local int      NumZombies, Counter;
     local string   S;
     local float    CircleSize;
@@ -3253,6 +3253,7 @@ simulated function DrawKFHUDTextElements(Canvas C)
     C.FontScaleY = FMin(ResScale,1.f);
 
     // Countdown Text
+    Y = CircleSize/2;
     if (!KFGRI.bWaveInProgress || (ScrnGRI != none && (ScrnGRI.WaveEndRule == 2 || ScrnGRI.WaveEndRule == 9))) {
         DrawWaveCircle(C, WaveCircleClockBG[TeamIndex], CircleSize);
 
@@ -3264,8 +3265,10 @@ simulated function DrawKFHUDTextElements(Canvas C)
             C.Font = LoadFont(2);
             C.Strlen(S, XL, YL);
             C.SetDrawColor(255, 50, 50, KFHUDAlpha);
-            C.SetPos(C.ClipX - CircleSize/2 - (XL / 2), CircleSize/2 - YL / 2);
+            Y = CircleSize/2 - YL / 2;
+            C.SetPos(C.ClipX - CircleSize/2 - (XL / 2), Y);
             C.DrawText(S, False);
+            Y += YL * 0.9;
         }
         else if (ScrnGRI != none && ScrnGRI.WaveEndRule == 9) {
             // RULE_ReachTrader
@@ -3277,12 +3280,14 @@ simulated function DrawKFHUDTextElements(Canvas C)
             Y = CircleSize/2 - YL/2;
             C.SetPos(C.ClipX - CircleSize/2 - (XL / 2), Y);
             C.DrawText(S, False);
+            Y2 = Y;
+            Y += YL * 0.9;
 
             C.Font = LoadFont(5);
             S = strReachTrader1;
             C.Strlen(S, XL, YL);
-            Y -= YL;
-            C.SetPos(C.ClipX - CircleSize/2 - (XL / 2), Y);
+            Y2 -= YL * 0.9;
+            C.SetPos(C.ClipX - CircleSize/2 - (XL / 2), Y2);
             C.DrawText(S, False);
         }
     }
@@ -3324,16 +3329,24 @@ simulated function DrawKFHUDTextElements(Canvas C)
             C.Strlen(S, XL, YL);
         }
         C.SetDrawColor(255, 50, 50, KFHUDAlpha);
-        C.SetPos(C.ClipX - CircleSize/2 - (XL / 2), CircleSize/2 - (YL / 1.5));
+        Y = CircleSize/2 - (YL / 1.5);
+        C.SetPos(C.ClipX - CircleSize/2 - (XL / 2), Y);
         C.DrawText(S);
+        Y += YL * 0.9;
     }
 
     if( KFGRI.bWaveInProgress ) {
         // Show the number of waves
-        S = WaveString @ string(KFGRI.WaveNumber + 1) $ "/" $ string(KFGRI.FinalWave);
+        C.Font = LoadFont(7);
+        C.Strlen(WaveString, XL, YL);
+        C.SetPos(C.ClipX - CircleSize/2 - (XL / 2), Y);
+        C.DrawText(WaveString);
+        Y += YL * 0.9;
+
         C.Font = LoadFont(5);
+        S = string(KFGRI.WaveNumber + 1) $ "/" $ string(KFGRI.FinalWave);
         C.Strlen(S, XL, YL);
-        C.SetPos(C.ClipX - CircleSize/2 - (XL / 2), CircleSize/2 + (YL / 2.5));
+        C.SetPos(C.ClipX - CircleSize/2 - (XL / 2), Y);
         C.DrawText(S);
     }
 
@@ -4078,6 +4091,16 @@ function static Font GetStaticFontSizeIndex(Canvas C, int FontSize)
         FontSize++;
 
     return LoadFontStatic(Clamp( 8-FontSize, 0, 8));
+}
+
+static function Font LoadSmallFontStatic(int i)
+{
+    return super.LoadSmallFontStatic(min(i, arraycount(default.SmallFontArrayNames) -1));
+}
+
+static function Font LoadMenuFontStatic(int i)
+{
+    return super.LoadMenuFontStatic(min(i, arraycount(default.MenuFontArrayNames) -1));
 }
 
 simulated function SetHUDAlpha()

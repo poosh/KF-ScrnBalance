@@ -30,6 +30,11 @@
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+## v9.73.09
+- Added damage counter and healing points to the scoreboard
+- The ready state replaces health on the scoreboard - to display ping while in the lobby
+- *ScrnMapInfo.ini*: added map info for **KF-FestiveOffices**
+
 ## v9.73.07
 - Reworked gameplay data replication (perks, weapons, bonuses, etc.), achieving more than 10x faster replication while avoiding network channel oversaturation.
 - Player netspeed is set to at least 15k even if the player clicks "I'm on Dialup" button.
