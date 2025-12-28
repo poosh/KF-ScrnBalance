@@ -23,10 +23,7 @@ var int TotalDamageK, TotalHeal;
 replication
 {
     reliable if ( (bNetDirty || bNetInitial) && Role == Role_Authority )
-        SteamID32;
-
-    reliable if ( bNetDirty && Role == Role_Authority )
-        DoshRequestCounter, BlameCounter, bReachedGoal, TotalDamageK, TotalHeal;
+        SteamID32, DoshRequestCounter, BlameCounter, bReachedGoal, TotalDamageK, TotalHeal;
 }
 
 function PostBeginPlay()

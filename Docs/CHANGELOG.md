@@ -30,6 +30,12 @@
 ## VERSION 9
 
 -------------------------------------------------------------------------------
+## v9.73.10
+- **AA12** and **KSG** damage model aligned with other shotguns: X (body damage) * 1.5 (headshot multiplier) => 1.2X * 1.25. Head damage kept the same while increased base damage.
+- Scoreboard shifted towards the center of the screen on high-resolution and widescreen monitors (thanks [Joe])
+- Fixed the damage stat on the scoreboard not to include overkills.
+- Fixed an issue where damage and heling stats on the scoreboard were not restored after reconnect.
+
 ## v9.73.09
 - Added damage counter and healing points to the scoreboard
 - The ready state replaces health on the scoreboard - to display ping while in the lobby

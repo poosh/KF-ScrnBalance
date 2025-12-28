@@ -775,6 +775,8 @@ function MadeDamage(int Damage, KFMonster Injured, class<KFWeaponDamageType> Dam
     LastDamage = Damage;
     LastDamageType = DamType;
     LastDamagedMonster = Injured;
+
+    Damage = min(Damage, Injured.Health);
     DamagePerWave += Damage;
     DamagePerGame += Damage;
     ScrnPRI.TotalDamageK = (DamagePerGame >> 10);
@@ -810,7 +812,7 @@ function MadeDamage(int Damage, KFMonster Injured, class<KFWeaponDamageType> Dam
         || (ClassIsChildOf(DamType, class'DamTypeKatana')
             && KFPRI != none &&  ClassIsChildOf(KFPRI.ClientVeteranSkill, class'ScrnVetFieldMedic')) )
     {
-        MedicDamage += min(Damage, Injured.Health);
+        MedicDamage += Damage;
         if ( MedicDamage >= 1000 ) {
             SRStatsBase(PlayerOwner.SteamStatsAndAchievements).AddDamageHealed(MedicDamage / 1000 * MEDICXP_PER_1000DMG);
             MedicDamage = MedicDamage % 1000;
@@ -819,7 +821,7 @@ function MadeDamage(int Damage, KFMonster Injured, class<KFWeaponDamageType> Dam
 
     LastWeapInfoIndex = FindWeaponInfoByDamType(DamType);
     for ( i=0; i<GameRules.AchHandlers.length; ++i ) {
-        GameRules.AchHandlers[i].MonsterDamaged(Damage, Injured, self, DamType, bHeadshot, bWasDecapitated);
+        GameRules.AchHandlers[i].MonsterDamaged(LastDamage, Injured, self, DamType, bHeadshot, bWasDecapitated);
     }
 
 
@@ -1124,6 +1126,8 @@ function RestorePRI()
 
     if ( ScrnPRI != none ) {
         ScrnPRI.BlameCounter = max(PRI_BlameCounter, ScrnPRI.BlameCounter);
+        ScrnPRI.TotalDamageK = (DamagePerGame >> 10);
+        ScrnPRI.TotalHeal = HealedPointsInGame;
     }
 
     if (ScrnPC != none) {

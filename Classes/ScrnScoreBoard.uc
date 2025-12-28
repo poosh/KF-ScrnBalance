@@ -14,8 +14,7 @@ var Material WhiteMaterial;
 
 var color AssColor, DoshColor, BestColor;
 
-var float BoxWidth;
-var transient float BoxX;
+var transient float BoxWidth, BoxX;
 var transient float VetX, NameX, KillsX, DamageX, HealX, DeathsX, CashX, HealthX, TimeX, NetX;
 var transient float StoryIconXPos, StoryIconS;
 
@@ -217,7 +216,7 @@ static function float DrawNamePostfixIcons(Canvas C, PlayerReplicationInfo PRI, 
 
 simulated function ResolutionChanged(Canvas Canvas)
 {
-    local float XL, YL, X0;
+    local float XL, YL, X0, M;
 
     if ( Canvas.ClipX < 600 )
         PlayerFontIndex = 4;
@@ -230,41 +229,52 @@ simulated function ResolutionChanged(Canvas Canvas)
     else
         PlayerFontIndex = 0;
 
+    if (Canvas.ClipX < 1200)
+        BoxWidth = 0.99;
+    else if (Canvas.ClipX < 1900)
+        BoxWidth = 0.95;
+    else if (Canvas.ClipX < 2500)
+        BoxWidth = 0.90;
+    else if (Canvas.ClipX < 3800)
+        BoxWidth = 0.70;
+    else
+        BoxWidth = 0.50;
+    BoxWidth *= Canvas.ClipX;
+    BoxX = (Canvas.ClipX - BoxWidth) / 2;
+
     Canvas.Font = class'ScrnHUD'.static.LoadMenuFontStatic(PlayerFontIndex);
     Canvas.TextSize("0", X0, YL);
     BoxHeight = 1.2 * YL;
     BoxSpaceY = 0.25 * YL;
 
-    BoxWidth = default.BoxWidth * Canvas.ClipX;
-    BoxX = (Canvas.ClipX - BoxWidth) / 2;
+    if (Canvas.ClipX > 3000)
+        M = X0 * 4.0;
+    else if (Canvas.ClipX > 2000)
+        M = X0 * 2.0;
+    else
+        M = X0;
 
     VetX = BoxX + X0;
     NameX = VetX + BoxHeight * 1.75;
 
     NetX = BoxX + BoxWidth - X0;
     Canvas.TextSize("00:00:00", XL, YL);
-    TimeX = NetX - 5*X0 - XL/2;
+    TimeX = NetX - 4*X0 - M - XL/2;
 
-    HealthX = TimeX - XL/2 - X0;
+    HealthX = TimeX - XL/2 - M;
     Canvas.TextSize("999 HP", XL, YL);
     HealthX -= XL/2;
 
-    CashX = HealthX - XL/2 - X0;
-    Canvas.TextSize(class'ScrnUnicode'.default.Dosh $ "999999", XL, YL);
-    CashX -= XL/2;
-
-    DeathsX = CashX - XL/2 - X0;
-    DeathsX -= X0;  // Center align, two digits max
-
-    HealX = DeathsX - 2*X0; // right align
-
-    DamageX = HealX - 6*X0;
+    CashX = HealthX - XL/2 - M - 4*X0;
+    DeathsX = CashX - XL/2 - M - 5*X0;
+    HealX = DeathsX - M - X0; // right align
+    DamageX = HealX - M - 4*X0;
 
     Canvas.TextSize(KillsAssSeparator $ "9999", XL, YL);
-    KillsX = DamageX - 8*X0 - XL;
+    KillsX = DamageX - M - 6*X0 - XL;
 
     StoryIconS = BoxHeight - 2;
-    StoryIconXPos = KillsX - StoryIconS - 6*X0;
+    StoryIconXPos = KillsX - StoryIconS - M - 5*X0;
 }
 
 simulated event UpdateScoreBoard(Canvas Canvas)
@@ -288,7 +298,7 @@ simulated event UpdateScoreBoard(Canvas Canvas)
     local String Spectators;
     local int TotalKills, TotalDeaths, TotalCash;
     local int LineHeight;
-    local int MaxKills, MaxAss, MaxDamage, MaxHeals;
+    local int MaxKills, MaxAss, MaxDamage, MaxHeals, MaxDeaths;
 
     if (OldClipX != Canvas.ClipX || OldClipY != Canvas.ClipY) {
         ResolutionChanged(Canvas);
@@ -311,6 +321,7 @@ simulated event UpdateScoreBoard(Canvas Canvas)
             TeamPRIArray[TeamPRIArray.Length] = PRI;
             MaxKills = max(MaxKills, KFPRI.Kills);
             MaxAss =  max(MaxAss, KFPRI.KillAssists);
+            MaxDeaths =  max(MaxDeaths, KFPRI.Deaths);
             if (ScrnPRI != none) {
                 MaxDamage = max(MaxDamage, ScrnPRI.TotalDamageK);
                 MaxHeals = max(MaxHeals, ScrnPRI.TotalHeal);
@@ -532,7 +543,7 @@ simulated event UpdateScoreBoard(Canvas Canvas)
         }
 
         // draw kills
-        if (KFPRI.Kills == MaxKills && PlayerCount > 1) {
+        if (KFPRI.Kills == MaxKills && MaxKills > 0 && PlayerCount > 1) {
             Canvas.DrawColor = BestColor;
         }
         else {
@@ -584,8 +595,13 @@ simulated event UpdateScoreBoard(Canvas Canvas)
         }
 
         // deaths
-        if ( PRI.Deaths > 0 ) {
-            Canvas.DrawColor = HUDClass.default.RedColor;
+        if (PRI.Deaths > 0) {
+            if (PRI.Deaths == MaxDeaths) {
+                Canvas.DrawColor = HUDClass.default.RedColor;
+            }
+            else {
+                Canvas.DrawColor = HUDClass.default.WhiteColor;
+            }
             TotalDeaths += PRI.Deaths;
             S = string(int(PRI.Deaths));
             Canvas.TextSize(S, XL, YL);
@@ -694,7 +710,7 @@ simulated event UpdateScoreBoard(Canvas Canvas)
         y += YL;
     }
 
-    Canvas.Font = class'ScrnHUD'.static.LoadMenuFontStatic(4);
+    Canvas.Font = class'ScrnHUD'.static.LoadMenuFontStatic(PlayerFontIndex + FontReduction + 2);
     if (NotShownCount > 0) {
         Canvas.DrawColor = HUDClass.default.GreenColor;
         Canvas.SetPos(NameX, y);
@@ -709,7 +725,6 @@ simulated event UpdateScoreBoard(Canvas Canvas)
 
 defaultproperties
 {
-    BoxWidth = 0.95;
     TeamScoreString="Team Wallet:"
     AssHeaderText="Ass."
     KillsAssSeparator=" + "
