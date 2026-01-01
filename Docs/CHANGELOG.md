@@ -30,9 +30,10 @@
 ## VERSION 9
 
 -------------------------------------------------------------------------------
-## v9.73.11
+## v9.73.12
 - **TSC** and **FTG**: Fixed wave circle background.
 - **FTG**: Fixed `admin kill zeds` (thanks [nmmblez])
+- **XCM v1.07**: Zed count in a wave capped at 6p.
 - Added first aid kits to random weapon spawns.
 - Health moved to the left side on the scoreboard.
 - Kenny achievement can be earned in FTG, too.
