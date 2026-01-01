@@ -52,7 +52,9 @@ function PlayerDied(ScrnPlayerInfo DeadPlayerInfo, Controller Killer, class<Dama
 {
     bPerfectGame = false;
 
-    if ( GameRules.Mut.KF.FinalWave >= 7 && DeadPlayerInfo.Deaths >= GameRules.Mut.KF.FinalWave - 2 )
+    if (GameRules.Mut.KF.FinalWave >= 7 && DeadPlayerInfo.Deaths >= 4
+            && (DeadPlayerInfo.Deaths >= GameRules.Mut.KF.FinalWave - 2
+                || (GameRules.PlayerRespawnWaves >= 3 && DeadPlayerInfo.Deaths >= GameRules.PlayerRespawnWaves)))
         Ach2All('Kenny', 1);
 
     if ( Killer != none && Killer.Pawn != none && Killer.Pawn.IsA('Jason') )

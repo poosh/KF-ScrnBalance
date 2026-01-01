@@ -12,7 +12,7 @@ var     localized   string      HealText;
 var Material AdminIcon, BlameIcon, BigBlameIcon, DeathIcon;
 var Material WhiteMaterial;
 
-var color AssColor, DoshColor, BestColor;
+var color AssColor, DoshColor, BestColor, DeadColor;
 
 var transient float BoxWidth, BoxX;
 var transient float VetX, NameX, KillsX, DamageX, HealX, DeathsX, CashX, HealthX, TimeX, NetX;
@@ -232,11 +232,11 @@ simulated function ResolutionChanged(Canvas Canvas)
     if (Canvas.ClipX < 1200)
         BoxWidth = 0.99;
     else if (Canvas.ClipX < 1900)
-        BoxWidth = 0.95;
-    else if (Canvas.ClipX < 2500)
         BoxWidth = 0.90;
+    else if (Canvas.ClipX < 2500)
+        BoxWidth = 0.80;
     else if (Canvas.ClipX < 3800)
-        BoxWidth = 0.70;
+        BoxWidth = 0.65;
     else
         BoxWidth = 0.50;
     BoxWidth *= Canvas.ClipX;
@@ -254,27 +254,25 @@ simulated function ResolutionChanged(Canvas Canvas)
     else
         M = X0;
 
-    VetX = BoxX + X0;
+    HealthX = BoxX + M;
+    VetX = HealthX + M + 6*X0;
     NameX = VetX + BoxHeight * 1.75;
 
-    NetX = BoxX + BoxWidth - X0;
+    NetX = BoxX + BoxWidth - M;
     Canvas.TextSize("00:00:00", XL, YL);
     TimeX = NetX - 4*X0 - M - XL/2;
 
-    HealthX = TimeX - XL/2 - M;
-    Canvas.TextSize("999 HP", XL, YL);
-    HealthX -= XL/2;
-
-    CashX = HealthX - XL/2 - M - 4*X0;
-    DeathsX = CashX - XL/2 - M - 5*X0;
+    DeathsX = TimeX - XL/2 - M - X0;
     HealX = DeathsX - M - X0; // right align
     DamageX = HealX - M - 4*X0;
 
     Canvas.TextSize(KillsAssSeparator $ "9999", XL, YL);
     KillsX = DamageX - M - 6*X0 - XL;
 
+    CashX = KillsX - M - 9*X0;
+
     StoryIconS = BoxHeight - 2;
-    StoryIconXPos = KillsX - StoryIconS - M - 5*X0;
+    StoryIconXPos = CashX - M - 3*X0 - StoryIconS;
 }
 
 simulated event UpdateScoreBoard(Canvas Canvas)
@@ -287,7 +285,7 @@ simulated event UpdateScoreBoard(Canvas Canvas)
     local int i, FontReduction, PlayerCount, SpecCount, AliveCount, HeaderOffsetY, HeadFoot, MessageFoot,BoxTextOffsetY,
             TitleYPos, NotShownCount;
     local float XL,YL, y;
-    local float deathsXL, KillsXL, NetXL, HealthXL, MaxNamePos, KillWidthX;
+    local float deathsXL, KillsXL, NetXL, MaxNamePos, KillWidthX;
     local Material VeterancyBox,StarBox;
     local string S;
     local byte Stars;
@@ -443,7 +441,6 @@ simulated event UpdateScoreBoard(Canvas Canvas)
 
     // Draw headers
     TitleYPos = HeaderOffsetY - 1.1 * YL;
-    Canvas.TextSize(HealthText, HealthXL, YL);
     Canvas.TextSize(DeathsText, DeathsXL, YL);
     Canvas.TextSize(KillsText, KillsXL, YL);
     Canvas.TextSize(NetText, NetXL, YL);
@@ -458,6 +455,7 @@ simulated event UpdateScoreBoard(Canvas Canvas)
     Canvas.DrawColor = AssColor;
     Canvas.DrawTextClipped(KillsAssSeparator $ AssHeaderText);
 
+    Canvas.DrawColor = HUDClass.default.WhiteColor;
     Canvas.TextSize(DamageText, XL, YL);
     Canvas.SetPos(DamageX - XL, TitleYPos);
     Canvas.DrawTextClipped(DamageText);
@@ -482,7 +480,7 @@ simulated event UpdateScoreBoard(Canvas Canvas)
     Canvas.SetPos(TimeX - 0.5 * XL, TitleYPos);
     Canvas.DrawTextClipped(TimeText);
 
-    Canvas.SetPos(HealthX - 0.5 * HealthXL, TitleYPos);
+    Canvas.SetPos(HealthX, TitleYPos);
     Canvas.DrawTextClipped(HealthText);
 
     Canvas.Style = ERenderStyle.STY_Normal;
@@ -656,17 +654,21 @@ simulated event UpdateScoreBoard(Canvas Canvas)
                 S = ReadyText;
             }
             else {
-                Canvas.DrawColor = HUDClass.Default.RedColor;
+                Canvas.DrawColor = DeadColor;
                 S = NotReadyText;
             }
         }
         else if (PRI.bOutOfLives || KFPRI.PlayerHealth<=0) {
-            Canvas.DrawColor = HUDClass.default.RedColor;
+            Canvas.DrawColor = DeadColor;
             S = OutText;
         }
         else {
+            S = KFPRI.PlayerHealth @ HealthyString;
             if (KFPRI.PlayerHealth >= 90) {
                 Canvas.DrawColor = HUDClass.default.GreenColor;
+                if (KFPRI.PlayerHealth >= 1000) {
+                    S = string(KFPRI.PlayerHealth); // WTF?
+                }
             }
             else if (KFPRI.PlayerHealth >= 50) {
                 Canvas.DrawColor = HUDClass.default.GoldColor;
@@ -674,10 +676,8 @@ simulated event UpdateScoreBoard(Canvas Canvas)
             else {
                 Canvas.DrawColor = HUDClass.default.RedColor;
             }
-            S = KFPRI.PlayerHealth @ HealthyString;
         }
-        Canvas.TextSize(S, XL, YL);
-        Canvas.SetPos(HealthX - 0.5 * XL, y);
+        Canvas.SetPos(HealthX, y);
         Canvas.DrawTextClipped(S);
 
         y += LineHeight;
@@ -730,7 +730,7 @@ defaultproperties
     KillsAssSeparator=" + "
     SpectatorsText="Spectators"
     SuicideTimeText="Suicide in"
-    HealthText="Health"
+    HealthText="Status"
     PointsText="Do$h"
     DamageText="Damage"
     HealText="Heal"
@@ -743,6 +743,7 @@ defaultproperties
     AdminIcon=Texture'I_AdminShield'
     WhiteMaterial=Texture'KillingFloorHUD.HUD.WhiteTexture'
     AssColor=(R=160,G=160,B=160,A=255)
+    DeadColor=(R=160,G=160,B=160,A=255)
     DoshColor=(R=255,G=255,B=125,A=255)
     BestColor=(R=255,G=0,B=255,A=255)
 }

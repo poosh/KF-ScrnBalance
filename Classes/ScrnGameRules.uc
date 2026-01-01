@@ -17,6 +17,8 @@ var bool bScrnDoom; // is server running ScrN version of Doom3 mutator?
 var localized string msgDoom3Monster, msgDoomPercent, msgDoom3Boss;
 var transient int WaveTotalKills, WaveDoom3Kills, GameDoom3Kills;
 var transient int WaveAmmoPickups;
+var transient int PlayerRespawnWaves;
+
 
 var transient bool bHasCustomZeds;
 

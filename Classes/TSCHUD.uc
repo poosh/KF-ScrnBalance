@@ -325,7 +325,7 @@ simulated function DrawKFHUDTextElements(Canvas C)
         }
     }
     else {
-        DrawWaveCircle(C, WaveCircleClockBG[TeamIndex], CircleSize);
+        DrawWaveCircle(C, WaveCircleBG[TeamIndex], CircleSize);
 
         if ( MyTeam != none && MyTeam.GetCurWaveKills() < TSCGRI.WaveKillReq ) {
             NumZombies = TSCGRI.WaveKillReq - MyTeam.GetCurWaveKills();

@@ -516,7 +516,7 @@ function ShowPathToBase(PlayerController P)
     }
 }
 
-function KillZeds()
+exec function KillZeds()
 {
     super.KillZeds();
     KillAllStinkyClots();

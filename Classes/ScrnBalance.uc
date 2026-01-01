@@ -3,7 +3,7 @@
  * @GitHub: https://github.com/poosh/KF-ScrnBalance
  * @author [ScrN]PooSH, contact via Steam: http://steamcommunity.com/id/scrn-poosh/
  *                      or Discord: https://discord.gg/Y3W5crSXA5
- * Copyright (c) 2012-2025 PU Developing IK, All Rights Reserved.
+ * Copyright (c) 2012-2026 PU Developing IK, All Rights Reserved.
  *****************************************************************************/
 
 class ScrnBalance extends ScrnMutator
@@ -3366,7 +3366,7 @@ function GameResumed()
 
 defaultproperties
 {
-    VersionNumber=97310
+    VersionNumber=97311
     GroupName="KF-Scrn"
     FriendlyName="ScrN Balance"
     Description="Total rework of KF1 to make it modern and the best tactical coop in the world while sticking to the roots of the original."

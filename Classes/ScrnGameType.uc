@@ -4319,6 +4319,10 @@ State MatchInProgress
             WaveCountDown = max(TimeBetweenWaves, 1);
         }
 
+        if (bRespawnDeadPlayers) {
+            ScrnBalanceMut.GameRules.PlayerRespawnWaves++;
+        }
+
         bWaveInProgress = false;
         bWaveBossInProgress = false;
         bNotifiedLastManStanding = false;
