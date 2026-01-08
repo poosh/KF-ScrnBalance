@@ -8,6 +8,10 @@ var float PenDmgReductionByHealth;
 
 var transient int KillCountPerTrace;
 
+var int MaxSpreadBurst; // number of shots in a burst to reach MaxSpread
+var float SpreadAimMod, SpreadCrouchMod, SpreadSemiAutoMod;
+var float SpreadResetTime;
+
 
 // should be called by the weapon when after the fire mode change (e.g., switch from full- to semi-auto)
 function FireModeChanged() ;
@@ -128,10 +132,101 @@ function DoTrace(Vector Start, Rotator Dir)
     }
 }
 
+function float GetSpread()
+{
+    local float NewSpread;
+    local float AccuracyMod;
+
+    AccuracyMod = 1.0;
+
+    if (KFWeap.bAimingRifle)
+        AccuracyMod *= SpreadAimMod;
+
+    if (Instigator != none && Instigator.bIsCrouched)
+        AccuracyMod *= SpreadCrouchMod;
+
+    if (bAccuracyBonusForSemiAuto && bWaitForRelease)
+        AccuracyMod *= SpreadSemiAutoMod;
+
+    if (Level.TimeSeconds - LastFireTime > SpreadResetTime) {
+        NewSpread = default.Spread;
+        NumShotsInBurst=0;
+    }
+    else {
+        ++NumShotsInBurst;
+        NewSpread = FMin(Default.Spread + (NumShotsInBurst * (MaxSpread / MaxSpreadBurst)), MaxSpread);
+    }
+
+    NewSpread *= AccuracyMod;
+
+    return NewSpread;
+}
+
+simulated function HandleRecoil(float Rec)
+{
+    local rotator NewRecoilRotation;
+    local KFPlayerController KFPC;
+    local KFPawn KFPwn;
+    local vector AdjustedVelocity;
+    local float AdjustedSpeed;
+
+    if( Instigator != none )
+    {
+        KFPC = KFPlayerController(Instigator.Controller);
+        KFPwn = KFPawn(Instigator);
+
+        if (Instigator.bIsCrouched) {
+            Rec *= SpreadCrouchMod;
+        }
+    }
+
+    if( KFPC == none || KFPwn == none )
+        return;
+
+    if (KFPC.bFreeCamera || !bIsFiring)
+        return;
+
+    NewRecoilRotation.Pitch = RandRange(maxVerticalRecoilAngle * 0.5, maxVerticalRecoilAngle);
+    NewRecoilRotation.Yaw = RandRange(maxHorizontalRecoilAngle * 0.5, maxHorizontalRecoilAngle);
+
+    if (!bRecoilRightOnly && Rand(2) == 1)
+        NewRecoilRotation.Yaw *= -1;
+
+    if (RecoilVelocityScale > 0) {
+        if (Weapon.Owner != none && Weapon.Owner.Physics == PHYS_Falling &&
+            Weapon.Owner.PhysicsVolume.Gravity.Z > class'PhysicsVolume'.default.Gravity.Z)
+        {
+            AdjustedVelocity = Weapon.Owner.Velocity;
+            // Ignore Z velocity in low grav so we don't get massive recoil
+            AdjustedVelocity.Z = 0;
+            AdjustedSpeed = VSize(AdjustedVelocity);
+            //log("AdjustedSpeed = "$AdjustedSpeed$" scale = "$(AdjustedSpeed* RecoilVelocityScale * 0.5));
+
+            // Reduce the falling recoil in low grav
+            NewRecoilRotation.Pitch += (AdjustedSpeed* RecoilVelocityScale * 0.5);
+            NewRecoilRotation.Yaw += (AdjustedSpeed* RecoilVelocityScale * 0.5);
+        }
+        else {
+            //log("Velocity = "$VSize(Weapon.Owner.Velocity)$" scale = "$(VSize(Weapon.Owner.Velocity)* RecoilVelocityScale));
+            NewRecoilRotation.Pitch += VSize(Weapon.Owner.Velocity) * RecoilVelocityScale;
+            NewRecoilRotation.Yaw += VSize(Weapon.Owner.Velocity) * RecoilVelocityScale;
+        }
+    }
+    NewRecoilRotation *= Rec;
+
+    KFPC.SetRecoil(NewRecoilRotation, RecoilRate / (default.FireRate/FireRate));
+}
+
 defaultproperties
 {
     MaxPenetrations=0
     PenDmgReduction=0.500000
     PenDmgReductionByHealth=0.0005  // zed with 100 hp remaining reduces the following damage by 5%
     DamageMin=10  // the bullet cannot over-penetrate the body if its leftover damage is lower than DamageMin
+    MaxSpreadBurst=6
+    MaxSpread=0.12
+    SpreadAimMod=0.5
+    SpreadCrouchMod=0.85
+    SpreadSemiAutoMod=0.85
+    SpreadResetTime=0.5
 }

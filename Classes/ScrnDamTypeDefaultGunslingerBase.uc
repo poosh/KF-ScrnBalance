@@ -31,9 +31,9 @@ static function ScoredHeadshot(KFSteamStatsAndAchievements KFStatsAndAchievement
     if( stats == none || stats.Rep == none )
         return;
 
-    if ( ClassIsChildOf(MonsterClass, class'ZombieScrake') )
+    if (MonsterClass.default.Health >= 1000)
         Amount = 7;
-    else if ( ClassIsChildOf(MonsterClass, class'ZombieBloat') )
+    else if (MonsterClass.default.Health >= 500)
         Amount = 3;
     else
         Amount = 1;
@@ -52,15 +52,15 @@ static function AwardDamage(KFSteamStatsAndAchievements KFStatsAndAchievements, 
 
 defaultproperties
 {
-     bSniperWeapon=False
-     DeathString="%k killed %o (Pistol)."
-     FemaleSuicide="%o shot herself in the foot."
-     MaleSuicide="%o shot himself in the foot."
-     bRagdollBullet=True
-     bBulletHit=True
-     FlashFog=(X=600.000000)
-     KDamageImpulse=3500.000000
-     KDeathVel=175.000000
-     KDeathUpKick=15.000000
-     VehicleDamageScaling=0.800000
+    bSniperWeapon=False
+    DeathString="%k killed %o (Pistol)."
+    FemaleSuicide="%o shot herself in the foot."
+    MaleSuicide="%o shot himself in the foot."
+    bRagdollBullet=True
+    bBulletHit=True
+    FlashFog=(X=600.000000)
+    KDamageImpulse=3500.000000
+    KDeathVel=175.000000
+    KDeathUpKick=15.000000
+    VehicleDamageScaling=0.800000
 }

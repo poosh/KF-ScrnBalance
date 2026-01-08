@@ -2332,8 +2332,10 @@ function SetupRepLink(ClientPerkRepLink R)
             ScrnRep.CachePerks.Length = 250; //wtf?
         for (i = ScrnRep.CachePerks.length-1; i >= 0; --i ) {
             Perk = class<ScrnVeterancyTypes>(ScrnRep.CachePerks[i].PerkClass);
-            if (Perk == none || (bHardcore && !Perk.default.bHardcoreReady))
-                ScrnRep.CachePerks.remove(i--, 1);
+            if (Perk == none || (bHardcore && !Perk.default.bHardcoreReady)) {
+                log("Perk " $ Perk $ " is not hardcore-ready", class.name);
+                ScrnRep.CachePerks.remove(i, 1);
+            }
         }
 
         if (ScrnRep.ShopCategories.Length > 250)
@@ -3366,7 +3368,7 @@ function GameResumed()
 
 defaultproperties
 {
-    VersionNumber=97312
+    VersionNumber=97400
     GroupName="KF-Scrn"
     FriendlyName="ScrN Balance"
     Description="Total rework of KF1 to make it modern and the best tactical coop in the world while sticking to the roots of the original."

@@ -35,6 +35,7 @@ static function float AddExtraAmmoFor(KFPlayerReplicationInfo KFPRI, Class<Ammun
     if ( ClassIsChildOf(AmmoType, class'SingleAmmo') || ClassIsChildOf(AmmoType, class'DualiesAmmo')
             || ClassIsChildOf(AmmoType, class'Magnum44Ammo')
             || ClassIsChildOf(AmmoType, class'ScrnMagnum44APAmmo')
+            || ClassIsChildOf(AmmoType, class'ScrnRevolverAmmo')
             || ClassIsChildOf(AmmoType, class'MK23Ammo')
             || ClassIsChildOf(AmmoType, class'DeagleAmmo')
             || ClassIsChildOf(AmmoType, class'FlareRevolverAmmo')
@@ -97,6 +98,7 @@ static function float ModifyRecoilSpread(KFPlayerReplicationInfo KFPRI, WeaponFi
             || Magnum44Pistol(Other.Weapon) != none
             || FlareRevolver(Other.Weapon) != none
             || Winchester(Other.Weapon) != none
+            || ScrnRevolver(Other.Weapon) != none
             || ClassIsInArray(default.PerkedWeapons, Other.Weapon.Class) //v3 - custom weapon support
         )
     {
@@ -115,7 +117,10 @@ static function bool CheckCowboyMode(KFPlayerReplicationInfo KFPRI, class<Weapon
 // Modify fire speed
 static function float GetFireSpeedModStatic(KFPlayerReplicationInfo KFPRI, class<Weapon> Other)
 {
-    if (ClassIsChildOf(Other, class'Winchester') ||  Other.name == 'Colt')
+    if (ClassIsChildOf(Other, class'FlareRevolver') || ClassIsChildOf(Other, class'DualFlareRevolver'))
+        return 1.3;
+
+    if (ClassIsChildOf(Other, class'Winchester') || ClassIsChildOf(Other, class'ScrnRevolver'))
         return 1.6;
 
     //increase fire only with full-automatic pistols
@@ -125,9 +130,6 @@ static function float GetFireSpeedModStatic(KFPlayerReplicationInfo KFPRI, class
         return 1.6;
     }
 
-    if (ClassIsChildOf(Other, class'FlareRevolver') || ClassIsChildOf(Other, class'DualFlareRevolver'))
-        return 1.3;
-
     return 1.0;
 }
 
@@ -136,7 +138,7 @@ static function float GetReloadSpeedModifierStatic(KFPlayerReplicationInfo KFPRI
 {
     if ( ClassIsChildOf(Other, class'Magnum44Pistol') || ClassIsChildOf(Other, class'Dual44Magnum')
             || ClassIsChildOf(Other, class'FlareRevolver') || ClassIsChildOf(Other, class'DualFlareRevolver')
-            || Other.name == 'Colt' || Other.name == 'MedicPistol' )
+            || ClassIsChildOf(Other, class'ScrnRevolver') || Other.name == 'MedicPistol' )
     {
         if ( class'ScrnBalance'.default.Mut.bHardcore )
             return 1.6;
@@ -176,7 +178,7 @@ static function float GetCostScaling(KFPlayerReplicationInfo KFPRI, class<Pickup
             || Item == class'Magnum44Pickup' || Item == class'Dual44MagnumPickup'
             || ClassIsChildOf(Item, class'ScrnDual44MagnumLaserPickup')
             || ClassIsChildOf(Item, class'FlareRevolverPickup') || ClassIsChildOf(Item, class'DualFlareRevolverPickup')
-            || Item.Name == 'ColtPickup' || Item.Name == 'MedicPistolPickup'
+            || ClassIsChildOf(Item, class'ScrnRevolverPickup') || Item.Name == 'MedicPistolPickup'
             || ClassIsInArray(default.PerkedPickups, Item)
         )
     {

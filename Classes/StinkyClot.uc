@@ -21,9 +21,14 @@ var string TeleportSoundRef;
 var sound TeleportSound;
 var transient Actor MoveHistory[3];
 
+var byte TeamIndex;
+var ColorModifier TeamColor;
 
 replication
 {
+    reliable if (bNetInitial && Role == ROLE_Authority)
+        TeamIndex;
+
     reliable if (Role == ROLE_Authority)
         TeleportPhase;
 }
@@ -63,6 +68,20 @@ simulated event PostNetReceive()
         }
     }
     SetSkin();
+}
+
+simulated function Destroyed()
+{
+    if (TeamColor != none) {
+        Level.ObjectPool.FreeObject(TeamColor);
+        TeamColor = none;
+    }
+    super.Destroyed();
+}
+
+simulated function int GetTeamNum()
+{
+    return TeamIndex;
 }
 
 function bool CanSpeedAdjust()
@@ -199,7 +218,26 @@ simulated function SetSkin()
             ZombieCrispUp();
     }
     else {
-        Skins[0] = ColorModifier'ScrnTex.Zeds.StinkyColor';
+        if (TeamIndex < 2) {
+            if (TeamColor == none) {
+                TeamColor = ColorModifier(Level.ObjectPool.AllocateObject(class'ColorModifier'));
+                TeamColor.Material = Combiner'KF_Specimens_Trip_T.clot_cmb';
+                if (TeamIndex == 0) {
+                    TeamColor.Color.R = 255;
+                    TeamColor.Color.G = 0;
+                    TeamColor.Color.B = 0;
+                }
+                else {
+                    TeamColor.Color.R = 0;
+                    TeamColor.Color.G = 128;
+                    TeamColor.Color.B = 255;
+                }
+            }
+            Skins[0] = TeamColor;
+        }
+        else {
+            Skins[0] = ColorModifier'ScrnTex.Zeds.StinkyColor';
+        }
         ColorModifier(Skins[0]).Color.A = clamp(AlphaFader, 0, 255);
         ColorModifier(Skins[0]).AlphaBlend = TeleportPhase != TELEPORT_NONE;
     }
@@ -394,6 +432,7 @@ defaultproperties
     HeadHealth=1000
     MotionDetectorThreat=0
     ScoringValue=100
+    TeamIndex=255
 
     CompleteAnim="ClotPunt"
     GrabBone="CHR_RArmPalm"

@@ -3227,7 +3227,12 @@ function ClientSetBehindView(bool B)
 
 exec function FreeCamera( bool B )
 {
-    ClientMessage("FreeCamera is blocked due to exploits. Use ToggleBehindView instead");
+    if (Role != ROLE_Authority) {
+        ClientMessage("FreeCamera is blocked due to exploits. Use ToggleBehindView instead");
+        return;
+    }
+    bFreeCamera = B;
+    bBehindView = B;
 }
 
 // BehindView() executes on the server-side only. Should be called ServerBehindView()
@@ -3322,6 +3327,12 @@ function bool IsMarkablePickup(Pickup P, out String caption, out byte MarkType)
     if (Vest(P) != none) {
         caption = class'ScrnCombatVestPickup'.default.ItemName;
         MarkType = class'ScrnHUD'.default.MARK_ARMOR;
+        return true;
+    }
+
+    if (FirstAidKit(P) != none) {
+        caption = class'ScrnFirstAidKit'.default.ItemName;
+        MarkType = class'ScrnHUD'.default.MARK_HEALTH;
         return true;
     }
 

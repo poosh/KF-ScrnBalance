@@ -254,8 +254,8 @@ simulated function ResolutionChanged(Canvas Canvas)
     else
         M = X0;
 
-    HealthX = BoxX + M;
-    VetX = HealthX + M + 6*X0;
+    HealthX = BoxX + M + 7*X0;
+    VetX = HealthX + M;
     NameX = VetX + BoxHeight * 1.75;
 
     NetX = BoxX + BoxWidth - M;
@@ -480,7 +480,8 @@ simulated event UpdateScoreBoard(Canvas Canvas)
     Canvas.SetPos(TimeX - 0.5 * XL, TitleYPos);
     Canvas.DrawTextClipped(TimeText);
 
-    Canvas.SetPos(HealthX, TitleYPos);
+    Canvas.TextSize(HealthText, XL, YL);
+    Canvas.SetPos(HealthX - XL, TitleYPos);
     Canvas.DrawTextClipped(HealthText);
 
     Canvas.Style = ERenderStyle.STY_Normal;
@@ -654,11 +655,11 @@ simulated event UpdateScoreBoard(Canvas Canvas)
                 S = ReadyText;
             }
             else {
-                Canvas.DrawColor = DeadColor;
+                Canvas.DrawColor = HUDClass.default.RedColor;
                 S = NotReadyText;
             }
         }
-        else if (PRI.bOutOfLives || KFPRI.PlayerHealth<=0) {
+        else if (PRI.bOutOfLives || KFPRI.PlayerHealth <= 0) {
             Canvas.DrawColor = DeadColor;
             S = OutText;
         }
@@ -666,9 +667,6 @@ simulated event UpdateScoreBoard(Canvas Canvas)
             S = KFPRI.PlayerHealth @ HealthyString;
             if (KFPRI.PlayerHealth >= 90) {
                 Canvas.DrawColor = HUDClass.default.GreenColor;
-                if (KFPRI.PlayerHealth >= 1000) {
-                    S = string(KFPRI.PlayerHealth); // WTF?
-                }
             }
             else if (KFPRI.PlayerHealth >= 50) {
                 Canvas.DrawColor = HUDClass.default.GoldColor;
@@ -677,7 +675,8 @@ simulated event UpdateScoreBoard(Canvas Canvas)
                 Canvas.DrawColor = HUDClass.default.RedColor;
             }
         }
-        Canvas.SetPos(HealthX, y);
+        Canvas.TextSize(S, XL, YL);
+        Canvas.SetPos(HealthX - XL, y);
         Canvas.DrawTextClipped(S);
 
         y += LineHeight;

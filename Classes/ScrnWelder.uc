@@ -11,6 +11,8 @@ simulated function PostBeginPlay()
 defaultproperties
 {
     PickupClass=Class'ScrnWelderPickup'
+    FireModeClass(0)=Class'ScrnWeldFire'
+    FireModeClass(1)=Class'ScrnUnWeldFire'
     TraderInfoTexture=Texture'KillingFloorHUD.WeaponSelect.Welder'
     ItemName="Welder SE"
 

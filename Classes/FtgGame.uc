@@ -398,6 +398,9 @@ function StinkyControllerReady(StinkyController SC)
         SC.GotoState('LatentDeath', 'Begin'); // can't kill pawn in its PostBeginPlay(). Need to wait a bit.
         return;
     }
+    if (!bSingleTeamGame) {
+        SC.StinkyClot.TeamIndex = SC.TeamIndex;
+    }
 
     if ( bWaveBossInProgress)
         SelectShop(); // during boss wave select different move locations per each stinky clot

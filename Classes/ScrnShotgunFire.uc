@@ -20,6 +20,6 @@ simulated function bool AllowFire()
 
 defaultproperties
 {
-     ProjectileClass=class'ScrnShotgunBullet'
-     AmmoPerFire=1
+    ProjectileClass=class'ScrnShotgunBullet'
+    AmmoPerFire=1
 }

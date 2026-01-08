@@ -79,7 +79,7 @@ function ServerTraveling(string URL, bool bItems)
 
 defaultproperties
 {
-    VersionNumber=97300
+    VersionNumber=97400
     GroupName="KF-Speed"
     FriendlyName="ScrN Speed Boost"
     Description="Boosts movement speed of players and zeds"

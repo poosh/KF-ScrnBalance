@@ -251,6 +251,8 @@ var transient float ObjLeft, ObjTop, ObjWidth, ObjHeight;
 var transient byte LastDialogueCounter;
 var transient bool bDialogueFading;
 
+var float DoorBarScaleX, DoorBarScaleY;
+
 function PostBeginPlay()
 {
     super.PostBeginPlay();
@@ -349,6 +351,33 @@ function DrawDoorHealthBars(Canvas C)
         }
     }
 }
+
+function DrawDoorBar(Canvas C, float XCentre, float YCentre, float BarPercentage, byte BarAlpha)
+{
+    local float TextWidth, TextHeight;
+    local string IntegrityText;
+
+    IntegrityText = int(FClamp(BarPercentage,0.f,1.f) * 100) $ "%";
+
+    if ( !bLightHud ) {
+        C.SetDrawColor(255, 255, 255, KFHUDAlpha);
+        C.Style = ERenderStyle.STY_Alpha;
+        C.SetPos(XCentre - ((DoorWelderBG.USize * DoorBarScaleX) / 2) , YCentre - ((DoorWelderBG.VSize * DoorBarScaleY) / 2));
+        C.DrawTileScaled(DoorWelderBG, DoorBarScaleX, DoorBarScaleY);
+    }
+
+    C.DrawColor = TeamColors[TeamIndex];
+
+    C.Font = LoadSmallFontStatic(4);
+    C.StrLen(IntegrityText, TextWidth, TextHeight);
+    C.SetPos(XCentre + 5 , YCentre - (TextHeight / 2.4));
+    C.DrawTextClipped(IntegrityText);
+
+    C.SetPos((XCentre - 5) - 64, YCentre - 24);
+    C.Style = ERenderStyle.STY_Alpha;
+    C.DrawTile(DoorWelderIcon, 64, 48, 0, 0, 256, 192);
+}
+
 
 
 simulated function DrawCowboyMode(Canvas C)
@@ -2506,15 +2535,20 @@ simulated function LinkActors()
 
     ScrnGRI = ScrnGameReplicationInfo(PlayerOwner.GameReplicationInfo);
 
-    if ( PlayerOwner != ScrnPC ) {
+    if (PlayerOwner != ScrnPC) {
         ScrnPC = ScrnPlayerController(PlayerOwner);
     }
 
-    if ( PawnOwner != none ) {
-        if ( PawnOwner != ScrnPawnOwner )
+    if (PawnOwner != none) {
+        if (PawnOwner != ScrnPawnOwner) {
             ScrnPawnOwner = ScrnHumanPawn(PawnOwner);
-        if ( PawnOwner.Weapon != OwnerWeapon )
+            OwnerWeapon = none;
+            KFPRI = none;
+            ScrnPRI = none;
+        }
+        if (PawnOwner.Weapon != OwnerWeapon) {
             OwnerWeapon = KFWeapon(PawnOwner.Weapon);
+        }
         // update KFPRI for spectators too
         if ( KFPRI != PawnOwner.PlayerReplicationInfo ) {
             KFPRI = KFPlayerReplicationInfo(PawnOwner.PlayerReplicationInfo);
@@ -2579,7 +2613,6 @@ simulated function LinkActors()
             WaveEndRule = ScrnGRI.WaveEndRule;
         }
     }
-
 }
 
 simulated event PostRender(Canvas C)
@@ -4529,6 +4562,9 @@ defaultproperties
     SpeedometerFont=5
     ChatIcon=Texture'ScrnTex.HUD.ChatIcon'
     CriticalOverlay=Shader'KFX.NearDeathShader'
+    DoorBarScaleX= 1.25
+    DoorBarScaleY= 0.9
+
 
     BlamedIcon=(WidgetTexture=Texture'ScrnTex.HUD.Crap64',RenderStyle=STY_Alpha,TextureCoords=(X2=64,Y2=64),TextureScale=0.500,PosX=0.95,PosY=0.5,ScaleMode=SM_Right,Scale=1.0,Tints[0]=(B=255,G=255,R=255,A=255),Tints[1]=(B=255,G=255,R=255,A=255))
     BlamedIconSize=32
@@ -4578,6 +4614,10 @@ defaultproperties
     SpeedBG=(WidgetTexture=Texture'KillingFloorHUD.HUD.Hud_Box_128x64',RenderStyle=STY_Alpha,TextureCoords=(X2=128,Y2=64),TextureScale=0.35,PosX=0.225,PosY=0.935,ScaleMode=SM_Right,Scale=1.0,Tints[0]=(B=255,G=255,R=255,A=255),Tints[1]=(B=255,G=255,R=255,A=255))
     SpeedIcon=(WidgetTexture=Texture'KillingFloorHUD.HUD.Hud_Lightning_Bolt',RenderStyle=STY_Alpha,TextureCoords=(X2=64,Y2=64),TextureScale=0.20,PosX=0.230,PosY=0.945,ScaleMode=SM_Right,Scale=1.0,Tints[0]=(B=255,G=255,R=255,A=255),Tints[1]=(B=255,G=255,R=255,A=255))
     SpeedDigits=(RenderStyle=STY_Alpha,TextureScale=0.300,PosX=0.251,PosY=0.950,Tints[0]=(B=64,G=64,R=255,A=255),Tints[1]=(B=64,G=64,R=255,A=255))
+
+    QuickSyringeBG=(WidgetTexture=Texture'KillingFloorHUD.HUD.Hud_Box_128x64',RenderStyle=STY_Alpha,TextureCoords=(X2=128,Y2=64),TextureScale=0.35,PosX=0.295,PosY=0.935,Scale=1.0,Tints[0]=(B=255,G=255,R=255,A=255),Tints[1]=(B=255,G=255,R=255,A=255))
+    QuickSyringeIcon=(WidgetTexture=Texture'KillingFloorHUD.HUD.Hud_Syringe',RenderStyle=STY_Alpha,TextureCoords=(X2=64,Y2=64),TextureScale=0.20,PosX=0.30,PosY=0.945,Scale=1.0,Tints[0]=(B=255,G=255,R=255,A=255),Tints[1]=(B=255,G=255,R=255,A=255))
+    QuickSyringeDigits=(RenderStyle=STY_Alpha,TextureScale=0.30,PosX=0.321,PosY=0.95,Tints[0]=(B=64,G=64,R=255,A=255),Tints[1]=(B=64,G=64,R=255,A=255))
 
     // RIGHT SIDE - from right to left
     GrenadeBG=(WidgetTexture=Texture'KillingFloorHUD.HUD.Hud_Box_128x64',RenderStyle=STY_Alpha,TextureCoords=(X2=128,Y2=64),TextureScale=0.35,PosX=0.915,PosY=0.935,ScaleMode=SM_Right,Scale=1.0,Tints[0]=(B=255,G=255,R=255,A=255),Tints[1]=(B=255,G=255,R=255,A=255))

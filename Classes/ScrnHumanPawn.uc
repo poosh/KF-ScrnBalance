@@ -2496,11 +2496,17 @@ simulated function TakeDamage( int Damage, Pawn InstigatedBy, Vector Hitlocation
         }
         else if ( KFDamType.default.bIsExplosive ) {
             if ( KFDamType != class'DamTypeFrag' )
-                Damage *= 0.70;
+                Damage *= 0.80;
         }
         else if ( KFDamType.default.bIsMeleeDamage ) {
             if ( ClassIsChildOf(KFDamType, class'DamTypeCrossbuzzsaw') )
                 Damage *= 0.80;
+        }
+        else if (KFDamType.default.bSniperWeapon) {
+            if (Damage > 100 && ClassIsChildOf(KFDamType.default.WeaponClass, class'Crossbow')) {
+                // 50% damage resistance to Xbow headshots (like Scrakes)
+                Damage *= 0.5;
+            }
         }
     }
 

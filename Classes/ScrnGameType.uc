@@ -2441,6 +2441,7 @@ function SetupRepLink(ScrnClientPerkRepLink R)
 
     for (i = R.CachePerks.length-1; i >= 0; --i ) {
         if (!IsPerkAllowed(class<ScrnVeterancyTypes>((R.CachePerks[i].PerkClass)))) {
+            log("Perk " $ R.CachePerks[i].PerkClass $ " is not allowed", class.name);
             R.CachePerks.remove(i, 1);
         }
     }

@@ -701,7 +701,7 @@ function int GetVoteIndex(PlayerController Sender, string Key, out string Value,
         }
         if ( right(Value, 1) == "%" )
             Value = left(Value, len(Value)-1);
-        if ( !TryStrToInt(Value, v) || v < Mut.MinVoteFF || v > Mut.MaxVoteFF )
+        if (!TryStrToInt(Value, v) || v < 0 || (!Mut.bTestMap && (v < Mut.MinVoteFF || v > Mut.MaxVoteFF)))
             return VOTE_ILLEGAL;
         if ( v == int(Mut.KF.FriendlyFireScale*100) )
             return VOTE_NOEFECT;

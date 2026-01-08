@@ -58,6 +58,7 @@ static function float ModifyRecoilSpread(KFPlayerReplicationInfo KFPRI, WeaponFi
     if ( Crossbow(Other.Weapon) != none || Winchester(Other.Weapon) != none
             || Single(Other.Weapon) != none || Deagle(Other.Weapon) != none
             || Magnum44Pistol(Other.Weapon) != none
+            || ScrnRevolver(Other.Weapon) != none
             || M14EBRBattleRifle(Other.Weapon) != none
             || M99SniperRifle(Other.Weapon) != none
             || SPSniperRifle(Other.Weapon) != none
@@ -99,6 +100,7 @@ static function float GetReloadSpeedModifierStatic(KFPlayerReplicationInfo KFPRI
             || ClassIsChildOf(Other, class'Deagle')
             || ClassIsChildOf(Other, class'Magnum44Pistol')
             || ClassIsChildOf(Other, class'MK23Pistol')
+            || ClassIsChildOf(Other, class'ScrnRevolver')
             || ClassIsChildOf(Other, class'M14EBRBattleRifle')
             || ClassIsChildOf(Other, class'SPSniperRifle'))
     {
@@ -124,6 +126,7 @@ static function float GetCostScaling(KFPlayerReplicationInfo KFPRI, class<Pickup
             || ClassIsChildOf(Item, class'M99Pickup')
             || ClassIsChildOf(Item, class'SPSniperPickup')
             || ClassIsChildOf(Item, class'CrossbowPickup') // Add discount on Crossbow (c) PooSH, 2012
+            || ClassIsChildOf(Item, class'ScrnRevolverPickup')
             || ClassIsInArray(default.PerkedPickups, Item) //v3 - custom weapon support
         )
     {

@@ -21,15 +21,61 @@
 
 # Version History
 
-> In this document all references to config file **ScrnBalance.ini** should be
-  treated as **ScrnBalanceSrv.ini**, if you're using server version of
-  ScrnBalance (ScrnBalanceSrv.ScrnBalance).
+> In this document all references to config file **ScrnBalance.ini** should be treated as **ScrnBalanceSrv. ScrnBalance (ScrnBalanceSrv.ScrnBalance).
 
 -------------------------------------------------------------------------------
 
-## VERSION 9
+# VERSION 9
 
 -------------------------------------------------------------------------------
+## v9.74
+- **New Survival v1.01**: Added a "finish them off" wave after wave 8. Now the game has 15 waves + boss.
+- **Gunslinger** gets +7 XP for any big zed kill (previously - only Scrakes) and +3 XP for any medium one (previously - only Bloats)
+- **FTG-SC**: Stinky Clots are glowing in their team color instead of green.
+- **Syringe** charge is always displayed on the HUD when not fully charged (<100)
+- **Medkits** can be marked.
+- **Scoreboard**: health/status values are right-aligned.
+- Door health indicators are updated more frequently during welding or unwelding.
+- Door health indicators are drawn in the team color.
+- `MVOTE FF` is always allowed on a test map.
+- Fixed an issue when Hardcore Mode could block wrong perks. Prohibited perks are logged now.
+- `FreeCamera` can be used in solo mode to make selfies.
+
+### Weapon Balance
+- **Medkit** now instantly gives +50 HP boost and +50 HP over time. The health boost can go beyond the max health. That applies only to medkits spawned by random weapon spawners.
+- **TSC**: Added 50% Human Damage resistance to **Crossbow** headshots (288 => 144 perked damage).
+- **TSC**: Lowered Human Damage resistance to **Explosives**: 30% => 20%. Hand nades still do full damage.
+- **M99**: increased total ammo count: 25 => 30.
+
+### Code Changes
+- Added a base class for custom single revolvers - `ScrnRevolver`. Inheriting from it automatically applies proper perk bonuses to Sharpshooter and Gunslinger.
+
+### ScrN Weapon Pack
+- Colt replaced by **.500 S&W Magnum** (in collaboration with [Scuddles], [Duckbuster], and [That1Guy])
+- For balance reasons, Sharpshooter receives only discount bonus (`$`) on .500 to Sharpshooter: `PerkedWeapons=2:ScrnWeaponPack.SW500Magnum:$`. Other bonuses received special handling in the perk's code.
+- Enhanced weapon sounds (by [That1Guy])
+- Enhanced **Saiga-12** model and animations (by [That1Guy])
+
+### Heavy Machine Gunner
+- All heavy machine guns can score *headshots*.
+- The deafult HMG headshot multiplier is 0.30 (30% damage to the head; the rest 70% - to the body)
+- Increased bullet spread buildup during longer bursts. Vanilla game capped max burst to 6 rounds, after which the spread didn't increase. HMG continues to increase bullet spread up to 10-25 rounds, depending on the gun.
+- Spread and recoil are significantly decreased when *crouched* or firing big guns in *Semi-Auto* mode.
+- **M249**: headshot multiplier set to 0.40
+- **RPK-47**: headshot multiplier set to 0.40
+- **SA80**: increased headshot multiplier 0.30 => 0.50
+- **SA80**: drastically reduced spread and recoil while crounched thanks to its bipod.
+
+### Horzine Technician
+- **Cryo ZED Shotgun**: a new weapon that shots cryo shells and have Zed Erradication Device for its alternate fire (thanks [ivanmagadan])
+- **Cryo Harpoon Bomber**: reduced weight 6 => 5kg.
+- **Cryo Thrower**: reduced weight 7 => 6kg.
+- **Cryo Mass Driver**: increased primary damage: 45 => 60.
+- **Cryo Mass Drive**: reduced headshot multiplier: 1.65 => 1.38.
+- **KVolt**: increased damage: 22 => 27.
+- **KVolt**: reduced headshot multiplier: 1.65 => 1.38.
+
+
 ## v9.73.12
 - **TSC** and **FTG**: Fixed wave circle background.
 - **FTG**: Fixed `admin kill zeds` (thanks [nmmblez])

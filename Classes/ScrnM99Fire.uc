@@ -5,5 +5,6 @@ defaultproperties
     FireAnimRate=0.850000
     FireRate=3.564706
     ProjectileClass=class'ScrnM99Bullet'
+    AmmoClass=Class'ScrnM99Ammo'
     ProjSpawnOffset=(X=0,Y=0,Z=0)
 }
