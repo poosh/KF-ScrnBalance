@@ -17,12 +17,15 @@ function Timer()
     local Actor HitActor;
     local Pawn Victim;
     local KFMonster Zed;
-    local vector StartTrace, EndTrace, HitLocation, HitNormal;
-    local rotator PointRot;
+    local KFPawn HitPawn;
+    local vector StartTrace, EndTrace, HitLocation, HitNormal, PointDir;
     local int MyDamage;
     local bool bBackStabbed;
     local vector dir, lookdir;
     local float DiffAngle, VictimDistSq;
+    local array<int> HitPoints;
+    local array<Actor> IgnoreActors;
+    local int c;
 
     MGun = KFMeleeGun(Weapon);
     if (MGun == none || mGun.bNoHit)
@@ -32,17 +35,27 @@ function Timer()
     StartTrace = Instigator.Location + Instigator.EyePosition();
 
     if (Instigator.Controller != none && !Instigator.Controller.bIsPlayer && Instigator.Controller.Enemy != none) {
-        PointRot = rotator(Instigator.Controller.Enemy.Location - StartTrace); // Give aimbot for bots.
+        PointDir = Instigator.Controller.Enemy.Location - StartTrace; // Give aimbot for bots.
     }
     else {
-        PointRot = Instigator.GetViewRotation();
+        PointDir = vector(Instigator.GetViewRotation());
     }
 
     // Instigator.ClearStayingDebugLines();
 
-    EndTrace = StartTrace + vector(PointRot) * WeaponRange;
-    HitActor = Instigator.Trace(HitLocation, HitNormal, EndTrace, StartTrace, true);
-    if (HitActor != None) {
+    EndTrace = StartTrace + PointDir * WeaponRange;
+    while (++c < 100) {  // a safety guard to prevent infinite loops
+        HitActor = Instigator.HitPointTrace(HitLocation, HitNormal, EndTrace, HitPoints, StartTrace,, 1);
+        if (HitActor == none)
+            break;
+
+        if (HitActor == Instigator || HitActor.Base == Instigator || KFBulletWhipAttachment(HitActor) != none) {
+            IgnoreActors[IgnoreActors.Length] = HitActor;
+            HitActor.SetCollision(false);
+            StartTrace = HitLocation;
+            continue;
+        }
+
         // Instigator.DrawStayingDebugLine(StartTrace, HitLocation, 0, 255, 0);
         bHitActor = true;
         ImpactShakeView();
@@ -52,26 +65,29 @@ function Timer()
         }
 
         Victim = Pawn(HitActor);
-        Zed = KFMonster(HitActor);
+        Zed = KFMonster(Victim);
+        HitPawn = KFPawn(Victim);
+
         if (Victim != none && MGun.BloodyMaterial != none) {
             Weapon.Skins[MGun.BloodSkinSwitchArray] = MGun.BloodyMaterial;
             Weapon.texture = Weapon.default.Texture;
         }
-        if (Level.NetMode==NM_Client) {
+
+        if (Level.NetMode == NM_Client) {
             if (Victim != none) {
                 Weapon.PlayOwnedSound(MeleeHitSounds[Rand(MeleeHitSounds.length)],SLOT_None,MeleeHitVolume,,,,false);
             }
         }
         else {
-            if (Victim != none && !Victim.IsA('Vehicle')
-                    && Normal(Victim.Location - Instigator.Location) dot vector(Victim.Rotation) > 0) {
-                bBackStabbed = true;
-                MyDamage*=2;
+            bBackStabbed = Victim != none
+                    && Normal(Victim.Location - Instigator.Location) dot vector(Victim.Rotation) > 0;
+            if (bBackStabbed) {
+                MyDamage *= 2;
             }
 
             if (Zed != none) {
                 Zed.bBackstabbed = bBackStabbed;
-                Zed.TakeDamage(MyDamage, Instigator, HitLocation, vector(PointRot), hitDamageClass);
+                Zed.TakeDamage(MyDamage, Instigator, HitLocation, PointDir, hitDamageClass);
                 // Zed can be already dead here
                 if (MeleeHitSounds.Length > 0) {
                     Weapon.PlaySound(MeleeHitSounds[Rand(MeleeHitSounds.length)],SLOT_None,MeleeHitVolume,,,,false);
@@ -81,10 +97,25 @@ function Timer()
                     Zed.FlipOver();
                 }
             }
+            else if (HitPawn != none) {
+                HitPawn.ProcessLocationalDamage(MyDamage, Instigator, HitLocation, PointDir,
+                        hitDamageClass, HitPoints);
+                if (MeleeHitSounds.Length > 0) {
+                    Weapon.PlaySound(MeleeHitSounds[Rand(MeleeHitSounds.length)],SLOT_None,MeleeHitVolume,,,,false);
+                }
+            }
             else {
-                HitActor.TakeDamage(MyDamage, Instigator, HitLocation, vector(PointRot), hitDamageClass) ;
+                HitActor.TakeDamage(MyDamage, Instigator, HitLocation, PointDir, hitDamageClass) ;
                 Spawn(HitEffectClass,,, HitLocation, rotator(HitLocation - StartTrace));
             }
+        }
+        break;
+    }
+
+    // Turn the collision back on for any actors we turned it off
+    for (c = 0; c < IgnoreActors.Length; ++c) {
+        if (IgnoreActors[c] != none) {
+            IgnoreActors[c].SetCollision(true);
         }
     }
 
@@ -118,8 +149,16 @@ function Timer()
         if (DiffAngle < WideDamageMinHitAngle)
             continue;
 
-        Victim.TakeDamage(MyDamage*DiffAngle, Instigator, EndTrace - dir * Victim.CollisionRadius, dir,
-                hitDamageClass);
+        Zed = KFMonster(Victim);
+        HitPawn = KFPawn(Victim);
+        MyDamage = MeleeDamage * DiffAngle;
+        bBackStabbed = Normal(Victim.Location - Instigator.Location) dot vector(Victim.Rotation) > 0;
+        if (Zed != none) {
+            Zed.bBackstabbed = bBackStabbed;
+        }
+
+        Victim.TakeDamage(MyDamage, Instigator, EndTrace - dir * Victim.CollisionRadius, dir, hitDamageClass);
+
         if(MeleeHitSounds.Length > 0) {
             if (Level.NetMode==NM_Client) {
                 Victim.PlayOwnedSound(MeleeHitSounds[Rand(MeleeHitSounds.length)],SLOT_None,MeleeHitVolume,,,,false);

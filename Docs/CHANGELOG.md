@@ -28,6 +28,13 @@
 # VERSION 9
 
 -------------------------------------------------------------------------------
+## v9.74.01
+- **TSC**: Fixed Human Damage for Crossbow, flares, and melee weapons.
+- **Katana**: restored radial damage for primary attack.
+- **Machete**: restored radial attack for secondary attack.
+- **Chainsaw**: fixed zed hit sounds on a dedicated server.
+- Fixed a bug where melee radial attack didn't do double backstab damage.
+
 ## v9.74
 - **New Survival v1.01**: Added a "finish them off" wave after wave 8. Now the game has 15 waves + boss.
 - **Gunslinger** gets +7 XP for any big zed kill (previously - only Scrakes) and +3 XP for any medium one (previously - only Bloats)

@@ -17,18 +17,6 @@ simulated function ProcessTouch(Actor Other, Vector HitLocation)
     if ( Other == none || Other == Instigator || Other.Base == Instigator )
         return;
 
-    // Don't collide with bullet whip attachments
-    // if( KFBulletWhipAttachment(Other) != none )
-    // {
-    //     return;
-    // }
-
-    // Don't allow hits on poeple on the same team
-    HitPawn = KFPawn(Other);
-    if( HitPawn != none && Instigator != none && HitPawn.PlayerReplicationInfo != none
-            && HitPawn.PlayerReplicationInfo.Team.TeamIndex == Instigator.PlayerReplicationInfo.Team.TeamIndex )
-        return;
-
     // Use the instigator's location if it exists. This fixes issues with
     // the original location of the projectile being really far away from
     // the real Origloc due to it taking a couple of milliseconds to

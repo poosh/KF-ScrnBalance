@@ -23,8 +23,8 @@ function DoTrace(Vector Start, Rotator Dir)
     local Actor Other;
     local byte HitCount, PenCounter;
     local float HitDamage, HitMomentum;
-    local array<int>    HitPoints;
-    local array<Actor>    IgnoreActors;
+    local array<int> HitPoints;
+    local array<Actor> IgnoreActors;
     local KFPawn HitPawn;
     local KFMonster Zed;
     local int i;
@@ -122,12 +122,9 @@ function DoTrace(Vector Start, Rotator Dir)
     }
 
     // Turn the collision back on for any actors we turned it off
-    if ( IgnoreActors.Length > 0 )
-    {
-        for (i=0; i<IgnoreActors.Length; i++)
-        {
-            if ( IgnoreActors[i] != none )
-                IgnoreActors[i].SetCollision(true);
+    for (i = 0; i < IgnoreActors.Length; ++i) {
+        if (IgnoreActors[i] != none) {
+            IgnoreActors[i].SetCollision(true);
         }
     }
 }

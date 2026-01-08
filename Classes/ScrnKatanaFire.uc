@@ -2,7 +2,7 @@ class ScrnKatanaFire extends ScrnMeleeFire;
 
 defaultproperties
 {
-    WideDamageMinHitAngle=0.000000
+    WideDamageMinHitAngle=0.80
     bWaitForRelease=False
 
     FireAnims(0)="Fire"

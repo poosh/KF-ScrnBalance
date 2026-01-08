@@ -23,7 +23,7 @@ simulated event ModeDoFire()
 
 defaultproperties
 {
-    WideDamageMinHitAngle=0.000000
+    WideDamageMinHitAngle=0.65
     MeleeDamage=130
     bWaitForRelease=false
 
