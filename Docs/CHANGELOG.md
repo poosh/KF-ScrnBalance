@@ -28,6 +28,9 @@
 # VERSION 9
 
 -------------------------------------------------------------------------------
+## v9.74.02
+- **TSC**: Fixed **Syringe** healing amount in uneven teams.
+
 ## v9.74.01
 - **TSC**: Fixed Human Damage for Crossbow, flares, and melee weapons.
 - **Katana**: restored radial damage for primary attack.

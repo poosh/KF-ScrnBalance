@@ -851,7 +851,7 @@ function TSCBaseGuardian SpawnBaseGuardian(byte TeamIndex)
 function BalanceTeams(byte SmallTeamIndex, float BalanceMult)
 {
     local Controller C;
-    local Syringe S;
+    local ScrnSyringe S;
     local ScrnHumanPawn ScrnPawn;
     local bool bInSmallTeam;
 
@@ -875,12 +875,13 @@ function BalanceTeams(byte SmallTeamIndex, float BalanceMult)
             ScrnPawn.SetHealthBonus(0);
         }
 
-        S = Syringe(ScrnPawn.FindInventoryType(class'Syringe'));
+        S = ScrnSyringe(ScrnPawn.FindInventoryType(class'ScrnSyringe'));
         if ( S != none ) {
             S.HealBoostAmount = S.default.HealBoostAmount;
+            S.SoloHealBoostAmount = S.default.SoloHealBoostAmount;
             if ( bInSmallTeam ) {
-                // syringe healths faster the smaller team
-                S.HealBoostAmount *= (BalanceMult - 1.0);
+                S.HealBoostAmount *= BalanceMult;
+                S.SoloHealBoostAmount *= BalanceMult;
             }
         }
     }
