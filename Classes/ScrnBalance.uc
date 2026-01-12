@@ -14,16 +14,6 @@ class ScrnBalance extends ScrnMutator
 #exec OBJ LOAD FILE=ScrnTex.utx
 #exec OBJ LOAD FILE=ScrnAch_T.utx
 
-// Deprecated config options. Those will be delete in future, so make sure not to use them.
-var deprecated bool bSpawn0, bNoStartCashToss, bLeaveCashOnDisconnect;
-var deprecated bool bMedicRewardFromTeam;
-var deprecated bool bReplaceNades;
-var deprecated bool bManualReload, bForceManualReload;
-var deprecated int StartCashNormal, StartCashHard, StartCashSui, StartCashHoE;
-var deprecated int MinRespawnCashNormal, MinRespawnCashHard, MinRespawnCashSui, MinRespawnCashHoE;
-var deprecated int TraderTimeNormal, TraderTimeHard, TraderTimeSui, TraderTimeHoE;
-
-
 var ScrnBalance Mut; // pointer to self to use in static functions, i.e class'ScrnBalance'.default.Mut
 
 var string CmdLine;
@@ -43,7 +33,7 @@ var globalconfig bool bMedicNades, bShieldWeight, bBeta;
 var globalconfig bool bShowDamages, bAllowWeaponLock;
 var globalconfig bool bNoPerkChanges, bPerkChangeBoss, bPerkChangeDead, b10Stars;
 var globalconfig bool bTraderSpeedBoost;
-var bool bHardcore;
+var bool bHardcore, bProjIgnoreHuman;
 // END OF SRVFLAGS
 
 var float SocialTax;
@@ -1779,7 +1769,7 @@ function SetReplicationData()
     // if ( bGunslinger )                      SrvFlags = SrvFlags | 0x00000040;
     if ( bTraderSpeedBoost )                SrvFlags = SrvFlags | 0x00000080;
 
-    // if ( bReplaceNades )                    SrvFlags = SrvFlags | 0x00000100;
+    if ( bProjIgnoreHuman )                 SrvFlags = SrvFlags | 0x00000100;
     if ( bShieldWeight )                    SrvFlags = SrvFlags | 0x00000200;
     if ( bHardcore )                        SrvFlags = SrvFlags | 0x00000400;
     if ( bBeta )                            SrvFlags = SrvFlags | 0x00000800;
@@ -1814,7 +1804,7 @@ simulated function LoadReplicationData()
     // bGunslinger                        = (SrvFlags & 0x00000040) > 0;
     bTraderSpeedBoost                  = (SrvFlags & 0x00000080) > 0;
 
-    // bReplaceNades                      = (SrvFlags & 0x00000100) > 0;
+    bProjIgnoreHuman                   = (SrvFlags & 0x00000100) > 0;
     bShieldWeight                      = (SrvFlags & 0x00000200) > 0;
     bHardcore                          = (SrvFlags & 0x00000400) > 0;
     bBeta                              = (SrvFlags & 0x00000800) > 0;
@@ -2718,6 +2708,7 @@ function SetGameDifficulty(byte HardcoreDifficulty)
         ScrnGT.BaseDifficulty = Difficulty;
     }
     bHardcore = bNewHardcore;
+    bProjIgnoreHuman = !bHardcore && !bTSCGame;
     KF.GameDifficulty = Difficulty;
     KF.AdjustedDifficulty = Difficulty;  // used by AIController, icluding KFMonsterController
     KFGRI = KFGameReplicationInfo(KF.GameReplicationInfo);
@@ -3368,7 +3359,7 @@ function GameResumed()
 
 defaultproperties
 {
-    VersionNumber=97402
+    VersionNumber=97403
     GroupName="KF-Scrn"
     FriendlyName="ScrN Balance"
     Description="Total rework of KF1 to make it modern and the best tactical coop in the world while sticking to the roots of the original."
@@ -3589,9 +3580,6 @@ defaultproperties
 
     SkippedTradeTimeMult=0.75
     SocialTax=0.40
-
-    // deprecated. Hardcoded to be true. Left for custom mods that rely on ScrnBalance
-    bMedicRewardFromTeam=true
 
     bAllowVoting=true
     bAllowPauseVote=true

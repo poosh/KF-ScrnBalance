@@ -1,5 +1,6 @@
 class ScrnZapProjectile extends ScrnRocketProjectile;
 
+var float ZapKeepTime;  // Prevent KFMonster.TotalZap from fading away during this period after the the last explosion
 
 simulated function ProcessExplosionFX(Emitter Explosion)
 {
@@ -22,6 +23,7 @@ defaultproperties
     MaxSpeed=1000.000000
     bDoubleDamageOnImpact=false
     Damage=150  // ZapAmount * 100
+    ZapKeepTime=5.0
     DamageRadius=300.000000
     ImpactDamage=0
     MyDamageType=Class'KFMod.DamTypeZEDGunMKII'

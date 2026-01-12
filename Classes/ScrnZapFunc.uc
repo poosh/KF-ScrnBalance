@@ -13,5 +13,8 @@ static function DealDamage(Projectile Proj, Actor Victim, int Damage, vector Hit
             // longer stay in zapped state after the explosion
             M.RemainingZap *= 1.50;
         }
+        else {
+            M.LastZapTime = M.Level.TimeSeconds + ScrnZapProjectile(Proj).ZapKeepTime;
+        }
     }
 }

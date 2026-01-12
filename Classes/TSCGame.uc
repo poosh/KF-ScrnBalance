@@ -38,6 +38,7 @@ var ShopVolume TeamShops[2];
 var class<WillowWhisp> BaseWhisp;
 var byte WaveMinuteTimer;
 var float WaveKillReqPct; // min kills per team in each wave (fraction of TotalMaxMonsters)
+var class<TSCMessages> TscMessages;
 
 var bool bPendingShuffle; // shuffle teams at the end of the wave
 var protected bool bTeamChanging; // indicates that game changes team members, e.g. doing shuffle
@@ -68,6 +69,7 @@ var enum EHumanDamageMode
 
 var config bool bVoteHDmg, bVoteHDmgOnlyBeforeStart;
 var float HDmgScale;
+var transient bool bHdmgWasEnabled;
 
 var transient bool bRecalcInventory;
 
@@ -462,7 +464,7 @@ function ShuffleTeams()
 
         if ( bWaveInProgress ) {
             bPendingShuffle = true;
-            BroadcastLocalizedMessage(class'TSCMessages', 240);
+            BroadcastLocalizedMessage(TscMessages, 240);
             return;
         }
         else if ( WaveCountDown < 10 ) {
@@ -516,7 +518,7 @@ function ShuffleTeams()
     }
     bTeamChanging = false;
 
-    BroadcastLocalizedMessage(class'TSCMessages', 241);
+    BroadcastLocalizedMessage(TscMessages, 241);
 }
 
 function ForceClanTeams()
@@ -642,7 +644,7 @@ function bool FFDisabled(pawn instigatedBy, pawn Victim)
     if ( instigatedBy.GetTeamNum() == Victim.GetTeamNum() ) {
         return HumanDamageMode < HDMG_Normal || TSCGRI.AtOwnBase(Victim, true);
     }
-    return HumanDamageMode < HDMG_PvP && TSCGRI.AtOwnBase(Victim, true);
+    return HumanDamageMode < HDMG_PvP && TSCGRI.AtOwnBase(Victim, true) && !TSCGRI.AtEnemyBase(Victim, true);
 }
 
 
@@ -705,7 +707,7 @@ function Killed(Controller Killer, Controller Killed, Pawn KilledPawn, class<Dam
                 TotalMaxMonsters /= 2;
                 TSCGRI.MaxMonsters = Max(TotalMaxMonsters + NumMonsters,0);
             }
-            BroadcastLocalizedMessage(class'TSCMessages', 10+KilledTeam.TeamIndex*100);
+            BroadcastLocalizedMessage(TscMessages, 10+KilledTeam.TeamIndex*100);
             TeamBases[KilledTeam.TeamIndex].SendHome();
         }
     }
@@ -835,6 +837,7 @@ function TSCBaseGuardian SpawnBaseGuardian(byte TeamIndex)
 
     gnome.Team = Teams[TeamIndex];
     gnome.TSCGRI = TSCGRI;
+    gnome.TscMessages = TscMessages;
     TeamBases[TeamIndex] = gnome;
 
     gnome.SetBrightness(ScrnBalanceMut.GetGuardianLight());
@@ -970,21 +973,30 @@ function SetupWave()
 
         if ( WaveNum >= OriginalFinalWave + OvertimeWaves ) {
             TSCGRI.bSuddenDeath = true;
-            BroadcastLocalizedMessage(class'TSCMessages', 302); // sudden death
+            BroadcastLocalizedMessage(TscMessages, 302); // sudden death
         }
         else {
-            BroadcastLocalizedMessage(class'TSCMessages', 201); // overtime
+            BroadcastLocalizedMessage(TscMessages, 201); // overtime
         }
     }
-    else if ( WaveNum == 0 || bNoBases ) {
-        BroadcastLocalizedMessage(class'TSCMessages', 230); // human damage disabled
+    else if (WaveNum == 0 || TSCGRI.bHumanDamageEnabled || bHdmgWasEnabled) {
+        BroadcastLocalizedMessage(TscMessages, GetHdmgMsgIndex(TSCGRI.bHumanDamageEnabled));
     }
-    else if ( HumanDamageMode > HDMG_None ) {
-        if ( HumanDamageMode >= HDMG_Normal )
-            BroadcastLocalizedMessage(class'TSCMessages', 231); // human damage enabled
-        else
-            BroadcastLocalizedMessage(class'TSCMessages', 232); // enemy fire enabled
+    bHdmgWasEnabled = TSCGRI.bHumanDamageEnabled;
+}
+
+function int GetHdmgMsgIndex(bool enabled)
+{
+    if (bSingleTeam) {
+        return 234 + int(enabled);  // friendly fire
     }
+    if (!enabled || HumanDamageMode == HDMG_None)
+        return 230; // human damage disabled
+
+    if (HumanDamageMode < HDMG_Normal)
+        return 232; // enemy fire enabled
+
+    return 231; // human damage enabled
 }
 
 function HandleRemainingZeds() {
@@ -1203,13 +1215,13 @@ State MatchInProgress
                         bWaveEnding = false;
                     }
                     // tell about disabling Human Damage 3 seconds after auto-end message
-                    if ( HumanDamageMode > HDMG_None && WaveEndingCountDown == default.WaveEndingCountDown-3 )
-                        BroadcastLocalizedMessage(class'TSCMessages', 230);
+                    if (bHdmgWasEnabled && WaveEndingCountDown == default.WaveEndingCountDown - 3)
+                        BroadcastLocalizedMessage(TscMessages, GetHdmgMsgIndex(false));
                 }
                 else {
                     bWaveEnding = true;
                     WaveEndingCountDown = default.WaveEndingCountDown; // force end wave in 30 seconds
-                    BroadcastLocalizedMessage(class'TSCMessages', 200); // tell about auto-end
+                    BroadcastLocalizedMessage(TscMessages, 200); // tell about auto-end
                 }
             }
         }
@@ -1225,10 +1237,10 @@ State MatchInProgress
 
         if (Level.TimeSeconds > BaseInvulTime) {
             // BaseInvulTime will be reset at the start of the next wave.
-            // For now, simply increase it by big-anough number
+            // For now, simply increase it by big-enough number
             BaseInvulTime += 3600;
             if ((TeamBases[0].bInvul || TeamBases[1].bInvul) && (TeamBases[0].bActive || TeamBases[1].bActive)) {
-                BroadcastLocalizedMessage(class'TSCMessages', 233); // tell about auto-end
+                BroadcastLocalizedMessage(TscMessages, 233); // tell about auto-end
             }
             TeamBases[0].bInvul = false;
             TeamBases[1].bInvul = false;
@@ -1274,14 +1286,14 @@ State MatchInProgress
         if ( AlivePlayerCount > 0 && NextWave >= OriginalFinalWave && NextWave < EndWaveNum() ) {
             if ( OvertimeWaves > 0 && NextWave == OriginalFinalWave ) {
                 TSCGRI.bOverTime = true;
-                BroadcastLocalizedMessage(class'TSCMessages', 201);
+                BroadcastLocalizedMessage(TscMessages, 201);
                 // legacy config name - now locking teams on overtime too
                 if ( bLockTeamsOnSuddenDeath )
                     LockTeams();
             }
             else if ( NextWave >= OriginalFinalWave + OvertimeWaves ) {
                 TSCGRI.bSuddenDeath = true;
-                BroadcastLocalizedMessage(class'TSCMessages', 202);
+                BroadcastLocalizedMessage(TscMessages, 202);
             }
             if ( NextWave >= FinalWave ) {
                 FinalWave = OriginalFinalWave + OvertimeWaves + SudDeathWaves;
@@ -1506,6 +1518,7 @@ defaultproperties
     ScoreBoardType="ScrnBalanceSrv.TSCScoreBoard"
     BaseGuardianClasses(0)=class'TSCGuardianRed'
     BaseGuardianClasses(1)=class'TSCGuardianBlue'
+    TscMessages=class'TSCMessages'
 
     ScreenShotName="TSC_T.Team.TSC"
 }

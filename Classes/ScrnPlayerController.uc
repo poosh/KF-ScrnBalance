@@ -1258,7 +1258,7 @@ simulated function ReceiveLocalizedMessage( class<LocalMessage> Message, optiona
             || (Message == class'KFVetEarnedMessagePL' && RelatedPRI_1 == PlayerReplicationInfo) ) {
         Message = class'ScrnPromotedMessage';
     }
-    else if ( Message == class'TSCMessages' ) {
+    else if (class<TSCMessages>(Message) != none) {
         switch (Switch) {
             case 300:     // trying to shop in enemy trader
                 ClientCloseMenu(true, true);

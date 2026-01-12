@@ -5,6 +5,7 @@ var int Damage; // damage per seconds that Base Guardian does to enemies
 var int SameTeamCounter; // if nobody of team members are at the base longer than this value, base will be lost
 
 var TSCGameReplicationInfo TSCGRI;
+var class<TSCMessages> TscMessages;
 
 var localized string strUseMessage;
 var localized string strUsedMessage;
@@ -187,7 +188,7 @@ function bool ValidPlaceForBase(Vector CheckLoc)
     if ( TSCGRI.AtBase(CheckLoc, EnemyBase) ) {
         PC = GetBaseSetter();
         if ( PC != none )
-            PC.ReceiveLocalizedMessage(class'TSCMessages', 310);
+            PC.ReceiveLocalizedMessage(TscMessages, 310);
         return false;
     }
 
@@ -195,7 +196,7 @@ function bool ValidPlaceForBase(Vector CheckLoc)
     foreach TouchingActors(Class'ShopVolume',Shop) {
         PC = GetBaseSetter();
         if ( PC != none )
-            PC.ReceiveLocalizedMessage(class'TSCMessages', 313);
+            PC.ReceiveLocalizedMessage(TscMessages, 313);
         return false;
     }
 
@@ -203,7 +204,7 @@ function bool ValidPlaceForBase(Vector CheckLoc)
         foreach Holder.TouchingActors(Class'ShopVolume',Shop) {
             PC = GetBaseSetter();
             if ( PC != none )
-                PC.ReceiveLocalizedMessage(class'TSCMessages', 313);
+                PC.ReceiveLocalizedMessage(TscMessages, 313);
             return false;
         }
     }
@@ -511,7 +512,7 @@ state SettingUp
 
     function Timer()
     {
-        BroadcastLocalizedMessage(class'TSCMessages', 1+Team.TeamIndex*100);
+        BroadcastLocalizedMessage(TscMessages, 1+Team.TeamIndex*100);
         GotoState('Guarding');
     }
 }
@@ -616,7 +617,7 @@ state Guarding
                     C.Pawn.TakeDamage(Damage, none, C.Pawn.Location, vect(0,0,0), class'DamTypeEnemyBase');
                     SC = ScrnPlayerController(C);
                     if (SC != none && SC.ScrnPawn != none && Level.TimeSeconds > SC.ScrnPawn.NextEnemyBaseDamageMsg) {
-                        SC.ReceiveLocalizedMessage(class'TSCMessages', 312);
+                        SC.ReceiveLocalizedMessage(TscMessages, 312);
                         SC.ScrnPawn.NextEnemyBaseDamageMsg = Level.TimeSeconds + 6.0;
                     }
                 }
@@ -636,7 +637,7 @@ state Guarding
                                     && Level.TimeSeconds > SC.ScrnPawn.NextEnemyBaseDamageMsg) {
                                 // Tell the player to return back to base, unless bNobodyAtBase triggered
                                 // Or the player is at the enemy base (and received a different warning)
-                                SC.ReceiveLocalizedMessage(class'TSCMessages', 211);
+                                SC.ReceiveLocalizedMessage(TscMessages, 211);
                             }
                         }
                     }
@@ -650,7 +651,7 @@ state Guarding
                     // player crashed an might return
                     return;
                 }
-                BroadcastLocalizedMessage(class'TSCMessages', 2+Team.TeamIndex*100);
+                BroadcastLocalizedMessage(TscMessages, 2+Team.TeamIndex*100);
                 SendHome();
             }
             else if ( (SameTeamCounter & 3) == 0 ) {
@@ -663,9 +664,9 @@ state Guarding
                         if ( SC != none ) {
                             SC.ServerShowPathTo(1); // show path to base
                             if ( SameTeamCounter <= 12 && ShouldWipeOnBaseLost() )
-                                SC.ReceiveLocalizedMessage(class'TSCMessages', 311); // critical message
+                                SC.ReceiveLocalizedMessage(TscMessages, 311); // critical message
                             else
-                                SC.ReceiveLocalizedMessage(class'TSCMessages', 211);
+                                SC.ReceiveLocalizedMessage(TscMessages, 211);
                         }
                     }
                 }
@@ -696,7 +697,7 @@ state Stunned
 
         SetTimer(StunDuration, false);
         NetUpdateTime = Level.TimeSeconds - 1; // replicate immediately
-        BroadcastLocalizedMessage(class'TSCMessages', 3+Team.TeamIndex*100);
+        BroadcastLocalizedMessage(TscMessages, 3+Team.TeamIndex*100);
     }
 
     function EndState()
@@ -735,7 +736,7 @@ state WakingUp
         SetPhysics(PHYS_Rotating);
 
         SetTimer(WakeUpDuration, false);
-        BroadcastLocalizedMessage(class'TSCMessages', 4+Team.TeamIndex*100);
+        BroadcastLocalizedMessage(TscMessages, 4+Team.TeamIndex*100);
     }
 
     function EndState()
@@ -746,7 +747,7 @@ state WakingUp
 
     function Timer()
     {
-        BroadcastLocalizedMessage(class'TSCMessages', 5+Team.TeamIndex*100);
+        BroadcastLocalizedMessage(TscMessages, 5+Team.TeamIndex*100);
         GotoState('Guarding');
     }
 }

@@ -28,16 +28,10 @@ simulated function ProcessTouch(Actor Other, Vector HitLocation)
 
     // Don't collide with bullet whip attachments
     if( KFBulletWhipAttachment(Other) != none )
-    {
         return;
-    }
 
-    // Don't allow hits on people on the same team - except hardcore mode
-    if( !class'ScrnBalance'.default.Mut.bHardcore && KFPawn(Other) != none && Instigator != none
-            && KFPawn(Other).GetTeamNum() == Instigator.GetTeamNum() )
-    {
-        return;
-    }
+    if (class'ScrnBalance'.default.Mut.bProjIgnoreHuman && ScrnHumanPawn(Other) != none)
+        return;  // the game mode allows projectiles flying through human bodies
 
     X = Vector(Rotation);
 

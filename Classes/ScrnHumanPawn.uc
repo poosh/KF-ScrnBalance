@@ -2494,10 +2494,6 @@ simulated function TakeDamage( int Damage, Pawn InstigatedBy, Vector Hitlocation
             if ( class<DamTypeMAC10MPInc>(KFDamType) == none )
                 Damage *= 1.50; // Increase burn damage 1.5 times, except MAC10.
         }
-        else if ( KFDamType.default.bIsExplosive ) {
-            if ( KFDamType != class'DamTypeFrag' )
-                Damage *= 0.80;
-        }
         else if ( KFDamType.default.bIsMeleeDamage ) {
             if ( ClassIsChildOf(KFDamType, class'DamTypeCrossbuzzsaw') )
                 Damage *= 0.80;
@@ -3296,7 +3292,7 @@ simulated function CheckGlow()
     }
 
     GlowCheckTime = Level.TimeSeconds + default.GlowCheckTime;
-    if (Health > 0 && TSCGRI.bHumanDamageEnabled && !TSCGRI.AtOwnBase(self, true)) {
+    if (Health > 0 && TSCGRI.bHumanDamageEnabled && (!TSCGRI.AtOwnBase(self, true) || TSCGRI.AtEnemyBase(self, true))) {
         EnableGlow();
     }
     else {

@@ -175,6 +175,9 @@ simulated function ProcessTouch(Actor Other, Vector HitLocation)
     if ( Other == none || Other == Instigator || Other.Base == Instigator || !Other.bBlockHitPointTraces )
         return;
 
+    if (class'ScrnBalance'.default.Mut.bProjIgnoreHuman && ScrnHumanPawn(Other) != none)
+        return;  // the game mode allows projectiles flying through human bodies
+
     // Use the instigator's location if it exists. This fixes issues with
     // the original location of the projectile being really far away from
     // the real Origloc due to it taking a couple of milliseconds to
@@ -200,9 +203,8 @@ simulated function ProcessTouch(Actor Other, Vector HitLocation)
 
         HitPawn = KFPawn(Other);
         if ( HitPawn != none ) {
-            // Don't allow hits on people on the same team - except hardcore mode
-            if ( !class'ScrnBalance'.default.Mut.bHardcore && HitPawn.GetTeamNum() == Instigator.GetTeamNum() )
-                return;
+            if (class'ScrnBalance'.default.Mut.bProjIgnoreHuman && ScrnHumanPawn(Other) != none)
+                return;  // the game mode allows projectiles flying through human bodies
             CheckCharge();
             HitPawn.ProcessLocationalDamage(Damage, Instigator, TempHitLocation, MomentumTransfer *X, MyDamageType,HitPoints);
         }

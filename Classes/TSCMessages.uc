@@ -6,6 +6,7 @@ var(Message) localized string strEnemyShop;
 var(Message) localized string strWaveEnding;
 var(Message) localized string strSeconds;
 var(Message) localized string strEnemyDmgEnabled, strHDmgEnabled, strHDmgDisabled, strStunProtectionDisabled;
+var(Message) localized string strFFEnabled, strFFDisabled;
 var(Message) localized string strOvertime;
 var(Message) localized string strSuddenDeath;
 var(Message) localized string strGetBackToBase;
@@ -65,6 +66,8 @@ static function string GetString(
             case 231:    return default.strHDmgEnabled;
             case 232:    return default.strEnemyDmgEnabled;
             case 233:    return default.strStunProtectionDisabled;
+            case 234:    return default.strFFDisabled;
+            case 235:    return default.strFFEnabled;
             case 240:    return default.strPendingShuffle;
             case 241:    return default.strTeamShuffle;
             case 242:    return default.strTeamUnlocked;
@@ -126,17 +129,19 @@ defaultproperties
     strSeconds="seconds"
     strHDmgDisabled="Human Damage OFF"
     strHDmgEnabled="Human Damage ON"
+    strFFDisabled="Friendly Fire OFF"
+    strFFEnabled="Friendly Fire ON"
     strEnemyDmgEnabled="Enemy Damage ON"
     strStunProtectionDisabled="Base Stun Protection OFF"
     strOvertime="Overtime Wave"
     strSuddenDeath="SUDDEN DEATH"
 
-    strEnemyShop="Can not trade in Enemy Shop!"
-    strBaseZ="Can not set up a Base just below the Enemy Base!"
+    strEnemyShop="Cannot trade in the Enemy Shop!"
+    strBaseZ="Cannot set the Base just below the Enemy Base!"
     strGetBackToBase="GET BACK TO THE BASE!"
     strGetBackToBaseOrDie="GET BACK TO THE BASE OR DIE!"
     strGetOutFromBase="You are at the ENEMY BASE! Get out of here!"
-    strBaseShop="Can not set up a Base inside a Shop!"
+    strBaseShop="Cannot set the Base inside a Shop!"
 
     strPendingShuffle="Teams will be shuffled at the end of the wave"
     strTeamShuffle="Teams shuffled"
@@ -156,5 +161,4 @@ defaultproperties
     strBaseWakingUp(1)="Steampunk Guardian is waking up"
     strBaseWakeUp(0)="British Guardian woke up"
     strBaseWakeUp(1)="Steampunk Guardian woke up"
-
 }

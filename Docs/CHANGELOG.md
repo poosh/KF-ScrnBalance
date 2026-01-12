@@ -28,6 +28,19 @@
 # VERSION 9
 
 -------------------------------------------------------------------------------
+## v9.74.03
+- Added a cooldown after a zap projectile explosion when the zed doesn't lose its accumulated zap value.
+- **M14 EBR**: restored the vanilla headshot multiplier: x2.15 => x2.25
+- **FTG**: Replaced "Human Damage ON/OFF" messages with "Friendly Fire ON/OFF", as there is no other team (thanks [nmmblez])
+- **FTG**: removed subsequent "Human Damage OFF" messages in cases when Human Damage wasn't enabled in the first place.
+
+## Team Survival Competition
+- Enabled Human Damage in the intersection area of both bases.
+- Removed Human Damage resistance from explosives (20% => 0)
+- Projectiles do not fly through human bodies (same as in Hardcore Mode)
+- `TscGame.TscMessages` class can be overridden by mods.
+
+
 ## v9.74.02
 - **TSC**: Fixed **Syringe** healing amount in uneven teams.
 
