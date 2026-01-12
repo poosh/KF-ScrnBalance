@@ -305,6 +305,18 @@ function UnrealTeamInfo MyClanTeam(PlayerReplicationInfo myPRI)
     return none;
 }
 
+function bool ForceTeam(PlayerController PC, int num)
+{
+    local bool result;
+    local bool oldTeamChanging;
+
+    oldTeamChanging = bTeamChanging;
+    bTeamChanging = true;
+    result = ChangeTeam(PC, num, true);
+    bTeamChanging = oldTeamChanging;
+    return result;
+}
+
 function bool ChangeTeam(Controller Other, int num, bool bNewTeam)
 {
     local PlayerController PC;

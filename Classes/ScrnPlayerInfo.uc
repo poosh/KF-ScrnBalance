@@ -1114,8 +1114,14 @@ function RestorePRI()
             KFPRI.ClientVeteranSkill = PRI_ClientVeteranSkill;
         }
 
-        if ( PRI_TeamIndex < 2 && ( KFPRI.Team == none || KFPRI.Team.TeamIndex != PRI_TeamIndex ) )
-            Level.Game.ChangeTeam( PlayerOwner, PRI_TeamIndex, true );
+        if (PRI_TeamIndex < 2 && (KFPRI.Team == none || KFPRI.Team.TeamIndex != PRI_TeamIndex)) {
+            if (TSCGame(Level.Game) != none) {
+                TSCGame(Level.Game).ForceTeam(PlayerOwner, PRI_TeamIndex);
+            }
+            else {
+                Level.Game.ChangeTeam(PlayerOwner, PRI_TeamIndex, true);
+            }
+        }
     }
 
     KFPRI.Score = max(PRI_Score, KFPRI.Score);

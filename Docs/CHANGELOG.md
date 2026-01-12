@@ -28,7 +28,7 @@
 # VERSION 9
 
 -------------------------------------------------------------------------------
-## v9.74.03
+## v9.74.04
 - Added a cooldown after a zap projectile explosion when the zed doesn't lose its accumulated zap value.
 - **M14 EBR**: restored the vanilla headshot multiplier: x2.15 => x2.25
 - **FTG**: Replaced "Human Damage ON/OFF" messages with "Friendly Fire ON/OFF", as there is no other team (thanks [nmmblez])
@@ -39,6 +39,8 @@
 - Removed Human Damage resistance from explosives (20% => 0)
 - Projectiles do not fly through human bodies (same as in Hardcore Mode)
 - `TscGame.TscMessages` class can be overridden by mods.
+- Fixed an issue when player could join a wrong team after reconnect.
+- Fixed Clan Captain permissions in a Clan Game (`mvote clan game`)
 
 
 ## v9.74.02

@@ -3359,7 +3359,7 @@ function GameResumed()
 
 defaultproperties
 {
-    VersionNumber=97403
+    VersionNumber=97404
     GroupName="KF-Scrn"
     FriendlyName="ScrN Balance"
     Description="Total rework of KF1 to make it modern and the best tactical coop in the world while sticking to the roots of the original."
@@ -3379,7 +3379,7 @@ defaultproperties
     strXPInitial="^G$Initial Perk Stats:"
     strXPProgress="^G$Perk Progression:"
     strXPBonus="^G$XP Bonus for winning: ^c$"
-    strOnlyAdmin="Requires ADMIN priviledges"
+    strOnlyAdmin="^r$Requires ADMIN privileges"
     strOnlyScrnGT="Avaliable in ScrnGameType only!"
     strOnlyNotInTourney="Not Available in TOURNEY mode"
 

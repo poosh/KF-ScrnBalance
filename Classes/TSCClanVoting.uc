@@ -13,7 +13,7 @@ const VOTE_LEAVE                =  5;
 var TSCClanInfo VotedRedClan, VotedBlueClan;
 var array<TSCClanInfo> Clans;
 
-var string strNoClan, strNoClanPlayers, strClanAlreadyExists, strAdminOrCaptain;
+var string strNoClan, strNoClanPlayers, strClanAlreadyExists, strAdminOrCaptain, strRequireClanGame, strCaptainOwnClan;
 
 function int GetGroupVoteIndex(PlayerController Sender, string Group, string Key, out string Value, out string VoteInfo)
 {
@@ -54,15 +54,7 @@ function int GetGroupVoteIndex(PlayerController Sender, string Group, string Key
         if (Clan == none) {
             return VOTE_NOEFECT;
         }
-        if (Clan.IsCaptain(Sender.GetPlayerIDHash())) {
-            if (!TSC.ScrnBalanceMut.CheckAdmin(Sender)) {
-                return VOTE_LOCAL;
-            }
-            else {
-                Clan.RemoveCaptain(Sender.GetPlayerIDHash());
-            }
-        }
-        else if (!Clan.RemovePlayer(Sender.GetPlayerIDHash())) {
+        if (!Clan.RemoveCaptain(Sender.GetPlayerIDHash()) && !Clan.RemovePlayer(Sender.GetPlayerIDHash())) {
             return VOTE_NOEFECT;
         }
         VotingHandler.VotedPlayer = Sender;
@@ -166,24 +158,35 @@ function int VotePlayerMod(PlayerController Sender, int VoteIndex, out string Va
         PlayerName = Value;
     }
 
-    Clan = FindTeamClan(Sender);
-    if (Clan == none || !(Clan.Acronym ~= ClanAcronym)) {
-        if (!bAdmin) {
+    if (!bAdmin) {
+        Clan = FindTeamClan(Sender);
+        if (Clan == none) {
+            Sender.ClientMessage(strRequireClanGame);
+            return VOTE_LOCAL;
+        }
+        if (ClanAcronym != "" && !(Clan.Acronym ~= ClanAcronym)) {
+            Sender.ClientMessage(strCaptainOwnClan);
+            return VOTE_LOCAL;
+        }
+        if (!Clan.IsCaptain(Sender.GetPlayerIDHash())) {
             Sender.ClientMessage(strAdminOrCaptain);
             return VOTE_LOCAL;
         }
-        else {
+    }
+    else {
+        if (ClanAcronym != "") {
             Clan = FindClan(ClanAcronym);
             if (Clan == none) {
                 Sender.ClientMessage(repl(strNoClan, "%c", ClanAcronym));
                 return VOTE_LOCAL;
             }
         }
-    }
-
-    if (!bAdmin && !Clan.IsCaptain(Sender.GetPlayerIDHash())) {
-        Sender.ClientMessage(strAdminOrCaptain);
-        return VOTE_LOCAL;
+        else {
+            Clan = FindTeamClan(Sender);
+            if (Clan == none) {
+                return VOTE_ILLEGAL;
+            }
+        }
     }
 
     Player = FindPlayer(PlayerName, Sender);
@@ -296,11 +299,13 @@ defaultproperties
     strNoClanPlayers="There are no clan [%c] members in the game";
     strClanAlreadyExists="Clan already exists"
     strAdminOrCaptain="Required ADMIN or CLAN CAPTAIN privileges"
+    strRequireClanGame="Required ADMIN privileges or a clan game (MVOTE CLAN GAME)"
+    strCaptainOwnClan="You can access your current clan only"
 
     HelpInfo(0)="%pCLAN %y<options> %w Clan votes. Type %bMVOTE CLAN HELP %wfor more details."
 
     GroupInfo(0)="%pCLAN %gGAME %r<clan1> %b<clan2> %w Start a clan1 vs. clan2 game"
-    GroupInfo(1)="%pCLAN %gCREATE %y<clan_acronym> <clan_name> %w Creates a new clan"
+    GroupInfo(1)="%pCLAN %rCREATE %y<clan_acronym> <clan_name> %w Creates a new clan"
     GroupInfo(2)="%pCLAN %gADD %y<player_name> [<clan>] %w Add the player to the clan"
     GroupInfo(3)="%pCLAN %gREMOVE %y<player_name> [<clan>] %w Remove the player to the clan"
     GroupInfo(4)="%pCLAN %gCAPTAIN %y<player_name> [<clan>] %w Make the player a clan captain"
