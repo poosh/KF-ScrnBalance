@@ -1880,8 +1880,10 @@ function Timer()
             Health = HealthMax + 150;
         else if ( Health > HealthMax + 100 )
             Health -= 5;
-        else
+        else if ( Health > HealthMax + 50 )
             Health -= 2;
+        else
+            Health -= 1;
         // make sure not to overshoot
         if (Health < HealthMax)
             Health = HealthMax;

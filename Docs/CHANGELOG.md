@@ -28,7 +28,7 @@
 # VERSION 9
 
 -------------------------------------------------------------------------------
-## v9.74.04
+## v9.74.05
 - Added a cooldown after a zap projectile explosion when the zed doesn't lose its accumulated zap value.
 - **M14 EBR**: restored the vanilla headshot multiplier: x2.15 => x2.25
 - **FTG**: Replaced "Human Damage ON/OFF" messages with "Friendly Fire ON/OFF", as there is no other team (thanks [nmmblez])
