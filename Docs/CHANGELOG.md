@@ -28,6 +28,16 @@
 # VERSION 9
 
 -------------------------------------------------------------------------------
+## v9.74.06
+- **Nightmare 2.0** - A reworked game mode based on New Survival. Nightmare 2.0 features 3 rounds x 3 waves (spawn zeds + reach the trader + kill the remaining zeds), followed by a KFMod-style warmup wave before the boss. Same as in the original Nightmare, all custom specimens are forced and cannot be disabled.
+- **New Survival 1.02** - more ammo boxes in "Wave 9 - Finish Them Off".
+- Fixed an issue in "Finish Them Off" waves, the number of alive zeds were doubled in the wave zed counter calculation.
+- The regular spectator HUD now displays the wave circle, showing the custom wave information (timeout, grab ammo, etc.)
+- Improved TSC Spectator HUD.
+- Fixed an issue where the TSC Spectator HUD was used in FTG.
+-*ScrnMapInfo.ini*: added map definition for **KF-WestLondon-ST**
+
+
 ## v9.74.05
 - Added a cooldown after a zap projectile explosion when the zed doesn't lose its accumulated zap value.
 - **M14 EBR**: restored the vanilla headshot multiplier: x2.15 => x2.25

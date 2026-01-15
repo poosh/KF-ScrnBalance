@@ -607,6 +607,9 @@ state Guarding
                 StunDamage = 0;
         }
 
+        if (TSCGRI.EndGameType > 0)
+            return; // game has ended
+
         bNobodyAtBase = true;
         bNobodyAlive = true;
         for ( C = Level.ControllerList; C != none; C = C.nextController ) {

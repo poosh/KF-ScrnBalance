@@ -118,6 +118,7 @@ var()   SpriteWidget            CoolCashIcon;
 var()   NumericWidget           CoolCashDigits;
 var Color LowAmmoColor;
 var Color NoAmmoColor;
+var float SmoothBarRate;
 
 var transient float PulseAlpha;
 var float PulseRate;
@@ -179,6 +180,7 @@ var float BlameCountdown;
 var float BlameDrawDistance; // max distance to draw a turn on blamed pawn's head
 
 var config bool bDrawSpecDeaths;
+var bool bDrawSpecWaveInfo;
 
 var Color WhiteAlphaColor; // white color with applied KFHUDAlpha. It is safe to use default.WhiteAlphaColor as well
 var array<color> PerkColors;
@@ -3266,19 +3268,14 @@ simulated function DrawWaveCircle(Canvas C, Material M, float CircleSize)
     }
 }
 
-simulated function DrawKFHUDTextElements(Canvas C)
+simulated function OverrideWaveCounterText(Canvas C, out string S);
+
+simulated function DrawWaveInfo(Canvas C)
 {
-    local float    XL, YL, Y, Y2;
-    local int      NumZombies, Counter;
-    local string   S;
-    local float    CircleSize;
-    local float    ResScale;
-
-    if ( PlayerOwner == none || KFGRI == none || !KFGRI.bMatchHasBegun || ScrnPC.bShopping )
-        return;
-
-    if( KF_StoryGRI(Level.GRI) != none )
-        return; // DrawStoryHUDInfo is used instead
+    local float XL, YL, Y, Y2;
+    local int NumZombies, Counter;
+    local string S;
+    local float ResScale, CircleSize;
 
     ResScale =  C.SizeX / 1024.0;
     CircleSize = FMin(128 * ResScale,128);
@@ -3297,7 +3294,7 @@ simulated function DrawKFHUDTextElements(Canvas C)
             S = Eval((Counter >= 10), string(Counter), "0" $ Counter) $ ":" $ Eval((NumZombies >= 10), string(NumZombies), "0" $ NumZombies);
             C.Font = LoadFont(2);
             C.Strlen(S, XL, YL);
-            C.SetDrawColor(255, 50, 50, KFHUDAlpha);
+            C.DrawColor = TextColors[TeamIndex];
             Y = CircleSize/2 - YL / 2;
             C.SetPos(C.ClipX - CircleSize/2 - (XL / 2), Y);
             C.DrawText(S, False);
@@ -3305,7 +3302,7 @@ simulated function DrawKFHUDTextElements(Canvas C)
         }
         else if (ScrnGRI != none && ScrnGRI.WaveEndRule == 9) {
             // RULE_ReachTrader
-            C.SetDrawColor(255, 50, 50, KFHUDAlpha);
+            C.DrawColor = TextColors[TeamIndex];
 
             C.Font = LoadFont(4);
             S = strReachTrader2;
@@ -3354,14 +3351,15 @@ simulated function DrawKFHUDTextElements(Canvas C)
                     break;
             }
         }
-        S = eval(Counter >= 0, string(Counter), "?");
+        C.DrawColor = TextColors[TeamIndex];
         C.Font = LoadFont(1);
+        S = eval(Counter >= 0, string(Counter), "?");
+        OverrideWaveCounterText(C, S);
         C.Strlen(S, XL, YL);
         if (XL > CircleSize * 0.75) {
             C.Font = LoadFont(2);
             C.Strlen(S, XL, YL);
         }
-        C.SetDrawColor(255, 50, 50, KFHUDAlpha);
         Y = CircleSize/2 - (YL / 1.5);
         C.SetPos(C.ClipX - CircleSize/2 - (XL / 2), Y);
         C.DrawText(S);
@@ -3385,7 +3383,17 @@ simulated function DrawKFHUDTextElements(Canvas C)
 
     C.FontScaleX = 1;
     C.FontScaleY = 1;
+}
 
+simulated function DrawKFHUDTextElements(Canvas C)
+{
+    if ( PlayerOwner == none || KFGRI == none || !KFGRI.bMatchHasBegun || ScrnPC.bShopping )
+        return;
+
+    if( KF_StoryGRI(Level.GRI) != none )
+        return; // DrawStoryHUDInfo is used instead
+
+    DrawWaveInfo(C);
 
     if ( KFPRI == none || KFPRI.Team == none || KFPRI.bOnlySpectator || PawnOwner == none )
         return;
@@ -3629,13 +3637,20 @@ simulated function DrawSpecialSpectatingHUD(Canvas C)
         C.DrawText(S);
 
         // number of zeds
-        if ( KFGRI.bWaveInProgress )
-            S = string(KFGRI.MaxMonsters);
-        else
-            s = class'ScrnFunctions'.static.FormatTime(KFGRI.TimeToNextWave);
-        C.TextSize(S, XL, YL);
-        C.SetPos(C.ClipX-XL, 0);
-        C.DrawText(S);
+        if (bDrawSpecWaveInfo) {
+            DrawWaveInfo(C);
+        }
+        else {
+            if (KFGRI.bWaveInProgress) {
+                S = string(KFGRI.MaxMonsters);
+            }
+            else {
+                s = class'ScrnFunctions'.static.FormatTime(KFGRI.TimeToNextWave);
+            }
+            C.TextSize(S, XL, YL);
+            C.SetPos(C.ClipX-XL, 0);
+            C.DrawText(S);
+        }
     }
 
     // deaths
@@ -3646,6 +3661,9 @@ simulated function DrawSpecialSpectatingHUD(Canvas C)
                 d += KFGRI.PRIArray[i].Deaths;
         }
         if ( d > 0 ) {
+            C.Font = LoadWaitingFont(SpecHeaderFont); // 0 - big, 1 - smaller
+            C.DrawColor = WhiteColor;
+            C.DrawColor.A = KFHUDAlpha;
             S = string(d);
             C.TextSize(S, XL, YL);
             C.SetPos(c.ClipY*0.01, c.ClipY*0.99 - YL/2);
@@ -4543,6 +4561,24 @@ function DisplayObjectiveWaveCounter(Canvas C, int index, string Caption)
     }
 }
 
+function float SmoothBarTransition(float NewValue, out float OldValue, out float OldTime)
+{
+    if (SmoothBarRate <= 0)
+        return NewValue;
+
+    if (NewValue != OldValue) {
+        if (NewValue > OldValue) {
+            NewValue = fmin(NewValue, OldValue + SmoothBarRate * (Level.TimeSeconds - OldTime));
+        }
+        else {
+            NewValue = fmax(NewValue, OldValue - SmoothBarRate * (Level.TimeSeconds - OldTime));
+        }
+        OldValue = NewValue;
+    }
+    OldTime = Level.TimeSeconds;
+    return NewValue;
+}
+
 
 defaultproperties
 {
@@ -4564,7 +4600,7 @@ defaultproperties
     CriticalOverlay=Shader'KFX.NearDeathShader'
     DoorBarScaleX= 1.25
     DoorBarScaleY= 0.9
-
+    SmoothBarRate=0.5
 
     BlamedIcon=(WidgetTexture=Texture'ScrnTex.HUD.Crap64',RenderStyle=STY_Alpha,TextureCoords=(X2=64,Y2=64),TextureScale=0.500,PosX=0.95,PosY=0.5,ScaleMode=SM_Right,Scale=1.0,Tints[0]=(B=255,G=255,R=255,A=255),Tints[1]=(B=255,G=255,R=255,A=255))
     BlamedIconSize=32
@@ -4572,6 +4608,7 @@ defaultproperties
     BlameDrawDistance=800
 
     SingleNadeIcon=(WidgetTexture=Texture'KillingFloor2HUD.HUD.Hud_M79',RenderStyle=STY_Alpha,TextureCoords=(X2=64,Y2=64),TextureScale=0.220,PosX=0.781,PosY=0.943,ScaleMode=SM_Right,Scale=1.0,Tints[0]=(B=255,G=255,R=255,A=255),Tints[1]=(B=255,G=255,R=255,A=255))
+    DoorWelderIcon=Texture'KillingFloorHUD.WeaponSelect.welder_unselected'
 
     // used in ScrnBuyMenuSaleList. Brought here to allow user config
     TraderGroupColor=(R=128,G=128,B=128,A=255)
@@ -4582,6 +4619,7 @@ defaultproperties
     TraderPriceButtonSelectedColor=(R=255,G=128,B=160,A=255)
 
     bDrawSpecDeaths=True
+    bDrawSpecWaveInfo=True
 
     strFollowing="FOLLOWING:"
     strTrader="Trader: "

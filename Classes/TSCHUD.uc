@@ -78,6 +78,7 @@ var()   NumericWidget           SpecDoshDigits[2];
 
 var     config bool             bDrawSpecBar;
 var     material                SpecBarBG, SpecBarRed, SpecBarBlue;
+var     texture                 SpecBarMark;
 var     config float            SpecBarY, SpecBarWidth, SpecBarHeight;
 
 var     config bool             bSpecDrawClan;
@@ -86,6 +87,8 @@ var     config float            SpecClanBannerX, SpecClanBannerY, SpecClanBanner
 
 var protected transient int TeamDosh[2], TeamHealth[2], TeamWaveKills[2];
 var protected transient float RedTeamHealthRatio, RedTeamDoshRatio, RedTeamWaveKillRatio;
+var protected transient float OldRedTeamHealthRatio, OldRedTeamDoshRatio, OldRedTeamWaveKillRatio;
+var protected transient float OldRedTeamHealthTime, OldRedTeamDoshTime, OldRedTeamWaveKillTime;
 var protected transient float NextStatUpdateTime;
 
 var bool bDrawShopDirPointer;
@@ -265,150 +268,44 @@ simulated function UpdateTeamHud()
     SetHUDAlpha();
 }
 
+simulated function OverrideWaveCounterText(Canvas C, out string S)
+{
+    local int NumZombies;
+
+    if (MyTeam == none || TSCGRI == none || TSCGRI.bSingleTeamGame || TSCGRI.AlivePlayers[TeamIndex] == 0)
+        return;
+
+    if (MyTeam.GetCurWaveKills() < TSCGRI.WaveKillReq) {
+        NumZombies = TSCGRI.WaveKillReq - MyTeam.GetCurWaveKills();
+        S = NumZombies $ "/" $ KFGRI.MaxMonsters;
+        C.Font = LoadFont(2);
+        C.DrawColor = LowAmmoColor;
+        PulseColorIf(C.DrawColor, KFGRI.MaxMonsters < NumZombies*2);
+    }
+}
+
 simulated function DrawKFHUDTextElements(Canvas C)
 {
-    local float    XL, YL, Y, Y2;
-    local int      NumZombies, Counter;
-    local string   S;
-    local float    CircleSize;
-    local float    ResScale;
     local ShopVolume shop;
 
-    if ( PlayerOwner == none || PlayerOwner.Player == none || PlayerOwner.Player.bShowWindowsMouse
-        || KFGRI == none || !KFGRI.bMatchHasBegun )
-    {
+    if (PlayerOwner == none || PlayerOwner.Player == none || PlayerOwner.Player.bShowWindowsMouse
+            || KFGRI == none || !KFGRI.bMatchHasBegun)
         return;
-    }
 
-    ResScale =  C.SizeX / 1024.0;
-    CircleSize = FMin(128 * ResScale,128);
-    C.FontScaleX = FMin(ResScale,1.f);
-    C.FontScaleY = FMin(ResScale,1.f);
+    DrawWaveInfo(C);
 
-    // Countdown Text
-    Y = CircleSize/2;
-    if (!KFGRI.bWaveInProgress || (ScrnGRI != none && (ScrnGRI.WaveEndRule == 2 || ScrnGRI.WaveEndRule == 9))) {
-        DrawWaveCircle(C, WaveCircleClockBG[TeamIndex], CircleSize);
-
-        if (KFGRI.TimeToNextWave >= 0) {
-            Counter = KFGRI.TimeToNextWave / 60;
-            NumZombies = KFGRI.TimeToNextWave - (Counter * 60);
-
-            S = Eval((Counter >= 10), string(Counter), "0" $ Counter) $ ":" $ Eval((NumZombies >= 10), string(NumZombies), "0" $ NumZombies);
-            C.Font = LoadFont(2);
-            C.Strlen(S, XL, YL);
-            C.DrawColor = TextColors[TeamIndex];
-             Y = CircleSize/2 - YL / 2;
-            C.SetPos(C.ClipX - CircleSize/2 - (XL / 2), Y);
-            C.DrawText(S, False);
-            Y += YL * 0.9;
-        }
-        else if (ScrnGRI != none && ScrnGRI.WaveEndRule == 9) {
-            // RULE_ReachTrader
-            C.DrawColor = TextColors[TeamIndex];
-
-            C.Font = LoadFont(4);
-            S = strReachTrader2;
-            C.Strlen(S, XL, YL);
-            Y = CircleSize/2 - YL/2;
-            C.SetPos(C.ClipX - CircleSize/2 - (XL / 2), Y);
-            C.DrawText(S, False);
-            Y2 = Y;
-            Y += YL * 0.9;
-
-            C.Font = LoadFont(5);
-            S = strReachTrader1;
-            C.Strlen(S, XL, YL);
-            Y2 -= YL * 0.9;
-            C.SetPos(C.ClipX - CircleSize/2 - (XL / 2), Y2);
-            C.DrawText(S, False);
-        }
-    }
-    else {
-        DrawWaveCircle(C, WaveCircleBG[TeamIndex], CircleSize);
-
-        if ( MyTeam != none && MyTeam.GetCurWaveKills() < TSCGRI.WaveKillReq ) {
-            NumZombies = TSCGRI.WaveKillReq - MyTeam.GetCurWaveKills();
-            S = NumZombies $ "/" $ KFGRI.MaxMonsters;
-            C.Font = LoadFont(2);
-            C.DrawColor = LowAmmoColor;
-            PulseColorIf(C.DrawColor, KFGRI.MaxMonsters < NumZombies*2);
-        }
-        else {
-            Counter = KFGRI.MaxMonsters;
-            if (ScrnGRI != none) {
-                switch (ScrnGRI.WaveEndRule) {
-                    case 3:  // RULE_EarnDosh
-                    case 5:  // RULE_GrabDosh
-                    case 6:  // RULE_GrabDoshZed
-                        C.SetPos(C.ClipX - CircleSize/2 - CircleSize/8, 8);
-                        if ( KFPRI != none && KFPRI.Team != none ) {
-                            C.DrawColor = TeamColors[KFPRI.Team.TeamIndex];
-                            C.DrawColor.A = 255;
-                        }
-                        C.DrawTile(Texture'ScrnTex.HUD.Hud_Pound_Symbol_BW', CircleSize/4, CircleSize/4, 0, 0, 64, 64);
-                        Counter = ScrnGRI.WaveCounter;
-                        break;
-
-                    case 7:  // RULE_GrabAmmo
-                        C.SetPos(C.ClipX - CircleSize/2 - CircleSize/8, 8);
-                        C.SetDrawColor(255, 255, 255, 255);
-                        C.DrawTile(ClipsIcon.WidgetTexture, CircleSize/4, CircleSize/4, 0, 0, ClipsIcon.TextureCoords.X2, ClipsIcon.TextureCoords.Y2);
-                        Counter = ScrnGRI.WaveCounter;
-                        break;
-
-                    case 8:  // RULE_KillSpecial
-                        Counter = ScrnGRI.WaveCounter;
-                        break;
-                }
-            }
-            S = eval(Counter >= 0, string(Counter), "?");
-            C.Font = LoadFont(1);
-            C.DrawColor = TextColors[TeamIndex];
-        }
-        C.Strlen(S, XL, YL);
-        Y = CircleSize/2 - (YL / 1.5);
-        C.SetPos(C.ClipX - CircleSize/2 - (XL / 2), Y);
-        C.DrawText(S);
-        Y += YL * 0.9;
-    }
-
-    C.DrawColor = TextColors[TeamIndex];
-    if ( KFGRI.bWaveInProgress ) {
-        // Show the number of waves
-        C.Font = LoadFont(7);
-        C.Strlen(WaveString, XL, YL);
-        C.SetPos(C.ClipX - CircleSize/2 - (XL / 2), Y);
-        C.DrawText(WaveString);
-        Y += YL * 0.9;
-
-        C.Font = LoadFont(5);
-        S = string(KFGRI.WaveNumber + 1) $ "/" $ string(KFGRI.FinalWave);
-        C.Strlen(S, XL, YL);
-        C.SetPos(C.ClipX - CircleSize/2 - (XL / 2), Y);
-        C.DrawText(S);
-    }
-
-    C.FontScaleX = 1;
-    C.FontScaleY = 1;
-
-
-    if ( KFPRI == none || KFPRI.Team == none || KFPRI.bOnlySpectator || PawnOwner == none )
-    {
+    if (KFPRI == none || KFPRI.Team == none || KFPRI.bOnlySpectator || PawnOwner == none)
         return;
-    }
 
     // Draw the shop pointer
-    if ( bDrawShopDirPointer )
-    {
-        if ( ShopDirPointer == None )
-        {
+    if (bDrawShopDirPointer) {
+        if (ShopDirPointer == None) {
             ShopDirPointer = Spawn(Class'KFShopDirectionPointer');
             //ShopDirPointer.bHidden = bHideHud;
         }
 
         // apply team color
-        if ( TSCGRI != none && TeamIndex == 1) {
+        if (TSCGRI != none && TeamIndex == 1) {
             shop = TSCGRI.BlueShop;
             ShopDirPointer.UV2Texture = ConstantColor'TSC_T.HUD.BlueCol';
         }
@@ -417,7 +314,7 @@ simulated function DrawKFHUDTextElements(Canvas C)
             ShopDirPointer.UV2Texture = none;
         }
 
-        if ( shop != none ) {
+        if (shop != none) {
             C.DrawColor = TextColors[TeamIndex];
             DrawDirPointer(C, ShopDirPointer, shop.Location, 0, 0, false, strTrader);
         }
@@ -430,8 +327,9 @@ simulated function DrawKFHUDTextElements(Canvas C)
         DrawScrnObjectives(C);
     }
 
-    if ( TSCGRI != none )
+    if (TSCGRI != none) {
         DrawTSCHUDTextElements(C);
+    }
 }
 
 
@@ -886,15 +784,17 @@ simulated function CalsTeamStats()
 }
 
 simulated function DrawSpecBar(Canvas C, float Ratio, float x, float y, float w, float h,
-    optional Texture RedIcon, optional Texture BlueIcon,
-    optional Texture CenterIcon, optional Color CenterIconColor)
+    optional Texture RedIcon, optional Texture BlueIcon, out optional float OldRatio, out optional float OldTime)
 {
     local float redw;
     local float IconSize, IconSizeX;
     local Color OldColor;
+    local int i;
 
     if (Ratio < 0)
         return;
+
+    Ratio = SmoothBarTransition(Ratio, OldRatio, OldTime);
 
     OldColor = C.DrawColor;
     SetAlphaColor(C.DrawColor, WhiteColor);
@@ -910,15 +810,27 @@ simulated function DrawSpecBar(Canvas C, float Ratio, float x, float y, float w,
     }
 
     redw = w * fclamp(Ratio, 0.025, 0.975);
-    C.SetPos(C.ClipX * x, C.ClipY * y);
-    C.DrawTileStretched(SpecBarRed, C.ClipX * redw, C.ClipY * h);
-
-    C.SetPos(C.ClipX * (x + redw), C.ClipY * y);
-    redw = w - redw;
-    C.DrawTileStretched(SpecBarBlue, C.ClipX * redw + 1, C.ClipY * h);
-
+    if (Ratio > 0.01) {
+        C.SetPos(C.ClipX * x, C.ClipY * y);
+        C.DrawTileStretched(SpecBarRed, C.ClipX * redw, C.ClipY * h);
+    }
+    if (Ratio < 0.99) {
+        C.SetPos(C.ClipX * (x + redw), C.ClipY * y);
+        C.DrawTileStretched(SpecBarBlue, C.ClipX * (w - redw) + 4, C.ClipY * h);
+    }
     C.SetPos(C.ClipX * x, C.ClipY * y);
     C.DrawTileStretched(SpecBarBG, C.ClipX * w, C.ClipY * h);
+
+    if (SpecBarMark != none) {
+        C.DrawColor.A = 128;
+        for (i = 2; i <= 8; ++i) {
+            if ((i & 1) == 1 && i != 5)
+                continue;  // skip 30% and 70%
+            C.SetPos(C.ClipX * (x + w * 0.1 * i) - IconSize/2, (C.ClipY * (y + h/2)) - IconSize/2);
+            C.DrawIcon(SpecBarMark, IconSize / SpecBarMark.VSize);
+        }
+        C.DrawColor.A = KFHUDAlpha;
+    }
 
     if (RedIcon != none) {
         C.SetPos(C.ClipX * x - IconSize, (C.ClipY * (y + h/2)) - IconSize/2);
@@ -927,12 +839,6 @@ simulated function DrawSpecBar(Canvas C, float Ratio, float x, float y, float w,
     if (BlueIcon != none) {
         C.SetPos(C.ClipX * (x + w), (C.ClipY * (y + h/2)) - IconSize/2);
         C.DrawIcon(BlueIcon, IconSize / BlueIcon.VSize);
-    }
-
-    if (CenterIcon != none) {
-        SetAlphaColor(C.DrawColor, CenterIconColor);
-        C.SetPos(C.ClipX * (x + w/2) - IconSize/2, (C.ClipY * (y + h/2)) - IconSize/2);
-        C.DrawIcon(CenterIcon, IconSize / CenterIcon.VSize);
     }
 
     C.DrawColor = OldColor;
@@ -1004,7 +910,13 @@ simulated function DrawSpecialSpectatingHUD(Canvas C)
     if ( KFGRI == none || !KFGRI.bMatchHasBegun)
         return;
 
+    if (TSCGRI == none || TSCGRI.bSingleTeamGame) {
+        super.DrawSpecialSpectatingHUD(C);
+        return;
+    }
+
     bDrawSpecDeaths = false;
+    bDrawSpecWaveInfo = false;
     super.DrawSpecialSpectatingHUD(C);
 
     // player stats
@@ -1035,13 +947,16 @@ simulated function DrawSpecialSpectatingHUD(Canvas C)
 
     if (bDrawSpecBar) {
         DrawSpecBar(C, RedTeamDoshRatio, (1.0 - SpecBarWidth) * 0.5, SpecBarY, SpecBarWidth, SpecBarHeight,
-                texture'KillingFloorHUD.HUD.Hud_Pound_Symbol', texture'TSC_T.HUD.Hud_Pound_Symbol');
+                texture'KillingFloorHUD.HUD.Hud_Pound_Symbol', texture'TSC_T.HUD.Hud_Pound_Symbol',
+                OldRedTeamDoshRatio, OldRedTeamDoshTime);
         DrawSpecBar(C, RedTeamHealthRatio, (1.0 - SpecBarWidth) * 0.5, SpecBarY + SpecBarHeight + 0.0005,
                 SpecBarWidth, SpecBarHeight,
-                texture'KillingFloorHUD.HUD.Hud_Medical_Cross', texture'TSC_T.HUD.Hud_Medical_Cross');
+                texture'KillingFloorHUD.HUD.Hud_Medical_Cross', texture'TSC_T.HUD.Hud_Medical_Cross',
+                OldRedTeamHealthRatio, OldRedTeamHealthTime);
         DrawSpecBar(C, RedTeamWaveKillRatio, (1.0 - SpecBarWidth) * 0.5, SpecBarY + 2*(SpecBarHeight + 0.0005),
                 SpecBarWidth, SpecBarHeight,
-                texture'TSC_T.SpecHUD.ClotEmoRed', texture'TSC_T.SpecHUD.ClotEmoBlue');
+                texture'TSC_T.SpecHUD.ClotEmoRed', texture'TSC_T.SpecHUD.ClotEmoBlue',
+                OldRedTeamWaveKillRatio, OldRedTeamWaveKillTime);
     }
 
     if ( !bLightHud ) {
@@ -1354,6 +1269,7 @@ defaultproperties
     SpecBarBG=texture'TSC_T.SpecHUD.Battery_BG'
     SpecBarRed=texture'TSC_T.SpecHUD.BarFill_Red'
     SpecBarBlue=texture'TSC_T.SpecHUD.BarFill_Blue'
+    SpecBarMark=Texture'ScrnTex.Perks.Hud_Perk_Star_Gray'
     bDrawSpecBar=true
     SpecBarY=0.06
     SpecBarWidth=0.30
@@ -1367,6 +1283,7 @@ defaultproperties
     SpecClanBannerHeight=0.120
 
     bDrawSpecDeaths=False
+    bDrawSpecWaveInfo=False
     bDrawShopDirPointer=True
 
     bCoolHud=False

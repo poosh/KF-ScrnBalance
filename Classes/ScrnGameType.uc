@@ -3289,7 +3289,7 @@ function SetupWave()
     }
 
     if ( ScrnGameLength != none ) {
-        TotalMaxMonsters = ScrnGameLength.GetWaveZedCount() + NumMonsters;
+        TotalMaxMonsters = ScrnGameLength.GetWaveZedCount();
         WaveEndTime = ScrnGameLength.GetWaveEndTime();
     }
     else {
@@ -3300,7 +3300,7 @@ function SetupWave()
     }
 
     MaxMonsters = min(TotalMaxMonsters, MaxZombiesOnce); // max monsters that can be spawned
-    ScrnGRI.MaxMonsters = TotalMaxMonsters; // num monsters in wave replicated to clients
+    ScrnGRI.MaxMonsters = TotalMaxMonsters + NumMonsters; // num monsters in the wave replicated to clients
     ScrnGRI.MaxMonstersOn = true; // I've no idea what is this for
     ScrnGRI.ScoredPlayers[0] = 0;
     ScrnGRI.ScoredPlayers[1] = 0;
