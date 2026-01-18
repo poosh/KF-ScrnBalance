@@ -616,6 +616,14 @@ function bool ShouldKillOnTeamChange(Pawn TeamChanger)
     return true;
 }
 
+function bool AllowMidWaveRespawn(ScrnPlayerController ScrnPC)
+{
+    if (bTeamWiped && !bSingleTeam)
+        return false;  // no respawn after a team wipe
+
+    return super.AllowMidWaveRespawn(ScrnPC);
+}
+
 function bool BecomeSpectator(PlayerController P)
 {
     if ( super.BecomeSpectator(P) ) {

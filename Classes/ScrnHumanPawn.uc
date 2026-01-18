@@ -1785,7 +1785,8 @@ function bool TakeHealing(ScrnHumanPawn Healer, int HealAmount, float HealPotenc
     }
 
     // Don't show healing messages from healing nades
-    if (MedicGun != none && (MedicGun.IsA('KFMedicGun') || MedicGun.IsA('Syringe') || MedicGun.IsA('MedicPistol'))) {
+    if (MedicGun != none && (MedicGun.IsA('KFMedicGun') || MedicGun.IsA('Syringe')
+            || (ScrnCustomMedicGun(MedicGun) != none && ScrnCustomMedicGun(MedicGun).bHealMessages))) {
         if (Healer.ScrnPC != none && Healer.ScrnPC.bHealMessages) {
             Healer.ScrnPC.ReceiveLocalizedMessage(Class'ScrnHealMessage', 0, PlayerReplicationInfo);
         }

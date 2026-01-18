@@ -41,7 +41,7 @@ static function float DrawNamePrefixIcons(Canvas C, PlayerReplicationInfo PRI, S
 }
 
 
-simulated function DrawTeam(Canvas Canvas, array<PlayerReplicationInfo> TeamPRIArray, int Left, int Top, int Width,
+simulated function float DrawTeam(Canvas Canvas, array<PlayerReplicationInfo> TeamPRIArray, int Left, int Top, int Width,
     int LineHeight, int LineCount,
     bool bExtraInfo, color OddBGColor, color EvenBGColor)
 {
@@ -323,8 +323,8 @@ simulated function DrawTeam(Canvas Canvas, array<PlayerReplicationInfo> TeamPRIA
     //     Canvas.DrawColor = HUDClass.default.WhiteColor;
     // }
 
+    y += YL;
     if ( TSCTeam != none && TotalKills > 0 ) {
-        y += YL;
         WaveKills = TSCTeam.GetCurWaveKills();
         S = WaveString @ KillsText $ ": " $ WaveKills;
         Canvas.TextSize(S, XL, YL);
@@ -342,9 +342,11 @@ simulated function DrawTeam(Canvas Canvas, array<PlayerReplicationInfo> TeamPRIA
             Canvas.SetPos(KillsXPos, y);
             Canvas.DrawTextClipped(S);
         }
+        y += YL;
     }
 
     Canvas.DrawColor = HUDClass.default.WhiteColor;
+    return y;
 }
 
 simulated event UpdateScoreBoard(Canvas Canvas)
@@ -355,7 +357,7 @@ simulated event UpdateScoreBoard(Canvas Canvas)
     local KFPlayerReplicationInfo KFPRI;
     local int i, fi, FontReduction, HeaderOffsetY, PlayerBoxSizeY;
     local int RedBoxXPos, RedBoxWidth, BlueBoxXpos, BlueBoxWidth;
-    local float XL,YL;
+    local float XL, YL, y;
     local int MyTeamIndex;
     local int AliveCount, SpecCount, DisplayedCount;
     local array<PlayerReplicationInfo> RedTeamPRIArray, BlueTeamPRIArray;
@@ -541,14 +543,14 @@ simulated event UpdateScoreBoard(Canvas Canvas)
         }
     }
 
-    DrawTeam(canvas, RedTeamPRIArray, RedBoxXPos, HeaderOffsetY, RedBoxWidth, PlayerBoxSizeY, DisplayedCount, MyTeamIndex == 0, RedBG[0], RedBG[1]);
-    DrawTeam(canvas, BlueTeamPRIArray, BlueBoxXPos, HeaderOffsetY, BlueBoxWidth, PlayerBoxSizeY, DisplayedCount, MyTeamIndex == 1, BlueBG[0], BlueBG[1]);
+    y = DrawTeam(canvas, RedTeamPRIArray, RedBoxXPos, HeaderOffsetY, RedBoxWidth, PlayerBoxSizeY, DisplayedCount, MyTeamIndex == 0, RedBG[0], RedBG[1]);
+    y = fmax(y, DrawTeam(canvas, BlueTeamPRIArray, BlueBoxXPos, HeaderOffsetY, BlueBoxWidth, PlayerBoxSizeY, DisplayedCount, MyTeamIndex == 1, BlueBG[0], BlueBG[1]));
+    y += PlayerBoxSizeY;
 
-    if ( Spectators != "" )
-    {
+    if (Spectators != "") {
         Canvas.Font = class'ROHud'.static.LoadMenuFontStatic( min(8, fi+2) );
         Canvas.DrawColor = Class'HudBase'.Default.GrayColor;
-        Canvas.SetPos(RedBoxXPos, HeaderOffsetY + PlayerBoxSizeY*DisplayedCount + PlayerBoxSizeY*0.5 );
+        Canvas.SetPos(RedBoxXPos, y);
         Canvas.DrawText(SpectatorsText $ ": |" $ Spectators, true);
     }
 }

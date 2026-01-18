@@ -78,11 +78,14 @@ function SaveSettings()
             ScrnPC.ClientMessage(strNotATeamChar);
         }
         else {
-            if ( ScrnPC != none && ScrnPC.PlayerReplicationInfo != none && ScrnPC.PlayerReplicationInfo.Team != none) {
-                if ( ScrnPC.PlayerReplicationInfo.Team.TeamIndex == 0 )
+            if (ScrnPC != none && !ScrnPC.Level.GRI.bNoTeamSkins && ScrnPC.PlayerReplicationInfo != none
+                    && ScrnPC.PlayerReplicationInfo.Team != none) {
+                if (ScrnPC.PlayerReplicationInfo.Team.TeamIndex == 0) {
                     ScrnPC.RedCharacter = ChangedCharacter;
-                else  if ( ScrnPC.PlayerReplicationInfo.Team.TeamIndex == 1 )
+                }
+                else if (ScrnPC.PlayerReplicationInfo.Team.TeamIndex == 1) {
                     ScrnPC.BlueCharacter = ChangedCharacter;
+                }
                 ScrnPC.SaveConfig();
             }
 

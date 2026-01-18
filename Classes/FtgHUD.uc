@@ -250,4 +250,6 @@ defaultproperties
 
     bSpecDrawClan=false
     bDrawSpecBar=false
+    bDrawSpecDeaths=true
+    bDrawSpecWaveInfo=true
 }

@@ -137,8 +137,8 @@ static function int ShieldReduceDamage(KFPlayerReplicationInfo KFPRI, ScrnHumanP
     local int AbsorbedDamage;
 
     if ( KFHumanPawn(Instigator) != none ) {
-        // armor reduces up to 30% human damage
-        AbsorbedDamage = InDamage * 0.30;
+        // armor reduces up to 37.5% human damage
+        AbsorbedDamage = InDamage * 0.375;
     }
     else {
         // armor reduces up to 60% damage

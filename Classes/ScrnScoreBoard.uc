@@ -706,7 +706,7 @@ simulated event UpdateScoreBoard(Canvas Canvas)
             Canvas.SetPos(KillsX - XL, y);
             Canvas.DrawTextClipped(TotalKills);
         }
-        y += YL;
+        y += YL + BoxSpaceY;
     }
 
     Canvas.Font = class'ScrnHUD'.static.LoadMenuFontStatic(PlayerFontIndex + FontReduction + 2);

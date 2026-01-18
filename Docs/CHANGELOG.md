@@ -17,6 +17,7 @@
 [Broski]: https://steamcommunity.com/id/broski270
 [That1Guy]: https://steamcommunity.com/id/defenciveguy121
 [FishFlop_The_CatSlap]: https://steamcommunity.com/id/FishFlop_The_CatSlap/
+[jkcrmptn]: https://steamcommunity.com/id/jkcrmptn/
 <!-- add other peaople too!!! -->
 
 # Version History
@@ -28,6 +29,19 @@
 # VERSION 9
 
 -------------------------------------------------------------------------------
+## v9.74.07
+- **TSC**: Increased Field Medic's armor bonus against Human Damage: 30% => 37.5%. Now, Field Medic's better armor precisely compensates for the lack of damage bonus in PvP fights. For example, Field and Combat Medics shoot each other with the same perked weapon. Field Medic deals 100 damage. Combat Medic would deal 160 damage (+60% damage bonus), but due to Field Medic's armor bonus, Combat Medic also deals 100 damage (160 - 37.5% = 160 * 0.625 = 100)
+- **TSC**: fixed character selection after swithing to other mode and back to TSC.
+- **TSC**: player mid-wave reconnects are disabled after one team gets wiped.
+- `SetDamageFont X` - a new console command to adjust damage numbers font. Set X to a positive number to make the numbers bigger (e.g., `SetDamageFont 2`). Negative X makes the font smaller (e.g., `SetDamageFont -1`).
+- Overheal shows in player health bars (thanks [jkcrmptn])
+- Fixed Spectator HUD in FTG.
+- `ScrnCustomMedicGun` - the base class for custom healing weapons that do not extend `KFMedicGun`.
+- Mods should extend `ScrnCustomMedicGun` so ScrN Balance could properly display healing messages.
+
+### ScrN Weapon Pac
+- `MedicPistol` now extends `ScrnCustomMedicGun`
+
 ## v9.74.06
 - **Nightmare 2.0** - A reworked game mode based on New Survival. Nightmare 2.0 features 3 rounds x 3 waves (spawn zeds + reach the trader + kill the remaining zeds), followed by a KFMod-style warmup wave before the boss. Same as in the original Nightmare, all custom specimens are forced and cannot be disabled.
 - **New Survival 1.02** - more ammo boxes in "Wave 9 - Finish Them Off".

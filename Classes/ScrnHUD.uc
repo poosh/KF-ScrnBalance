@@ -160,13 +160,15 @@ struct DamageInfo
 const DAMAGEPOPUP_COUNT = 32;
 var DamageInfo DamagePopups[32];
 var int NextDamagePopupIndex;
+var Color DamColorHeadshot, DamColorFire, DamColorPlayer, DamColorHigh, DamColorMid, DamColorLow, DamColorZero;
 
 
 const DAM_HIDE      = 0;
 const DAM_COMBO     = 1;
 const DAM_FULL      = 2;
 var config byte ShowDamages;
-var config byte DamagePopupFont;
+var byte DamagePopupFont;
+var config int DamageFontAdjust;
 var config float DamagePopupFadeOutTime;
 
 var config bool bShowSpeed;
@@ -2040,12 +2042,12 @@ simulated function ScrnDrawPlayerInfoClassic(Canvas C, Pawn P, float ScreenLocX,
 
         // Health
         if ( P.Health > 0 ) {
-            if ( EnemyScrnPawn != none && EnemyScrnPawn.ClientHealthToGive > 0 ) {
+            if ( EnemyScrnPawn != none && P.Health < P.HealthMax && EnemyScrnPawn.ClientHealthToGive > 0 ) {
                 DrawKFBarEx(C, ScreenLocX - Offset, (ScreenLocY - YL) - 0.4 * BarHeight, FClamp(P.Health / P.HealthMax, 0, 1), BeaconAlpha, false,
                     FClamp(float(EnemyScrnPawn.ClientHealthToGive) / P.HealthMax, 0, 1.0 - P.Health / P.HealthMax));
             }
             else
-                DrawKFBarEx(C, ScreenLocX - Offset, (ScreenLocY - YL) - 0.4 * BarHeight, FClamp(P.Health / P.HealthMax, 0, 1), BeaconAlpha, false);
+                DrawKFBarEx(C, ScreenLocX - Offset, (ScreenLocY - YL) - 0.4 * BarHeight, FClamp(P.Health / P.HealthMax, 0, 2), BeaconAlpha, false);
         }
         // Armor
         if ( P.ShieldStrength > 0 )
@@ -2376,11 +2378,22 @@ simulated function DrawKFBarEx(Canvas C, float XCentre, float YCentre, float Bar
         C.SetPos(XCentre - (0.5 * BarLength) - HealthIconSize - 2.0, YCentre - (HealthIconSize * 0.5));
         C.DrawTile(HealthIcon.WidgetTexture, HealthIconSize, HealthIconSize, 0, 0, HealthIcon.WidgetTexture.MaterialUSize(), HealthIcon.WidgetTexture.MaterialVSize());
 
-        if ( BarStyle >= BARSTL_MODERN && BarPercentage + BarPercentage2 >= 1.0 )
-            C.DrawColor = FullHealthColor;
-        else
+        if (BarStyle < BARSTL_MODERN || BarPercentage + BarPercentage2 < 1.0) {
             C.DrawColor = HealthBarColor;
+        }
+        else if (BarPercentage < 1.01) {
+            C.DrawColor = FullHealthColor;
+        }
+        else {
+            C.DrawColor = OverchargeHealthColor;
+            BarPercentage -= 1.0;
+            BarPercentage2 = 1.0 - BarPercentage;
+            BarColor2 = FullHealthColor;
+        }
     }
+
+    BarPercentage = fclamp(BarPercentage, 0.0, 1.0);
+    BarPercentage2 = fmin(BarPercentage2, 1.0 - BarPercentage);
 
     C.DrawColor.A = BarAlpha;
     C.SetPos(XCentre - (0.5 * BarLength) + 1.0, YCentre - (0.5 * BarHeight) + 1.0);
@@ -2388,6 +2401,7 @@ simulated function DrawKFBarEx(Canvas C, float XCentre, float YCentre, float Bar
 
     if ( BarPercentage2 > 0 ) {
         C.DrawColor = BarColor2;
+        C.DrawColor.A = BarAlpha;
         C.SetPos(XCentre - (0.5 * BarLength) + 1.0 + (BarLength - 2.0) * BarPercentage, YCentre - (0.5 * BarHeight) + 1.0);
         C.DrawTileStretched(WhiteMaterial, (BarLength - 2.0) * BarPercentage2, BarHeight - 2.0);
     }
@@ -2414,48 +2428,27 @@ simulated function ShowDamage(int Damage, float HitTime, vector HitLocation, byt
 
     c.A = 255;
     if ( DamTypeNum == 1 ) { // headshots
-
-        c.R = 0;
-        c.G = 100;
-        c.B = 255;
+        c = DamColorHeadshot;
     }
     else if ( DamTypeNum == 2 ) { // fire DoT
-        c.R = 206;
-        c.G = 103;
-        c.B = 0;
+        c = DamColorFire;
     }
     else if ( DamTypeNum == 10 ) { // player-to-player damage
-        c.R = 206;
-        c.G = 0;
-        c.B = 206;
+        c = DamColorPlayer;
     }
     else if ( Damage >= 500 ) {
-        c.R = 0;
-        c.G = 206;
-        c.B = 0;
+        c = DamColorHigh;
     }
     else if ( Damage >= 175 ) {
-        c.R = 206;
-        c.G = 206;
-        c.B = 0;
+        c = DamColorMid;
     }
-    /*
-    else if ( Damage >= 100 ){
-        c.R = 206;
-        c.G = 64;
-        c.B = 103;
-    }
-    */
     else if ( Damage > 0 ) {
-        c.R = 206;
-        c.G = 64;
-        c.B = 64;
+        c = DamColorLow;
     }
     else {
-        c.R = 127;
-        c.G = 127;
-        c.B = 127;
+        c = DamColorZero;
     }
+    C.A = KFHUDAlpha;
     DamagePopups[NextDamagePopupIndex].FontColor = c;
 
     if( ++NextDamagePopupIndex >= DAMAGEPOPUP_COUNT)
@@ -2472,21 +2465,8 @@ simulated function DrawDamage(Canvas C)
     local float TextWidth, TextHeight, x;
 
     C.GetCameraLocation(CameraLocation, CameraRotation);
-    CamDir    = vector(CameraRotation);
-
-    if ( C.ClipX <= 800 )
-        DamagePopupFont = 7;
-    else if ( C.ClipX <= 1024 )
-        DamagePopupFont = 6;
-    else if ( C.ClipX < 1400 )
-        DamagePopupFont = 5;
-    else if ( C.ClipX < 1700 )
-        DamagePopupFont = 4;
-    else
-        DamagePopupFont = 3;
-
+    CamDir = vector(CameraRotation);
     C.Font = LoadFont(DamagePopupFont);
-
     for( i=0; i < DAMAGEPOPUP_COUNT ; i++ ) {
         TimeSinceHit = Level.TimeSeconds - DamagePopups[i].HitTime;
         if( TimeSinceHit > DamagePopupFadeOutTime
@@ -2504,7 +2484,7 @@ simulated function DrawDamage(Canvas C)
         x = Sin(2*Pi * TimeSinceHit/DamagePopupFadeOutTime) * TextWidth * DamagePopups[i].RandX;
         // odd numbers start to flying to the right side, even - left
         // So in situations of decapitaion player could see both damages
-        if ( i % 2 == 0)
+        if ((i & 1) == 0)
             x *= -1.0;
         HBScreenPos.X += x;
 
@@ -2514,6 +2494,11 @@ simulated function DrawDamage(Canvas C)
         C.SetPos( HBScreenPos.X, HBScreenPos.Y);
         C.DrawText(DamagePopups[i].damage);
     }
+}
+
+exec function SetDamageFont(int inc) {
+    DamageFontAdjust = inc;
+    ResSizeX = 0;  // trigger ResolutionChanged() on the next render
 }
 
 simulated function MyPerkChanged(class<KFVeterancyTypes> OldPerk)
@@ -2624,13 +2609,14 @@ simulated event PostRender(Canvas C)
         ResolutionChanged(C);
         ResSizeX = C.SizeX;
         ResSizeY = C.SizeY;
-
     }
     super.PostRender(C);
 }
 
 simulated function ResolutionChanged(Canvas C)
 {
+    local int i;
+
     ObjFontSize = ResolveFontResolution(C, 1);
     C.Font = LoadFont(ObjFontSize);
     C.FontScaleX = 1.0;
@@ -2640,6 +2626,19 @@ simulated function ResolutionChanged(Canvas C)
     ObjHeight *= 1.5;
     ObjLeft = C.SizeX - ObjWidth - 2;
     ObjTop = 16.0 + 128.0 * fmin(1.0, C.SizeX / 1024.0);  // Wave Circle
+
+    if ( C.ClipX <= 800 )
+        i = 7;
+    else if ( C.ClipX <= 1024 )
+        i = 6;
+    else if ( C.ClipX < 1400 )
+        i = 5;
+    else if ( C.ClipX < 1700 )
+        i = 4;
+    else
+        i = 3;
+    i -= DamageFontAdjust;
+    DamagePopupFont = clamp(i, 0, 8);
 }
 
 simulated function WaveRuleChanged(byte OldRule, byte NewRule)
@@ -4592,6 +4591,13 @@ defaultproperties
     ShowDamages=1
     DamagePopupFont=4
     DamagePopupFadeOutTime=3.000
+    DamColorHeadshot=(R=0,G=100,B=255,A=255)
+    DamColorFire=(R=206,G=103,B=0,A=255)
+    DamColorPlayer=(R=206,G=0,B=206,A=255)
+    DamColorHigh=(R=0,G=206,B=0,A=255)
+    DamColorMid=(R=206,G=206,B=0,A=255)
+    DamColorLow=(R=206,G=64,B=64,A=255)
+    DamColorZero=(R=127,G=127,B=127,A=255)
     bShowSpeed=true
     SpeedometerX=0.85
     SpeedometerY=0.00
@@ -4753,7 +4759,7 @@ defaultproperties
     CoolPerkLevelOffsetY=0.87
     HealthBarColor=(R=192,G=0,B=0,A=200)
     HealingBarColor=(R=255,G=128,B=128,A=200)
-    OverchargeHealthColor=(R=0,G=255,B=255,A=200)
+    OverchargeHealthColor=(R=255,G=0,B=255,A=200)
     FullHealthColor=(R=0,G=192,B=0,A=200)
     LowHealthColor=(R=210,G=50,B=0,A=200)
     FullHealingColor=(R=128,G=255,B=128,A=200)

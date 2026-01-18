@@ -2727,6 +2727,11 @@ function StartMatch()
 // Prevent Deathmatch from messing up with player inventory
 function AcceptInventory(pawn PlayerPawn);
 
+function bool AllowMidWaveRespawn(ScrnPlayerController ScrnPC)
+{
+    return ScrnBalanceMut.AllowMidWaveRespawn(ScrnPC);
+}
+
 function bool PlayerCanRestart(PlayerController PC)
 {
     local PlayerReplicationInfo PRI;
@@ -2753,7 +2758,7 @@ function bool PlayerCanRestart(PlayerController PC)
     }
 
     if ( bWaveInProgress ) {
-        if (!ScrnBalanceMut.AllowMidWaveRespawn(ScrnPC)) {
+        if (!AllowMidWaveRespawn(ScrnPC)) {
             return false;
         }
         PRI.bOutOfLives = false;
