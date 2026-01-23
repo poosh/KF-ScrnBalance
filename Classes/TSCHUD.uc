@@ -655,10 +655,6 @@ simulated function DrawEndGameHUD(Canvas C, bool bVictory)
 
     if (bVictory) {
         Team = TSCTeam(KFGRI.Winner);
-
-        // FIXME:
-        Team = MyTeam;
-
         if (Team != none && Team.TeamIndex < 2) {
             if (Team.ClanRep != none && Team.ClanRep.Logo != none) {
                 MyColorMod.Material = Team.ClanRep.Logo;

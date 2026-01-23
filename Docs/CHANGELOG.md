@@ -29,6 +29,9 @@
 # VERSION 9
 
 -------------------------------------------------------------------------------
+## v9.74.09
+- **TSC**: fixed end-game clan logo
+
 ## v9.74.08
 - **TSC**: Fixed an issue where player could be moved to a wrong team after reconnect (thanks STEAMAUTH error)
 - **TSC**: Fixed an issue where the blue team members were moved to spectator after `MVOTE CLAN GAME <RED> <BLUE>`.
