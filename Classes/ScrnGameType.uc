@@ -83,6 +83,8 @@ var const bool bForceScrnWaves;
 var const bool bSingleTeamGame;
 var transient int WavePlayerCount; // alive player count at the beginning of the wave
 var transient int AlivePlayerCount, AliveTeamPlayerCount[2];
+var transient int TeamHealth[2];
+var transient int TeamArmor[2];
 var array<KFMonster> Bosses;
 var transient bool bBossSpawned;
 var transient float ZedLastSpawnTime, LastZedKillTime;
@@ -3351,9 +3353,14 @@ function bool UpdateMonsterCount()
 {
     local Controller C;
     local PlayerReplicationInfo PRI;
+    local byte t;
 
     AliveTeamPlayerCount[0] = 0;
     AliveTeamPlayerCount[1] = 0;
+    TeamHealth[0] = 0;
+    TeamHealth[1] = 0;
+    TeamArmor[0] = 0;
+    TeamArmor[1] = 0;
     NumMonsters = 0;
 
     for ( C = Level.ControllerList; C != none;  C = C.NextController ) {
@@ -3365,7 +3372,10 @@ function bool UpdateMonsterCount()
             if ( PRI != none && !PRI.bOnlySpectator && !PRI.bIsSpectator
                     && PRI.Team != none && PRI.Team.TeamIndex <= 1)
             {
-                AliveTeamPlayerCount[PRI.Team.TeamIndex]++;
+                t = PRI.Team.TeamIndex;
+                AliveTeamPlayerCount[t]++;
+                TeamHealth[t] += C.Pawn.Health;
+                TeamArmor[t] += C.Pawn.ShieldStrength;
             }
         }
         else if ( Monster(C.Pawn) != none ) {
@@ -4466,18 +4476,17 @@ State MatchInProgress
 
 State MatchOver
 {
-    function BeginState()
-    {
-        super.BeginState();
-        UnlockTeams();
-    }
-
     function Timer()
     {
         super.Timer();
 
-        if ( EndMessageCounter == 10 ) {
-            class'ScrnSuicideBomb'.static.DisintegrateAll(Level);
+        switch (EndMessageCounter) {
+            case 3:
+                UnlockTeams();
+                break;
+            case 10:
+                class'ScrnSuicideBomb'.static.DisintegrateAll(Level);
+                break;
         }
     }
 

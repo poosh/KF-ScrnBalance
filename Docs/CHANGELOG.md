@@ -29,6 +29,13 @@
 # VERSION 9
 
 -------------------------------------------------------------------------------
+## v9.74.08
+- **TSC**: Fixed an issue where player could be moved to a wrong team after reconnect (thanks STEAMAUTH error)
+- **TSC**: Fixed an issue where the blue team members were moved to spectator after `MVOTE CLAN GAME <RED> <BLUE>`.
+- **TSC**: Various UI improvements to the Spectator HUD.
+- **TSC**: The team health bar on the Spectator HUD calculates health+armor to display hitpoint balance between the teams.
+- Removed the 999 zed limit in waves with custom objectives: Timeout, Reach Trader, etc. (thanks [Broski])
+
 ## v9.74.07
 - **TSC**: Increased Field Medic's armor bonus against Human Damage: 30% => 37.5%. Now, Field Medic's better armor precisely compensates for the lack of damage bonus in PvP fights. For example, Field and Combat Medics shoot each other with the same perked weapon. Field Medic deals 100 damage. Combat Medic would deal 160 damage (+60% damage bonus), but due to Field Medic's armor bonus, Combat Medic also deals 100 damage (160 - 37.5% = 160 * 0.625 = 100)
 - **TSC**: fixed character selection after swithing to other mode and back to TSC.

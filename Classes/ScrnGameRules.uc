@@ -268,6 +268,7 @@ function WaveStarted()
 
     for ( SPI=PlayerInfo; SPI!=none; SPI=SPI.NextPlayerInfo ) {
         SPI.WaveStarted(Mut.KF.WaveNum);
+        SPI.BackupPRI();
     }
 
     for ( i=0; i<AchHandlers.length; ++i ) {
@@ -373,24 +374,42 @@ function AddSPIWeapon(Pickup P)
 function PlayerEntering(ScrnPlayerController PC)
 {
     local ScrnPlayerInfo SPI;
+    local PlayerReplicationInfo PRI;
     local NavigationPoint PlayerStart;
     local vector SpawnLoc;
 
-    log("Player Entering: " $ class'ScrnFunctions'.static.PlainPlayerName(PC.PlayerReplicationInfo)
+    PRI = PC.PlayerReplicationInfo;
+    log("Player Entering: " $ class'ScrnFunctions'.static.PlainPlayerName(PRI)
             $ " SteamID64=" $ PC.ScrnCustomPRI.GetSteamID64()
             $ " SteamID32=" $ PC.ScrnCustomPRI.GetSteamID32()
-            $ " Dosh=$" $ PC.PlayerReplicationInfo.Score
+            $ " Dosh=$" $ PRI.Score
             , 'ScrnBalance');
     SPI = CreatePlayerInfo(PC, true, true);
 
-    if (SPI.HealthBeforeDisconnect > 0 && !PC.PlayerReplicationInfo.bOnlySpectator && PC.IsInState('PlayerWaiting')) {
-        log("Player Reconnected: " $ SPI.PlayerName $ " perk " $ SPI.PRI_ClientVeteranSkill, 'ScrnBalance');
+    if (SPI.HealthBeforeDisconnect > 0 && !PRI.bOnlySpectator && PC.IsInState('PlayerWaiting')) {
+        log("Player Reconnected: " $ SPI.PlayerName $ " perk " $ SPI.PRI_ClientVeteranSkill $ " team " $ SPI.PRI_TeamIndex, 'ScrnBalance');
         if (Level.Pauser != none && Level.Pauser == Pauser) {
             GameEndDelayNoPlayers = 0;
             Mut.ResumeGame(Mut.ResumeDelayOnReconnect);
         }
-        PC.PlayerReplicationInfo.bOutOfLives = false;
-        PC.PlayerReplicationInfo.NumLives = 0;
+
+        if (SPI.PRI_TeamIndex < 2 && PRI.Team == none || PRI.Team.TeamIndex != SPI.PRI_TeamIndex) {
+            log("Moving " $ SPI.PlayerName $ " to team " $ SPI.PRI_TeamIndex, 'ScrnBalance');
+            if (TSCGame(Level.Game) != none) {
+                TSCGame(Level.Game).ForceTeam(PC, SPI.PRI_TeamIndex);
+                if (PRI.Team == none || PRI.Team.TeamIndex != SPI.PRI_TeamIndex) {
+                    log("TEAM SWITCH FAILED! Move " $ SPI.PlayerName $ " to spectator.", 'ScrnBalance');
+                    PC.BecomeSpectator();
+                    return;
+                }
+            }
+            else {
+                Level.Game.ChangeTeam(PC, SPI.PRI_TeamIndex, true);
+            }
+        }
+
+        PRI.bOutOfLives = false;
+        PRI.NumLives = 0;
         PC.bForceDelayedRestart = true;
         GameEndDelay = Level.TimeSeconds + 8.0;
         PlayerStart = FindPlayerStart(PC, SPI.PRI_TeamIndex);

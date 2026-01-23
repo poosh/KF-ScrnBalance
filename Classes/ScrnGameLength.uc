@@ -1240,7 +1240,7 @@ function int GetWaveZedCount()
         case RULE_GrabAmmo:
         case RULE_ReachTrader:
         case RULE_Dialogue:
-            return 999;
+            return 99999;
     }
     return WaveCounter;
 }

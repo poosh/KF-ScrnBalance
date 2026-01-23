@@ -357,7 +357,7 @@ simulated event UpdateScoreBoard(Canvas Canvas)
     local KFPlayerReplicationInfo KFPRI;
     local int i, fi, FontReduction, HeaderOffsetY, PlayerBoxSizeY;
     local int RedBoxXPos, RedBoxWidth, BlueBoxXpos, BlueBoxWidth;
-    local float XL, YL, y;
+    local float XL, YL, y, LogoSize;
     local int MyTeamIndex;
     local int AliveCount, SpecCount, DisplayedCount;
     local array<PlayerReplicationInfo> RedTeamPRIArray, BlueTeamPRIArray;
@@ -472,6 +472,7 @@ simulated event UpdateScoreBoard(Canvas Canvas)
     }
 
 
+    LogoSize = HeaderOffsetY + YL;
     HeaderOffsetY+=(YL*3.f);
 
     // Select best font size and box size to fit as many players as possible on screen
@@ -523,24 +524,15 @@ simulated event UpdateScoreBoard(Canvas Canvas)
     Canvas.DrawTile(GameLogo, XL, YL, 0, 0, GameLogo.MaterialUSize(), GameLogo.MaterialVSize());
 
     // Team Logos
-    Canvas.DrawColor.A = 100;
-    XL = fmin(Canvas.ClipX * 0.25, PlayerBoxSizeY*DisplayedCount - 4);
-    YL = fmax((PlayerBoxSizeY*DisplayedCount-XL)/2, 2);
-
     if (TSCTeams[0] != none) {
         logo = TSCTeams[0].GetLogo();
-        if (logo != none) {
-            Canvas.SetPos(RedBoxXPos+(RedBoxWidth-XL)/2, HeaderOffsetY + YL);
-            Canvas.DrawTile(logo, XL, XL, 0, 0, logo.MaterialUSize(), logo.MaterialVSize());
-        }
+        Canvas.SetPos(0, 0);
+        Canvas.DrawTile(logo, LogoSize, LogoSize, 0, 0, logo.MaterialUSize(), logo.MaterialVSize());
     }
-
     if (TSCTeams[1] != none) {
         logo = TSCTeams[1].GetLogo();
-        if (logo != none) {
-            Canvas.SetPos(BlueBoxXPos + (BlueBoxWidth-XL)/2, HeaderOffsetY + YL);
-            Canvas.DrawTile(logo, XL, XL, 0, 0, logo.MaterialUSize(), logo.MaterialVSize());
-        }
+        Canvas.SetPos(Canvas.ClipX - LogoSize, 0);
+        Canvas.DrawTile(logo, LogoSize, LogoSize, 0, 0, logo.MaterialUSize(), logo.MaterialVSize());
     }
 
     y = DrawTeam(canvas, RedTeamPRIArray, RedBoxXPos, HeaderOffsetY, RedBoxWidth, PlayerBoxSizeY, DisplayedCount, MyTeamIndex == 0, RedBG[0], RedBG[1]);

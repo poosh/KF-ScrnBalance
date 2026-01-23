@@ -6,6 +6,8 @@ var int ZedKills, Deaths;
 var int LastMinKills;       // how many kills team scored, exluding current minute
 var int PrevMinKills;       // how many kills team scored, exluding current and previous minute
 var int WaveKills;          // how many kills team scored in previous waves
+var int Health;             // total health of all players in the team
+var int Armor;              // total health of all players in the team
 
 var int InventorySellValue; // total sell value of all inventory items of all team members
 
@@ -19,7 +21,7 @@ replication
 
     reliable if( bNetDirty && (Role==ROLE_Authority) )
         ZedKills, Deaths, LastMinKills, PrevMinKills, WaveKills,
-        InventorySellValue;
+        InventorySellValue, Health, Armor;
 }
 
 simulated function int GetCurWaveKills()

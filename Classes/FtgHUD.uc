@@ -33,87 +33,91 @@ simulated function DrawTSCHUDTextElements(Canvas C)
     local EScrnEffect Effect;
     local int       row;
 
-    // enemy base
-    TeamBase = TSCTeamBase(KFGRI.Teams[1-TeamIndex].HomeBase);
-    if ( TeamBase != none && TeamBase.bActive ) {
-        bAtEnemyBase = TSCGRI.AtBase(PawnOwner.Location, TeamBase);
-        if ( EnemyBaseDirPointer == None ) {
-            EnemyBaseDirPointer = Spawn(Class'KFShopDirectionPointer');
-        }
-        // apply enemy team color
-        if ( TeamIndex == 0)
-            EnemyBaseDirPointer.UV2Texture = ConstantColor'TSC_T.HUD.BlueCol';
-        else
-            EnemyBaseDirPointer.UV2Texture = none;
+    if (KFGRI.EndGameType > 0)
+        return;
 
-        if ( bAtEnemyBase ) {
-            Effect = EFF_Pulse;
-            C.SetDrawColor(200, 128, 0, KFHUDAlpha);
-        }
-        else {
-            C.DrawColor = TextColors[1-TeamIndex];
-            Effect = EFF_None;
-        }
-        DrawDirPointer(C, EnemyBaseDirPointer, TeamBase.Location, 2, 0, false, strEnemyBase, false, Effect);
-    }
+    if (!bShowScoreBoard) {
+        // enemy base
+        TeamBase = TSCTeamBase(KFGRI.Teams[1-TeamIndex].HomeBase);
+        if ( TeamBase != none && TeamBase.bActive ) {
+            bAtEnemyBase = TSCGRI.AtBase(PawnOwner.Location, TeamBase);
+            if ( EnemyBaseDirPointer == None ) {
+                EnemyBaseDirPointer = Spawn(Class'KFShopDirectionPointer');
+            }
+            // apply enemy team color
+            if ( TeamIndex == 0)
+                EnemyBaseDirPointer.UV2Texture = ConstantColor'TSC_T.HUD.BlueCol';
+            else
+                EnemyBaseDirPointer.UV2Texture = none;
 
-    // own base
-    TeamBase = TSCTeamBase(KFPRI.Team.HomeBase);
-    if ( TeamBase == none )
-        return; // just in case
-
-    if ( !TeamBase.bHidden && !(TeamBase.bHeld && TeamBase.HolderPRI == KFPRI) ) {
-        if ( BaseDirPointer == None ) {
-            BaseDirPointer = Spawn(Class'KFShopDirectionPointer');
-            OutOfTheBaseMaterial = new class'ConstantColor';
-            OutOfTheBaseMaterial.Color = OutOfTheBaseColor;
-        }
-
-        Effect = EFF_None;
-        bDrawShopDirPointer = !KFGRI.bWaveInProgress && (ScrnGRI == none || ScrnGRI.bTraderArrow); // always draw Trader Arrow during the Trader Time
-        bAtOwnBase = TSCGRI.AtBase(PawnOwner.Location, TeamBase);
-        if ( TeamBase.bActive ) {
-            s = strOurBase;
-            if ( bAtOwnBase) {
-                C.SetDrawColor(32, 255, 32, KFHUDAlpha);
+            if ( bAtEnemyBase ) {
+                Effect = EFF_Pulse;
+                C.SetDrawColor(200, 128, 0, KFHUDAlpha);
             }
             else {
-                C.SetDrawColor(200, 128, 0, KFHUDAlpha);
-                if (TSCGRI.bWaveInProgress && (TSCGRI.MaxMonsters >= 10 || TSCGRI.WaveEndRule == 4)) {
-                    Effect = EFF_PULSE;
+                C.DrawColor = TextColors[1-TeamIndex];
+                Effect = EFF_None;
+            }
+            DrawDirPointer(C, EnemyBaseDirPointer, TeamBase.Location, 2, 0, false, strEnemyBase, false, Effect);
+        }
+
+        // own base
+        TeamBase = TSCTeamBase(KFPRI.Team.HomeBase);
+        if ( TeamBase == none )
+            return; // just in case
+
+        if ( !TeamBase.bHidden && !(TeamBase.bHeld && TeamBase.HolderPRI == KFPRI) ) {
+            if ( BaseDirPointer == None ) {
+                BaseDirPointer = Spawn(Class'KFShopDirectionPointer');
+                OutOfTheBaseMaterial = new class'ConstantColor';
+                OutOfTheBaseMaterial.Color = OutOfTheBaseColor;
+            }
+
+            Effect = EFF_None;
+            bDrawShopDirPointer = !KFGRI.bWaveInProgress && (ScrnGRI == none || ScrnGRI.bTraderArrow); // always draw Trader Arrow during the Trader Time
+            bAtOwnBase = TSCGRI.AtBase(PawnOwner.Location, TeamBase);
+            if ( TeamBase.bActive ) {
+                s = strOurBase;
+                if ( bAtOwnBase) {
+                    C.SetDrawColor(32, 255, 32, KFHUDAlpha);
+                }
+                else {
+                    C.SetDrawColor(200, 128, 0, KFHUDAlpha);
+                    if (TSCGRI.bWaveInProgress && (TSCGRI.MaxMonsters >= 10 || TSCGRI.WaveEndRule == 4)) {
+                        Effect = EFF_PULSE;
+                    }
                 }
             }
-        }
-        else if ( TeamBase.bHeld ) {
-            s = strCarrier;
-            C.SetDrawColor(196, 206, 0, KFHUDAlpha);
+            else if ( TeamBase.bHeld ) {
+                s = strCarrier;
+                C.SetDrawColor(196, 206, 0, KFHUDAlpha);
+            }
+            else {
+                s = strGnome;
+                C.SetDrawColor(200, 0, 0, KFHUDAlpha); // dropped somewhere
+            }
+
+            if (Effect != EFF_NONE) {
+                BaseDirPointer.UV2Texture = OutOfTheBaseMaterial;
+            }
+            else {
+                BaseDirPointer.UV2Texture = OwnBaseMaterial;
+            }
+
+            if ( bDrawShopDirPointer ) {
+                row = 1; // shift team base arrow to fit trader pointer
+            }
+
+            DrawDirPointer(C, BaseDirPointer, TeamBase.GetLocation(), row, 0, false, s, false, Effect);
         }
         else {
-            s = strGnome;
-            C.SetDrawColor(200, 0, 0, KFHUDAlpha); // dropped somewhere
+            bDrawShopDirPointer = (ScrnGRI == none || ScrnGRI.bTraderArrow); // no gnome = draw shop arrow
         }
-
-        if (Effect != EFF_NONE) {
-            BaseDirPointer.UV2Texture = OutOfTheBaseMaterial;
-        }
-        else {
-            BaseDirPointer.UV2Texture = OwnBaseMaterial;
-        }
-
-        if ( bDrawShopDirPointer ) {
-            row = 1; // shift team base arrow to fit trader pointer
-        }
-
-        DrawDirPointer(C, BaseDirPointer, TeamBase.GetLocation(), row, 0, false, s, false, Effect);
-    }
-    else {
-        bDrawShopDirPointer = (ScrnGRI == none || ScrnGRI.bTraderArrow); // no gnome = draw shop arrow
     }
 
     // hints
-    if ( bHideTSCHints || KFGRI.EndGameType > 0 )
+    if (bHideTSCHints)
         return;
-
 
     if ( TSCGRI.ElapsedTime <= 10 ) {
         aTitle = titleWelcome;

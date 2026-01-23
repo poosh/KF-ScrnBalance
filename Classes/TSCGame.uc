@@ -533,57 +533,7 @@ function ShuffleTeams()
     BroadcastLocalizedMessage(TscMessages, 241);
 }
 
-function ForceClanTeams()
-{
-    local byte t;
-    local int i, p;
-    local PlayerController PC;
-    local PlayerReplicationInfo PRI;
-    local string id;
-    local int CaptainPriority[2];
-
-    if (!bClanGame)
-        return;
-
-    SetTeamCaptain(0, none);
-    SetTeamCaptain(1, none);
-    CaptainPriority[0] = 255;
-    CaptainPriority[1] = 255;
-
-    InviteList.length = 0;
-    ScrnBalanceMut.bTeamsLocked = false;
-    bTeamChanging = true;
-    for ( i = 0; i < TSCGRI.PRIArray.Length; ++i ) {
-        PRI = TSCGRI.PRIArray[i];
-        if (PRI == none)
-            continue;  // is this possible?
-        PC = PlayerController(PRI.Owner);
-        if (PC == none)
-            continue;
-        id = PC.GetPlayerIDHash();
-        for (t = 0; t < 2; ++t) {
-            p = TSCTeams[t].ClanRep.Clan.CaptainPriority(id);
-            if (p >= 0) {
-                PC.ServerChangeTeam(t);
-                if (p < CaptainPriority[t]) {
-                    SetTeamCaptain(t, PRI);
-                    CaptainPriority[t] = p;
-                }
-                break;
-            }
-            else if (TSCTeams[t].ClanRep.Clan.IsPlayer(id)) {
-                PC.ServerChangeTeam(t);
-                break;
-            }
-            else if (PRI.Team == TSCTeams[t]) {
-                PC.BecomeSpectator();
-                UninvitePlayer(PC);
-            }
-        }
-    }
-    bTeamChanging = false;
-    LockTeams();
-}
+function ForceClanTeams();
 
 function SetTeamCaptain(byte TeamIndex, PlayerReplicationInfo NewCaptainPRI)
 {
@@ -618,8 +568,8 @@ function bool ShouldKillOnTeamChange(Pawn TeamChanger)
 
 function bool AllowMidWaveRespawn(ScrnPlayerController ScrnPC)
 {
-    if (bTeamWiped && !bSingleTeam)
-        return false;  // no respawn after a team wipe
+    if ((bTeamWiped && !bSingleTeam) || TSCGRI.bSuddenDeath)
+        return false;  // no respawn after a team wipe or during sudden death
 
     return super.AllowMidWaveRespawn(ScrnPC);
 }
@@ -930,6 +880,18 @@ function int EndWaveNum()
     return OriginalFinalWave + OvertimeWaves + SudDeathWaves + int(bUseEndGameBoss);
 }
 
+function bool UpdateMonsterCount()
+{
+    local bool result;
+
+    result = super.UpdateMonsterCount();
+    TSCTeams[0].Health = TeamHealth[0];
+    TSCTeams[0].Armor = TeamArmor[0];
+    TSCTeams[1].Health = TeamHealth[1];
+    TSCTeams[1].Armor = TeamArmor[1];
+    return result;
+}
+
 function SetupWave()
 {
     local int i;
@@ -1190,13 +1152,81 @@ auto State PendingMatch
 
         BlueRep = class'TSCClanReplicationInfo'.static.Create(TSCTeams[1], BlueClan);
         if (BlueRep == none) {
+            RedRep.Destroy();
             return false;
+        }
+
+        if (TSCTeams[0].ClanRep != none) {
+            TSCTeams[0].ClanRep.Destroy();
+        }
+        if (TSCTeams[1].ClanRep != none) {
+            TSCTeams[1].ClanRep.Destroy();
         }
         TSCTeams[0].ClanRep = RedRep;
         TSCTeams[1].ClanRep = BlueRep;
         bClanGame = true;
         ForceClanTeams();
         return true;
+    }
+
+    function ForceClanTeams()
+    {
+        local byte t;
+        local int i, p;
+        local ScrnPlayerController PC;
+        local PlayerReplicationInfo PRI;
+        local string id;
+        local int CaptainPriority[2];
+        local bool bIllegalAlien;
+
+        if (!bClanGame)
+            return;
+
+        SetTeamCaptain(0, none);
+        SetTeamCaptain(1, none);
+        CaptainPriority[0] = 255;
+        CaptainPriority[1] = 255;
+
+        InviteList.length = 0;
+        ScrnBalanceMut.bTeamsLocked = false;
+        bTeamChanging = true;
+        for ( i = 0; i < TSCGRI.PRIArray.Length; ++i ) {
+            PRI = TSCGRI.PRIArray[i];
+            if (PRI == none)
+                continue;  // is this possible?
+            PC = ScrnPlayerController(PRI.Owner);
+            if (PC == none)
+                continue;
+
+            id = PC.GetPlayerIDHash();
+            bIllegalAlien = true;
+            for (t = 0; t < 2; ++t) {
+                p = TSCTeams[t].ClanRep.Clan.CaptainPriority(id);
+                if (p >= 0 || TSCTeams[t].ClanRep.Clan.IsPlayer(id)) {
+                    if (PRI.bOnlySpectator) {
+                        PC.BecomeActivePlayer();
+                    }
+                    bIllegalAlien = false;
+                    PC.ServerChangeTeam(t);
+                    InvitePlayer(PC);
+                    PC.ShowLobbyMenu();
+
+                    if (p >= 0 && p < CaptainPriority[t]) {
+                        SetTeamCaptain(t, PRI);
+                        CaptainPriority[t] = p;
+                    }
+                    break;
+                }
+            }
+            if (bIllegalAlien) {
+                if (!PRI.bOnlySpectator) {
+                    PC.BecomeSpectator();
+                }
+                UninvitePlayer(PC);
+            }
+        }
+        bTeamChanging = false;
+        LockTeams();
     }
 }
 

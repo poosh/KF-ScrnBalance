@@ -90,6 +90,7 @@ var localized string strFollowing;
 var localized string strTrader, strReachTrader1, strReachTrader2;
 var localized string strMax;
 var localized string strEarnDosh, strGrabDosh, strGrabAmmo, strKillBoss, strReachTrader, strStayAtTrader;
+var localized string strSurvived;
 
 var bool bCoolHud, bCoolHudLeftAlign;
 var config float CoolHudScale;
@@ -1913,6 +1914,7 @@ function DrawPlayerInfo(Canvas C, Pawn P, float ScreenLocX, float ScreenLocY)
     local float OldZ, fZoom;
     local bool bSameTeam;
     local KFPlayerReplicationInfo EnemyPRI;
+    local Color OriginalFullHealthColor;
 
     if ( bHidePlayerInfo )
         return;
@@ -1949,8 +1951,15 @@ function DrawPlayerInfo(Canvas C, Pawn P, float ScreenLocX, float ScreenLocY)
     C.Z = 1;
     C.Style = ERenderStyle.STY_Alpha;
 
-    // call delegate function
+    // call the delegate function
+    OriginalFullHealthColor = FullHealthColor;
+    if (!bSameTeam) {
+        // always display enemy health in red
+        FullHealthColor = HealthBarColor;
+    }
     ScrnDrawPlayerInfoBase(C, P, ScreenLocX, ScreenLocY, fZoom, EnemyPRI, bSameTeam);
+    FullHealthColor = OriginalFullHealthColor;
+
 
     C.Z = OldZ;
     VetStarSize = default.VetStarSize; // restore from drawing in other places
@@ -2499,6 +2508,7 @@ simulated function DrawDamage(Canvas C)
 exec function SetDamageFont(int inc) {
     DamageFontAdjust = inc;
     ResSizeX = 0;  // trigger ResolutionChanged() on the next render
+    SaveConfig();
 }
 
 simulated function MyPerkChanged(class<KFVeterancyTypes> OldPerk)
@@ -4639,6 +4649,7 @@ defaultproperties
     strKillBoss="Kill boss"
     strReachTrader="Reach the trader"
     strStayAtTrader="Stay at the trader"
+    strSurvived="SURVIVED"
 
     DigitsSmall=(DigitTexture=Texture'KillingFloorHUD.Generic.HUD',TextureCoords[0]=(X1=8,Y1=6,X2=32,Y2=38),TextureCoords[1]=(X1=50,Y1=6,X2=68,Y2=38),TextureCoords[2]=(X1=83,Y1=6,X2=113,Y2=38),TextureCoords[3]=(X1=129,Y1=6,X2=157,Y2=38),TextureCoords[4]=(X1=169,Y1=6,X2=197,Y2=38),TextureCoords[5]=(X1=206,Y1=6,X2=235,Y2=38),TextureCoords[6]=(X1=241,Y1=6,X2=269,Y2=38),TextureCoords[7]=(X1=285,Y1=6,X2=315,Y2=38),TextureCoords[8]=(X1=318,Y1=6,X2=348,Y2=38),TextureCoords[9]=(X1=357,Y1=6,X2=388,Y2=38),TextureCoords[10]=(X1=390,Y1=6,X2=428,Y2=38))
 

@@ -78,14 +78,14 @@ var()   NumericWidget           SpecDoshDigits[2];
 
 var     config bool             bDrawSpecBar;
 var     material                SpecBarBG, SpecBarRed, SpecBarBlue;
-var     texture                 SpecBarMark;
+var     texture                 SpecBarMark, SpecBarMarkLeft, SpecBarMarkMiddle, SpecBarMarkRight;
 var     config float            SpecBarY, SpecBarWidth, SpecBarHeight;
 
 var     config bool             bSpecDrawClan;
 var     config float            SpecClanNameX, SpecClanNameY;
 var     config float            SpecClanBannerX, SpecClanBannerY, SpecClanBannerHeight;
 
-var protected transient int TeamDosh[2], TeamHealth[2], TeamWaveKills[2];
+var protected transient int TeamDosh[2], TeamWaveKills[2];
 var protected transient float RedTeamHealthRatio, RedTeamDoshRatio, RedTeamWaveKillRatio;
 var protected transient float OldRedTeamHealthRatio, OldRedTeamDoshRatio, OldRedTeamWaveKillRatio;
 var protected transient float OldRedTeamHealthTime, OldRedTeamDoshTime, OldRedTeamWaveKillTime;
@@ -130,7 +130,6 @@ simulated function LinkActors()
         EnemyTeam = none;
     }
 }
-
 
 simulated function UpdateHud()
 {
@@ -284,6 +283,15 @@ simulated function OverrideWaveCounterText(Canvas C, out string S)
     }
 }
 
+simulated function DrawWaveInfo(Canvas C)
+{
+    if (bShowScoreBoard && !TSCGRI.bSingleTeamGame)
+        return;
+
+    super.DrawWaveInfo(C);
+}
+
+
 simulated function DrawKFHUDTextElements(Canvas C)
 {
     local ShopVolume shop;
@@ -298,7 +306,7 @@ simulated function DrawKFHUDTextElements(Canvas C)
         return;
 
     // Draw the shop pointer
-    if (bDrawShopDirPointer) {
+    if (bDrawShopDirPointer && !bShowScoreBoard && KFGRI.EndGameType == 0) {
         if (ShopDirPointer == None) {
             ShopDirPointer = Spawn(Class'KFShopDirectionPointer');
             //ShopDirPointer.bHidden = bHideHud;
@@ -332,7 +340,6 @@ simulated function DrawKFHUDTextElements(Canvas C)
     }
 }
 
-
 simulated function DrawTSCHUDTextElements(Canvas C)
 {
     local TSCTeamBase TeamBase;
@@ -344,88 +351,93 @@ simulated function DrawTSCHUDTextElements(Canvas C)
     local string    s;
     local EScrnEffect Effect;
 
+    if (KFGRI.EndGameType > 0)
+        return;
+
     // enemy base
-    TeamBase = TSCTeamBase(KFGRI.Teams[1-TeamIndex].HomeBase);
-    if ( TeamBase != none && (TeamBase.bActive || TeamBase.bStunned) ) {
-        bAtEnemyBase = TSCGRI.AtBase(PawnOwner.Location, TeamBase);
-        if ( EnemyBaseDirPointer == None ) {
-            EnemyBaseDirPointer = Spawn(Class'KFShopDirectionPointer');
-        }
-        // apply enemy team color
-        if ( TeamIndex == 0)
-            EnemyBaseDirPointer.UV2Texture = ConstantColor'TSC_T.HUD.BlueCol';
-        else
-            EnemyBaseDirPointer.UV2Texture = none;
+    if (!bShowScoreBoard) {
+        TeamBase = TSCTeamBase(KFGRI.Teams[1-TeamIndex].HomeBase);
+        if ( TeamBase != none && (TeamBase.bActive || TeamBase.bStunned) ) {
+            bAtEnemyBase = TSCGRI.AtBase(PawnOwner.Location, TeamBase);
+            if ( EnemyBaseDirPointer == None ) {
+                EnemyBaseDirPointer = Spawn(Class'KFShopDirectionPointer');
+            }
+            // apply enemy team color
+            if ( TeamIndex == 0)
+                EnemyBaseDirPointer.UV2Texture = ConstantColor'TSC_T.HUD.BlueCol';
+            else
+                EnemyBaseDirPointer.UV2Texture = none;
 
-        if (TeamBase.bStunned) {
-            s = strStunned;
-            C.DrawColor = LowAmmoColor;
-            Effect = EFF_NONE;
-        }
-        else if ( bAtEnemyBase ) {
-            s = strEnemyBase;
-            C.SetDrawColor(200, 128, 0, KFHUDAlpha);
-            Effect = EFF_PULSE;
-        }
-        else {
-            s = strEnemyBase;
-            C.DrawColor = TextColors[1-TeamIndex];
-            Effect = EFF_NONE;
-        }
-        DrawDirPointer(C, EnemyBaseDirPointer, TeamBase.Location, 2, 0, false, s, false, Effect);
-    }
-
-    // own base
-    TeamBase = TSCTeamBase(KFPRI.Team.HomeBase);
-    if ( TeamBase == none )
-        return; // just in case
-
-    if ( !TeamBase.bHidden && !(TeamBase.bHeld && TeamBase.HolderPRI == KFPRI) ) {
-        Effect = EFF_NONE;
-        if ( BaseDirPointer == None ) {
-            BaseDirPointer = Spawn(Class'KFShopDirectionPointer');
-            OutOfTheBaseMaterial = new class'ConstantColor';
-            OutOfTheBaseMaterial.Color = OutOfTheBaseColor;
-        }
-
-        bAtOwnBase = TSCGRI.AtBase(PawnOwner.Location, TeamBase);
-        if ( TeamBase.bStunned ) {
-            s = strStunned;
-            C.SetDrawColor(200, 0, 0, KFHUDAlpha);
-            Effect = EFF_BLINK;
-        }
-        else if ( TeamBase.bActive ) {
-            s = strOurBase;
-            if ( bAtOwnBase) {
-                C.SetDrawColor(32, 255, 32, KFHUDAlpha);
+            if (TeamBase.bStunned) {
+                s = strStunned;
+                C.DrawColor = LowAmmoColor;
+                Effect = EFF_NONE;
+            }
+            else if ( bAtEnemyBase ) {
+                s = strEnemyBase;
+                C.SetDrawColor(200, 128, 0, KFHUDAlpha);
+                Effect = EFF_PULSE;
             }
             else {
-                C.SetDrawColor(200, 128, 0, KFHUDAlpha);
-                if( TSCGRI.bWaveInProgress && TSCGRI.MaxMonsters >= 10 ) {
-                    Effect = EFF_PULSE;
-                }
+                s = strEnemyBase;
+                C.DrawColor = TextColors[1-TeamIndex];
+                Effect = EFF_NONE;
             }
-        }
-        else if ( TeamBase.bHeld ) {
-            s = strCarrier;
-            C.SetDrawColor(196, 206, 0, KFHUDAlpha);
-        }
-        else {
-            s = strGnome;
-            C.SetDrawColor(200, 0, 0, KFHUDAlpha); // dropped somewhere
+            DrawDirPointer(C, EnemyBaseDirPointer, TeamBase.Location, 2, 0, false, s, false, Effect);
         }
 
-        if (Effect == EFF_Pulse) {
-            BaseDirPointer.UV2Texture = OutOfTheBaseMaterial;
+        // own base
+        TeamBase = TSCTeamBase(KFPRI.Team.HomeBase);
+        if ( TeamBase == none )
+            return; // just in case
+
+        if ( !TeamBase.bHidden && !(TeamBase.bHeld && TeamBase.HolderPRI == KFPRI) ) {
+            Effect = EFF_NONE;
+            if ( BaseDirPointer == None ) {
+                BaseDirPointer = Spawn(Class'KFShopDirectionPointer');
+                OutOfTheBaseMaterial = new class'ConstantColor';
+                OutOfTheBaseMaterial.Color = OutOfTheBaseColor;
+            }
+
+            bAtOwnBase = TSCGRI.AtBase(PawnOwner.Location, TeamBase);
+            if ( TeamBase.bStunned ) {
+                s = strStunned;
+                C.SetDrawColor(200, 0, 0, KFHUDAlpha);
+                Effect = EFF_BLINK;
+            }
+            else if ( TeamBase.bActive ) {
+                s = strOurBase;
+                if ( bAtOwnBase) {
+                    C.SetDrawColor(32, 255, 32, KFHUDAlpha);
+                }
+                else {
+                    C.SetDrawColor(200, 128, 0, KFHUDAlpha);
+                    if( TSCGRI.bWaveInProgress && TSCGRI.MaxMonsters >= 10 ) {
+                        Effect = EFF_PULSE;
+                    }
+                }
+            }
+            else if ( TeamBase.bHeld ) {
+                s = strCarrier;
+                C.SetDrawColor(196, 206, 0, KFHUDAlpha);
+            }
+            else {
+                s = strGnome;
+                C.SetDrawColor(200, 0, 0, KFHUDAlpha); // dropped somewhere
+            }
+
+            if (Effect == EFF_Pulse) {
+                BaseDirPointer.UV2Texture = OutOfTheBaseMaterial;
+            }
+            else {
+                BaseDirPointer.UV2Texture = OwnBaseMaterial;
+            }
+            DrawDirPointer(C, BaseDirPointer, TeamBase.GetLocation(), 1, 0, false, s, false, Effect);
         }
-        else {
-            BaseDirPointer.UV2Texture = OwnBaseMaterial;
-        }
-        DrawDirPointer(C, BaseDirPointer, TeamBase.GetLocation(), 1, 0, false, s, false, Effect);
     }
 
     // hints
-    if ( bHideTSCHints || KFGRI.EndGameType > 0 )
+    if (bHideTSCHints)
         return;
 
     if ( TSCGRI.ElapsedTime <= 10 ) {
@@ -593,12 +605,43 @@ simulated function DrawWeaponName(Canvas C)
     C.DrawText(CurWeaponName);
 }
 
+simulated function DrawCenteredText(Canvas C, out array<string> Lines, optional bool bBottomAlign, optional float yPad)
+{
+    local int i;
+    local float XL, YL, x, y;
 
+    if (Lines.Length == 0)
+        return;
+
+    x = C.CurX;
+    y = C.CurY;
+    C.TextSize("|", XL, YL);
+    if (bBottomAlign) {
+        y -= (YL + yPad) * Lines.Length;
+        if (y < 0) {
+            y = fmax(0.0, C.CurY - Lines.Length * YL);
+            yPad = 0;
+        }
+    }
+    else if (y + YL * Lines.Length + yPad * (Lines.Length - 1) > C.ClipY) {
+        y = fmax(0.0, C.ClipY - Lines.Length * YL);
+        yPad = 0;
+    }
+
+    for (i = 0; i < Lines.Length; ++i) {
+        C.TextSize(Lines[i], XL, YL);
+        C.SetPos(x - XL/2, y);
+        C.DrawText(Lines[i]);
+        y += YL + yPad;
+    }
+}
 
 simulated function DrawEndGameHUD(Canvas C, bool bVictory)
 {
     local float Scalar;
-    local TeamInfo Team;
+    local TSCTeam Team;
+    local array<string> Lines;
+    local byte MaxAlpha;
 
     DestroyDirPointers();
 
@@ -606,35 +649,66 @@ simulated function DrawEndGameHUD(Canvas C, bool bVictory)
     C.DrawColor.R = 255;
     C.DrawColor.G = 255;
     C.DrawColor.B = 255;
+    MaxAlpha = 255;
     Scalar = FClamp(C.ClipY, 320, 1024);
-    C.CurX = C.ClipX / 2 - Scalar / 2;
-    C.CurY = C.ClipY / 2 - Scalar / 2;
     C.Style = ERenderStyle.STY_Alpha;
 
-    if ( bVictory )
-    {
-        Team = TeamInfo(KFGRI.Winner);
-        if ( Team != none && Team.TeamIndex < 2 )
-            MyColorMod.Material = EndGameMaterials[Team.TeamIndex];
-        else if ( !TSCGRI.bSingleTeamGame )
+    if (bVictory) {
+        Team = TSCTeam(KFGRI.Winner);
+
+        // FIXME:
+        Team = MyTeam;
+
+        if (Team != none && Team.TeamIndex < 2) {
+            if (Team.ClanRep != none && Team.ClanRep.Logo != none) {
+                MyColorMod.Material = Team.ClanRep.Logo;
+                MaxAlpha = 200;
+                Scalar = FClamp(C.ClipY, 320, 512);
+                if (Team.ClanRep.DecoName != "") {
+                    Split(Team.ClanRep.DecoName, "|", Lines);
+                }
+                else {
+                    Lines[0] = Team.ClanRep.ClanName;
+                }
+                Lines[Lines.Length] = strSurvived;
+            }
+            else {
+                MyColorMod.Material = EndGameMaterials[Team.TeamIndex];
+            }
+        }
+        else if (!TSCGRI.bSingleTeamGame) {
             MyColorMod.Material = EndGameMaterials[2]; // both teams win
-        else
+        }
+        else {
             MyColorMod.Material = EndGameMaterials[1]; // in non-team game players are in blue team
+        }
     }
-    else if ( TSCGRI.bSingleTeamGame )
+    else if ( TSCGRI.bSingleTeamGame ) {
         MyColorMod.Material = Combiner'DefeatCombiner';
-    else
+    }
+    else {
         MyColorMod.Material =  EndGameMaterials[3];
+    }
 
-    if ( EndGameHUDTime >= 1 )
-        MyColorMod.Color.A = 255;
-    else
-        MyColorMod.Color.A = EndGameHUDTime * 255.f;
+    if (EndGameHUDTime >= 1) {
+        MyColorMod.Color.A = MaxAlpha;
+    }
+    else {
+        MyColorMod.Color.A = EndGameHUDTime * MaxAlpha;
+    }
 
-    C.DrawTile(MyColorMod, Scalar, Scalar, 0, 0, 1024, 1024);
+    C.SetPos((C.ClipX - Scalar)/2, (C.ClipY - Scalar)/2);
+    C.DrawTile(MyColorMod, Scalar, Scalar, 0, 0, MyColorMod.Material.MaterialUSize(),
+            MyColorMod.Material.MaterialVSize());
 
-    if ( bShowScoreBoard && ScoreBoard != None )
-    {
+    if (Lines.length > 0) {
+        C.DrawColor = TextColors[Team.TeamIndex];
+        C.Font = LoadFont(0);
+        C.SetPos(C.ClipX/2, (C.ClipY + Scalar)/2);
+        DrawCenteredText(C, Lines);
+    }
+
+    if (bShowScoreBoard && ScoreBoard != none) {
         ScoreBoard.DrawScoreboard(C);
     }
 
@@ -657,8 +731,6 @@ simulated function CalsTeamStats()
 
     TeamDosh[0] = 0;
     TeamDosh[1] = 0;
-    TeamHealth[0] = 0;
-    TeamHealth[1] = 0;
     TeamWaveKills[0] = TSCTeams[0].GetCurWaveKills();
     TeamWaveKills[1] = TSCTeams[1].GetCurWaveKills();
 
@@ -666,7 +738,6 @@ simulated function CalsTeamStats()
         OtherPRI = KFPlayerReplicationInfo(KFGRI.PRIArray[i]);
         if ( OtherPRI != none && OtherPRI.Team != none && OtherPRI.Team.TeamIndex < 2 ) {
             TeamDosh[OtherPRI.Team.TeamIndex] += OtherPRI.Score;
-            TeamHealth[OtherPRI.Team.TeamIndex] += OtherPRI.PlayerHealth;
         }
     }
 
@@ -685,7 +756,7 @@ simulated function CalsTeamStats()
 
     RedTeamDoshRatio = CalcTeamRatio(SpecDoshDigits[0].Value + SpecInvDoshDigits[0].Value,
             SpecDoshDigits[1].Value + SpecInvDoshDigits[1].Value);
-    RedTeamHealthRatio = CalcTeamRatio(TeamHealth[0], TeamHealth[1]);
+    RedTeamHealthRatio = CalcTeamRatio(TSCTeams[0].Health + TSCTeams[0].Armor, TSCTeams[1].Health + TSCTeams[1].Armor);
     RedTeamWaveKillRatio = CalcTeamRatio(TeamWaveKills[0], TeamWaveKills[1]);
 
     if ( SpecWaveKillsDigits[0].Value < TSCGRI.WaveKillReq ) {
@@ -787,7 +858,7 @@ simulated function DrawSpecBar(Canvas C, float Ratio, float x, float y, float w,
     optional Texture RedIcon, optional Texture BlueIcon, out optional float OldRatio, out optional float OldTime)
 {
     local float redw;
-    local float IconSize, IconSizeX;
+    local float IconSize, IconSizeX, MarkSize;
     local Color OldColor;
     local int i;
 
@@ -821,17 +892,6 @@ simulated function DrawSpecBar(Canvas C, float Ratio, float x, float y, float w,
     C.SetPos(C.ClipX * x, C.ClipY * y);
     C.DrawTileStretched(SpecBarBG, C.ClipX * w, C.ClipY * h);
 
-    if (SpecBarMark != none) {
-        C.DrawColor.A = 128;
-        for (i = 2; i <= 8; ++i) {
-            if ((i & 1) == 1 && i != 5)
-                continue;  // skip 30% and 70%
-            C.SetPos(C.ClipX * (x + w * 0.1 * i) - IconSize/2, (C.ClipY * (y + h/2)) - IconSize/2);
-            C.DrawIcon(SpecBarMark, IconSize / SpecBarMark.VSize);
-        }
-        C.DrawColor.A = KFHUDAlpha;
-    }
-
     if (RedIcon != none) {
         C.SetPos(C.ClipX * x - IconSize, (C.ClipY * (y + h/2)) - IconSize/2);
         C.DrawIcon(RedIcon, IconSize / RedIcon.VSize);
@@ -839,6 +899,36 @@ simulated function DrawSpecBar(Canvas C, float Ratio, float x, float y, float w,
     if (BlueIcon != none) {
         C.SetPos(C.ClipX * (x + w), (C.ClipY * (y + h/2)) - IconSize/2);
         C.DrawIcon(BlueIcon, IconSize / BlueIcon.VSize);
+    }
+
+    // Draw Marks
+    MarkSize =  C.ClipY * h * 0.50;
+    C.DrawColor = GrayColor;
+    C.DrawColor.A = 128;
+
+    if (SpecBarMark != none) {
+        for (i = 1; i <= 9; ++i) {
+            if (i == 4 && SpecBarMarkLeft != none && SpecBarMarkRight != none && SpecBarMarkMiddle != none) {
+                // skip the middle
+                i = 6;
+                continue;
+            }
+            C.SetPos(C.ClipX * (x + w * 0.1 * i) - MarkSize/2, (C.ClipY * (y + h/2)) - MarkSize/2);
+            C.DrawIcon(SpecBarMark, MarkSize / SpecBarMark.VSize);
+        }
+    }
+
+    if (SpecBarMarkLeft != none && SpecBarMarkRight != none && SpecBarMarkMiddle != none) {
+        C.SetPos(C.ClipX * (x + w * 0.4), (C.ClipY * (y + h/2)) - MarkSize/2);
+        C.DrawIcon(SpecBarMarkLeft, MarkSize / SpecBarMarkLeft.VSize);
+
+        C.SetPos(C.ClipX * (x + w * 0.6) - MarkSize, (C.ClipY * (y + h/2)) - MarkSize/2);
+        C.DrawIcon(SpecBarMarkRight, MarkSize / SpecBarMarkRight.VSize);
+
+        C.DrawColor = WhiteColor;
+        C.DrawColor.A = 128;
+        C.SetPos(C.ClipX * (x + w * 0.5) - IconSize/2, (C.ClipY * (y + h/2)) - IconSize/2);
+        C.DrawIcon(SpecBarMarkMiddle, IconSize / SpecBarMarkMiddle.VSize);
     }
 
     C.DrawColor = OldColor;
@@ -879,8 +969,10 @@ simulated function DrawClan(Canvas C, byte TeamIndex, float x, float y, float h)
     }
 
     // find the biggest font of the clan name that fits into the banner
-    for (i = 1; i < 9; ++i) {
+    for (i = 0; i < 9; ++i) {
         C.Font = LoadFont(i);
+        XLMax = 0;
+        YLMax = 0;
         for (j = 0; j < Lines.Length; ++j) {
             C.TextSize(Lines[j], XL, YL);
             XLMax = fmax(XLMax, XL);
@@ -1269,7 +1361,10 @@ defaultproperties
     SpecBarBG=texture'TSC_T.SpecHUD.Battery_BG'
     SpecBarRed=texture'TSC_T.SpecHUD.BarFill_Red'
     SpecBarBlue=texture'TSC_T.SpecHUD.BarFill_Blue'
-    SpecBarMark=Texture'ScrnTex.Perks.Hud_Perk_Star_Gray'
+    SpecBarMark=Texture'TSC_T.SpecHUD.MarkMiddle'
+    SpecBarMarkLeft=Texture'TSC_T.SpecHUD.MarkBegin'
+    SpecBarMarkMiddle=Texture'ScrnTex.Perks.Hud_Perk_Star_Gray'
+    SpecBarMarkRight=Texture'TSC_T.SpecHUD.MarkEnd'
     bDrawSpecBar=true
     SpecBarY=0.06
     SpecBarWidth=0.30
