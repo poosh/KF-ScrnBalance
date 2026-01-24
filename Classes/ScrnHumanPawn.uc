@@ -3350,10 +3350,18 @@ simulated function Color GetGlowColor()
         return LocalPC.GlowColorSingleTeam;
     }
 
-    if (GetTeamNum() == 0) {
-        return LocalPC.GlowColorRed;
+    if (LocalPC.PlayerReplicationInfo == none || LocalPC.PlayerReplicationInfo.bOnlySpectator
+            || LocalPC.PlayerReplicationInfo.Team == none) {
+        if (GetTeamNum() == 0) {
+            return LocalPC.GlowColorRed;
+        }
+        return LocalPC.GlowColorBlue;
     }
-    return LocalPC.GlowColorBlue;
+
+    if (LocalPC.GetTeamNum() == GetTeamNum()) {
+        return LocalPC.GlowColorFriendly;
+    }
+    return LocalPC.GlowColorEnemy;
 }
 
 simulated function Combiner AllocateGlowCombiner(Material OriginalMat)

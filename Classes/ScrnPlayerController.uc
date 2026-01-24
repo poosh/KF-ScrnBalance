@@ -84,7 +84,7 @@ var globalconfig bool bTSCAutoDetectKeys; // turns off bTSCAdvancedKeyBindings i
 var string DefaultRedCharacter, DefaultBlueCharacter;
 var globalconfig string RedCharacter, BlueCharacter;
 var globalconfig Color GlowColorSingleTeam;
-var Color GlowColorRed, GlowColorBlue;
+var Color GlowColorRed, GlowColorBlue, GlowColorFriendly, GlowColorEnemy;
 var transient float LastBaseMarkTime;
 var array<string> RedCharacters, BlueCharacters;  // MUST BE SORTED!
 
@@ -4287,6 +4287,8 @@ defaultproperties
     GlowColorSingleTeam=(R=128,G=0,B=0)
     GlowColorRed=(R=128,G=0,B=0)
     GlowColorBlue=(R=0,G=64,B=128)
+    GlowColorFriendly=(R=0,G=128,B=0)
+    GlowColorEnemy=(R=128,G=0,B=0)
 
     // MUST BE SORTED!
     RedCharacters( 0)="AGENT_WILKES"

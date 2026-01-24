@@ -499,6 +499,7 @@ function int GetVoteIndex(PlayerController Sender, string Key, out string Value,
                 Value = "TEAM";
                 VoteInfo = "Blame Team";
                 VotingHandler.VotedPlayer = none;
+                VotingHandler.VotedTeam = Sender.PlayerReplicationInfo.Team;
             }
             else {
                 if ( Value ~= "ME" )
@@ -1092,8 +1093,12 @@ function Blame(string VoteValue)
     }
     else if ( VoteValue ~= "TEAM" || VoteValue ~= "ALL" ) {
         for ( C = Level.ControllerList; C != none; C = C.nextController ) {
+            if (C.PlayerReplicationInfo == none)
+                continue;
             BlamedPlayer = ScrnPlayerController(C);
             if ( BlamedPlayer != none ) {
+                if (BlamedPlayer.PlayerReplicationInfo.Team == VotingHandler.VotedTeam
+                        || VotingHandler.VotedTeam == none)
                 Mut.BlamePlayer(BlamedPlayer, "");
             }
         }

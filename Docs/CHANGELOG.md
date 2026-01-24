@@ -29,6 +29,16 @@
 # VERSION 9
 
 -------------------------------------------------------------------------------
+## v9.74.10
+- Fixed a netcode issue where a grenade or a rocket could play explosion effects on the client-side but disintegrate on the server due to being too close to the target. The issue is visual-only, as the server made the correct proximity check. Players could see a grenade/rocket explode, but do no AOE damage.
+### TSC
+- Teammates are glowing green, and enemies are glowing red, regardless of the chosen side.
+- Fixed an issue when a player could bypass the clan check and still join the team in the lobby if they connected to the server after `MVOTE CLAN GAME`.
+- MVOTE BLAME TEAM` blames only your team.
+- (Probably) Fixed a rare issue where the team could lose the base on a wave start.
+- Fixed CountryTags detection in clan assignment by nickname prefixes.
+-
+
 ## v9.74.09
 - **TSC**: fixed end-game clan logo
 

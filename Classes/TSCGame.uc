@@ -128,7 +128,10 @@ event InitGame( string Options, out string Error )
 
     // check loaded mutators
     for (M = BaseMutator; M != None; M = M.NextMutator) {
-        bCtryTags = bCtryTags || M.IsA('CtryTags');
+        if (M.IsA('CtryTags') || M.IsA('CountryTags')) {
+            bCtryTags = true;
+            break;
+        }
     }
 
     // hard-code some ScrN features
@@ -136,8 +139,6 @@ event InitGame( string Options, out string Error )
         // no vote end wave since it is auto-ended in 30 seconds
         ScrnBalanceMut.MaxVoteKillMonsters = 0;
     }
-    if ( ScrnBalanceMut.ForcedMaxPlayers < 12 )
-        ScrnBalanceMut.ForcedMaxPlayers = 0;
 
     VH = class'ScrnVotingHandlerMut'.static.GetVotingHandler(self);
     if ( VH != none ) {
@@ -1137,6 +1138,14 @@ function InventoryUpdate(Pawn P)
 
 auto State PendingMatch
 {
+    event PostLogin(PlayerController NewPlayer)
+    {
+        if (bClanGame && !IsInvited(NewPlayer)) {
+            NewPlayer.PlayerReplicationInfo.bOnlySpectator = true;
+        }
+        global.PostLogin(NewPlayer);
+    }
+
     function bool StartClanGame(TSCClanInfo RedClan, TSCClanInfo BlueClan)
     {
         local TSCClanReplicationInfo RedRep, BlueRep;

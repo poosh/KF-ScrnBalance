@@ -1316,7 +1316,7 @@ defaultproperties
     SpecDoshDigits(0)=(RenderStyle=STY_Alpha,TextureScale=0.3,PosX=0.0225,PosY=0.850,Tints[0]=(B=64,G=64,R=255,A=255),Tints[1]=(B=64,G=64,R=255,A=255))
 
     SpecDeathsBG(0)=(WidgetTexture=Texture'KillingFloorHUD.HUD.Hud_Box_256x64',RenderStyle=STY_Alpha,TextureCoords=(X2=256,Y2=64),TextureScale=0.350,PosX=-0.04,PosY=0.885,ScaleMode=SM_Right,Scale=1.0,Tints[0]=(B=255,G=255,R=255,A=128),Tints[1]=(B=255,G=255,R=255,A=128))
-    SpecDeathsIcon(0)=(WidgetTexture=Texture'TSC_T.SpecHUD.Skull64',RenderStyle=STY_Alpha,TextureCoords=(X2=64,Y2=64),TextureScale=0.16,PosX=0.001,PosY=0.897,ScaleMode=SM_Right,Scale=1.0,Tints[0]=(B=64,G=64,R=200,A=255),Tints[1]=(B=64,G=64,R=2,A=255))
+    SpecDeathsIcon(0)=(WidgetTexture=Texture'TSC_T.SpecHUD.Skull64',RenderStyle=STY_Alpha,TextureCoords=(X2=64,Y2=64),TextureScale=0.16,PosX=0.001,PosY=0.897,ScaleMode=SM_Right,Scale=1.0,Tints[0]=(B=64,G=64,R=255,A=255),Tints[1]=(B=64,G=64,R=255,A=255))
     SpecDeathsDigits(0)=(RenderStyle=STY_Alpha,TextureScale=0.3,PosX=0.0225,PosY=0.9,Tints[0]=(B=64,G=64,R=255,A=255),Tints[1]=(B=64,G=64,R=255,A=255))
 
     SpecKillsBG(0)=(WidgetTexture=Texture'KillingFloorHUD.HUD.Hud_Box_256x64',RenderStyle=STY_Alpha,TextureCoords=(X2=256,Y2=64),TextureScale=0.35,PosX=-0.040,PosY=0.935,ScaleMode=SM_Right,Scale=1.0,Tints[0]=(B=255,G=255,R=255,A=128),Tints[1]=(B=255,G=255,R=255,A=128))

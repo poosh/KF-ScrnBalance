@@ -453,7 +453,11 @@ state Held
 
 state SettingUp
 {
-    ignores Score, ScoreOrHome, Touch, UsedBy;
+    ignores Score, Touch, UsedBy;
+
+    // There is a bug in UnrealScript where it can sometimes ignore the "ignore" statement and execute the global
+    // funciton. Defining an empty function is safer.
+    function ScoreOrHome() {}
 
     function BeginState()
     {
@@ -519,7 +523,9 @@ state SettingUp
 
 state Guarding
 {
-    ignores Score, ScoreOrHome, Touch, UsedBy;
+    ignores Score, Touch, UsedBy;
+
+    function ScoreOrHome() {}
 
     function BeginState()
     {
@@ -722,7 +728,7 @@ state Stunned
 
 state WakingUp
 {
-    ignores Score, ScoreOrHome, Touch, UsedBy;
+    ignores Score, Touch, UsedBy;
 
     function BeginState()
     {
@@ -746,6 +752,11 @@ state WakingUp
     {
         // log("State <-- WakingUp", class.name);
         bStunned = false;
+    }
+
+    function ScoreOrHome()
+    {
+        GotoState('Guarding');
     }
 
     function Timer()

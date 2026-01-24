@@ -105,11 +105,16 @@ function TakeDamage( int Damage, Pawn InstigatedBy, Vector Hitlocation, Vector M
             Disintegrate(HitLocation, vect(0,0,1));
     }
     else if (Health <= 0) {
-        if ( (VSizeSquared(Location - OrigLoc) < ArmDistSquared) || OrigLoc == vect(0,0,0))
+        if (!IsArmed())
             Disintegrate(HitLocation, vect(0,0,1));
         else
             Explode(HitLocation, vect(0,0,0));
     }
+}
+
+simulated function bool IsArmed()
+{
+    return ArmDistSquared <= 0 || (bBegunPlay && VSizeSquared(Location - OrigLoc) >= ArmDistSquared);
 }
 
 // At a point-blank range, ProcessTouch may trigger during BeginPlay(), i.e. before PostBeginPlay()
@@ -127,16 +132,7 @@ simulated function ProcessTouch(Actor Other, Vector HitLocation)
 
     X = Vector(Rotation);
 
-    // Use the instigator's location if it exists. This fixes issues with
-    // the original location of the projectile being really far away from
-    // the real Origloc due to it taking a couple of milliseconds to
-    // replicate the location to the client and the first replicated location has
-    // already moved quite a bit.
-    if (Role < ROLE_Authority && Instigator != none)
-        OrigLoc = Instigator.Location;
-
-    if (ArmDistSquared > 0 && ((Role == ROLE_Authority && !bBegunPlay)
-            || VSizeSquared(Location - OrigLoc) < ArmDistSquared)) {
+    if (!IsArmed()) {
         if (Role == ROLE_Authority) {
             AmbientSound=none;
             PlaySound(Sound'ProjectileSounds.PTRD_deflect04',,2.0);
