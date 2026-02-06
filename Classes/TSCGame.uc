@@ -915,7 +915,7 @@ function SetupWave()
     i = rand(2);
     TeamBases[i].ScoreOrHome();
     TeamBases[1-i].ScoreOrHome();
-    if (TeamBases[0].StunThreshold > 0) {
+    if (TeamBases[0].HealthMax > 0) {
         BaseInvulTime = Level.TimeSeconds + default.BaseInvulTime;
         TeamBases[0].bInvul = true;
         TeamBases[1].bInvul = true;

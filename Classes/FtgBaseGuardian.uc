@@ -116,7 +116,7 @@ defaultproperties
     PrePivot=(Z=23)
     SameTeamCounter=30
     Damage=2 // do less damage to enemies due to moving
-    StunThreshold=0 // cannot be stunned
+    HealthMax=0 // cannot be stunned
 
     LightRadius=25
     GuardianLightRadius=25

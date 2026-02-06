@@ -13,9 +13,10 @@ var TSCTeam TSCTeams[2];
 var TSCTeam MyTeam, EnemyTeam;
 
 var     KFShopDirectionPointer  BaseDirPointer, EnemyBaseDirPointer, EnemyShopDirPointer;
-var Color OutOfTheBaseColor;
+var Color OutOfTheBaseColor, BaseInvulColor;
 var ConstantColor OutOfTheBaseMaterial;
 var ConstantColor OwnBaseMaterial;
+var ConstantColor BaseInvulMaterial;
 
 var localized string strBase;
 var localized string strOurBase;
@@ -108,6 +109,14 @@ simulated function DestroyDirPointers()
 simulated function Destroyed()
 {
     DestroyDirPointers();
+    if (OutOfTheBaseMaterial != none) {
+        Level.ObjectPool.FreeObject(OutOfTheBaseMaterial);
+        OutOfTheBaseMaterial = none;
+    }
+    if (BaseInvulMaterial != none) {
+        Level.ObjectPool.FreeObject(BaseInvulMaterial);
+        BaseInvulMaterial = none;
+    }
     super.Destroyed();
 }
 
@@ -361,24 +370,31 @@ simulated function DrawTSCHUDTextElements(Canvas C)
             bAtEnemyBase = TSCGRI.AtBase(PawnOwner.Location, TeamBase);
             if ( EnemyBaseDirPointer == None ) {
                 EnemyBaseDirPointer = Spawn(Class'KFShopDirectionPointer');
+                BaseInvulMaterial =  ConstantColor(Level.ObjectPool.AllocateObject(class'ConstantColor'));
+                BaseInvulMaterial.Color = BaseInvulColor;
             }
             // apply enemy team color
-            if ( TeamIndex == 0)
+            if (TeamIndex == 0) {
                 EnemyBaseDirPointer.UV2Texture = ConstantColor'TSC_T.HUD.BlueCol';
-            else
+            }
+            else {
                 EnemyBaseDirPointer.UV2Texture = none;
+            }
 
             if (TeamBase.bStunned) {
                 s = strStunned;
                 C.DrawColor = LowAmmoColor;
                 Effect = EFF_NONE;
             }
-            else if ( bAtEnemyBase ) {
+            else if (bAtEnemyBase) {
                 s = strEnemyBase;
                 C.SetDrawColor(200, 128, 0, KFHUDAlpha);
                 Effect = EFF_PULSE;
             }
             else {
+                if (TeamBase.bInvul) {
+                    EnemyBaseDirPointer.UV2Texture = BaseInvulMaterial;
+                }
                 s = strEnemyBase;
                 C.DrawColor = TextColors[1-TeamIndex];
                 Effect = EFF_NONE;
@@ -395,7 +411,7 @@ simulated function DrawTSCHUDTextElements(Canvas C)
             Effect = EFF_NONE;
             if ( BaseDirPointer == None ) {
                 BaseDirPointer = Spawn(Class'KFShopDirectionPointer');
-                OutOfTheBaseMaterial = new class'ConstantColor';
+                OutOfTheBaseMaterial =  ConstantColor(Level.ObjectPool.AllocateObject(class'ConstantColor'));
                 OutOfTheBaseMaterial.Color = OutOfTheBaseColor;
             }
 
@@ -603,6 +619,19 @@ simulated function DrawWeaponName(Canvas C)
         C.SetPos((C.ClipX * 0.97) - XL, C.ClipY * 0.915);
 
     C.DrawText(CurWeaponName);
+}
+
+simulated function DrawPlayerInfos(Canvas C)
+{
+    local TSCBaseGuardian Gnome;
+
+    super.DrawPlayerInfos(C);
+
+    foreach C.ViewPort.Actor.VisibleCollidingActors(class'TSCBaseGuardian', Gnome, 800, C.ViewPort.Actor.CalcViewLocation) {
+        if ((Gnome.bActive || Gnome.bStunned) && Gnome.HealthPct < 100) {
+            DrawHealthBar(C, Gnome, Gnome.HealthPct, 100 , 50.0);
+        }
+    }
 }
 
 simulated function DrawCenteredText(Canvas C, out array<string> Lines, optional bool bBottomAlign, optional float yPad)
@@ -1381,5 +1410,6 @@ defaultproperties
     bCoolHudTeamColor=True
 
     OutOfTheBaseColor=(R=200,G=200,B=32)
+    BaseInvulColor=(R=50,G=200,B=200)
     OwnBaseMaterial=ConstantColor'TSC_T.HUD.GreenCol'
 }

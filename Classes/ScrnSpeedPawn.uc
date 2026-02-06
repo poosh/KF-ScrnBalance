@@ -6,7 +6,7 @@ defaultproperties
     GroundSpeed=250
     WalkingPct=0.60
     AirSpeed=400
-    AirControl=0.35
+    AirControl=0.25
     AccelRate=15000
     HealthSpeedModifier=0.00
     BaseMeleeIncrease=0.20
@@ -15,6 +15,6 @@ defaultproperties
     WeaponWeightSpeedReduction=0
     bAllowMacheteBoost=false
     TraderSpeedBoost=1.0
-    MaxFallSpeed=1000
-    FallingDamageMod=0.5
+    MaxFallSpeed=775
+    FallingDamageMod=1.0
 }

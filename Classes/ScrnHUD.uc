@@ -287,8 +287,16 @@ function PostBeginPlay()
 
 function Destroyed()
 {
-    if ( PerkOverlay != none )
+    if (PerkOverlay != none) {
         PerkOverlay.Destroy();
+        PerkOverlay = none;
+    }
+
+    if (MyColorMod != none) {
+        Level.ObjectPool.FreeObject(MyColorMod);
+        MyColorMod = none;
+    }
+
     super.Destroyed();
 }
 
@@ -2766,7 +2774,12 @@ simulated function DrawHealthBar(Canvas C, Actor A, int Health, int MaxHealth, f
 
         HealthPct = 1.0f * Health / MaxHealth;
 
-        C.SetDrawColor(255, 0, 0, 255);
+        if (KFMonster(A) != none) {
+            C.SetDrawColor(255, 0, 0, 255);
+        }
+        else {
+            C.SetDrawColor(0, 100, 200, 255);
+        }
         C.SetPos(HBScreenPos.X - EnemyHealthBarLength * 0.5 + 1.0, HBScreenPos.Y - EnemyHealthBarHeight + 1.0);
         C.DrawTileStretched(WhiteMaterial, (EnemyHealthBarLength - 2.0) * HealthPct, EnemyHealthBarHeight - 2.0);
     }

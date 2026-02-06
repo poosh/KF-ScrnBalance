@@ -11,6 +11,7 @@ var(Message) localized string strOvertime;
 var(Message) localized string strSuddenDeath;
 var(Message) localized string strGetBackToBase;
 var(Message) localized string strGetBackToBaseOrDie;
+var(Message) localized string strNobodyAtBase;
 var(Message) localized string strGetOutFromBase;
 var(Message) localized string strPendingShuffle;
 var(Message) localized string strTeamShuffle;
@@ -84,6 +85,7 @@ static function string GetString(
             case 311:    return default.strGetBackToBaseOrDie;
             case 312:    return default.strGetOutFromBase;
             case 313:    return default.strBaseShop;
+            case 314:    return default.strNobodyAtBase;
         }
     }
 
@@ -140,6 +142,7 @@ defaultproperties
     strBaseZ="Cannot set the Base just below the Enemy Base!"
     strGetBackToBase="GET BACK TO THE BASE!"
     strGetBackToBaseOrDie="GET BACK TO THE BASE OR DIE!"
+    strNobodyAtBase="NOBODY AT THE BASE!"
     strGetOutFromBase="You are at the ENEMY BASE! Get out of here!"
     strBaseShop="Cannot set the Base inside a Shop!"
 

@@ -584,7 +584,7 @@ function TransferDoshToTeam(ScrnPlayerInfo SPI)
 
 function WaveEnded()
 {
-    local int i;
+    local int i, val;
     local string s;
     local ScrnPlayerInfo SPI;
     local byte WaveNum;
@@ -600,10 +600,13 @@ function WaveEnded()
     // give HL for boring votes
     for ( i = 1; i < BoringMonsters.length; ++i ) {
         //    ^ there is no typo. Zero index = no boring
-        if ( BoringMonsters[i] < 100 )
+
+        // Subtract the remaining not yet spawned zeds if the wave has a custom end rule (timeout etc.)
+        val = BoringMonsters[i] - Mut.KF.TotalMaxMonsters;
+        if (val < 100)
             break;
 
-        BoringHL += HardcoreLevelFloat * BoringMonsters[i] / 500.0 / Mut.KF.FinalWave;
+        BoringHL += HardcoreLevelFloat * val / 500.0 / Mut.KF.FinalWave;
     }
     if ( BoringHL > 0.09 ) {
         RaiseHardcoreLevel(BoringHL, Mut.ScrnGT.GetBoringString(i-1));

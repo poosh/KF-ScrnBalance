@@ -17,13 +17,12 @@ var transient Pawn BaseSetter;
 // none (default) = no team wipe on base lost
 var class<DamageType> WipeOnBaseLost;
 
-var int StunThreshold;
+var int HealthMax;
+var transient int StunTime;
 var int StunDuration, WakeUpDuration;
-var float StunFadeoutRate;
-var transient float StunDamage;
-var float StunFadeoutTime;  // time after last damage taken to start fading out
-var deprecated float InvulTime;
-var bool bInvul;
+var float HealthRegenRate;
+var float HealthRegenStart;  // time after last damage taken to start fading out
+var float DamMultFrag, DamMultZed;
 
 var ShopVolume MyShop;
 var transient ScrnPlayerController LastHolder;
@@ -55,6 +54,8 @@ simulated function PostBeginPlay()
     //log("TSCGRI = " $ TSCGRI, 'TSCBaseGuardian');
 
     super.PostBeginPlay();
+
+    Health = HealthMax;
 }
 
 simulated function PostNetReceive()
@@ -126,6 +127,17 @@ singular function Touch(Actor Other)
     }
 }
 
+function SetHealth(int value)
+{
+    Health = clamp(value, 0, HealthMax);
+    HealthPct = clamp(100 * Health / HealthMax, 0, 100);
+    NetUpdateTime = Level.TimeSeconds - 1;
+}
+
+function IncHealth(int inc)
+{
+    SetHealth(Health + inc);
+}
 
 function bool SameTeam(Controller c)
 {
@@ -473,6 +485,7 @@ state SettingUp
 
         SetTimer(10, false); // just in case
 
+        SetHealth(HealthMax);
         NetUpdateTime = Level.TimeSeconds - 1; // replicate immediately
     }
 
@@ -546,7 +559,7 @@ state Guarding
         SetRotation(r);
         SetPhysics(PHYS_Rotating);
 
-        StunDamage = 0;
+        SetHealth(HealthMax);
         SameTeamCounter = default.SameTeamCounter;
         SetTimer(1, true);
 
@@ -580,24 +593,39 @@ state Guarding
         return WipeOnBaseLost != none && TSCGRI.MaxMonsters > 10;
     }
 
-    function TakeDamage( int Damage, Pawn InstigatedBy, Vector Hitlocation, Vector Momentum, class<DamageType> damageType, optional int HitIndex)
+    function TakeDamage( int Damage, Pawn InstigatedBy, Vector Hitlocation, Vector Momentum,
+            class<DamageType> damageType, optional int HitIndex)
     {
         local ScrnPlayerController PC;
 
         if ( bInvul )
             return;
 
-        if ( damageType == class'DamTypeFrag' )
-            Damage *= 5;
-        if ( InstigatedBy != none )
+        if (damageType == class'DamTypeFrag') {
+            Damage *= DamMultFrag;
+        }
+        else if (KFMonster(InstigatedBy) != none) {
+            Damage *= DamMultZed;
+        }
+
+        if (InstigatedBy != none)
             PC = ScrnPlayerController(InstigatedBy.Controller);
         if ( PC != none ) {
             PC.DamageMade(Damage, Hitlocation, 10);
         }
-        StunDamage += Damage;
-        StunFadeoutTime = Level.TimeSeconds + default.StunFadeoutTime;
-        if ( StunDamage >= StunThreshold ) {
+
+        IncHealth(-Damage);
+        HealthRegenStart = Level.TimeSeconds + default.HealthRegenStart;
+        if (Health <= 0 ) {
             GotoState('Stunned');
+            if (PC != none) {
+                Level.Game.BroadcastLocalizedMessage(class'TSCConsoleMessage', 0 + Team.TeamIndex*100,
+                        PC.PlayerReplicationInfo, none, DamageType);
+            }
+            else if (InstigatedBy != none) {
+                Level.Game.BroadcastLocalizedMessage(class'TSCConsoleMessage', 1 + Team.TeamIndex*100, none, none,
+                        InstigatedBy.class);
+            }
         }
     }
 
@@ -607,10 +635,8 @@ state Guarding
         local ScrnPlayerController SC;
         local bool bNobodyAtBase, bNobodyAlive;
 
-        if ( StunDamage > 0 && Level.TimeSeconds > StunFadeoutTime ) {
-            StunDamage -= StunFadeoutRate;
-            if ( StunDamage < 0 )
-                StunDamage = 0;
+        if ( Health < HealthMax && Level.TimeSeconds > HealthRegenStart ) {
+            IncHealth(HealthRegenRate);
         }
 
         if (TSCGRI.EndGameType > 0)
@@ -675,7 +701,7 @@ state Guarding
                             if ( SameTeamCounter <= 12 && ShouldWipeOnBaseLost() )
                                 SC.ReceiveLocalizedMessage(TscMessages, 311); // critical message
                             else
-                                SC.ReceiveLocalizedMessage(TscMessages, 211);
+                                SC.ReceiveLocalizedMessage(TscMessages, 314);  // nobody at the base
                         }
                     }
                 }
@@ -704,7 +730,9 @@ state Stunned
         SetRotation(r);
         SetPhysics(PHYS_None);
 
-        SetTimer(StunDuration, false);
+        StunTime = 0;
+        HealthPct = 0;
+        SetTimer(1.0, true);
         NetUpdateTime = Level.TimeSeconds - 1; // replicate immediately
         BroadcastLocalizedMessage(TscMessages, 3+Team.TeamIndex*100);
     }
@@ -715,6 +743,7 @@ state Stunned
         bStunned = false;
     }
 
+
     function ScoreOrHome()
     {
         GotoState('Guarding');
@@ -722,7 +751,12 @@ state Stunned
 
     function Timer()
     {
-        GotoState('WakingUp');
+        if (++StunTime >= StunDuration) {
+            GotoState('WakingUp');
+        }
+        else {
+            HealthPct = 100 * StunTime / (StunDuration + WakeUpDuration);
+        }
     }
 }
 
@@ -744,7 +778,7 @@ state WakingUp
         SetRotation(r);
         SetPhysics(PHYS_Rotating);
 
-        SetTimer(WakeUpDuration, false);
+        SetTimer(1.0, true);
         BroadcastLocalizedMessage(TscMessages, 4+Team.TeamIndex*100);
     }
 
@@ -761,8 +795,14 @@ state WakingUp
 
     function Timer()
     {
-        BroadcastLocalizedMessage(TscMessages, 5+Team.TeamIndex*100);
-        GotoState('Guarding');
+        if (++StunTime >= StunDuration + WakeUpDuration) {
+            HealthPct = 100;
+            BroadcastLocalizedMessage(TscMessages, 5+Team.TeamIndex*100);
+            GotoState('Guarding');
+        }
+        else {
+            HealthPct = 100 * StunTime / (StunDuration + WakeUpDuration);
+        }
     }
 }
 
@@ -776,11 +816,14 @@ defaultproperties
     GameObjOffset=(X=0,Y=15,Z=0)
     GameObjRot=(Pitch=-16384,Yaw=0,Roll=0)
     Damage=5
-    StunThreshold=500
+    HealthMax=500
+    HealthPct=100
+    DamMultFrag=5.0
+    DamMultZed=10.0
     StunDuration=30
     WakeUpDuration=10
-    StunFadeoutRate=50
-    StunFadeoutTime=2.0
+    HealthRegenRate=50
+    HealthRegenStart=5.0
     SameTeamCounter=14
     bCanBeDamaged=False
     ClientState=CS_Home

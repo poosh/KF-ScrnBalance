@@ -29,6 +29,20 @@
 # VERSION 9
 
 -------------------------------------------------------------------------------
+## v9.74.11
+- **M7A3** increase ammo pickup from an ammo box: 15 => 40 (thanks [nmmblez])
+- Fixed some broken traders on some bad objective maps (thanks [jkcrmptn])
+- Fixed boring vote HL calculation or custom waves
+- **Speed Boost**: Fixed a bug where non-berserkers received almost no falling damage. Note that falling damage is reduced in ScrN Balance to promote verticality. For example, you can jump from L3 to L2 or from L2 to L1 with no falling damage on Foundry. But jumping from L3 all the way down to L1 should deal damage, which didn't happen due to a bug.
+- Fixed the FP Health requirement for the "Unassisted" achievement
+### TSC
+- The enemy base arrow is drawn in grey during the base stun protection period.
+- Show base guardian health bar (when not at full health)
+- Base guardian health regeneration starts 5 seconds after last damage taken (up from 2s)
+- Stop zeds after the game has ended
+- Lowered dosh penalty on player death: $500 => $200
+- Raised dosh gain on killing an enemy player: $500 => $800
+
 ## v9.74.10
 - Fixed a netcode issue where a grenade or a rocket could play explosion effects on the client-side but disintegrate on the server due to being too close to the target. The issue was visual-only, as the server made the correct proximity check. Players could see a grenade/rocket explode, but do no AOE damage.
 ### TSC

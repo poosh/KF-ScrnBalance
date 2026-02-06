@@ -3124,11 +3124,22 @@ function bool CanBuyNow()
     local bool bAtEnemyShop;
 
     KFGRI = KFGameReplicationInfo(Level.GRI);
-    TSCGRI = TSCGameReplicationInfo(Level.GRI);
-
-    if (KFGRI == none || KFGRI.bWaveInProgress || PlayerReplicationInfo==None || PlayerReplicationInfo.Team==None)
+    if (KFGRI == none || PlayerReplicationInfo == none || PlayerReplicationInfo.Team == none)
         return False;
 
+    if (KF_StoryGRI(Level.GRI) != none) {
+        // A workaound for crappy KFO maps
+        foreach TouchingActors(Class'ShopVolume',Shop) {
+            ScrnPC.bShoppedThisWave = true;
+            return True;
+        }
+        return false;
+    }
+
+    if (KFGRI.bWaveInProgress)
+        return false;
+
+    TSCGRI = TSCGameReplicationInfo(Level.GRI);
     if ( TSCGRI == none ) {
         MyShop = KFGRI.CurrentShop;
         EnemyShop = none;
@@ -3474,7 +3485,7 @@ defaultproperties
     WeaponWeightSpeedReduction=0
     bAllowMacheteBoost=true
     PrevPerkLevel=-1
-    MaxFallSpeed=750
+    MaxFallSpeed=775
     FallingDamageMod=1.0
     FartSound=SoundGroup'ScrnSnd.Fart'
     RequiredEquipment(0)="ScrnBalanceSrv.ScrnKnife"

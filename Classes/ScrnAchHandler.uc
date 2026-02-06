@@ -969,7 +969,7 @@ function MonsterKilled(KFMonster Victim, ScrnPlayerInfo KillerInfo, class<KFWeap
 
         if ( (MC.KillAssistants.Length == 0 ||
                     (MC.KillAssistants.Length == 1 && MC.KillAssistants[0].PC == KillerInfo.PlayerOwner))
-                && Level.Game.GameDifficulty >= 7 && GameRules.AlivePlayerCount() >= 6 )
+                && Level.Game.GameDifficulty >= 7 && Victim.HealthMax >= 5900 )
         {
             KillerInfo.ProgressAchievement('Unassisted', 1);
         }

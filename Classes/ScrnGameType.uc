@@ -114,7 +114,8 @@ var transient array<Actor> InvalidPathTargets;
 
 var bool bKillMessages;  // should the game broadcast kill messages? Set to false if Marco's Kill Messages is in use.
 var float DoshDifficultyMult; // Multiplier for Moster.ScoringValue to calculate kill reward
-var int PlayerKillScore;  // How much dosh player loses on death (or gains on killing an enemy player).
+var int PlayerDeathScore;  // How much dosh player loses on death
+var int PlayerKillScore;  // How much dosh player gains on killing an enemy player
 var bool bZedDropDosh, bZedPickupDosh, bZedGiveBounty;
 enum EDropKind {
     DK_TOSS,
@@ -1090,9 +1091,9 @@ function ScoreKill(Controller Killer, Controller Victim)
             return;  // player became a spectator
 
         VictimPRI.NumLives++;
-        VictimPRI.Score -= PlayerKillScore;
+        VictimPRI.Score -= PlayerDeathScore;
         if ( VictimPRI.Team != none ) {
-            VictimPRI.Team.Score -= PlayerKillScore;
+            VictimPRI.Team.Score -= PlayerDeathScore;
             if (VictimPRI.Score < 0) {
                 // Victim does not have enough dosh. Charge the team instead
                 VictimPRI.Team.Score += VictimPRI.Score;
@@ -1134,7 +1135,7 @@ function ScoreKill(Controller Killer, Controller Victim)
         // p2p kills
         if ( Killer.PlayerReplicationInfo.Team == VictimPRI.Team ) {
             if ( VictimPRI != none ) {
-                KillScore = min(2*PlayerKillScore, Killer.PlayerReplicationInfo.Score);
+                KillScore = min(PlayerDeathScore, Killer.PlayerReplicationInfo.Score);
                 Killer.PlayerReplicationInfo.Score -= KillScore;
                 VictimPRI.Score += KillScore;
                 Killer.PlayerReplicationInfo.NetUpdateTime = Level.TimeSeconds - 1;
@@ -2332,7 +2333,6 @@ protected function StartTourney()
     log("Starting TOURNEY MODE " $ TourneyMode, 'ScrnBalance');
 
     TurboScale = 1.0;
-    PlayerKillScore = 250;
     ScrnBalanceMut.SrvTourneyMode = TourneyMode;
     ScrnBalanceMut.bAltBurnMech = true;
     ScrnBalanceMut.bReplacePickups = true;
@@ -2523,12 +2523,20 @@ event PlayerController Login(string Portal, string Options, out string Error)
     return NewPlayer;
 }
 
-event PostLogin( PlayerController NewPlayer )
+event PostLogin(PlayerController NewPlayer)
 {
     super.PostLogin(NewPlayer);
     if ( ScrnPlayerController(NewPlayer) != none )
         ScrnPlayerController(NewPlayer).PostLogin();
     GiveStartingCash(NewPlayer);
+}
+
+function Logout(Controller Exiting)
+{
+    super.Logout(Exiting);
+    if (NumPlayers == 0) {
+        UnlockTeams();
+    }
 }
 
 function LockTeams()
@@ -3082,8 +3090,15 @@ function bool CheckEndGame(PlayerReplicationInfo Winner, string Reason)
             if ( KFPC != none && EngGameSong != "" ) {
                 KFPC.NetPlayMusic(EngGameSong, 0.5, 0);
             }
+            C.GameHasEnded();
         }
-        C.GameHasEnded();
+        else if (MonsterController(C) != none) {
+            // MonsterController.GameHasEnded() is stripped
+            C.GotoState('GameEnded');
+        }
+        else {
+            C.GameHasEnded();
+        }
     }
 
     if ( CurrentGameProfile != none )  {
@@ -4174,6 +4189,9 @@ State MatchInProgress
                 if (bTradingDoorsOpen) {
                     CloseShops();
                 }
+                else {
+                    ScrnBalanceMut.GameRules.WaveStarted();
+                }
                 SetupWave();
             }
         }
@@ -4319,15 +4337,15 @@ State MatchInProgress
                 return;
             }
             bRespawnDeadPlayers = ScrnGameLength.Wave.bRespawnDeadPlayers;
-            if ( WaveCountDown <= 0 ) {
-                SetupWave();
-                return;
-            }
             if ( !ScrnGameLength.Wave.bOpenTrader ) {
                 SetupPickups();
                 ScrnBalanceMut.bPickupSetupReduced = true; // don't let ScrnBalance to reduce pickups again
                 ScrnBalanceMut.GameRules.WaveEnded();
+            }
+            if ( WaveCountDown <= 0 ) {
                 ScrnBalanceMut.GameRules.WaveStarted();
+                SetupWave();
+                return;
             }
         }
         else {
@@ -4543,7 +4561,8 @@ defaultproperties
     ZEDTimeTransitionTime=0.498
     ZEDTimeTransitionRate=0.100
     bZedGiveBounty=true
-    PlayerKillScore=100
+    PlayerKillScore=400
+    PlayerDeathScore=100
 
     DebugZVolColors[0]=(R=255,G=1,B=1,A=255)
     DebugZVolColors[1]=(R=1,G=255,B=1,A=255)
