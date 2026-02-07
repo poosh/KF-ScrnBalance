@@ -5,7 +5,20 @@ var int GameVersion;
 var string WaveHeader, WaveTitle, WaveMessage;
 var int WaveCounter, WaveCounterMax;
 var int EndGameCounter;
+
+// RULE_KillEmAll    =  0
+// RULE_SpawnEmAll   =  1
+// RULE_Timeout      =  2
+// RULE_EarnDosh     =  3
+// RULE_KillBoss     =  4
+// RULE_GrabDosh     =  5
+// RULE_GrabDoshZed  =  6
+// RULE_GrabAmmo     =  7
+// RULE_KillSpecial  =  8
+// RULE_ReachTrader  =  9
+// RULE_Dialogue     = 10
 var byte WaveEndRule;
+
 var bool bTraderArrow;
 var byte ZedTimeValue, ZedTimeDuration;
 var const float ZedTimeValueScale;

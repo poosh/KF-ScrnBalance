@@ -915,10 +915,10 @@ function SetupWave()
     i = rand(2);
     TeamBases[i].ScoreOrHome();
     TeamBases[1-i].ScoreOrHome();
-    if (TeamBases[0].HealthMax > 0) {
+    TeamBases[0].bInvul = true;
+    TeamBases[1].bInvul = true;
+    if (TeamBases[0].StunDuration > 0) {
         BaseInvulTime = Level.TimeSeconds + default.BaseInvulTime;
-        TeamBases[0].bInvul = true;
-        TeamBases[1].bInvul = true;
     }
     else {
         BaseInvulTime = Level.TimeSeconds + 100000; // never trigger
@@ -942,7 +942,7 @@ function SetupWave()
 
     TSCGRI.bHumanDamageEnabled = WaveNum > 0 && HumanDamageMode > HDMG_None && !bNoBases;
 
-    if (bSingleTeam || bWaveBossInProgress) {
+    if (bSingleTeam || bWaveBossInProgress || TSCGRI.WaveEndRule != 0) {
         TSCGRI.WaveKillReq = 0;
     }
     else {
@@ -1359,16 +1359,12 @@ State MatchInProgress
             }
         }
 
-        if ( !bSingleTeamGame ) {
-            if ( TeamBases[0] == none )
-                SpawnBaseGuardian(0); // just in case
-            // don't check for none here making warning message appear in server log
-            // to point on indicated bad map design
-            TeamBases[0].SendHome();
+        if (TeamBases[0] == none && !bSingleTeamGame ) {
+            SpawnBaseGuardian(0); // just in case
         }
-        if ( TeamBases[1] == none )
+        if (TeamBases[1] == none) {
             SpawnBaseGuardian(1);
-        TeamBases[1].SendHome();
+        }
 
         if ( NextWave >= ScrnGameLength.Waves.length ) {
             // if there are not enough waves in ScrnGameLength, then just re-load the last one again
@@ -1377,6 +1373,18 @@ State MatchInProgress
         super.DoWaveEnd();
         if ( bGameEnded )
             return;
+
+        if (ScrnGameLength.Wave.bOpenTrader) {
+            // Guardians will be moved to shop later in OpenShops()
+            if (TeamBases[0] != none) {
+                // don't check for none here making warning message appear in server log
+                // to point on indicated bad map design
+                TeamBases[0].SendHome();
+            }
+            if (TeamBases[1] != none) {
+                TeamBases[1].SendHome();
+            }
+        }
 
         WaveNum = NextWave;
         TSCGRI.WaveNumber = WaveNum;

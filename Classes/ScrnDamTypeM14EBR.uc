@@ -3,4 +3,5 @@ class ScrnDamTypeM14EBR extends DamTypeM14EBR
 
 defaultproperties
 {
+    HeadShotDamageMult=2.15
 }

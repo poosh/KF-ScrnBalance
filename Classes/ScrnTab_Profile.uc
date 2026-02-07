@@ -115,6 +115,14 @@ defaultproperties
 {
     strNotATeamChar="Selected character is not avaliable for your team!"
 
+    Begin Object class=ScrnPerkSelectListBox Name=PerkSelectList
+        WinWidth=0.318980
+        WinHeight=0.654653
+        WinLeft=0.323418
+        WinTop=0.082969
+    End Object
+    lb_PerkSelect=PerkSelectList
+
     Begin Object class=ScrnPerkProgressListBox Name=PerkProgressList
         WinWidth=0.319980
         WinHeight=0.292235

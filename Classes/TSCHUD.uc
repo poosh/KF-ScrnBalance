@@ -628,7 +628,7 @@ simulated function DrawPlayerInfos(Canvas C)
     super.DrawPlayerInfos(C);
 
     foreach C.ViewPort.Actor.VisibleCollidingActors(class'TSCBaseGuardian', Gnome, 800, C.ViewPort.Actor.CalcViewLocation) {
-        if ((Gnome.bActive || Gnome.bStunned) && Gnome.HealthPct < 100) {
+        if ((Gnome.bActive || Gnome.bStunned) && !Gnome.bInvul && Gnome.HealthPct < 100) {
             DrawHealthBar(C, Gnome, Gnome.HealthPct, 100 , 50.0);
         }
     }

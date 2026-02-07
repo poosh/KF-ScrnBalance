@@ -30,6 +30,8 @@ function DrawPerk(Canvas Canvas, int CurIndex, float X, float Y, float Width, fl
     Canvas.Font = class'ROHUD'.Static.GetSmallMenuFont(Canvas);
     Canvas.SetDrawColor(255, 255, 255, 255);
 
+	IconSize = Height - ItemSpacing;// - (ItemBorder * 2.0 * Height);
+
     // Draw Item Background
     Canvas.SetPos(TempX, TempY);
     if ( bSelected )

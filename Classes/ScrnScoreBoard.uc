@@ -12,6 +12,8 @@ var     localized   string      HealText;
 var Material AdminIcon, BlameIcon, BigBlameIcon, DeathIcon;
 var Material WhiteMaterial;
 
+var Material PlayerIconBackground;
+
 var color AssColor, DoshColor, BestColor, DeadColor;
 
 var transient float BoxWidth, BoxX;
@@ -22,6 +24,10 @@ var int PlayerFontIndex;
 
 var transient float OldClipX, OldClipY;
 var transient float BoxHeight, BoxSpaceY;
+var transient float PlayerIconSize;
+var float PlayerIconSpacing, PlayerIconMargin, PlayerPortraitVShift;
+
+var transient int LastDrawnPlayerCount;
 
 // SE - because DrawCountryName() is final :(
 static function float DrawCountryNameSE( Canvas C, PlayerReplicationInfo PRI, float X, float Y,
@@ -229,8 +235,14 @@ simulated function ResolutionChanged(Canvas Canvas)
     else
         PlayerFontIndex = 0;
 
-    if (Canvas.ClipX < 1200)
+    PlayerIconSize = Canvas.ClipY * 0.06;
+    PlayerIconSpacing = default.PlayerIconSpacing;
+
+    if (Canvas.ClipX < 1200) {
         BoxWidth = 0.99;
+        PlayerIconSize = 0;
+        PlayerIconSpacing = 0;
+    }
     else if (Canvas.ClipX < 1900)
         BoxWidth = 0.90;
     else if (Canvas.ClipX < 2500)
@@ -241,11 +253,12 @@ simulated function ResolutionChanged(Canvas Canvas)
         BoxWidth = 0.50;
     BoxWidth *= Canvas.ClipX;
     BoxX = (Canvas.ClipX - BoxWidth) / 2;
+    PlayerIconSize = fmin(PlayerIconSize, BoxX);
 
     Canvas.Font = class'ScrnHUD'.static.LoadMenuFontStatic(PlayerFontIndex);
     Canvas.TextSize("0", X0, YL);
     BoxHeight = 1.2 * YL;
-    BoxSpaceY = 0.25 * YL;
+    BoxSpaceY = fmax(0.25 * YL, PlayerIconSize - BoxHeight + PlayerIconSpacing);
 
     if (Canvas.ClipX > 3000)
         M = X0 * 4.0;
@@ -284,9 +297,9 @@ simulated event UpdateScoreBoard(Canvas Canvas)
     local ScrnGameReplicationInfo ScrnGRI;
     local int i, FontReduction, PlayerCount, SpecCount, AliveCount, HeaderOffsetY, HeadFoot, MessageFoot,BoxTextOffsetY,
             TitleYPos, NotShownCount;
-    local float XL,YL, y;
-    local float deathsXL, KillsXL, NetXL, MaxNamePos, KillWidthX;
-    local Material VeterancyBox,StarBox;
+    local float XL,YL, y, IconToBoxY;
+    local float deathsXL, KillsXL, NetXL, OriginalClipX, KillWidthX;
+    local Material VeterancyBox,StarBox, M;
     local string S;
     local byte Stars;
     local KF_StoryObjective CurrentObj;
@@ -331,12 +344,17 @@ simulated event UpdateScoreBoard(Canvas Canvas)
         }
     }
 
+    if (LastDrawnPlayerCount != TeamPRIArray.Length) {
+        LastDrawnPlayerCount = TeamPRIArray.Length;
+        ResolutionChanged(Canvas);
+    }
+
     Canvas.Font = class'ScrnHUD'.static.GetSmallMenuFont(Canvas);
     Canvas.DrawColor = HUDClass.default.RedColor;
     Canvas.Style = ERenderStyle.STY_Normal;
     HeaderOffsetY = Canvas.ClipY * 0.11;
 
-    // "Zeroth", Draw game name :)
+    // Title Line 1
     S = GRI.GameName;
     if ( ScrnGRI != none ) {
         if ( ScrnGRI.GameTitle != "" ) {
@@ -354,7 +372,7 @@ simulated event UpdateScoreBoard(Canvas Canvas)
     Canvas.SetPos( (Canvas.ClipX - XL)/2, HeaderOffsetY - YL);
     Canvas.DrawTextClipped(S);
 
-    // First, draw title.
+    // Title Line 2
     if(KF_StoryGRI(GRI) != none) {
         CurrentObj = KF_StoryGRI(GRI).GetCurrentObjective();
         if(CurrentObj != none)
@@ -374,7 +392,7 @@ simulated event UpdateScoreBoard(Canvas Canvas)
     Canvas.SetPos( (Canvas.ClipX - XL)/2, HeaderOffsetY );
     Canvas.DrawTextClipped(S);
 
-    // Second title line
+    // Title Line 3
     S = PlayerCountText @ PlayerCount;
     if ( SpecCount > 0 ) {
         S @= SpectatorCountText @ SpecCount;
@@ -399,43 +417,55 @@ simulated event UpdateScoreBoard(Canvas Canvas)
     HeaderOffsetY+=(YL*3.f);
 
     Canvas.Font = class'ScrnHUD'.static.LoadMenuFontStatic(PlayerFontIndex);
-    while ((BoxHeight + BoxSpaceY) * PlayerCount > Canvas.ClipY - HeaderOffsetY) {
-        // Shrink font, if too small then break loop.
-        if (PlayerFontIndex + FontReduction >= 4) {
-            // We need to remove some player names here to make it fit.
-            NotShownCount = PlayerCount - int((Canvas.ClipY - HeaderOffsetY) / (BoxHeight + BoxSpaceY)) + 1;
-            PlayerCount -= NotShownCount;
-            break;
+    if ((BoxHeight + BoxSpaceY) * PlayerCount > Canvas.ClipY - HeaderOffsetY) {
+        // in the first iteration, we don't reduce the font; just remove avatars
+        FontReduction = -1;
+        PlayerIconSize = 0;
+
+        while ((BoxHeight + BoxSpaceY) * PlayerCount > Canvas.ClipY - HeaderOffsetY) {
+            // Shrink font, if too small then break loop.
+            if (PlayerFontIndex + FontReduction >= 4) {
+                // We need to remove some player names here to make it fit.
+                NotShownCount = PlayerCount - int((Canvas.ClipY - HeaderOffsetY) / (BoxHeight + BoxSpaceY)) + 1;
+                PlayerCount -= NotShownCount;
+                break;
+            }
+            ++FontReduction;
+            Canvas.Font = class'ScrnHUD'.static.LoadMenuFontStatic(PlayerFontIndex + FontReduction);
+            Canvas.TextSize("Test", XL, YL);
+            BoxHeight = 1.2 * YL;
+            BoxSpaceY = 4;
         }
-        ++FontReduction;
-        Canvas.Font = class'ScrnHUD'.static.LoadMenuFontStatic(PlayerFontIndex + FontReduction);
-        Canvas.TextSize("Test", XL, YL);
-        BoxHeight = 1.2 * YL;
-        BoxSpaceY = 4;
     }
+
+    IconToBoxY = fmax(0.0, (PlayerIconSize - BoxHeight)/2);
+    LineHeight = BoxHeight + BoxSpaceY;
 
     HeadFoot = 7 * YL;
     MessageFoot = 1.5 * HeadFoot;
 
     // draw background boxes
+    y = HeaderOffsetY + IconToBoxY;
     Canvas.Style = ERenderStyle.STY_Alpha;
     for (i = 0; i < PlayerCount; ++i) {
         Canvas.DrawColor = HUDClass.default.WhiteColor;
         Canvas.DrawColor.A = 128;
-        Canvas.SetPos(BoxX, HeaderOffsetY + (BoxHeight + BoxSpaceY) * i);
+        Canvas.SetPos(BoxX, y);
         Canvas.DrawTileStretched( BoxMaterial, BoxWidth, BoxHeight);
 
         // highlight myself
-        if ( TeamPRIArray[i] == OwnerPRI ) {
+        if (TeamPRIArray[i] == OwnerPRI) {
             Canvas.SetDrawColor(0, 255, 0, 48);
-            Canvas.SetPos(BoxX + 1, HeaderOffsetY + (BoxHeight + BoxSpaceY) * i + 1);
-            Canvas.DrawTileStretched( WhiteMaterial, BoxWidth-2, BoxHeight-2);
+            Canvas.SetPos(BoxX + 1, y + 1);
+            Canvas.DrawTileStretched(WhiteMaterial, BoxWidth-2, BoxHeight-2);
         }
+
+        y += LineHeight;
     }
 
     if (NotShownCount > 0) {
         Canvas.DrawColor = HUDClass.default.RedColor;
-        Canvas.SetPos(BoxX, HeaderOffsetY + (BoxHeight + BoxSpaceY) * PlayerCount);
+        Canvas.SetPos(BoxX, HeaderOffsetY + y);
         Canvas.DrawTileStretched( BoxMaterial, BoxWidth, BoxHeight);
     }
 
@@ -484,42 +514,69 @@ simulated event UpdateScoreBoard(Canvas Canvas)
     Canvas.SetPos(HealthX - XL, TitleYPos);
     Canvas.DrawTextClipped(HealthText);
 
-    Canvas.Style = ERenderStyle.STY_Normal;
-    Canvas.DrawColor = HUDClass.default.WhiteColor;
-    Canvas.SetPos(0.5 * Canvas.ClipX, HeaderOffsetY + 4);
-
     Canvas.DrawColor = HUDClass.default.WhiteColor;
     Canvas.SetPos(NetX - NetXL, TitleYPos);
     Canvas.DrawTextClipped(NetText);
 
-    BoxTextOffsetY = HeaderOffsetY + 0.5 * (BoxHeight - YL);
-
-    Canvas.DrawColor = HUDClass.default.WhiteColor;
-    MaxNamePos = Canvas.ClipX;
-    Canvas.ClipX = StoryIconXPos - StoryIconS;
-    for (i = 0; i < PlayerCount; ++i) {
-        PRI = TeamPRIArray[i]; // For some reasons, GRI.PRIArray[i] has WebAdmin in Story Mode
-        // draw myself in green, admins - red, others - white  -- PooSH
-        if ( PRI.bAdmin )
-            Canvas.DrawColor = Class'HudBase'.Default.RedColor;
-        else
-            Canvas.DrawColor = Class'HudBase'.Default.WhiteColor;
-        DrawCountryNameSE(Canvas, PRI, NameX, (BoxHeight + BoxSpaceY)*i + BoxTextOffsetY);
-    }
-    Canvas.ClipX = MaxNamePos;
-    Canvas.DrawColor = HUDClass.default.WhiteColor;
-
-    Canvas.Style = ERenderStyle.STY_Normal;
+    OriginalClipX = Canvas.ClipX;
 
     // Draw the player information
-    LineHeight = BoxHeight + BoxSpaceY;
-    y = BoxTextOffsetY;
+    BoxTextOffsetY = (BoxHeight - YL)/2;
+    y =  HeaderOffsetY + IconToBoxY + BoxTextOffsetY;
     for (i = 0; i < PlayerCount; ++i) {
-        //PRI = GRI.PRIArray[i];
         PRI = TeamPRIArray[i]; // For some reasons, GRI.PRIArray[i] has WebAdmin in Story Mode
         KFPRI = KFPlayerReplicationInfo(PRI);
         StoryPRI = KF_StoryPRI(PRI);
         ScrnPRI = class'ScrnCustomPRI'.static.FindMe(PRI);
+
+        // Avatar
+        if (PlayerIconSize > 0) {
+            Canvas.DrawColor = Class'HudBase'.Default.WhiteColor;
+            Canvas.SetPos(BoxX - PlayerIconSize + PlayerIconMargin, y - IconToBoxY - BoxTextOffsetY + PlayerIconMargin);
+            M = none;
+            if (ScrnPRI != none) {
+                M = ScrnPRI.GetAvatar();
+            }
+
+            if (M != none) {
+                Canvas.DrawTile(M, PlayerIconSize - 2*PlayerIconMargin, PlayerIconSize - 2*PlayerIconMargin, 0, 0,
+                        M.MaterialUSize(), M.MaterialVSize());
+            }
+            else {
+                M = PRI.GetPortrait();
+                if (M != none) {
+                    // There is no typo - we use U size on both axis to cut down the bottom part of the character
+                    // portrait.
+                    Canvas.DrawTile(M, PlayerIconSize - 2*PlayerIconMargin, PlayerIconSize - 2*PlayerIconMargin,
+                            0, M.MaterialVSize() * PlayerPortraitVShift, M.MaterialUSize(), M.MaterialUSize());
+                }
+            }
+
+            Canvas.SetPos(BoxX - PlayerIconSize, y - IconToBoxY - BoxTextOffsetY);
+            Canvas.DrawTileStretched(PlayerIconBackground, PlayerIconSize, PlayerIconSize);
+
+            if (ScrnPRI != none) {
+                M = ScrnPRI.GetClanIcon();
+                if (M != none) {
+                    Canvas.SetPos(BoxX + BoxWidth + PlayerIconMargin, y - IconToBoxY - BoxTextOffsetY + PlayerIconMargin);
+                    Canvas.DrawTile(M, PlayerIconSize - 2*PlayerIconMargin, PlayerIconSize - 2*PlayerIconMargin, 0, 0,
+                                            M.MaterialUSize(), M.MaterialVSize());
+                    Canvas.SetPos(BoxX + BoxWidth, y - IconToBoxY - BoxTextOffsetY);
+                    Canvas.DrawTileStretched(PlayerIconBackground, PlayerIconSize, PlayerIconSize);
+                }
+            }
+        }
+
+        // Player Name
+        if (PRI.bAdmin) {
+            Canvas.DrawColor = Class'HudBase'.Default.RedColor;
+        }
+        else {
+            Canvas.DrawColor = Class'HudBase'.Default.WhiteColor;
+        }
+        Canvas.ClipX = StoryIconXPos - StoryIconS;
+        DrawCountryNameSE(Canvas, PRI, NameX, y);
+        Canvas.ClipX = OriginalClipX;
 
         Canvas.DrawColor = HUDClass.default.WhiteColor;
         // display Story Icon
@@ -531,17 +588,16 @@ simulated event UpdateScoreBoard(Canvas Canvas)
             }
         }
 
-        // Display perks.
+        // Perk
         if (KFPRI!=None && Class<SRVeterancyTypes>(KFPRI.ClientVeteranSkill)!=none) {
             Stars = Class<SRVeterancyTypes>(KFPRI.ClientVeteranSkill).Static.PreDrawPerk(Canvas,
                     KFPRI.ClientVeteranSkillLevel, VeterancyBox, StarBox);
-
-            if (VeterancyBox != None)
-                DrawPerkWithStars(Canvas, VetX, HeaderOffsetY + (BoxHeight + BoxSpaceY) * i, BoxHeight,
-                        min(Stars, 25), VeterancyBox, StarBox);
+            if (VeterancyBox != None) {
+                DrawPerkWithStars(Canvas, VetX, y - BoxTextOffsetY, BoxHeight, min(Stars, 25), VeterancyBox, StarBox);
+            }
         }
 
-        // draw kills
+        // Kills
         if (KFPRI.Kills == MaxKills && MaxKills > 0 && PlayerCount > 1) {
             Canvas.DrawColor = BestColor;
         }
@@ -553,7 +609,7 @@ simulated event UpdateScoreBoard(Canvas Canvas)
         Canvas.SetPos(KillsX - KillWidthX, y);
         Canvas.DrawTextClipped(KFPRI.Kills);
 
-        // draw Assists  -- PooSH
+        // Assists
         if (KFPRI.KillAssists > 0) {
             Canvas.DrawColor = AssColor;
             Canvas.SetPos(KillsX, y);
@@ -593,7 +649,7 @@ simulated event UpdateScoreBoard(Canvas Canvas)
             }
         }
 
-        // deaths
+        // Deaths
         if (PRI.Deaths > 0) {
             if (PRI.Deaths == MaxDeaths) {
                 Canvas.DrawColor = HUDClass.default.RedColor;
@@ -608,7 +664,7 @@ simulated event UpdateScoreBoard(Canvas Canvas)
             Canvas.DrawTextClipped(S);
         }
 
-        // draw cash
+        // Dosh
         if (int(PRI.Score) != 0) {
             TotalCash += PRI.Score;
             S = class'ScrnUnicode'.default.Dosh $ int(PRI.Score);
@@ -638,10 +694,16 @@ simulated event UpdateScoreBoard(Canvas Canvas)
         }
         else {
             S = string(PRI.Ping*4);
-            if (PRI.Ping >= 50) // *4 = 200
+            if (PRI.PacketLoss > 0) {
+                S $= "!";
                 Canvas.DrawColor = HUDClass.default.RedColor;
-            else if ( PRI.Ping >= 25 ) // *4 = 100
+            }
+            if (PRI.Ping >= 50) { // *4 = 200
+                Canvas.DrawColor = HUDClass.default.RedColor;
+            }
+            else if ( PRI.Ping >= 25 ) { // *4 = 100
                 Canvas.DrawColor = HUDClass.default.GoldColor;
+            }
         }
         Canvas.TextSize(S, XL, YL);
         Canvas.SetPos(NetX-XL, y);
@@ -682,7 +744,7 @@ simulated event UpdateScoreBoard(Canvas Canvas)
         y += LineHeight;
     }
 
-    y -= BoxSpaceY;
+    // y -= BoxSpaceY;
     // totals
     if (NotShownCount == 0) {
         Canvas.Font = class'ScrnHUD'.static.LoadMenuFontStatic(PlayerFontIndex + FontReduction + 1);
@@ -745,4 +807,8 @@ defaultproperties
     DeadColor=(R=160,G=160,B=160,A=255)
     DoshColor=(R=255,G=255,B=125,A=255)
     BestColor=(R=255,G=0,B=255,A=255)
+    PlayerIconBackground=Texture'InterfaceContent.Menu.BorderBoxA1'
+    PlayerIconSpacing=4
+    PlayerIconMargin=3
+    PlayerPortraitVShift=0.1
 }

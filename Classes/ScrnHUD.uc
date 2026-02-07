@@ -1184,7 +1184,7 @@ simulated function DrawOldHudItems(Canvas C)
 
     // AVATAR AND CLAN ICON
     if ( ScrnPRI != none ) {
-        if ( KFGRI != none && !KFGRI.bWaveInProgress ) {
+        if (KFGRI != none && (!KFGRI.bWaveInProgress || bShowScoreboard)) {
             TempMaterial = ScrnPRI.GetSpecialIcon();
             if ( TempMaterial != none ) {
                 TempX = C.ClipX * 0.007;

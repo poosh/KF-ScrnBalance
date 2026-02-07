@@ -29,6 +29,20 @@
 # VERSION 9
 
 -------------------------------------------------------------------------------
+## v9.74.12
+- Fixed an issue where Base Guardian health bar was displayed in FTG.
+- Scoreboard: Added player and clan icons.
+- Scoreboard: added "!" next to the ping when packet loss is detected.
+- Fixed perk icon background on the perk selection list.
+- **TSC**: The 20/80 kill rule applies only to RULE_KillEmAll waves (thanks [nmmblez])
+- **TSC** now supports custom wave rules (RULE_Timeout, etc.)
+- Faked Players affect Dynamic Level Cap. For example, `mvote faked 7` sets max perk bonus level to 7.
+- **M14 EBR**: Lowered headshot multiplier x2.25 => x2.15 for Husk/Siren BTK consistency across the player count:
+  - 1..4 players - one headshot to kill
+  - 5+ players - two headshots
+  - With vanilla headshot mult., 6p Husk or Siren required two headshot, while 5p or 7p - one.
+- **Bullpup** - increased fire rate 0.10 => 0.09 s/shot.
+
 ## v9.74.11
 - **M7A3** increase ammo pickup from an ammo box: 15 => 40 (thanks [nmmblez])
 - Fixed some broken traders on some bad objective maps (thanks [jkcrmptn])

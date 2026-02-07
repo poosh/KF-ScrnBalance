@@ -921,9 +921,11 @@ function ApplyVoteValue(int VoteIndex, string VoteValue)
         case VOTE_FAKEDPLAYERS:
             Mut.ScrnGT.ScrnGRI.FakedPlayers = byte(VoteValue);
             Mut.ScrnGT.ScrnGRI.FakedAlivePlayers = byte(VoteValue);
+            Mut.DynamicLevelCap();
             break;
         case VOTE_FAKEDCOUNT:
             Mut.ScrnGT.ScrnGRI.FakedPlayers = byte(VoteValue);
+            Mut.DynamicLevelCap();
             break;
         case VOTE_FAKEDHEALTH:
             Mut.ScrnGT.ScrnGRI.FakedAlivePlayers = byte(VoteValue);
