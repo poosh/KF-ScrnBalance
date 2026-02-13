@@ -29,7 +29,9 @@ var float PlayerIconSpacing, PlayerIconMargin, PlayerPortraitVShift;
 
 var transient int LastDrawnPlayerCount;
 
-// SE - because DrawCountryName() is final :(
+// debug
+// var int FakedPlayers;
+
 static function float DrawCountryNameSE( Canvas C, PlayerReplicationInfo PRI, float X, float Y,
     optional byte MaxLen, optional bool bNoColorTags )
 {
@@ -235,7 +237,7 @@ simulated function ResolutionChanged(Canvas Canvas)
     else
         PlayerFontIndex = 0;
 
-    PlayerIconSize = Canvas.ClipY * 0.06;
+    PlayerIconSize = Canvas.ClipY * 0.05;
     PlayerIconSpacing = default.PlayerIconSpacing;
 
     if (Canvas.ClipX < 1200) {
@@ -243,7 +245,7 @@ simulated function ResolutionChanged(Canvas Canvas)
         PlayerIconSize = 0;
         PlayerIconSpacing = 0;
     }
-    else if (Canvas.ClipX < 1900)
+    else if (Canvas.ClipX < 1600)
         BoxWidth = 0.90;
     else if (Canvas.ClipX < 2500)
         BoxWidth = 0.80;
@@ -311,12 +313,6 @@ simulated event UpdateScoreBoard(Canvas Canvas)
     local int LineHeight;
     local int MaxKills, MaxAss, MaxDamage, MaxHeals, MaxDeaths;
 
-    if (OldClipX != Canvas.ClipX || OldClipY != Canvas.ClipY) {
-        ResolutionChanged(Canvas);
-        OldClipX = Canvas.ClipX;
-        OldClipY = Canvas.ClipY;
-    }
-
     OwnerPRI = KFPlayerController(Owner).PlayerReplicationInfo;
     bStoryMode = KF_StoryPRI(OwnerPRI) != none;
     ScrnGRI = ScrnGameReplicationInfo(GRI);
@@ -344,9 +340,23 @@ simulated event UpdateScoreBoard(Canvas Canvas)
         }
     }
 
-    if (LastDrawnPlayerCount != TeamPRIArray.Length) {
+    // DEBUG
+    // if (TeamPRIArray.Length < FakedPlayers) {
+    //     i = TeamPRIArray.Length;
+    //     TeamPRIArray.Length = FakedPlayers;
+    //     while (i < TeamPRIArray.Length) {
+    //         TeamPRIArray[i++] = TeamPRIArray[0];
+    //         ++PlayerCount;
+    //     }
+    //     ++SpecCount;
+    //     Spectators $= " Test Spectator |";
+    // }
+
+    if (LastDrawnPlayerCount != TeamPRIArray.Length || OldClipX != Canvas.ClipX || OldClipY != Canvas.ClipY) {
         LastDrawnPlayerCount = TeamPRIArray.Length;
         ResolutionChanged(Canvas);
+        OldClipX = Canvas.ClipX;
+        OldClipY = Canvas.ClipY;
     }
 
     Canvas.Font = class'ScrnHUD'.static.GetSmallMenuFont(Canvas);
@@ -417,12 +427,12 @@ simulated event UpdateScoreBoard(Canvas Canvas)
     HeaderOffsetY+=(YL*3.f);
 
     Canvas.Font = class'ScrnHUD'.static.LoadMenuFontStatic(PlayerFontIndex);
-    if ((BoxHeight + BoxSpaceY) * PlayerCount > Canvas.ClipY - HeaderOffsetY) {
+    if ((BoxHeight + BoxSpaceY) * PlayerCount > Canvas.ClipY * 0.85 - HeaderOffsetY) {
         // in the first iteration, we don't reduce the font; just remove avatars
         FontReduction = -1;
         PlayerIconSize = 0;
 
-        while ((BoxHeight + BoxSpaceY) * PlayerCount > Canvas.ClipY - HeaderOffsetY) {
+        while ((BoxHeight + BoxSpaceY) * PlayerCount > Canvas.ClipY * 0.85 - HeaderOffsetY) {
             // Shrink font, if too small then break loop.
             if (PlayerFontIndex + FontReduction >= 4) {
                 // We need to remove some player names here to make it fit.
@@ -432,9 +442,14 @@ simulated event UpdateScoreBoard(Canvas Canvas)
             }
             ++FontReduction;
             Canvas.Font = class'ScrnHUD'.static.LoadMenuFontStatic(PlayerFontIndex + FontReduction);
-            Canvas.TextSize("Test", XL, YL);
+            Canvas.TextSize("[Test]", XL, YL);
             BoxHeight = 1.2 * YL;
-            BoxSpaceY = 4;
+            if (FontReduction < 2) {
+                BoxSpaceY = 4;
+            }
+            else {
+                BoxSpaceY = 0;
+            }
         }
     }
 
@@ -744,7 +759,7 @@ simulated event UpdateScoreBoard(Canvas Canvas)
         y += LineHeight;
     }
 
-    // y -= BoxSpaceY;
+    y -= BoxSpaceY - IconToBoxY;
     // totals
     if (NotShownCount == 0) {
         Canvas.Font = class'ScrnHUD'.static.LoadMenuFontStatic(PlayerFontIndex + FontReduction + 1);
@@ -768,7 +783,7 @@ simulated event UpdateScoreBoard(Canvas Canvas)
             Canvas.SetPos(KillsX - XL, y);
             Canvas.DrawTextClipped(TotalKills);
         }
-        y += YL + BoxSpaceY;
+        y += YL + BoxSpaceY - IconToBoxY;
     }
 
     Canvas.Font = class'ScrnHUD'.static.LoadMenuFontStatic(PlayerFontIndex + FontReduction + 2);
@@ -779,7 +794,7 @@ simulated event UpdateScoreBoard(Canvas Canvas)
     }
     else if (Spectators != "") {
         Canvas.DrawColor = HUDClass.Default.GrayColor;
-        Canvas.SetPos(NameX, y);
+        Canvas.SetPos(BoxX, y);
         Canvas.DrawText(SpectatorsText $ ": |" $ Spectators, true);
     }
 }

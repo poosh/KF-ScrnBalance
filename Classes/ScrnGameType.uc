@@ -94,6 +94,7 @@ var float KillRemainingZedsCooldown;  // time after LastSpawnTime when games tri
 var int MaxSuicideAtOnce;
 var transient bool bKillZeds;
 var int MaxSpawnAttempts, MaxSpecialSpawnAttempts; // maximum spawn attempts before deleting the squad
+var int SpawnRatePlayerExclude;
 var float SpawnRatePlayerMod;  // per-player zed spawn rate increase
 var int WavePct;  // Current wave's percentage to the final wave.
 var string EngGameSong;
@@ -2097,7 +2098,7 @@ function float WaveSinMod()
 
 function bool HasEnoughZeds()
 {
-    return bWaveBossInProgress || NumMonsters >= min(4 * AlivePlayerCount, 16);
+    return bWaveBossInProgress || NumMonsters >= 4 + min(4 * AlivePlayerCount, 16);
 }
 
 function bool SetBoringStage(byte stage)
@@ -4282,7 +4283,7 @@ State MatchInProgress
         }
 
         NextSpawnTime = fclamp(KFLRules.WaveSpawnPeriod, 0.2, BoringStages[BoringStage].SpawnPeriod);
-        NextSpawnTime /= 1.0 + (AlivePlayerCount - 1) * SpawnRatePlayerMod;
+        NextSpawnTime /= fmax(0.7, 1.0 + (AlivePlayerCount - SpawnRatePlayerExclude) * SpawnRatePlayerMod);
 
         if (ScrnGameLength != none) {
             ScrnGameLength.AdjustNextSpawnTime(NextSpawnTime, BoringStages[BoringStage].MinSpawnTime);
@@ -4585,7 +4586,8 @@ defaultproperties
     LogZedSpawnLevel=4  // LOG_INFO
     MaxSpawnAttempts=3
     MaxSpecialSpawnAttempts=10
-    SpawnRatePlayerMod=0.25
+    SpawnRatePlayerExclude=2
+    SpawnRatePlayerMod=0.40
     KillRemainingZedsCooldown=15.0
     MaxSuicideAtOnce=8
     // SpawnPeriod may be further limited by KFLevelRules

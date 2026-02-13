@@ -4,36 +4,29 @@ var transient float PendingHealTime;
 
 Function Timer()
 {
-    local KFPlayerReplicationInfo PRI;
     local KFHumanPawn Healed;
-    local float HealSum, HealPotency; // for modifying based on perks
+    local int HealSum; // for modifying based on perks
     local bool bHealed;
 
-    PRI = KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo);
     Healed = CachedHealee;
-    HealPotency = 1.0;
     CachedHealee = none;
 
-    if ( Healed != none && Healed.Health > 0 && Healed != Instigator )
-    {
+    if (Healed != none && Healed.Health > 0 && Healed != Instigator) {
         Weapon.ConsumeAmmo(ThisModeNum, AmmoPerFire);
 
-        if ( PRI != none && PRI.ClientVeteranSkill != none )
-            HealPotency = PRI.ClientVeteranSkill.Static.GetHealPotency(PRI);
-
-        if ( Weapon.Level.Game.NumPlayers == 1 )
-            HealSum = 50;  // for healing NPC on Story Mode
-        else
-            HealSum = Syringe(Weapon).HealBoostAmount;
-
-        HealSum *= HealPotency;
-
-        if (ScrnHumanPawn(Healed) != none) {
-            bHealed =  ScrnHumanPawn(Healed).TakeHealing(ScrnHumanPawn(Instigator), HealSum, HealPotency,
-                    KFWeapon(Instigator.Weapon));
+        if (Weapon.Level.Game.NumPlayers == 1) {
+            HealSum = 50;  // for healing NPC in Story Mode
         }
         else {
-            bHealed = Healed.GiveHealth(HealSum, Healed.HealthMax);;
+            HealSum = Syringe(Weapon).HealBoostAmount;
+        }
+
+        if (ScrnHumanPawn(Healed) != none) {
+            bHealed =  ScrnHumanPawn(Healed).TakeHealingEx(ScrnHumanPawn(Instigator), 0, HealSum,
+                    KFWeapon(Weapon), true);
+        }
+        else {
+            bHealed = class'ScrnHumanPawn'.static.HealLegacyPawn(Healed, Instigator, HealSum);
         }
 
         if (bHealed) {

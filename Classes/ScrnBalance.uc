@@ -177,7 +177,7 @@ var globalconfig array<string> AutoLoadMutators;
 var globalconfig bool bReplaceHUD, bReplaceScoreBoard;
 
 var globalconfig int MaxWaveSize;
-var globalconfig int MaxZombiesOnce;
+var globalconfig int SmallMapZeds, NormalMapZeds, BigMapZeds, WideOpenMapZeds;
 
 var globalconfig float EndGameStatBonus;
 var globalconfig float FirstStatBonusMult;
@@ -2441,11 +2441,14 @@ function ForceEvent()
 
 function SetMaxZombiesOnce(optional int value)
 {
-    if ( value < 16 ) {
-        if ( MapInfo.MaxZombiesOnce >= 16 )
-            value = MapInfo.MaxZombiesOnce;
-        else
-            value = MaxZombiesOnce;
+    if (value < 16) {
+        value = NormalMapZeds;  // just to be sure
+        switch (int(MapInfo.MapSize)) {
+            case 0: value = SmallMapZeds; break;
+            case 1: value = NormalMapZeds; break;
+            case 2: value = BigMapZeds; break;
+            case 3: value = WideOpenMapZeds; break;
+        }
     }
 
     value = clamp(value, 16, 254);
@@ -3363,7 +3366,7 @@ function GameResumed()
 
 defaultproperties
 {
-    VersionNumber=97412
+    VersionNumber=97413
     GroupName="KF-Scrn"
     FriendlyName="ScrN Balance"
     Description="Total rework of KF1 to make it modern and the best tactical coop in the world while sticking to the roots of the original."
@@ -3415,7 +3418,10 @@ defaultproperties
 
     bScrnWaves=true
     MaxWaveSize=500
-    MaxZombiesOnce=48
+    SmallMapZeds=32
+    NormalMapZeds=48
+    BigMapZeds=64
+    WideOpenMapZeds=100
     MinZedSpawnPeriod=2.0
     bZedFights=true
     ZedToZedDamageMult=5.0

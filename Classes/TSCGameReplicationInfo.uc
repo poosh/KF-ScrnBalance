@@ -7,6 +7,7 @@ var byte SudDeathWaves;         // number of Sudden Death waves
 var transient bool bOverTime, bSuddenDeath;
 var byte HumanDamageMode;
 var bool bHumanDamageEnabled;
+var bool bHumanDamageAtBaseIntersection;
 
 var PlayerReplicationInfo TeamCaptain[2];   // MVOTE TEAM CAPTAIN
 var PlayerReplicationInfo TeamCarrier[2];   // MVOTE TEAM CARRIER
@@ -18,7 +19,7 @@ var int WaveKillReq; // required kills in the current wave for both team
 replication
 {
     reliable if ( bNetInitial && Role==ROLE_Authority )
-        bSingleTeamGame, OvertimeWaves, SudDeathWaves,
+        bSingleTeamGame, bHumanDamageAtBaseIntersection, OvertimeWaves, SudDeathWaves,
         BaseRadiusSqr, MinBaseZ, MaxBaseZ;
 
     reliable if( bNetDirty && Role == ROLE_Authority )
@@ -113,4 +114,5 @@ defaultproperties
     BaseRadiusSqr=1562500 // 25 m
     MinBaseZ=-60
     MaxBaseZ=200
+    bHumanDamageAtBaseIntersection=true
 }

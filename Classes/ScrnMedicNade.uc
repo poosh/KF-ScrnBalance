@@ -11,44 +11,30 @@ function HealOrHurt(float DamageAmount, float DamageRadius, class<DamageType> Da
 
 function HealRadius(float HealAmount, float HealRadius, vector HealLocation)
 {
-    local KFHumanPawn Victim;
+    local KFPawn Victim;
     local ScrnHumanPawn ScrnVictim;
-    // Healing
-    local KFPlayerReplicationInfo KFPRI;
-    local float HealSum; // for modifying based on perks
-    local float HealPotency;
 
     if ( bHurtEntry )
         return;
     bHurtEntry = true;
     NextHealTime = Level.TimeSeconds + HealInterval;
 
-    HealPotency = 1.0;
     // raise it half a meter to be sure it doesn't stuck inside a floor like bugged pipes
     HealLocation.Z = HealLocation.Z + 25;
 
-    if (Instigator != none)
-        KFPRI = KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo);
-    if (KFPRI != none && KFPRI.ClientVeteranSkill != none) {
-        HealPotency = KFPRI.ClientVeteranSkill.Static.GetHealPotency(KFPRI);
-    }
-    HealSum = HealAmount * HealPotency;
-
-    foreach CollidingActors(class'KFHumanPawn', Victim, HealRadius, HealLocation) {
+    foreach CollidingActors(class'KFPawn', Victim, HealRadius, HealLocation) {
         if( Victim.Health <= 0 || Victim.Health >= Victim.HealthMax )
             continue;
 
         ScrnVictim = ScrnHumanPawn(Victim);
-
-
         if (ScrnVictim != none) {
-            if (ScrnVictim.TakeHealing(ScrnVictim, HealSum, HealPotency, none)) {
+            if (ScrnVictim.TakeHealingEx(ScrnHumanPawn(Instigator), 0, HealAmount, KFWeapon(Instigator.Weapon), false)) {
                 HealedHP += ScrnVictim.LastHealAmount;
                 class'ScrnFunctions'.static.ObjAddUnique(HealedPlayers, Victim);
             }
         }
         else {
-            Victim.GiveHealth(HealSum, Victim.HealthMax);
+            class'ScrnHumanPawn'.static.HealLegacyPawn(Victim, Instigator, HealAmount);
         }
     }
     bHurtEntry = false;

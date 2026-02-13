@@ -3,7 +3,7 @@ class ScrnSyringeAltFire extends SyringeAltFire;
 
 function Timer()
 {
-    local float HealSum, HealPotency;
+    local int HealSum;
     local KFPlayerReplicationInfo KFPRI;
     local ScrnHumanPawn ScrnPawn;
     local ScrnGameType ScrnGT;
@@ -21,16 +21,14 @@ function Timer()
         HealSum = max(HealSum, MySyringe.SoloHealBoostAmount);
     }
 
-    HealPotency = 1.0;
-    if ( KFPRI != none && KFPRI.ClientVeteranSkill != none )
-        HealPotency = KFPRI.ClientVeteranSkill.Static.GetHealPotency(KFPRI);
-    HealSum *= HealPotency;
-
     Weapon.ConsumeAmmo(ThisModeNum, AmmoPerFire);
-    if ( ScrnPawn != none )
-        ScrnPawn.TakeHealing(ScrnPawn, HealSum, HealPotency, MySyringe);
-    else
-        Instigator.GiveHealth(HealSum, Instigator.HealthMax);
+    if (ScrnPawn != none) {
+        ScrnPawn.TakeHealingEx(ScrnPawn, 0, HealSum, MySyringe, false);
+    }
+    else {
+        // shouldn't happen
+        class'ScrnHumanPawn'.static.HealLegacyPawn(KFPawn(Instigator), Instigator, HealSum);
+    }
 }
 
 defaultproperties

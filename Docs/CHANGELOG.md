@@ -18,6 +18,7 @@
 [That1Guy]: https://steamcommunity.com/id/defenciveguy121
 [FishFlop_The_CatSlap]: https://steamcommunity.com/id/FishFlop_The_CatSlap/
 [jkcrmptn]: https://steamcommunity.com/id/jkcrmptn/
+[WaffleTime]: https://steamcommunity.com/id/Waffle_Time/
 <!-- add other peaople too!!! -->
 
 # Version History
@@ -29,6 +30,35 @@
 # VERSION 9
 
 -------------------------------------------------------------------------------
+## v9.74.13
+- Reworked per-player zed spawn rate increase. The new zed spawn rate in solo is slower, but in 5+p games - faster.
+- `MaxZombiesOnce` in *ScrnMapInfo.ini* replaced with `MapSize`.
+- `MaxZombiesOnce` in *ScrnBalanceSrv.ini* and *ScrnGames.ini* replaced with `SmallMapZeds`, `NormalMapZeds`, `BigMapZeds`, and `WideOpenMapZeds` depending ot the `MapSize` in *ScrnMapInfo.ini*.
+- `MaxZombiesOnce` in *ScrnWaves.ini* is left intact, allowing to override zed count for the given wave regardless of the map size (e.g., for a boss wave).
+- **Steampunk Musket**: Increased price $1500 => $2000 (perked $600 => $800)
+- Adjusted Scoreboard UI
+- Fixed Sharpshooter's post-level-6 ammo bonus for SW .500 Magnum (thanks [WaffleTime])
+- **FTG On The Clock v2.55**: Increased Trader Path zed counters to compensate for the bug fix.
+- **FTG Special Ops v2.03**: Forced relaxed Tourney Mode, so players spawn with default weapons only, where it make sense to look for ammo.
+- Fixed font size of story item pickup messages.
+- Fixed healing messages for **M7A3** (thanks [That1Guy])
+- Fixed a bug where medic nades didn't give dosh or XP.
+- Fixed minor issues in the player healing code.
+### TSC Tourney v2.00
+- Normal wave count reduced to 5 by removing Wave 4
+- Increased spawn rate in Wave 5 (ex. W6) and OT.
+- Sudden Death wave changed to XCM Wave 10.
+- Team wipe messages now countain timestamps.
+### FTG Survival Competition
+- Restored to the official rotation.
+- Switched to FTG:OTC waves.
+- Human damage is disabled in the base intersection area.
+### Code Changes
+- All custom medic weapons should call `ScrnHumanPawn.TakeHealingEx` to properly apply healing.
+- Old `ScrnHumanPawn.TakeHealing` is deprecated and will be removed in future versions.
+### ScrN Weapon Pack
+- Medic Pistol and CZ805M switched to the new healing code.
+
 ## v9.74.12
 - Fixed an issue where Base Guardian health bar was displayed in FTG.
 - Scoreboard: Added player and clan icons.
@@ -85,8 +115,7 @@
 - Fixed Spectator HUD in FTG.
 - `ScrnCustomMedicGun` - the base class for custom healing weapons that do not extend `KFMedicGun`.
 - Mods should extend `ScrnCustomMedicGun` so ScrN Balance could properly display healing messages.
-
-### ScrN Weapon Pac
+### ScrN Weapon Pack
 - `MedicPistol` now extends `ScrnCustomMedicGun`
 
 ## v9.74.06

@@ -28,10 +28,7 @@ simulated function PostNetReceive()
 //copy-pasted to use GiveHealth()
 simulated function ProcessTouch(Actor Other, Vector HitLocation)
 {
-    local KFPlayerReplicationInfo PRI;
     local KFHumanPawn Healed;
-    local float HealSum; // for modifying based on perks
-    local float HealPotency;
 
     if (Other == none || Other == Instigator || Other.Base == Instigator || Other.IsA('ExtendedZCollision'))
         return;
@@ -53,26 +50,13 @@ simulated function ProcessTouch(Actor Other, Vector HitLocation)
             HitHealTarget(HitLocation, -vector(Rotation));
 
             if( Instigator != none && Healed.Health > 0 && Healed.Health <  Healed.HealthMax ) {
-                PRI = KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo);
-                HealPotency = 1.0;
-
-                if ( PRI != none && PRI.ClientVeteranSkill != none )
-                    HealPotency = PRI.ClientVeteranSkill.Static.GetHealPotency(PRI);
-
-                HealSum = HealBoostAmount * HealPotency;
-
-                if (InstantHealAmount != 0) {
-                    Healed.Health = min(Healed.Health + InstantHealAmount * HealPotency, Healed.HealthMax);
-                }
-
                 if (ScrnHumanPawn(Healed) != none) {
-                    ScrnHumanPawn(Healed).TakeHealing(ScrnHumanPawn(Instigator), HealSum, HealPotency, KFWeapon(Instigator.Weapon));
+                    ScrnHumanPawn(Healed).TakeHealingEx(ScrnHumanPawn(Instigator), InstantHealAmount, HealBoostAmount,
+                            KFWeapon(Instigator.Weapon), true);
                 }
                 else {
-                    Healed.GiveHealth(HealSum, Healed.HealthMax);
+                    class'ScrnHumanPawn'.static.HealLegacyPawn(Healed, Instigator, InstantHealAmount + HealBoostAmount);
                 }
-                // Replaced by ScrnHealMessage
-                // ClientSuccessfulHeal(Healed.GetPlayerName());
             }
         }
         else {

@@ -1706,9 +1706,10 @@ simulated function CalcHealthMax()
     }
 }
 
-// allows to adjust player's health
-function bool GiveHealth(int HealAmount, int _unused_HealMax)
+function int GiveHealthEx(int HealAmount, optional int InstantHealAmount)
 {
+    local int ActualyHealed;
+
     CalcHealthMax();
 
     if( BurnDown > 0 ) {
@@ -1717,16 +1718,33 @@ function bool GiveHealth(int HealAmount, int _unused_HealMax)
         LastBurnDamage /= 2;
     }
 
-    HealAmount = min(HealAmount, HealthMax - Health - HealthToGive);
-    if (HealAmount <= 0)
-        return false;
+    if (Health >= HealthMax)
+        return 0;
 
-    HealthToGive += HealAmount;
-    ClientHealthToGive = HealthToGive;
-    lastHealTime = level.timeSeconds;
-    LastHealAmount = HealAmount;
-    return true;
+    if (InstantHealAmount > 0) {
+        ActualyHealed = min(InstantHealAmount, HealthMax - Health);
+        Health += ActualyHealed;
+    }
+
+    HealAmount = min(HealAmount + InstantHealAmount, HealthMax - Health - HealthToGive);
+    if (HealAmount > 0) {
+        ActualyHealed += HealAmount;
+        HealthToGive += HealAmount;
+        ClientHealthToGive = HealthToGive;
+    }
+
+    if (ActualyHealed > 0) {
+        lastHealTime = level.timeSeconds;
+        LastHealAmount = ActualyHealed;
+    }
+    return ActualyHealed;
 }
+
+function bool GiveHealth(int HealAmount, int _unused_HealMax)
+{
+    return GiveHealthEx(HealAmount) > 0;
+}
+
 
 // returns true, if player is using medic perk
 simulated function bool IsMedic()
@@ -1737,23 +1755,36 @@ simulated function bool IsMedic()
     return false;
 }
 
-function bool TakeHealing(ScrnHumanPawn Healer, int HealAmount, float HealPotency, optional KFWeapon MedicGun)
+function bool TakeHealingEx(ScrnHumanPawn Healer, int InstantHealAmount, int HealAmount, optional KFWeapon MedicGun,
+        optional bool bNotify)
 {
     local ScrnPlayerInfo SPI;
     local int MedicReward;
     local KFSteamStatsAndAchievements HealerStats;
+    local KFPlayerReplicationInfo HealerPRI;
+    local float HealPotency;
 
     if ( HealthToGive <= 0 || HealthBeforeHealing == 0 || Health < HealthBeforeHealing )
         HealthBeforeHealing = Health;
 
-    if (!GiveHealth(HealAmount, HealthMax))
+    HealPotency = 1.0;
+    if (Healer != none) {
+        HealerPRI = KFPlayerReplicationInfo(Healer.PlayerReplicationInfo);
+        if (HealerPRI != none && HealerPRI.ClientVeteranSkill != none) {
+            HealPotency = HealerPRI.ClientVeteranSkill.Static.GetHealPotency(HealerPRI);
+            InstantHealAmount *= HealPotency;
+            HealAmount *= HealPotency;
+        }
+    }
+
+    if (GiveHealthEx(HealAmount, InstantHealAmount) == 0)
         return false;
 
     HealthRestoreRate = fmax(default.HealthRestoreRate * HealPotency, 1);
 
     if ( LastHealedBy != Healer ) {
         LastHealedBy = Healer;
-        HealthBeforeHealing = Health;
+        HealthBeforeHealing = Health - InstantHealAmount;
     }
 
     if (Healer == none || Healer == self)
@@ -1785,16 +1816,42 @@ function bool TakeHealing(ScrnHumanPawn Healer, int HealAmount, float HealPotenc
     }
 
     // Don't show healing messages from healing nades
-    if (MedicGun != none && (MedicGun.IsA('KFMedicGun') || MedicGun.IsA('Syringe')
-            || (ScrnCustomMedicGun(MedicGun) != none && ScrnCustomMedicGun(MedicGun).bHealMessages))) {
-        if (Healer.ScrnPC != none && Healer.ScrnPC.bHealMessages) {
-            Healer.ScrnPC.ReceiveLocalizedMessage(Class'ScrnHealMessage', 0, PlayerReplicationInfo);
-        }
-        if (ScrnPC != none && ScrnPC.bHealedByMessages) {
-            ScrnPC.ReceiveLocalizedMessage(Class'ScrnHealMessage', 1, Healer.PlayerReplicationInfo);
-        }
+    if (bNotify) {
+        NotifyHealing(Healer);
     }
     return true;
+}
+
+// Deprecated function. Use TakeHealingEx instead.
+function bool TakeHealing(ScrnHumanPawn Healer, int HealAmount, float HealPotency, optional KFWeapon MedicGun)
+{
+    return TakeHealingEx(Healer, 0, HealAmount, MedicGun, MedicGun != none && (MedicGun.IsA('KFMedicGun')
+            || MedicGun.IsA('Syringe')
+            || (ScrnCustomMedicGun(MedicGun) != none && ScrnCustomMedicGun(MedicGun).bHealMessages)));
+}
+
+function NotifyHealing(ScrnHumanPawn Healer)
+{
+    if (Healer.ScrnPC != none && Healer.ScrnPC.bHealMessages) {
+        Healer.ScrnPC.ReceiveLocalizedMessage(Class'ScrnHealMessage', 0, PlayerReplicationInfo);
+    }
+    if (ScrnPC != none && ScrnPC.bHealedByMessages) {
+        ScrnPC.ReceiveLocalizedMessage(Class'ScrnHealMessage', 1, Healer.PlayerReplicationInfo);
+    }
+}
+
+// A helper function to heal legacy pawns, like Ringmaster or bots
+static function bool HealLegacyPawn(KFPawn Healed, Pawn Healer, int HealAmount)
+{
+    local KFPlayerReplicationInfo HealerPRI;
+
+    if (Healer != none) {
+        HealerPRI = KFPlayerReplicationInfo(Healer.PlayerReplicationInfo);
+        if (HealerPRI != none && HealerPRI.ClientVeteranSkill != none) {
+            HealAmount *= HealerPRI.ClientVeteranSkill.Static.GetHealPotency(HealerPRI);
+        }
+    }
+    return Healed.GiveHealth(HealAmount, Healed.HealthMax);
 }
 
 //overrided to add HealthRestoreRate
@@ -3306,7 +3363,8 @@ simulated function CheckGlow()
     }
 
     GlowCheckTime = Level.TimeSeconds + default.GlowCheckTime;
-    if (Health > 0 && TSCGRI.bHumanDamageEnabled && (!TSCGRI.AtOwnBase(self, true) || TSCGRI.AtEnemyBase(self, true))) {
+    if (Health > 0 && TSCGRI.bHumanDamageEnabled && (!TSCGRI.AtOwnBase(self, true)
+            || (TSCGRI.bHumanDamageAtBaseIntersection && TSCGRI.AtEnemyBase(self, true)))) {
         EnableGlow();
     }
     else {
@@ -3463,7 +3521,7 @@ simulated function DisableGlow()
 defaultproperties
 {
     MyFunc=class'ScrnPawnFunc'
-    DoshPerHeal=0.6  // the same as in vanilla
+    DoshPerHeal=1.0
     HealthRestoreRate=7.0  // 10
     HealthSpeedModifier=0.15
     NoVestClass=class'ScrnNoVestPickup'

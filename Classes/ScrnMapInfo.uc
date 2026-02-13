@@ -6,6 +6,12 @@ class ScrnMapInfo extends Object
 
 var ScrnBalance Mut;
 
+enum EMapSize {
+    MAP_Small,
+    MAP_Normal,
+    MAP_Big,
+    MAP_WideOpen
+};
 struct SZVolDoor {
     var config name ZVol;
     var config name Door;
@@ -27,7 +33,8 @@ var config bool bDebug;
 var config bool bTestMap;
 var config name DebugShop, DebugZVol;
 
-var config int MaxZombiesOnce;
+
+var config EMapSize MapSize;
 var config bool bFastTrack;
 var config float WaveSpawnPeriod;
 var config byte BoringStage;
@@ -289,6 +296,7 @@ function ZVolDrawDebug()
 
 defaultproperties
 {
+    MapSize=MAP_Normal
     ZVolDisableTime=10
     ZVolDisableTimeMax=60
     ZedSpawnMaxDist=2000

@@ -33,7 +33,8 @@ var config array<string> Zeds;
 var config bool bUniqueWaves;
 var config bool bAllowZedEvents;
 var config byte ForceZedEvent, FallbackZedEvent;
-var config byte MaxZombiesOnce;
+var config int SmallMapZeds, NormalMapZeds, BigMapZeds, WideOpenMapZeds;
+var transient int MapZeds[4];
 var config bool bLogStats;
 var config bool bDebug, bTest;
 var config ScrnTypes.EZedTimeTrigger ZedTimeTrigger;
@@ -148,6 +149,11 @@ function LoadGame(ScrnGameType MyGame)
     TSC = TscGame(MyGame);
     FTG = FtgGame(MyGame);
     Mut = Game.ScrnBalanceMut;
+
+    MapZeds[0] = SmallMapZeds;
+    MapZeds[1] = NormalMapZeds;
+    MapZeds[2] = BigMapZeds;
+    MapZeds[3] = WideOpenMapZeds;
 
     if ( bTest ) {
         Mut.SetTestMap();
@@ -709,11 +715,11 @@ protected function bool LoadNextWave()
         Game.SelectShop();
     }
 
-    if ( Wave.MaxZombiesOnce > 0 )
+    if (Wave.MaxZombiesOnce > 0)
         Game.MaxZombiesOnce = Wave.MaxZombiesOnce;
-    else if ( MaxZombiesOnce > 0 )
-        Game.MaxZombiesOnce = MaxZombiesOnce;
-    else if ( Wave.EndRule == RULE_KillBoss )
+    else if (MapZeds[int(Mut.MapInfo.MapSize)] >= 16)
+        Game.MaxZombiesOnce = MapZeds[int(Mut.MapInfo.MapSize)];
+    else if (Wave.EndRule == RULE_KillBoss)
         Game.MaxZombiesOnce = 16;
     else
         Game.MaxZombiesOnce = Game.StandardMaxZombiesOnce;

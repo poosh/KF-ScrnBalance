@@ -1180,31 +1180,6 @@ simulated function DrawOldHudItems(Canvas C)
     // adjust console message location
     ConsoleMessagePosX = fmax((TempX + 2*VetStarSize) / C.ClipX, 0.105);
     ConsoleMessagePosY = default.ConsoleMessagePosY;
-
-
-    // AVATAR AND CLAN ICON
-    if ( ScrnPRI != none ) {
-        if (KFGRI != none && (!KFGRI.bWaveInProgress || bShowScoreboard)) {
-            TempMaterial = ScrnPRI.GetSpecialIcon();
-            if ( TempMaterial != none ) {
-                TempX = C.ClipX * 0.007;
-                TempY = C.ClipY * 0.93 - 2.24*TempSize;
-                // TempX += VetStarSize*2;
-                // TempY = C.ClipY * 0.93 - TempSize;
-                C.SetPos(TempX, TempY);
-                C.DrawColor = WhiteAlphaColor;
-                C.DrawTile(TempMaterial, TempSize, TempSize, 0, 0, TempMaterial.MaterialUSize(), TempMaterial.MaterialVSize());
-
-                if ( ScrnPRI.GetClanIcon() != TempMaterial ) {
-                    TempMaterial = ScrnPRI.GetClanIcon();
-                    if ( TempMaterial != none ) {
-                        C.SetPos(BonusPerkX, TempY);
-                        C.DrawTile(TempMaterial, TempSize, TempSize, 0, 0, TempMaterial.MaterialUSize(), TempMaterial.MaterialVSize());
-                    }
-                }
-            }
-        }
-    }
 }
 
 // allows child classes to shift Cool HUD, they need to draw something beneath it
@@ -3071,6 +3046,7 @@ simulated function DrawFirstPersonSpectatorHUD(Canvas C)
 {
     local String S;
     local float TempSize, XL, YL;
+    local Material M;
 
     // player name
     C.SetDrawColor(200, 200, 200, KFHUDAlpha);
@@ -3094,11 +3070,32 @@ simulated function DrawFirstPersonSpectatorHUD(Canvas C)
         ScrnScoreBoardClass.Static.DrawCountryNameSE(C,PawnOwner.PlayerReplicationInfo,(c.ClipX-XL)/2,YL);
 
         C.DrawColor = WhiteAlphaColor;
+
+        // AVATAR AND CLAN ICON
+        if (ScrnPRI != none && !bShowScoreboard) {
+            M = ScrnPRI.GetSpecialIcon();
+            if (M != none) {
+                TempSize = c.ClipY * 0.1;
+                C.SetPos((c.ClipX-XL)/2 - TempSize - 10, 0);
+                C.DrawTile(M, TempSize, TempSize, 0, 0, M.MaterialUSize(), M.MaterialVSize());
+
+                if (ScrnPRI.GetClanIcon() != M) {
+                    M = ScrnPRI.GetClanIcon();
+                    if (M != none) {
+                        C.SetPos((c.ClipX+XL)/2 + 10, 0);
+                        C.DrawTile(M, TempSize, TempSize, 0, 0, M.MaterialUSize(), M.MaterialVSize());
+                    }
+                }
+            }
+        }
+
         // weapon icon
         if ( OwnerWeaponClass != none && OwnerWeaponClass.default.TraderInfoTexture != none ) {
             TempSize = c.ClipY * 0.2;
             C.SetPos((c.ClipX-TempSize)/2, c.ClipY - TempSize);
-            C.DrawTile(OwnerWeaponClass.default.TraderInfoTexture, TempSize, TempSize, 0, 0, OwnerWeaponClass.default.TraderInfoTexture.MaterialUSize(), OwnerWeaponClass.default.TraderInfoTexture.MaterialVSize());
+            C.DrawTile(OwnerWeaponClass.default.TraderInfoTexture, TempSize, TempSize, 0, 0,
+                    OwnerWeaponClass.default.TraderInfoTexture.MaterialUSize(),
+                    OwnerWeaponClass.default.TraderInfoTexture.MaterialVSize());
         }
     }
 }
@@ -4216,7 +4213,10 @@ simulated function LayoutMessage( out HudLocalizedMessage Message, Canvas C )
     else {
         FontSize = Message.Message.static.GetFontSize(Message.Switch, Message.RelatedPRI, Message.RelatedPRI2,
                 PlayerOwner.PlayerReplicationInfo);
-        if (class<WaitingMessage>(Message.Message) != none && (Message.Switch <= 3 || Message.Switch == 5)) {
+        // Story messages extends WaitingMessage, e.g. Msg_GoldBarNotification.
+        // Don't mess up with their font.
+        if ((Message.Message == class'WaitingMessage' || class<ScrnWaitingMessage>(Message.Message) != none)
+                && (Message.Switch <= 3 || Message.Switch == 5)) {
             Message.StringFont = GetWaitingFontSizeIndex(C, FontSize);
         }
         else {
@@ -4629,7 +4629,7 @@ defaultproperties
     CriticalOverlay=Shader'KFX.NearDeathShader'
     DoorBarScaleX= 1.25
     DoorBarScaleY= 0.9
-    SmoothBarRate=0.5
+    SmoothBarRate=0.25
 
     BlamedIcon=(WidgetTexture=Texture'ScrnTex.HUD.Crap64',RenderStyle=STY_Alpha,TextureCoords=(X2=64,Y2=64),TextureScale=0.500,PosX=0.95,PosY=0.5,ScaleMode=SM_Right,Scale=1.0,Tints[0]=(B=255,G=255,R=255,A=255),Tints[1]=(B=255,G=255,R=255,A=255))
     BlamedIconSize=32

@@ -148,6 +148,7 @@ static function float AddExtraAmmoFor(KFPlayerReplicationInfo KFPRI, Class<Ammun
                 || ClassIsChildOf(AmmoType, class'Magnum44Ammo')
                 || ClassIsChildOf(AmmoType, class'MK23Ammo')
                 || ClassIsChildOf(AmmoType, class'DeagleAmmo')
+                || ClassIsChildOf(AmmoType, class'ScrnRevolverAmmo')
                 || ClassIsInArray(default.PerkedAmmo, AmmoType) )
             return 1.0 + 0.10 * float(GetClientVeteranSkillLevel(KFPRI)-6); // +10% per level above 6
     }

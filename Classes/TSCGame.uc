@@ -89,6 +89,7 @@ function InitGameReplicationInfo()
         TSCGRI.MaxBaseZ = MaxBaseZ;
         TSCGRI.HumanDamageMode = HumanDamageMode;
         TSCGRI.bSingleTeamGame = bSingleTeamGame;
+        TSCGRI.bHumanDamageAtBaseIntersection = true;
     }
 }
 
@@ -615,7 +616,8 @@ function bool FFDisabled(pawn instigatedBy, pawn Victim)
     if ( instigatedBy.GetTeamNum() == Victim.GetTeamNum() ) {
         return HumanDamageMode < HDMG_Normal || TSCGRI.AtOwnBase(Victim, true);
     }
-    return HumanDamageMode < HDMG_PvP && TSCGRI.AtOwnBase(Victim, true) && !TSCGRI.AtEnemyBase(Victim, true);
+    return HumanDamageMode < HDMG_PvP && TSCGRI.AtOwnBase(Victim, true)
+            && (!TSCGRI.bHumanDamageAtBaseIntersection || !TSCGRI.AtEnemyBase(Victim, true));
 }
 
 
@@ -671,15 +673,8 @@ function Killed(Controller Killer, Controller Killed, Pawn KilledPawn, class<Dam
                 WipeTeam(KilledTeam);
         }
 
-        if ( !bTeamWiped && AliveTeamPlayerCount[KilledTeam.TeamIndex] == 0) {
-            bTeamWiped = true;
-            // lower amount of remaining but not-spawned zeds twice
-            if ( TotalMaxMonsters > 1) {
-                TotalMaxMonsters /= 2;
-                TSCGRI.MaxMonsters = Max(TotalMaxMonsters + NumMonsters,0);
-            }
-            BroadcastLocalizedMessage(TscMessages, 10+KilledTeam.TeamIndex*100);
-            TeamBases[KilledTeam.TeamIndex].SendHome();
+        if (AliveTeamPlayerCount[KilledTeam.TeamIndex] == 0) {
+            TeamWiped(KilledTeam.TeamIndex);
         }
     }
     else if  ( NumMonsters == 0 && bHadMonsters && !bSingleTeam && damageType != class'Suicided' ) {
@@ -689,6 +684,35 @@ function Killed(Controller Killer, Controller Killed, Pawn KilledPawn, class<Dam
 
     if (TotalMaxMonsters <= 0 && NumMonsters < 10 && !bWaveBossInProgress) {
         TSCGRI.bHumanDamageEnabled = false;
+    }
+}
+
+function TeamWiped(byte t)
+{
+    local string s;
+
+    if (TSCTeams[t].WipeTime > 0) {
+        warn("Team " $ t $ " is already wiped out");
+        return;
+    }
+
+    TSCTeams[t].WipeTime = TSCGRI.ElapsedTime;
+
+    s = TSCTeams[t].GetHumanReadableName() $ " WIPED out at " $ ScrnBalanceMut.GameTimeStr();
+    if (TSCTeams[1-t].WipeTime > 0) {
+        s $= " [T+"$ class'ScrnFunctions'.static.FormatTime(TSCTeams[t].WipeTime - TSCTeams[1-t].WipeTime) $"]";
+    }
+    ScrnBalanceMut.BroadcastMessage(s, true);
+
+    if (!bTeamWiped) {
+        bTeamWiped = true;
+        // lower amount of remaining but not-spawned zeds twice
+        if ( TotalMaxMonsters > 1) {
+            TotalMaxMonsters /= 2;
+            TSCGRI.MaxMonsters = Max(TotalMaxMonsters + NumMonsters, 0);
+        }
+        BroadcastLocalizedMessage(TscMessages, 10 + t*100);
+        TeamBases[t].SendHome();
     }
 }
 
@@ -989,8 +1013,8 @@ function HandleRemainingZeds() {
 
 function bool HasEnoughZeds()
 {
-    if (!bTeamWiped) {
-        return NumMonsters >= min(4 * AlivePlayerCount, 24);
+    if (!bTeamWiped && !bWaveBossInProgress) {
+        return NumMonsters >= 4 + min(4 * AlivePlayerCount, 24);
     }
     return super.HasEnoughZeds();
 }

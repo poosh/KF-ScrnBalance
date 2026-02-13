@@ -8,6 +8,7 @@ var int PrevMinKills;       // how many kills team scored, exluding current and 
 var int WaveKills;          // how many kills team scored in previous waves
 var int Health;             // total health of all players in the team
 var int Armor;              // total health of all players in the team
+var int WipeTime;           // GRI.ElapsedTime when the team got wiped out
 
 var int InventorySellValue; // total sell value of all inventory items of all team members
 

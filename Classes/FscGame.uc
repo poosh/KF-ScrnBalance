@@ -1,6 +1,12 @@
 class FscGame extends FtgGame
     config;
 
+function InitGameReplicationInfo()
+{
+    super.InitGameReplicationInfo();
+    TSCGRI.bHumanDamageAtBaseIntersection = false;
+}
+
 defaultproperties
 {
     GameName="FTG Survival Competition"
