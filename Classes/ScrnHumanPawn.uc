@@ -46,8 +46,12 @@ var transient int             HealthBeforeHealing;
 var transient float           LastDamageTime;
 var transient float           LastExplosionTime;
 var transient float           LastExplosionDistance; // distance between player and explosions's epicenter
-var float                     FallingDamageMod;
 
+var float FallingDamageMod;
+
+var float HdmgExplosionFallStart; // distance from the player where explosive human damange falls down explonentially
+var float HdmgExplosionFallEnd;   // to compensate for big explosion radiuses in KF (nades - 8m, rockets - 10m).
+var float HdmgExplosionFallMax;   // Max damage falloff when the distance reaches HdmgExplosionFallEnd.
 // Seems like bonus ammo is fixed in v1051 and not needed anymore
 // var class<Ammunition> BonusAmmoClass;
 // var int BonusAmmoAmount;
@@ -2547,8 +2551,9 @@ simulated function TakeDamage( int Damage, Pawn InstigatedBy, Vector Hitlocation
         if ( InstigatorPRI != none && InstigatorPRI.ClientVeteranSkill != none )
             Damage = InstigatorPRI.ClientVeteranSkill.Static.AddDamage(InstigatorPRI, none, KFHumanPawn(instigatedBy),
                     Damage, DamageType);
-        if ( LastExplosionTime == Level.TimeSeconds && LastExplosionDistance > 50 )
-            Damage *= (1.0 - lerp( LastExplosionDistance / 200, 0.0, 1.00, true ));
+        if (LastExplosionTime == Level.TimeSeconds && LastExplosionDistance > HdmgExplosionFallStart)
+            Damage *= (1.0 - lerp((LastExplosionDistance - HdmgExplosionFallStart)
+                    / (HdmgExplosionFallEnd - HdmgExplosionFallStart), 0.0, HdmgExplosionFallMax, true));
 
         if ( KFDamType.default.bDealBurningDamage ) {
             if ( class<DamTypeMAC10MPInc>(KFDamType) == none )
@@ -3545,6 +3550,9 @@ defaultproperties
     PrevPerkLevel=-1
     MaxFallSpeed=775
     FallingDamageMod=1.0
+    HdmgExplosionFallStart=100  // start explonential HDMG falloff at 2 meters
+    HdmgExplosionFallEnd=300  // explonential HDMG falloff reaches the maximum at 6m
+    HdmgExplosionFallMax=1.00 // HDMG gets reduced maximum by 100% (no damage after HdmgExplosionFallEnd)
     FartSound=SoundGroup'ScrnSnd.Fart'
     RequiredEquipment(0)="ScrnBalanceSrv.ScrnKnife"
     RequiredEquipment(1)="ScrnBalanceSrv.ScrnSingle"

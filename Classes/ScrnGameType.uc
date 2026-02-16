@@ -3063,13 +3063,8 @@ function bool CheckEndGame(PlayerReplicationInfo Winner, string Reason)
         return false;
     }
 
-    // if we reached here, the game must be ended
+    // if we reached here, the game must end
     EndTime = Level.TimeSeconds + EndTimeDelay;
-
-    if ( ScrnGRI.EndGameType == 2 ) {
-        // squad survived - don't let remaining zeds to eat players at end-game screen
-        KillZeds();
-    }
 
     for ( C = Level.ControllerList; C != none; C = N ) {
         N = C.nextController;  // save it in case C gets destroyed
@@ -3094,8 +3089,11 @@ function bool CheckEndGame(PlayerReplicationInfo Winner, string Reason)
             C.GameHasEnded();
         }
         else if (MonsterController(C) != none) {
-            // MonsterController.GameHasEnded() is stripped
-            C.GotoState('GameEnded');
+            if (ScrnGRI.EndGameType == 2) {
+                // squad survived - don't let remaining zeds to eat players at the end-game screen
+                // MonsterController.GameHasEnded() is stripped, so force the state directly.
+                C.GotoState('GameEnded');
+            }
         }
         else {
             C.GameHasEnded();
@@ -4589,7 +4587,7 @@ defaultproperties
     SpawnRatePlayerExclude=2
     SpawnRatePlayerMod=0.40
     KillRemainingZedsCooldown=15.0
-    MaxSuicideAtOnce=8
+    MaxSuicideAtOnce=255
     // SpawnPeriod may be further limited by KFLevelRules
     BoringStages[0]=(SpawnPeriod=3.0,MinSpawnTime=1.5,ZVolUsageTime=20)
     BoringStages[1]=(SpawnPeriod=1.0,MinSpawnTime=1.0,ZVolUsageTime=10)

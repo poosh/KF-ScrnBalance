@@ -30,6 +30,11 @@
 # VERSION 9
 
 -------------------------------------------------------------------------------
+## v9.74.14
+- **TSCT**: Fixed exponential explosive human damage (HDMG) falloff. The falloff starts at 2 meters, dropping to 0 at 6m. HDMG Explosive damage radius is limited to 6m for PvP balancing reasons. However, due to the bug, the falloff started at 0m and ended at 4m, dealing only 50% damage at 2m, where it was supposed to deal the full damage.
+- Fixed visibility check for hand nades when damaging non-pawn targets (like a Base Guardian)
+- Fixed zed behavior after the squad gets wiped out (thanks *adreanalonso*)
+
 ## v9.74.13
 - Reworked per-player zed spawn rate increase. The new zed spawn rate in solo is slower, but in 5+p games - faster.
 - `MaxZombiesOnce` in *ScrnMapInfo.ini* replaced with `MapSize`.
@@ -48,7 +53,7 @@
 - Normal wave count reduced to 5 by removing Wave 4
 - Increased spawn rate in Wave 5 (ex. W6) and OT.
 - Sudden Death wave changed to XCM Wave 10.
-- Team wipe messages now countain timestamps.
+- Team wipe messages now contain timestamps.
 ### FTG Survival Competition
 - Restored to the official rotation.
 - Switched to FTG:OTC waves.
