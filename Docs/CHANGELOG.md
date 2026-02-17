@@ -3540,7 +3540,7 @@ Configures games/waves/squads/zeds. A replacement for Zed Manager.
 * Added TestQuickMelee console command to print weapon state into both console and log
 * Fixed reload animation bug after weapon's bring up, i.e. when weapon was
   reloading without animation play.
-* Fixed FreeCamera exploit (thanks to prototype22)
+* Fixed FreeCamera exploit (thanks [ivanmagadan])
 * MUTATE LOCKPERK / UNLOCKPERK allows perk now allow passing perk indexes instead of names,
   e.g. MUTATE LOCKPERK 1 locks first perk in the perk list (usually Medic).
 * Fixed level earn message popping up after locking perk.
