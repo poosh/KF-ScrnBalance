@@ -30,10 +30,16 @@
 # VERSION 9
 
 -------------------------------------------------------------------------------
+## v9.74.15
+- Fixed a bug where hand nades couldn't destroy doors (thanks [nmmblez])
+- Fixed a none-reference warning in `DynamicLevelCap` (thanks [nmmblez])
+
 ## v9.74.14
 - **TSCT**: Fixed exponential explosive human damage (HDMG) falloff. The falloff starts at 2 meters, dropping to 0 at 6m. HDMG Explosive damage radius is limited to 6m for PvP balancing reasons. However, due to the bug, the falloff started at 0m and ended at 4m, dealing only 50% damage at 2m, where it was supposed to deal the full damage.
-- Fixed visibility check for hand nades when damaging non-pawn targets (like a Base Guardian)
+- Fixed visibility check for hand nades when damaging non-pawn targets (Base Guardian, doors, windows, etc.)
 - Fixed zed behavior after the squad gets wiped out (thanks *adreanalonso*)
+### ScrN Weapon Pack
+- Fixed Medic Pistol
 
 ## v9.74.13
 - Reworked per-player zed spawn rate increase. The new zed spawn rate in solo is slower, but in 5+p games - faster.

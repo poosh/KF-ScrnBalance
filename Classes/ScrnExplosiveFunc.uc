@@ -1,5 +1,7 @@
 class ScrnExplosiveFunc extends Object abstract;
 
+var bool bDamageDoors;
+
 static function int HurtRadius(Projectile Proj, float Damage, float DamageRadius, class<DamageType> DamageType,
         float MomentumScale, vector HitLocation, bool bCheckExposure)
 {
@@ -80,8 +82,16 @@ static function bool HurtVictim(Projectile Proj, Actor Victim, int Damage, vecto
             ScaleHumanDamage(Proj, KFPawn(Victim), HitLocation, DamScale);
         }
     }
-    else if (bCheckExposure && !Proj.FastTrace(Victim.Location, Proj.Location)) {
-        return false;
+    else if (bCheckExposure) {
+        if (Mover(Victim) != none) {
+            // FastTrace to a door may fail due to being blocked by the door itself.
+            // Doing a full trace is an overkill in such a case.
+            // Hence, we either damage doors (without visibility check) or ignore doors.
+            if (!default.bDamageDoors)
+                return false;
+        }
+        else if (!Proj.FastTrace(Victim.Location, Proj.Location))
+            return false;
     }
 
     Damage *= DamScale;

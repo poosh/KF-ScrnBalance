@@ -909,7 +909,7 @@ function DynamicLevelCap()
     else
         num = KF.NumPlayers;
 
-    if (ScrnGT != none) {
+    if (ScrnGT != none && ScrnGT.ScrnGRI != none) {
         num = max(num, ScrnGT.ScrnGRI.FakedPlayers);
     }
 
@@ -3366,7 +3366,7 @@ function GameResumed()
 
 defaultproperties
 {
-    VersionNumber=97414
+    VersionNumber=97415
     GroupName="KF-Scrn"
     FriendlyName="ScrN Balance"
     Description="Total rework of KF1 to make it modern and the best tactical coop in the world while sticking to the roots of the original."

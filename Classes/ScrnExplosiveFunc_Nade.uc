@@ -45,4 +45,5 @@ static function ScrakeNader(Projectile Proj, int DamageAmount, ZombieScrake Scra
 defaultproperties
 {
     ScrakeUnstunDamageThreshold=50
+    bDamageDoors=true
 }

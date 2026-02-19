@@ -315,6 +315,10 @@ function InitGameReplicationInfo()
         if (ZedTimeTrigger == ZT_Bucket) {
             ScrnGRI.ZedTimeValue = 0;
         }
+
+        if (FakedPlayers > 1) {
+            ScrnBalanceMut.DynamicLevelCap();
+        }
     }
 
     log("ZedTimeTrigger=" $ ZedTimeTrigger $ " ChanceMult=" $ ZedTimeChanceMult $ " Duration=" $ ZEDTimeDuration, class.name);
