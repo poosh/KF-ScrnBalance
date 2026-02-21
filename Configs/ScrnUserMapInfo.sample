@@ -1,0 +1,74 @@
+########################################################################################################################
+# A sample of user map definition file (ScrnUserMapInfo.ini)
+# Allows adding or overriding the default map definitions without touching the original file.
+#
+# NB!
+# - ScrnMapInfo.ini stores ScrnMapInfo objects.
+# - ScrnUserMapInfo.ini stores ScrnUserMapInfo objects.
+# - ScrnUserMapInfo object names must have the "USER_" prefix.
+# - When overriding an existing map definition, all unchanged fields MUST be copied from ScrnMapInfo.ini.
+#
+# ScrnUserMapInfo has the following fields in addition to ScrnMapInfo:
+# bEnabled (default = false) - MUST be set to true to load the user map definition instead of ScrnMapInfo.
+#
+# See ScrnMapInfo.ini for more info.
+########################################################################################################################
+
+[USER_KF-MyCustomMap ScrnUserMapInfo]
+bEnabled=true
+MapSize=MAP_Big
+WaveSpawnPeriod=2.5
+ZedEventNum=3
+
+# En example how to turn Bedlam into a Halloween map.
+[USER_KF-Bedlam ScrnUserMapInfo]
+# bEnabled must be always enabled
+bEnabled=true
+ZedEventNum=2
+# Unchanged fields copied from [KF-Bedlam ScrnMapInfo]
+MapSize=MAP_Big
+WaveSpawnPeriod=3.0
+ZVolBad=ZombieVolume39
+ZVolBad=ZombieVolume43
+ZVolBad=ZombieVolume70
+ZVolHidden=ZombieVolume9
+ZVolHidden=ZombieVolume11
+ZVolHidden=ZombieVolume18
+ZVolHidden=ZombieVolume22
+ZVolHidden=ZombieVolume27
+ZVolHidden=ZombieVolume36
+ZVolHidden=ZombieVolume44
+ZVolHidden=ZombieVolume45
+ZVolHidden=ZombieVolume54
+ZVolHidden=ZombieVolume63
+ZVolHidden=ZombieVolume76
+ZVolHidden=ZombieVolume79
+ZVolHidden=ZombieVolume94
+ZVolHidden=ZombieVolume158
+ZVolHidden=ZombieVolume169
+ZVolElevated=ZombieVolume5
+ZVolElevated=ZombieVolume19
+ZVolElevated=ZombieVolume24
+ZVolElevated=ZombieVolume33
+ZVolElevated=ZombieVolume36
+ZVolElevated=ZombieVolume38
+ZVolElevated=ZombieVolume45
+ZVolElevated=ZombieVolume46
+ZVolElevated=ZombieVolume56
+ZVolElevated=ZombieVolume62
+ZVolElevated=ZombieVolume63
+ZVolElevated=ZombieVolume74
+ZVolElevated=ZombieVolume82
+# Courtyard balcony spawns - easy to jump down, but prevent cheap spawns around a corner
+ZVolElevated=ZombieVolume138
+ZVolElevated=ZombieVolume139
+ZVolElevated=ZombieVolume141
+ZVolElevated=ZombieVolume143
+ZVolElevated=ZombieVolume161
+ZVolJumpable=ZombieVolume58
+ZVolJumpable=ZombieVolume60
+ZVolJumpable=ZombieVolume66
+ZVolDoors=(ZVol=ZombieVolume138,Door=KFDoorMover7)
+ZVolDoors=(ZVol=ZombieVolume139,Door=KFDoorMover7)
+ZVolDoors=(ZVol=ZombieVolume143,Door=KFDoorMover7)
+ZVolDoors=(ZVol=ZombieVolume161,Door=KFDoorMover7)

@@ -2341,10 +2341,9 @@ simulated function Fire( optional float F )
         return;
 
     W = KFWeapon(Weapon);
-    if (W != none && !W.bMeleeWeapon && W.MagAmmoRemaining < W.GetFireMode(0).AmmoPerFire
-            && W.MagCapacity > 1 && W.bConsumesPhysicalAmmo && !W.bIsReloading && !W.bHoldToReload)
-    {
-        if (ScrnPC != none && ScrnPC.bManualReload) {
+    if (ScrnPC != none && W != none && !W.bMeleeWeapon && W.MagAmmoRemaining < W.GetFireMode(0).AmmoPerFire
+            && W.MagCapacity > 1 && W.bConsumesPhysicalAmmo && !W.bIsReloading && !W.bHoldToReload) {
+        if (ScrnPC.bManualReload) {
             if ( W.AmmoAmount(0) == 0 )
                 ScrnPC.ReceiveLocalizedMessage(class'ScrnPlayerWarningMessage',1);
             else

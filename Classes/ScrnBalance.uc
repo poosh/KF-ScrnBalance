@@ -2535,7 +2535,13 @@ function PostBeginPlay()
     MapName = KF.GetCurrentMapName(Level);
     OriginalMapName = GameRules.GetOriginalMapName(MapName);
     s = caps(MapName);
-    MapInfo = new(none, OriginalMapName) class'ScrnMapInfo';
+    MapInfo = class'ScrnUserMapInfo'.static.LoadMap(OriginalMapName);
+    if (MapInfo != none) {
+        log("User map info detected for " $ OriginalMapName, 'ScrnBalance');
+    }
+    else {
+        MapInfo = new(none, OriginalMapName) class'ScrnMapInfo';
+    }
     MapInfo.Mut = self;
 
     if (bStoryMode && bStoryZedPack) {
@@ -3366,7 +3372,7 @@ function GameResumed()
 
 defaultproperties
 {
-    VersionNumber=97415
+    VersionNumber=97416
     GroupName="KF-Scrn"
     FriendlyName="ScrN Balance"
     Description="Total rework of KF1 to make it modern and the best tactical coop in the world while sticking to the roots of the original."

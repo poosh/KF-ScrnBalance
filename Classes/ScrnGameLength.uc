@@ -112,6 +112,7 @@ var array<int> PendingSpecialSquads;
 var transient array < class<KFMonster> > PendingNextSpawnSquad;
 
 var ScrnWaveInfo Wave, NextWave;
+var array<ScrnWaveInfo> WaveCache;
 var protected int NextWaveNum;
 var transient int ZedsBeforeSpecial;
 var transient bool bLoadedSpecial;  // is the last loaded squad special
@@ -311,11 +312,10 @@ function LoadGame(ScrnGameType MyGame)
         Game.bUseEndGameBoss = false;
     }
     else {
-        Wave = CreateWave(Waves[Waves.length-1]);
-        Game.bUseEndGameBoss = Wave.EndRule == RULE_KillBoss;
-        UsedWaves.Length = 0;
+        PrecacheWaves();
+        Wave = WaveCache[0];
+        Game.bUseEndGameBoss = WaveCache[WaveCache.Length - 1].EndRule == RULE_KillBoss;
 
-        Wave = CreateWave(Waves[0]);
         if (StartDosh == 0 && StartDoshPerWave == 0) {
             StartDoshPerWave = RecommendedStartDosh / Waves.length / 25 * 25;
             StartDosh = StartDoshPerWave;
@@ -331,6 +331,16 @@ function LoadGame(ScrnGameType MyGame)
     }
 
     LoadWeaponLists();
+}
+
+function PrecacheWaves()
+{
+    local int i;
+
+    WaveCache.Length = Waves.Length;
+    for (i = 0; i < Waves.Length; ++i) {
+        WaveCache[i] = CreateWave(Waves[i]);
+    }
 }
 
 function PickRandomZedEvent()
@@ -816,8 +826,8 @@ function bool LoadWave(int WaveNum)
 {
     if ( NextWave == none || WaveNum != NextWaveNum ) {
         NextWaveNum = WaveNum;
-        if ( NextWaveNum < Waves.length ) {
-            NextWave = CreateWave(Waves[NextWaveNum]);
+        if ( NextWaveNum < WaveCache.length ) {
+            NextWave = WaveCache[NextWaveNum];
         }
         else {
             warn("ScrnGameLength: Illegal wave number: " $ WaveNum);
@@ -834,8 +844,8 @@ function bool LoadWave(int WaveNum)
     }
 
     NextWaveNum = WaveNum + 1;
-    if ( NextWaveNum < Waves.length ) {
-        NextWave = CreateWave(Waves[NextWaveNum]);
+    if (NextWaveNum < WaveCache.length) {
+        NextWave = WaveCache[NextWaveNum];
     }
     return true;
 }

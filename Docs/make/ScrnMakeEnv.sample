@@ -1,5 +1,6 @@
 @echo off
 
+set REVEMU=0
 set KFPACKAGE=
 call :GetKfPackage KFPACKAGE %~dpn1
 

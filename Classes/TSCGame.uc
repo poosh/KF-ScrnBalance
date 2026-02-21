@@ -1011,14 +1011,6 @@ function HandleRemainingZeds() {
         super.HandleRemainingZeds();
 }
 
-function bool HasEnoughZeds()
-{
-    if (!bTeamWiped && !bWaveBossInProgress) {
-        return NumMonsters >= 4 + min(4 * AlivePlayerCount, 24);
-    }
-    return super.HasEnoughZeds();
-}
-
 function EZedSpawnLocation GetSpawnLocation()
 {
     if (!bTeamWiped) {

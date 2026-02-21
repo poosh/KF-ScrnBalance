@@ -100,6 +100,8 @@ var int WavePct;  // Current wave's percentage to the final wave.
 var string EngGameSong;
 var byte ZedEventNum;
 var bool bForceZEDThreatAssessment;
+var transient float LastEnoughZedsTime;
+var float EnoughZedsCooldown;
 
 struct SBoringStage {
     var float SpawnPeriod;
@@ -2102,7 +2104,19 @@ function float WaveSinMod()
 
 function bool HasEnoughZeds()
 {
-    return bWaveBossInProgress || NumMonsters >= 4 + min(4 * AlivePlayerCount, 16);
+    if (bWaveBossInProgress)
+        return true;
+
+    if (TotalMaxMonsters < 10)
+        return false;  // spawn the last remaining zeds ASAP
+
+    if (NumMonsters > min(3 * AlivePlayerCount, 15)) {
+        LastEnoughZedsTime = Level.TimeSeconds;
+        return true;
+    }
+
+    // give a short breath after killing zeds before forcing closer spawns
+    return (Level.TimeSeconds - LastEnoughZedsTime) < EnoughZedsCooldown;
 }
 
 function bool SetBoringStage(byte stage)
@@ -4192,7 +4206,7 @@ State MatchInProgress
                 if (bTradingDoorsOpen) {
                     CloseShops();
                 }
-                else {
+                else if (WaveNum > 0) {
                     ScrnBalanceMut.GameRules.WaveStarted();
                 }
                 SetupWave();
@@ -4285,7 +4299,8 @@ State MatchInProgress
         }
 
         NextSpawnTime = fclamp(KFLRules.WaveSpawnPeriod, 0.2, BoringStages[BoringStage].SpawnPeriod);
-        NextSpawnTime /= fmax(0.7, 1.0 + (AlivePlayerCount - SpawnRatePlayerExclude) * SpawnRatePlayerMod);
+        NextSpawnTime /= fmax(0.7, 1.0 + SpawnRatePlayerMod
+                * (max(AlivePlayerCount, ScrnGRI.FakedPlayers) - SpawnRatePlayerExclude));
 
         if (ScrnGameLength != none) {
             ScrnGameLength.AdjustNextSpawnTime(NextSpawnTime, BoringStages[BoringStage].MinSpawnTime);
@@ -4374,8 +4389,17 @@ State MatchInProgress
 
             ScrnPC = ScrnPlayerController(C);
             KFPRI = KFPlayerReplicationInfo(C.PlayerReplicationInfo);
-            if (ScrnPC == none || KFPRI == none)
+            if (ScrnPC == none || KFPRI == none) {
+                if (bRespawnDeadPlayers) {
+                    // respawn a bot
+                    C.PlayerReplicationInfo.bOutOfLives = false;
+                    C.PlayerReplicationInfo.NumLives = 0;  // NumDeaths
+                    if (C.Pawn == none && !C.PlayerReplicationInfo.bOnlySpectator) {
+                        C.ServerReStartPlayer();
+                    }
+                }
                 continue;
+            }
 
             ScrnPC.bChangedVeterancyThisWave = false;
             if (KFPRI.ClientVeteranSkill != ScrnPC.SelectedVeterancy) {
@@ -4590,6 +4614,7 @@ defaultproperties
     MaxSpecialSpawnAttempts=10
     SpawnRatePlayerExclude=2
     SpawnRatePlayerMod=0.40
+    EnoughZedsCooldown=5.0
     KillRemainingZedsCooldown=15.0
     MaxSuicideAtOnce=255
     // SpawnPeriod may be further limited by KFLevelRules

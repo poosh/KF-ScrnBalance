@@ -57,10 +57,12 @@ echo Syncing System directory
 cd %STEAMDIR%\System2
 xcopy /D /Y ..\System\*.u .\
 
+if %REVEMU% NEQ 0 goto start_server
 echo Waiting for KF to start...
 echo You can press a key once you see the game logo
 timeout /t 5
 
+:start_server
 echo Starting KF Server
 rem ucc server KF-Foundry.rom?Game=ScrnBalanceSrv.ScrnGameType?GameLength=60?VACSecured=true?MaxPlayers=6?Port=7707 log=KFServer.log
 ucc server %KFSRVARGS% log=KFServer.log

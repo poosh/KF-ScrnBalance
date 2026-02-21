@@ -30,6 +30,13 @@
 # VERSION 9
 
 -------------------------------------------------------------------------------
+## v9.74.16
+- Fixed issues that could caused insane zed spawn rate.
+- *ScrnUserMapInfo.ini* - a dedicated files for used-defined maps to avoid conflicts with the stock *ScrnMapInfo.ini*. Check *ScrnUserMapInfo.sample* for details.
+- Waves from *ScrnWaves.ini* are precached at map load, preventing possible stuttering on wave change.
+- Fixed an issue where dead bots were not respawned at the wave end.
+- KillWhore achievement is granted only when there are 3+ *alive* players at the end of the wave.
+
 ## v9.74.15
 - Fixed a bug where hand nades couldn't destroy doors (thanks [nmmblez])
 - Fixed a none-reference warning in `DynamicLevelCap` (thanks [nmmblez])

@@ -404,6 +404,9 @@ simulated event UpdateScoreBoard(Canvas Canvas)
 
     // Title Line 3
     S = PlayerCountText @ PlayerCount;
+    if ( ScrnGRI != none && ScrnGRI.FakedPlayers > PlayerCount ) {
+        S $= " ("$ScrnGRI.FakedPlayers$")";
+    }
     if ( SpecCount > 0 ) {
         S @= SpectatorCountText @ SpecCount;
     }
