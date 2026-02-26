@@ -3,10 +3,12 @@ class ScrnGrenadeProjectile extends M79GrenadeProjectile;
 var class<ScrnExplosiveFunc> Func;
 var class<Emitter> ExplosionClass;
 var float ExplosionSoundVolume;
+var rotator SmokeRotation;
 var class<PanzerfaustTrail> SmokeTrailClass;
 var class<Emitter> TracerClass;
 var Emitter Tracer;
 var string ImpactSoundRef;
+var string AmbientSoundRef;
 
 // allow double damage bug/feature when hitting ExtendedZCollision
 var bool bDoubleDamageOnImpact;
@@ -20,18 +22,21 @@ static function PreloadAssets()
 
     if (default.ImpactSoundRef != "")
         default.ImpactSound = sound(DynamicLoadObject(default.ImpactSoundRef, class'Sound', true));
+    if (default.AmbientSoundRef != "")
+        default.AmbientSound = sound(DynamicLoadObject(default.AmbientSoundRef, class'Sound', true));
 }
 
 static function bool UnloadAssets()
 {
-    default.ImpactSound = none;
+    if (default.ImpactSoundRef != "")
+        default.ImpactSound = none;
+    if (default.AmbientSoundRef != "")
+        default.AmbientSound = none;
     return super.UnloadAssets();
 }
 
 simulated function PostBeginPlay()
 {
-    local rotator SmokeRotation;
-
     bBegunPlay = true;
     if (Role == ROLE_Authority && (bHasExploded || bDud)) {
         // Set a delayed destroy.
@@ -47,7 +52,6 @@ simulated function PostBeginPlay()
         if (SmokeTrailClass != none) {
             SmokeTrail = Spawn(SmokeTrailClass, self);
             SmokeTrail.SetBase(self);
-            SmokeRotation.Pitch = 32768;
             SmokeTrail.SetRelativeRotation(SmokeRotation);
         }
         if (TracerClass != none) {
@@ -224,6 +228,7 @@ defaultproperties
 {
     Func=class'ScrnExplosiveFunc'
     SmokeTrailClass=class'ReducedGrenadeTrail'
+    SmokeRotation=(Pitch=32768)
     ExplosionClass=class'KFMod.KFNadeLExplosion'
     ExplosionSoundVolume=2.0
     Health=150

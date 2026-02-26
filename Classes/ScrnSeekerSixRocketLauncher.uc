@@ -2,16 +2,13 @@ class ScrnSeekerSixRocketLauncher extends SeekerSixRocketLauncher;
 
 var int MultiFireLoad;
 
-var class<SeekerSixRocketProjectile>         NormalProjClass;
-var class<SeekerSixSeekingRocketProjectile> SeekingProjClass;
-
 simulated function WeaponTick(float dt)
 {
     super(KFWeapon).WeaponTick(dt);
 
     if ( Level.NetMode!=NM_DedicatedServer)
     {
-        if ( MagAmmoRemaining == 0 ) 
+        if ( MagAmmoRemaining == 0 )
             Skins[2] = Counter0;
         else {
             switch ( ceil(float(MagAmmoRemaining) / MultiFireLoad) ) {
@@ -40,24 +37,10 @@ simulated function WeaponTick(float dt)
      }
 }
 
+// deprecated
 function Projectile SpawnProjectile(Vector Start, Rotator Dir)
 {
-    local SeekerSixRocketProjectile Rocket;
-    local SeekerSixSeekingRocketProjectile SeekingRocket;
-
-    // bBreakLock = true;
-
-    if (bLockedOn && SeekTarget != None)
-    {
-        SeekingRocket = Spawn(SeekingProjClass,,, Start, Dir);
-        SeekingRocket.Seeking = SeekTarget;
-        return SeekingRocket;
-    }
-    else
-    {
-        Rocket = Spawn(NormalProjClass,,, Start, Dir);
-        return Rocket;
-    }
+    return Spawn(class'ScrnSeekerSixRocket',,, Start, Dir);
 }
 
 // can lock on only when aiming
@@ -65,7 +48,7 @@ function bool CanLockOnTo(Actor Other)
 {
     if ( !bAimingRifle )
         return false;
-    
+
     return super.CanLockOnTo(Other);
 }
 
@@ -77,13 +60,18 @@ simulated function ZoomOut(bool bAnimateTransition)
 
 function Tick(float dt)
 {
-    if ( !bAimingRifle ) {
+    if (!bAimingRifle) {
+        bBreakLock = true;
+    }
+
+    if (bBreakLock) {
         bBreakLock = false;
         bLockedOn = false;
-        SeekTarget = None;    
+        SeekTarget = none;
+        SeekCheckTime = Level.TimeSeconds + SeekCheckFreq;
         return;
     }
-    
+
     super.Tick(dt);
 }
 
@@ -98,8 +86,6 @@ defaultproperties
     ReloadRate=3.9125 // 3.13
     ReloadAnim="Reload"
     ReloadAnimRate=0.8 // 3.13 / 3.9125
-    
-    NormalProjClass=class'ScrnS6Rocket'
-    SeekingProjClass=class'ScrnS6SeekingRocket'
+
     ItemName="SeekerSix Rocket Launcher SE"
 }

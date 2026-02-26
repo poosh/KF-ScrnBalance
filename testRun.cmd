@@ -12,6 +12,7 @@ call ..\ScrnMakeEnv.cmd %CURDIR%
 
 set STEAMAPPID=1250
 set KFARGS=KFT-ScrnTestGrounds-SE.rom?Game=ScrnBalanceSrv.ScrnTestGame?GameLength=8
+@REM set KFARGS=KF-BioticsLab-SE.rom?Game=ScrnBalanceSrv.TscGame?GameLength=8
 set KFSRVPORT=7707
 set KFSRVARGS=%KFARGS%?VACSecured=true?Port=%KFSRVPORT%
 set /A IS_SRV=0

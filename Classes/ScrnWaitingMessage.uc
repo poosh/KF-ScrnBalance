@@ -40,13 +40,16 @@ static function RenderComplexMessage(
     local float TempY;
     local PlayerController PC;
     local ScrnHUD myHUD;
+    local byte a;
 
     PC = class'ScrnBalance'.default.Mut.Level.GetLocalPlayerController();
     if (PC != none)
         myHUD = ScrnHUD(PC.myHUD);
 
     if (myHUD != none && myHUD.TeamIndex == 1) {
+        a = Canvas.DrawColor.A;
         Canvas.DrawColor = myHUD.TextColors[myHUD.TeamIndex];
+        Canvas.DrawColor.A = a;
     }
 
     i = InStr(MessageString, "|");

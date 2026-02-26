@@ -97,7 +97,7 @@ simulated function ClientSideTouch(Actor Other, Vector HitLocation)
 
 defaultproperties
 {
-    Func = class'ScrnExplosiveFunc_Nade'
+    Func = class'ScrnExplosiveFunc_HandNade'
 
     ExplodeSounds(0)=SoundGroup'KF_GrenadeSnd.Nade_Explode_1'
     ExplodeSounds(1)=SoundGroup'KF_GrenadeSnd.Nade_Explode_2'

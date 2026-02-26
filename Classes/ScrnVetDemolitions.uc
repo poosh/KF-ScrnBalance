@@ -36,6 +36,9 @@ static function float AddExtraAmmoFor(KFPlayerReplicationInfo KFPRI, Class<Ammun
     else if ( ClassIsChildOf(AmmoType, class'M203Ammo') ) {
         return 1.0 + (0.083334 * float(GetClientVeteranSkillLevel(KFPRI))); //1 extra nade per level [Aze]
     }
+    else if ( ClassIsChildOf(AmmoType, class'ScrnSPGrenadeAmmo') ) {
+        return 1.0 + (0.0625 * float(GetClientVeteranSkillLevel(KFPRI))); //1 extra nade per level [Aze]
+    }
     else if ( GetClientVeteranSkillLevel(KFPRI) > 6 ) {
         if ( ClassIsChildOf(AmmoType, class'M79Ammo') || ClassIsChildOf(AmmoType, class'M32Ammo') )
             return 1.0 + (0.083334 * float(GetClientVeteranSkillLevel(KFPRI)-6)); //+1 M203 or +2 M79 or +3 M32 nades post level 6
@@ -85,7 +88,8 @@ static function float GetCostScaling(KFPlayerReplicationInfo KFPRI, class<Pickup
         return 1.0; //no discount on medic nade launchers
 
     if ( ClassIsChildOf(Item, class'PipeBombPickup')
-        || (ClassIsChildOf(Item, class'M79Pickup') && !ClassIsChildOf(Item, class'ScrnM79IncPickup')) )
+        || (ClassIsChildOf(Item, class'M79Pickup') && !ClassIsChildOf(Item, class'ScrnM79IncPickup')
+            && !ClassIsChildOf(Item, class'ScrnSPGrenadePickup')) )
     {
         // 30% base discount + 5% extra per level
         return fmax(0.10, 0.70 - 0.05 * GetClientVeteranSkillLevel(KFPRI));
@@ -93,7 +97,7 @@ static function float GetCostScaling(KFPlayerReplicationInfo KFPRI, class<Pickup
     else if ( ClassIsChildOf(Item, class 'M32Pickup')
                 || ClassIsChildOf(Item, class 'LawPickup')
                 || ClassIsChildOf(Item, class 'M4203Pickup')
-                || ClassIsChildOf(Item, class 'SPGrenadePickup')
+                || Item == class 'SPGrenadePickup'
                 || ClassIsChildOf(Item, class 'SealSquealPickup') || ClassIsChildOf(Item, class 'SeekerSixPickup')
                 || ClassIsInArray(default.PerkedPickups, Item) )
     {

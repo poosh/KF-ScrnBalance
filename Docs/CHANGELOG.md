@@ -19,6 +19,7 @@
 [FishFlop_The_CatSlap]: https://steamcommunity.com/id/FishFlop_The_CatSlap/
 [jkcrmptn]: https://steamcommunity.com/id/jkcrmptn/
 [WaffleTime]: https://steamcommunity.com/id/Waffle_Time/
+[Mortimer]: https://steamcommunity.com/id/MortimerKubrick/
 <!-- add other peaople too!!! -->
 
 # Version History
@@ -30,6 +31,30 @@
 # VERSION 9
 
 -------------------------------------------------------------------------------
+## v9.74.17
+### Orca Bomb Propeller (ScrN Edition)
+- A new weapon ported to ScrN Balance.
+- Orca is a Tier-1 weapon for Demolition Expert.
+- Price: $400 (no perk discount)
+- Weight: 3
+- Total Ammo: 16 (Demo gets +1 nade per perk level; 22 at level 6).
+### Seeker Six
+- Reworked S6 rockets to extend `ScrnRocketProjectile`, and therefore, apply all bugfixes (hit detection, etc.)
+- Increased impact damage.
+- Introduced FP takedown combos:
+  - Nade + AltFire + 2xNades + AltFire
+  - Nade + AltFire + Nade + AltFire + 3xFire
+  - Nade + AltFire + (Fire until it dies)
+  - Fire until it dies (requires long distance to FP)
+### Other Changes
+- Fixed transparency of the "Next Wave Inbound" message in TSC/FTG (thanks [Mortimer])
+- **FTG**: `FtgSpawnDelayOnPickup` is not applied when there are not enough zeds on the map.
+### ScrN Zed Pack
+- **Tesla Husk**: drastically reduced head healing rate.
+- **Tesla Husk**: Fixed an issue when TH was restoring energy while draining it, which resulted in longer attacks and healings than intended.
+- **Hard Pat**: Radial Attack is performed only if at least one player is really close.
+- **Hard Pat**: (HoE only) Subsequent Radial Attacks are shortened, allowing the boss to follow up with the next attack faster.
+
 ## v9.74.16
 - Fixed issues that could caused insane zed spawn rate.
 - *ScrnUserMapInfo.ini* - a dedicated files for used-defined maps to avoid conflicts with the stock *ScrnMapInfo.ini*. Check *ScrnUserMapInfo.sample* for details.

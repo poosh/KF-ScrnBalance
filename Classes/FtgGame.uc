@@ -481,7 +481,7 @@ function StinkyControllerCompeledAction(StinkyController SC, int CompletedAction
             gnome.bHeld = true;
             ZedSpawnLoc = ZSLOC_RANDOM;
             SetBoringStage(0);
-            if (!bWaveBossInProgress) {
+            if (!bWaveBossInProgress && HasEnoughZeds()) {
                 NextMonsterTime += ScrnGameLength.FtgSpawnDelayOnPickup;
             }
             ScrnGameLength.LoadDialogues(ScrnGameLength.Wave.FtgDialogues);

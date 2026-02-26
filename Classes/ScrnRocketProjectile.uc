@@ -4,6 +4,7 @@ var class<ScrnExplosiveFunc> Func;
 var class<Emitter> ExplosionClass;
 var float ExplosionSoundVolume;
 var class<PanzerfaustTrail> SmokeTrailClass;
+var rotator SmokeRotation;
 var class<Emitter> TracerClass;
 var Emitter Tracer;
 var string ImpactSoundRef;
@@ -31,8 +32,6 @@ static function bool UnloadAssets()
 
 simulated function PostBeginPlay()
 {
-    local rotator SmokeRotation;
-
     bBegunPlay = true;
     if (Role == ROLE_Authority && (bHasExploded || bDud)) {
         // Set a delayed destroy.
@@ -48,7 +47,6 @@ simulated function PostBeginPlay()
         if (SmokeTrailClass != none) {
             SmokeTrail = Spawn(SmokeTrailClass, self);
             SmokeTrail.SetBase(self);
-            SmokeRotation.Pitch = 32768;
             SmokeTrail.SetRelativeRotation(SmokeRotation);
         }
         if (TracerClass != none) {
@@ -229,6 +227,7 @@ defaultproperties
 {
     Func=class'ScrnExplosiveFunc'
     ExplosionClass=class'ScrnLawExplosion'
+    SmokeRotation=(Pitch=32768)
     ExplosionSoundVolume=2.0
     Health=300
     bDoubleDamageOnImpact=True
