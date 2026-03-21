@@ -656,12 +656,15 @@ function Killed(Controller Killer, Controller Killed, Pawn KilledPawn, class<Dam
             HealthBeforeDeath = ScrnHumanPawn(KilledPawn).HealthBeforeDeath;
     }
 
+    if ( KilledTeam != none ) {
+        if (--AliveTeamPlayerCount[KilledTeam.TeamIndex] == 0) {
+            TeamWiped(KilledTeam.TeamIndex);
+        }
+    }
+
     super.Killed(Killer, Killed, KilledPawn, damageType);
 
-
     if ( KilledTeam != none ) {
-        AliveTeamPlayerCount[KilledTeam.TeamIndex]--;
-        //Broadcast(Self, "HealthBeforeDeath="$HealthBeforeDeath);
         // During Sudden Death wipe team after player's death, unless:
         // - he isn't fully joined yet or lost the connection (ping == 255)
         // - he isn't suicided/disconnected. To prevent cheating, only players with full health are allowed to suicide
@@ -672,18 +675,14 @@ function Killed(Controller Killer, Controller Killed, Pawn KilledPawn, class<Dam
             if ( TSCGRI.bSuddenDeath )
                 WipeTeam(KilledTeam);
         }
-
-        if (AliveTeamPlayerCount[KilledTeam.TeamIndex] == 0) {
-            TeamWiped(KilledTeam.TeamIndex);
-        }
     }
-    else if  ( NumMonsters == 0 && bHadMonsters && !bSingleTeam && damageType != class'Suicided' ) {
+    else if (TotalMaxMonsters <= 0 && NumMonsters < 10 && !bWaveBossInProgress) {
+        TSCGRI.bHumanDamageEnabled = false;
+    }
+
+    if  (NumMonsters == 0 && bHadMonsters && !bSingleTeam && damageType != class'Suicided') {
         if ( AliveTeamPlayerCount[0] == 0 ^^ AliveTeamPlayerCount[1] == 0 )
             DramaticEvent(1.0); // do ZED time on winner's kill
-    }
-
-    if (TotalMaxMonsters <= 0 && NumMonsters < 10 && !bWaveBossInProgress) {
-        TSCGRI.bHumanDamageEnabled = false;
     }
 }
 

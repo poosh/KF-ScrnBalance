@@ -227,6 +227,7 @@ defaultproperties
 {
     Func=class'ScrnExplosiveFunc'
     ExplosionClass=class'ScrnLawExplosion'
+    SmokeTrailClass=class'PanzerfaustTrail'
     SmokeRotation=(Pitch=32768)
     ExplosionSoundVolume=2.0
     Health=300

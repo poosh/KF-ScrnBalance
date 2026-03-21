@@ -31,6 +31,10 @@
 # VERSION 9
 
 -------------------------------------------------------------------------------
+## v9.74.18
+- Fixed LAW rocket smoke tail (thanks [Mortimer])
+- **TSC**: fixed timestamp broadcast when both teams got wiped out.
+
 ## v9.74.17
 ### Orca Bomb Propeller (ScrN Edition)
 - A new weapon ported to ScrN Balance.

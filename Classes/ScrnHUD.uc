@@ -3075,7 +3075,7 @@ simulated function DrawFirstPersonSpectatorHUD(Canvas C)
         if (ScrnPRI != none && !bShowScoreboard) {
             M = ScrnPRI.GetSpecialIcon();
             if (M != none) {
-                TempSize = c.ClipY * 0.1;
+                TempSize = c.ClipY * 0.05;
                 C.SetPos((c.ClipX-XL)/2 - TempSize - 10, 0);
                 C.DrawTile(M, TempSize, TempSize, 0, 0, M.MaterialUSize(), M.MaterialVSize());
 
