@@ -31,6 +31,9 @@
 # VERSION 9
 
 -------------------------------------------------------------------------------
+## v9.74.19
+- Fixed an issue where LAW rocket smoke tail was applied to ZED Guns (thanks [jkcrmptn])
+
 ## v9.74.18
 - Fixed LAW rocket smoke tail (thanks [Mortimer])
 - **TSC**: fixed timestamp broadcast when both teams got wiped out.
