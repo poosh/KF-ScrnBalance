@@ -238,6 +238,9 @@ simulated function BringUp(optional Weapon PrevWeapon)
         KFP.SetAiming(false);
         bQuick = ClientGrenadeState == GN_BringUp || KFP.bIsQuickHealing > 0
                 || (PrevWeapon == SingleGun && SingleGun != none);
+        if (!bQuick && KFPlayerController(Instigator.Controller) != none) {
+            KFPlayerController(Instigator.Controller).WeaponPulloutRemark(22);
+        }
     }
 
     bAimingRifle = false;

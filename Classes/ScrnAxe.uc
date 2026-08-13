@@ -1,5 +1,14 @@
 class ScrnAxe extends Axe;
 
+simulated function BringUp(optional Weapon PrevWeapon)
+{
+    super.BringUp(PrevWeapon);
+
+    if (ClientGrenadeState != GN_BringUp && KFPlayerController(Instigator.Controller) != none) {
+        KFPlayerController(Instigator.Controller).WeaponPulloutRemark(24);
+    }
+}
+
 defaultproperties
 {
     bIsTier2Weapon=False

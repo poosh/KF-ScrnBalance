@@ -27,6 +27,16 @@ simulated function ZoomIn(bool bAnimateTransition)
     }
 }
 
+simulated function BringUp(optional Weapon PrevWeapon)
+{
+    super.BringUp(PrevWeapon);
+
+    if (ClientGrenadeState != GN_BringUp && KFPlayerController(Instigator.Controller) != none) {
+        KFPlayerController(Instigator.Controller).WeaponPulloutRemark(23);
+    }
+}
+
+
 defaultproperties
 {
     Weight=12

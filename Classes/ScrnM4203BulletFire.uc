@@ -21,20 +21,23 @@ function PostBeginPlay()
 // client-side state
 state WaitingForFireButtonRelease
 {
-    ignores PlayFiring, ServerPlayFiring, PlayFireEnd, ModeDoFire;
+    function PlayFiring() {}
+    function ServerPlayFiring() {}
+    function PlayFireEnd() {}
+    function ModeDoFire() {}
 
     function ModeTick(float dt)
     {
         // allow fire as soon as player releases a fire button
-        if (Instigator == none || Instigator.Controller == none || Instigator.Controller.bFire == 0)
+        if (!IsFireButtonPressed())
             GotoState('');
     }
 }
 
 state FireBurst
 {
-    ignores PlayFiring, ServerPlayFiring; // ingnore because we play an anbient fire sound
-    //ignores StopFiring;
+    function PlayFiring() {}
+    function ServerPlayFiring() {}
 
     function BeginState()
     {
@@ -76,14 +79,13 @@ state FireBurst
 
     function StartFiring()
     {
-        super(KFFire).StartFiring(); //bypass KFHighROFFire
+        super(ScrnFire).StartFiring(); //bypass HighROF
     }
 
     function StopFiring()
     {
         GotoState('');
     }
-
 
     function ModeTick(float dt)
     {
@@ -99,68 +101,17 @@ state FireBurst
         }
     }
 
-
-    //copy-pasted from KFFire
-    //add stopping fire after reaching the burst amount
     function ModeDoFire()
     {
-        local float Rec;
-        local KFPlayerReplicationInfo KFPRI;
-
         if (!AllowFire())
             return;
 
-        if( Instigator==None || Instigator.Controller==none )
-            return;
-
-        //log ("ScrnM4Fire.FireBurst.ModeDoFire()", 'ScrnBalance');
-
-        KFPRI = KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo);
-
-        Spread = GetSpread();
-
-        Rec = GetFireSpeed();
-        FireRate = default.FireRate/Rec;
-        FireAnimRate = default.FireAnimRate*Rec;
-        ReloadAnimRate = default.ReloadAnimRate*Rec;
-        Rec = 1;
-
-        if ( KFPRI != none && KFPRI.ClientVeteranSkill != none )
-        {
-            Spread *= KFPRI.ClientVeteranSkill.Static.ModifyRecoilSpread(KFPRI, self, Rec);
-        }
-
-        LastFireTime = Level.TimeSeconds;
-
-        if (Weapon.Owner != none && AllowFire() && !bFiringDoesntAffectMovement)
-        {
-            if (FireRate > 0.25)
-            {
-                Weapon.Owner.Velocity.x *= 0.1;
-                Weapon.Owner.Velocity.y *= 0.1;
-            }
-            else
-            {
-                Weapon.Owner.Velocity.x *= 0.5;
-                Weapon.Owner.Velocity.y *= 0.5;
-            }
-        }
-
-        Super(WeaponFire).ModeDoFire();
-
-        // client
-        if (Instigator.IsLocallyControlled()) {
-            if (bDoClientRagdollShotFX && Weapon.Level.NetMode == NM_Client) {
-                DoClientOnlyFireEffect();
-            }
-            HandleRecoil(Rec);
-        }
+        super(ScrnFire).ModeDoFire();
 
         if (++BurstShotCount >= BurstSize) {
             //log ("ScrnM4203BulletFire.ChangeFireBurstState", 'ScrnBalance');
             //don't go to WaitingForFireButtonRelease state on server
-            if (!Instigator.IsLocallyControlled() || Instigator.Controller.bFire == 0
-                    || ScrnWeap.MagAmmoRemaining < 1 || ScrnWeap.bTriggerReleased)
+            if (!IsFireButtonPressed() || ScrnWeap.MagAmmoRemaining < 1 || ScrnWeap.bTriggerReleased)
                 GotoState('');
             else
                 GotoState('WaitingForFireButtonRelease');
@@ -170,11 +121,12 @@ state FireBurst
 
 defaultproperties
 {
-     BurstSize=3
-     DamageType=class'ScrnDamTypeM4203AssaultRifle'
-     DamageMax=41
-     FireAnimRate=0.75
-     FireLoopAnimRate=1.4 //0.750000
-     FireRate=0.100000
-     AmmoClass=Class'KFMod.M4203Ammo'
+    bHasFireBurst=true
+    BurstSize=3
+    DamageType=class'ScrnDamTypeM4203AssaultRifle'
+    DamageMax=41
+    FireAnimRate=0.75
+    FireLoopAnimRate=1.4 //0.750000
+    FireRate=0.100000
+    AmmoClass=Class'KFMod.M4203Ammo'
 }

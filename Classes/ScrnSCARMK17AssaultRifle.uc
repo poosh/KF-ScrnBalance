@@ -26,6 +26,8 @@ simulated function AltFire(float F)
 //called to set bolt at end position at end of timer
 simulated function MoveBoltForward()
 {
+    if (Level.NetMode == NM_DedicatedServer)
+        return;
     SetBoneLocation( 'Charging_Bolt', ChargingHandleOffset, 0 ); //move bolt to forward position
     SetBoneRotation( 'Bolt_Release', BoltReleaseRotation, , 0 ); //move bolt release to not locked back rotation
 }
@@ -33,6 +35,8 @@ simulated function MoveBoltForward()
 //called to set bolt at end position at end of timer
 simulated function MoveBoltToLocked()
 {
+    if (Level.NetMode == NM_DedicatedServer)
+        return;
     SetBoneLocation( 'Charging_Bolt', ChargingHandleOffset, 100 ); //move bolt to locked open position
     SetBoneRotation( 'Bolt_Release', BoltReleaseRotation, , 100 ); //move bolt release to locked open rotation
 }

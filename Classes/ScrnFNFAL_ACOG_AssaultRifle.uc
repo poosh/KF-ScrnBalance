@@ -5,6 +5,9 @@ class ScrnFNFAL_ACOG_AssaultRifle extends FNFAL_ACOG_AssaultRifle
 var byte FireModeEx; // 0 - F/A, 1 - S/A, 2 - 2 bullet fire
 var byte FireModeExCount;
 
+var transient bool bTriggerReleased;           // indicates that fire button is released, but need to end the burst
+var transient float PrevFireTime;
+
 var         name             ReloadShortAnim;
 var         float             ReloadShortRate;
 
@@ -44,30 +47,42 @@ function ServerChangeFireModeEx(byte NewFireModeEx)
 
 simulated function bool StartFire(int Mode)
 {
-    if ( FireModeEx <= 1 || Mode != 0 )
-        return super.StartFire(Mode);
+    local name NewState;
 
-    if (FireMode[Mode].IsInState('WaitingForFireButtonRelease'))
-        return false;
-
-    if( !super(KFWeapon).StartFire(Mode) )  // returns false when mag is empty
+    if (!super(KFWeapon).StartFire(Mode))
        return false;
 
-    if( AmmoAmount(0) <= 0 )
+    if (Mode != 0 || FireMode[Mode].bWaitForRelease)
+        return true;
+
+    if (FireMode[Mode].IsInState('FireLoop') || FireMode[Mode].IsInState('FireBurst')
+            || FireMode[Mode].IsInState('WaitingForFireButtonRelease'))
+        return false;
+
+    if (FireModeEx <= 1) {
+        NewState = 'FireLoop';
+    }
+    else {
+        NewState = 'FireBurst';
+    }
+
+    //prevent fire button spam-clicking
+    if (Level.TimeSeconds < PrevFireTime + 0.2 * Level.TimeDilation/1.1)
         return false;
 
     AnimStopLooping();
-
-    if( !FireMode[Mode].IsInState('FireBurst') && (AmmoAmount(0) > 0) ) {
-        FireMode[Mode].GotoState('FireBurst');
-        return true;
-    }
-
-    return false;
+    PrevFireTime = Level.TimeSeconds;
+    bTriggerReleased = false;
+    FireMode[Mode].GotoState(NewState);
+    return FireMode[Mode].IsInState(NewState);
 }
 
 simulated function StopFire(int Mode)
 {
+    if (Mode == 0) {
+        bTriggerReleased = true;
+    }
+
     super.StopFire(Mode);
     if (FireMode[Mode].IsInState('WaitingForFireButtonRelease'))
         FireMode[Mode].GotoState('');

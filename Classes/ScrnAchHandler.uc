@@ -152,6 +152,10 @@ function WaveStarted(byte WaveNum)
         bPerfectGame = bPerfectGame && TotalPlayers >= 2; // each wave must have 2+ players for perfect game
         bPerfectWave = WaveNum > 0 && GameRules.WaveTotalKills >= 50;
     }
+
+    // restore player speech messages every wave
+    GameRules.Mut.KF.bDidKillStalkerMeleeMessage = false;
+    GameRules.Mut.KF.LastBurnedEnemyMessageTime = 0;
 }
 
 function WaveEnded(byte WaveNum)
@@ -776,6 +780,13 @@ function MonsterKilled(KFMonster Victim, ScrnPlayerInfo KillerInfo, class<KFWeap
                 || ClassIsChildOf(DamType, class'ScrnDamTypeScythe') )
             KillerInfo.ProgressAchievement('GrimReaper', 1);
     }
+    else if (DamType.default.bDealBurningDamage) {
+        if (Level.TimeSeconds > GameRules.Mut.KF.LastBurnedEnemyMessageTime && FRand() < 0.02) {
+            // 2% chance of the Killer saying something about burning the enemy to death
+            KillerInfo.PlayerOwner.Speech('AUTO', 20, "");
+            GameRules.Mut.KF.LastBurnedEnemyMessageTime = Level.TimeSeconds + GameRules.Mut.KF.BurnedEnemyMessageDelay;
+        }
+    }
     else if ( ClassIsChildOf(DamType, class'KFMod.DamTypeRocketImpact') ) {
         KillerInfo.ProgressAchievement('PrematureDetonation', 1);
     }
@@ -859,6 +870,12 @@ function MonsterKilled(KFMonster Victim, ScrnPlayerInfo KillerInfo, class<KFWeap
                 && VSizeSquared(Victim.Location - KillerInfo.PlayerOwner.Pawn.Location)
                     < 360000 * KFPRI.ClientVeteranSkill.static.GetStalkerViewDistanceMulti(KFPRI) )
             KillerInfo.ProgressAchievement('Ghostbuster', 1);
+
+        if (DamType.default.bIsMeleeDamage && !GameRules.Mut.KF.bDidKillStalkerMeleeMessage && FRand() < 0.25) {
+            // 25% chance saying something about killing Stalker("Kissy, kissy, darlin!" or "Give us a kiss!")
+            KillerInfo.PlayerOwner.Speech('AUTO', 19, "");
+            GameRules.Mut.KF.bDidKillStalkerMeleeMessage = true;
+        }
     }
     else if ( ZombieBloat(Victim) != none ) {
         PipeBombsAround = InPipeBombRange(Victim, 600);

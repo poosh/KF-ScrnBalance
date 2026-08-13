@@ -18,7 +18,7 @@
 [That1Guy]: https://steamcommunity.com/id/defenciveguy121
 [FishFlop_The_CatSlap]: https://steamcommunity.com/id/FishFlop_The_CatSlap/
 [jkcrmptn]: https://steamcommunity.com/id/jkcrmptn/
-[WaffleTime]: https://steamcommunity.com/id/Waffle_Time/
+[WaffleTime]: ht-tps://steamcommunity.com/id/Waffle_Time/
 [Mortimer]: https://steamcommunity.com/id/MortimerKubrick/
 <!-- add other peaople too!!! -->
 
@@ -31,6 +31,25 @@
 # VERSION 9
 
 -------------------------------------------------------------------------------
+## v9.74.20
+- Fixed an issue where fire effects were not played for the last round in the magazine.
+- **FN FAL**: fixed recoil in burst fire mode.
+- **FN FAL**: fixed an exploit in burst fire mode allowing to exceed the weapon's fire rate.
+- Restored weapon select voice lines like "Yeah! One in each hand!" (thanks [jkcrmptn])
+- A player may ask a Stalker for the last kiss while killing her with a melee weapon, as she isn't an ugly woke c**t like her KF3 counterpart.
+### Code Changes
+- All instant fire classes migrated to extend `ScrnFire`.
+- `ScrnHighROFFire` deprecated. Extend from `ScrnFire_HighROF` instead.
+- `ScrnFire_HighROF` is not extended from `KFHighROFFire`, so be cautious when typecasting.
+- ScrnBalance listens for `RandomMap` and `NextRandomMap` values. The following code tells ScrnBalance that the next voted map is random, so it should apply the double XP bonus:
+```js
+class'ScrnMutator'.static.sPublishValue(Level, 'NextRandomMap', 1);
+```
+### ScrN Weapon Pack
+- Migrated to `ScrnFire`
+### Heavy Machine Gunner
+- Migrated to `ScrnFire`
+
 ## v9.74.19
 - Fixed an issue where LAW rocket smoke tail was applied to ZED Guns (thanks [jkcrmptn])
 

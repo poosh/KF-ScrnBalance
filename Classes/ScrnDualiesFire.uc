@@ -1,55 +1,12 @@
-class ScrnDualiesFire extends DualiesFire;
+class ScrnDualiesFire extends ScrnFire_Dualies;
 
 var ScrnDualies ScrnWeap; // avoid typecasting
-
-var protected bool bFireLeft;
 
 
 function PostBeginPlay()
 {
     super.PostBeginPlay();
     ScrnWeap = ScrnDualies(Weapon);
-}
-
-//called after reload and on zoom toggle, sets next pistol to fire to sync with slide lock order
-function SetPistolFireOrder(bool bNextFireLeft)
-{
-    bFireLeft = bNextFireLeft;
-
-    if (bFireLeft)
-    {
-        ScrnWeap.altFlashBoneName = ScrnWeap.default.FlashBoneName;
-        ScrnWeap.FlashBoneName = ScrnWeap.default.altFlashBoneName;
-        FireAnim2 = default.FireAnim;
-        FireAimedAnim2 = default.FireAimedAnim;
-        FireAnim = default.FireAnim2;
-        FireAimedAnim = default.FireAimedAnim2;
-    }
-    else
-    {
-        ScrnWeap.altFlashBoneName = ScrnWeap.default.altFlashBoneName;
-        ScrnWeap.FlashBoneName = ScrnWeap.default.FlashBoneName;
-        FireAnim2 = default.FireAnim2;
-        FireAimedAnim2 = default.FireAimedAnim2;
-        FireAnim = default.FireAnim;
-        FireAimedAnim = default.FireAimedAnim;
-    }
-}
-
-function bool GetPistolFireOrder()
-{
-    return bFireLeft;
-}
-
-event ModeDoFire()
-{
-    if ( !AllowFire() )
-        return;
-
-    super(KFFire).ModeDoFire();
-
-    InitEffects();
-    SetPistolFireOrder(!bFireLeft);
 }
 
 function PlayFiring()
@@ -86,16 +43,11 @@ function PlayFiring()
     }
 }
 
-// Remove left gun's aiming bug  (c) PooSH
-// Thanks to n87, Benjamin
-function DoFireEffect()
-{
-    super(KFFire).DoFireEffect();
-}
 
 defaultproperties
 {
-     DamageType=class'ScrnDamTypeDualies'
-     bFiringDoesntAffectMovement=true
-     RecoilVelocityScale=0
+    DamageMax=35
+    DamageType=class'ScrnDamTypeDualies'
+    bFiringDoesntAffectMovement=true
+    RecoilVelocityScale=0
 }

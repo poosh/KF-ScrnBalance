@@ -1,14 +1,20 @@
 class ScrnWinchester extends Winchester;
 
 var bool bChamberThisReload; //if full reload is uninterrupted, play chambering animation
+var bool bFiringLastRound;
+
 
 simulated function HideBullet()
 {
+    if (Level.NetMode == NM_DedicatedServer)
+        return;
     SetBoneScale(1, 0.001, 'Bullet');
 }
 
 simulated function ShowBullet()
 {
+    if (Level.NetMode == NM_DedicatedServer)
+        return;
     SetBoneScale(1, 1.0, 'Bullet');
 }
 
@@ -33,6 +39,13 @@ simulated function ClientFinishReloading()
     if(Instigator.PendingWeapon != none && Instigator.PendingWeapon != self)
         Instigator.Controller.ClientSwitchToBestWeapon();
 }
+
+simulated function Fire(float F)
+{
+    bFiringLastRound = MagAmmoRemaining == 1;
+    super.Fire(f);
+}
+
 
 defaultproperties
 {

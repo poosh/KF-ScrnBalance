@@ -1,63 +1,51 @@
-class ScrnMKb42Fire extends MKb42Fire;
+class ScrnMKb42Fire extends ScrnFire_OpenBolt;
 
-var() Sound BoltCloseSound;
-var string BoltCloseSoundRef;
-var bool bClientEffectPlayed;
-
-//load additional sound
-static function PreloadAssets(LevelInfo LevelInfo, optional KFFire Spawned)
-{
-    local ScrnMKb42Fire ScrnSpawned;
-
-    super.PreloadAssets(LevelInfo, Spawned);
-    if ( default.BoltCloseSoundRef != "" )
-    {
-        default.BoltCloseSound = sound(DynamicLoadObject(default.BoltCloseSoundRef, class'Sound', true));
-    }
-    ScrnSpawned = ScrnMKb42Fire(Spawned);
-    if ( ScrnSpawned != none )
-    {
-        ScrnSpawned.BoltCloseSound = default.BoltCloseSound;
-    }
-}
-
-static function bool UnloadAssets()
-{
-    default.BoltCloseSound = none;
-    return super.UnloadAssets();
-}
-
-function DoCloseBolt()
+function WeaponCloseBolt()
 {
     ScrnMKb42AssaultRifle(KFWeap).CloseBolt();
-
-    if (BoltCloseSound != none && !bClientEffectPlayed )
-    {
-        Weapon.PlayOwnedSound(BoltCloseSound,SLOT_Interact,TransientSoundVolume * 0.85,,TransientSoundRadius,1.00,false);
-        bClientEffectPlayed = true;
-    }
 }
 
-function ModeDoFire()
+function bool IsBoltClosed()
 {
-    if ( Instigator != none && Instigator.IsLocallyControlled() ) {
-        if (KFWeap.MagAmmoRemaining <= 0 && !KFWeap.bIsReloading && ( Level.TimeSeconds - LastFireTime>FireRate )
-                && !ScrnMKb42AssaultRifle(KFWeap).bBoltClosed )
-        {
-            LastFireTime = Level.TimeSeconds; //moved to allowfire
-            DoCloseBolt(); //plays sound and sets bBoltClosed
-        }
-        else
-        {
-            bClientEffectPlayed = false; //reset if not empty
-        }
-    }
-    Super.ModeDoFire();
+    return ScrnMKb42AssaultRifle(KFWeap).bBoltClosed;
 }
 
 defaultproperties
 {
-     BoltCloseSoundRef="KF_FNFALSnd.FNFAL_Bolt_Forward"
-     DamageType=class'ScrnDamTypeMKb42AssaultRifle'
-     AmmoClass=class'ScrnMKb42Ammo'
+    // vanilla
+    FireAimedAnim="Fire_Iron"
+    RecoilRate=0.070000
+    maxVerticalRecoilAngle=425
+    maxHorizontalRecoilAngle=225
+    ShellEjectClass=Class'ROEffects.KFShellEjectMkb'
+    ShellEjectBoneName="Shell_eject"
+    bAccuracyBonusForSemiAuto=True
+    FireSoundRef="KF_mkb42Snd.mkb42_Fire_Single_M"
+    StereoFireSoundRef="KF_mkb42Snd.mkb42_Fire_Single_S"
+    NoAmmoSoundRef="KF_AK47Snd.AK47_DryFire"
+    DamageMax=45
+    Momentum=8500.000000
+    bPawnRapidFireAnim=True
+    TransientSoundVolume=1.800000
+    FireLoopAnim="Fire"
+    TweenTime=0.025000
+    FireForce="AssaultRifleFire"
+    FireRate=0.100000
+    AmmoPerFire=1
+    ShakeRotMag=(X=50.000000,Y=50.000000,Z=350.000000)
+    ShakeRotRate=(X=5000.000000,Y=5000.000000,Z=5000.000000)
+    ShakeRotTime=0.750000
+    ShakeOffsetMag=(X=6.000000,Y=3.000000,Z=7.500000)
+    ShakeOffsetRate=(X=1000.000000,Y=1000.000000,Z=1000.000000)
+    ShakeOffsetTime=1.250000
+    BotRefireRate=0.990000
+    FlashEmitterClass=Class'ROEffects.MuzzleFlash1stSTG'
+    aimerror=42.000000
+    Spread=0.009000
+    SpreadStyle=SS_Random
+
+    // ScrN
+    DamageType=class'ScrnDamTypeMKb42AssaultRifle'
+    AmmoClass=class'ScrnMKb42Ammo'
+    bHasFireLoop=false
 }

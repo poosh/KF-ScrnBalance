@@ -198,6 +198,22 @@ function AddReloadedAmmo()
     }
 }
 
+simulated function bool StartFire(int Mode)
+{
+    if (!super(KFWeapon).StartFire(Mode))
+       return false;
+
+    if (Mode != 0 || FireMode[Mode].bWaitForRelease)
+        return true;
+
+    if (FireMode[Mode].IsInState('FireLoop') || FireMode[Mode].IsInState('FireBurst')
+            || FireMode[Mode].IsInState('WaitingForFireButtonRelease'))
+        return false;
+
+    AnimStopLooping();
+    FireMode[Mode].GotoState('FireLoop');
+    return FireMode[Mode].IsInState('FireLoop');
+}
 
 defaultproperties
 {

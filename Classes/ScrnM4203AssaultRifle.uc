@@ -72,8 +72,7 @@ simulated function bool StartFire(int Mode)
 
     //AnimStopLooping();
     //prevent fire button spam-clicking
-    if (!FireMode[0].IsInState('FireBurst') && (AmmoAmount(0) > 0)
-            && Level.TimeSeconds > PrevFireTime + 0.2 * Level.TimeDilation/1.1) {
+    if (Level.TimeSeconds > PrevFireTime + 0.2 * Level.TimeDilation/1.1) {
         PrevFireTime = Level.TimeSeconds;
         bTriggerReleased = false;
         FireMode[0].GotoState('FireBurst');

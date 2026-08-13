@@ -1088,6 +1088,15 @@ function bool SetCustomValue(name Key, int Value, optional ScrnMutator Publisher
                 Publisher.SetCustomValue('SpawnDoom3Monsters', Value & 2, self);
                 return true;
             }
+            break;
+
+        case 'RandomMap':
+            bRandomMap = bool(Value);
+            break;
+
+        case 'NextRandomMap':
+            Persistence.bRandomMap = bool(Value);
+            break;
     }
     return false;
 }
@@ -3372,7 +3381,7 @@ function GameResumed()
 
 defaultproperties
 {
-    VersionNumber=97419
+    VersionNumber=97420
     GroupName="KF-Scrn"
     FriendlyName="ScrN Balance"
     Description="Total rework of KF1 to make it modern and the best tactical coop in the world while sticking to the roots of the original."

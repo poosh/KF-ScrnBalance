@@ -205,11 +205,16 @@ replication
 
 simulated function PreBeginPlay()
 {
-    super.PreBeginPlay();
-
+    class'ScrnSingleFire'.static.PreloadAssets(Level);
+    class'ScrnDualiesFire'.static.PreloadAssets(Level);
     class'ScrnMagnum44Fire'.static.PreloadAssets(Level);
     class'ScrnDual44MagnumFire'.static.PreloadAssets(Level);
+    class'ScrnBullpupFire'.static.PreloadAssets(Level);
+    class'ScrnShotgunFire'.static.PreloadAssets(Level);
+    class'ScrnWinchesterFire'.static.PreloadAssets(Level);
     class'ScrnMAC10Fire'.static.PreloadAssets(Level);
+
+    super.PreBeginPlay();
 }
 
 
@@ -2077,6 +2082,12 @@ exec function WeaponSlot(optional byte Slot)
 exec function GunSlot(optional byte Slot)
 {
     WeaponSlot(Slot);
+}
+
+simulated function WeaponPulloutRemark(int RemarkIndex)
+{
+    if (!bShopping)
+        super.WeaponPulloutRemark(RemarkIndex);
 }
 
 function ServerReStartPlayer()
@@ -4165,6 +4176,7 @@ defaultproperties
     bAutoOpenGiveDosh=true
     DelayedRestartMsg=class'ScrnPrepareToFightMsg'
     bNetSpeedCheck=true
+    WeaponPulloutMessageDelay=60
 
     PawnClass=class'ScrnHumanPawn'
     CustomPlayerReplicationInfoClass=class'ScrnCustomPRI'

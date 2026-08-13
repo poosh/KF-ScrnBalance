@@ -1,174 +1,49 @@
 //=============================================================================
 // MAC Fire
 //=============================================================================
-class ScrnMAC10Fire extends MAC10Fire;
+class ScrnMAC10Fire extends ScrnFire_Inc;
 
-var() Sound BoltCloseSound;
-var string BoltCloseSoundRef;
-var bool bClientEffectPlayed;
-
-//load additional sound
-static function PreloadAssets(LevelInfo LevelInfo, optional KFFire Spawned)
-{
-    local ScrnMac10Fire ScrnSpawned;
-
-    super.PreloadAssets(LevelInfo, Spawned);
-    if ( default.BoltCloseSoundRef != "" )
-    {
-        default.BoltCloseSound = sound(DynamicLoadObject(default.BoltCloseSoundRef, class'Sound', true));
-    }
-    ScrnSpawned = ScrnMac10Fire(Spawned);
-    if ( ScrnSpawned != none )
-    {
-        ScrnSpawned.BoltCloseSound = default.BoltCloseSound;
-    }
-}
-
-static function bool UnloadAssets()
-{
-    default.BoltCloseSound = none;
-    return super.UnloadAssets();
-}
-
-function DoCloseBolt()
+function WeaponCloseBolt()
 {
     ScrnMAC10MP(KFWeap).CloseBolt();
-
-    if (BoltCloseSound != none && !bClientEffectPlayed )
-    {
-        Weapon.PlayOwnedSound(BoltCloseSound,SLOT_Interact,TransientSoundVolume * 0.85,,TransientSoundRadius,1.00,false);
-        bClientEffectPlayed = true;
-    }
 }
 
-state FireLoop
+function bool IsBoltClosed()
 {
-    function BeginState()
-    {
-        super.BeginState();
-
-        NextFireTime = Level.TimeSeconds - 0.000001; //fire now!
-    }
-    function ModeTick(float dt)
-    {
-        if( KFWeap.MagAmmoRemaining < 1 )
-        {
-            DoCloseBolt(); //plays sound and sets bBoltClosed
-        }
-        Super.ModeTick(dt);
-    }
-}
-
-function ModeDoFire()
-{
-    if ( Instigator != none && Instigator.IsLocallyControlled() ) {
-        if (KFWeap.MagAmmoRemaining <= 0 && !KFWeap.bIsReloading && ( Level.TimeSeconds - LastFireTime>FireRate )
-                && !ScrnMAC10MP(KFWeap).bBoltClosed )
-        {
-            LastFireTime = Level.TimeSeconds;
-            DoCloseBolt(); //plays sound and sets bBoltClosed
-        }
-        else
-        {
-            bClientEffectPlayed = false; //reset if not empty
-        }
-    }
-    Super.ModeDoFire();
-}
-
-// Overwritten to switch damage types for the firebug
-function DoTrace(Vector Start, Rotator Dir)
-{
-    local Vector X,Y,Z, End, HitLocation, HitNormal, ArcEnd;
-    local Actor Other;
-    local KFWeaponAttachment WeapAttach;
-    local array<int> HitPoints;
-    local KFPawn HitPawn;
-    local KFMonster KFMonsterVictim;
-
-    MaxRange();
-
-    Weapon.GetViewAxes(X, Y, Z);
-
-    DamageType = KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo).ClientVeteranSkill.static.GetMAC10DamageType(KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo));
-
-    if ( Weapon.WeaponCentered() )
-    {
-        ArcEnd = (Instigator.Location + Weapon.EffectOffset.X * X + 1.5 * Weapon.EffectOffset.Z * Z);
-    }
-    else
-    {
-        ArcEnd = (Instigator.Location + Instigator.CalcDrawOffset(Weapon) + Weapon.EffectOffset.X * X + Weapon.Hand * Weapon.EffectOffset.Y * Y +
-        Weapon.EffectOffset.Z * Z);
-    }
-
-    X = Vector(Dir);
-    End = Start + TraceRange * X;
-    Other = Instigator.HitPointTrace(HitLocation, HitNormal, End, HitPoints, Start,, 1);
-
-    if ( Other != None && Other != Instigator && Other.Base != Instigator )
-    {
-        WeapAttach = KFWeaponAttachment(Weapon.ThirdPersonActor);
-
-        if ( !Other.bWorldGeometry )
-        {
-            // Update hit effect except for pawns
-            if ( !Other.IsA('Pawn') && !Other.IsA('HitScanBlockingVolume') &&
-                 !Other.IsA('ExtendedZCollision') )
-            {
-                if( WeapAttach!=None )
-                {
-                    WeapAttach.UpdateHit(Other, HitLocation, HitNormal);
-                }
-            }
-
-            HitPawn = KFPawn(Other);
-
-            if ( HitPawn != none )
-            {
-                if ( !HitPawn.bDeleteMe )
-                {
-                    HitPawn.ProcessLocationalDamage(DamageMax, Instigator, HitLocation, Momentum * X, DamageType, HitPoints);
-                }
-            }
-            else
-            {
-                if ( ExtendedZCollision(Other) != none)
-                    Other = Other.Owner; // ExtendedZCollision is attached to and owned by a KFMonster
-                KFMonsterVictim = KFMonster(Other);
-                if ( KFMonsterVictim != none && KFMonsterVictim.Health > 0
-                        && ClassIsChildOf(DamageType, class'DamTypeMAC10MPInc')
-                        && class'ScrnBalance'.default.Mut.BurnMech != none)
-                {
-                    class'ScrnBalance'.default.Mut.BurnMech.MakeBurnDamage(
-                        KFMonsterVictim, DamageMax, Instigator, HitLocation, Momentum * X, DamageType);
-                }
-                else {
-                    Other.TakeDamage(DamageMax, Instigator, HitLocation, Momentum * X, DamageType);
-                }
-            }
-        }
-        else
-        {
-            HitLocation = HitLocation + 2.0 * HitNormal;
-
-            if ( WeapAttach != None )
-            {
-                WeapAttach.UpdateHit(Other,HitLocation,HitNormal);
-            }
-        }
-    }
-    else
-    {
-        HitLocation = End;
-        HitNormal = Normal(Start - End);
-    }
+    return ScrnMAC10MP(KFWeap).bBoltClosed;
 }
 
 
 defaultproperties
 {
-    BoltCloseSoundRef="KF_FNFALSnd.FNFAL_Bolt_Forward"
+    // vanilla
+    FireEndSoundRef="KF_MAC10MPSnd.MAC10_Fire_Loop_End_M"
+    FireEndStereoSoundRef="KF_MAC10MPSnd.MAC10_Fire_Loop_End_S"
+    AmbientFireSoundRef="KF_MAC10MPSnd.MAC10_Fire_Loop"
+    maxVerticalRecoilAngle=150
+    maxHorizontalRecoilAngle=100
+    ShellEjectClass=Class'ROEffects.KFShellEjectMac'
+    ShellEjectBoneName="Mac11_Ejector"
+    bRandomPitchFireSound=False
+    FireSoundRef="KF_MAC10MPSnd.MAC10_Silenced_Fire"
+    StereoFireSoundRef="KF_MAC10MPSnd.MAC10_Silenced_FireST"
+    NoAmmoSoundRef="KF_AK47Snd.AK47_DryFire"
+    Momentum=6500.000000
+    FireRate=0.052000
+    AmmoClass=Class'KFMod.MAC10Ammo'
+    ShakeRotMag=(X=35.000000,Y=35.000000,Z=200.000000)
+    ShakeRotRate=(X=8000.000000,Y=8000.000000,Z=8000.000000)
+    ShakeRotTime=3.000000
+    ShakeOffsetMag=(X=4.500000,Y=2.800000,Z=5.500000)
+    ShakeOffsetRate=(X=1000.000000,Y=1000.000000,Z=1000.000000)
+    ShakeOffsetTime=1.250000
+    BotRefireRate=0.990000
+    FlashEmitterClass=Class'ROEffects.MuzzleFlash1stSTG'
+    aimerror=35.000000
+    Spread=0.013000
+    SpreadStyle=SS_Random
+
+    // ScrN
     FireAnim=Fire_Iron //fix annoying hipfire messing up aiming after firing
     FireEndAnim=Fire_Iron_End //fix annoying hipfire messing up aiming after firing
     RecoilRate=0.03

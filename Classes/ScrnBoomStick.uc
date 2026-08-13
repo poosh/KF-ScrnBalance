@@ -254,6 +254,15 @@ simulated function bool InterruptReload()
     return false;
 }
 
+simulated function BringUp(optional Weapon PrevWeapon)
+{
+    super.BringUp(PrevWeapon);
+
+    if (ClientGrenadeState != GN_BringUp && KFPlayerController(Instigator.Controller) != none) {
+        KFPlayerController(Instigator.Controller).WeaponPulloutRemark(21);
+    }
+}
+
 simulated state PendingReload
 {
     ignores PlayIdle;
