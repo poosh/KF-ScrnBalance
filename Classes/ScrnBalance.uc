@@ -2768,7 +2768,15 @@ function SetNetSpeed()
 
 function SetCmdLine(string s)
 {
+    local int i;
+
     CmdLine = s;
+
+    i = KF.GetIntOption(CmdLine, "RandomMap", 2);
+    if (i < 2) {
+        bRandomMap = bool(i);
+        log("RandomMap=" $ bRandomMap, class.name);
+    }
 }
 
 function int GetTickRate()
@@ -3381,7 +3389,7 @@ function GameResumed()
 
 defaultproperties
 {
-    VersionNumber=97420
+    VersionNumber=97421
     GroupName="KF-Scrn"
     FriendlyName="ScrN Balance"
     Description="Total rework of KF1 to make it modern and the best tactical coop in the world while sticking to the roots of the original."

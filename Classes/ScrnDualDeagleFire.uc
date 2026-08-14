@@ -3,6 +3,7 @@ class ScrnDualDeagleFire extends ScrnFire_Dualies;
 var ScrnDualDeagle ScrnWeap; // avoid typecasting
 
 var bool bCheck4Ach;
+var transient float NextAchSpeechTime;
 
 
 function PostBeginPlay()
@@ -62,9 +63,15 @@ function DoTrace(Vector Start, Rotator Dir)
 {
     super.DoTrace(Start, Dir);
 
-    if (Weapon.Role == Role_Authority && bCheck4Ach && KillCountPerTrace >= 4) {
-        class'ScrnAchCtrl'.static.Ach2Pawn(Weapon.Instigator, 'HC4Kills', 1);
-        bCheck4Ach = false;
+    if (Weapon.Role == Role_Authority && KillCountPerTrace >= 4) {
+        if (Level.TimeSeconds > NextAchSpeechTime && KFPlayerController(Instigator.Controller) != none) {
+            KFPlayerController(Instigator.Controller).Speech('AUTO', 22, "");
+            NextAchSpeechTime = Level.TimeSeconds + 60;
+        }
+        if (bCheck4Ach) {
+            class'ScrnAchCtrl'.static.Ach2Pawn(Weapon.Instigator, 'HC4Kills', 1);
+            bCheck4Ach = false;
+        }
     }
 }
 

@@ -102,6 +102,7 @@ var byte ZedEventNum;
 var bool bForceZEDThreatAssessment;
 var transient float LastEnoughZedsTime;
 var float EnoughZedsCooldown;
+var int ZombiesKilledForTraderMovingMessage, ZombiesKilledForMoveTowardTraderMessage;
 
 struct SBoringStage {
     var float SpawnPeriod;
@@ -973,6 +974,21 @@ function Killed(Controller Killer, Controller Killed, Pawn KilledPawn, class<Dam
 
         if ( bZedDropDosh ) {
             ZedTossCashFromDamage(KilledMonster, KFDamType);
+        }
+
+        if (!bDidTraderMovingMessage) {
+            if (ZombiesKilled >= ZombiesKilledForTraderMovingMessage && PlayerController(Killer) != none) {
+                // Have Trader tell players that the Shop's Moving
+                PlayerController(Killer).ServerSpeech('TRADER', 0, "");
+                bDidTraderMovingMessage = true;
+            }
+        }
+        else if (!bDidMoveTowardTraderMessage ) {
+            if (ZombiesKilled >= ZombiesKilledForMoveTowardTraderMessage && PlayerController(Killer) != none) {
+                // Have Trader tell players that the Shop's Almost Open
+                PlayerController(Killer).ServerSpeech('TRADER', 1, "");
+                bDidMoveTowardTraderMessage = true;
+            }
         }
     }
     else if (PlayerController(Killed) != none) {
@@ -3278,6 +3294,9 @@ function SetupWave()
     local ScrnPlayerController ScrnPC;
     local InvasionBot B;
 
+    // Enabled by default; might get disabled later in the code.
+    EnableTraderMessages();
+
     UpdateMonsterCount();
 
     bWaveInProgress = true;
@@ -3323,6 +3342,7 @@ function SetupWave()
     CalcDoshDifficultyMult();
 
     if (WaveNum == FinalWave && bUseEndGameBoss) {
+        DisableTraderMessages();
         StartWaveBoss();
         return;
     }
@@ -3336,6 +3356,10 @@ function SetupWave()
         TotalMaxMonsters = Waves[WaveIndex].WaveMaxMonsters;
         WaveEndTime = Level.TimeSeconds + Waves[WaveIndex].WaveDuration;
         TotalMaxMonsters = max(8, ScaleMonsterCount(TotalMaxMonsters));  // num monsters in wave
+
+        if (WaveNum + 1 == FinalWave && !bUseEndGameBoss) {
+            DisableTraderMessages();
+        }
     }
 
     MaxMonsters = min(TotalMaxMonsters, MaxZombiesOnce); // max monsters that can be spawned
@@ -3344,6 +3368,16 @@ function SetupWave()
     ScrnGRI.ScoredPlayers[0] = 0;
     ScrnGRI.ScoredPlayers[1] = 0;
     ScrnGRI.NetUpdateTime = Level.TimeSeconds - 1;
+
+    if (TotalMaxMonsters < 20) {
+        DisableTraderMessages();
+    }
+    else {
+        // Those values are ignored when the trader messages are disabled
+        ZombiesKilledForMoveTowardTraderMessage = min(TotalMaxMonsters * 4 / 5, TotalMaxMonsters - 10); // 80%
+        ZombiesKilledForTraderMovingMessage = min(TotalMaxMonsters * 2 / 5,
+                ZombiesKilledForMoveTowardTraderMessage - 10);  // 40%
+    }
 
     //Now build the first squad to use
     SquadsToUse.Length = 0; // force BuildNextSquad() to rebuild squad list
@@ -3379,6 +3413,18 @@ function SetupWave()
             }
         }
     }
+}
+
+function DisableTraderMessages()
+{
+    bDidTraderMovingMessage = true;
+    bDidMoveTowardTraderMessage = true;
+}
+
+function EnableTraderMessages()
+{
+    bDidTraderMovingMessage = false;
+    bDidMoveTowardTraderMessage = false;
 }
 
 function bool UpdateMonsterCount()
@@ -4334,10 +4380,6 @@ State MatchInProgress
 
         RewardSurvivingPlayers();
 
-        // Clear Trader Message status
-        bDidTraderMovingMessage = false;
-        bDidMoveTowardTraderMessage = false;
-
         Bosses.length = 0;
         WaveNum++;
         WavePct = 100 * (WaveNum + 1) / FinalWave;
@@ -4590,6 +4632,9 @@ defaultproperties
     bZedGiveBounty=true
     PlayerKillScore=400
     PlayerDeathScore=100
+    // set some intial values to prevent spamming on the test map
+    ZombiesKilledForTraderMovingMessage=40
+    ZombiesKilledForMoveTowardTraderMessage=80
 
     DebugZVolColors[0]=(R=255,G=1,B=1,A=255)
     DebugZVolColors[1]=(R=1,G=255,B=1,A=255)

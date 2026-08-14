@@ -1722,8 +1722,12 @@ function ServerSpeech(name msgtype, int msgid, string Callsign)
                 ServerLobbyMark(Callsign);
             }
             break;
+        case 'TRADER':
+            if (KF_StoryGRI(Level.GRI) != none)
+                return;  // no trader messages in Story Mode
+
     }
-    super.ServerSpeech(msgtype, msgid, Callsign);
+    super(KFPlayerController).ServerSpeech(msgtype, msgid, Callsign);
 }
 
 exec function AmIMedic()

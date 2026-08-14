@@ -917,6 +917,7 @@ function RunWave()
 {
     local string s;
     local bool bHasTitle, bHasMsg;
+    local PlayerController PC;
 
     SetWaveInfo();
     DoorControl(Wave.DoorControl2, false);
@@ -949,6 +950,10 @@ function RunWave()
         Mut.DisableDoom3Monsters();
     }
 
+    if (NextWave == none || !NextWave.bOpenTrader || Wave.EndRule != RULE_KillEmAll || !Wave.bTraderArrow) {
+        Game.DisableTraderMessages();
+    }
+
     switch (Wave.EndRule) {
         case RULE_EarnDosh:
         case RULE_GrabDosh:
@@ -959,6 +964,14 @@ function RunWave()
 
         case RULE_GrabAmmo:
             Mut.GameRules.WaveAmmoPickups = 0;
+            break;
+
+        case RULE_ReachTrader:
+            // get a random player to trigger the Trader's voice line
+            PC = PlayerController(Game.FindSquadTarget());
+            if (PC != none) {
+                PC.ServerSpeech('TRADER', 0, "");
+            }
             break;
     }
 

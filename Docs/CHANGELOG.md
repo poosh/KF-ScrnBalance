@@ -31,6 +31,16 @@
 # VERSION 9
 
 -------------------------------------------------------------------------------
+## v9.74.21
+- Added support for the `?RandomMap=1` command line option on [Broski]'s request.
+- Restored Trader voice lines during regular waves (thanks [jkcrmptn])
+- The Trader voice line "Watch the arrow - check where the shop is!" is played at the begin of a `RULE_ReachTrader` wave.
+- Added weapon-specific voice lines for progressing the following achievements:
+  - "Evil Dead Combo" or "I said get off my Lawn!" with **Boomstick** when no player damage is taken.
+  - "Old-School Kiting" or "Melee God" with **Axe** when no player damage is taken.
+  - "One Bloody Handsome" or "Two Bloody Handsome" with **Dual Handcannons**
+  - "I Love Rocket Blow" with **LAW**
+
 ## v9.74.20
 - Fixed an issue where fire effects were not played for the last round in the magazine.
 - **FN FAL**: fixed recoil in burst fire mode.

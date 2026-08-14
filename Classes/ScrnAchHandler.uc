@@ -359,16 +359,18 @@ function int WRowHeadhots(ScrnPlayerInfo SPI, KFWeapon Weapon, class<KFWeaponDam
 function int WKillsPerShot(ScrnPlayerInfo SPI, KFWeapon Weapon, class<KFWeaponDamageType> DamType, int Count, float DeltaTime)
 {
     if ( DamType.default.bIsExplosive ) {
-        if ( !ClassIsChildOf(DamType, class'KFMod.DamTypePipeBomb') ) {
+        if ( !ClassIsChildOf(DamType, class'DamTypePipeBomb') ) {
             if ( Count >= 10 && Count % 10 == 0) {
+                if (ClassIsChildOf(DamType, class'DamTypeLAW'))
+                    SPI.PlayerOwner.Speech('AUTO', 23, "");
                 if ( !SPI.ProgressAchievement('RocketBlow', 1) )
                     return IGNORE_STAT; // if achievement already earned, then ProgressAchievement() returns false, meaning no need to track it anymore
             }
             return 10;
         }
     }
-    else if ( ClassIsChildOf(DamType, class'KFMod.DamTypeSPThompson')
-                || ClassIsChildOf(DamType, class'KFMod.DamTypeThompsonDrum') )
+    else if ( ClassIsChildOf(DamType, class'DamTypeSPThompson')
+                || ClassIsChildOf(DamType, class'DamTypeThompsonDrum') )
     {
         if ( Count >= 5 ) { // count 5,6,7 etc.
             if ( !SPI.ProgressAchievement('OldGangster', 1) )
@@ -409,24 +411,24 @@ function int WKillsPerMagazine(ScrnPlayerInfo SPI, KFWeapon Weapon, class<KFWeap
         // if achievement is earned - no need to track stat anymore, so return IGNORE_STAT
         SPI.ProgressAchievement('MedicOfDoom', 1);
     }
-    else if ( ClassIsChildOf(DamType, class'KFMod.DamTypeDual44Magnum') ) {
+    else if ( ClassIsChildOf(DamType, class'DamTypeDual44Magnum') ) {
         // DamTypeDual44Magnum is a subclass of DamTypeMagnum44Pistol, so it must be checked first
         if ( Count < 18)
             return 18;
         SPI.ProgressAchievement('Magnum12Kills', 1);
     }
-    else if ( ClassIsChildOf(DamType, class'KFMod.DamTypeMagnum44Pistol') ) {
+    else if ( ClassIsChildOf(DamType, class'DamTypeMagnum44Pistol') ) {
         if ( Count < 12)
             return 12;
         SPI.ProgressAchievement('Magnum12Kills', 1);
     }
-    else if ( ClassIsChildOf(DamType, class'KFMod.DamTypeDualMK23Pistol') ) {
+    else if ( ClassIsChildOf(DamType, class'DamTypeDualMK23Pistol') ) {
         // DamTypeDualMK23Pistol is a subclass of DamTypeMK23Pistol, so it must be checked first
         if ( Count < 24)
             return 24;
         SPI.ProgressAchievement('MK23_12Kills', 1);
     }
-    else if ( ClassIsChildOf(DamType, class'KFMod.DamTypeMK23Pistol') ) {
+    else if ( ClassIsChildOf(DamType, class'DamTypeMK23Pistol') ) {
         if ( Count < 12)
             return 12;
         SPI.ProgressAchievement('MK23_12Kills', 1);
@@ -437,24 +439,24 @@ function int WKillsPerMagazine(ScrnPlayerInfo SPI, KFWeapon Weapon, class<KFWeap
 
 function int WDecapsPerMagazine(ScrnPlayerInfo SPI, KFWeapon Weapon, class<KFWeaponDamageType> DamType, int Count)
 {
-    if ( ClassIsChildOf(DamType, class'KFMod.DamTypeDual44Magnum') ) {
+    if ( ClassIsChildOf(DamType, class'DamTypeDual44Magnum') ) {
         // DamTypeDual44Magnum is a subclass of DamTypeMagnum44Pistol, so it must be checked first
         if ( Count < 18)
             return 18;
         SPI.ProgressAchievement('Magnum12Kills', 1);
     }
-    else if ( ClassIsChildOf(DamType, class'KFMod.DamTypeMagnum44Pistol') ) {
+    else if ( ClassIsChildOf(DamType, class'DamTypeMagnum44Pistol') ) {
         if ( Count < 12)
             return 12;
         SPI.ProgressAchievement('Magnum12Kills', 1);
     }
-    else if ( ClassIsChildOf(DamType, class'KFMod.DamTypeDualMK23Pistol') ) {
+    else if ( ClassIsChildOf(DamType, class'DamTypeDualMK23Pistol') ) {
         // DamTypeDualMK23Pistol is a subclass of DamTypeMK23Pistol, so it must be checked first
         if ( Count < 24)
             return 24;
         SPI.ProgressAchievement('MK23_12Kills', 1);
     }
-    else if ( ClassIsChildOf(DamType, class'KFMod.DamTypeMK23Pistol') ) {
+    else if ( ClassIsChildOf(DamType, class'DamTypeMK23Pistol') ) {
         if ( Count < 12)
             return 12;
         SPI.ProgressAchievement('MK23_12Kills', 1);
@@ -490,7 +492,7 @@ function MonsterDamaged(int Damage, KFMonster Victim, ScrnPlayerInfo InstigatorI
         if ( Victim.bBackstabbed )
             InstigatorInfo.ProgressAchievement('MeleeHitBehind', 1);
     }
-    else if ( bIsHeadshot && ClassIsChildOf(DamType, class'KFMod.DamTypeDeagle') )
+    else if ( bIsHeadshot && ClassIsChildOf(DamType, class'DamTypeDeagle') )
         InstigatorInfo.SetCustomFloat(self, 'LastDeagleHSTime', Level.TimeSeconds);
 
 
@@ -500,7 +502,7 @@ function MonsterDamaged(int Damage, KFMonster Victim, ScrnPlayerInfo InstigatorI
             if ( Damage >= Victim.Health )
                 InstigatorInfo.ProgressAchievement('MeleeKillCrawlers', 1);
             if ( Victim.Physics == PHYS_Falling ) {
-                if ( Damage >= Victim.Health && ClassIsChildOf(DamType, class'KFMod.DamTypeMachete') )
+                if ( Damage >= Victim.Health && ClassIsChildOf(DamType, class'DamTypeMachete') )
                     InstigatorInfo.ProgressAchievement('MacheteKillMidairCrawler', 1);
                 InstigatorInfo.ProgressAchievement('MeleeKillMidairCrawlers', 1);
             }
@@ -590,13 +592,13 @@ function MonsterDamaged(int Damage, KFMonster Victim, ScrnPlayerInfo InstigatorI
     }
     else if ( ZombieScrake(Victim) != none ) {
         if ( !Victim.bDecapitated && Damage < Victim.Health && !GameRules.MonsterInfos[index].TW_Ach_Failed ) {
-            if ( ClassIsChildOf(GameRules.MonsterInfos[index].DamType1, class'KFMod.DamTypeLAW') ) {
+            if ( ClassIsChildOf(GameRules.MonsterInfos[index].DamType1, class'DamTypeLAW') ) {
                 if ( (ClassIsChildOf(DamType, class'ScrnDamTypeHeavyBase')
-                            || DamType == class'KFMod.DamTypeDBShotgun'
-                            || DamType == class'KFMod.DamTypeBenelli')
+                            || DamType == class'DamTypeDBShotgun'
+                            || DamType == class'DamTypeBenelli')
                         && !ClassIsChildOf(GameRules.MonsterInfos[index].DamType2, class'ScrnDamTypeHeavyBase')
-                        && GameRules.MonsterInfos[index].DamType2 != class'KFMod.DamTypeDBShotgun'
-                        && GameRules.MonsterInfos[index].DamType2 != class'KFMod.DamTypeBenelli' ) {
+                        && GameRules.MonsterInfos[index].DamType2 != class'DamTypeDBShotgun'
+                        && GameRules.MonsterInfos[index].DamType2 != class'DamTypeBenelli' ) {
                     GameRules.MonsterInfos[index].KillAss2 = InstigatorInfo;
                     GameRules.MonsterInfos[index].DamType2 = DamType;
                     GameRules.MonsterInfos[index].DamTime2 = Level.TimeSeconds;
@@ -607,7 +609,7 @@ function MonsterDamaged(int Damage, KFMonster Victim, ScrnPlayerInfo InstigatorI
                 if (GameRules.MonsterInfos[index].FirstStunTime == 0)
                     GameRules.MonsterInfos[index].FirstStunTime = Level.TimeSeconds;
 
-                if ( DamType.default.bIsMeleeDamage && ClassIsChildOf(DamType, class'KFMod.DamTypeMachete') )
+                if ( DamType.default.bIsMeleeDamage && ClassIsChildOf(DamType, class'DamTypeMachete') )
                     InstigatorInfo.ProgressAchievement('MacheteStunSC', 1);
 
                 // STUN DAMAGE
@@ -642,8 +644,12 @@ function MonsterDamaged(int Damage, KFMonster Victim, ScrnPlayerInfo InstigatorI
         }
     }
     else if ( ZombieFleshpound(Victim) != none ) {
-        if ( Victim.bDecapitated && !bWasDecapitated && ClassIsChildOf(DamType, class'DamTypeAxe') )
+        if ( Victim.bDecapitated && !bWasDecapitated && ClassIsChildOf(DamType, class'DamTypeAxe') ) {
+            if (!Victim.bDamagedAPlayer) {
+                InstigatorInfo.PlayerOwner.Speech('AUTO', 24, "");
+            }
             InstigatorInfo.ProgressAchievement('OldSchoolKiting', 1);
+        }
         // both TW FP achievements requires first rage shot to be from heavy sniper rifgle: Xbow, M99, HR or 2xSVD
         // Pipe achievement also requires it to be a rage shot.
         // M14 ach allows to shoot already raged FP.
@@ -760,9 +766,9 @@ function MonsterKilled(KFMonster Victim, ScrnPlayerInfo KillerInfo, class<KFWeap
 
     // big zeds
     if ( Victim.default.Health >= 1000 ) {
-        if ( ClassIsChildOf(DamType, class'KFMod.DamTypeLAW') )
+        if ( ClassIsChildOf(DamType, class'DamTypeLAW') )
             KillerInfo.ProgressAchievement('BringingLAW', 1);
-        else if ( ClassIsChildOf(DamType, class'KFMod.DamTypePipeBomb') ) {
+        else if ( ClassIsChildOf(DamType, class'DamTypePipeBomb') ) {
             // check if somebody is blocking it
             if ( Victim.LastDamageAmount >= 1300 && GameRules.MonsterInfos[index].PlayerKillCounter == 0
                     && GameRules.MonsterInfos[index].DamageCounter < 30 * Victim.DifficultyDamageModifer()
@@ -776,7 +782,7 @@ function MonsterKilled(KFMonster Victim, ScrnPlayerInfo KillerInfo, class<KFWeap
     if ( DamType.default.bIsMeleeDamage ) {
         if ( Victim.bCrispified )
             KillerInfo.ProgressAchievement('CarveRoast', 1);
-        if ( ClassIsChildOf(DamType, class'KFMod.DamTypeScythe')
+        if ( ClassIsChildOf(DamType, class'DamTypeScythe')
                 || ClassIsChildOf(DamType, class'ScrnDamTypeScythe') )
             KillerInfo.ProgressAchievement('GrimReaper', 1);
     }
@@ -787,7 +793,7 @@ function MonsterKilled(KFMonster Victim, ScrnPlayerInfo KillerInfo, class<KFWeap
             GameRules.Mut.KF.LastBurnedEnemyMessageTime = Level.TimeSeconds + GameRules.Mut.KF.BurnedEnemyMessageDelay;
         }
     }
-    else if ( ClassIsChildOf(DamType, class'KFMod.DamTypeRocketImpact') ) {
+    else if ( ClassIsChildOf(DamType, class'DamTypeRocketImpact') ) {
         KillerInfo.ProgressAchievement('PrematureDetonation', 1);
     }
 
@@ -846,11 +852,11 @@ function MonsterKilled(KFMonster Victim, ScrnPlayerInfo KillerInfo, class<KFWeap
         }
         else if ( GameRules.MonsterInfos[index].bHeadshot ) {
             // Overkills
-            if (  ClassIsChildOf(DamType, class'KFMod.DamTypeM99HeadShot') )
+            if (  ClassIsChildOf(DamType, class'DamTypeM99HeadShot') )
                 KillerInfo.ProgressAchievement('Overkill', 1);
-            else if ( Victim.LastDamageAmount > 3600 && ClassIsChildOf(DamType, class'KFMod.DamTypeHuskGunProjectileImpact') )
+            else if ( Victim.LastDamageAmount > 3600 && ClassIsChildOf(DamType, class'DamTypeHuskGunProjectileImpact') )
                 KillerInfo.ProgressAchievement('Overkill1', 1);
-            else if ( ClassIsChildOf(DamType, class'KFMod.DamTypeLawRocketImpact') )
+            else if ( ClassIsChildOf(DamType, class'DamTypeLawRocketImpact') )
                 KillerInfo.ProgressAchievement('Overkill2', 1);
         }
     }
@@ -871,7 +877,8 @@ function MonsterKilled(KFMonster Victim, ScrnPlayerInfo KillerInfo, class<KFWeap
                     < 360000 * KFPRI.ClientVeteranSkill.static.GetStalkerViewDistanceMulti(KFPRI) )
             KillerInfo.ProgressAchievement('Ghostbuster', 1);
 
-        if (DamType.default.bIsMeleeDamage && !GameRules.Mut.KF.bDidKillStalkerMeleeMessage && FRand() < 0.25) {
+        if (DamType.default.bIsMeleeDamage && !Victim.bDamagedAPlayer && !GameRules.Mut.KF.bDidKillStalkerMeleeMessage
+                && FRand() < 0.25) {
             // 25% chance saying something about killing Stalker("Kissy, kissy, darlin!" or "Give us a kiss!")
             KillerInfo.PlayerOwner.Speech('AUTO', 19, "");
             GameRules.Mut.KF.bDidKillStalkerMeleeMessage = true;
@@ -918,11 +925,11 @@ function MonsterKilled(KFMonster Victim, ScrnPlayerInfo KillerInfo, class<KFWeap
         if ( Victim.IsA('Jason') && ClassIsChildOf(DamType, class'DamTypeMachete') )
             KillerInfo.ProgressAchievement('ComeatMe', 1);
         //scrake unnader
-        if ( !Victim.bDamagedAPlayer && GameRules.MonsterInfos[index].DamType2 == class'KFMod.DamTypeFrag'
+        if ( !Victim.bDamagedAPlayer && GameRules.MonsterInfos[index].DamType2 == class'DamTypeFrag'
                 && GameRules.MonsterInfos[index].DamageFlags2 == (DF_RAGED | DF_STUPID) )
             KillerInfo.ProgressAchievement('ScrakeUnnader', 1);
 
-        if ( DamType.default.bSniperWeapon || ClassIsChildOf(DamType, class'KFMod.DamTypeCrossbuzzsawHeadShot') ) {
+        if ( DamType.default.bSniperWeapon || ClassIsChildOf(DamType, class'DamTypeCrossbuzzsawHeadShot') ) {
             if ( GameRules.MonsterInfos[index].bHeadshot ) {
                 KillerInfo.ProgressAchievement('Snipe250SC', 1);
                 // Teamwork: InstantKill
@@ -936,20 +943,21 @@ function MonsterKilled(KFMonster Victim, ScrnPlayerInfo KillerInfo, class<KFWeap
         }
         else if ( DamType.default.bIsPowerWeapon ) {
             if ( GameRules.MonsterInfos[index].DamType1 == class'ScrnDamTypeChainsawAlt'
-                && DamType == class'KFMod.DamTypeDBShotgun'
+                && DamType == class'DamTypeDBShotgun'
                 && GameRules.MonsterInfos[index].KillAss1 == KillerInfo
                 && GameRules.MonsterInfos[index].KillAss2 == none
                 && MC.KillAssistants.Length <= 1
                 && !Victim.bDamagedAPlayer )
             {
+                KillerInfo.PlayerOwner.Speech('AUTO', 21, "");
                 KillerInfo.ProgressAchievement('EvilDeadCombo', 1);
             }
             else if ( (ClassIsChildOf(DamType, class'ScrnDamTypeHeavyBase')
-                        || DamType == class'KFMod.DamTypeDBShotgun'
-                        || DamType == class'KFMod.DamTypeBenelli')
+                        || DamType == class'DamTypeDBShotgun'
+                        || DamType == class'DamTypeBenelli')
                     && GameRules.MonsterInfos[index].DamType1 != none
                     && GameRules.MonsterInfos[index].DamType1.default.bIsExplosive
-                    && ClassIsChildOf(GameRules.MonsterInfos[index].DamType1, class'KFMod.DamTypeLAW')
+                    && ClassIsChildOf(GameRules.MonsterInfos[index].DamType1, class'DamTypeLAW')
                     && (GameRules.MonsterInfos[index].DamageFlags1 & DF_STUNNED) > 0 )
             {
                 // TeamWork: LAW Stun + HSg finish
@@ -957,31 +965,45 @@ function MonsterKilled(KFMonster Victim, ScrnPlayerInfo KillerInfo, class<KFWeap
             }
         }
         else if ( DamType.default.bIsMeleeDamage ) {
-            if ( GameRules.MonsterInfos[index].BodyShots == 0 && !ClassIsChildOf(DamType, class'KFMod.DamTypeCrossbuzzsaw') )
+            if ( GameRules.MonsterInfos[index].BodyShots == 0 && !ClassIsChildOf(DamType, class'DamTypeCrossbuzzsaw') ) {
+                if (!Victim.bDamagedAPlayer && ClassIsChildOf(DamType, class'DamTypeAxe') ) {
+                    KillerInfo.PlayerOwner.Speech('AUTO', 24, "");
+                }
                 KillerInfo.ProgressAchievement('MeleeGod', 1);
-            if ( ClassIsChildOf(DamType, class'KFMod.DamTypeChainsaw') )
+            }
+            if ( ClassIsChildOf(DamType, class'DamTypeChainsaw') )
                 KillerInfo.ProgressAchievement('BitterIrony', 1);
             if ( !Victim.bDamagedAPlayer && GameRules.MonsterInfos[index].bWasBackstabbed )
                 CheckAchBackstabAttract(Victim, KillerInfo);
         }
-        else if ( ClassIsChildOf(DamType, class'KFMod.DamTypeHuskGunProjectileImpact')
-                || ClassIsChildOf(DamType, class'KFMod.DamTypeHuskGun') )
+        else if ( ClassIsChildOf(DamType, class'DamTypeHuskGunProjectileImpact')
+                || ClassIsChildOf(DamType, class'DamTypeHuskGun') )
             KillerInfo.ProgressAchievement('HuskGunSC', 1);
         else if ( !Victim.bDamagedAPlayer && (ClassIsChildOf(DamType, class'ScrnDamTypeDualDeagle')
-                || ClassIsChildOf(DamType, class'ScrnDamTypeDual44Magnum')) )
-           KillerInfo.ProgressAchievement('GunslingerSC', 1);
+                || ClassIsChildOf(DamType, class'ScrnDamTypeDual44Magnum')) ) {
+
+            if (ClassIsChildOf(DamType, class'ScrnDamTypeDualDeagle') && frand() < 0.5) {
+                KillerInfo.PlayerOwner.Speech('AUTO', 22, "");
+            }
+            KillerInfo.ProgressAchievement('GunslingerSC', 1);
+        }
     }
     else if ( ZombieFleshpound(Victim) != none ) {
         if ( DamType.default.bIsExplosive )
             KillerInfo.ProgressAchievement('Kill100FPExplosives', 1);
         else if ( DamType.default.bIsPowerWeapon) {
-            if ( DamType == class'KFMod.DamTypeDBShotgun' || DamType == class'KFMod.DamTypeBenelli' )
+            if ( DamType == class'DamTypeDBShotgun' || DamType == class'DamTypeBenelli' ) {
+                if (DamType == class'DamTypeDBShotgun' && !Victim.bDamagedAPlayer) {
+                    KillerInfo.PlayerOwner.Speech('AUTO', 21, "");
+                }
                 KillerInfo.ProgressAchievement('GetOffMyLawn', 1);
+            }
         }
         else if ( DamType.default.bIsMeleeDamage) {
             // if Victim is already decapitated, then OldSchoolKiting  is granted on decapitation
-            if ( !Victim.bDecapitated && ClassIsChildOf(DamType, class'DamTypeAxe') )
+            if ( !Victim.bDecapitated && ClassIsChildOf(DamType, class'DamTypeAxe') ) {
                 KillerInfo.ProgressAchievement('OldSchoolKiting', 1);
+            }
         }
 
         if ( (MC.KillAssistants.Length == 0 ||
@@ -992,7 +1014,7 @@ function MonsterKilled(KFMonster Victim, ScrnPlayerInfo KillerInfo, class<KFWeap
         }
         else {
             if ( GameRules.MonsterInfos[index].DamType1 != none ) {
-                if ( DamType == class'KFMod.DamTypePipeBomb'
+                if ( DamType == class'DamTypePipeBomb'
                         && (GameRules.MonsterInfos[index].DamageFlags1 & DF_RAGED) != 0 )
                     GameRules.RewardTeamwork(KillerInfo, index, 'TW_FP_Pipe');
                 else if ( DamType.default.bSniperWeapon ) {
@@ -1008,7 +1030,7 @@ function MonsterKilled(KFMonster Victim, ScrnPlayerInfo KillerInfo, class<KFWeap
         if ( DamType.default.bIsExplosive )
             KillerInfo.ProgressAchievement('Kill100FPExplosives', 1);
         else if ( DamType.default.bIsPowerWeapon) {
-            if ( DamType == class'KFMod.DamTypeDBShotgun' || DamType == class'KFMod.DamTypeBenelli' )
+            if ( DamType == class'DamTypeDBShotgun' || DamType == class'DamTypeBenelli' )
                 KillerInfo.ProgressAchievement('GetOffMyLawn', 1);
         }
     }
@@ -1017,11 +1039,11 @@ function MonsterKilled(KFMonster Victim, ScrnPlayerInfo KillerInfo, class<KFWeap
             KillerInfo.ProgressAchievement('BruteExplosive', 1);
 
         if ( !Victim.bDamagedAPlayer ) {
-            if ( ClassIsChildOf(DamType, class'KFMod.DamTypeM14EBR') )
+            if ( ClassIsChildOf(DamType, class'DamTypeM14EBR') )
                 KillerInfo.ProgressAchievement('BruteM14', 1);
-            else if ( ClassIsChildOf(DamType, class'KFMod.DamTypeM99HeadShot') || ClassIsChildOf(DamType, class'KFMod.DamTypeCrossbowHeadShot') )
+            else if ( ClassIsChildOf(DamType, class'DamTypeM99HeadShot') || ClassIsChildOf(DamType, class'DamTypeCrossbowHeadShot') )
                 KillerInfo.ProgressAchievement('BruteXbow', 1);
-            else if ( ClassIsChildOf(DamType, class'KFMod.DamTypeSCARMK17AssaultRifle') || ClassIsChildOf(DamType, class'KFMod.DamTypeFNFALAssaultRifle') )
+            else if ( ClassIsChildOf(DamType, class'DamTypeSCARMK17AssaultRifle') || ClassIsChildOf(DamType, class'DamTypeFNFALAssaultRifle') )
                 KillerInfo.ProgressAchievement('BruteSCAR', 1);
         }
     }
