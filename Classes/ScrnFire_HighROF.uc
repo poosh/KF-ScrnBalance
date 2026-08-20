@@ -11,8 +11,6 @@ var string FireEndSoundRef;
 var string FireEndStereoSoundRef;
 var string AmbientFireSoundRef;
 
-var transient float FireRateReminder;
-
 static function PreloadAssets(LevelInfo LevelInfo, optional KFFire Spawned)
 {
     local ScrnFire_HighROF ScrnSpawned;
@@ -131,7 +129,6 @@ state FireLoop
             Weapon.PlayOwnedSound(FireEndSound,SLOT_None,AmbientFireVolume/127,,AmbientFireSoundRadius);
         }
         Weapon.StopFire(ThisModeNum);
-        FireRateReminder = 0;
     }
 
     function StopFiring()
@@ -146,29 +143,6 @@ state FireLoop
         if (!bIsFiring || !AllowFire() || bWaitForRelease) {
             GotoState('');
             return;
-        }
-    }
-
-    event ModeDoFire()
-    {
-        if (!AllowFire())
-            return;
-
-        if (Level.TimeSeconds - LastFireTime > 0.1) {
-            FireRateReminder = 0;
-        }
-        else {
-            FireRateReminder += fmax(Level.TimeSeconds - FireRate - LastFireTime, 0.f); // do precise fire rate
-        }
-
-        super.ModeDoFire();
-
-        if (FireRateReminder > 0) {
-            NextFireTime -= FireRateReminder;
-            if (NextFireTime < Level.TimeSeconds) {
-                FireRateReminder = Level.TimeSeconds - NextFireTime;
-                NextFireTime = Level.TimeSeconds;
-            }
         }
     }
 }
