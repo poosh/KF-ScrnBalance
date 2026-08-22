@@ -648,12 +648,12 @@ function SetupPickups(optional bool bReduceAmount, optional bool bBoostAmount)
         A = 0.10;
     }
     else if ( bBoostAmount ) {
-        W = 0.50;
+        W = 0.40;
         A = 0.70;
     }
     else if ( KF.GameDifficulty >= 5.0 ) {
         // Suicidal and Hell on Earth
-        W = 0.15;
+        W = 0.20;
         A = 0.35;
     }
     else {
@@ -3389,7 +3389,7 @@ function GameResumed()
 
 defaultproperties
 {
-    VersionNumber=97421
+    VersionNumber=97423
     GroupName="KF-Scrn"
     FriendlyName="ScrN Balance"
     Description="Total rework of KF1 to make it modern and the best tactical coop in the world while sticking to the roots of the original."

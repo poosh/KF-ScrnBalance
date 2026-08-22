@@ -31,6 +31,17 @@
 # VERSION 9
 
 -------------------------------------------------------------------------------
+## v9.74.23
+- Fixed recoil bug (introduced in .20)
+- Always ignore Z velocity while calculating recoil. This fixes insane recoil while falling. Originally, only low-gravity maps/zones had reduced recoil mid-air.
+- **Welder** instantly unwelds doors below 10% to eliminate RNG when trying to save a door from zed attacks.
+- **TSC**: The 20/80 rule changed to "Quarter Rule". Each team needs to score at least 1/4 (25%) zed kills in every wave.
+- **43. TSC Tourney (Short)** - temporarily added to the default game mode rotation for the upcoming TSC Tournament. It is 5-wave TSC game without overtime.
+- Weapon spawn chance raised to 20% on Suicidal/HoE (up from 15%).
+- Weapon spawn chance lowered to 40% in `bMoreAmmoBoxes=true` waves (down from 50%).
+- Increased a delay between picking up a randomly placed weapon on the map and spawning a new one. This prevents agressive weapon "farming" in TSC Wave 1.
+- *ScrnMapInfo.ini*: added map definitions for **KF-Departed-TSC**, **KF-FilthsCross-TSC**, **KF-Foundry-TSC**, and **KF-Offices-TSC**.
+
 ## v9.74.21
 - Added support for the `?RandomMap=1` command line option on [Broski]'s request.
 - Restored Trader voice lines during regular waves (thanks [jkcrmptn])

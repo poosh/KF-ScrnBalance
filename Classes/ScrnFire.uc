@@ -207,26 +207,26 @@ function float GetSpread()
 simulated function HandleRecoil(float Rec)
 {
     local rotator NewRecoilRotation;
+    local float NewRecoilSpeed;
     local KFPlayerController KFPC;
-    local KFPawn KFPwn;
-    local vector AdjustedVelocity;
-    local float AdjustedSpeed;
+    local KFPawn P;
+    local vector HorzVelocity;
+    local float HorzSpeed;
 
-    if( Instigator != none )
-    {
-        KFPC = KFPlayerController(Instigator.Controller);
-        KFPwn = KFPawn(Instigator);
+    if (Instigator == none)
+        return;
 
-        if (Instigator.bIsCrouched) {
-            Rec *= SpreadCrouchMod;
-        }
-    }
+    KFPC = KFPlayerController(Instigator.Controller);
+    P = KFPawn(Instigator);
 
-    if( KFPC == none || KFPwn == none )
+    if (KFPC == none || P == none)
         return;
 
     if (KFPC.bFreeCamera || !bIsFiring)
         return;
+
+    if (Instigator.bIsCrouched)
+        Rec *= SpreadCrouchMod;
 
     NewRecoilRotation.Pitch = RandRange(maxVerticalRecoilAngle * 0.5, maxVerticalRecoilAngle);
     NewRecoilRotation.Yaw = RandRange(maxHorizontalRecoilAngle * 0.5, maxHorizontalRecoilAngle);
@@ -234,29 +234,24 @@ simulated function HandleRecoil(float Rec)
     if (!bRecoilRightOnly && Rand(2) == 1)
         NewRecoilRotation.Yaw *= -1;
 
-    if (RecoilVelocityScale > 0) {
-        if (Weapon.Owner != none && Weapon.Owner.Physics == PHYS_Falling &&
-            Weapon.Owner.PhysicsVolume.Gravity.Z > class'PhysicsVolume'.default.Gravity.Z)
-        {
-            AdjustedVelocity = Weapon.Owner.Velocity;
-            // Ignore Z velocity in low grav so we don't get massive recoil
-            AdjustedVelocity.Z = 0;
-            AdjustedSpeed = VSize(AdjustedVelocity);
-            //log("AdjustedSpeed = "$AdjustedSpeed$" scale = "$(AdjustedSpeed* RecoilVelocityScale * 0.5));
+    if (RecoilVelocityScale > 0 && abs(P.Velocity.X) + abs(P.Velocity.Y) > 50) {
+        HorzVelocity = P.Velocity;
+        HorzVelocity.Z = 0;
+        HorzSpeed = VSize(HorzVelocity);
 
-            // Reduce the falling recoil in low grav
-            NewRecoilRotation.Pitch += (AdjustedSpeed* RecoilVelocityScale * 0.5);
-            NewRecoilRotation.Yaw += (AdjustedSpeed* RecoilVelocityScale * 0.5);
+        if (P.Physics == PHYS_Falling) {
+            // Reduce recoil while falling
+            HorzSpeed = fmin(HorzSpeed, P.GroundSpeed);
+            HorzSpeed *= 0.5;
         }
-        else {
-            //log("Velocity = "$VSize(Weapon.Owner.Velocity)$" scale = "$(VSize(Weapon.Owner.Velocity)* RecoilVelocityScale));
-            NewRecoilRotation.Pitch += VSize(Weapon.Owner.Velocity) * RecoilVelocityScale;
-            NewRecoilRotation.Yaw += VSize(Weapon.Owner.Velocity) * RecoilVelocityScale;
-        }
+
+        NewRecoilRotation.Pitch += HorzSpeed * RecoilVelocityScale;
+        NewRecoilRotation.Yaw += HorzSpeed * RecoilVelocityScale;
     }
-    NewRecoilRotation *= Rec;
 
-    KFPC.SetRecoil(NewRecoilRotation, RecoilRate / (default.FireRate/FireRate));
+    NewRecoilRotation *= Rec;
+    NewRecoilSpeed = RecoilRate / (default.FireRate / FireRate);
+    KFPC.SetRecoil(NewRecoilRotation, NewRecoilSpeed);
 }
 
 // Unreliable. Always use together with the (MagAmmoRemaining == 0) check.
@@ -371,4 +366,5 @@ defaultproperties
     SpreadCrouchMod=0.85
     SpreadSemiAutoMod=0.85
     SpreadResetTime=0.5
+    RecoilVelocityScale=1.5
 }

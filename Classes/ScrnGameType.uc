@@ -69,6 +69,7 @@ const TOURNEY_ALL_PERKS         = 0x0010;  // no perk filter in tourney
 const TOURNEY_HMG               = 0x0020;  // allow Heavy MachineGunner perk
 
 var array<KFAmmoPickup> SleepingAmmo;
+var array<KFRandomItemSpawn> SleepingWeapons;
 var transient int CurrentAmmoBoxCount, DesiredAmmoBoxCount;
 //var const protected array< class<Pickup> > CheatPickups; // disallowed pickups in tourney mode
 
@@ -976,18 +977,20 @@ function Killed(Controller Killer, Controller Killed, Pawn KilledPawn, class<Dam
             ZedTossCashFromDamage(KilledMonster, KFDamType);
         }
 
-        if (!bDidTraderMovingMessage) {
-            if (ZombiesKilled >= ZombiesKilledForTraderMovingMessage && PlayerController(Killer) != none) {
-                // Have Trader tell players that the Shop's Moving
-                PlayerController(Killer).ServerSpeech('TRADER', 0, "");
-                bDidTraderMovingMessage = true;
+        if (!bZEDTimeActive) {
+            if (!bDidTraderMovingMessage) {
+                if (ZombiesKilled >= ZombiesKilledForTraderMovingMessage && PlayerController(Killer) != none) {
+                    // Have Trader tell players that the Shop's Moving
+                    PlayerController(Killer).ServerSpeech('TRADER', 0, "");
+                    bDidTraderMovingMessage = true;
+                }
             }
-        }
-        else if (!bDidMoveTowardTraderMessage ) {
-            if (ZombiesKilled >= ZombiesKilledForMoveTowardTraderMessage && PlayerController(Killer) != none) {
-                // Have Trader tell players that the Shop's Almost Open
-                PlayerController(Killer).ServerSpeech('TRADER', 1, "");
-                bDidMoveTowardTraderMessage = true;
+            else if (!bDidMoveTowardTraderMessage ) {
+                if (ZombiesKilled >= ZombiesKilledForMoveTowardTraderMessage && PlayerController(Killer) != none) {
+                    // Have Trader tell players that the Shop's Almost Open
+                    PlayerController(Killer).ServerSpeech('TRADER', 1, "");
+                    bDidMoveTowardTraderMessage = true;
+                }
             }
         }
     }
@@ -3593,6 +3596,47 @@ function AmmoPickedUp(KFAmmoPickup PickedUp)
             return;
         }
     }
+}
+
+function WeaponPickedUp(KFRandomItemSpawn PickedUp)
+{
+    local int i;
+    local KFRandomItemSpawn WeaponSpawn;
+    local float RespawnDelay;
+
+    if (PickedUp == none)
+        return;
+
+    RespawnDelay = 10*frand() + 30.0/AlivePlayerCount;
+
+    while (SleepingWeapons.length > 0) {
+        i = rand(SleepingWeapons.Length);
+        WeaponSpawn = SleepingWeapons[i];
+        SleepingWeapons.remove(i, 1);
+
+        if (WeaponSpawn != PickedUp && !WeaponSpawn.bIsEnabledNow) {
+            WeaponSpawn.EnableMeDelayed(RespawnDelay);
+            return;
+        }
+    }
+
+    if (SleepingWeapons.length == 0) {
+        for (i = 0; i < WeaponPickups.length; ++i) {
+            WeaponSpawn = WeaponPickups[i];
+            if ( WeaponSpawn != PickedUp && WeaponSpawn.bIsEnabledNow )
+                SleepingWeapons[SleepingWeapons.length] = WeaponSpawn;
+        }
+
+        if (SleepingWeapons.length > 0) {
+            i = rand(SleepingWeapons.Length);
+            SleepingWeapons[i].EnableMeDelayed(RespawnDelay);
+            SleepingWeapons.remove(i, 1);
+            return;
+        }
+    }
+
+    // if we reached here, no other  weapon spawns are available
+    PickedUp.EnableMeDelayed(30.0);
 }
 
 function StartWaveBoss()

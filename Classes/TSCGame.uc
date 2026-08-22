@@ -1560,7 +1560,7 @@ defaultproperties
     bLockTeamsOnSuddenDeath=true
     bAntiBlocker=True
     DefaultGameLength=40
-    WaveKillReqPct=0.20
+    WaveKillReqPct=0.25
     PlayerKillScore=250
 
     bClanCheck=True

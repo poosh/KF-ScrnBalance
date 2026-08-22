@@ -131,6 +131,11 @@ state FireLoop
         Weapon.StopFire(ThisModeNum);
     }
 
+    event ModeDoFire()
+    {
+        super.ModeDoFire();
+    }
+
     function StopFiring()
     {
         GotoState('');

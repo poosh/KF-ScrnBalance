@@ -787,7 +787,7 @@ protected function bool LoadNextWave()
     LoadDialogues(Wave.TraderDialogues);
     bSkipDialogue = false;
 
-    DoorControl(Wave.DoorControl, Mut.bRespawnDoors || Mut.bTSCGame);
+    DoorControl(Wave.DoorControl, Mut.bRespawnDoors || Mut.bTSCGame || Mut.bTestMap);
 
     switch (Wave.EndRule) {
         case RULE_ReachTrader:
