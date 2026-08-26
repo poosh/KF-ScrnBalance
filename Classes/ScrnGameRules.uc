@@ -80,14 +80,6 @@ var array<MonsterInfo> MonsterInfos;
 var protected transient KFMonster LastSeachedMonster; //used to optimize GetMonsterIndex()
 var protected transient int       LastFoundMonsterIndex;
 
-
-struct MapAlias {
-    var string FileName;
-    var string AchName;
-    var string OriginalMap;
-};
-var config array<MapAlias> MapAliases;
-
 var array< class<KFMonster> > CheckedMonsterClasses;
 
 var ScrnGameRulesMod Mods;
@@ -276,11 +268,11 @@ function WaveStarted()
     }
 
     if ( Mut.bStoryMode )
-        log("Wave "$(Mut.KF.WaveNum+1)$" started at " $ Mut.GameTimeStr(), 'ScrnBalance');
+        Mut.GameTimeLog("Wave "$(Mut.KF.WaveNum+1)$" started");
     else if (bFinalWave)
-        log("Final wave started at " $ Mut.GameTimeStr(), 'ScrnBalance');
+        Mut.GameTimeLog("Final wave started");
     else
-        log("Wave "$(Mut.KF.WaveNum+1)$"/"$(Mut.KF.FinalWave)$" started at " $ Mut.GameTimeStr(), 'ScrnBalance');
+        Mut.GameTimeLog("Wave "$(Mut.KF.WaveNum+1)$"/"$(Mut.KF.FinalWave)$" started");
 
     DestroyBuzzsawBlade(); // prevent cheating
 }
@@ -666,36 +658,13 @@ function bool HasCustomZeds()
 
 function string GetOriginalMapName(String FileName)
 {
-    local int i;
-
-    for ( i = 0; i < MapAliases.length; ++i ) {
-        if ( FileName ~= MapAliases[i].FileName ) {
-            if ( MapAliases[i].OriginalMap != "" )
-                return MapAliases[i].OriginalMap;
-            if ( MapAliases[i].AchName != "" )
-                return MapAliases[i].AchName;
-            return FileName;
-        }
-    }
     return FileName;
 }
 
 function string GetMapAchName(String FileName)
 {
-    local int i;
-
     if (Mut.MapInfo.AchName != "" && FileName == Mut.MapName) {
         return Mut.MapInfo.AchName;
-    }
-
-    for ( i = 0; i < MapAliases.length; ++i ) {
-        if ( FileName ~= MapAliases[i].FileName ) {
-            if ( MapAliases[i].AchName != "" )
-                return MapAliases[i].AchName;
-            if ( MapAliases[i].OriginalMap != "" )
-                return MapAliases[i].OriginalMap;
-            return FileName;
-        }
     }
     return FileName;
 }
@@ -1459,7 +1428,6 @@ function BleedingMonster(KFMonster M, float BleedOutTime)
 
     index = GetMonsterIndex(M);
     MonsterInfos[index].BleedOutTime = Level.TimeSeconds + BleedOutTime;
-    StartProcessing();
 }
 
 // returns true if last damage to zed was a headshot
@@ -2099,61 +2067,23 @@ function bool HasInventoryClass( Pawn P, class<Inventory> IC )
     return false;
 }
 
-function StartProcessing()
+function bool ProcessMonster(out MonsterInfo MI)
 {
-    GotoState('Processing');
-}
+    local KFMonster M;
 
-state Processing
-{
-    ignores StartProcessing;
+    M = MI.Monster;
+    if (M == none || M.Health <= 0)
+        return false;
 
-    function BeginState()
-    {
-        Timer();
-    }
-
-    function EndState()
-    {
-        SetTimer(0, false);
-    }
-
-    function Timer()
-    {
-        local bool bKeepProcessing;
-        local float NextTime;
-        local int i;
-        local KFMonster M;
-        local Controller C;
-
-        NextTime = Level.TimeSeconds + 3600;
-        for ( i = 0; i < MonsterInfos.length; ++i ) {
-            M = MonsterInfos[i].Monster;
-            if ( M == none || M.Health <= 0 )
-                continue;
-
-            if ( MonsterInfos[i].BleedOutTime > 0 ) {
-                if ( Level.TimeSeconds >= MonsterInfos[i].BleedOutTime ) {
-                    if ( M.LastDamagedBy != none )
-                        C = M.LastDamagedBy.Controller;
-                    else
-                        C = none;
-                    M.Died(C, class'DamTypeBleedOut', M.Location);
-                }
-                else {
-                    bKeepProcessing = true;
-                    NextTime = fmin(NextTime, MonsterInfos[i].BleedOutTime);
-                }
-            }
-        }
-
-        if ( NextTime > Level.TimeSeconds ) {
-            SetTimer(NextTime - Level.TimeSeconds, false);
+    if (MI.BleedOutTime > 0 && Level.TimeSeconds >= MI.BleedOutTime) {
+        if (M.LastDamagedBy != none) {
+            M.Died(M.LastDamagedBy.Controller, class'DamTypeBleedOut', M.Location);
         }
         else {
-            GotoState('');
+            M.Died(none, class'DamTypeBleedOut', M.Location);
         }
     }
+    return true;
 }
 
 
@@ -2244,32 +2174,4 @@ defaultproperties
     HardcoreBosses(11)=(MonsterClass="HunterHellTime",HL=2)
     HardcoreBosses(12)=(MonsterClass="Guardian",HL=2)
     HardcoreBosses(13)=(MonsterClass="Cyberdemon",HL=2)
-
-    MapAliases(0)=(FileName="KF-Abandoned-Moonbase",AchName="KF-MoonBase")
-    MapAliases(1)=(FileName="KF-BigSunriseBeta1-6",AchName="KF-BigSunrise")
-    MapAliases(2)=(FileName="KF-Clandestine-SE",AchName="KF-Clandestine",OriginalMap="KF-Clandestine-SE")
-    MapAliases(3)=(FileName="KF-Constriction-SE",AchName="KF-Constriction")
-    MapAliases(4)=(FileName="KF-DepartedNight",AchName="KF-Departed")
-    MapAliases(5)=(FileName="KF-Doom2-Final-V7",AchName="KF-D2M1")
-    MapAliases(6)=(FileName="KF-Doom2-HiRes",AchName="KF-D2M1")
-    MapAliases(7)=(FileName="KF-Doom2-HiRes11",AchName="KF-D2M1")
-    MapAliases(8)=(FileName="KF-Doom2-SE",AchName="KF-D2M1")
-    MapAliases(9)=(FileName="KF-FoundryLightsOut",AchName="KF-Foundry")
-    MapAliases(10)=(FileName="KF-Harbor",AchName="KF-HarbourV3",OriginalMap="KF-Harbor")
-    MapAliases(11)=(FileName="KF-HarbourV3-fix",AchName="KF-HarbourV3",OriginalMap="KF-HarbourV3")
-    MapAliases(12)=(FileName="KF-HellFreezesOver1-2",AchName="KF-Hell")
-    MapAliases(13)=(FileName="KF-HellGateFinal1-2",AchName="KF-HellGate")
-    MapAliases(14)=(FileName="KF-HospitalhorrorsLightsOut",AchName="KF-Hospitalhorrors")
-    MapAliases(15)=(FileName="KF-Icebreaker-SE",AchName="KF-Icebreaker")
-    MapAliases(16)=(FileName="KF-PandorasBoxV2-fix",AchName="KF-PandorasBox")
-    MapAliases(17)=(FileName="KF-SantasRetreatFinal1-1",AchName="KF-SantasRetreat")
-    MapAliases(18)=(FileName="KF-SilentHillBeta2-0",AchName="KF-SilentHill")
-    MapAliases(19)=(FileName="KF-SunnyLandSanitariumBeta1-5",AchName="KF-SunnyLandSanitarium")
-    MapAliases(20)=(FileName="KF-SunnyLandSanitarium-SE",AchName="KF-SunnyLandSanitarium",OriginalMap="KF-SunnyLandSanitarium-SE")
-    MapAliases(21)=(FileName="KF-Steamland_Fogged",AchName="KF-Steamland")
-    MapAliases(22)=(FileName="KF-Train-fix",AchName="KF-Train")
-    MapAliases(23)=(FileName="KF-ZedDiscoThe1stFloor",AchName="KF-ZedDisco",OriginalMap="KF-ZedDiscoThe1stFloor")
-    MapAliases(24)=(FileName="KF-ZedDiscoThe2ndFloor",AchName="KF-ZedDisco",OriginalMap="KF-ZedDiscoThe2ndFloor")
-    MapAliases(25)=(FileName="KFT-ScrnTestGrounds",OriginalMap="KF-ScrnTestGrounds")
-    MapAliases(26)=(FileName="KFT-ScrnTestGrounds-SE",OriginalMap="KF-ScrnTestGrounds-SE")
 }

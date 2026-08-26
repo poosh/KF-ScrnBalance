@@ -31,6 +31,21 @@
 # VERSION 9
 
 -------------------------------------------------------------------------------
+## v9.74.25
+- Enhanced zed spawn system. Fixed multiple minor bugs, and split zed spawn on multiple ticks to reduce CPU spikes on high-tickrate servers.
+- **TSC**: Fixed a rate issue where both special squads could spawn near the same team.
+- **TSC Tourney v2.01** - adjusted OT and SD waves to better suit the updated zed spawn system.
+- Fixed an issue where not enough zeds were spawning in Solo Boss fights.
+- Fixed **LAR** reload interruption (thanks [Duckbuster])
+- Fixed log warning messages when spectating zeds.
+- *ScrnUser.ini*: Added `bDoorMessages` to HUD configs (default: true). Allows hiding "Press USE to open/close door" messages.
+- *ScrnUser.ini*: Added `MessageFontAdjust` to adjust `CriticalEvent` message font size (door messages etc.). Set it to a negative value to make the messages smaller.
+- *ScrnBalanceSrv.ini*: Removed `MapAliases` (replaced with `AchName` in *ScrnMapInfo.ini*)
+- *ScrnMapInfo.ini*: Added `bResetZPenalty`, `ZVolStaired`, `ZVolPaths`.
+### Code Changes
+- `ScrnWorkqueue` - a new class to split recurring tasks across multiple ticks, balancing the CPU load across ticks.
+- `ScrnGameType` - multiple variables and functions changed relating to zed spawn.
+
 ## v9.74.23
 - Fixed recoil bug (introduced in .20)
 - Always ignore Z velocity while calculating recoil. This fixes insane recoil while falling. Originally, only low-gravity maps/zones had reduced recoil mid-air.

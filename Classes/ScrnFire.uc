@@ -266,7 +266,10 @@ simulated function bool AllowFire()
 
     p = KFPawn(Instigator);
 
-    if (KFWeap.bIsReloading || p.SecondaryItem != none || p.bThrowingNade)
+    if (KFWeap.bIsReloading && !KFWeap.bHoldToReload)
+        return false;
+
+    if (p.SecondaryItem != none || p.bThrowingNade)
         return false;
 
     if (Weapon.AmmoAmount(ThisModeNum) < AmmoPerFire)

@@ -923,8 +923,8 @@ function SetupWave()
     UpdateMonsterCount();
 
     bWaveEnding = false;
-    NextSquadTarget[0] = rand(AliveTeamPlayerCount[0]);
-    NextSquadTarget[1] = rand(AliveTeamPlayerCount[1]);
+    NextSquadTargetIndex[0] = rand(AliveTeamPlayerCount[0]);
+    NextSquadTargetIndex[1] = rand(AliveTeamPlayerCount[1]);
     NextSquadTeam = rand(2); // pickup random team for the next special squad
 
     WaveMinuteTimer = 0;
@@ -1024,63 +1024,62 @@ function EZedSpawnLocation GetSpawnLocation()
     return super.GetSpawnLocation();
 }
 
-function bool AddSquad()
+function bool LoadNextSpawnSquad()
 {
-    if ( !bSingleTeamGame && NextSpawnSquad.length == 0 ) {
-        NextSquadTeam = 1 - NextSquadTeam;
-        LastZVol = none;
+    if (bSingleTeamGame)
+        return super.LoadNextSpawnSquad();
 
-        if ( PendingSpecialSquad.length != 0 ) {
-            // spawn the same special squad for another team
-            NextSpawnSquad = PendingSpecialSquad;
-            PendingSpecialSquad.length = 0;
-        }
-        else {
-            ScrnGameLength.LoadNextSpawnSquad(NextSpawnSquad);
-            if ( NextSpawnSquad.length == 0 )
-                return false;
+    NextSquadTeam = 1 - NextSquadTeam;
 
-            if ( ScrnGameLength.bLoadedSpecial ) {
-                if (!bTeamWiped) {
-                    PendingSpecialSquad = NextSpawnSquad; // backup for another team
-                }
-                bCheckSquadTeam = true; // One special squad per each team
-            }
-            else {
-                // Check teams only when they are equal in number.
-                // If teams are uneven, then just pick up random player as squad's target
-                bCheckSquadTeam = BigTeamSize == SmallTeamSize;
-            }
-        }
+    if (PendingSpecialSquad.length != 0) {
+        // spawn the same special squad for another team
+        NextSpawnSquad = PendingSpecialSquad;
+        PendingSpecialSquad.length = 0;
+        return true;
     }
-    return super.AddSquad();
+
+    if (!super.LoadNextSpawnSquad())
+        return false;
+
+    if (ScrnGameLength.bLoadedSpecial) {
+        if (!bTeamWiped) {
+            PendingSpecialSquad = NextSpawnSquad; // backup for another team
+        }
+        bCheckSquadTeam = true; // One special squad per each team
+    }
+    else {
+        // Check teams only when they are equal in number.
+        // If teams are uneven, then just pick up random player as squad's target
+        bCheckSquadTeam = BigTeamSize == SmallTeamSize;
+    }
 }
 
 // returns every alive player in a row
-function Controller FindSquadTarget()
+function bool SetSquadTarget()
 {
-    local Controller C, FirstC;
     local int i;
-
-    if ( bTeamWiped || !bCheckSquadTeam || NextSquadTeam > 1 ) {
-        return super.FindSquadTarget();
+    if (bTeamWiped || !bCheckSquadTeam || NextSquadTeam > 1 || Telemetry.Length == 0) {
+        return super.SetSquadTarget();
     }
 
-    for ( C = Level.ControllerList; C != none; C = C.NextController ) {
-        if ( C.bIsPlayer && C.Pawn!=None && C.Pawn.Health>0  && C.GetTeamNum() == NextSquadTeam ) {
-            if (i == NextSquadTarget[NextSquadTeam]) {
-                ++NextSquadTarget[NextSquadTeam];
-                return C;
-            }
-            ++i;
-            if ( FirstC == none ) {
-                FirstC = C;
-            }
-        }
+    if (NextSquadTargetIndex[NextSquadTeam] >= Telemetry.Length) {
+        NextSquadTargetIndex[NextSquadTeam] = 0;
     }
 
-    NextSquadTarget[NextSquadTeam] = 1;  // cuz we return zeroth
-    return FirstC;
+    i = NextSquadTargetIndex[NextSquadTeam];
+    while (i < Telemetry.Length && Telemetry[i].Pawn.GetTeamNum() != NextSquadTeam) {
+        ++i;
+    }
+
+    if (i < Telemetry.Length) {
+        NextSquadTarget = Telemetry[i].Pawn;
+        NextSquadTargetIndex[NextSquadTeam] = i;
+        ++NextSquadTargetIndex[NextSquadTeam];
+    }
+    else {
+        NextSquadTarget = none;
+    }
+    return NextSquadTarget != none;
 }
 
 protected function StartTourney()
@@ -1504,6 +1503,12 @@ State MatchInProgress
 } //MatchInProgress
 
 
+State MatchOver
+{
+    // ignore disconnects
+    function Killed(Controller Killer, Controller Killed, Pawn KilledPawn, class<DamageType> damageType) { }
+    function TeamWiped(byte t) { }
+} // MatchOver
 
 defaultproperties
 {

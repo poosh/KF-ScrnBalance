@@ -167,8 +167,7 @@ function WaveStarted(byte WaveNum) { }
 function WaveEnded(byte WaveNum) { }
 
 // Function is called only when squad is survived.
-// @param MapName - Map name without .rom, e.g. "KF-Farm". MapName is already checked for GameRules.MapAliases before
-//      calling GameWon()
+// @param MapName - Map name without .rom, e.g. "KF-Farm".
 function GameWon(string MapName) { }
 
 // Function is called only when the game is ended no matter of the result (won or lost).

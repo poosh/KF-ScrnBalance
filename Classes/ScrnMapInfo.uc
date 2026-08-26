@@ -23,6 +23,12 @@ struct SZVolLink {
     var config name Door;
 };
 
+struct SZVolPath {
+    var config name ZVol;
+    var config name Path;
+    var config float Dist;
+};
+
 struct SPath {
     var config name From;
     var config name To;
@@ -51,14 +57,16 @@ var config float FloorHeight, BasementZ;
 var config float FloorPenalty;
 var config float ElevatedSpawnMinZ, ElevatedSpawnMaxZ;
 var config bool bHighGround;
-var config bool bResetSpawnDesirability;
+var config bool bResetSpawnDesirability, bResetZPenalty;
 var config array<name> ZVolBad;
 var config array<name> ZVolHidden;
 var config array<name> ZVolClose;
+var config array<name> ZVolStaired;
 var config array<name> ZVolElevated;
 var config array<name> ZVolJumpable;
 var config array<SZVolDoor> ZVolDoors;
 var config array<SZVolLink> ZVolLinks;
+var config array<SZVolPath> ZVolPaths;
 
 var config byte GuardianLight, GuardianHue;
 var config byte FTGTargetsPerWave;
@@ -98,13 +106,14 @@ static function int FindZVolByName(out array<ZombieVolume> ZList, name n) {
     return -1;
 }
 
-function ProcessZombieVolumes(out array<ZombieVolume> ZList, out array<ScrnTypes.ZVolInfo> ZVolInfos)
+function ProcessZombieVolumes(ScrnGameType Game, out array<ZombieVolume> ZList, out array<ScrnTypes.ZVolInfo> ZVolInfos)
 {
     local int i, j, k, L, ZVolHiddenCount;
     local ZombieVolume ZVol;
     local name n;
     local KFDoorMover Door;
     local string s;
+    local NavigationPoint NP;
 
     if (bDebug && DebugZVol != '') {
         i = FindZVolByName(ZList, DebugZVol);
@@ -131,35 +140,45 @@ function ProcessZombieVolumes(out array<ZombieVolume> ZList, out array<ScrnTypes
             --i;
             continue;
         }
+
         if ( bResetSpawnDesirability ) {
             if ( abs(ZVol.SpawnDesirability - ZVol.default.SpawnDesirability) > 30 ) {
                 log(n $ " SpawnDesirability reset " $ ZVol.SpawnDesirability $ " => " $ ZVol.default.SpawnDesirability, class.name);
             }
             ZVol.SpawnDesirability = class'ZombieVolume'.default.SpawnDesirability;
         }
-        if ( bHighGround ) {
+
+        if (bHighGround || bResetZPenalty) {
             ZVol.bNoZAxisDistPenalty = false;
         }
+
         if ( FindNameInArray(ZVolHidden, n) != -1 ) {
             log(n $ " marked hidden", class.name);
             ZVol.bAllowPlainSightSpawns = true;
         }
+
         if (ZVol.bAllowPlainSightSpawns) {
             ++ZVolHiddenCount;
         }
+
         if ( FindNameInArray(ZVolClose, n) != -1 ) {
             log(n $ " marked close", class.name);
             ZVol.MinDistanceToPlayer = 1;
         }
-        ZVol.bHasInitSpawnPoints = false;  // reuse this flag for elevation mark
+
         if ( FindNameInArray(ZVolElevated, n) != -1 ) {
             log(n $ " marked elevated", class.name);
             ZVol.bNoZAxisDistPenalty = true;
-            ZVol.bHasInitSpawnPoints = true;
+            ZVolInfos[i].bElevated = true;
         }
         else if ( FindNameInArray(ZVolJumpable, n) != -1 ) {
             log(n $ " marked jumpable", class.name);
             ZVol.bNoZAxisDistPenalty = true;
+        }
+        else if ( FindNameInArray(ZVolStaired, n) != -1 ) {
+            log(n $ " marked staired", class.name);
+            ZVol.bNoZAxisDistPenalty = false;
+            ZVolInfos[i].bStaired = true;
         }
 
         for (j = 0; j < ZVolDoors.length; ++j) {
@@ -241,6 +260,45 @@ function ProcessZombieVolumes(out array<ZombieVolume> ZList, out array<ScrnTypes
         s $= " => " $ ZList[i].name;
         log(s, class.name);
     }
+
+    for (j = 0; j < ZVolPaths.length; ++j) {
+        // log("ZVolLinks["$j$"] Src="$ZVolLinks[j].Src $ " Dst="$ZVolLinks[j].Dst $ " Door=" $ ZVolLinks[j].Door, class.name);
+        if (ZVolPaths[j].ZVol == '' || ZVolPaths[j].Path == '') {
+            log("ZVolPaths["$j$"] - invalid entry", class.name);
+            continue;
+        }
+
+        i = FindZVolByName(ZList, ZVolPaths[j].ZVol);
+        if (i == -1) {
+            log("ZVolPaths["$j$"].ZVol '" $ ZVolPaths[j].ZVol $ "' not found", class.name);
+            continue;
+        }
+
+        NP = Game.FindPathNodeByName(ZVolPaths[j].Path);
+        // NavigationPoint(FindObject(String(ZVolPaths[j].Path), class'NavigationPoint'));
+        if (NP == none) {
+            log("ZVolPaths["$j$"].Path '" $ ZVolPaths[j].Path $ "' not found", class.name);
+            continue;
+        }
+
+        ZVol = ZList[i];
+        ZVolInfos[i].Location = NP.Location;
+        s = "ZVolPaths["$j$"] " $ ZVol.name $ " => " $ NP.name $ ". Path Distance: ";
+        if (ZVolPaths[j].Dist == 0) {
+            ZVolInfos[i].ExtraDistance = CalcPathDistance(ZVol.SpawnPos[0], NP.Location);
+            s $= "(auto) ";
+        }
+        else {
+            ZVolInfos[i].ExtraDistance = ZVolPaths[j].Dist;
+        }
+        s $= ZVolInfos[i].ExtraDistance $ ". Straight Distance: " $ VSize(ZVol.SpawnPos[0] - NP.Location);
+        log(s, class.name);
+    }
+}
+
+function float CalcPathDistance(vector from, vector to) {
+    // a very dummy method
+    return VSize(from - to);
 }
 
 function InitDebug()

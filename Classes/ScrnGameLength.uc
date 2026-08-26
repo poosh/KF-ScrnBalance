@@ -917,7 +917,6 @@ function RunWave()
 {
     local string s;
     local bool bHasTitle, bHasMsg;
-    local PlayerController PC;
 
     SetWaveInfo();
     DoorControl(Wave.DoorControl2, false);
@@ -967,11 +966,7 @@ function RunWave()
             break;
 
         case RULE_ReachTrader:
-            // get a random player to trigger the Trader's voice line
-            PC = PlayerController(Game.FindSquadTarget());
-            if (PC != none) {
-                PC.ServerSpeech('TRADER', 0, "");
-            }
+            Mut.BroadcastSpeech('TRADER', 0);
             break;
     }
 
@@ -1872,6 +1867,17 @@ function SkipDialogue()
     if (DialogueHandler != none && DialogueHandler.IsRunning()) {
         DialogueHandler.EndDialogue();
     }
+}
+
+function bool IsLastTrader()
+{
+    local int i;
+
+    for (i = Game.WaveNum + 1; i < WaveCache.Length; ++i) {
+        if (WaveCache[i].bOpenTrader)
+            return false;
+    }
+    return true;
 }
 
 defaultproperties

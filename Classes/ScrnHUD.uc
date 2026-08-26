@@ -175,6 +175,8 @@ var config float DamagePopupFadeOutTime;
 var config bool bShowSpeed;
 var config float SpeedometerX, SpeedometerY;
 var config byte SpeedometerFont;
+var config bool bDoorMessages;
+var config int MessageFontAdjust;
 
 var bool bHidePlayerInfo;
 
@@ -1609,7 +1611,12 @@ simulated function UpdateHud()
     else if ( bSpectatingScrn ) {
         // spectating
         BulletsInClipDigits.Value = CurMagAmmo;
-        GrenadeDigits.Value = ScrnPawnOwner.SpecNades;
+        if (ScrnPawnOwner != none) {
+            GrenadeDigits.Value = ScrnPawnOwner.SpecNades;
+        }
+        else {
+            GrenadeDigits.Value = 0;
+        }
     }
 
     ClipsDigits.Value = CurClipsPrimary;
@@ -1654,7 +1661,7 @@ simulated function UpdateHud()
     else if (PawnOwner.Health < 50) {
         HealthDigits.Tints[0] =  SwitchDigitColors[SwitchDigitColorIndex];
     }
-    else if (ScrnPawnOwner.Health < int(ScrnPawnOwner.HealthMax)
+    else if (ScrnPawnOwner != none && ScrnPawnOwner.Health < int(ScrnPawnOwner.HealthMax)
             && ScrnPawnOwner.ClientHealthToGive +  ScrnPawnOwner.Health >= int(ScrnPawnOwner.HealthMax)) {
         HealthDigits.Tints[0] = FullHealingColor;
     }
@@ -3476,13 +3483,14 @@ simulated function DrawModOverlay( Canvas C )
     // BrightFactor = 1.5;   // Not too bright.  Not too dark.  Livens things up just abit
     // Hook for Optional Vision overlay.  - Alex
 
-    if( PawnOwner==None )
-    {
-        if( CurrentZone!=None || CurrentVolume!=None ) // Reset everything.
-        {
+    C.Style = ERenderStyle.STY_Alpha;
+
+    if (PawnOwner==None) {
+        if (CurrentZone != none || CurrentVolume != none ) {
+             // Reset everything.
             LastR = 0;
-                LastG = 0;
-                LastB = 0;
+            LastG = 0;
+            LastB = 0;
             CurrentZone = None;
             LastZone = None;
             CurrentVolume = None;
@@ -3493,8 +3501,7 @@ simulated function DrawModOverlay( Canvas C )
         VisionOverlay = default.VisionOverlay;
 
         // Dead Players see Red
-        if( !PlayerOwner.IsSpectating() && SpectatorOverlay != none )
-        {
+        if (!PlayerOwner.IsSpectating() && SpectatorOverlay != none) {
             C.SetDrawColor(255, 255, 255, GrainAlpha);
             C.DrawTile(SpectatorOverlay, C.SizeX, C.SizeY, 0, 0, 1024, 1024);
         }
@@ -3504,10 +3511,10 @@ simulated function DrawModOverlay( Canvas C )
     C.SetPos(0, 0);
 
     // if critical, pulsate.  otherwise, dont.
-    if ( CriticalOverlayTimer > Level.TimeSeconds )
+    if (CriticalOverlayTimer > Level.TimeSeconds)
         VisionOverlay = CriticalOverlay;
-    else if ( (PlayerOwner.Pawn==PawnOwner || !PlayerOwner.bBehindView) && Vehicle(PawnOwner)==None
-            && PawnOwner.Health > 0 && PawnOwner.Health < 25 )
+    else if ((PlayerOwner.Pawn == PawnOwner || !PlayerOwner.bBehindView)
+            && PawnOwner.Health > 0 && PawnOwner.Health < 25 && Vehicle(PawnOwner) == none )
         VisionOverlay = NearDeathOverlay;
     else
         VisionOverlay = default.VisionOverlay;
@@ -3693,7 +3700,7 @@ simulated function DrawSpecialSpectatingHUD(Canvas C)
     }
 }
 
-// color tar support
+// color tag support
 simulated function LocalizedMessage( class<LocalMessage> Message, optional int Switch, optional PlayerReplicationInfo RelatedPRI_1, optional PlayerReplicationInfo RelatedPRI_2, optional Object OptionalObject, optional String CriticalString)
 {
     local int i;
@@ -3703,6 +3710,9 @@ simulated function LocalizedMessage( class<LocalMessage> Message, optional int S
         return;
 
     if( bIsCinematic && !ClassIsChildOf(Message,class'ActionMessage') )
+        return;
+
+    if (Message == class'WaitingMessage' && Switch == 6 && !bDoorMessages)
         return;
 
     if( CriticalString == "" )
@@ -3796,6 +3806,15 @@ simulated function LocalizedMessage( class<LocalMessage> Message, optional int S
 
 simulated function DrawMessage( Canvas C, int i, float PosX, float PosY, out float DX, out float DY )
 {
+    local name mcname;
+
+    // Don't display kill messages while Scoreboard is active - to avoid overlaping.
+    if (bShowScoreboard) {
+        mcname = LocalMessages[i].Message.name;
+        if (mcname == 'KillsMessage' || mcname == 'NKillsMessage' || mcname == 'DamageMessage')
+            return;
+    }
+
     // fix for cases when some mutators directly write LocalMessages instead of calling LocalizedMessage()
     // e.g., MutKillMessage
     LocalMessages[i].StringMessage = class'ScrnFunctions'.static.ParseColorTags(LocalMessages[i].StringMessage,
@@ -4215,8 +4234,20 @@ simulated function LayoutMessage( out HudLocalizedMessage Message, Canvas C )
                 PlayerOwner.PlayerReplicationInfo);
         // Story messages extends WaitingMessage, e.g. Msg_GoldBarNotification.
         // Don't mess up with their font.
-        if ((Message.Message == class'WaitingMessage' || class<ScrnWaitingMessage>(Message.Message) != none)
-                && (Message.Switch <= 3 || Message.Switch == 5)) {
+        if (Message.Message == class'WaitingMessage') {
+            if (Message.Switch <= 3 || Message.Switch == 5) {
+                // next wave inbound
+                Message.StringFont = GetWaitingFontSizeIndex(C, FontSize);
+            }
+            else {
+                // door messages
+                Message.StringFont = GetFontSizeIndex(C, FontSize + 2 * MessageFontAdjust);
+            }
+        }
+        else if (Message.Message == class'KFCriticalEventPlus') {
+            Message.StringFont = GetFontSizeIndex(C, FontSize + MessageFontAdjust);
+        }
+        else if (class<ScrnWaitingMessage>(Message.Message) != none) {
             Message.StringFont = GetWaitingFontSizeIndex(C, FontSize);
         }
         else {
@@ -4625,6 +4656,7 @@ defaultproperties
     SpeedometerX=0.85
     SpeedometerY=0.00
     SpeedometerFont=5
+    bDoorMessages=true
     ChatIcon=Texture'ScrnTex.HUD.ChatIcon'
     CriticalOverlay=Shader'KFX.NearDeathShader'
     DoorBarScaleX= 1.25

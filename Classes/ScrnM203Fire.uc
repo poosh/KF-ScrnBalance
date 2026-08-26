@@ -7,8 +7,6 @@ simulated function HandleRecoil(float Rec)
     local float NewRecoilSpeed;
     local KFPlayerController KFPC;
     local KFPawn P;
-    local vector HorzVelocity;
-    local float HorzSpeed;
 
     if (Instigator == none)
         return;

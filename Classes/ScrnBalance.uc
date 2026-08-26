@@ -61,7 +61,7 @@ var bool bStoryMode; // Objective Game mode (KFStoryGameInfo)
 var bool bTSCGame; // Team Survival Competition (TSCGame)
 var transient bool bTestMap, bRandomMap;
 var transient string MapName;
-var transient string OriginalMapName; // based on ScrnGameRules.MapAliases
+var transient string OriginalMapName; // Equals MapName. Deprecated. Left for backward-compatibility.
 
 struct SPickupReplacement {
     var class<Pickup> oldClass;
@@ -457,7 +457,12 @@ simulated function InitSettings()
 
 simulated function TimeLog(coerce string s)
 {
-    log("["$Level.TimeSeconds$"s]" @ s, 'ScrnBalance');
+    log("["$Level.TimeSeconds$"s] " $ s, 'ScrnBalance');
+}
+
+simulated function GameTimeLog(coerce string s)
+{
+    log("["$GameTimeStr()$"] " $ s, 'ScrnBalance');
 }
 
 static function MessageBonusLevel(PlayerController KPC)
@@ -814,6 +819,21 @@ function BroadcastFakedAchievement(int AchIndex)
     }
 }
 
+function BroadcastSpeech(name MessageType, byte MessageID, optional Pawn SenderPawn, optional vector SenderLocation)
+{
+    local Controller C;
+    local KFPlayerController KFPC;
+
+    for (C = Level.ControllerList; C != None; C = C.NextController) {
+        if (!C.bIsPlayer)
+            continue;
+        KFPC = KFPlayerController(C);
+        if (KFPC != none)
+            KFPC.ClientLocationalVoiceMessage(C.PlayerReplicationInfo, none, MessageType, MessageID, SenderPawn,
+                    senderLocation);
+    }
+}
+
 function CheckMutators()
 {
     local Mutator M;
@@ -967,6 +987,7 @@ function OnTraderTime()
     }
 
     KF.WaveCountDown += TradeTimeAddSeconds;
+    KF.NextMonsterTime = Level.TimeSeconds + KF.WaveCountDown + 10; // will be changed in the next SetupWave()
     TradeTimeAddSeconds = 0;
     PauseTimeRemaining = MaxPauseTimePerWave;
 
@@ -3389,7 +3410,7 @@ function GameResumed()
 
 defaultproperties
 {
-    VersionNumber=97423
+    VersionNumber=97425
     GroupName="KF-Scrn"
     FriendlyName="ScrN Balance"
     Description="Total rework of KF1 to make it modern and the best tactical coop in the world while sticking to the roots of the original."
