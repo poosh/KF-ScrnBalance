@@ -32,8 +32,8 @@
 
 -------------------------------------------------------------------------------
 ## v9.74.25
-- Enhanced zed spawn system. Fixed multiple minor bugs, and split zed spawn on multiple ticks to reduce CPU spikes on high-tickrate servers.
-- **TSC**: Fixed a rate issue where both special squads could spawn near the same team.
+- Enhanced zed spawn system. Fixed multiple minor bugs and split zed spawn on multiple ticks to reduce CPU spikes on high-tickrate servers.
+- **TSC**: Fixed a rare issue where both special squads could spawn near the same team.
 - **TSC Tourney v2.01** - adjusted OT and SD waves to better suit the updated zed spawn system.
 - Fixed an issue where not enough zeds were spawning in Solo Boss fights.
 - Fixed **LAR** reload interruption (thanks [Duckbuster])
