@@ -73,6 +73,17 @@ var transient bool bHdmgWasEnabled;
 
 var transient bool bRecalcInventory;
 
+struct SDoorZeds {
+    var KFUseTrigger DoorTrigger;
+    var int ZedCount;
+    var float LastAttackTime;
+    var float MarkTime;
+    var float BlowupTime;
+};
+var array<SDoorZeds> DoorZeds;
+var float DoorWarningZeds;  // zed count behind the door to trigger a warning
+var int DoorBlowUpTime, DoorBlowUpOvertime;  // blow up the door if zeds are not cleared in the given time
+
 // this one is called from PreBeginPlay()
 function InitGameReplicationInfo()
 {
@@ -680,8 +691,8 @@ function Killed(Controller Killer, Controller Killed, Pawn KilledPawn, class<Dam
         TSCGRI.bHumanDamageEnabled = false;
     }
 
-    if  (NumMonsters == 0 && bHadMonsters && !bSingleTeam && damageType != class'Suicided') {
-        if ( AliveTeamPlayerCount[0] == 0 ^^ AliveTeamPlayerCount[1] == 0 )
+    if (NumMonsters == 0 && bHadMonsters && !bSingleTeam && damageType != class'Suicided') {
+        if ((AliveTeamPlayerCount[0] == 0 ^^ AliveTeamPlayerCount[1] == 0) || (WaveNum + 1)  >= EndWaveNum())
             DramaticEvent(1.0); // do ZED time on winner's kill
     }
 }
@@ -696,6 +707,7 @@ function TeamWiped(byte t)
     }
 
     TSCTeams[t].WipeTime = TSCGRI.ElapsedTime;
+    DramaticEvent(1.0);
 
     s = TSCTeams[t].GetHumanReadableName() $ " WIPED out at " $ ScrnBalanceMut.GameTimeStr();
     if (TSCTeams[1-t].WipeTime > 0) {
@@ -923,6 +935,7 @@ function SetupWave()
     UpdateMonsterCount();
 
     bWaveEnding = false;
+    DoorZeds.Length = 0;
     NextSquadTargetIndex[0] = rand(AliveTeamPlayerCount[0]);
     NextSquadTargetIndex[1] = rand(AliveTeamPlayerCount[1]);
     NextSquadTeam = rand(2); // pickup random team for the next special squad
@@ -1150,6 +1163,85 @@ function InventoryUpdate(Pawn P)
     bRecalcInventory = true;
 }
 
+function DoorUnderZedAttack(KFUseTrigger DoorTrigger, KFMonster Attacker, int ZedsBehindDoor)
+{
+    local int i;
+    local int BlowupTime;
+
+    for (i = 0; i < DoorZeds.Length; ++i) {
+        if (DoorZeds[i].DoorTrigger == DoorTrigger) {
+            DoorZeds[i].ZedCount = ZedsBehindDoor;
+            DoorZeds[i].LastAttackTime = Level.TimeSeconds;
+            if (Level.TimeSeconds - DoorZeds[i].MarkTime > 20) {
+                DoorZeds[i].MarkTime = Level.TimeSeconds;
+                MarkDoor(DoorTrigger, true);
+            }
+            return;
+        }
+    }
+    if (ZedsBehindDoor < DoorWarningZeds)
+        return;
+
+    DoorZeds.insert(i, 1);
+    DoorZeds[i].DoorTrigger = DoorTrigger;
+    DoorZeds[i].ZedCount = ZedsBehindDoor;
+    DoorZeds[i].LastAttackTime = Level.TimeSeconds;
+    DoorZeds[i].MarkTime = Level.TimeSeconds;
+    if (TSCGRI.bOverTime) {
+        BlowupTime = DoorBlowUpOvertime;
+    }
+    else {
+       BlowupTime = DoorBlowUpTime;
+    }
+    DoorZeds[i].BlowupTime = Level.TimeSeconds + BlowupTime;
+
+    MarkDoor(DoorTrigger, true);
+    ScrnBalanceMut.BroadcastMessage("^r$" $ string(DoorTrigger.DoorOwners[0].name) $ "^o$ is attacked by " $ ZedsBehindDoor
+            $ " zeds. Auto-destroy in ^y$" $ BlowupTime $ "s", true);
+}
+
+function CheckDoorZeds()
+{
+    local int i;
+    local KFUseTrigger DoorTrigger;
+
+    for (i = DoorZeds.Length - 1; i >= 0; --i) {
+        DoorTrigger = DoorZeds[i].DoorTrigger;
+        if (DoorTrigger.DoorOwners[0].bDoorIsDead || Level.TimeSeconds - DoorZeds[i].LastAttackTime > 30
+                || (TotalMaxMonsters <= 0 && NumMonsters < 10)) {
+            MarkDoor(DoorTrigger, false);
+            DoorZeds.remove(i, 1);
+            continue;
+        }
+
+        if (Level.TimeSeconds - DoorZeds[i].LastAttackTime > 1.1)  {
+            // The door hasn't been attacked for a while - extend the timer
+            DoorZeds[i].BlowupTime += 1.1;
+            if (DoorTrigger.WeldStrength <= 0) {
+                MarkDoor(DoorTrigger, false);
+                DoorZeds[i].MarkTime = 0;
+            }
+        }
+        else if (Level.TimeSeconds > DoorZeds[i].BlowupTime) {
+            DoorTrigger.DamageWeld(DoorTrigger.WeldStrength + 100, none, vect(0,0,0), vect(0,0,0), none);
+            ScrnBalanceMut.BroadcastMessage("^r$" $ DoorTrigger.DoorOwners[0].name $ "^o$ got auto-destroyed", true);
+        }
+    }
+}
+
+function MarkDoor(KFUseTrigger DoorTrigger, bool bMark)
+{
+    // KFUseTrigger is not replicated, so we use the first door on the list
+    if (bMark) {
+        ScrnBalanceMut.BroadcastMark(DoorTrigger.DoorOwners[0], DoorTrigger.Location - vect(0, 0, 50), "",
+                class'ScrnHUD'.default.MARK_DOOR);
+    }
+    else {
+        ScrnBalanceMut.BroadcastUnmark(DoorTrigger.DoorOwners[0]);
+    }
+}
+
+
 auto State PendingMatch
 {
     event PostLogin(PlayerController NewPlayer)
@@ -1318,6 +1410,8 @@ State MatchInProgress
             TeamBases[0].bInvul = false;
             TeamBases[1].bInvul = false;
         }
+
+        CheckDoorZeds();
     }
 
     function float CalcNextSquadSpawnTime()
@@ -1567,6 +1661,9 @@ defaultproperties
     DefaultGameLength=40
     WaveKillReqPct=0.25
     PlayerKillScore=250
+    DoorWarningZeds=10
+    DoorBlowUpTime=20
+    DoorBlowUpOvertime=10
 
     bClanCheck=True
     ClanTags(0)=(Prefix="[",Postfix="]")

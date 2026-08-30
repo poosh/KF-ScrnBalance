@@ -75,6 +75,9 @@ struct MonsterInfo {
     var bool bWasDecapitated; // was the monster decapitated before last damage? If bWasDecapitated=true then bHeadshot=false
     var bool bWasBackstabbed; // previous hit was a melee backstab
     var float BleedOutTime;  // time when zed should die from bleeding
+
+    var KFUseTrigger DoorTrigger;
+    var float DoorAttackStartTime;
 };
 var array<MonsterInfo> MonsterInfos;
 var protected transient KFMonster LastSeachedMonster; //used to optimize GetMonsterIndex()
@@ -1144,8 +1147,8 @@ function ScoreKill(Controller Killer, Controller Killed)
 
     if ( Killed.bIsPlayer ) {
         AdjustZedSpawnRate();
-        if ( Mut.bPlayerZEDTime && Killer != none && Killer != Killed )
-            Mut.KF.DramaticEvent(1.0); // always zed time on player death
+        if ( Mut.bPlayerZEDTime && !Mut.bTSCGame && Killer != none && Killer != Killed )
+            Mut.KF.DramaticEvent(1.0); // always zed time on player death. TSCGame handles it internally.
     }
 }
 
@@ -1274,6 +1277,9 @@ function ClearMonsterInfo(int index)
     MonsterInfos[index].bWasDecapitated = false;
     MonsterInfos[index].bWasBackstabbed = false;
     MonsterInfos[index].BleedOutTime = 0;
+
+    MonsterInfos[index].DoorTrigger = none;
+    MonsterInfos[index].DoorAttackStartTime = 0;
 }
 
 //creates a new record, if monster not found
@@ -2082,8 +2088,40 @@ function bool ProcessMonster(out MonsterInfo MI)
         else {
             M.Died(none, class'DamTypeBleedOut', M.Location);
         }
+        return true;
     }
+
+    if (Mut.bTSCGame && M.Controller != none && KFDoorMover(M.Controller.Target) != none) {
+        DoorUnderAttack(MI, KFDoorMover(M.Controller.Target));
+    }
+
     return true;
+}
+
+function DoorUnderAttack(out MonsterInfo MI, KFDoorMover Door)
+{
+    local float TimeUnderAttack;
+    local KFMonster Dummy;
+    local int MonsterCount;
+
+    if (Door == none || Door.MyTrigger == none || Door.MyTrigger.WeldStrength <= 0)
+        return;
+
+    if (MI.DoorTrigger != Door.MyTrigger) {
+        MI.DoorTrigger = Door.MyTrigger;
+        MI.DoorAttackStartTime = Level.TimeSeconds;
+        return;
+    }
+
+    TimeUnderAttack = Level.TimeSeconds - MI.DoorAttackStartTime;
+    if (TimeUnderAttack < 5.1)
+        return;
+
+    foreach VisibleCollidingActors(class'KFMonster', Dummy, 500, MI.Monster.Location, true) {
+        ++MonsterCount;
+    }
+
+    Mut.ScrnGT.DoorUnderZedAttack(Door.MyTrigger, MI.Monster, MonsterCount);
 }
 
 

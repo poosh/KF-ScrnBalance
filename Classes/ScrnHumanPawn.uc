@@ -2332,6 +2332,19 @@ function ServerRequestAutoReload()
     }
 }
 
+simulated function FixFireMode(KFWeapon W, byte Mode)
+{
+    local ScrnFire F;
+
+    if (W == none)
+        return;
+
+    F = ScrnFire(W.GetFireMode(0));
+    if (F != none) {
+        F.ClientMagAmmoRemaining = W.MagAmmoRemaining;
+    }
+}
+
 // disable automatic reloading
 simulated function Fire( optional float F )
 {
@@ -2341,20 +2354,23 @@ simulated function Fire( optional float F )
         return;
 
     W = KFWeapon(Weapon);
-    if (ScrnPC != none && W != none && !W.bMeleeWeapon && W.MagAmmoRemaining < W.GetFireMode(0).AmmoPerFire
-            && W.MagCapacity > 1 && W.bConsumesPhysicalAmmo && !W.bIsReloading && !W.bHoldToReload) {
-        if (ScrnPC.bManualReload) {
-            if ( W.AmmoAmount(0) == 0 )
-                ScrnPC.ReceiveLocalizedMessage(class'ScrnPlayerWarningMessage',1);
-            else
-                ScrnPC.ReceiveLocalizedMessage(class'ScrnPlayerWarningMessage',0);
-            W.PlayOwnedSound(W.GetFireMode(0).NoAmmoSound, SLOT_None,2.0,,,,false); //play weapon's no ammo sound
-            W.GetFireMode(0).ModeDoFire(); //force weapon's mode do fire
+    if (ScrnPC != none && W != none) {
+        if (!W.bMeleeWeapon && W.MagAmmoRemaining < W.GetFireMode(0).AmmoPerFire
+                && W.MagCapacity > 1 && W.bConsumesPhysicalAmmo && !W.bIsReloading && !W.bHoldToReload) {
+            if (ScrnPC.bManualReload) {
+                if ( W.AmmoAmount(0) == 0 )
+                    ScrnPC.ReceiveLocalizedMessage(class'ScrnPlayerWarningMessage',1);
+                else
+                    ScrnPC.ReceiveLocalizedMessage(class'ScrnPlayerWarningMessage',0);
+                W.PlayOwnedSound(W.GetFireMode(0).NoAmmoSound, SLOT_None,2.0,,,,false); //play weapon's no ammo sound
+                W.GetFireMode(0).ModeDoFire(); //force weapon's mode do fire
+            }
+            else {
+                ServerRequestAutoReload();
+            }
+            return;
         }
-        else {
-            ServerRequestAutoReload();
-        }
-        return;
+        FixFireMode(W, 0);
     }
 
     Weapon.Fire(F);
@@ -2369,17 +2385,21 @@ simulated function AltFire( optional float F )
 
     if ( Weapon == none )
         return;
+
     W = KFWeapon(Weapon);
-    if ( ScrnPC != none && ScrnPC.bManualReload && W != none && !W.bMeleeWeapon && W.bConsumesPhysicalAmmo
-            && W.bReduceMagAmmoOnSecondaryFire && KFMedicGun(W) == none
-            && !W.bIsReloading && !W.bHoldToReload
-            && W.MagCapacity > 2 && W.MagAmmoRemaining < W.GetFireMode(1).AmmoPerFire ) {
-        if ( W.AmmoAmount(0) == 0 )
-            ScrnPC.ReceiveLocalizedMessage(class'ScrnPlayerWarningMessage',1);
-        else
-            ScrnPC.ReceiveLocalizedMessage(class'ScrnPlayerWarningMessage',0);
-        W.PlayOwnedSound(W.GetFireMode(0).NoAmmoSound, SLOT_None,2.0,,,,false);
-        return;
+    if (ScrnPC != none && W != none) {
+        if (ScrnPC.bManualReload && !W.bMeleeWeapon && W.bConsumesPhysicalAmmo
+                && W.bReduceMagAmmoOnSecondaryFire && KFMedicGun(W) == none
+                && !W.bIsReloading && !W.bHoldToReload
+                && W.MagCapacity > 2 && W.MagAmmoRemaining < W.GetFireMode(1).AmmoPerFire ) {
+            if ( W.AmmoAmount(0) == 0 )
+                ScrnPC.ReceiveLocalizedMessage(class'ScrnPlayerWarningMessage',1);
+            else
+                ScrnPC.ReceiveLocalizedMessage(class'ScrnPlayerWarningMessage',0);
+            W.PlayOwnedSound(W.GetFireMode(0).NoAmmoSound, SLOT_None,2.0,,,,false);
+            return;
+        }
+        FixFireMode(W, 1);
     }
 
     Weapon.AltFire(F);

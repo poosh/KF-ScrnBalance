@@ -242,13 +242,14 @@ var const int MARK_ARMOR;
 var const int MARK_HEALTH;
 var const int MARK_BASE;
 var const int MARK_TRADER;
+var const int MARK_DOOR;
 var array<Color> MarkColors;
 var Material MarkIcon;
 var float MaxMarks;
 var Color MarkEnemyColor;
 var Color MarkPlayerColor;
 var float MarkLifeDefault, MarkLifeNoTarget, MarkLifePlayer, MarkLifeLocation;
-var localized string strBaseMark, strTraderMark;
+var localized string strBaseMark, strTraderMark, strDoorMark;
 
 var Material ObjBackground;
 var Material ObjProgressBar;
@@ -4360,7 +4361,11 @@ function DrawMarks(Canvas C)
         bValid = Level.TimeSeconds < Marks[i].MarkLife;
 
         if (bValid && KFGRI.bMatchHasBegun && Level.TimeSeconds > Marks[i].PulseUntil) {
-            if (Marks[i].MarkGroup == MARK_PLAYERS || Marks[i].MarkGroup == MARK_LOCATIONS) {
+            // do not invalidate mark in first second in case ScrnPRI or KFGRI has not replicated yet
+            if (Marks[i].MarkType == MARK_TRADER) {
+                bValid = ScrnPRI != none && !ScrnPRI.bReachedGoal && KFGRI.bWaveInProgress;
+            }
+            else if (Marks[i].MarkGroup == MARK_PLAYERS || Marks[i].MarkGroup == MARK_LOCATIONS) {
                 // A player mark is valid until the player is alive.
                 // Medic mark disappers once the player reaches 100hp.
                 // If player pawn (Target) is replicated, use its location. Otherwise, use TargetLocation.
@@ -4371,10 +4376,6 @@ function DrawMarks(Canvas C)
             else if (!Marks[i].bIgnoreTarget) {
                 bValid = A != none && !A.bDeleteMe && !A.bHidden && (Pawn(A) == none
                         || (Pawn(A).Health > 0 && Pawn(A).Visibility >= 120));
-            }
-            else if (Marks[i].MarkType == MARK_TRADER) {
-                // do not invalidate mark in first second in case ScrnPRI or KFGRI has not replicated yet
-                bValid = ScrnPRI != none && !ScrnPRI.bReachedGoal && KFGRI.bWaveInProgress;
             }
         }
 
@@ -4436,10 +4437,14 @@ function MarkTarget(KFPlayerReplicationInfo Sender, Actor Target, vector Locatio
             break;
 
         case MARK_ENEMIES:
-            if (MarkType == MARK_LASTZED && Target != none) {
-                MarkLife = 600;
-                break;
+            if (Target == none) {
+                MarkLife = MarkLifeNoTarget;
             }
+            else if (MarkType == MARK_LASTZED && Target != none) {
+                MarkLife = 600;
+            }
+            break;
+
             // else fall-through
         case MARK_ITEMS:
             if (MarkType == MARK_BASE) {
@@ -4448,8 +4453,19 @@ function MarkTarget(KFPlayerReplicationInfo Sender, Actor Target, vector Locatio
             else if (MarkType == MARK_TRADER) {
                 Caption = strTraderMark;
                 MarkLife = 600;
-                break;
             }
+            else if (MarkType == MARK_DOOR) {
+                if (Caption == "") {
+                    Caption = eval(Target != none, string(Target.name), strDoorMark);
+                }
+                Target = none;  // don't use Door's location, as it may be messed up
+                MarkLife = 20;
+            }
+            else if (Target == none) {
+                MarkLife = MarkLifeNoTarget;
+            }
+            break;
+
         default:
             if (Target == none) {
                 MarkLife = MarkLifeNoTarget;
@@ -4520,12 +4536,17 @@ function MarkTarget(KFPlayerReplicationInfo Sender, Actor Target, vector Locatio
                 asc(Mid(Marks[i].Caption, 2, 1)),
                 asc(Mid(Marks[i].Caption, 3, 1)));
     }
+    else if (MarkType == MARK_DOOR) {
+        // draw door warnings in red
+        Marks[i].Color = MarkColors[MARK_ENEMIES];
+    }
     else {
         Marks[i].Color = MarkColors[min(MarkGroup, MarkColors.Length - 1)];
     }
     Marks[i].MarkLife = Level.TimeSeconds + MarkLife;
     Marks[i].PulseUntil = Level.TimeSeconds + 2.0;
-    // PlayerOwner.ClientMessage("Set mark #" $ i @ Caption $ " MarkType=" $ MarkType $ " MarkGroup="$MarkGroup);
+    // PlayerOwner.ClientMessage("Set mark #" $ i @ Caption $ " MarkType=" $ MarkType $ " MarkGroup="$MarkGroup
+    //         $ " Target=" $ Target, 'log');
 }
 
 function UnmarkTarget(KFPlayerReplicationInfo Sender, Actor Target) {
@@ -4857,24 +4878,30 @@ defaultproperties
     MarkColors[2]=(R=255,G=20,B=147,A=200)  // MARK_LOCATIONS
     MarkColors[3]=(R=1,G=192,B=1,A=200)     // MARK_ITEMS
     // defaultproperties do not support hex values!
+    // MARK_ENEMIES
     MARK_ENEMY=0            // 0x00
     MARK_FLESHPOUND=1       // 0x01
     MARK_SCRAKE=2           // 0x02
     MARK_LASTZED=3          // 0x03
     MARK_BOSS=4             // 0x04
+    // MARK_PLAYERS
     MARK_PLAYER=16          // 0x10
     MARK_MEDIC=17           // 0x11
+    // MARK_LOCATIONS
     MARK_CAMP=32            // 0x20
     MARK_LOBBY=33           // 0x21
     MARK_DEBUGLOC=34        // 0x22
+    // MARK_ITEMS
     MARK_AMMO=48            // 0x30
     MARK_WEAPON=49          // 0x31
     MARK_ARMOR=50           // 0x32
     MARK_HEALTH=51          // 0x33
     MARK_BASE=52            // 0x34
     MARK_TRADER=53          // 0x35
+    MARK_DOOR=54            // 0x36
     strBaseMark="Base"
     strTraderMark="Trader"
+    strDoorMark="Door"
 
     WaveCircleClockBG[0]=Material'KillingFloorHUD.HUD.Hud_Bio_Clock_Circle'
     WaveCircleClockBG[1]=Material'KillingFloorHUD.HUD.Hud_Bio_Clock_Circle'

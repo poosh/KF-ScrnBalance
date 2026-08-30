@@ -49,6 +49,7 @@ function PostBeginPlay()
     }
 }
 
+// DoTrace is called server-side only from DoFireEffect()
 function DoTrace(Vector Start, Rotator Dir)
 {
     local Vector X,Y,Z, End, HitLocation, HitNormal, ArcEnd;
@@ -97,8 +98,6 @@ function DoTrace(Vector Start, Rotator Dir)
             continue;
         }
         else if ( Other.bWorldGeometry || Other == Level ) {
-            if( KFWeaponAttachment(Weapon.ThirdPersonActor) != None )
-                KFWeaponAttachment(Weapon.ThirdPersonActor).UpdateHit(Other,HitLocation,HitNormal);
             break;
         }
 
@@ -149,6 +148,10 @@ function DoTrace(Vector Start, Rotator Dir)
         HitDamage *= PenDmgReduction;
         HitMomentum *= PenDmgReduction;
         Start = HitLocation;
+    }
+
+    if (Other != none) {
+        HitFX(Other, HitLocation, HitNormal);
     }
 
     // Turn the collision back on for any actors we turned it off
@@ -345,6 +348,52 @@ event ModeDoFire()
             // Sync with the server. The value might be incorrect, but it's irrelevant for the AllowFire() check
             ClientMagAmmoRemaining = KFWeap.MagAmmoRemaining;
         }
+    }
+}
+
+function ModeTick(float dt)
+{
+    super.ModeTick(dt);
+
+    if (bIsFiring && Weapon.ROLE < Role_Authority) {
+        CheckAttachment();
+    }
+}
+
+function HitFX(Actor HitActor, vector HitLocation, vector HitNormal)
+{
+    local KFWeaponAttachment WA;
+
+    // XXX: The original InstantFire doesn't trigger UpdateHit on hitting Pawns. Investigate why?
+
+    WA = KFWeaponAttachment(Weapon.ThirdPersonActor);
+    if (WA == none)
+        return;
+
+    // Only HitLocation is replicated to the client (weapon owner).
+    // HitActor and HitNormal are estimated in KFWeaponAttachment.ThirdPersonEffects() after SpawnHitCount update.
+    WA.UpdateHit(HitActor, HitLocation, HitNormal);
+}
+
+// Fixed the bug where Tracer is spawned only on weapon fire release.
+// For non-owner clients, WeaponAttachment.ThirdPersonEffects() is called on FlashCount update.
+// The weapon owner calls WeaponAttachment.ThirdPersonEffects() from IncrementFlashCount(), which, in turn,
+// is called from WeponFire.ModeDoFire().
+// When the "WeponFire.ModeDoFire() => Weapon.IncrementFlashCount() => WeaponAttachment.ThirdPersonEffects()" chain
+// is called on the client, WeaponAttachment.SpawnHitCount and mHitLocation might not be replicated yet, and
+// "OldSpawnHitCount != SpawnHitCount" check in KFWeaponAttachment.ThirdPersonEffects() fails.
+// When the client finally receives SpawnHitCount, ThirdPersonEffects() is not called because Mr. (c) 20099 was too
+// busy choosing which car to drive rather than writing good code.
+//
+// The ultimate solution is to call ThirdPersonEffects() from KFWeaponAttachment.PostNetReceive() when
+// SpawnHitCount != OldSpawnHitCount.
+function CheckAttachment()
+{
+    local KFWeaponAttachment WA;
+
+    WA = KFWeaponAttachment(Weapon.ThirdPersonActor);
+    if (WA != none && WA.SpawnHitCount != WA.OldSpawnHitCount) {
+        WA.ThirdPersonEffects();
     }
 }
 

@@ -4164,6 +4164,8 @@ function BossGrandExit()
     }
 }
 
+function DoorUnderZedAttack(KFUseTrigger DoorTrigger, KFMonster Attacker, int ZedsBehindDoor);
+
 // global funciton definitions to prevent crashes during function calls at state transitions
 function BattleTimer() {}
 function WaveTimer() {}

@@ -834,6 +834,34 @@ function BroadcastSpeech(name MessageType, byte MessageID, optional Pawn SenderP
     }
 }
 
+function BroadcastMark(Actor A, vector ALocation, string Caption, byte MarkType)
+{
+    local Controller C;
+    local ScrnPlayerController ScrnPC;
+
+    for (C = Level.ControllerList; C != None; C = C.NextController) {
+        if (!C.bIsPlayer)
+            continue;
+        ScrnPC = ScrnPlayerController(C);
+        if (ScrnPC != none)
+            ScrnPC.ClientMark(KFPlayerReplicationInfo(C.PlayerReplicationInfo), A, ALocation, Caption, MarkType);
+    }
+}
+
+function BroadcastUnmark(Actor A)
+{
+    local Controller C;
+    local ScrnPlayerController ScrnPC;
+
+    for (C = Level.ControllerList; C != None; C = C.NextController) {
+        if (!C.bIsPlayer)
+            continue;
+        ScrnPC = ScrnPlayerController(C);
+        if (ScrnPC != none)
+            ScrnPC.ClientUnmark(KFPlayerReplicationInfo(C.PlayerReplicationInfo), A);
+    }
+}
+
 function CheckMutators()
 {
     local Mutator M;
@@ -3410,7 +3438,7 @@ function GameResumed()
 
 defaultproperties
 {
-    VersionNumber=97425
+    VersionNumber=97426
     GroupName="KF-Scrn"
     FriendlyName="ScrN Balance"
     Description="Total rework of KF1 to make it modern and the best tactical coop in the world while sticking to the roots of the original."

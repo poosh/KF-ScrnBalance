@@ -175,7 +175,7 @@ delegate OnTraderDoshRequest(PlayerReplicationInfo Sender, string Msg);
 replication
 {
     reliable if ( Role == ROLE_Authority )
-        ClientMonsterBlamed, ClientPostLogin, ClientMark, ClientInvite;
+        ClientMonsterBlamed, ClientPostLogin, ClientMark, ClientUnmark, ClientInvite;
 
     unreliable if ( Role == ROLE_Authority )
         ClientPlayerDamaged, ClientFlareDamage;
@@ -1699,6 +1699,14 @@ function ServerLobbyMark(string Caption)
 
         PC.ClientMark(KFPRI, none, Location, Caption, class'ScrnHUD'.default.MARK_LOBBY);
     }
+}
+
+exec function Speech(name msgtype, int msgid, string Callsign)
+{
+    if (msgtype == 'TRADER')
+        return;  // no trolling teammates with trader voice lines!
+
+    ServerSpeech(msgtype, msgid, Callsign);
 }
 
 function ServerSpeech(name msgtype, int msgid, string Callsign)
@@ -3530,6 +3538,17 @@ function ClientMark(KFPlayerReplicationInfo Sender, Actor A, vector ALocation, s
     }
 }
 
+function ClientUnmark(KFPlayerReplicationInfo Sender, Actor A)
+{
+    local ScrnHUD hud;
+
+    hud = ScrnHUD(myHUD);
+    if (hud == none || !hud.bShowMarks)
+        return;
+
+    hud.UnmarkTarget(Sender, A);
+}
+
 function ServerMark(Actor A)
 {
     local string Caption;
@@ -3725,8 +3744,10 @@ state Spectating
         PlayerCalcView(A, TraceStart, R);
         TraceEnd = TraceStart + 1000 * Vector(R);
         A = Trace(HitLocation, HitNormal, TraceEnd, TraceStart, true);
-        if ( Pawn(A) != none)
+        if (A.IsA('Pawn'))
             ServerSetViewTarget(A);
+        else if (A.IsA('ExtendedZCollision'))
+            ServerSetViewTarget(A.Owner);
     }
 }
 

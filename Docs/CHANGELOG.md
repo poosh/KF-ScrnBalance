@@ -31,6 +31,14 @@
 # VERSION 9
 
 -------------------------------------------------------------------------------
+## v9.74.26
+- **TSC**: *Door Auto-Destruct*. If there are 10+ zeds behind a welded door, the door gets auto-destroyed in 20 seconds (10s in Overtime) unless the players kill *all* zeds behind it. The auto-destruct timer pauses after zeds stop attacking the door and resets 30 seconds after the last attack.
+- **TSC**: Killing a player doesn't trigger Zed Time unless the player was the last alive team member.
+- Fixed an issue where `ScrnFire` weapons could play the client-side fire animation with an empty magazine (thanks [That1Guy])
+- Fixed an issue where `ScrnFire` could delay the tracer until the fire trigger release (thanks [That1Guy])
+- Players can no longer send 'TRADER' speech messages (thanks [Broski] and [ImmortalNub])
+- Improved zed detection when pressing USE in spectator mode to chace a zed.
+
 ## v9.74.25
 - Enhanced zed spawn system. Fixed multiple minor bugs and split zed spawn on multiple ticks to reduce CPU spikes on high-tickrate servers.
 - **TSC**: Fixed a rare issue where both special squads could spawn near the same team.
