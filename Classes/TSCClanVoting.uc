@@ -12,8 +12,10 @@ const VOTE_LEAVE                =  5;
 
 var TSCClanInfo VotedRedClan, VotedBlueClan;
 var array<TSCClanInfo> Clans;
+var int VotedTeamSize;
 
 var string strNoClan, strNoClanPlayers, strClanAlreadyExists, strAdminOrCaptain, strRequireClanGame, strCaptainOwnClan;
+var string strWrongTeamSize;
 
 function int GetGroupVoteIndex(PlayerController Sender, string Group, string Key, out string Value, out string VoteInfo)
 {
@@ -71,6 +73,9 @@ function ApplyVoteValue(int VoteIndex, string VoteValue)
 {
     switch ( VoteIndex ) {
         case VOTE_GAME:
+            if (VotedTeamSize > 0) {
+                TSC.MaxTeamSize = VotedTeamSize;
+            }
             TSC.StartClanGame(VotedRedClan, VotedBlueClan);
             break;
         case VOTE_CREATE:
@@ -84,21 +89,27 @@ function ApplyVoteValue(int VoteIndex, string VoteValue)
 
 function int VoteGame(PlayerController Sender, out string Value, out string VoteInfo)
 {
-    local string r, b;
+    local string r, b, x;
     local TSCClanInfo RedClan, BlueClan;
     local bool bRedPlayers, bBluePlayers;
     local int i;
     local PlayerController PC;
     local PlayerReplicationInfo PRI;
     local string id;
+    local int TeamSize;
 
     if (!TSC.bWaitingToStartMatch) {
         Sender.ClientMessage(strNotAvaliableATM);
         return VOTE_LOCAL;
     }
-    if (!Divide(Value, " ", r, b) || InStr(b, " ") != -1) {
+    if (!Divide(Value, " ", r, b)) {
         return VOTE_ILLEGAL;
     }
+    Divide(b, " ", b, x);
+    if (InStr(b, " ") != -1) {
+        return VOTE_ILLEGAL;
+    }
+
     RedClan = FindClan(r);
     if (RedClan == none) {
         Sender.ClientMessage(repl(strNoClan, "%c", r));
@@ -108,6 +119,14 @@ function int VoteGame(PlayerController Sender, out string Value, out string Vote
     if (BlueClan == none) {
         Sender.ClientMessage(repl(strNoClan, "%c", b));
         return VOTE_LOCAL;
+    }
+
+    if (x != "" && x != "0") {
+        TeamSize = int(x);
+        if (TeamSize == 0 || TeamSize > Level.Game.default.MaxPlayers / 2) {
+            Sender.ClientMessage(repl(strWrongTeamSize, "%m", string(Level.Game.default.MaxPlayers / 2)));
+            return VOTE_LOCAL;
+        }
     }
 
     if (!TSC.ScrnBalanceMut.IsAdmin(Sender)) {
@@ -135,7 +154,11 @@ function int VoteGame(PlayerController Sender, out string Value, out string Vote
     // if reached here, the clan game is possible
     VotedRedClan = RedClan;
     VotedBlueClan = BlueClan;
+    VotedTeamSize = TeamSize;
     VoteInfo = "CLAN GAME: " $ RedClan.Acronym $ " vs. " $ BlueClan.Acronym;
+    if (VotedTeamSize > 0) {
+        VoteInfo $= " (" $ VotedTeamSize $ "v" $ VotedTeamSize $ ")";
+    }
     return VOTE_GAME;
 }
 
@@ -301,10 +324,11 @@ defaultproperties
     strAdminOrCaptain="Required ADMIN or CLAN CAPTAIN privileges"
     strRequireClanGame="Required ADMIN privileges or a clan game (MVOTE CLAN GAME)"
     strCaptainOwnClan="You can access your current clan only"
+    strWrongTeamSize="Team size (X) must be in [1..%m]"
 
     HelpInfo(0)="%pCLAN %y<options> %w Clan votes. Type %bMVOTE CLAN HELP %wfor more details."
 
-    GroupInfo(0)="%pCLAN %gGAME %r<clan1> %b<clan2> %w Start a clan1 vs. clan2 game"
+    GroupInfo(0)="%pCLAN %gGAME %r<clan1> %b<clan2> %w[%yX%w]%w Start a clan1 vs. clan2 game (XvX players)"
     GroupInfo(1)="%pCLAN %rCREATE %y<clan_acronym> <clan_name> %w Creates a new clan"
     GroupInfo(2)="%pCLAN %gADD %y<player_name> [<clan>] %w Add the player to the clan"
     GroupInfo(3)="%pCLAN %gREMOVE %y<player_name> [<clan>] %w Remove the player to the clan"

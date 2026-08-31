@@ -3,6 +3,27 @@ class ScrnFunctions extends ScrnF
 
 
 // TODO: Move to ScrnF on the next ScrnShared update
+static function int ObjArrayInsert(out array<Object> dst, out array<Object> src, optional int pos, optional int count,
+        optional int skip)
+{
+    local int i;
+
+    if (src.Length == 0)
+        return pos;
+
+    if (count == 0 || count + skip > src.Length) {
+        count = src.Length - skip;
+    }
+
+    if (count <= 0)
+        return pos;
+
+    dst.insert(pos, count);
+    for (i = 0; i < count; ++i) {
+        dst[pos++] = src[i + skip];
+    }
+    return pos;
+}
 // MOVE SECTION END
 
 static function class<ScrnVeterancyTypes> FindPerkByName(ClientPerkRepLink L, string VeterancyNameOrIndex)

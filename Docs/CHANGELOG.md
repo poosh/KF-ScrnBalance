@@ -31,6 +31,17 @@
 # VERSION 9
 
 -------------------------------------------------------------------------------
+## v9.74.28
+- Fixed bullet tracers for dual pistols.
+- Fixed a warning in `FtgHUD.DrawTSCHUDTextElements`
+- Fixed a `[ShellPort]` warning in Musket, M99, FN FAL, and KSG.
+### TSC
+- `MVOTE CLAN GAME CLAN1 CLAN2 X` - an extra option to specify the max team size (X). For example, `MVOTE CLAN GAME A01 A02 4` sets a 4v4 game between A01 and A02 clan. If there are more than 4 clan members on the server, they will be moved to spectator.
+- Dead players are locked to the 1st person spectator mode in clan games.
+- Spectating clan members follow the dead player rules in clan games - they can spectate only their clan members and only from the 1st person.
+- Fixed an issue where a door mark stayed visible even after the door got destroyed or unwelded.
+- New game mode "48. Tourney Practice" - to practice TSC Tourney waves in a regular single-team game mode.
+
 ## v9.74.26
 - **TSC**: *Door Auto-Destruct*. If there are 10+ zeds behind a welded door, the door gets auto-destroyed in 20 seconds (10s in Overtime) unless the players kill *all* zeds behind it. The auto-destruct timer pauses after zeds stop attacking the door and resets 30 seconds after the last attack.
 - **TSC**: Killing a player doesn't trigger Zed Time unless the player was the last alive team member.

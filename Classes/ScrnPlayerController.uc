@@ -87,6 +87,7 @@ var globalconfig Color GlowColorSingleTeam;
 var Color GlowColorRed, GlowColorBlue, GlowColorFriendly, GlowColorEnemy;
 var transient float LastBaseMarkTime;
 var array<string> RedCharacters, BlueCharacters;  // MUST BE SORTED!
+var private byte SpecTeam;
 
 var class<ScrnCustomPRI> CustomPlayerReplicationInfoClass;
 var ScrnCustomPRI ScrnCustomPRI;
@@ -193,7 +194,7 @@ replication
         ServerCrap;
 
     reliable if ( bNetOwner && (bNetDirty || bNetInitial) && Role == ROLE_Authority )
-        bForceDelayedRestart;
+        bForceDelayedRestart, SpecTeam;
 
     reliable if ( bNetOwner && (bNetDirty || bNetInitial) && Role < ROLE_Authority )
         bPrioritizePerkedWeapons, StartCash;
@@ -230,6 +231,8 @@ function PostLogin()
         ScrnCustomPRI.SetSteamID64(Mut.MySteamID64);
     else
         ScrnCustomPRI.SetSteamID64(GetPlayerIDHash());
+
+    ScrnCustomPRI.SetSpecTeam();
     ScrnCustomPRI.NetUpdateTime = Level.TimeSeconds - 1;
 
     if ( PlayerName != "" )
@@ -2151,6 +2154,23 @@ exec function Ready()
     }
 }
 
+final function byte GetSpecTeam()
+{
+    return SpecTeam;
+}
+
+final function SetSpecTeam(byte value)
+{
+    if (Role != ROLE_Authority || SpecTeam == value)
+        return;
+
+    SpecTeam = value;
+    ScrnCustomPRI.SetSpecTeam();
+    if (SpecTeam < 2 && IsSpectating()) {
+        ServerViewNextPlayer();
+    }
+}
+
 exec function Spectate()
 {
     if ( PlayerReplicationInfo.bOnlySpectator ) {
@@ -3026,7 +3046,7 @@ function ServerViewNextPlayer()
 
     if ( ScrnGameType(Level.Game) == none ) {
         super.ServerViewNextPlayer();
-        ViewTargetChanged();;
+        ViewTargetChanged();
         return;
     }
 
@@ -3051,7 +3071,7 @@ function ServerViewNextPlayer()
     if ( (ViewTarget == self) || bWasSpec )
         bBehindView = false;
     else
-        bBehindView = true; //bChaseCam;
+        bBehindView = AllowBehindView(); //bChaseCam;
     ClientSetBehindView(bBehindView);
     ViewTargetChanged();
 }
@@ -3104,6 +3124,9 @@ function ServerSwitchViewMode(byte Mode)
         return;
 
     if ( ScrnGameType(Level.Game) == none )
+        return;
+
+    if (!AllowFreeCamera())
         return;
 
     CurrentTarget = Controller(ViewTarget);
@@ -3203,7 +3226,7 @@ function ServerSetViewTarget(Actor NewViewTarget)
     if ( ViewTarget == self || bWasSpec )
         bBehindView = false;
     else
-        bBehindView = true; //bChaseCam;
+        bBehindView = AllowBehindView(); //bChaseCam;
     ClientSetBehindView(bBehindView);
 }
 
@@ -3240,8 +3263,8 @@ function ClientSetBehindView(bool B)
 
     if ( PlayerReplicationInfo != none && PlayerReplicationInfo.bOnlySpectator ) {
         // auto show crosshair in first person spectator mode
-        if ( ScrnHUD(MyHUD) != none )
-            ScrnHUD(MyHUD).DebugCrosshair(!bBehindView);
+        // if ( ScrnHUD(MyHUD) != none )
+        //     ScrnHUD(MyHUD).DebugCrosshair(!bBehindView);
     }
     else if ( !bBehindView ) {
         bFreeCamera = false;
@@ -3258,26 +3281,35 @@ exec function FreeCamera( bool B )
     bBehindView = B;
 }
 
+function bool AllowBehindView()
+{
+    if (GetSpecTeam() < 200)
+        return false;
+
+    if (Pawn == none || IsSpectating())
+        return true;
+
+    return Mut.bAllowBehindView && !Mut.bTSCGame;
+}
+
 // BehindView() executes on the server-side only. Should be called ServerBehindView()
 exec function BehindView( Bool B )
 {
-    if ( B && Pawn != None && !IsSpectating() && (!Mut.bAllowBehindView || Mut.bTSCGame) ) {
-        return;
-    }
-    super.BehindView(B);
+    super.BehindView(B && AllowBehindView());
 }
 
 function ServerToggleBehindView()
 {
-    if ( !bBehindView && Pawn != None && !IsSpectating() && (!Mut.bAllowBehindView || Mut.bTSCGame) ) {
+    if (!bBehindView && !AllowBehindView())
         return;
-    }
+
     super.ServerToggleBehindView();
 }
 
 function bool AllowFreeCamera()
 {
-    return PlayerReplicationInfo.bOnlySpectator || !Level.GRI.bMatchHasBegun
+    return (PlayerReplicationInfo.bOnlySpectator && GetSpecTeam() >= 200)
+            || !Level.GRI.bMatchHasBegun
             || (!Mut.bTSCGame && Mut.SrvTourneyMode == 0);
 }
 
@@ -4326,6 +4358,7 @@ defaultproperties
     GlowColorBlue=(R=0,G=64,B=128)
     GlowColorFriendly=(R=0,G=128,B=0)
     GlowColorEnemy=(R=128,G=0,B=0)
+    SpecTeam=255
 
     // MUST BE SORTED!
     RedCharacters( 0)="AGENT_WILKES"

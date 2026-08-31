@@ -47,7 +47,13 @@ function bool IsMember(string PlayerID)
 
 function bool IsPlayer(string PlayerID)
 {
-    return class'ScrnFunctions'.static.SearchStr(Players, PlayerID) != -1;
+    return PlayerPriority(PlayerID) != -1;
+}
+
+// 0 - highest priority, -1 - not a team member
+function int PlayerPriority(string PlayerID)
+{
+    return class'ScrnFunctions'.static.SearchStr(Players, PlayerID);
 }
 
 // 0 - highest priority, -1 - not a captain

@@ -2684,18 +2684,35 @@ function InitPlacedBot(Controller C, RosterEntry R)
 // overrided to remove team check for spectators-only
 function bool CanSpectate( PlayerController Viewer, bool bOnlySpectator, actor ViewTarget )
 {
+    local TeamInfo AllowedTeam;
+    local ScrnPlayerController ScrnPC;
+
+
     if ( (ViewTarget == None) )
         return false;
+
+    if (!bOnlySpectator) {
+        AllowedTeam = Viewer.PlayerReplicationInfo.Team;
+    }
+
+    ScrnPC = ScrnPlayerController(Viewer);
+    if (ScrnPC != none) {
+        if (ScrnPC.GetSpecTeam() < 2) {
+            AllowedTeam = Teams[ScrnPC.GetSpecTeam()];
+        }
+        else if (ScrnPC.GetSpecTeam() < 200)
+            return false;
+    }
 
     if ( Controller(ViewTarget) != None ) {
         if ( Controller(ViewTarget).Pawn == None )
             return false;
         return Controller(ViewTarget).PlayerReplicationInfo != None && ViewTarget != Viewer
-                && (bOnlySpectator || Controller(ViewTarget).PlayerReplicationInfo.Team == Viewer.PlayerReplicationInfo.Team);
+                && (Controller(ViewTarget).PlayerReplicationInfo.Team == AllowedTeam || AllowedTeam == none);
     }
 
     return Pawn(ViewTarget) != None && Pawn(ViewTarget).IsPlayerPawn()
-        && (bOnlySpectator || Pawn(ViewTarget).PlayerReplicationInfo.Team == Viewer.PlayerReplicationInfo.Team);
+            && (Pawn(ViewTarget).PlayerReplicationInfo.Team == AllowedTeam || AllowedTeam == none);
 }
 
 event PlayerController Login(string Portal, string Options, out string Error)
@@ -3036,6 +3053,27 @@ function RestartPlayer( Controller aPlayer )
     }
 }
 
+function byte GetForcedTeamNum(ScrnPlayerController ScrnPC)
+{
+    return 255;
+}
+
+function bool AllowBecomeTeamMember(ScrnPlayerController ScrnPC)
+{
+    local byte t;
+
+    if (MaxTeamSize <= 0)
+        return true;
+
+    t = GetForcedTeamNum(ScrnPC);
+    if (t < 2 && Teams[t].Size >= MaxTeamSize) {
+        ScrnPC.ReceiveLocalizedMessage(GameMessageClass, 13);
+        ScrnPC.ClientMessage("Reason: MaxTeamSize reached ("$MaxTeamSize$") for team " $ t);
+        return false;
+    }
+    return true;
+}
+
 function bool AllowBecomeActivePlayer(PlayerController CI)
 {
     local ScrnPlayerController ScrnPC;
@@ -3054,22 +3092,16 @@ function bool AllowBecomeActivePlayer(PlayerController CI)
         return false;
     }
 
-    if ( /*!GameReplicationInfo.bMatchHasBegun ||*/ NumPlayers >= MaxPlayers
-        /* || CI.IsInState('GameEnded') || CI.IsInState('RoundEnded') */ )
-    {
+    if (NumPlayers >= MaxPlayers) {
         CI.ReceiveLocalizedMessage(GameMessageClass, 13);
 
-        // debug info
-        // if ( !GameReplicationInfo.bMatchHasBegun )
-            // CI.ClientMessage("Reason: Match has not begun yet");
-        // else
         if ( NumPlayers >= MaxPlayers )
             CI.ClientMessage("Reason: MaxPlayers reached ("$MaxPlayers$")");
-        // else if ( CI.IsInState('GameEnded') )
-        //     CI.ClientMessage("Reason: You are in GameEnded state");
-        // else if ( CI.IsInState('RoundEnded') )
-        //     CI.ClientMessage("Reason: You are in RoundEnded state");
 
+        return false;
+    }
+
+    if (!AllowBecomeTeamMember(ScrnPC)) {
         return false;
     }
 

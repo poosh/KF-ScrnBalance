@@ -330,12 +330,27 @@ function bool ForceTeam(PlayerController PC, int num)
     return result;
 }
 
+function byte GetForcedTeamNum(ScrnPlayerController ScrnPC)
+{
+    if (bTeamChanging || !bClanGame || ScrnPC == none)
+        return 255;
+
+    if (TSCTeams[0].ClanRep.Clan.IsMember(ScrnPC.GetPlayerIDHash())) {
+        if (TSCTeams[1].ClanRep.Clan.IsMember(ScrnPC.GetPlayerIDHash()))
+            return 255;
+        return 0;
+    }
+    if (TSCTeams[1].ClanRep.Clan.IsMember(ScrnPC.GetPlayerIDHash()))
+        return 1;
+    return 255;
+}
+
 function bool ChangeTeam(Controller Other, int num, bool bNewTeam)
 {
     local PlayerController PC;
     local UnrealTeamInfo NewTeam;
     local TSCBaseGuardian gnome;
-    local bool b;
+    local byte ForcedTeamNum;
 
     // if (CurrentGameProfile != none)
     // {
@@ -355,16 +370,10 @@ function bool ChangeTeam(Controller Other, int num, bool bNewTeam)
         if ( bTeamChanging && num < 2 ) {
             NewTeam = Teams[num];
         }
-        else if (bClanGame && PC != none && PC.bIsPlayer) {
-            b = TSCTeams[0].ClanRep.Clan.IsMember(PC.GetPlayerIDHash());
-            if (b != TSCTeams[1].ClanRep.Clan.IsMember(PC.GetPlayerIDHash())) {
-                // member of one and only one clan
-                if (b) {
-                    NewTeam = TSCTeams[0];
-                }
-                else {
-                    NewTeam = TSCTeams[1];
-                }
+        else {
+            ForcedTeamNum = GetForcedTeamNum(ScrnPlayerController(PC));
+            if (ForcedTeamNum < 2) {
+                NewTeam = Teams[num];
             }
         }
 
@@ -413,7 +422,6 @@ function bool ChangeTeam(Controller Other, int num, bool bNewTeam)
                 && TSCTeam(NewTeam).ClanRep.Clan.IsCaptain(PC.GetPlayerIDHash())) {
             // clan captain joined the party
             SetTeamCaptain(NewTeam.TeamIndex, Other.PlayerReplicationInfo);
-
         }
     }
 
@@ -589,6 +597,8 @@ function bool AllowMidWaveRespawn(ScrnPlayerController ScrnPC)
 
 function bool BecomeSpectator(PlayerController P)
 {
+    local byte ForcedTeamNum;
+
     if ( super.BecomeSpectator(P) ) {
         // check if player is a team captain
         if ( P.PlayerReplicationInfo.Team != none && P.PlayerReplicationInfo.Team.TeamIndex < 2 ) {
@@ -596,6 +606,12 @@ function bool BecomeSpectator(PlayerController P)
                 SetTeamCaptain(P.PlayerReplicationInfo.Team.TeamIndex, none);
             }
         }
+
+        ForcedTeamNum = GetForcedTeamNum(ScrnPlayerController(P));
+        if (ForcedTeamNum < 2) {
+            ScrnPlayerController(P).SetSpecTeam(ForcedTeamNum);
+        }
+
         return true;
     }
 
@@ -1284,27 +1300,131 @@ auto State PendingMatch
         return true;
     }
 
+    function bool ClanParseCaptain(byte t, ScrnPlayerController PC, out array<ScrnPlayerController> Captains,
+            out int Priority)
+    {
+        local int p;
+
+        p = TSCTeams[t].ClanRep.Clan.CaptainPriority(PC.GetPlayerIDHash());
+        if (p < 0)
+            return false;
+
+
+        if (p < Priority) {
+            Captains.insert(0, 1);
+            Captains[0] = PC;
+            Priority = p;
+        }
+        else {
+            // there are clan captains with higher priority on the server
+            Captains[Captains.length] = PC;
+        }
+        return true;
+    }
+
+    function ClanParseMember(ScrnPlayerController PC, out array<ScrnPlayerController> Members)
+    {
+        if (PC.PlayerReplicationInfo.bOnlySpectator) {
+            Members[Members.Length] = PC;
+        }
+        else {
+            Members.insert(0, 1);
+            Members[0] = PC;
+        }
+    }
+
+    function ClanParseEnsureTeamIndex(byte t, out array<ScrnPlayerController> Members)
+    {
+        local int i;
+        local ScrnPlayerController PC;
+
+        for (i = 0; i < Members.Length; ++i) {
+            PC = Members[i];
+            PC.SetSpecTeam(t);
+            InvitePlayer(PC);
+            if (PC.PlayerReplicationInfo.Team == TSCTeams[1-t]) {
+                PC.ServerChangeTeam(t);
+            }
+        }
+    }
+
+    function ClanParseLimitTeamSize(byte t, out array<ScrnPlayerController> Members)
+    {
+        local int i;
+        local ScrnPlayerController PC;
+
+        for (i = Members.Length - 1; i >= 0 && TSCTeams[t].Size > MaxTeamSize; --i) {
+            PC = Members[i];
+            if (!PC.PlayerReplicationInfo.bOnlySpectator) {
+                PC.BecomeSpectator();
+            }
+        }
+    }
+
+    function ClanParseTeamWelcome(byte t, out array<ScrnPlayerController> Members)
+    {
+        local int i;
+        local ScrnPlayerController PC;
+        local PlayerReplicationInfo PRI;
+
+        for (i = 0; i < Members.Length; ++i) {
+            PC = Members[i];
+            PRI = PC.PlayerReplicationInfo;
+            if (PRI.bOnlySpectator && TSCTeams[t].Size < MaxTeamSize) {
+                PC.BecomeActivePlayer();
+            }
+            if (!PRI.bOnlySpectator) {
+                PC.ServerChangeTeam(t);
+                PC.ShowLobbyMenu();
+            }
+        }
+    }
+
+    function ClanParseTeamCaptain(byte t, out array<ScrnPlayerController> Captains)
+    {
+        local int i;
+        local ScrnPlayerController PC;
+        local PlayerReplicationInfo PRI;
+
+        for (i = 0; i < Captains.Length; ++i) {
+            PC = Captains[i];
+            PRI = PC.PlayerReplicationInfo;
+            if (!PRI.bOnlySpectator) {
+                SetTeamCaptain(t, PRI);
+                return;
+            }
+        }
+    }
+
     function ForceClanTeams()
     {
-        local byte t;
-        local int i, p;
+        local int i;
         local ScrnPlayerController PC;
         local PlayerReplicationInfo PRI;
         local string id;
-        local int CaptainPriority[2];
-        local bool bIllegalAlien;
+        local int RedPriority, BluePriority;
+        local array<ScrnPlayerController> RedCaptains, BlueCaptains, RedPlayers, BluePlayers, ReservePlayers;
 
         if (!bClanGame)
             return;
 
         SetTeamCaptain(0, none);
         SetTeamCaptain(1, none);
-        CaptainPriority[0] = 255;
-        CaptainPriority[1] = 255;
+        RedPriority = 255;
+        BluePriority = 255;
 
         InviteList.length = 0;
         ScrnBalanceMut.bTeamsLocked = false;
         bTeamChanging = true;
+
+        if (MaxTeamSize <= 0) {
+            MaxTeamSize = MaxPlayers / 2;
+        }
+        else {
+            MaxPlayers = MaxTeamSize * 2;
+        }
+
+        // Sort players by teams. Move non-clan members to spectators.
         for ( i = 0; i < TSCGRI.PRIArray.Length; ++i ) {
             PRI = TSCGRI.PRIArray[i];
             if (PRI == none)
@@ -1314,32 +1434,72 @@ auto State PendingMatch
                 continue;
 
             id = PC.GetPlayerIDHash();
-            bIllegalAlien = true;
-            for (t = 0; t < 2; ++t) {
-                p = TSCTeams[t].ClanRep.Clan.CaptainPriority(id);
-                if (p >= 0 || TSCTeams[t].ClanRep.Clan.IsPlayer(id)) {
-                    if (PRI.bOnlySpectator) {
-                        PC.BecomeActivePlayer();
-                    }
-                    bIllegalAlien = false;
-                    PC.ServerChangeTeam(t);
-                    InvitePlayer(PC);
-                    PC.ShowLobbyMenu();
 
-                    if (p >= 0 && p < CaptainPriority[t]) {
-                        SetTeamCaptain(t, PRI);
-                        CaptainPriority[t] = p;
-                    }
-                    break;
+            if (ClanParseCaptain(0, PC, RedCaptains, RedPriority))
+                continue;
+            if (ClanParseCaptain(1, PC, BlueCaptains, BluePriority))
+                continue;
+
+            if (TSCTeams[0].ClanRep.Clan.IsPlayer(id)) {
+                if (TSCTeams[1].ClanRep.Clan.IsPlayer(id)) {
+                    // The player is a member of both clans - mote to reserve.
+                    ClanParseMember(PC, ReservePlayers);
+                }
+                else {
+                    ClanParseMember(PC, RedPlayers);
                 }
             }
-            if (bIllegalAlien) {
+            else if (TSCTeams[1].ClanRep.Clan.IsPlayer(id)) {
+                ClanParseMember(PC, BluePlayers);
+            }
+            else {
+                PC.SetSpecTeam(255);
                 if (!PRI.bOnlySpectator) {
                     PC.BecomeSpectator();
                 }
                 UninvitePlayer(PC);
             }
         }
+
+        // Merge captain into the player list for convenience.
+        class'ScrnFunctions'.static.ObjArrayInsert(RedPlayers, RedCaptains);
+        class'ScrnFunctions'.static.ObjArrayInsert(BluePlayers, BlueCaptains);
+
+        // Fill the gap with reserve players (if needed)
+        for (i = 0; i < ReservePlayers.Length; ++i) {
+            if (RedPlayers.Length <= BluePlayers.Length) {
+                if (RedPlayers.Length < MaxTeamSize)
+                    RedPlayers[RedPlayers.Length] = ReservePlayers[i];
+                else
+                    break;
+            }
+            else if (BluePlayers.Length < MaxTeamSize) {
+                BluePlayers[BluePlayers.Length] = ReservePlayers[i];
+            }
+            else {
+                break;
+            }
+        }
+        if (i > 0) {
+            ReservePlayers.remove(0, i);
+        }
+
+        // Ensure players are on the right team. Don't touch spectators yet.
+        ClanParseEnsureTeamIndex(0, RedPlayers);
+        ClanParseEnsureTeamIndex(1, BluePlayers);
+
+        // if there are too many players, move the bottom of the list to spectators.
+        ClanParseLimitTeamSize(0, RedPlayers);
+        ClanParseLimitTeamSize(1, BluePlayers);
+
+        // if there are not enough players, move the top of the list to active players. Welcome team members.
+        ClanParseTeamWelcome(0, RedPlayers);
+        ClanParseTeamWelcome(1, BluePlayers);
+
+        // Promote the top Clan Captain to the Team Captain
+        ClanParseTeamCaptain(0, RedCaptains);
+        ClanParseTeamCaptain(1, BlueCaptains);
+
         bTeamChanging = false;
         LockTeams();
     }

@@ -349,6 +349,36 @@ simulated function float DrawTeam(Canvas Canvas, array<PlayerReplicationInfo> Te
     return y;
 }
 
+simulated function string GetColoredSpectatorName(PlayerReplicationInfo PRI)
+{
+    local string s;
+    local ScrnCustomPRI ScrnPRI;
+    local byte SpecTeam;
+    local Color CustomColor;
+
+    if (PRI.bAdmin) {
+        CustomColor = AdminColor;
+    }
+    else {
+        ScrnPRI = class'ScrnCustomPRI'.static.FindMe(PRI);
+        if (ScrnPRI != none) {
+            if (ScrnPRI.IsReferee()) {
+                CustomColor = AdminColor;
+            }
+            else if (ScrnPRI.GetSpecTeam() < 2) {
+                CustomColor = class'ScrnHUD'.default.TextColors[ScrnPRI.GetSpecTeam()];
+            }
+        }
+    }
+
+    s = class'ScrnFunctions'.static.StripColorTags(PRI.PlayerName);
+    if (CustomColor.A != 0) {
+        s = class'ScrnF'.static.ColorStringC(s, CustomColor)
+                $ class'ScrnF'.static.ColorStringC("", SpecColor);
+    }
+    return s;
+}
+
 simulated event UpdateScoreBoard(Canvas Canvas)
 {
     local TSCGameReplicationInfo TSCGRRI;
@@ -394,7 +424,7 @@ simulated event UpdateScoreBoard(Canvas Canvas)
             }
             else if ( PRI.PlayerID != 0 || PRI.PlayerName != "WebAdmin" ) {
                 ++SpecCount;
-                Spectators @= class'ScrnFunctions'.static.StripColorTags(PRI.PlayerName) $ " |";
+                Spectators @= GetColoredSpectatorName(PRI) $ " |";
             }
         }
     }
@@ -541,7 +571,7 @@ simulated event UpdateScoreBoard(Canvas Canvas)
 
     if (Spectators != "") {
         Canvas.Font = class'ROHud'.static.LoadMenuFontStatic( min(8, fi+2) );
-        Canvas.DrawColor = Class'HudBase'.Default.GrayColor;
+        Canvas.DrawColor = SpecColor;
         Canvas.SetPos(RedBoxXPos, y);
         Canvas.DrawText(SpectatorsText $ ": |" $ Spectators, true);
     }

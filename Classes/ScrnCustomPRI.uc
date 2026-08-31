@@ -12,6 +12,8 @@ var private int             SteamID32, ClientSteamID32;
 
 var private transient byte SteamID64Attempts;
 
+var private byte            SpecTeam;
+
 //0x0110000100000000 - 76561197960265728
 const SteamUID_Part1 = 76561197;
 const SteamUID_Part2 =         960265728;
@@ -23,7 +25,7 @@ var int TotalDamageK, TotalHeal;
 replication
 {
     reliable if ( (bNetDirty || bNetInitial) && Role == Role_Authority )
-        SteamID32, DoshRequestCounter, BlameCounter, bReachedGoal, TotalDamageK, TotalHeal;
+        SteamID32, DoshRequestCounter, BlameCounter, bReachedGoal, TotalDamageK, TotalHeal, SpecTeam;
 }
 
 function PostBeginPlay()
@@ -199,6 +201,23 @@ final simulated function material GetPostNameIcon()
     return PostNameIcon;
 }
 
+final simulated function byte GetSpecTeam()
+{
+    return SpecTeam;
+}
+
+final simulated function bool IsReferee()
+{
+    return SpecTeam == 250;
+}
+
+final function SetSpecTeam()
+{
+    if (Role < ROLE_Authority)
+        return;
+    SpecTeam = ScrnPlayerController(Owner).GetSpecTeam();
+}
+
 
 state InitPRI
 {
@@ -220,4 +239,5 @@ defaultproperties
 {
     bNetNotify=True
     NetUpdateFrequency=1.0
+    SpecTeam=255
 }

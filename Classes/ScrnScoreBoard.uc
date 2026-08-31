@@ -14,7 +14,7 @@ var Material WhiteMaterial;
 
 var Material PlayerIconBackground;
 
-var color AssColor, DoshColor, BestColor, DeadColor;
+var color AssColor, DoshColor, BestColor, DeadColor, AdminColor, SpecColor;
 
 var transient float BoxWidth, BoxX;
 var transient float VetX, NameX, KillsX, DamageX, HealX, DeathsX, CashX, HealthX, TimeX, NetX;
@@ -796,7 +796,7 @@ simulated event UpdateScoreBoard(Canvas Canvas)
         Canvas.DrawText(NotShownCount@NotShownInfo,true);
     }
     else if (Spectators != "") {
-        Canvas.DrawColor = HUDClass.Default.GrayColor;
+        Canvas.DrawColor = SpecColor;
         Canvas.SetPos(BoxX, y);
         Canvas.DrawText(SpectatorsText $ ": |" $ Spectators, true);
     }
@@ -825,6 +825,8 @@ defaultproperties
     DeadColor=(R=160,G=160,B=160,A=255)
     DoshColor=(R=255,G=255,B=125,A=255)
     BestColor=(R=255,G=0,B=255,A=255)
+    AdminColor=(R=255,G=0,B=255,A=255)
+    SpecColor=(B=200,G=200,R=200,A=255)
     PlayerIconBackground=Texture'InterfaceContent.Menu.BorderBoxA1'
     PlayerIconSpacing=4
     PlayerIconMargin=3
