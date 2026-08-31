@@ -2,7 +2,7 @@
 // Copy-paste job from ScrnLaserWeaponAttachment, just extending DualiesAttachment
 // @author PooSH, 2015
 
-class ScrnLaserDualWeaponAttachment extends DualiesAttachment
+class ScrnLaserDualWeaponAttachment extends ScrnDualiesAttachment
 abstract;
 
 
@@ -20,11 +20,6 @@ replication {
 // disabled flashlight
 simulated function UpdateTacBeam( float Dist );
 simulated function TacBeamGone();
-
-// it's better to avoid dynamic mesh loading for this
-static function PreloadAssets(optional KFWeaponAttachment Spawned)  { }
-static function bool UnloadAssets() { return true; }
-
 
 
 simulated function PostNetReceive()

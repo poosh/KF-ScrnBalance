@@ -1207,7 +1207,7 @@ function CheckDoorZeds()
 
     for (i = DoorZeds.Length - 1; i >= 0; --i) {
         DoorTrigger = DoorZeds[i].DoorTrigger;
-        if (DoorTrigger.DoorOwners[0].bDoorIsDead || Level.TimeSeconds - DoorZeds[i].LastAttackTime > 30
+        if (DoorTrigger.DoorOwners[0].bHidden || Level.TimeSeconds - DoorZeds[i].LastAttackTime > 30
                 || (TotalMaxMonsters <= 0 && NumMonsters < 10)) {
             MarkDoor(DoorTrigger, false);
             DoorZeds.remove(i, 1);

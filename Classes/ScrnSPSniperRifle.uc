@@ -1,7 +1,7 @@
 class ScrnSPSniperRifle extends SPSniperRifle
     config(user);
 
-  
+
 var         name             ReloadShortAnim;
 var         float             ReloadShortRate;
 
@@ -24,7 +24,7 @@ simulated function bool AllowReload()
 exec function ReloadMeNow()
 {
     local float ReloadMulti;
-    
+
     if(!AllowReload())
         return;
     if ( bHasAimingMode && bAimingRifle )
@@ -35,12 +35,12 @@ exec function ReloadMeNow()
         if( Role < ROLE_Authority)
             ServerZoomOut(false);
     }
-    
+
     if ( KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo) != none && KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo).ClientVeteranSkill != none )
         ReloadMulti = KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo).ClientVeteranSkill.Static.GetReloadSpeedModifier(KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo), self);
     else
         ReloadMulti = 1.0;
-        
+
     bIsReloading = true;
     ReloadTimer = Level.TimeSeconds;
     bShortReload = MagAmmoRemaining > 0;
@@ -48,7 +48,7 @@ exec function ReloadMeNow()
         ReloadRate = default.ReloadShortRate / ReloadMulti;
     else
         ReloadRate = default.ReloadRate / ReloadMulti;
-        
+
     if( bHoldToReload )
     {
         NumLoadedThisReload = 0;
@@ -74,12 +74,12 @@ simulated function ClientReload()
         if( Role < ROLE_Authority)
             ServerZoomOut(false);
     }
-    
+
     if ( KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo) != none && KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo).ClientVeteranSkill != none )
         ReloadMulti = KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo).ClientVeteranSkill.Static.GetReloadSpeedModifier(KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo), self);
     else
         ReloadMulti = 1.0;
-        
+
     bIsReloading = true;
     if (MagAmmoRemaining <= 0)
     {
@@ -94,13 +94,13 @@ simulated function ClientReload()
 function AddReloadedAmmo()
 {
     local int a;
-    
+
     UpdateMagCapacity(Instigator.PlayerReplicationInfo);
 
     a = MagCapacity;
     if ( bShortReload )
         a++; // 1 bullet already bolted
-    
+
     if ( AmmoAmount(0) >= a )
         MagAmmoRemaining = a;
     else
@@ -117,17 +117,18 @@ function AddReloadedAmmo()
         KFSteamStatsAndAchievements(PlayerController(Instigator.Controller).SteamStatsAndAchievements).OnWeaponReloaded();
     }
 }
-  
-    
+
+
 defaultproperties
 {
-     PickupClass=class'ScrnSPSniperPickup'
-     FireModeClass(0)=class'ScrnSPSniperFire'
-     ReloadShortAnim="Reload"
-     ReloadShortRate=1.8
-     MagCapacity=10
-     ReloadRate=2.866000
-     ReloadAnimRate=1.000000
-     Weight=6.000000
-     ItemName="S.P. Musket SE"
+    PickupClass=class'ScrnSPSniperPickup'
+    AttachmentClass=Class'ScrnSPSniperAttachment'
+    FireModeClass(0)=class'ScrnSPSniperFire'
+    ReloadShortAnim="Reload"
+    ReloadShortRate=1.8
+    MagCapacity=10
+    ReloadRate=2.866000
+    ReloadAnimRate=1.000000
+    Weight=6.000000
+    ItemName="S.P. Musket SE"
 }

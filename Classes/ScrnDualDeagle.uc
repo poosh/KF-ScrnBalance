@@ -1053,7 +1053,8 @@ defaultproperties
     PistolHammerRotation=(Pitch=120,Yaw=0,Roll=0) //tripwire why did you do this
     DefaultHammerRotateRate = 0.04
     DefaultHammerRotateMult = 1.0
-    Weight=6.000000
+    Weight=6
+    AttachmentClass=class'ScrnDualDeagleAttachment'
     FireModeClass(0)=class'ScrnDualDeagleFire'
     DemoReplacement=class'ScrnDeagle'
     InventoryGroup=3

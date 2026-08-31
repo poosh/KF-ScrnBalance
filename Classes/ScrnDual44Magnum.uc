@@ -687,6 +687,7 @@ defaultproperties
     ReloadShortAnim="Reload"
     ReloadShortRate=2.235
     bDoubleAmmo=true
+    AttachmentClass=class'ScrnDual44MagnumAttachment'
     FireModeClass(0)=class'ScrnDual44MagnumFire'
     Description="A pair of .44 Magnum Pistols - cowboy's favorite choice to clear Wild West for Zed hordes!"
     DemoReplacement=class'ScrnMagnum44Pistol'

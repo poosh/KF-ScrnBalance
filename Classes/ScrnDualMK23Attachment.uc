@@ -1,4 +1,8 @@
-class ScrnDualMK23LaserAttachment extends ScrnLaserDualWeaponAttachment;
+class ScrnDualMK23Attachment extends ScrnDualiesAttachment;
+
+
+simulated function UpdateTacBeam( float Dist );
+simulated function TacBeamGone();
 
 defaultproperties
 {

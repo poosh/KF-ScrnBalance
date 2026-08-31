@@ -4283,7 +4283,7 @@ function DrawMark(Canvas C, int i)
 
     OldDrawColor = C.DrawColor;
 
-    if (Marks[i].Target == none) {
+    if (Marks[i].Target == none || Marks[i].MarkType == MARK_DOOR) {
         TargetLocation = Marks[i].Location;
     }
     else {
@@ -4458,7 +4458,6 @@ function MarkTarget(KFPlayerReplicationInfo Sender, Actor Target, vector Locatio
                 if (Caption == "") {
                     Caption = eval(Target != none, string(Target.name), strDoorMark);
                 }
-                Target = none;  // don't use Door's location, as it may be messed up
                 MarkLife = 20;
             }
             else if (Target == none) {
@@ -4539,6 +4538,7 @@ function MarkTarget(KFPlayerReplicationInfo Sender, Actor Target, vector Locatio
     else if (MarkType == MARK_DOOR) {
         // draw door warnings in red
         Marks[i].Color = MarkColors[MARK_ENEMIES];
+        Marks[i].bIgnoreTarget = true;
     }
     else {
         Marks[i].Color = MarkColors[min(MarkGroup, MarkColors.Length - 1)];

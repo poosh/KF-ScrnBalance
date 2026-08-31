@@ -106,6 +106,7 @@ function FlashMuzzleFlash()
 //called after reload and on zoom toggle, sets next pistol to fire to sync with slide lock order
 function SetPistolFireOrder(bool bNextFireLeft)
 {
+    local ScrnDualiesAttachment DualAttach;
     bFireLeft = bNextFireLeft;
 
     if (bFireLeft != bDefaultLeft) {
@@ -123,6 +124,17 @@ function SetPistolFireOrder(bool bNextFireLeft)
         FireAimedAnim2 = default.FireAimedAnim2;
         FireAnim = default.FireAnim;
         FireAimedAnim = default.FireAimedAnim;
+    }
+
+    if (Weapon.Level.NetMode == NM_DedicatedServer)
+        return;
+
+    DualAttach = ScrnDualiesAttachment(DualWeap.ThirdPersonActor);
+    if (DualAttach != none) {
+        DualAttach.bMyFlashTurn = !bFireLeft;
+        if (!bIsFiring) {
+            DualAttach.bLastMyTurn = DualAttach.bMyFlashTurn;
+        }
     }
 }
 
@@ -147,6 +159,8 @@ event ModeDoFire()
     SwapPistolFireOrder();
 }
 
+// The fix already implemented in ScrnDualiesAttachment
+function CheckAttachment() { }
 
 
 defaultproperties

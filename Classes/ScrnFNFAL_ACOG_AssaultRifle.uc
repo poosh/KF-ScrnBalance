@@ -246,4 +246,5 @@ defaultproperties
     PickupClass=class'ScrnFNFAL_ACOG_Pickup'
     ItemName="FN FAL ACOG AP"
     BulletMoveOffset=(X=0,Y=0,Z=0.03) //for tactical reload
+    AttachmentClass=Class'ScrnFNFAL_ACOG_Attachment'
 }

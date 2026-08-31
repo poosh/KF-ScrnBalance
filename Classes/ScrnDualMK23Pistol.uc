@@ -880,6 +880,7 @@ defaultproperties
     ReloadShortRate = 2.57 //no slides locked back
     ReloadHalfShortRate = 3.35 //left slide locked back
     PistolSlideOffset=(X=0,Y=-0.0235000,Z=0.0)
+    AttachmentClass=class'ScrnDualMK23Attachment'
     FireModeClass(0)=class'ScrnDualMK23Fire'
     DemoReplacement=class'ScrnMK23Pistol'
     InventoryGroup=3

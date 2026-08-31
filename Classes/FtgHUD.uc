@@ -119,6 +119,10 @@ simulated function DrawTSCHUDTextElements(Canvas C)
     if (bHideTSCHints)
         return;
 
+    TeamBase = TSCTeamBase(KFPRI.Team.HomeBase);
+    if ( TeamBase == none )
+        return; // just in case
+
     if ( TSCGRI.ElapsedTime <= 10 ) {
         aTitle = titleWelcome;
         aHint = hintWelcome;

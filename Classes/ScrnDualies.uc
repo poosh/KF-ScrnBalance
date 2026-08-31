@@ -458,12 +458,12 @@ function AddReloadedAmmo()
 defaultproperties
 {
     MagAmmoRemaining=30
-    ClientMagAmmoRemaining=30
     ReloadShortRate = 2.93 //no slides locked back
     ReloadHalfShortRate = 3.23 //right slide locked back
     //ReloadRate=3.500000 //both
     Weight=2
     ModeSwitchAnim="LightOn"
+    AttachmentClass=Class'ScrnDualiesAttachment'
     FireModeClass(0)=class'ScrnDualiesFire'
     DemoReplacement=class'ScrnSingle'
     PickupClass=class'ScrnDualiesPickup'
