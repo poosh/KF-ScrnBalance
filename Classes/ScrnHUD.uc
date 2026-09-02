@@ -186,6 +186,9 @@ var float BlameDrawDistance; // max distance to draw a turn on blamed pawn's hea
 
 var config bool bDrawSpecDeaths;
 var bool bDrawSpecWaveInfo;
+var config bool bSpecDrawWeapons;
+var config float SpecWeaponsScale, SpecWeaponsRightOffsetX, SpecWeaponsCenterOffsetY;
+
 
 var Color WhiteAlphaColor; // white color with applied KFHUDAlpha. It is safe to use default.WhiteAlphaColor as well
 var array<color> PerkColors;
@@ -3699,6 +3702,54 @@ simulated function DrawSpecialSpectatingHUD(Canvas C)
             C.DrawText(S);
         }
     }
+
+    if (bSpecDrawWeapons) {
+        DrawSpecWeapons(C);
+    }
+}
+
+simulated function DrawSpecWeapons(Canvas C)
+{
+    local int i, count;
+    local float TempX, TempY, TempWidth, TempHeight;
+    local Material Icon;
+
+    if (ScrnPawnOwner == none)
+        return;
+
+    for (i = 0; i < 4; ++i) {
+        if (ScrnPawnOwner.SpecWeapons[i] != none)
+            ++count;
+    }
+    if (count == 0)
+        return;
+
+    C.Style = ERenderStyle.STY_Alpha;
+    C.DrawColor = WhiteColor;
+    C.DrawColor.A = KFHUDAlpha;
+
+    TempWidth = InventoryBoxWidth * C.ClipX * SpecWeaponsScale;
+    TempHeight = InventoryBoxHeight * C.ClipX * SpecWeaponsScale;
+    TempX = C.ClipX - TempWidth;
+    TempX -= C.ClipX * SpecWeaponsRightOffsetX;
+
+    TempY = (C.ClipY - TempHeight * count) / 2;
+    TempY += C.ClipY * SpecWeaponsCenterOffsetY;
+
+    for (i = 0; i < 4; ++i) {
+        if (ScrnPawnOwner.SpecWeapons[i] == none)
+            continue;
+
+        if (ScrnPawnOwner.SpecWeapon == ScrnPawnOwner.SpecWeapons[i]) {
+            Icon = ScrnPawnOwner.SpecWeapon.default.SelectedHudImage;
+        }
+        else {
+            Icon = ScrnPawnOwner.SpecWeapons[i].default.HudImage;
+        }
+        C.SetPos(TempX, TempY);
+        C.DrawTile(Icon, TempWidth, TempHeight, 0, 0, 256, 192);
+        TempY += TempHeight;
+    }
 }
 
 // color tag support
@@ -4702,6 +4753,10 @@ defaultproperties
 
     bDrawSpecDeaths=True
     bDrawSpecWaveInfo=True
+    bSpecDrawWeapons=true
+    SpecWeaponsScale=0.70
+    SpecWeaponsRightOffsetX=0.01
+    SpecWeaponsCenterOffsetY=0.07
 
     strFollowing="FOLLOWING:"
     strTrader="Trader: "

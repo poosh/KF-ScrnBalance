@@ -1330,9 +1330,24 @@ function bool IsAdmin(PlayerController Sender)
             || (Level.NetMode == NM_ListenServer && NetConnection(Sender.Player) == none);
 }
 
+function bool IsReferee(PlayerController Sender)
+{
+    return IsAdmin(Sender)
+            || (ScrnPlayerController(Sender) != none && ScrnPlayerController(Sender).GetSpecTeam() >= 250);
+}
+
 function bool CheckAdmin(PlayerController Sender)
 {
     if ( IsAdmin(Sender) )
+        return true;
+
+    Sender.ClientMessage(strOnlyAdmin);
+    return false;
+}
+
+function bool CheckReferee(PlayerController Sender)
+{
+    if ( IsReferee(Sender) )
         return true;
 
     Sender.ClientMessage(strOnlyAdmin);
@@ -1355,6 +1370,62 @@ function bool CheckNotTourney(PlayerController Sender)
 
     Sender.ClientMessage(strOnlyNotInTourney);
     return false;
+}
+
+function KickPlayer(PlayerController PC, optional bool bSessionBan, optional string Reason)
+{
+    local string msg, IP, ID, PlayerName;
+    local AccessControl AC;
+
+    if (PC == none || Mut.IsReferee(PC))
+        return;
+
+    if (Mut.ScrnGT != none) {
+        Mut.ScrnGT.UninvitePlayer(PC);
+    }
+
+    IP = PC.GetPlayerNetworkAddress();
+    ID = PC.GetPlayerIDHash();
+    PlayerName = PlainPlayerName(PC.PlayerReplicationInfo);
+    AC = Mut.KF.AccessControl;
+
+    if (bSessionBan) {
+        if(AC == none || AC.CheckIPPolicy(IP) != 0) {
+            bSessionBan = false;
+        }
+        else {
+            IP = Left(IP, InStr(IP, ":"));
+            Log("Adding Session Ban for: " $ IP @ ID @ PlayerName $ " Reason: " $ Reason, class.name);
+
+            if (AC.bBanByID) {
+                AC.SessionBannedIDs[AC.SessionBannedIDs.Length] = ID @ PlayerName;
+            }
+            else {
+                AC.SessionIPPolicies[AC.SessionIPPolicies.Length] = "DENY;" $ IP;
+            }
+            AC.SaveConfig();
+        }
+    }
+    else {
+        Log("Player kicked: " $ IP @ ID @ PlayerName $ " Reason: " $ Reason, class.name);
+    }
+
+    msg = PlayerName @ eval(bSessionBan, "banned", "kicked");
+    if (Reason == "") {
+        Reason = "Team Vote";
+    }
+    else {
+        msg $= ": " $ Reason;
+    }
+    BroadcastMessage(msg);
+    PC.ClientNetworkMessage("AC_Kicked", Reason);
+
+    if (PC.Pawn != none && Vehicle(PC.Pawn) == none) {
+        PC.Pawn.Destroy();
+    }
+    if (PC != None) {
+        PC.Destroy();
+    }
 }
 
 function Mutate(string MutateString, PlayerController Sender)
@@ -3438,7 +3509,7 @@ function GameResumed()
 
 defaultproperties
 {
-    VersionNumber=97428
+    VersionNumber=97430
     GroupName="KF-Scrn"
     FriendlyName="ScrN Balance"
     Description="Total rework of KF1 to make it modern and the best tactical coop in the world while sticking to the roots of the original."

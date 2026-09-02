@@ -9,13 +9,15 @@ const VOTE_ADD                  =  2;
 const VOTE_REMOVE               =  3;
 const VOTE_CAPTAIN              =  4;
 const VOTE_LEAVE                =  5;
+const VOTE_LOCKSPEC             =  6;
+const VOTE_UNLOCKSPEC           =  7;
 
 var TSCClanInfo VotedRedClan, VotedBlueClan;
 var array<TSCClanInfo> Clans;
 var int VotedTeamSize;
 
 var string strNoClan, strNoClanPlayers, strClanAlreadyExists, strAdminOrCaptain, strRequireClanGame, strCaptainOwnClan;
-var string strWrongTeamSize;
+var string strWrongTeamSize, strNeedClanGame;
 
 function int GetGroupVoteIndex(PlayerController Sender, string Group, string Key, out string Value, out string VoteInfo)
 {
@@ -30,6 +32,9 @@ function int GetGroupVoteIndex(PlayerController Sender, string Group, string Key
             return VOTE_LOCAL;
         }
         if (!Divide(Value, " ", s1, s2)) {
+            return VOTE_ILLEGAL;
+        }
+        if (!ValidClanAcronym(s1)) {
             return VOTE_ILLEGAL;
         }
         Clan = FindClan(s1, true);
@@ -65,6 +70,31 @@ function int GetGroupVoteIndex(PlayerController Sender, string Group, string Key
         GotoState('AutoPass');
         return VOTE_LEAVE;
     }
+    else if (Key == "LOCKSPEC") {
+        if (!TSC.bClanGame) {
+            Sender.ClientMessage(strNeedClanGame);
+            return VOTE_LOCAL;
+        }
+        if (TSC.ClanAdmin != none && TSC.ClanAdmin.bSpecLocked) {
+            return VOTE_NOEFECT;
+        }
+        if (!TSC.ScrnBalanceMut.CheckReferee(Sender)) {
+            return VOTE_LOCAL;
+        }
+        VoteInfo="LOCK SPECTATORS";
+        return VOTE_LOCKSPEC;
+    }
+    else if (Key == "UNLOCKSPEC") {
+        if (!TSC.bClanGame) {
+            Sender.ClientMessage(strNeedClanGame);
+            return VOTE_LOCAL;
+        }
+        if (TSC.ClanAdmin == none || !TSC.ClanAdmin.bSpecLocked) {
+            return VOTE_NOEFECT;
+        }
+        VoteInfo="UNLOCK SPECTATORS";
+        return VOTE_UNLOCKSPEC;
+    }
 
     return VOTE_UNKNOWN;
 }
@@ -80,6 +110,12 @@ function ApplyVoteValue(int VoteIndex, string VoteValue)
             break;
         case VOTE_CREATE:
             VotedRedClan.Create();
+            break;
+        case VOTE_LOCKSPEC:
+            TSC.ClanAdmin.LockSpectators();
+            break;
+        case VOTE_UNLOCKSPEC:
+            TSC.ClanAdmin.UnlockSpectators();
             break;
     }
 
@@ -167,11 +203,12 @@ function int VotePlayerMod(PlayerController Sender, int VoteIndex, out string Va
     local string PlayerName, ClanAcronym;
     local PlayerController Player;
     local TSCClanInfo Clan;
-    local bool bAdmin;
+    local bool bAdmin, bReferee;
     local bool b;
     local string id, cmd;
 
     bAdmin = TSC.ScrnBalanceMut.IsAdmin(Sender);
+    bReferee = TSC.ScrnBalanceMut.IsReferee(Sender);
     if (!bAdmin && VoteIndex == VOTE_CAPTAIN) {
         Sender.ClientMessage(TSC.ScrnBalanceMut.strOnlyAdmin);
         return VOTE_LOCAL;
@@ -181,7 +218,15 @@ function int VotePlayerMod(PlayerController Sender, int VoteIndex, out string Va
         PlayerName = Value;
     }
 
-    if (!bAdmin) {
+    Player = FindPlayer(PlayerName, Sender);
+    if ( Player == none ) {
+        Sender.ClientMessage(strPlayerNotFound);
+        SendPlayerList(Sender);
+        return VOTE_ILLEGAL;
+    }
+    id = Player.GetPlayerIDHash();
+
+    if (!bReferee) {
         Clan = FindTeamClan(Sender);
         if (Clan == none) {
             Sender.ClientMessage(strRequireClanGame);
@@ -196,29 +241,29 @@ function int VotePlayerMod(PlayerController Sender, int VoteIndex, out string Va
             return VOTE_LOCAL;
         }
     }
+    else if (ClanAcronym == "REFEREE" || ClanAcronym == "STREAMER") {
+        if (!bAdmin) {
+            Sender.ClientMessage(TSC.ScrnBalanceMut.strOnlyAdmin);
+            return VOTE_LOCAL;
+        }
+        return VoteAdminMod(Sender, Player, ClanAcronym, VoteIndex, Value, VoteInfo);
+    }
+    else if (ClanAcronym == "GUEST") {
+        return VoteAdminMod(Sender, Player, ClanAcronym, VoteIndex, Value, VoteInfo);
+    }
+    else if (ClanAcronym == "") {
+        Clan = FindTeamClan(Sender);
+        if (Clan == none) {
+            return VOTE_ILLEGAL;
+        }
+    }
     else {
-        if (ClanAcronym != "") {
-            Clan = FindClan(ClanAcronym);
-            if (Clan == none) {
-                Sender.ClientMessage(repl(strNoClan, "%c", ClanAcronym));
-                return VOTE_LOCAL;
-            }
-        }
-        else {
-            Clan = FindTeamClan(Sender);
-            if (Clan == none) {
-                return VOTE_ILLEGAL;
-            }
+        Clan = FindClan(ClanAcronym);
+        if (Clan == none) {
+            Sender.ClientMessage(repl(strNoClan, "%c", ClanAcronym));
+            return VOTE_LOCAL;
         }
     }
-
-    Player = FindPlayer(PlayerName, Sender);
-    if ( Player == none ) {
-        Sender.ClientMessage(strPlayerNotFound);
-        SendPlayerList(Sender);
-        return VOTE_ILLEGAL;
-    }
-    id = Player.GetPlayerIDHash();
 
     switch (VoteIndex) {
         case VOTE_ADD:
@@ -226,7 +271,7 @@ function int VotePlayerMod(PlayerController Sender, int VoteIndex, out string Va
             cmd = "ADD";
             break;
         case VOTE_REMOVE:
-            b = Clan.RemovePlayer(id) || (bAdmin && Clan.RemoveCaptain(id));
+            b = Clan.RemovePlayer(id) || (bReferee && Clan.RemoveCaptain(id));
             cmd = "REMOVE";
             break;
         case VOTE_CAPTAIN:
@@ -252,6 +297,67 @@ function int VotePlayerMod(PlayerController Sender, int VoteIndex, out string Va
     GotoState('AutoPass');
     return VoteIndex;
 }
+
+function int VoteAdminMod(PlayerController Sender, PlayerController Player, string AdminType, int VoteIndex, out string Value,
+        out string VoteInfo)
+{
+    local bool b;
+    local string id;
+    local string cmd;
+
+    if (VoteIndex != VOTE_ADD && VoteIndex != VOTE_REMOVE)
+        return VOTE_UNKNOWN;
+
+    TSC.EnsureClanAdmin();
+    id = Player.GetPlayerIDHash();
+
+    if (VoteIndex == VOTE_ADD) {
+        cmd = "ADD";
+        switch (AdminType) {
+            case "REFEREE":
+                b = TSC.ClanAdmin.AddReferee(id);
+                break;
+            case "STREAMER":
+                b = TSC.ClanAdmin.AddStreamer(id);
+                break;
+            case "GUEST":
+                b = TSC.ClanAdmin.AddGuest(id);
+                break;
+            default:
+                return VOTE_UNKNOWN;
+        }
+    }
+    else {
+        cmd = "REMOVE";
+        switch (AdminType) {
+            case "REFEREE":
+                b = TSC.ClanAdmin.RemoveReferee(id);
+                break;
+            case "STREAMER":
+                b = TSC.ClanAdmin.RemoveStreamer(id);
+                break;
+            case "GUEST":
+                b = TSC.ClanAdmin.RemoveGuest(id);
+                break;
+            default:
+                return VOTE_UNKNOWN;
+        }
+    }
+
+    if (!b) {
+        return VOTE_NOEFECT;
+    }
+
+    VotingHandler.VotedPlayer = Player;
+    Value = TSC.ScrnBalanceMut.ColoredPlayerName(Player.PlayerReplicationInfo);
+    VoteInfo = AdminType @ cmd @ Value;
+
+    // actually it is not a vote but a forced command. We just reusing features of Voting Handler
+    // If we reached here, the vote must be passed.
+    GotoState('AutoPass');
+    return VoteIndex;
+}
+
 
 // Return clan of the player's team in a clan game. The player does not necessary is a clan member (can play by invite).
 function TSCClanInfo FindTeamClan(PlayerController Player)
@@ -306,6 +412,12 @@ function TSCClanInfo FindLoadedClan(string Acronym)
     return none;
 }
 
+function bool ValidClanAcronym(string Acronym)
+{
+    Acronym = caps(Acronym);
+    return Acronym != "ADMIN" && Acronym != "REFEREE" && Acronym != "STREAMER" && Acronym != "GUEST";
+}
+
 state AutoPass
 {
 Begin:
@@ -325,14 +437,16 @@ defaultproperties
     strRequireClanGame="Required ADMIN privileges or a clan game (MVOTE CLAN GAME)"
     strCaptainOwnClan="You can access your current clan only"
     strWrongTeamSize="Team size (X) must be in [1..%m]"
+    strNeedClanGame="CLAN GAME must be started first."
 
     HelpInfo(0)="%pCLAN %y<options> %w Clan votes. Type %bMVOTE CLAN HELP %wfor more details."
 
-    GroupInfo(0)="%pCLAN %gGAME %r<clan1> %b<clan2> %w[%yX%w]%w Start a clan1 vs. clan2 game (XvX players)"
+    GroupInfo(0)="%pCLAN %gGAME %r<clan1> %b<clan2> %y[X] %w Start a clan1 vs. clan2 game (XvX players)"
     GroupInfo(1)="%pCLAN %rCREATE %y<clan_acronym> <clan_name> %w Creates a new clan"
-    GroupInfo(2)="%pCLAN %gADD %y<player_name> [<clan>] %w Add the player to the clan"
-    GroupInfo(3)="%pCLAN %gREMOVE %y<player_name> [<clan>] %w Remove the player to the clan"
+    GroupInfo(2)="%pCLAN %gADD %y<player_name> [<clan>%r|REFEREE|STREAMER|GUEST%y] %w Add the player to the clan"
+    GroupInfo(3)="%pCLAN %gREMOVE %y<player_name> [<clan>%r|REFEREE|STREAMER|GUEST%y] %w Remove the player from the clan"
     GroupInfo(4)="%pCLAN %gCAPTAIN %y<player_name> [<clan>] %w Make the player a clan captain"
     GroupInfo(5)="%pCLAN %gLEAVE %w Leave the current clan"
-
+    GroupInfo(6)="%pCLAN %rLOCKSPEC %w Lock spectators to referees, streamers, guests, and clan members only"
+    GroupInfo(7)="%pCLAN %gUNLOCKSPEC %w Unlock spectators so everyone can spectate the game"
 }

@@ -441,6 +441,11 @@ function CheckZedSpawnList()
                 continue;
             }
         }
+        if (ZVol.SpawnPos.length < MapInfo.ZVolMinSpawnPlaces) {
+            LogZedSpawn(LOG_INFO, ZVol.name $ " has only " $ ZVol.SpawnPos.length $ " spawn places - remove");
+            ZedSpawnList.remove(i--, 1);
+            continue;
+        }
 
         if (MapInfo.bDebug) {
             LogZedSpawn(LOG_DEBUG, ZVol.name $ " has " $ ZVol.SpawnPos.length $ " spawn places");
@@ -4961,9 +4966,4 @@ defaultproperties
     KFHints[24]="ScrN: Flares deal the incremental burn Damage over Time (iDoT). The more you shoot the more damage zeds take from burning."
     KFHints[25]="ScrN: Nailgun can nail enemies to walls... nail them alive! Crucify your ZED!"
     KFHints[26]="ScrN Console Command: MVOTE - access to ScrN Voting. Type MVOTE HELP for more info."
-    KFHints[27]="Social Isolation: The Virus gets spread by a close contact. Keep distance!"
-    KFHints[28]="Social Isolation: Infected players should keep a distance from other infected as well. Increased Virus concentration in the air leads to severe symptoms."
-    KFHints[29]="Social Isolation: Epidemic safety rules prohibit picking up items of infected players, even if you are already infected."
-    KFHints[30]="Social Isolation: Rumors say that Toilet Paper can protect you from the Virus. At least you will die with a clean butt."
-    KFHints[31]="Social Isolation: The shop is a high-risk area for spreading the Virus. Keep distance and wait in line for shopping."
 }

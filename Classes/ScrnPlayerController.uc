@@ -2159,16 +2159,26 @@ final function byte GetSpecTeam()
     return SpecTeam;
 }
 
-final function SetSpecTeam(byte value)
+final function bool SetSpecTeam(byte value)
 {
+    local ScrnVotingHandlerMut VH;
+
     if (Role != ROLE_Authority || SpecTeam == value)
-        return;
+        return false;
+
 
     SpecTeam = value;
     ScrnCustomPRI.SetSpecTeam();
+
+    VH = class'ScrnVotingHandlerMut'.static.GetVotingHandler(Level.Game);
+    if (VH != none) {
+        VH.SetVotingAdmin(self, SpecTeam >= 250);
+    }
+
     if (SpecTeam < 2 && IsSpectating()) {
         ServerViewNextPlayer();
     }
+    return true;
 }
 
 exec function Spectate()
@@ -4358,7 +4368,7 @@ defaultproperties
     GlowColorBlue=(R=0,G=64,B=128)
     GlowColorFriendly=(R=0,G=128,B=0)
     GlowColorEnemy=(R=128,G=0,B=0)
-    SpecTeam=255
+    SpecTeam=200
 
     // MUST BE SORTED!
     RedCharacters( 0)="AGENT_WILKES"

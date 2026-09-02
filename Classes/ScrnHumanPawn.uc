@@ -94,6 +94,10 @@ var bool bViewTarget; // somebody spectating me
 var class<KFWeapon> SpecWeapon;
 var byte AmmoStatus;
 var byte SpecWeight, SpecMagAmmo, SpecMags, SpecSecAmmo, SpecNades;
+var class<KFWeapon> SpecWeapons[4];
+var transient bool bSpecWeaponsReady;
+var transient float NextSpecInfoUpdateTime;
+var float SpecInfoUpdateDelay;
 
 var transient Frag PlayerGrenade;
 
@@ -151,10 +155,14 @@ replication
     reliable if( bNetDirty && Role == ROLE_Authority )
         ClientHealthToGive, ClientHealthBonus; // all clients need to know it to properly display health on the hud
 
-    reliable if( bNetDirty && Role == ROLE_Authority )
+    reliable if( (bNetDirty || bNetInitial) && Role == ROLE_Authority )
         SpecWeapon, AmmoStatus;
-    reliable if( bNetDirty && bViewTarget && Role == ROLE_Authority )
+
+    reliable if( bViewTarget && (bNetDirty || bNetInitial) && Role == ROLE_Authority )
         SpecWeight, SpecMagAmmo, SpecMags, SpecSecAmmo, SpecNades;
+
+    reliable if( bViewTarget && (bNetDirty || bNetInitial) && Role == ROLE_Authority )
+        SpecWeapons;
 
     // seem like that there is no need to replicate bCowboyMode, because it is used only on local player,
     // which can set it himself
@@ -442,6 +450,7 @@ function bool AddInventory( inventory NewItem )
     CalcCarriedInventorySpeed();
     CalcGroundSpeed();
     ++ShopUpdateCounter;
+    bSpecWeaponsReady = false;
     return true;
 }
 
@@ -460,6 +469,7 @@ function DeleteInventory( inventory Item )
     CalcCarriedInventorySpeed();
     CalcGroundSpeed();
     ++ShopUpdateCounter;
+    bSpecWeaponsReady = false;
 }
 
 simulated function SetWeaponAttachment(WeaponAttachment NewAtt)
@@ -664,6 +674,8 @@ function UpdateSpecInfo()
 {
     local KFWeapon Weap;
 
+    NextSpecInfoUpdateTime = Level.TimeSeconds + SpecInfoUpdateDelay;
+
     SpecWeight = CurrentWeight;
     Weap = KFWeapon(Weapon);
     if ( Weap != none ) {
@@ -693,6 +705,61 @@ function UpdateSpecInfo()
         SpecNades = PlayerGrenade.AmmoAmount(0);
     else
         SpecNades = 0;
+
+    if (!bSpecWeaponsReady) {
+        UpdateSpecWeapons();
+    }
+}
+
+function UpdateSpecWeapons()
+{
+    local Inventory Inv;
+    local KFWeapon Weap;
+    local class<KFWeaponPickup> WP;
+    local int i, j, c;
+    local class<KFWeapon> NewSpecWeapons[4];
+
+    for ( Inv = Inventory; Inv != none && ++c < 1000; Inv = Inv.Inventory ) {
+        Weap = KFWeapon(Inv);
+        if (Weap == none)
+            continue;
+
+        if (Weap.SellValue <= 0 && Weap.Weight <= 0)
+            continue;
+
+        WP = class<KFWeaponPickup>(Weap.PickupClass);
+        if (WP == none)
+            continue;
+
+        // Sort by default Cost descending
+        for (i = 0; i < 4; ++i) {
+            if (NewSpecWeapons[i] == none) {
+                NewSpecWeapons[i] = Weap.class;
+                break;
+            }
+            else if (class<KFWeaponPickup>(NewSpecWeapons[i].default.PickupClass).default.Cost < WP.default.Cost) {
+                // shift cheaper guns down the list
+                for (j = 3; j > i; --j) {
+                    NewSpecWeapons[j] = NewSpecWeapons[j - 1];
+                }
+                NewSpecWeapons[i] = Weap.class;
+                break;
+            }
+        }
+    }
+
+    // update only if changed
+    for (i = 0; i < 4; ++i) {
+        if (SpecWeapons[i] != NewSpecWeapons[i])
+            break;
+    }
+    if (i < 4) {
+        for (i = 0; i < 4; ++i) {
+            SpecWeapons[i] = NewSpecWeapons[i];
+        }
+    }
+
+    bSpecWeaponsReady = true;
 }
 
 simulated function ApplyWeaponStats(Weapon NewWeapon)
@@ -2041,7 +2108,7 @@ simulated function Tick(float DeltaTime)
     if ( KFPRI != none && ( PrevPerkClass != KFPRI.ClientVeteranSkill || PrevPerkLevel != KFPRI.ClientVeteranSkillLevel) )
         VeterancyChanged();
 
-    if ( bViewTarget )
+    if (bViewTarget && Level.TimeSeconds > NextSpecInfoUpdateTime)
         UpdateSpecInfo();
 
     if (bWantsZoom) {
@@ -3582,4 +3649,5 @@ defaultproperties
     DyingMessageDelay=8.0
     bBlockHitPointTraces=true
     RagdollLifeSpan=120
+    SpecInfoUpdateDelay=0.2
 }

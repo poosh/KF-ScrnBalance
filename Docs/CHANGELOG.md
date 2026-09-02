@@ -31,6 +31,19 @@
 # VERSION 9
 
 -------------------------------------------------------------------------------
+## v9.74.30
+- Fixed an issue where bullet wall hit effects were drawn on zeds when shooting from dual pistols.
+- *ScrnMapInfo.ini*: Added `ZVolMinSpawnPlaces`.
+- Spectator HUD displays player weapons.
+### TSC CLAN GAME
+- Added **Referees**, **Streamers**, and **Guests** (see *ScrnClans.sample* for details)
+- Referees get Voting Admin rights (force any `MVOTE`) during Clan Games but they don't get full server admin rights.
+- `MVOTE CLAN LOCKSPEC` - kicks spectators that are not clan members, rererees, streamers, or guests and prevents them from joining the server until the current clan game is over.
+- Streamer status is permanent (stored in the *ScrnClans.ini*) while Guest status lasts for the current clan game only (`MVOTE CLAN ADD <player> GUEST`).
+- PvP kill stats are reported at the end of the game.
+### ScrN Voting Handler
+- Added Referee support.
+
 ## v9.74.28
 - Fixed bullet tracers for dual pistols.
 - Fixed a warning in `FtgHUD.DrawTSCHUDTextElements`

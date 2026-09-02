@@ -826,7 +826,7 @@ defaultproperties
     DoshColor=(R=255,G=255,B=125,A=255)
     BestColor=(R=255,G=0,B=255,A=255)
     AdminColor=(R=255,G=0,B=255,A=255)
-    SpecColor=(B=200,G=200,R=200,A=255)
+    SpecColor=(R=200,G=200,B=200,A=255)
     PlayerIconBackground=Texture'InterfaceContent.Menu.BorderBoxA1'
     PlayerIconSpacing=4
     PlayerIconMargin=3

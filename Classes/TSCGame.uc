@@ -51,6 +51,8 @@ struct SClanTags {
 var config array<SClanTags> ClanTags;
 var config bool bClanCheck;
 var bool bClanGame; // mvote clan game
+var TSCClanAdmin ClanAdmin;
+var class<TSCClanAdmin> ClanAdminClass;
 
 var deprecated bool bCustomHUD, bCustomScoreboard;
 
@@ -246,9 +248,35 @@ function bool IsInvited(PlayerController PC)
     return false;
 }
 
+function EnsureClanAdmin()
+{
+    if (ClanAdmin == none) {
+        ClanAdmin = spawn(ClanAdminClass, self);
+    }
+}
+
 function bool StartClanGame(TSCClanInfo RedClan, TSCClanInfo BlueClan)
 {
     return false;
+}
+
+event PreLogin( string Options, string Address, string PlayerID, out string Error, out string FailCode )
+{
+    super.PreLogin(Options,Address,PlayerID,Error,FailCode);
+
+    if (FailCode=="" && bClanGame && ScrnBalanceMut.bTeamsLocked && ClanAdmin != none) {
+        ClanAdmin.PreLogin(Options, Address, PlayerID, Error, FailCode);
+    }
+}
+
+function Logout(Controller Exiting)
+{
+    super.Logout(Exiting);
+    if (NumPlayers == 0) {
+        if (ClanAdmin != none) {
+            ClanAdmin.StopClanGame();
+        }
+    }
 }
 
 // extracts ClanName from PlayerName or returns empty string, if player name
@@ -554,8 +582,6 @@ function ShuffleTeams()
     BroadcastLocalizedMessage(TscMessages, 241);
 }
 
-function ForceClanTeams();
-
 function SetTeamCaptain(byte TeamIndex, PlayerReplicationInfo NewCaptainPRI)
 {
     if ( TeamIndex > 1 )
@@ -597,25 +623,33 @@ function bool AllowMidWaveRespawn(ScrnPlayerController ScrnPC)
 
 function bool BecomeSpectator(PlayerController P)
 {
+    local bool result;
+    local ScrnPlayerController ScrnPC;
     local byte ForcedTeamNum;
 
-    if ( super.BecomeSpectator(P) ) {
+    ScrnPC = ScrnPlayerController(P);
+
+    result = super.BecomeSpectator(P);
+
+    if (result) {
         // check if player is a team captain
         if ( P.PlayerReplicationInfo.Team != none && P.PlayerReplicationInfo.Team.TeamIndex < 2 ) {
             if ( TSCGRI.TeamCaptain[P.PlayerReplicationInfo.Team.TeamIndex] == P.PlayerReplicationInfo ) {
                 SetTeamCaptain(P.PlayerReplicationInfo.Team.TeamIndex, none);
             }
         }
-
-        ForcedTeamNum = GetForcedTeamNum(ScrnPlayerController(P));
-        if (ForcedTeamNum < 2) {
-            ScrnPlayerController(P).SetSpecTeam(ForcedTeamNum);
-        }
-
-        return true;
     }
 
-    return false;
+    ForcedTeamNum = GetForcedTeamNum(ScrnPC);
+    if (ForcedTeamNum < 2) {
+        ScrnPC.SetSpecTeam(ForcedTeamNum);
+    }
+
+    if (ClanAdmin != none) {
+        ClanAdmin.CheckSpectator(ScrnPC);
+    }
+
+    return result;
 }
 
 function SetHumanDamage(EHumanDamageMode Hdmg)
@@ -1270,152 +1304,9 @@ auto State PendingMatch
 
     function bool StartClanGame(TSCClanInfo RedClan, TSCClanInfo BlueClan)
     {
-        local TSCClanReplicationInfo RedRep, BlueRep;
-
         if (bSingleTeamGame) {
             return false;
         }
-
-        RedRep = class'TSCClanReplicationInfo'.static.Create(TSCTeams[0], RedClan);
-        if (RedRep == none) {
-            return false;
-        }
-
-        BlueRep = class'TSCClanReplicationInfo'.static.Create(TSCTeams[1], BlueClan);
-        if (BlueRep == none) {
-            RedRep.Destroy();
-            return false;
-        }
-
-        if (TSCTeams[0].ClanRep != none) {
-            TSCTeams[0].ClanRep.Destroy();
-        }
-        if (TSCTeams[1].ClanRep != none) {
-            TSCTeams[1].ClanRep.Destroy();
-        }
-        TSCTeams[0].ClanRep = RedRep;
-        TSCTeams[1].ClanRep = BlueRep;
-        bClanGame = true;
-        ForceClanTeams();
-        return true;
-    }
-
-    function bool ClanParseCaptain(byte t, ScrnPlayerController PC, out array<ScrnPlayerController> Captains,
-            out int Priority)
-    {
-        local int p;
-
-        p = TSCTeams[t].ClanRep.Clan.CaptainPriority(PC.GetPlayerIDHash());
-        if (p < 0)
-            return false;
-
-
-        if (p < Priority) {
-            Captains.insert(0, 1);
-            Captains[0] = PC;
-            Priority = p;
-        }
-        else {
-            // there are clan captains with higher priority on the server
-            Captains[Captains.length] = PC;
-        }
-        return true;
-    }
-
-    function ClanParseMember(ScrnPlayerController PC, out array<ScrnPlayerController> Members)
-    {
-        if (PC.PlayerReplicationInfo.bOnlySpectator) {
-            Members[Members.Length] = PC;
-        }
-        else {
-            Members.insert(0, 1);
-            Members[0] = PC;
-        }
-    }
-
-    function ClanParseEnsureTeamIndex(byte t, out array<ScrnPlayerController> Members)
-    {
-        local int i;
-        local ScrnPlayerController PC;
-
-        for (i = 0; i < Members.Length; ++i) {
-            PC = Members[i];
-            PC.SetSpecTeam(t);
-            InvitePlayer(PC);
-            if (PC.PlayerReplicationInfo.Team == TSCTeams[1-t]) {
-                PC.ServerChangeTeam(t);
-            }
-        }
-    }
-
-    function ClanParseLimitTeamSize(byte t, out array<ScrnPlayerController> Members)
-    {
-        local int i;
-        local ScrnPlayerController PC;
-
-        for (i = Members.Length - 1; i >= 0 && TSCTeams[t].Size > MaxTeamSize; --i) {
-            PC = Members[i];
-            if (!PC.PlayerReplicationInfo.bOnlySpectator) {
-                PC.BecomeSpectator();
-            }
-        }
-    }
-
-    function ClanParseTeamWelcome(byte t, out array<ScrnPlayerController> Members)
-    {
-        local int i;
-        local ScrnPlayerController PC;
-        local PlayerReplicationInfo PRI;
-
-        for (i = 0; i < Members.Length; ++i) {
-            PC = Members[i];
-            PRI = PC.PlayerReplicationInfo;
-            if (PRI.bOnlySpectator && TSCTeams[t].Size < MaxTeamSize) {
-                PC.BecomeActivePlayer();
-            }
-            if (!PRI.bOnlySpectator) {
-                PC.ServerChangeTeam(t);
-                PC.ShowLobbyMenu();
-            }
-        }
-    }
-
-    function ClanParseTeamCaptain(byte t, out array<ScrnPlayerController> Captains)
-    {
-        local int i;
-        local ScrnPlayerController PC;
-        local PlayerReplicationInfo PRI;
-
-        for (i = 0; i < Captains.Length; ++i) {
-            PC = Captains[i];
-            PRI = PC.PlayerReplicationInfo;
-            if (!PRI.bOnlySpectator) {
-                SetTeamCaptain(t, PRI);
-                return;
-            }
-        }
-    }
-
-    function ForceClanTeams()
-    {
-        local int i;
-        local ScrnPlayerController PC;
-        local PlayerReplicationInfo PRI;
-        local string id;
-        local int RedPriority, BluePriority;
-        local array<ScrnPlayerController> RedCaptains, BlueCaptains, RedPlayers, BluePlayers, ReservePlayers;
-
-        if (!bClanGame)
-            return;
-
-        SetTeamCaptain(0, none);
-        SetTeamCaptain(1, none);
-        RedPriority = 255;
-        BluePriority = 255;
-
-        InviteList.length = 0;
-        ScrnBalanceMut.bTeamsLocked = false;
-        bTeamChanging = true;
 
         if (MaxTeamSize <= 0) {
             MaxTeamSize = MaxPlayers / 2;
@@ -1424,84 +1315,21 @@ auto State PendingMatch
             MaxPlayers = MaxTeamSize * 2;
         }
 
-        // Sort players by teams. Move non-clan members to spectators.
-        for ( i = 0; i < TSCGRI.PRIArray.Length; ++i ) {
-            PRI = TSCGRI.PRIArray[i];
-            if (PRI == none)
-                continue;  // is this possible?
-            PC = ScrnPlayerController(PRI.Owner);
-            if (PC == none)
-                continue;
-
-            id = PC.GetPlayerIDHash();
-
-            if (ClanParseCaptain(0, PC, RedCaptains, RedPriority))
-                continue;
-            if (ClanParseCaptain(1, PC, BlueCaptains, BluePriority))
-                continue;
-
-            if (TSCTeams[0].ClanRep.Clan.IsPlayer(id)) {
-                if (TSCTeams[1].ClanRep.Clan.IsPlayer(id)) {
-                    // The player is a member of both clans - mote to reserve.
-                    ClanParseMember(PC, ReservePlayers);
-                }
-                else {
-                    ClanParseMember(PC, RedPlayers);
-                }
-            }
-            else if (TSCTeams[1].ClanRep.Clan.IsPlayer(id)) {
-                ClanParseMember(PC, BluePlayers);
-            }
-            else {
-                PC.SetSpecTeam(255);
-                if (!PRI.bOnlySpectator) {
-                    PC.BecomeSpectator();
-                }
-                UninvitePlayer(PC);
-            }
+        EnsureClanAdmin();
+        if (!ClanAdmin.StartClanGame(RedClan, BlueClan)) {
+            ClanAdmin.Destroy();
+            return false;
         }
 
-        // Merge captain into the player list for convenience.
-        class'ScrnFunctions'.static.ObjArrayInsert(RedPlayers, RedCaptains);
-        class'ScrnFunctions'.static.ObjArrayInsert(BluePlayers, BlueCaptains);
+        bClanGame = true;
 
-        // Fill the gap with reserve players (if needed)
-        for (i = 0; i < ReservePlayers.Length; ++i) {
-            if (RedPlayers.Length <= BluePlayers.Length) {
-                if (RedPlayers.Length < MaxTeamSize)
-                    RedPlayers[RedPlayers.Length] = ReservePlayers[i];
-                else
-                    break;
-            }
-            else if (BluePlayers.Length < MaxTeamSize) {
-                BluePlayers[BluePlayers.Length] = ReservePlayers[i];
-            }
-            else {
-                break;
-            }
-        }
-        if (i > 0) {
-            ReservePlayers.remove(0, i);
-        }
-
-        // Ensure players are on the right team. Don't touch spectators yet.
-        ClanParseEnsureTeamIndex(0, RedPlayers);
-        ClanParseEnsureTeamIndex(1, BluePlayers);
-
-        // if there are too many players, move the bottom of the list to spectators.
-        ClanParseLimitTeamSize(0, RedPlayers);
-        ClanParseLimitTeamSize(1, BluePlayers);
-
-        // if there are not enough players, move the top of the list to active players. Welcome team members.
-        ClanParseTeamWelcome(0, RedPlayers);
-        ClanParseTeamWelcome(1, BluePlayers);
-
-        // Promote the top Clan Captain to the Team Captain
-        ClanParseTeamCaptain(0, RedCaptains);
-        ClanParseTeamCaptain(1, BlueCaptains);
-
+        bTeamChanging = true;
+        ClanAdmin.ForceClanTeams();
         bTeamChanging = false;
+
         LockTeams();
+        ClanAdmin.CheckSpectators();
+        return true;
     }
 }
 
@@ -1762,6 +1590,15 @@ State MatchOver
     // ignore disconnects
     function Killed(Controller Killer, Controller Killed, Pawn KilledPawn, class<DamageType> damageType) { }
     function TeamWiped(byte t) { }
+
+    function BeginState()
+    {
+        super.BeginState();
+
+        if (ClanAdmin != none) {
+            ClanAdmin.GameEnded();
+        }
+    }
 } // MatchOver
 
 defaultproperties
@@ -1769,37 +1606,34 @@ defaultproperties
     GameName="Team Survival Competition"
     Description="Two Teams, One Floor. Killing Floor. There are two teams competing in surviving specimen invasion on the same map and at the same time. Both teams can cooperate, fight against each other, or just stay each in their own corner of the map - the choice is up to you..."
 
-    KFHints[0]="Each team has its own Trader. A team can not get the same Trader two times in a row."
-    KFHints[1]="When the Trader opens her doors, she drops the Base Guardian nearby. Take it to your Base!"
-    KFHints[2]="Pick up the Base Guardian next to the Trader, bring it where you want your Base to be, and press the SETUPBASE or CROUCH button."
-    KFHints[3]="The Base can be established only once per wave. Once set up, it can not be moved."
-    KFHints[4]="If nobody stays at the Base, the Guardian gets frustrated and disappears. No Guardian = No Base."
-    KFHints[5]="Base Guardian has two cool features: it protects you from the Friendly Fire and damages enemy squad members."
-    KFHints[6]="Base Guardian hurts enemy players within the range of the Base no matter of the Friendly Fire setting."
-    KFHints[7]="Base Guardian can be stunned with nades or 500+ cumulative damage."
-    KFHints[8]="Base Guardian is invulnerable while waking up or for the first 10 seconds of a wave."
-    KFHints[9]="The Base can be established during the Trader Time only. So hurry up!"
-    KFHints[10]="The other squad cannot stay at your Base."
-    KFHints[11]="You can play without the Base too, but who will protect you from the Friendly Fire then?"
-    KFHints[12]="Setting up the Base in a strategic map point is the key to success."
-    KFHints[13]="You cannot set up your own Base at the Enemy Base. However, the Bases may intersect."
-    KFHints[14]="While carrying Base Guardian, you can pass it to another player by pressing the same key as throwing a weapon."
-    KFHints[15]="Best camping spots in the standard KF game are not necessarily the best spots in TSC."
-    KFHints[16]="The team gets wiped if ANY its member dies during the SUDDEN DEATH wave."
-    KFHints[17]="Wiping the enemy squad doesn't grant you a win. You still have to survive till the end of the wave."
-    KFHints[18]="TSC isn't Versus or Team Deathmatch game. You don't have to fight the enemy team. Leave that job to ZEDs."
-    KFHints[19]="You can wait until ZEDs wipe out the enemy squad or help them. Help who? ZEDs or the other squad? The choice is up to you..."
-    KFHints[20]="There are 4 Human Damage rules in TSC: OFF, No Friendly Fire, Normal, and PvP. Type MVOTE TEAM HDMG for the info."
-    KFHints[21]="When Human Damage is OFF, you can not damage the other squad's members. The Base Guardian can, though."
-    KFHints[22]="Human Damage is OFF during the first wave, Trader Time, and when there are less than 10 zeds left in the wave."
-    KFHints[23]="Human Damage is ON during waves (except the first one). Staying at your own Base protects you from it."
-    KFHints[24]="You can switch team during the Trader Time. Type SWITCHTEAM in the console or bind it to a key."
-    KFHints[25]="Switching the team during the game kills you first. Then restarts you as an another squad member."
-    KFHints[26]="You cannot switch a team during a wave."
-    KFHints[27]="Medics, and only medics, can see the health and armor of enemy players."
-    KFHints[28]="TSC, same as KF, is not about winning or losing. It is all about surviving."
-    KFHints[29]="TSC doesn't force you to play against the other squad. You can cooperate and survive together. But nobody said that the other team thinks the same..."
-    KFHints[30]="During the Trader Time, if the other squad has 2+ players less than yours, you can switch to it on-the-fly (without dying)."
+    KFHints[ 0]="Each team has its own Trader. A team can not get the same Trader twice in a row."
+    KFHints[ 1]="When the Trader opens her doors, she drops the Base Guardian nearby. Take it to your Base!"
+    KFHints[ 2]="Pick up the Base Guardian next to the Trader, bring it where you want your Base to be, and press the SETUPBASE or CROUCH button."
+    KFHints[ 3]="The Base can be established only once per wave. Once set up, it can not be moved."
+    KFHints[ 4]="If nobody stays at the Base, the Guardian gets frustrated and disappears. No Guardian = No Base."
+    KFHints[ 5]="Base Guardian protects you from the Friendly Fire and damages enemy squad members."
+    KFHints[ 6]="Base Guardian hurts enemy players within the range of the Base, regardless of the Friendly Fire setting."
+    KFHints[ 7]="Base Guardian can be stunned with a nade or 500+ cumulative damage."
+    KFHints[ 8]="Base Guardian is invulnerable while waking up or for the first 30 seconds of a wave."
+    KFHints[ 9]="The Base can be established during the Trader Time only. So hurry up!"
+    KFHints[10]="The enemy squad cannot stay at your Base for too long, as they are getting damaged by your Guardian."
+    KFHints[11]="You can play without the Base too, but who will protect you from the Human Damage then?"
+    KFHints[12]="Setting up the base at a strategic point on the map is key to success."
+    KFHints[13]="You cannot set up your Base at the Enemy Base. However, the Bases may intersect when set closer than 50m."
+    KFHints[14]="Players are vulnerable to Human Damage in the Base Intersection zone and are damaged by the enemy Guardian."
+    KFHints[15]="While carrying Base Guardian, you can pass it to another player by pressing the same key as throwing a weapon."
+    KFHints[16]="Best camping spots in the standard KF game are not necessarily the best spots in TSC."
+    KFHints[17]="The team gets wiped if ANY its member dies during the SUDDEN DEATH wave."
+    KFHints[18]="Wiping the enemy squad doesn't grant you a win. You still have to survive till the end of the wave (except Overtime)."
+    KFHints[19]="TSC isn't Versus or Team Deathmatch game. You don't have to fight the enemy team. Leave that job to ZEDs."
+    KFHints[20]="When Human Damage is OFF, you can not damage the other squad's members, but the Base Guardian still CAN."
+    KFHints[21]="Human Damage is OFF during the first wave, Trader Time, and when there are less than 10 zeds left in the wave."
+    KFHints[22]="Human Damage is ON during waves (except the first one). Staying at your own Base protects you from it."
+    KFHints[23]="You can switch team during the Trader Time. Type SWITCHTEAM in the console."
+    KFHints[24]="You cannot switch a team during a wave."
+    KFHints[25]="Switching the team during the game kills you first. Then restarts you as another squad member."
+    KFHints[26]="During the Trader Time, if the other squad has 2+ players less than yours, you can switch to it on-the-fly (without dying)."
+    KFHints[27]="Field Medic is the only perk that sees the health and armor of enemy players."
 
     DefaultEnemyRosterClass="ScrnBalanceSrv.TSCTeam"
     bNoLateJoiners=False
@@ -1825,6 +1659,7 @@ defaultproperties
     DoorBlowUpTime=20
     DoorBlowUpOvertime=10
 
+    ClanAdminClass=class'TSCClanAdmin'
     bClanCheck=True
     ClanTags(0)=(Prefix="[",Postfix="]")
     ClanTags(1)=(Prefix="(",Postfix=")")

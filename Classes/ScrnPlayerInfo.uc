@@ -93,6 +93,7 @@ var int BodyshotsPerWave, BodyshotsPerGame; // this number doesn't include damag
 var int KillsPerWave; // total kills per game are already tracked in PRI
 var int DecapsPerWave, DecapsPerGame; // number of decapitations in the current wave
 var int DamagePerWave, DamagePerGame;
+var int PvP_Kills, FP_Kills, SC_Kills;
 
 var int DamageReceivedPerWave, DamageReceivedPerGame; // damage received from monsters
 var int HealedPointsInWave, HealedPointsInGame;
@@ -932,6 +933,15 @@ function KilledMonster(KFMonster Killed, class<KFWeaponDamageType> DamType)
 
     KillsPerWave++;
     LastWeapInfoIndex = FindWeaponInfoByDamType(DamType);
+    if (Killed.default.Health >= 1000) {
+        if (Killed.IsA('ZombieFleshPound') || Killed.IsA('FemaleFP')) {
+            FP_Kills++;
+        }
+        else if (Killed.IsA('ZombieScrake')) {
+            SC_Kills++;
+        }
+    }
+
     if ( LastWeapInfoIndex != -1 ) {
         Weapon = WeapInfos[LastWeapInfoIndex].Weapon;
         WeapInfos[LastWeapInfoIndex].KillsPerShot++;

@@ -126,8 +126,10 @@ simulated function HitEffects()
     OldSpawnHitCount = SpawnHitCount;
     GetHitInfo();
     PC = Level.GetLocalPlayerController();
-    if ((Instigator != none && Instigator.Controller == PC) || VSize(PC.ViewTarget.Location - mHitLocation) < 4000) {
-        Spawn(class'ROBulletHitEffect',,, mHitLocation, Rotator(-mHitNormal));
+    if ((Instigator != none && Instigator.Controller == PC)
+            || VSizeSquared(PC.ViewTarget.Location - mHitLocation) < 16000000) {
+        if (mHitActor != none)
+            Spawn(class'ROBulletHitEffect',,, mHitLocation, Rotator(-mHitNormal));
         CheckForSplash();
         SpawnTracer();
     }

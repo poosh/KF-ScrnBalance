@@ -24,6 +24,22 @@ ClanName=Scrake Naders
 DecoName=^r$Scr^o$ake|^r$N^o$aders
 LogoRef=TscClans.scrn_logo
 BannerRef=TscClans.scrn_banner
-Captains=76561197992537591
-Players=76561197994574456
-Players=76561198006289592
+Captains=76561197000000001
+Players=76561197000000002
+Players=76561197000000003
+Players=76561197000000004
+
+########################################################################################################################
+# TSCClanAdmin is the special object that specifies Referees and Streamers for Clan Games.
+# Referees gain Admin Rights on Voting (MVOTE ...) during Clan Games, but they don't get full admin rights.
+# Streamers are allowed to stay on the server and spectate the game even after MVOTE CLAN LOCKSPEC.
+# A sever admin can adjust these lists in-game via:
+# MVOTE CLAN ADD <PlayerName> REFEREE
+# MVOTE CLAN ADD <PlayerName> STREAMER
+########################################################################################################################
+[ScrnBalanceSrv.TSCClanAdmin]
+Referees=76561197000000010
+Referees=76561197000000011
+Streamers=76561197000000020
+Streamers=76561197000000021
+Streamers=76561197000000022

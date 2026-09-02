@@ -49,6 +49,7 @@ var config byte ZedEventNum; // use event zeds for this map. 0 - don't force
 var config string AchName;
 
 var config float ZVolDisableTime, ZVolDisableTimeMax;
+var config byte ZVolMinSpawnPlaces;
 var config bool bVanillaVisibilityCheck;
 var config bool bOnlyInvisibleZVol;
 var config float ZedSpawnMaxDist;

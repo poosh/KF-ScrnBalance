@@ -356,15 +356,9 @@ function ApplyMapVote(string ServerTravelString)
     Level.ServerTravel(ServerTravelString, false);
 }
 
-function bool IsReferee(PlayerController Sender)
+function bool CheckTscReferee(PlayerController Sender)
 {
-    return Sender.PlayerReplicationInfo.bAdmin && Sender.PlayerReplicationInfo.bOnlySpectator
-            && Mut.SrvTourneyMode != 0;
-}
-
-function bool CheckReferee(PlayerController Sender)
-{
-    if ( IsReferee(Sender) )
+    if ( Mut.bTSCGame && Mut.IsReferee(Sender) )
         return true;
 
     Sender.ClientMessage(strRCommands);
@@ -434,7 +428,7 @@ function int GetVoteIndex(PlayerController Sender, string Key, out string Value,
             return VOTE_NOEFECT;
         }
         if ( Mut.bPauseTraderOnly && !Mut.KF.bTradingDoorsOpen && Mut.KF.IsInState('MatchInProgress')
-                && !Mut.IsAdmin(Sender) )
+                && !Mut.IsReferee(Sender) )
         {
             Sender.ClientMessage(strPauseTraderOnly);
             return VOTE_NOEFECT;
@@ -446,7 +440,7 @@ function int GetVoteIndex(PlayerController Sender, string Key, out string Value,
             v = int(Value);
             if ( v <= 0 )
                 v = 120;
-            if ( !Mut.IsAdmin(Sender) ) {
+            if ( !Mut.IsReferee(Sender) ) {
                 v = min(min(v, Mut.MaxPauseTime), Mut.PauseTimeRemaining);
             }
             if ( v <= 0 ) {
@@ -522,7 +516,7 @@ function int GetVoteIndex(PlayerController Sender, string Key, out string Value,
     else if ( Key == "SPEC" ) {
         if ( Level.Game.AccessControl == none
                 || Level.Game.NumSpectators > Level.Game.MaxSpectators
-                || (!Mut.bAllowKickVote && !Mut.IsAdmin(Sender)) )
+                || (!Mut.bAllowKickVote && !Mut.IsReferee(Sender)) )
         {
             Sender.ClientMessage(strOptionDisabled);
             return VOTE_NOEFECT;
@@ -546,7 +540,7 @@ function int GetVoteIndex(PlayerController Sender, string Key, out string Value,
         result = VOTE_SPEC;
     }
     else if ( Key == "KICK" ) {
-        if ( Level.Game.AccessControl == none || (!Mut.bAllowKickVote && !Mut.IsAdmin(Sender)) ) {
+        if ( Level.Game.AccessControl == none || (!Mut.bAllowKickVote && !Mut.IsReferee(Sender)) ) {
             Sender.ClientMessage(strOptionDisabled);
             return VOTE_NOEFECT;
         }
@@ -599,7 +593,7 @@ function int GetVoteIndex(PlayerController Sender, string Key, out string Value,
             return VOTE_LOCAL;
         }
 
-        if (!Mut.IsAdmin(Sender)) {
+        if (!Mut.IsReferee(Sender)) {
             if (!Mut.bAllowBoringVote) {
                 Sender.ClientMessage(strOptionDisabled);
                 return VOTE_LOCAL;
@@ -678,7 +672,7 @@ function int GetVoteIndex(PlayerController Sender, string Key, out string Value,
             return VOTE_LOCAL;
         else if ( Mut.bTeamsLocked )
             return VOTE_NOEFECT;
-        else if ( !Mut.IsAdmin(Sender) && !CanLockTeam() ) {
+        else if ( !Mut.IsReferee(Sender) && !CanLockTeam() ) {
             Sender.ClientMessage(strNotAvaliableATM);
             return VOTE_LOCAL;
         }
@@ -781,7 +775,7 @@ function int GetVoteIndex(PlayerController Sender, string Key, out string Value,
         return VOTE_DIFF;
     }
     else if ( Key == "R_KILL" ) {
-        if ( !CheckReferee(Sender) )
+        if ( !CheckTscReferee(Sender) )
             return VOTE_LOCAL;
 
         if ( Value == "" ) {
@@ -854,7 +848,7 @@ function ApplyVoteValue(int VoteIndex, string VoteValue)
             break;
 
         case VOTE_KICK:
-            KickPlayer(VotingHandler.VotedPlayer, Mut.bKickBan, Reason);
+            Mut.KickPlayer(VotingHandler.VotedPlayer, Mut.bKickBan, Reason);
             break;
 
         case VOTE_BORING:
@@ -946,59 +940,6 @@ function ApplyVoteValue(int VoteIndex, string VoteValue)
                 }
             }
             break;
-    }
-}
-
-function KickPlayer(PlayerController PC, optional bool bBan, optional string Reason)
-{
-    local string msg, IP, ID, PlayerName;
-    local AccessControl AC;
-
-    if (PC == none || Mut.IsAdmin(PC))
-        return;
-
-    if (Mut.ScrnGT != none) {
-        Mut.ScrnGT.UninvitePlayer(PC);
-    }
-
-    IP = PC.GetPlayerNetworkAddress();
-    ID = PC.GetPlayerIDHash();
-    PlayerName = GetPlayerName(PC.PlayerReplicationInfo);
-    AC = Mut.KF.AccessControl;
-
-    if (bBan) {
-        if(AC == none || AC.CheckIPPolicy(IP) != 0) {
-            bBan = false;
-        }
-        else {
-            IP = Left(IP, InStr(IP, ":"));
-            Log("Adding Session Ban for: " $ IP @ ID @ PlayerName);
-
-            if (AC.bBanByID) {
-                AC.SessionBannedIDs[AC.SessionBannedIDs.Length] = ID @ PlayerName;
-            }
-            else {
-                AC.SessionIPPolicies[AC.SessionIPPolicies.Length] = "DENY;" $ IP;
-            }
-            AC.SaveConfig();
-        }
-    }
-
-    msg = PlayerName @ eval(bBan, "banned", "kicked");
-    if (Reason == "") {
-        Reason = "Team Vote";
-    }
-    else {
-        msg $= ": " $ Reason;
-    }
-    VotingHandler.BroadcastMessage(msg);
-    PC.ClientNetworkMessage("AC_Kicked", Reason);
-
-    if (PC.Pawn != none && Vehicle(PC.Pawn) == none) {
-        PC.Pawn.Destroy();
-    }
-    if (PC != None) {
-        PC.Destroy();
     }
 }
 
@@ -1262,7 +1203,7 @@ defaultproperties
     strNotDead="Dead players cannot initial this vote"
     strCantEndWaveNow="Can't end the wave now"
     strEndWavePenalty="Team charged for premature wave end with $"
-    strRCommands="R_* commands can be executed only by Referee (Spectator + Admin rights + Tourney Mode)"
+    strRCommands="R_* commands can be executed only by a Referee"
     strBlamed="%p blamed %r"
     strBlamedBaron="%p blamed for blaming Baron"
     strWrongPerk="Wrong perk (%s)"

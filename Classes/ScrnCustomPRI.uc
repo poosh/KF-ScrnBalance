@@ -208,7 +208,12 @@ final simulated function byte GetSpecTeam()
 
 final simulated function bool IsReferee()
 {
-    return SpecTeam == 250;
+    return SpecTeam >= 250;
+}
+
+final simulated function bool IsGuest()
+{
+    return SpecTeam >= 210;
 }
 
 final function SetSpecTeam()
@@ -239,5 +244,5 @@ defaultproperties
 {
     bNetNotify=True
     NetUpdateFrequency=1.0
-    SpecTeam=255
+    SpecTeam=200
 }

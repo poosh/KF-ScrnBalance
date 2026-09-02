@@ -682,6 +682,7 @@ function bool CheckEndGame(PlayerReplicationInfo Winner, string Reason)
     local bool bWin;
     local string MapName;
     local int i;
+    local ScrnPlayerInfo SPI;
 
     if ( Level.Game.bGameEnded ) {
         return true;
@@ -738,6 +739,14 @@ function bool CheckEndGame(PlayerReplicationInfo Winner, string Reason)
         mut.BroadcastMessage("Game LOST in " $ Mut.GameTimeStr()
             $ " @ wave "$(Mut.KF.WaveNum+1)
             $", HL="$HardcoreLevel, true);
+    }
+
+    if (Mut.bTSCGame) {
+        for (SPI = PlayerInfo; SPI != none; SPI = SPI.NextPlayerInfo) {
+            if (SPI.PvP_Kills > 0) {
+                mut.BroadcastMessage(SPI.PlayerName $ " killed " $ SPI.PvP_Kills $ " enemy player(-s)", true);
+            }
+        }
     }
 
     for ( i=0; i<AchHandlers.length; ++i ) {
@@ -1154,7 +1163,7 @@ function ScoreKill(Controller Killer, Controller Killed)
 
 function bool PreventDeath(Pawn Killed, Controller Killer, class<DamageType> damageType, vector HitLocation)
 {
-    local ScrnPlayerInfo SPI;
+    local ScrnPlayerInfo KillerSPI, KilledSPI;
     local int idx;
     local class<KFWeaponDamageType> KFDamType;
     local ScrnHumanPawn ScrnKillerPawn;
@@ -1165,6 +1174,7 @@ function bool PreventDeath(Pawn Killed, Controller Killer, class<DamageType> dam
     KFDamType = class<KFWeaponDamageType>(DamageType);
     if ( Killer != none ) {
         ScrnKillerPawn = ScrnHumanPawn(Killer.Pawn);
+        KillerSPI = GetPlayerInfo(PlayerController(Killer));
     }
 
     ++WaveTotalKills;
@@ -1179,11 +1189,8 @@ function bool PreventDeath(Pawn Killed, Controller Killer, class<DamageType> dam
     }
 
     if ( KFMonster(Killed) != none ) {
-        if ( PlayerController(Killer) != none && KFDamType != none ) {
-            SPI = GetPlayerInfo(PlayerController(Killer));
-            if ( SPI != none ) {
-                SPI.KilledMonster(KFMonster(Killed), KFDamType);
-            }
+        if ( KillerSPI != none && KFDamType != none ) {
+            KillerSPI.KilledMonster(KFMonster(Killed), KFDamType);
         }
         // dead zeds must not block players
         Killed.SetCollision(true, false);
@@ -1197,10 +1204,13 @@ function bool PreventDeath(Pawn Killed, Controller Killer, class<DamageType> dam
             MonsterInfos[idx].PlayerKillTime = Level.TimeSeconds;
         }
         // don't count suicide deaths during trader time
-        if ( !Mut.KF.bTradingDoorsOpen ) {
-            SPI = GetPlayerInfo(PlayerController(Killed.Controller));
-            if ( SPI != none ) {
-                SPI.Died(Killer, DamageType);
+        if (!Mut.KF.bTradingDoorsOpen) {
+            KilledSPI = GetPlayerInfo(PlayerController(Killed.Controller));
+            if (KilledSPI != none) {
+                if (KillerSPI != none && !Killer.SameTeamAs(Killed.Controller)) {
+                    KillerSPI.PvP_Kills++;
+                }
+                KilledSPI.Died(Killer, DamageType);
             }
         }
         // Drop all weapons on death

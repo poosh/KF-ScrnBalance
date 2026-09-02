@@ -3,6 +3,7 @@ class TSCScoreBoard extends ScrnScoreBoard;
 #exec OBJ LOAD FILE=TSC_T.utx
 
 var     color                   RedBG[2], BlueBG[2];
+var color GuestColor;
 
 // use TSCTeam.GetLogo() instead
 var deprecated material RedLogo, BlueLogo;
@@ -353,7 +354,6 @@ simulated function string GetColoredSpectatorName(PlayerReplicationInfo PRI)
 {
     local string s;
     local ScrnCustomPRI ScrnPRI;
-    local byte SpecTeam;
     local Color CustomColor;
 
     if (PRI.bAdmin) {
@@ -364,6 +364,9 @@ simulated function string GetColoredSpectatorName(PlayerReplicationInfo PRI)
         if (ScrnPRI != none) {
             if (ScrnPRI.IsReferee()) {
                 CustomColor = AdminColor;
+            }
+            else if (ScrnPRI.IsGuest()) {
+                CustomColor = GuestColor;
             }
             else if (ScrnPRI.GetSpecTeam() < 2) {
                 CustomColor = class'ScrnHUD'.default.TextColors[ScrnPRI.GetSpecTeam()];
@@ -583,6 +586,9 @@ defaultproperties
     RedBG(1)=(R=160,G=64,B=64,A=200)
     BlueBG(0)=(R=64,G=64,B=128,A=200)
     BlueBG(1)=(R=64,G=64,B=160,A=200)
+
+    GuestColor=(R=1,G=255,B=1,A=255)
+
 
     KillsAssSeparator="+"
     GameLogo=Texture'TSC_T.Team.TSC'
