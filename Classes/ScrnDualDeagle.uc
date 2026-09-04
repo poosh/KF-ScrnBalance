@@ -1040,6 +1040,40 @@ simulated function ClientFinishReloading()
         Instigator.Controller.ClientSwitchToBestWeapon();
 }
 
+function AttachToPawn(Pawn P)
+{
+    local name BoneName;
+
+    Super(KFWeapon).AttachToPawn(P);
+
+    if (altThirdPersonActor == none) {
+        altThirdPersonActor = Spawn(AttachmentClass, Owner);
+        if (altThirdPersonActor == none)
+            return;
+        InventoryAttachment(altThirdPersonActor).InitFor(self);
+    }
+    else {
+        altThirdPersonActor.NetUpdateTime = Level.TimeSeconds - 1;
+    }
+
+    BoneName = P.GetOffhandBoneFor(self);
+    if(BoneName == '') {
+        altThirdPersonActor.SetLocation(P.Location);
+        altThirdPersonActor.SetBase(P);
+    }
+    else {
+        P.AttachToBone(altThirdPersonActor, BoneName);
+    }
+
+    DualiesAttachment(altThirdPersonActor).bIsOffHand = true;
+
+    if (ThirdPersonActor != None) {
+        DualiesAttachment(altThirdPersonActor).brother = DualiesAttachment(ThirdPersonActor);
+        DualiesAttachment(ThirdPersonActor).brother = DualiesAttachment(altThirdPersonActor);
+        altThirdPersonActor.LinkMesh(DualiesAttachment(ThirdPersonActor).BrotherMesh);
+    }
+}
+
 
 defaultproperties
 {

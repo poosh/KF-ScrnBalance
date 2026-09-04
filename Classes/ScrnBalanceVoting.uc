@@ -901,9 +901,7 @@ function ApplyVoteValue(int VoteIndex, string VoteValue)
             }
             break;
         case VOTE_FF:
-            Mut.KF.FriendlyFireScale = float(VoteValue)/100.0;
-            if ( TSCGame(Mut.KF) != none )
-                TSCGame(Mut.KF).HdmgScale = Mut.KF.FriendlyFireScale;
+            Mut.SetFriendlyFire(float(VoteValue) * 0.01);
             break;
         case VOTE_MAPRESTART:
             Mut.Persistence.bRandomMap = Mut.bRandomMap;  // restore previous value

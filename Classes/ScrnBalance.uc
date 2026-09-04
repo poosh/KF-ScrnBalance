@@ -58,7 +58,7 @@ var transient bool bInitialized;
 
 var ScrnGameType ScrnGT;
 var bool bStoryMode; // Objective Game mode (KFStoryGameInfo)
-var bool bTSCGame; // Team Survival Competition (TSCGame)
+var bool bTSCGame; // Team-Based Team Survival Competition (TSCGame). False in FTG.
 var transient bool bTestMap, bRandomMap;
 var transient string MapName;
 var transient string OriginalMapName; // Equals MapName. Deprecated. Left for backward-compatibility.
@@ -221,6 +221,13 @@ var globalconfig bool bMidWaveRespawnReconnetedPlayers;
 var globalconfig bool bPauseOnDisconnect;
 var globalconfig int PauseTimeOnDisconnect;
 var globalconfig int ResumeDelayOnReconnect;
+var globalconfig float FriendlyFireScale;
+var transient float ActualFriendlyFireScale;
+var globalconfig int ChatSpamProtectionMessages;
+var globalconfig int ChatSpamProtectionPeriod;
+var int ClientChatSpamProtectionMessages;
+var int ClientChatSpamProtectionPeriod;
+var globalconfig int WeaponStayTime;
 
 struct SSquadConfig {
     var String SquadName;
@@ -364,6 +371,9 @@ replication
     // non-config vars and configs vars which seem to replicate fine
     reliable if ( bNetInitial && Role == ROLE_Authority )
         SrvTourneyMode, bTSCGame, bTestMap, SrvMarkDistance, SrvMarkZedBounty, SrvNetSpeed;
+
+    reliable if ( bNetInitial && Role == ROLE_Authority )
+        ClientChatSpamProtectionMessages, ClientChatSpamProtectionPeriod;
 
 }
 
@@ -584,8 +594,34 @@ function BroadcastMessage(string Msg, optional bool bSaveToLog)
 
 function SendFriendlyFireWarning(PlayerController Player)
 {
-    if ( !bTSCGame )
-        Player.ClientMessage(ColorString("FRIENDLY FIRE " $int(KF.FriendlyFireScale*100)$"% !!!", 255, 127, 1));
+    if (TSCGame(KF) != none) {
+        if (KF.FriendlyFireScale ~= 0.1)
+            return; // default FF is in use
+    }
+    else if (KF.FriendlyFireScale < 0.01)
+        return;
+
+    Player.ClientMessage(ColorString("FRIENDLY FIRE " $int(KF.FriendlyFireScale*100)$"% !!!", 255, 127, 1));
+}
+
+function SetFriendlyFire(float Scale)
+{
+    if (ScrnGT != none && ScrnGT.IsTourney())
+        return;
+
+    ActualFriendlyFireScale = Scale;
+    if (Scale >= 0) {
+        KF.FriendlyFireScale = Scale;
+        if (TSCGame(KF) != none) {
+            TSCGame(KF).HDmgScale = Scale;
+        }
+    }
+    ApplyFriendlyFire();
+}
+
+function ApplyFriendlyFire()
+{
+    bProjIgnoreHuman = !bHardcore && !bTSCGame && ActualFriendlyFireScale ~= 0.0;
 }
 
 static final function string ColorString(string s, byte R, byte G, byte B)
@@ -1322,7 +1358,7 @@ function MsgEnemies(PlayerController Sender)
 }
 
 
-function bool IsAdmin(PlayerController Sender)
+simulated function bool IsAdmin(PlayerController Sender)
 {
     return (Sender.PlayerReplicationInfo != none && (Sender.PlayerReplicationInfo.bAdmin
                 || Sender.PlayerReplicationInfo.bSilentAdmin))
@@ -1330,13 +1366,13 @@ function bool IsAdmin(PlayerController Sender)
             || (Level.NetMode == NM_ListenServer && NetConnection(Sender.Player) == none);
 }
 
-function bool IsReferee(PlayerController Sender)
+simulated function bool IsReferee(PlayerController Sender)
 {
     return IsAdmin(Sender)
             || (ScrnPlayerController(Sender) != none && ScrnPlayerController(Sender).GetSpecTeam() >= 250);
 }
 
-function bool CheckAdmin(PlayerController Sender)
+simulated function bool CheckAdmin(PlayerController Sender)
 {
     if ( IsAdmin(Sender) )
         return true;
@@ -1345,7 +1381,7 @@ function bool CheckAdmin(PlayerController Sender)
     return false;
 }
 
-function bool CheckReferee(PlayerController Sender)
+simulated function bool CheckReferee(PlayerController Sender)
 {
     if ( IsReferee(Sender) )
         return true;
@@ -2390,6 +2426,9 @@ function bool CheckReplacement(Actor Other, out byte bSuperRelevant)
         Other.SetDrawScale3D(AmmoBoxDrawScale3D);
     }
     else if (Pickup(Other) != none) {
+        if (WeaponStayTime > 0) {
+            Other.LifeSpan = WeaponStayTime;
+        }
         OnSetupPickup(Pickup(Other));
     }
     else if ( bStoryMode ) {
@@ -2651,6 +2690,13 @@ function PostBeginPlay()
         ScrnStoryGameInfo(KF).ScrnBalanceMut = self;
     }
 
+    ActualFriendlyFireScale = FriendlyFireScale;
+    if (FriendlyFireScale != 0 && TSCGame(KF) == none) {
+        KF.FriendlyFireScale = FriendlyFireScale;
+    }
+    ClientChatSpamProtectionMessages = ChatSpamProtectionMessages;
+    ClientChatSpamProtectionPeriod = ChatSpamProtectionPeriod;
+
     bUseAchievements = bool(AchievementFlags & ACH_ENABLE);
     GameRules = Spawn(Class'ScrnGameRules');
     GameRules.Mut = self;
@@ -2734,6 +2780,11 @@ function PostBeginPlay()
     ApplyWeaponFix();
     SrvMarkDistance = MarkDistanceMeters * 50;
     SrvMarkZedBounty = MarkZedBounty;
+
+    if (WeaponStayTime != 0 && WeaponStayTime < 20) {
+        warn("WeaponStayTime must be either 0 or set to at least 20 seconds!");
+        WeaponStayTime = 0;
+    }
 
     if (bAltBurnMech) {
         BurnMech = spawn(class'ScrnBurnMech');
@@ -2850,7 +2901,7 @@ function SetGameDifficulty(byte HardcoreDifficulty)
         ScrnGT.BaseDifficulty = Difficulty;
     }
     bHardcore = bNewHardcore;
-    bProjIgnoreHuman = !bHardcore && !bTSCGame;
+    ApplyFriendlyFire();
     KF.GameDifficulty = Difficulty;
     KF.AdjustedDifficulty = Difficulty;  // used by AIController, icluding KFMonsterController
     KFGRI = KFGameReplicationInfo(KF.GameReplicationInfo);
@@ -3509,7 +3560,7 @@ function GameResumed()
 
 defaultproperties
 {
-    VersionNumber=97430
+    VersionNumber=97431
     GroupName="KF-Scrn"
     FriendlyName="ScrN Balance"
     Description="Total rework of KF1 to make it modern and the best tactical coop in the world while sticking to the roots of the original."
@@ -3593,6 +3644,10 @@ defaultproperties
     bShowDamages=true
     bAllowBehindView=true
     bLateJoinersSpectate=true
+    ChatSpamProtectionMessages=5
+    ChatSpamProtectionPeriod=10
+    ClientChatSpamProtectionMessages=5
+    ClientChatSpamProtectionPeriod=10
 
     bReplacePickups=true
     bReplacePickupsStory=true
@@ -3758,6 +3813,7 @@ defaultproperties
     MaxVoteFF=0
     MinVoteDifficulty=2
     MaxDifficulty=8
+
 
     AmmoBoxMesh=StaticMesh'kf_generic_sm.pickups.Metal_Ammo_Box'
     AmmoBoxDrawScale=1.000000

@@ -24,7 +24,6 @@ event InitGame( string Options, out string Error )
     super.InitGame(Options, Error);
 
     if ( bSingleTeamGame ) {
-        FriendlyFireScale = 0;
         bSingleTeam = true;
         bTeamWiped = true;
     }
@@ -221,7 +220,7 @@ function SetupWave()
             t = 1; // skip team 0
         }
         if (bNoBases) {
-            NextStinkySpawnTime = Level.TimeSeconds + 600;
+            NextStinkySpawnTime = Level.TimeSeconds + 6000;
         }
         else {
             while ( t < 2 ) {
@@ -601,7 +600,7 @@ State MatchInProgress
             t = 1; // skip red team
 
         if (bNoBases) {
-            NextStinkySpawnTime = Level.TimeSeconds + 600;
+            NextStinkySpawnTime = Level.TimeSeconds + 6000;
         }
         else {
             while ( t < 2 ) {

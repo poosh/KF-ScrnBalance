@@ -36,7 +36,8 @@ var enum EClientState {
     CS_SettingUp,
     CS_Guarding,
     CS_Stunned,
-    CS_WakingUp
+    CS_WakingUp,
+    CS_Dead,
 } ClientState;
 
 replication
@@ -68,6 +69,12 @@ simulated function PostNetReceive()
         }
         ApplyClientState();
     }
+}
+
+simulated function PostNetBeginPlay()
+{
+    super.PostNetBeginPlay();
+    ApplyClientState();
 }
 
 function UsedBy( Pawn user )
@@ -141,10 +148,24 @@ function IncHealth(int inc)
 
 function bool SameTeam(Controller c)
 {
-    if ( c == None || c.PlayerReplicationInfo == none || c.PlayerReplicationInfo.Team != Team )
+    local ScrnPlayerController SC;
+
+    if (c == none || c.PlayerReplicationInfo == none)
         return false;
 
-    return true;
+    if (c.PlayerReplicationInfo.Team == Team)
+        return true;
+
+    SC = ScrnPlayerController(C);
+    if (SC != none && SC.GetSpecTeam() == Team.TeamIndex)
+        return true;
+
+    return false;
+}
+
+function TeamInfo GetEnemyTeam()
+{
+    return TSCGRI.Teams[1-Team.TeamIndex];
 }
 
 function bool ValidHolder(Actor Other)
@@ -377,7 +398,18 @@ simulated function ApplyClientState()
             LightType = LT_Flicker;
             LightRadius *= 0.3;
             break;
+        case CS_Dead:
+            if (Role < ROLE_Authority) {
+                Destroy();
+            }
+            break;
     }
+}
+
+function KillMe()
+{
+    WipeOnBaseLost = none;
+    GotoState('Dead');
 }
 
 auto state Home
@@ -406,6 +438,16 @@ auto state Home
     }
 
     function CheckTouching() {}
+}
+
+state Dead extends Home
+{
+Begin:
+    sleep(0.01);
+    SetClientState(CS_Dead);
+    NetUpdateTime = Level.TimeSeconds - 1;
+    sleep(1.0);
+    Destroy();
 }
 
 state Dropped
@@ -543,8 +585,13 @@ state Guarding
     function BeginState()
     {
         local Controller C;
-        local ScrnPlayerController ScrnC;
+        local ScrnPlayerController SC, MySetter;
+        local KFPlayerReplicationInfo MySetterPRI;
         local rotator r;
+
+        MySetter = GetBaseSetter();
+        if (MySetter != none)
+            MySetterPRI = KFPlayerReplicationInfo(MySetter.PlayerReplicationInfo);
 
         SetClientState(CS_Guarding);
         // log("State --> Guarding", class.name);
@@ -564,10 +611,20 @@ state Guarding
         SetTimer(1, true);
 
         for ( C = Level.ControllerList; C != none; C = C.nextController ) {
-            if ( C.bIsPlayer && SameTeam(C) ) {
-                ScrnC = ScrnPlayerController(C);
-                if ( ScrnC != none && ScrnC.bShoppedThisWave )
-                    ScrnPlayerController(C).ServerShowPathTo(1); // show path to base
+            if (C.PlayerReplicationInfo == none || C == MySetter)
+                continue;
+
+            SC = ScrnPlayerController(C);
+            if (SC == none)
+                continue;
+
+            if (SameTeam(C) || SC.IsSpecGuest()) {
+                if (SC.Pawn != none && SC.bShoppedThisWave && !TSCGRI.AtOwnBase(SC.Pawn)) {
+                    SC.ServerShowPathTo(1); // show path to base
+                }
+
+                if (MySetterPRI != none)
+                    SC.ClientMark(MySetterPRI, GetWorldActor(), GetLocation(), "", class'ScrnHUD'.default.MARK_BASE);
             }
         }
     }
@@ -683,7 +740,7 @@ state Guarding
         if ( bNobodyAtBase ) {
             if ( bNobodyAlive || --SameTeamCounter <= 0 ) {
                 if (ScrnGameType(Level.Game).ScrnBalanceMut.GameRules.IsEndGameDelayed()) {
-                    // player crashed an might return
+                    // player crashed and might return
                     return;
                 }
                 BroadcastLocalizedMessage(TscMessages, 2+Team.TeamIndex*100);
@@ -691,19 +748,22 @@ state Guarding
             }
             else if ( (SameTeamCounter & 3) == 0 ) {
                 for ( C = Level.ControllerList; C != none; C = C.nextController ) {
-                    if ( C.bIsPlayer && C.PlayerReplicationInfo != none
-                            && C.Pawn != none && C.Pawn.Health > 0
-                            && C.PlayerReplicationInfo.Team == Team )
-                    {
-                        SC = ScrnPlayerController(C);
-                        if ( SC != none ) {
-                            SC.ServerShowPathTo(1); // show path to base
-                            if ( SameTeamCounter <= 12 && ShouldWipeOnBaseLost() )
-                                SC.ReceiveLocalizedMessage(TscMessages, 311); // critical message
-                            else
-                                SC.ReceiveLocalizedMessage(TscMessages, 314);  // nobody at the base
-                        }
+                    if (C.PlayerReplicationInfo == none || !SameTeam(C))
+                        continue;
+
+                    SC = ScrnPlayerController(C);
+                    if (SC == none)
+                        continue;
+
+                    if (C.Pawn != none && C.Pawn.Health > 0) {
+                        SC.ServerShowPathTo(1); // show path to base
                     }
+
+                    // Broadcast the message to dead players, too.
+                    if ( SameTeamCounter <= 12 && ShouldWipeOnBaseLost() )
+                        SC.ReceiveLocalizedMessage(TscMessages, 311); // critical message
+                    else
+                        SC.ReceiveLocalizedMessage(TscMessages, 314);  // nobody at the base
                 }
             }
         }

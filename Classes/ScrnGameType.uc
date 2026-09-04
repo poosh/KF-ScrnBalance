@@ -3050,8 +3050,7 @@ function RestartPlayer( Controller aPlayer )
         }
 
         if ( PC != none ) {
-            if ( FriendlyFireScale > 0 )
-                ScrnBalanceMut.SendFriendlyFireWarning(PC);
+            ScrnBalanceMut.SendFriendlyFireWarning(PC);
         }
         bRestartPlayersTriggered = false;
         InventoryUpdate(aPlayer.Pawn);
@@ -3707,7 +3706,8 @@ function DestroyDroppedPickups()
     local Pickup Pickup;
 
     foreach DynamicActors(class'Pickup', Pickup) {
-        if ( Pickup.bDropped ) {
+        if (Pickup.bDropped && (ScrnBalanceMut.WeaponStayTime == 0
+                || KFWeaponPickup(Pickup) == none || KFWeaponPickup(Pickup).SellValue == 0)) {
             Pickup.LifeSpan = 3.0;
         }
     }

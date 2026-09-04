@@ -31,6 +31,14 @@
 # VERSION 9
 
 -------------------------------------------------------------------------------
+## v9.74.31
+- Added `FriendlyFireScale` to *ScrnBalanceSrv.ini* and *ScrnGames.ini*
+- *ScrnBalanceSrv.ini*: added `WeaponStayTime`, `ChatSpamProtectionMessages`, `ChatSpamProtectionPeriod` (thanks [Mortimer])
+- **FTG**: Setting `FtgRule=FTG_TSCBase` change the base guardian to `TSCBaseGuardian` (which can be stunned).
+- **48. Tourney Practice** changed to FTG with `FtgRule=FTG_TSCBase` to practice playing with bases and friendly fire.
+### ScrN Zed Pack
+- **Patriarch** No longer prepares a Minigun or Rocket attack while in mid-air (thanks [Mortimer])
+
 ## v9.74.30
 - Fixed an issue where bullet wall hit effects were drawn on zeds when shooting from dual pistols.
 - *ScrnMapInfo.ini*: Added `ZVolMinSpawnPlaces`.

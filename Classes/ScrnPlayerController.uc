@@ -43,7 +43,7 @@ var transient byte BeggingForMoney; // how many times player asked for money dur
 var transient bool bShoppedThisWave;
 var byte PathDestination; // 0 - trader, 255 - TSC base
 
-var byte MaxTextMsgIn10s, MaxVoiceMsgIn10s; // maximum number of voice messages during 10 seconds
+var transient int TextMsgCounter, VoiceMsgCounter; // maximum number of voice messages during 10 seconds
 var bool bZEDTimeActive;
 var float ZedTimeStart;
 
@@ -1978,29 +1978,24 @@ function bool AllowVoiceMessage(name msgtype)
     }
 
     TimeSinceLastMsg = Level.TimeSeconds - OldMessageTime;
-
-    if ( TimeSinceLastMsg < 3 )
-    {
-        if ( (msgtype == 'TAUNT') || (msgtype == 'AUTOTAUNT') )
-            return false;
-        if ( TimeSinceLastMsg < 1 )
+    if (TimeSinceLastMsg < 3) {
+        if (TimeSinceLastMsg < 1 || msgtype == 'TAUNT' || msgtype == 'AUTOTAUNT')
             return false;
     }
 
     // zed time screws up voice messages
-    if ( !bZEDTimeActive && msgtype != 'TRADER' && msgtype != 'AUTO' ) {
-        OldMessageTime = Level.TimeSeconds;
-        if ( TimeSinceLastMsg < 10 ) {
-            if ( MaxVoiceMsgIn10s > 0 )
-                MaxVoiceMsgIn10s--;
-            else {
-                ClientMessage(repl(strShutUp, "%s", string(int(ceil(10-TimeSinceLastMsg)))));
-                return false;
-            }
+    if (!bZEDTimeActive && msgtype != 'TRADER') {
+        if (TimeSinceLastMsg > Mut.ClientChatSpamProtectionPeriod ) {
+            VoiceMsgCounter = 1;
         }
-        else
-            MaxVoiceMsgIn10s = default.MaxVoiceMsgIn10s;
+        else if (++VoiceMsgCounter > Mut.ClientChatSpamProtectionMessages) {
+            if (msgtype != 'AUTO')
+                ClientMessage(repl(strShutUp, "%s",
+                        string(int(ceil(Mut.ClientChatSpamProtectionPeriod - TimeSinceLastMsg)))));
+            return false;
+        }
     }
+    OldMessageTime = Level.TimeSeconds;
     return true;
 }
 
@@ -2008,18 +2003,15 @@ function bool AllowTextMessage(string Msg)
 {
     local float TimeSinceLastMsg;
 
-    if (Mut.IsAdmin(self))
+    if (Mut.IsReferee(self))
         return true;
 
     TimeSinceLastMsg = Level.TimeSeconds - LastBroadcastTime;
-    if (TimeSinceLastMsg > 10.0) {
-        MaxTextMsgIn10s = default.MaxTextMsgIn10s;
+    if (TimeSinceLastMsg > Mut.ClientChatSpamProtectionPeriod ) {
+        TextMsgCounter = 1;
     }
-    else if (MaxTextMsgIn10s > 0) {
-        --MaxTextMsgIn10s;
-    }
-    else {
-        ClientMessage(repl(strShutUp, "%s", string(int(ceil(10.0-TimeSinceLastMsg)))));
+    else if (++TextMsgCounter > Mut.ClientChatSpamProtectionMessages) {
+        ClientMessage(repl(strShutUp, "%s", string(int(ceil(Mut.ClientChatSpamProtectionPeriod - TimeSinceLastMsg)))));
         return false;
     }
 
@@ -2152,6 +2144,16 @@ exec function Ready()
     if ( Level.GRI.bMatchHasBegun ) {
         ClientCloseMenu(true, false);
     }
+}
+
+final function bool IsSpecGuest()
+{
+    return PlayerReplicationInfo.bOnlySpectator && SpecTeam >= 210;
+}
+
+final function bool IsSpecReferee()
+{
+    return PlayerReplicationInfo.bOnlySpectator && SpecTeam >= 250;
 }
 
 final function byte GetSpecTeam()
@@ -4250,8 +4252,7 @@ defaultproperties
     FlareCloudClass=class'ScrnFlareCloud'
     bSpeechVote=true
     bAlwaysDisplayAchProgression=true
-    MaxTextMsgIn10s=5
-    MaxVoiceMsgIn10s=5
+
     strLocked="Weapon pickups LOCKED"
     strUnlocked="Weapon pickups UNLOCKED"
     strAlreadySpectating="Already spectating. Type READY, if you want to join the game."

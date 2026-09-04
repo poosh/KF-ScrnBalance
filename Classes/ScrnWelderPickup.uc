@@ -5,4 +5,6 @@ defaultproperties
     InventoryType=Class'ScrnWelder'
     ItemName="Welder SE"
     ItemShortName="Welder SE"
+    Weight=0
+    Cost=0
 }

@@ -124,11 +124,9 @@ function PostBeginPlay()
     TSCTeams[1] = TSCTeam(Teams[1]);
 
     SpawnBaseGuardian(0);
-    Teams[0].HomeBase = TeamBases[0];
     Teams[0].TeamColor=class'Canvas'.static.MakeColor(180, 0, 0, 255);
 
     SpawnBaseGuardian(1);
-    Teams[1].HomeBase = TeamBases[1];
     Teams[1].TeamColor=class'Canvas'.static.MakeColor(32, 92, 255, 255);
 }
 
@@ -446,10 +444,14 @@ function bool ChangeTeam(Controller Other, int num, bool bNewTeam)
             GiveStartingCash(PlayerController(Other));
         }
 
-        if (bClanGame && NewTeam.TeamIndex < 2 && TSCGRI.TeamCaptain[NewTeam.TeamIndex] == none
-                && TSCTeam(NewTeam).ClanRep.Clan.IsCaptain(PC.GetPlayerIDHash())) {
-            // clan captain joined the party
-            SetTeamCaptain(NewTeam.TeamIndex, Other.PlayerReplicationInfo);
+        if (!bSingleTeam && NewTeam.TeamIndex < 2 && ScrnPlayerController(Other) != none) {
+            ScrnPlayerController(Other).SetSpecTeam(NewTeam.TeamIndex);
+
+            if (bClanGame && TSCGRI.TeamCaptain[NewTeam.TeamIndex] == none
+                    && TSCTeam(NewTeam).ClanRep.Clan.IsCaptain(PC.GetPlayerIDHash())) {
+                // clan captain joined the party
+                SetTeamCaptain(NewTeam.TeamIndex, Other.PlayerReplicationInfo);
+            }
         }
     }
 
@@ -895,6 +897,7 @@ function TSCBaseGuardian SpawnBaseGuardian(byte TeamIndex)
     gnome.TSCGRI = TSCGRI;
     gnome.TscMessages = TscMessages;
     TeamBases[TeamIndex] = gnome;
+    Teams[TeamIndex].HomeBase = gnome;
 
     gnome.SetBrightness(ScrnBalanceMut.GetGuardianLight());
     if (bSingleTeamGame) {
@@ -1151,6 +1154,12 @@ protected function StartTourney()
 
     bAntiBlocker = true;
     bVoteHDmg = false;
+
+    if (!bSingleTeamGame) {
+        HdmgScale = 0.1;
+        FriendlyFireScale = HDmgScale;
+        default.FriendlyFireScale = HDmgScale;
+    }
 }
 
 function SetupRepLink(ScrnClientPerkRepLink R)
@@ -1456,7 +1465,7 @@ State MatchInProgress
         }
 
         if (TeamBases[0] == none && !bSingleTeamGame ) {
-            SpawnBaseGuardian(0); // just in case
+            SpawnBaseGuardian(0);
         }
         if (TeamBases[1] == none) {
             SpawnBaseGuardian(1);

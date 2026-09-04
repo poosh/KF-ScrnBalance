@@ -8,4 +8,6 @@ defaultproperties
     CorrespondingPerkIndex=4
     InventoryType=class'ScrnKnife'
     PickupMessage="You got the Knife."
+    Weight=0
+    Cost=0
 }

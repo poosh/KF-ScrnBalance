@@ -45,6 +45,7 @@ var config int TraderSpeedBoost;
 var config int SuicideTime;
 var config int SuicideTimePerWave;
 var config float SuicideTimePerPlayerMult, SuicideTimePerPlayerDeath;
+var config float FriendlyFireScale;
 
 struct SHL {
     var byte Difficulty;
@@ -162,6 +163,10 @@ function LoadGame(ScrnGameType MyGame)
 
     if ( bDebug ) {
         Game.MaximizeDebugLogging();
+    }
+
+    if (FriendlyFireScale != 0) {
+        Game.ScrnBalanceMut.SetFriendlyFire(FriendlyFireScale);
     }
 
     FtgSpawnRateMod = fclamp(FtgSpawnRateMod, 0.2, 1.0);
@@ -808,17 +813,30 @@ protected function bool LoadNextWave()
 protected function LoadFtgWave()
 {
     local class<DamageType> WipeOnBaseLost;
+    local byte t;
 
     FTG.bNoBases = Wave.FtgRule == FTG_NoBase;
-    if (Wave.FtgRule != FTG_TSCBase) {
+
+    if (Wave.FtgRule == FTG_TSCBase) {
+        WipeOnBaseLost = none;
+        FTG.BaseGuardianClasses[0] = class'TSCGame'.default.BaseGuardianClasses[0];
+        FTG.BaseGuardianClasses[1] = class'TSCGame'.default.BaseGuardianClasses[1];
+    }
+    else {
         WipeOnBaseLost = class'FtgBaseGuardian'.default.WipeOnBaseLost;
+        FTG.BaseGuardianClasses[0] = FTG.default.BaseGuardianClasses[0];
+        FTG.BaseGuardianClasses[1] = FTG.default.BaseGuardianClasses[1];
     }
 
-    if (FTG.TeamBases[0] != none) {
-        FTG.TeamBases[0].WipeOnBaseLost = WipeOnBaseLost;
-    }
-    if (FTG.TeamBases[1] != none) {
-        FTG.TeamBases[1].WipeOnBaseLost = WipeOnBaseLost;
+    for (t = 0; t < 2; ++t) {
+        if (FTG.TeamBases[t] != none) {
+            if (FTG.TeamBases[t].class != FTG.BaseGuardianClasses[t]) {
+                FTG.TeamBases[t].KillMe();
+                FTG.TeamBases[t] = none;
+                FTG.SpawnBaseGuardian(t);
+            }
+            FTG.TeamBases[t].WipeOnBaseLost = WipeOnBaseLost;
+        }
     }
 }
 

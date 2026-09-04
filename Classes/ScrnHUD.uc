@@ -4591,6 +4591,9 @@ function MarkTarget(KFPlayerReplicationInfo Sender, Actor Target, vector Locatio
         Marks[i].Color = MarkColors[MARK_ENEMIES];
         Marks[i].bIgnoreTarget = true;
     }
+    else if (MarkType == MARK_BASE && PlayerOwner.PlayerReplicationInfo.bOnlySpectator && Sender.Team != none) {
+        Marks[i].Color = TeamColors[Sender.Team.TeamIndex];
+    }
     else {
         Marks[i].Color = MarkColors[min(MarkGroup, MarkColors.Length - 1)];
     }
