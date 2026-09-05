@@ -812,32 +812,8 @@ protected function bool LoadNextWave()
 
 protected function LoadFtgWave()
 {
-    local class<DamageType> WipeOnBaseLost;
-    local byte t;
-
     FTG.bNoBases = Wave.FtgRule == FTG_NoBase;
-
-    if (Wave.FtgRule == FTG_TSCBase) {
-        WipeOnBaseLost = none;
-        FTG.BaseGuardianClasses[0] = class'TSCGame'.default.BaseGuardianClasses[0];
-        FTG.BaseGuardianClasses[1] = class'TSCGame'.default.BaseGuardianClasses[1];
-    }
-    else {
-        WipeOnBaseLost = class'FtgBaseGuardian'.default.WipeOnBaseLost;
-        FTG.BaseGuardianClasses[0] = FTG.default.BaseGuardianClasses[0];
-        FTG.BaseGuardianClasses[1] = FTG.default.BaseGuardianClasses[1];
-    }
-
-    for (t = 0; t < 2; ++t) {
-        if (FTG.TeamBases[t] != none) {
-            if (FTG.TeamBases[t].class != FTG.BaseGuardianClasses[t]) {
-                FTG.TeamBases[t].KillMe();
-                FTG.TeamBases[t] = none;
-                FTG.SpawnBaseGuardian(t);
-            }
-            FTG.TeamBases[t].WipeOnBaseLost = WipeOnBaseLost;
-        }
-    }
+    FTG.SetTscMode(Wave.FtgRule == FTG_TSCBase);
 }
 
 function bool LoadWave(int WaveNum)
@@ -938,7 +914,7 @@ function RunWave()
 
     SetWaveInfo();
     DoorControl(Wave.DoorControl2, false);
-    Game.ScrnGRI.bTraderArrow = Wave.bTraderArrow;
+    Game.ScrnGRI.bTraderArrow = Wave.bTraderArrow && (FTG == none || !IsStinkyClotAllowed()) && !IsLastTrader();
     if (Wave.TimeLimit > 0 && Wave.EndRule != RULE_Timeout) {
         TimeLimit = Game.Level.TimeSeconds + Wave.TimeLimit - class'TSCGame'.default.WaveEndingCountDown;
     }

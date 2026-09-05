@@ -31,6 +31,11 @@
 # VERSION 9
 
 -------------------------------------------------------------------------------
+## v9.74.32
+- (Experimental) **TSC** and **FTG** base radius narrowed down to **20 meters**.
+- **FTG**: Fixed an issue where the trader arrow was not displayed when `FtgRule=FTG_TSCBase`
+- Removed the trader arrow from the final boss wave (as there will be no trader)
+
 ## v9.74.31
 - Added `FriendlyFireScale` to *ScrnBalanceSrv.ini* and *ScrnGames.ini*
 - *ScrnBalanceSrv.ini*: added `WeaponStayTime`, `ChatSpamProtectionMessages`, `ChatSpamProtectionPeriod` (thanks [Mortimer])

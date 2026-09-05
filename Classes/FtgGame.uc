@@ -11,6 +11,7 @@ var transient array<KFAmmoPickup> StinkyAmmoPickups;   // ammo pickups that are 
 var transient array<NavigationPoint> StinkyTargets;
 
 var transient float NextStinkySpawnTime;
+var bool bTscMode;
 
 struct SPathRedirect {
     var name From;
@@ -543,6 +544,40 @@ function DoBossDeath()
 {
     KillAllStinkyClots();
     super.DoBossDeath();
+}
+
+// PLay FTG in TSC Base rules
+function SetTscMode(bool enable)
+{
+    local byte t;
+
+    if (enable == bTscMode)
+        return;
+
+    bTscMode = enable;
+
+    if (bTscMode) {
+        BaseGuardianClasses[0] = class'TSCGame'.default.BaseGuardianClasses[0];
+        BaseGuardianClasses[1] = class'TSCGame'.default.BaseGuardianClasses[1];
+        MinBaseZ = class'TSCGame'.default.MinBaseZ;
+        MaxBaseZ = class'TSCGame'.default.MaxBaseZ;
+    }
+    else {
+        BaseGuardianClasses[0] = default.BaseGuardianClasses[0];
+        BaseGuardianClasses[1] = default.BaseGuardianClasses[1];
+        MinBaseZ = default.MinBaseZ;
+        MaxBaseZ = default.MaxBaseZ;
+    }
+    TSCGRI.MinBaseZ = MinBaseZ;
+    TSCGRI.MaxBaseZ = MaxBaseZ;
+
+    for (t = 0; t < 2; ++t) {
+        if (TeamBases[t] != none) {
+            TeamBases[t].KillMe();
+            TeamBases[t] = none;
+        }
+        SpawnBaseGuardian(t);
+    }
 }
 
 

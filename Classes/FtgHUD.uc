@@ -74,7 +74,12 @@ simulated function DrawTSCHUDTextElements(Canvas C)
             }
 
             Effect = EFF_None;
-            bDrawShopDirPointer = !KFGRI.bWaveInProgress && (ScrnGRI == none || ScrnGRI.bTraderArrow); // always draw Trader Arrow during the Trader Time
+
+            if (ScrnGRI != none)
+                bDrawShopDirPointer = ScrnGRI.bTraderArrow;
+            else
+                bDrawShopDirPointer = !KFGRI.bWaveInProgress;
+
             bAtOwnBase = TSCGRI.AtBase(PawnOwner.Location, TeamBase);
             if ( TeamBase.bActive ) {
                 s = strOurBase;

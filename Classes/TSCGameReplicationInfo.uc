@@ -20,7 +20,10 @@ replication
 {
     reliable if ( bNetInitial && Role==ROLE_Authority )
         bSingleTeamGame, bHumanDamageAtBaseIntersection, OvertimeWaves, SudDeathWaves,
-        BaseRadiusSqr, MinBaseZ, MaxBaseZ;
+        BaseRadiusSqr;
+
+    reliable if ( (bNetInitial || bNetDirty) && Role==ROLE_Authority )
+        MinBaseZ, MaxBaseZ;
 
     reliable if( bNetDirty && Role == ROLE_Authority )
         BlueShop, bOverTime, bSuddenDeath,
@@ -111,7 +114,7 @@ static function int SetTeamCmbValue(int Team0Val, int Team1Val)
 
 defaultproperties
 {
-    BaseRadiusSqr=1562500 // 25 m
+    BaseRadiusSqr=1000000 // 20 m
     MinBaseZ=-60
     MaxBaseZ=200
     bHumanDamageAtBaseIntersection=true

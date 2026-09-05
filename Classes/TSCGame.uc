@@ -1684,7 +1684,7 @@ defaultproperties
     PathWhisps(0)="KFMod.RedWhisp"
     PathWhisps(1)="ScrnBalanceSrv.BlueWhisp"
     BaseWhisp=class'GreenWhisp'
-    BaseRadius=1250 // 25 m
+    BaseRadius=1000 // 20 m
     MinBaseZ=-60
     MaxBaseZ=200
     BaseInvulTime=30
