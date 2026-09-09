@@ -870,7 +870,7 @@ function ApplyVoteValue(int VoteIndex, string VoteValue)
         case VOTE_ENDWAVE:
             if (Mut.ScrnGT != none && Mut.ScrnGT.ScrnGRI.WaveEndRule == 10) {
                 //RULE_Dialogue
-                Mut.ScrnGT.ScrnGameLength.SkipDialogue();
+                Mut.ScrnGT.WaveHandler.SkipDialogue();
                 break;
             }
             if ( Mut.KF.TotalMaxMonsters > 0 || Mut.KF.NumMonsters > Mut.MaxVoteKillMonsters
@@ -960,8 +960,8 @@ function class<KFMonster> Str2Monster(string MonsterName)
 {
     local class<KFMonster> M;
 
-    if ( Mut.ScrnGT != none && Mut.ScrnGT.ScrnGameLength != none ) {
-        M = Mut.ScrnGT.ScrnGameLength.FindActiveZedByAlias(MonsterName);
+    if (Mut.ScrnGT != none && Mut.ScrnGT.WaveHandler != none) {
+        M = Mut.ScrnGT.WaveHandler.FindActiveZedByAlias(MonsterName);
         if ( M != none )
             return M;
     }

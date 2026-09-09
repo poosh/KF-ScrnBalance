@@ -1,4 +1,5 @@
-class ToiletPaperDamType extends KFWeaponDamageType;
+class ToiletPaperDamType extends KFWeaponDamageType
+    abstract;
 
 defaultproperties
 {

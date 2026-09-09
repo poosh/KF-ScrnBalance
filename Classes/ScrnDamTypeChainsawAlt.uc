@@ -1,4 +1,5 @@
-class ScrnDamTypeChainsawAlt extends DamTypeChainsaw;
+class ScrnDamTypeChainsawAlt extends DamTypeChainsaw
+    abstract;
 
 defaultproperties
 {

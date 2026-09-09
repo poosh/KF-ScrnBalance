@@ -15,12 +15,22 @@ event InitComponent(GUIController MyController, GUIComponent MyOwner)
         UpdatePerkIcons();
 }
 
+function Free()
+{
+    super.Free();
+
+    // We don't use that. But clear it just to be "110%" sure
+    KFStatsAndAchievements = none;
+}
+
 event Opened(GUIComponent Sender)
 {
     super(GUIMultiComponent).Opened( Sender );
     if( !bHasInit )
         UpdatePerkIcons();
 }
+
+function CheckPerks(KFSteamStatsAndAchievements StatsAndAchievements) { }
 
 function KFIndexedGUIImage AddButton( int Index )
 {

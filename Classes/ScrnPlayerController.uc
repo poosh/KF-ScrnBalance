@@ -1860,7 +1860,7 @@ function Possess(Pawn aPawn)
 
     //ClientMessage("Possess("$aPawn$"). Current Pawn="$Pawn);
     if ( Role == ROLE_Authority && Mut != none ) {
-        if ( Mut.ScrnGT != none && Mut.ScrnGT.ScrnGameLength != none && Mut.ScrnGT.ScrnGameLength.Wave.bStartAtTrader )
+        if (Mut.ScrnGT != none && Mut.ScrnGT.WaveHandler != none && Mut.ScrnGT.WaveHandler.Wave.bStartAtTrader)
         {
             R = aPawn.Rotation;
             // spawnned at the trader on a trader teleporter.

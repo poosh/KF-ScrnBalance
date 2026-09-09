@@ -5,7 +5,7 @@ class StinkyClotZed extends ZombieClotMix;
 
 simulated function BeginPlay()
 {
-	Super(ZombieClot).BeginPlay();
+    Super(ZombieClot).BeginPlay();
 }
 
 defaultproperties

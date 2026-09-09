@@ -1,4 +1,5 @@
-class VirusDamage extends DamTypeZombieAttack;
+class VirusDamage extends DamTypeZombieAttack
+    abstract;
 
 #exec OBJ LOAD FILE=ScrnTex.utx
 

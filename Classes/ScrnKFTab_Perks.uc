@@ -1,5 +1,13 @@
 class ScrnKFTab_Perks extends SRKFTab_Perks;
 
+function Free()
+{
+    super.Free();
+
+    // It is already cleared in KFTab_Perks.Closed(). But better safe than sorry.
+    KFStatsAndAchievements = none;
+}
+
 function ShowPanel(bool bShow)
 {
     super.ShowPanel(bShow);

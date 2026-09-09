@@ -14,6 +14,9 @@ function ShowPanel(bool bShow)
             lb_PerkProgress.List.InitList();
         }
     }
+    else {
+        PerkLink = none;
+    }
 }
 
 function OnPerkSelected(GUIComponent Sender)

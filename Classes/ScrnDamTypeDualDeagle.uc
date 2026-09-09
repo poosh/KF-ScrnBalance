@@ -1,4 +1,5 @@
-class ScrnDamTypeDualDeagle extends DamTypeDualDeagle;
+class ScrnDamTypeDualDeagle extends DamTypeDualDeagle
+    abstract;
 
 static function AwardKill(KFSteamStatsAndAchievements KFStatsAndAchievements, KFPlayerController Killer,
         KFMonster Killed )

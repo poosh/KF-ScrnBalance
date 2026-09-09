@@ -2,6 +2,14 @@ class ScrnPerkSelectList extends SRPerkSelectList;
 
 var float ProgressBarBottomOffset;
 
+function Free()
+{
+    super.Free();
+
+    // We don't use that. But clear it just to be "110%" sure
+    KFStatsAndAchievements = none;
+}
+
 function float PerkHeight(Canvas c)
 {
     return (MenuOwner.ActualHeight() / ItemsPerPage ) - 1.0;
@@ -30,7 +38,7 @@ function DrawPerk(Canvas Canvas, int CurIndex, float X, float Y, float Width, fl
     Canvas.Font = class'ROHUD'.Static.GetSmallMenuFont(Canvas);
     Canvas.SetDrawColor(255, 255, 255, 255);
 
-	IconSize = Height - ItemSpacing;// - (ItemBorder * 2.0 * Height);
+    IconSize = Height - ItemSpacing;// - (ItemBorder * 2.0 * Height);
 
     // Draw Item Background
     Canvas.SetPos(TempX, TempY);

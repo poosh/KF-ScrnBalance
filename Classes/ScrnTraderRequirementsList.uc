@@ -29,6 +29,13 @@ function InitComponent(GUIController MyController, GUIComponent MyOwner)
     Super.InitComponent(MyController, MyOwner);
 }
 
+function Free()
+{
+    super.Free();
+
+    // reset all actor references
+    PerkLink = none;
+}
 
 function Display(GUIBuyable NewBuyable)
 {

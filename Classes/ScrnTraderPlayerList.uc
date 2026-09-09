@@ -18,9 +18,9 @@ var int IconMargin;
 var int PlayersPerPage;
 
 var texture DoshIcon;
-var	texture	AvatarBG;
-var	texture	ItemBG;
-var	texture	HoverItemBG;
+var texture AvatarBG;
+var texture ItemBG;
+var texture HoverItemBG;
 
 var Color TextColorHover, TextColorDoshRequest, TextColorDefault;
 

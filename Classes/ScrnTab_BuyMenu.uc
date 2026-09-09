@@ -28,8 +28,29 @@ var localized string SaleButtonCaption, strSale0, strNoSale;
 var localized string PurchaseButtonCaption;
 
 var ScrnGuiBuyMenu TraderMenu;
+
+// !!! WARNING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+// This is a GUI class (non-Actor Object), so our references to destroyed actors are NOT nulled.
+// An Object MUST NOT store references to Actors whose lifetime can be shorter than the Object's (Pawn, Inventory, etc.)
+// Even if we don't access dangling references here, they will lead to a crash on garbage collection.
+// A BAD example: A GUI page stores a reference to a Pawn. Pawn dies while the menu is open => crash.
+// Even worse: the crash may occur later in the game during garbage collection where everybody forgot that the GUI
+// was open and stil hold a dangling reference (which is invoked by the engine on the GC path).
+// That's why MyAmmos MUST NOT be used. If the ammo put in MyAmmos gets destroyed (simply by a weapon drop) => crash.
+
+// Storing ScrnPC is fine, as it is just a  typecasted PlayerOwner(), and PlayerOwner() outlives GUI pages,
+// given bPersistent=false at the level change moment (this case)
+// The livetime of PerkLink and KFPRI is the same as PlayerController's - all 3 outlive the GUI page, so storing them
+// here is fine.
+
+// ANOTHER WARNING!
+// All actor references must be nulled in Free() - that always preceeds PC's destruction when bPersistent=false.
+// Leaving Actor references after Free() also may cause a crash.
+
+// ONCE AGAIN (So I won't forget myself):
+// 1. If an actor may be destroyed while GUI is active - NO REFERENCES! No PAWN or INVENTORY!
+// 2. PlayerOwner() and its linked actors (PRI) are fine, but CLEAR THEM IN FREE()
 var transient ScrnPlayerController ScrnPC;
-var transient ScrnHumanPawn ScrnPawn;
 var transient ScrnClientPerkRepLink PerkLink;
 var transient KFPlayerReplicationInfo KFPRI;
 
@@ -49,21 +70,36 @@ function InitComponent(GUIController MyController, GUIComponent MyOwner)
     GiveDoshButtonCaption = GiveDoshButton.Caption;
 }
 
+function LinkActors()
+{
+    ScrnPC = ScrnPlayerController(PlayerOwner());
+    KFPRI = KFPlayerReplicationInfo(ScrnPC.PlayerReplicationInfo);
+    PerkLink = Class'ScrnClientPerkRepLink'.Static.FindMe(ScrnPC);
+}
+
+// All linked actors must be nulled here
+function UnlinkActors()
+{
+    ScrnPC = none;
+    KFPRI = none;
+    PerkLink = none;
+}
+
+// TraderMenu is persistent (bPersistent=True), do Free() is called only on map change (NotifyLevelChange resets it)
 function Free()
 {
     super.Free();
 
-    // reset all actor references
+    UnLinkActors();
+
+    // DO NOT FILL MyAmmos!
+    // SERIOUSLY! Putting something in the array leads to a potential crash on garbage collection.
+    MyAmmos.Length = 0;
+
     LastPerk = none;
     LastVestClass = none;
-    PerkLink = none;
-    KFPRI = none;
-    ScrnPC = none;
-    ScrnPawn = none;
-
     SelectedItem = none;
     OldPerkClass = none;
-    MyAmmos.Length = 0;
     OldPickupClass = none;
 }
 
@@ -79,11 +115,8 @@ function ShowPanel(bool bShow)
         return;
     }
 
+    LinkActors();
 
-    ScrnPC = ScrnPlayerController(PlayerOwner());
-    KFPRI = KFPlayerReplicationInfo(ScrnPC.PlayerReplicationInfo);
-    PerkLink = Class'ScrnClientPerkRepLink'.Static.FindMe(ScrnPC);
-    ScrnPawn = ScrnHumanPawn(ScrnPC.Pawn);
     bJustOpened = true;
     bClosed = false;
     LastInvCount = -1; // force item update on timer
@@ -127,7 +160,7 @@ function SetInfoText()
     local string TempString;
     local int Dosh;
 
-    if (ScrnPawn == none || TheBuyable == none) {
+    if (ScrnPC.ScrnPawn == none || TheBuyable == none) {
         if (!bDidBuyableUpdate) {
             SetCustomInfoText(InfoText[0]);
             bDidBuyableUpdate = true;
@@ -135,7 +168,7 @@ function SetInfoText()
         return;
     }
 
-    Dosh = ScrnPawn.GetAvailableDosh();
+    Dosh = ScrnPC.ScrnPawn.GetAvailableDosh();
 
     // if (OldPickupClass == TheBuyable.ItemPickupClass)
     //     return;
@@ -148,11 +181,11 @@ function SetInfoText()
         // Too expensive
         SetCustomInfoText(InfoText[2]);
     }
-    else if (TheBuyable.bSaleList && TheBuyable.ItemWeight + ScrnPawn.CurrentWeight > ScrnPawn.MaxCarryWeight )
+    else if (TheBuyable.bSaleList && TheBuyable.ItemWeight + ScrnPC.ScrnPawn.CurrentWeight > ScrnPC.ScrnPawn.MaxCarryWeight )
     {
         // Too heavy
         TempString = Repl(Infotext[1], "%1", int(TheBuyable.ItemWeight));
-        TempString = Repl(TempString, "%2", int(ScrnPawn.MaxCarryWeight - ScrnPawn.CurrentWeight));
+        TempString = Repl(TempString, "%2", int(ScrnPC.ScrnPawn.MaxCarryWeight - ScrnPC.ScrnPawn.CurrentWeight));
         SetCustomInfoText(TempString);
     }
     else {
@@ -177,15 +210,15 @@ function DoBuyKevlar()
 
 function DoBuy()
 {
-    if (TheBuyable == none || ScrnPawn == none || TheBuyable.ItemPickupClass == none)
+    if (TheBuyable == none || ScrnPC.ScrnPawn == none || TheBuyable.ItemPickupClass == none)
         return;
 
     if ( ClassIsChildOf(TheBuyable.ItemPickupClass, class'ScrnVestPickup') ) {
-        ScrnPawn.ServerBuyShield(class<ScrnVestPickup>(TheBuyable.ItemPickupClass));
+        ScrnPC.ScrnPawn.ServerBuyShield(class<ScrnVestPickup>(TheBuyable.ItemPickupClass));
         MakeSomeBuyNoise(class'Vest');
     }
     else if (TheBuyable.ItemWeaponClass != none ){
-        ScrnPawn.ServerBuyWeapon(TheBuyable.ItemWeaponClass, 0);
+        ScrnPC.ScrnPawn.ServerBuyWeapon(TheBuyable.ItemWeaponClass, 0);
         MakeSomeBuyNoise();
     }
 
@@ -278,7 +311,7 @@ function UpdateBuySellButtons()
         else {
             SaleButton.EnableMe();
             if (TheBuyable.bIsVest) {
-                SaleButton.Caption = ScrnPawn.LightVestClass.default.ItemName;
+                SaleButton.Caption = ScrnPC.ScrnPawn.LightVestClass.default.ItemName;
             }
             else if (TheBuyable.ItemSellValue <= 0) {
                 SaleButton.Caption = strSale0;
@@ -322,11 +355,11 @@ function MyInventoryStats(out int ItemCount, out int TotalAmmoAmount)
     ItemCount = 0;
     TotalAmmoAmount = 0;
 
-    if ( ScrnPawn == none )
-        return; // wtf?
+    if (ScrnPC.ScrnPawn == none)
+        return;
 
     // limit to 1000 to prevent circular loops
-    for (Inv = ScrnPawn.Inventory; Inv != none && ItemCount < 1000 ; Inv = Inv.Inventory) {
+    for (Inv = ScrnPC.ScrnPawn.Inventory; Inv != none && ItemCount < 1000 ; Inv = Inv.Inventory) {
         ++ItemCount;
         ammo = Ammunition(Inv);
         if (ammo != none) {
@@ -402,21 +435,21 @@ function UpdateCheck()
 
     MyInventoryStats(MyInvCount, MyAmmoCount);
     // ignore KFPC.bDoTraderUpdate and do it the right way
-    if (LastShopUpdateCounter != ScrnPawn.ShopUpdateCounter
+    if (LastShopUpdateCounter != ScrnPC.ScrnPawn.ShopUpdateCounter
             || LastDosh != int(KFPRI.Score)
             || (KFPRI.Team != none && LastTeamDosh != int(KFPRI.Team.Score))
             || LastPerk != KFPRI.ClientVeteranSkill
             || LastPerkLevel != KFPRI.ClientVeteranSkillLevel
             || LastInvCount != MyInvCount
-            || LastVestClass != ScrnPawn.GetCurrentVestClass())
+            || LastVestClass != ScrnPC.ScrnPawn.GetCurrentVestClass())
     {
         UpdateAll();
     }
-    else if ( LastAmmoCount != MyAmmoCount || LastShieldStrength != ScrnPawn.ShieldStrength ) {
+    else if ( LastAmmoCount != MyAmmoCount || LastShieldStrength != ScrnPC.ScrnPawn.ShieldStrength ) {
         // no need to update inventory list, just update the ammo values
         UpdateAmmo();
         LastAmmoCount = MyAmmoCount;
-        LastShieldStrength = ScrnPawn.ShieldStrength;
+        LastShieldStrength = ScrnPC.ScrnPawn.ShieldStrength;
     }
 
 }
@@ -433,14 +466,14 @@ function UpdateAll()
     // GetUpdatedBuyable();
     UpdatePanel();
 
-    LastShopUpdateCounter = ScrnPawn.ShopUpdateCounter;
+    LastShopUpdateCounter = ScrnPC.ScrnPawn.ShopUpdateCounter;
     LastDosh = int(KFPRI.Score);
     LastTeamDosh = int(KFPRI.Team.Score);
     LastPerk = KFPRI.ClientVeteranSkill;
     LastPerkLevel = KFPRI.ClientVeteranSkillLevel;
     MyInventoryStats(LastInvCount, LastAmmoCount);
-    LastShieldStrength = ScrnPawn.ShieldStrength;
-    LastVestClass = ScrnPawn.GetCurrentVestClass();
+    LastShieldStrength = ScrnPC.ScrnPawn.ShieldStrength;
+    LastVestClass = ScrnPC.ScrnPawn.GetCurrentVestClass();
 }
 
 function UpdateAmmo()
@@ -519,7 +552,7 @@ function DoSell()
     if ( TheBuyable.bIsVest ) {
         // there is no reason to sell the light armor as it has no weight.
         // So instead of selling armor, buy the light one
-        ScrnPawn.ServerBuyShield(ScrnPawn.LightVestClass);
+        ScrnPC.ScrnPawn.ServerBuyShield(ScrnPC.ScrnPawn.LightVestClass);
         MakeSomeBuyNoise(class'Vest');
     }
     else {
@@ -571,9 +604,9 @@ function SetCustomInfoText(string Text, optional bool bClearSelection)
 
 function DoShareAllDosh()
 {
-    if (ScrnPawn != none) {
-        ScrnPawn.ServerDoshTransfer(KFPRI.Score);
-    }
+    if (ScrnPC.ScrnPawn == none)
+        return;
+    ScrnPC.ScrnPawn.ServerDoshTransfer(KFPRI.Score);
 }
 
 function CloseSale()

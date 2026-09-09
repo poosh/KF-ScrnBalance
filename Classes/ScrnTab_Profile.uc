@@ -2,6 +2,18 @@ class ScrnTab_Profile extends SRTab_Profile;
 
 var localized string strNotATeamChar;
 
+function Free()
+{
+    super.Free();
+
+    // We don't use that. But clear it just to be "110%" sure
+    KFStatsAndAchievements = none;
+
+    if (SpinnyDude != None) {
+        SpinnyDude.Destroy();
+        SpinnyDude = None;
+    }
+}
 
 function bool PickModel(GUIComponent Sender)
 {

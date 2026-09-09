@@ -3,10 +3,10 @@ class ScrnSeekerSixMultiRocket extends ScrnSeekerSixRocket;
 var byte FlockIndex;
 var ScrnSeekerSixMultiRocket Flock[6];
 
-var(Flocking) float	FlockRadius;
-var(Flocking) float	FlockStiffness;
+var(Flocking) float FlockRadius;
+var(Flocking) float FlockStiffness;
 var(Flocking) float FlockMaxForce;
-var(Flocking) float	FlockCurlForce;
+var(Flocking) float FlockCurlForce;
 var bool bCurl;
 
 replication

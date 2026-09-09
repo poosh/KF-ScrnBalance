@@ -172,13 +172,13 @@ event InitGame( string Options, out string Error )
     }
     else {
         bUseEndGameBoss = false;
-        OvertimeWaves = ScrnGameLength.OTWaves;
-        SudDeathWaves = ScrnGameLength.SDWaves;
-        if ( ScrnGameLength.NWaves + OvertimeWaves + SudDeathWaves > 0 ) {
-            FinalWave = ScrnGameLength.NWaves;
+        OvertimeWaves = WaveHandler.GL.OTWaves;
+        SudDeathWaves = WaveHandler.GL.SDWaves;
+        if (WaveHandler.GL.NWaves + OvertimeWaves + SudDeathWaves > 0) {
+            FinalWave = WaveHandler.GL.NWaves;
         }
         else {
-            FinalWave = max(1, ScrnGameLength.Waves.length - OvertimeWaves - SudDeathWaves);
+            FinalWave = max(1, WaveHandler.GL.Waves.length - OvertimeWaves - SudDeathWaves);
         }
     }
     OriginalFinalWave = FinalWave;
@@ -738,7 +738,7 @@ function Killed(Controller Killer, Controller Killed, Pawn KilledPawn, class<Dam
 
     bHadMonsters = NumMonsters > 0;
     // save team here in cases when Killed destroyed by parent function
-    if ( Killed.bIsPlayer && Killed.PlayerReplicationInfo != none ) {
+    if ( Killed != none && Killed.PlayerReplicationInfo != none ) {
         KilledTeam = Killed.PlayerReplicationInfo.Team;
         Ping = Killed.PlayerReplicationInfo.Ping;
         bSuicide = Killer == Killed && (damageType == class'Suicided' || damageType == class'DamageType');
@@ -1106,7 +1106,7 @@ function HandleRemainingZeds() {
 function EZedSpawnLocation GetSpawnLocation()
 {
     if (!bTeamWiped) {
-        if (ScrnGameLength.bLoadedSpecial) {
+        if (WaveHandler.bLoadedSpecial) {
             // there are two special squads, one for each team. Spawn them closer to the target
             return ZSLOC_CLOSER;
         }
@@ -1134,7 +1134,7 @@ function bool LoadNextSpawnSquad()
     if (!super.LoadNextSpawnSquad())
         return false;
 
-    if (ScrnGameLength.bLoadedSpecial) {
+    if (WaveHandler.bLoadedSpecial) {
         if (!bTeamWiped) {
             PendingSpecialSquad = NextSpawnSquad; // backup for another team
         }
@@ -1507,15 +1507,15 @@ State MatchInProgress
             SpawnBaseGuardian(1);
         }
 
-        if ( NextWave >= ScrnGameLength.Waves.length ) {
-            // if there are not enough waves in ScrnGameLength, then just re-load the last one again
-            WaveNum = ScrnGameLength.Waves.length - 2;
+        if (NextWave >= WaveHandler.GL.Waves.length) {
+            // if there are not enough waves in WaveHandler, then just re-load the last one again
+            WaveNum = WaveHandler.GL.Waves.length - 2;
         }
         super.DoWaveEnd();
         if ( bGameEnded )
             return;
 
-        if (ScrnGameLength.Wave.bOpenTrader) {
+        if (WaveHandler.Wave.bOpenTrader) {
             // Guardians will be moved to shop later in OpenShops()
             if (TeamBases[0] != none) {
                 // don't check for none here making warning message appear in server log

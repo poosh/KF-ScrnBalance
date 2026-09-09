@@ -1,5 +1,13 @@
 class ScrnKFQuickPerkSelect extends SRKFQuickPerkSelect;
 
+function Free()
+{
+    super.Free();
+
+    // We don't use that. But clear it just to be "110%" sure
+    KFStatsAndAchievements = none;
+}
+
 function bool MyOnDraw(Canvas C)
 {
     local ScrnClientPerkRepLink S;

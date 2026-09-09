@@ -211,7 +211,7 @@ function SetupWave()
 
     super.SetupWave();
 
-    if (ScrnGameLength.Wave.bOpenTrader) {
+    if (WaveHandler.Wave.bOpenTrader) {
         ZedSpawnLoc = default.ZedSpawnLoc;
         FriendlyFireScale = HDmgScale;
 
@@ -416,7 +416,7 @@ function StinkyControllerReady(StinkyController SC)
 
     SC.ActionNum = 0;
 
-    if (bWaveBossInProgress || (ScrnGameLength.NextWave != none && !ScrnGameLength.NextWave.bOpenTrader)) {
+    if (bWaveBossInProgress || (WaveHandler.NextWave != none && !WaveHandler.NextWave.bOpenTrader)) {
         // if there is no trader on the next wave, don't hurry to the closed shop - go for more ammo
         if ( StinkyTargets.length >= 5 ) {
             t = StinkyTargets.length * 3 / 4;
@@ -481,10 +481,7 @@ function StinkyControllerCompeledAction(StinkyController SC, int CompletedAction
             gnome.bHeld = true;
             ZedSpawnLoc = ZSLOC_RANDOM;
             SetBoringStage(0);
-            if (!bWaveBossInProgress && HasEnoughZeds()) {
-                NextMonsterTime += ScrnGameLength.FtgSpawnDelayOnPickup;
-            }
-            ScrnGameLength.LoadDialogues(ScrnGameLength.Wave.FtgDialogues);
+            WaveHandler.FtgStinkyPickedBase();
         }
         if ( bDebugStinkyPathCheat ) {
             log("Next Stinky Path: " $ SC.MoveTargets[CompletedActionNum] $ " => " $ SC.MoveTargets[SC.ActionNum],
@@ -592,7 +589,7 @@ State MatchInProgress
         else
             super.DoWaveEnd();
 
-        if ( ScrnGameLength.Wave.bOpenTrader ) {
+        if (WaveHandler.Wave.bOpenTrader) {
             KillAllStinkyClots();
             if (bNoBases ) {
                 if (TeamBases[0] != none) {
@@ -618,7 +615,7 @@ State MatchInProgress
 
         if (NextStinkySpawnTime < Level.TimeSeconds) {
             NextStinkySpawnTime = Level.TimeSeconds + 5; // if failed to spawn, try again in 5 seconds
-            if ((bWaveBossInProgress || TotalMaxMonsters > 0) && ScrnGameLength.IsStinkyClotAllowed()
+            if ((bWaveBossInProgress || TotalMaxMonsters > 0) && WaveHandler.IsStinkyClotAllowed()
                     && ((StinkyControllers[1] == none && TeamBases[1].bActive)
                         || (!bSingleTeamGame && StinkyControllers[0] == none && TeamBases[0].bActive)))
             {

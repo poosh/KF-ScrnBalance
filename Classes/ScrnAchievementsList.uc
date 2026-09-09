@@ -29,7 +29,9 @@ function InitComponent(GUIController MyController, GUIComponent MyOwner)
 
 function Closed(GUIComponent Sender, bool bCancelled)
 {
+    // reset all actor references
     MyClientPerkRepLink = none;
+    AchievementHandlers.Length = 0;  // array<ScrnAchievements>, i.e. ReplicationInfo actors
 
     super.Closed(Sender, bCancelled);
 }

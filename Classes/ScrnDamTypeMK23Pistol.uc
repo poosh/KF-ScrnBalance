@@ -1,4 +1,5 @@
-class ScrnDamTypeMK23Pistol extends DamTypeMK23Pistol;
+class ScrnDamTypeMK23Pistol extends DamTypeMK23Pistol
+    abstract;
 
 static function AwardKill(KFSteamStatsAndAchievements KFStatsAndAchievements, KFPlayerController Killer,
         KFMonster Killed )

@@ -443,7 +443,7 @@ static function AddDefaultInventory(KFPlayerReplicationInfo KFPRI, Pawn P)
     local int ExtraAmmo;
     local ScrnBalance Mut;
     local bool bBalance;
-    local ScrnGameLength ScrnGL;
+    local ScrnWaveHandler WH;
     local class<KFWeaponPickup> WP;
 
     KFP = KFHumanPawn(P);
@@ -458,7 +458,7 @@ static function AddDefaultInventory(KFPlayerReplicationInfo KFPRI, Pawn P)
     }
     bBalance = Mut.SpawnBalanceRequired() || (ScrnPawn != none && ScrnPawn.bOnlyRequiredEquipment);
     if (Mut.ScrnGT != none) {
-        ScrnGL = Mut.ScrnGT.ScrnGameLength;
+        WH = Mut.ScrnGT.WaveHandler;
     }
 
     if ( Mut.bUseExpLevelForSpawnInventory && !bBalance )
@@ -503,7 +503,7 @@ static function AddDefaultInventory(KFPlayerReplicationInfo KFPRI, Pawn P)
             if ( AmmoInv != none )
                 AmmoInv.AddAmmo(default.DefaultInventory[i].AmmoAmount + ExtraAmmo);
         }
-        else if ((ScrnGL == none || ScrnGL.IsItemAllowed(default.DefaultInventory[i].PickupClass))
+        else if ((WH == none || WH.IsItemAllowed(default.DefaultInventory[i].PickupClass))
                 && ShouldAddDefaultInventory(i, KFPRI, P) ) {
             KFP.CreateInventoryVeterancy(string(default.DefaultInventory[i].PickupClass.default.InventoryType), 0);
             if (  default.DefaultInventory[i].bSetAmmo ) {

@@ -1,4 +1,5 @@
-class ScrnDamTypeCrossbuzzsaw extends DamTypeCrossbuzzsaw;
+class ScrnDamTypeCrossbuzzsaw extends DamTypeCrossbuzzsaw
+    abstract;
 
 defaultproperties
 {

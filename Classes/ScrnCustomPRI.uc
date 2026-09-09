@@ -22,6 +22,17 @@ var bool bReachedGoal;
 
 var int TotalDamageK, TotalHeal;
 
+// Cached player name, resolved locally from PRI.PlayerName - NOT replicated.
+// Parsing/stripping color tags is expensive (up to 30 Repl() passes per call), while the player name
+// changes almost never. So it is resolved once, when ScrnSrvReplInfo notifies us about a name change.
+// Do not read these directly: use the GetPlainName()/GetColoredName() statics, which fall back to
+// parsing the name live when it has not been resolved yet, or when there is no ScrnCustomPRI at all
+// (bots, WebAdmin).
+var string PlainPlayerName;
+var string ColoredPlayerName;
+
+var transient PlayerReplicationInfo myPRI;
+
 replication
 {
     reliable if ( (bNetDirty || bNetInitial) && Role == Role_Authority )
@@ -152,16 +163,91 @@ final simulated function LoadHighlyDecorated()
         TourneyPlayoffs, TourneyWins);
 }
 
+simulated function UpdatePlayerNames()
+{
+    if (!ResolvePRI())
+        return;
+
+    PlainPlayerName = class'ScrnF'.static.StripColorTags(myPRI.PlayerName);
+    ColoredPlayerName = class'ScrnF'.static.ParseColorTags(myPRI.PlayerName, myPRI);
+}
+
+simulated function PostNetBeginPlay()
+{
+    super.PostNetBeginPlay();
+
+    // May fail if the PRI hasn't been replicated or linked to us yet.
+    // ScrnSrvReplInfo keeps updating until it succeeds.
+    UpdatePlayerNames();
+}
+
+final static function string GetPlainName(PlayerReplicationInfo PRI, optional ScrnCustomPRI ScrnPRI)
+{
+    if (ScrnPRI != none && ScrnPRI.myPRI == PRI) {
+        if (ScrnPRI.PlainPlayerName == "")
+            ScrnPRI.PlainPlayerName = class'ScrnF'.static.PlainPlayerName(PRI);
+        return ScrnPRI.PlainPlayerName;
+    }
+    return class'ScrnF'.static.PlainPlayerName(PRI);
+}
+
+final static function string GetColoredName(PlayerReplicationInfo PRI, optional ScrnCustomPRI ScrnPRI)
+{
+    if (ScrnPRI != none && ScrnPRI.myPRI == PRI) {
+        if (ScrnPRI.ColoredPlayerName == "")
+            ScrnPRI.ColoredPlayerName = class'ScrnF'.static.ColoredPlayerName(PRI);
+        return ScrnPRI.ColoredPlayerName;
+    }
+    return class'ScrnF'.static.ColoredPlayerName(PRI);
+}
+
+simulated function bool ResolvePRI()
+{
+    local int i;
+    local PlayerController PC;
+
+    if (myPRI != none)
+        return true;
+
+    // Owner is replicated to the local player only
+    PC = PlayerController(Owner);
+    if (PC != none && PC.PlayerReplicationInfo != none) {
+        myPRI = PC.PlayerReplicationInfo;
+        return true;
+    }
+
+    if (Level.GRI != none) {
+        for (i = 0; i < Level.GRI.PRIArray.Length; ++i) {
+            if (Level.GRI.PRIArray[i] != none && FindMe(Level.GRI.PRIArray[i]) == self)
+                return true;  // myPRI got set in FindMe()
+        }
+    }
+    return false;
+}
+
+simulated function SetPRI(PlayerReplicationInfo PRI)
+{
+    if (MyPRI == PRI)
+        return;
+
+    MyPRI = PRI;
+    UpdatePlayerNames();
+}
+
 final static function ScrnCustomPRI FindMe(PlayerReplicationInfo PRI)
 {
     local LinkedReplicationInfo L;
+    local ScrnCustomPRI me;
 
     if ( PRI == none )
         return none;
 
     for( L = PRI.CustomReplicationInfo; L != none; L = L.NextReplicationInfo ) {
-        if ( ScrnCustomPRI(L) != none )
-            return ScrnCustomPRI(L);
+        me = ScrnCustomPRI(L);
+        if (me != none) {
+            me.SetPRI(PRI);
+            return me;
+        }
     }
     return none;
 }

@@ -30,6 +30,14 @@ function InitComponent(GUIController MyController, GUIComponent MyOwner)
     ch_FireMode0.Checked(true);
 }
 
+function Free()
+{
+    super.Free();
+
+    // KFLR is never assigned in SP/Scrn. Just to be safe.
+    KFLR = none;
+}
+
 function ResetValues()
 {
     TopDamage = 0;

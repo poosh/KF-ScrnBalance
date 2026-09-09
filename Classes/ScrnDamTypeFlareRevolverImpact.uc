@@ -1,4 +1,5 @@
-class ScrnDamTypeFlareRevolverImpact extends ScrnDamTypeFlareProjectileImpact;
+class ScrnDamTypeFlareRevolverImpact extends ScrnDamTypeFlareProjectileImpact
+    abstract;
 
 static function AwardKill(KFSteamStatsAndAchievements KFStatsAndAchievements, KFPlayerController Killer, KFMonster Killed )
 {

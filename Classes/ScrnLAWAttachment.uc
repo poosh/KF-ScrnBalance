@@ -1,4 +1,4 @@
-class ScrnLAWattachment extends LAWAttachment;
+class ScrnLAWAttachment extends LAWAttachment;
 
 var name AttachmentFlashBoneName;
 

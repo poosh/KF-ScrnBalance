@@ -1,4 +1,5 @@
-class ScrnDamTypeScythe extends DamTypeMelee;
+class ScrnDamTypeScythe extends DamTypeMelee
+    abstract;
 
 defaultproperties
 {

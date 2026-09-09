@@ -28,6 +28,14 @@ var int VestCategory;  // the item group that contains most armor items
 
 var array<String> SearchKeywords;
 
+function Free()
+{
+    super.Free();
+
+    // We don't use that. But clear it just to be "110%" sure
+    KFLR = none;
+}
+
 // all update checks now are perfomed in ScrnTab_BuyMenu
 function Timer()
 {

@@ -1,9 +1,9 @@
-class ScrnWaveRule extends object
+class ScrnWaveRule extends Info
     dependson(ScrnTypes)
     dependson(ScrnWaveInfo)
     abstract;
 
-var ScrnGameLength GL;
+var ScrnWaveHandler WH;
 
 function Load();
 function Run();

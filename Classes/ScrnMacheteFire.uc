@@ -33,7 +33,7 @@ simulated event ModeDoFire()
             FireAnim = FireAnims[0];
         }
     }
-	Super(KFMeleeFire).ModeDoFire();
+    Super(KFMeleeFire).ModeDoFire();
 }
 
 defaultproperties

@@ -639,6 +639,88 @@ static final function string ColoredPlayerName(PlayerReplicationInfo PRI)
     return class'ScrnFunctions'.static.ColoredPlayerName(PRI);
 }
 
+function ChangePlayerName(Controller Other, string S, bool bNameChange)
+{
+    local Controller APlayer, C, CI;
+
+    if ( Other == none || Other.PlayerReplicationInfo == none || S == "" )
+        return;
+
+    S = KF.StripColor(S);    // Stip out color codes
+
+    if (Other.PlayerReplicationInfo.playername~=S)
+        return;
+
+    if ( len(class'ScrnFunctions'.static.StripColorTags(S)) > 20 )
+        S = Left(class'ScrnFunctions'.static.StripColorTags(S), 20 );
+    S = Repl(S, " ", "_", true);
+    S = Repl(S, "|", "I", true);
+
+    if ( KF.bEpicNames && (Bot(Other) != None) )
+    {
+        if ( KF.TotalEpic < 21 )
+        {
+            S = KF.EpicNames[KF.EpicOffset % 21];
+            KF.EpicOffset++;
+            KF.TotalEpic++;
+        }
+        else
+        {
+            S = KF.NamePrefixes[KF.NameNumber%10]$"CliffyB"$KF.NameSuffixes[KF.NameNumber%10];
+            KF.NameNumber++;
+        }
+    }
+
+    for( APlayer=Level.ControllerList; APlayer!=None; APlayer=APlayer.nextController )
+        if ( APlayer.bIsPlayer && (APlayer.PlayerReplicationInfo.playername~=S) )
+        {
+            if ( Other.IsA('PlayerController') )
+            {
+                PlayerController(Other).ReceiveLocalizedMessage( KF.GameMessageClass, 8 );
+                return;
+            }
+            else
+            {
+                if ( Other.PlayerReplicationInfo.bIsFemale )
+                {
+                    S = KF.FemaleBackupNames[KF.FemaleBackupNameOffset%32];
+                    KF.FemaleBackupNameOffset++;
+                }
+                else
+                {
+                    S = KF.MaleBackupNames[KF.MaleBackupNameOffset%32];
+                    KF.MaleBackupNameOffset++;
+                }
+                for( CI=Level.ControllerList; CI!=None; CI=CI.nextController )
+                    if ( CI.bIsPlayer && (CI.PlayerReplicationInfo.playername~=S) )
+                    {
+                        S = KF.NamePrefixes[KF.NameNumber%10]$S$KF.NameSuffixes[KF.NameNumber%10];
+                        KF.NameNumber++;
+                        break;
+                    }
+                break;
+            }
+            S = KF.NamePrefixes[KF.NameNumber%10]$S$KF.NameSuffixes[KF.NameNumber%10];
+            KF.NameNumber++;
+            break;
+        }
+
+    if( bNameChange )
+        KF.GameEvent("NameChange",s,Other.PlayerReplicationInfo);
+
+    if ( S ~= "CliffyB" )
+        KF.bEpicNames = true;
+    Other.PlayerReplicationInfo.SetPlayerName(S);
+    // let the clients know that they need to refresh ScrnCustomPRI cached player names
+    if ( SrvInfo != none )
+        SrvInfo.NotifyPlayerNameChange();
+    // notify local players
+    if  ( bNameChange )
+        for ( C=Level.ControllerList; C!=None; C=C.NextController )
+            if ( (PlayerController(C) != None) && (Viewport(PlayerController(C).Player) != None) )
+                PlayerController(C).ReceiveLocalizedMessage( class'GameMessage', 2, Other.PlayerReplicationInfo );
+}
+
 function StolenWeapon(Pawn NewOwner, KFWeaponPickup WP)
 {
     local string str;
@@ -1166,10 +1248,10 @@ function bool SetCustomValue(name Key, int Value, optional ScrnMutator Publisher
             // 2 - mid-game bosses
             // 4 - end-game boss
             bDoom = true;
-            if ( Publisher != none && ScrnGT != none && bScrnWaves ) {
-                // regular monsters and end-game boss are spawned via ScrnGameLength.
+            if (Publisher != none && ScrnGT != none && ScrnGT.WaveHandler != none) {
+                // regular monsters and end-game boss are spawned via WaveHandler.
                 // Keep only mid-game bosses
-                // WARNING! ScrnGT.ScrnGameLength may not yet exist at this moment
+                // WARNING! ScrnGT.WaveHandler may not yet exist at this moment
                 Publisher.SetCustomValue('SpawnDoom3Monsters', Value & 2, self);
                 return true;
             }
@@ -1233,9 +1315,9 @@ auto simulated state WaitingForTick
                     Level.GRI.bNoTeamSkins = bNoTeamSkins && !ScrnGT.IsTourney();
                 }
                 ScrnGT.CheckZedSpawnList();
-                if ( ScrnGT.ScrnGameLength != none ) {
-                    if ( ScrnGT.ScrnGameLength.Doom3DisableSuperMonsters
-                            || ScrnGT.ScrnGameLength.Doom3DisableSuperMonstersFromWave == 1 )
+                if (ScrnGT.WaveHandler != none) {
+                    if (ScrnGT.WaveHandler.GL.Doom3DisableSuperMonsters
+                            || ScrnGT.WaveHandler.GL.Doom3DisableSuperMonstersFromWave == 1)
                     {
                         DisableDoom3Monsters();
                     }
@@ -1555,17 +1637,17 @@ function Mutate(string MutateString, PlayerController Sender)
             MessageVersion(Sender);
             break;
         case MUTATE_ZED:
-            if ( ScrnGT == none || ScrnGT.ScrnGameLength == none )
+            if (ScrnGT == none || ScrnGT.WaveHandler == none)
                 Sender.ClientMessage("Avaliable only in ScrnGameType + bScrnWaves");
             else if ( bTestMap || CheckAdmin(Sender) ) {
-                ScrnGT.ScrnGameLength.ZedCmd(Sender, Value);
+                ScrnGT.WaveHandler.ZedCmd(Sender, Value);
             }
             break;
         case MUTATE_ZEDLIST:
-            if ( ScrnGT == none || ScrnGT.ScrnGameLength == none )
+            if (ScrnGT == none || ScrnGT.WaveHandler == none)
                 SendZedList(Sender);
             else
-                ScrnGT.ScrnGameLength.ZedCmd(Sender, "LIST");
+                ScrnGT.WaveHandler.ZedCmd(Sender, "LIST");
             break;
     }
 
@@ -1901,8 +1983,8 @@ function SetLevels()
     }
 
     if (ScrnGT != none) {
-        if (ScrnGT.ScrnGameLength != none) {
-            ScrnGT.ScrnGameLength.AdjustBonusLevels(MinLevel, MaxLevel);
+        if (ScrnGT.WaveHandler != none) {
+            ScrnGT.WaveHandler.AdjustBonusLevels(MinLevel, MaxLevel);
         }
         if (ScrnGT.IsTourney()) {
             MaxLevel = clamp(MaxLevel, 0, 6);
@@ -2561,8 +2643,8 @@ function ForceEvent()
         }
     }
 
-    if (ScrnGT != none && bScrnWaves) {
-        return;  // all we need for ScrnWaves is to load CurrentEventNum. ScrnGameLength will handle everything else.
+    if (ScrnGT != none && ScrnGT.WaveHandler != none) {
+        return;  // all we need for ScrnWaves is to load CurrentEventNum. WaveHandler will handle everything else.
     }
 
     switch (CurrentEventNum) {
@@ -2896,7 +2978,7 @@ function SetGameDifficulty(byte HardcoreDifficulty)
     }
 
     if ( ScrnGT != none ) {
-        if ( ScrnGT.ScrnGameLength != none && !ScrnGT.ScrnGameLength.ApplyGameDifficulty(HardcoreDifficulty) )
+        if (ScrnGT.WaveHandler != none && !ScrnGT.WaveHandler.ApplyGameDifficulty(HardcoreDifficulty))
             return;
         ScrnGT.BaseDifficulty = Difficulty;
     }
@@ -3350,7 +3432,7 @@ function ServerTraveling(string URL, bool bItems)
     if (NextMutator != None)
         NextMutator.ServerTraveling(URL,bItems);
 
-    if ( ScrnGT == none || ScrnGT.ScrnGameLength == none )
+    if (ScrnGT == none || ScrnGT.WaveHandler == none)
         class'ScrnGameRules'.static.ResetGameSquads(KF, CurrentEventNum);
     class'ScrnAchCtrl'.static.Cleanup();
 
@@ -3560,7 +3642,7 @@ function GameResumed()
 
 defaultproperties
 {
-    VersionNumber=97433
+    VersionNumber=97450
     GroupName="KF-Scrn"
     FriendlyName="ScrN Balance"
     Description="Total rework of KF1 to make it modern and the best tactical coop in the world while sticking to the roots of the original."

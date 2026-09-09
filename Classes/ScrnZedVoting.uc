@@ -1,6 +1,6 @@
 class ScrnZedVoting extends ScrnVotingOptions;
 
-var ScrnGameLength GL;
+var ScrnWaveHandler WH;
 
 
 const VOTE_ZED     = 0;
@@ -17,10 +17,10 @@ function int VoteState(string vote)
     local int i, j, result, value;
 
     result = -1;
-    for ( i = 0; i < GL.ZedInfos.length; ++i ) {
-        for ( j = 0; j < GL.ZedInfos[i].Zeds.length; ++j ) {
-            if ( GL.ZedInfos[i].Zeds[j].Vote ~= vote ) {
-                value = int((!GL.ZedInfos[i].Zeds[j].bDisabled) ^^ GL.ZedInfos[i].Zeds[j].bVoteInvert);
+    for ( i = 0; i < WH.ZedInfos.length; ++i ) {
+        for ( j = 0; j < WH.ZedInfos[i].Zeds.length; ++j ) {
+            if ( WH.ZedInfos[i].Zeds[j].Vote ~= vote ) {
+                value = int((!WH.ZedInfos[i].Zeds[j].bDisabled) ^^ WH.ZedInfos[i].Zeds[j].bVoteInvert);
                 if ( result == -1 )
                     result = value;
                 else if ( result != value )
@@ -56,16 +56,16 @@ function ApplyVoteValue(int VoteIndex, string VoteValue)
     BoolValue = TryStrToBool(VoteValue);
     bDisabled = !bool(BoolValue);
 
-    for ( i = 0; i < GL.ZedInfos.length; ++i ) {
+    for ( i = 0; i < WH.ZedInfos.length; ++i ) {
         bChanged = false;
-        for ( j = 0; j < GL.ZedInfos[i].Zeds.length; ++j ) {
-            if ( GL.ZedInfos[i].Zeds[j].Vote ~= ZedVote ) {
-                GL.ZedInfos[i].Zeds[j].bDisabled = bDisabled ^^ GL.ZedInfos[i].Zeds[j].bVoteInvert;
+        for ( j = 0; j < WH.ZedInfos[i].Zeds.length; ++j ) {
+            if ( WH.ZedInfos[i].Zeds[j].Vote ~= ZedVote ) {
+                WH.ZedInfos[i].Zeds[j].bDisabled = bDisabled ^^ WH.ZedInfos[i].Zeds[j].bVoteInvert;
                 bChanged = true;
             }
         }
         if ( bChanged )
-            GL.ZedInfos[i].SaveConfig();
+            WH.ZedInfos[i].SaveConfig();
     }
 }
 
@@ -76,15 +76,15 @@ function SendGroupHelp(PlayerController Sender, string Group)
     local int ln;
 
     ln = 1;
-    for ( i = 0; i < GL.ZedVotes.length; ++i ) {
+    for ( i = 0; i < WH.ZedVotes.length; ++i ) {
 
-        switch (VoteState(GL.ZedVotes[i])) {
+        switch (VoteState(WH.ZedVotes[i])) {
             case 0:     s @= "%r"; break;
             case 1:     s @= "%g"; break;
             case 2:     s @= "%y"; break;
             default:    s @= "%k"; break; // shouldn't happen
         }
-        s $= GL.ZedVotes[i];
+        s $= WH.ZedVotes[i];
         if ( len(s) > 60 ) {
             // move to new line
             GroupInfo[ln++] = VotingHandler.ParseHelpLine(default.GroupInfo[1] @ s);

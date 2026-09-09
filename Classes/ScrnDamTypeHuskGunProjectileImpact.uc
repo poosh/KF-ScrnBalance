@@ -1,4 +1,5 @@
-class ScrnDamTypeHuskGunProjectileImpact extends DamTypeHuskGunProjectileImpact;
+class ScrnDamTypeHuskGunProjectileImpact extends DamTypeHuskGunProjectileImpact
+    abstract;
 
 defaultproperties
 {

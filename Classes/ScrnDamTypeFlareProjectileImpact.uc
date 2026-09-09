@@ -1,4 +1,5 @@
-class ScrnDamTypeFlareProjectileImpact extends DamTypeFlareProjectileImpact;
+class ScrnDamTypeFlareProjectileImpact extends DamTypeFlareProjectileImpact
+    abstract;
 
 static function AwardKill(KFSteamStatsAndAchievements KFStatsAndAchievements, KFPlayerController Killer,
         KFMonster Killed )

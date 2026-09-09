@@ -28,8 +28,8 @@ function bool FindReachLocation(ShopVolume Shop, byte Team)
 function PlanB()
 {
     log("Reach Trader wave failed. Falling back to Timeout", class.name);
-    GL.Wave.EndRule = RULE_Timeout;
-    GL.Rule = none;
+    WH.Wave.EndRule = RULE_Timeout;
+    WH.Rule = none;
 }
 
 function Run()
@@ -37,23 +37,23 @@ function Run()
     local byte t;
     local Controller C;
 
-    if (GL.TSC != none) {
+    if (WH.TSC != none) {
         for (t = 0; t < 2; ++t) {
-            if (GL.TSC.TeamShops[t] != none && !FindReachLocation(GL.TSC.TeamShops[t], t)) {
+            if (WH.TSC.TeamShops[t] != none && !FindReachLocation(WH.TSC.TeamShops[t], t)) {
                 PlanB();
                 return;
             }
         }
     }
-    else if (!FindReachLocation(GL.Game.ScrnGRI.CurrentShop, t)) {
+    else if (!FindReachLocation(WH.Game.ScrnGRI.CurrentShop, t)) {
         PlanB();
         return;
     }
 
     bRunning = true;
-    GL.Game.ScrnGRI.TimeToNextWave = -1;  // hide countdown until any player reach the trader
+    WH.Game.ScrnGRI.TimeToNextWave = -1;  // hide countdown until any player reach the trader
 
-    for (C = GL.Game.Level.ControllerList; C != none; C = C.NextController) {
+    for (C = WH.Game.Level.ControllerList; C != none; C = C.NextController) {
         if (C.bIsPlayer) {
             MarkTrader(ScrnPlayerController(C));
         }
@@ -85,7 +85,7 @@ function UpdateStats()
     ReachedPlayers[0] = 0;
     ReachedPlayers[1] = 0;
 
-    for (C = GL.Game.Level.ControllerList; C != none; C = C.NextController) {
+    for (C = WH.Game.Level.ControllerList; C != none; C = C.NextController) {
         if (!C.bIsPlayer || C.Pawn == none || C.Pawn.Health <= 0)
             continue;
 
@@ -125,12 +125,12 @@ function WaveTimer()
         return;
 
     UpdateStats();
-    GL.Game.ScrnGRI.ScoredPlayers[0] = ReachedPlayers[0];
-    GL.Game.ScrnGRI.ScoredPlayers[1] = ReachedPlayers[1];
+    WH.Game.ScrnGRI.ScoredPlayers[0] = ReachedPlayers[0];
+    WH.Game.ScrnGRI.ScoredPlayers[1] = ReachedPlayers[1];
 
     if (bFinalCountdown) {
-        if (GL.Game.ScrnGRI.TimeToNextWave > 0) {
-            GL.Game.ScrnGRI.TimeToNextWave--;
+        if (WH.Game.ScrnGRI.TimeToNextWave > 0) {
+            WH.Game.ScrnGRI.TimeToNextWave--;
         }
         return;
     }
@@ -144,31 +144,31 @@ function WaveTimer()
 
         if (ReachedPlayers[t] >= AlivePlayers[t]) {
             bFinalCountdown = true;
-            GL.Game.ScrnGRI.TimeToNextWave = FinalCountdown;
+            WH.Game.ScrnGRI.TimeToNextWave = FinalCountdown;
             return;
         }
 
-        Counter = GL.Wave.Counter;
-        MissingPlayers = AlivePlayers[t] - ReachedPlayers[t] - GL.Wave.PerPlayerExclude;
+        Counter = WH.Wave.Counter;
+        MissingPlayers = AlivePlayers[t] - ReachedPlayers[t] - WH.Wave.PerPlayerExclude;
         if (MissingPlayers > 0) {
-            Counter *= 1.0 + GL.Wave.PerPlayerMult * MissingPlayers;
+            Counter *= 1.0 + WH.Wave.PerPlayerMult * MissingPlayers;
         }
-        if (GL.Wave.MaxCounter > 0) {
-            Counter = min(Counter, GL.Wave.MaxCounter);
+        if (WH.Wave.MaxCounter > 0) {
+            Counter = min(Counter, WH.Wave.MaxCounter);
         }
 
-        if (GL.Game.ScrnGRI.TimeToNextWave < 0 || GL.Game.ScrnGRI.TimeToNextWave > Counter) {
-            GL.Game.ScrnGRI.TimeToNextWave = Counter + 1;
+        if (WH.Game.ScrnGRI.TimeToNextWave < 0 || WH.Game.ScrnGRI.TimeToNextWave > Counter) {
+            WH.Game.ScrnGRI.TimeToNextWave = Counter + 1;
         }
     }
 
-    if (--GL.Game.ScrnGRI.TimeToNextWave <= FinalCountdown) {
+    if (--WH.Game.ScrnGRI.TimeToNextWave <= FinalCountdown) {
         bFinalCountdown = true;
     }
 }
 
 function bool CheckWaveEnd() {
-    return GL.Game.ScrnGRI.TimeToNextWave == 0;
+    return WH.Game.ScrnGRI.TimeToNextWave == 0;
 }
 
 defaultproperties

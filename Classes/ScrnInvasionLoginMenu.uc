@@ -2,29 +2,12 @@ class ScrnInvasionLoginMenu extends SRInvasionLoginMenu;
 
 var automated   GUIButton               b_TeamSwitch;
 
-/*
-function ActivatePerkTab()
+function Free()
 {
-    local int index;
+    super.Free();
 
-    index = c_Main.TabIndex(Class'KFInvasionLoginMenu'.Default.Panels[1].Caption);
-    if ( index != -1 )
-        c_Main.ActivateTab(c_Main.TabStack[index], false);
-    else
-        log("ScrnInvasionLoginMenu: Unable to find Perk Tab!", 'ScrnBalance');
-
+    AddOnList.length = 0;
 }
-
-function InternalOnClose(optional Bool bCanceled)
-{
-    // Game sometimes crashes when showing mid game menu with "ScrN Features" tab active.
-    // Temporary workaround: change to other tab on close
-    if ( c_Main.ActiveTab.Caption == "ScrN Features" )
-        ActivatePerkTab();
-
-    Super.InternalOnClose(bCanceled);
-}
-*/
 
 function ActivateScrnSettingsTab()
 {

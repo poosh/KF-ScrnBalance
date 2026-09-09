@@ -8,20 +8,42 @@ var localized string strSellOffperkWeapons, strSellAllWeapons;
 var localized string strSellOffperkWeaponsHint, strSellAllWeaponsHint;
 var localized string strChangePerk, strCancel;
 
-var ScrnPlayerController ScrnPC;
 var ScrnTab_BuyMenu BuyMenuTab;
 var ScrnKFTab_Perks PerkTab;
 var bool bPlayerHasOffperkWeapons;
 var int SearchTicks;
 
+var ScrnPlayerController ScrnPC;
+
+
+function bool NotifyLevelChange()
+{
+    // Free() me and all my children on level change
+    bPersistent = false;
+
+    // Bypass bugged SRGUIBuyMenu that doesn't call the super method.
+    return super(GUIPage).NotifyLevelChange();
+}
+
+// WARNING! Read info in ScrnTab_BuyMenu.uc about linked actors.
+function LinkActors()
+{
+    ScrnPC = ScrnPlayerController(PlayerOwner());
+}
+
+// All linked actors must be nulled here
+function UnlinkActors()
+{
+    ScrnPC = none;
+}
+
+// triggers only on map change. bPersistent=True until NotifyLevelChange() above.
 function Free()
 {
     super.Free();
 
-    // reset all actor references
-    ScrnPC = none;
+    UnlinkActors();
 }
-
 
 function InitTabs()
 {
@@ -36,7 +58,7 @@ function InitTabs()
 
 event Opened(GUIComponent Sender)
 {
-    ScrnPC = ScrnPlayerController(PlayerOwner());
+    LinkActors();
 
     super(UT2k4MainPage).Opened(Sender);
 
