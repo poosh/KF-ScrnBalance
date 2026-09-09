@@ -54,6 +54,7 @@ function StopClanGame()
         TSC.TSCTeams[1].ClanRep = none;
     }
     TSC.bClanGame = false;
+    TSC.MaxTeamSize = 0;
 }
 
 function GameEnded()
@@ -157,6 +158,25 @@ function ClanParseTeamCaptain(byte t, out array<ScrnPlayerController> Captains)
     }
 }
 
+function ClanParseReservePlayers(out array<ScrnPlayerController> ReservePlayers)
+{
+    local int i;
+    local ScrnPlayerController PC;
+    local PlayerReplicationInfo PRI;
+
+    for (i = 0; i < ReservePlayers.Length; ++i) {
+        PC = ReservePlayers[i];
+        PRI = PC.PlayerReplicationInfo;
+
+        if (!PRI.bOnlySpectator) {
+            PC.BecomeSpectator();
+        }
+        if (PRI.bOnlySpectator) {
+            ForceGuestPlayer(PC);
+        }
+    }
+}
+
 function ForceClanTeams()
 {
     local int i;
@@ -196,7 +216,7 @@ function ForceClanTeams()
 
         if (Clans[0].IsPlayer(id)) {
             if (Clans[1].IsPlayer(id)) {
-                // The player is a member of both clans - mote to reserve.
+                // The player is a member of both clans - move to reserve.
                 ClanParseMember(PC, ReservePlayers);
             }
             else {
@@ -241,6 +261,10 @@ function ForceClanTeams()
     ClanParseEnsureTeamIndex(0, RedPlayers);
     ClanParseEnsureTeamIndex(1, BluePlayers);
 
+    // Reserve players belong to both clans, so they play for neither. Demote them before
+    // trimming team sizes, otherwise they inflate TSCTeams[t].Size.
+    ClanParseReservePlayers(ReservePlayers);
+
     // if there are too many players, move the bottom of the list to spectators.
     ClanParseLimitTeamSize(0, RedPlayers);
     ClanParseLimitTeamSize(1, BluePlayers);
@@ -276,42 +300,50 @@ function CheckSpectators()
     bSpectatorCheckInProgress = false;
 }
 
-function CheckSpectator(ScrnPlayerController PC)
+function CheckSpectator(ScrnPlayerController PC, optional bool bIgnoreCurrentTeam)
 {
     local PlayerReplicationInfo PRI;
     local string id;
 
-    if (PC == none || PC.GetSpecTeam() < 100)
+    if (PC == none)
         return;
 
     PRI = PC.PlayerReplicationInfo;
     id = PC.GetPlayerIDHash();
 
+    if (PC.GetSpecTeam() < 2 && !bIgnoreCurrentTeam) {
+        // must spectate their own team
+        if (ScrnHumanPawn(PC.ViewTarget) == none || ScrnHumanPawn(PC.ViewTarget).GetTeamNum() != PC.GetSpecTeam()) {
+            PC.ServerViewNextPlayer();
+        }
+        return;
+    }
+
     if (PRI.bAdmin) {
         // Ensure admins are referees, so they can safely reconnect without getting banned befor adminlogin.
         AddReferee(id);
-        PC.SetSpecTeam(255);
+        PC.SetSpecTeam(PC.SPEC_ADMIN);
     }
     else if (IsReferee(id)) {
-        if (PC.SetSpecTeam(250)) {
+        if (PC.SetSpecTeam(PC.SPEC_REFEREE)) {
             TSC.ScrnBalanceMut.BroadcastMessage(Repl(strBecameReferee, "%p", class'ScrnF'.static.PlainPlayerName(PRI),
                     true));
         }
     }
     else if (IsStreamer(id)) {
-        if (PC.SetSpecTeam(220)) {
+        if (PC.SetSpecTeam(PC.SPEC_STREAMER)) {
             TSC.ScrnBalanceMut.BroadcastMessage(Repl(strBecameStreamer, "%p", class'ScrnF'.static.PlainPlayerName(PRI),
                     true));
         }
     }
     else if (IsGuest(id)) {
-        if (PC.SetSpecTeam(210)) {
+        if (PC.SetSpecTeam(PC.SPEC_GUEST)) {
             TSC.ScrnBalanceMut.BroadcastMessage(Repl(strBecameGuest, "%p", class'ScrnF'.static.PlainPlayerName(PRI),
                     true));
         }
     }
-    else if (PC.GetSpecTeam() >= 200) {
-        if (PC.SetSpecTeam(200)) {
+    else {
+        if (PC.SetSpecTeam(PC.SPEC_DEFAULT)) {
             TSC.ScrnBalanceMut.BroadcastMessage(Repl(strBecameNobody, "%p", class'ScrnF'.static.PlainPlayerName(PRI),
                     true));
         }
@@ -370,6 +402,20 @@ function bool AddStreamer(string PlayerID)
     SaveConfig();
     CheckSpectators();
     return true;
+}
+
+function ForceGuestPlayer(ScrnPlayerController PC)
+{
+    local string PlayerID;
+
+    if (PC == none)
+        return;
+
+    PlayerID = PC.GetPlayerIDHash();
+    if (!IsGuest(PlayerID)) {
+        Guests[Guests.length] = PlayerID;
+    }
+    CheckSpectator(PC, true);
 }
 
 function bool AddGuest(string PlayerID)

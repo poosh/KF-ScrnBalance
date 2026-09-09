@@ -87,6 +87,14 @@ var globalconfig Color GlowColorSingleTeam;
 var Color GlowColorRed, GlowColorBlue, GlowColorFriendly, GlowColorEnemy;
 var transient float LastBaseMarkTime;
 var array<string> RedCharacters, BlueCharacters;  // MUST BE SORTED!
+
+const SPEC_FORCE_RED = 0;
+const SPEC_FORCE_BLUE = 1;
+const SPEC_DEFAULT = 200;
+const SPEC_GUEST = 210;
+const SPEC_STREAMER = 220;
+const SPEC_REFEREE = 250;
+const SPEC_ADMIN = 255;
 var private byte SpecTeam;
 
 var class<ScrnCustomPRI> CustomPlayerReplicationInfoClass;
@@ -1783,6 +1791,15 @@ function BecomeActivePlayer()
     if (PlayerReplicationInfo.bOnlySpectator)
         return;  // failed to become an active player
 
+    if (Level.Game.bTeamGame && PlayerReplicationInfo.Team == none
+            && !IsInState('GameEnded') && !IsInState('RoundEnded')) {
+        // ChangeTeam() refused us - the team is full
+        // Prevent Team-less state of active players and throw the player back to spectators.
+        // Unless the game is ended - leave the player active, so they can vote.
+        BecomeSpectator();
+        return;
+    }
+
     bForcedSpectator = false;
     if ( Mut.KF.bTradingDoorsOpen ) {
         if ( Mut.bDynamicLevelCap )
@@ -2146,14 +2163,19 @@ exec function Ready()
     }
 }
 
+final function bool IsFreeSpec()
+{
+    return PlayerReplicationInfo != none && PlayerReplicationInfo.bOnlySpectator && SpecTeam >= SPEC_DEFAULT;
+}
+
 final function bool IsSpecGuest()
 {
-    return PlayerReplicationInfo.bOnlySpectator && SpecTeam >= 210;
+    return PlayerReplicationInfo != none && PlayerReplicationInfo.bOnlySpectator && SpecTeam >= SPEC_GUEST;
 }
 
 final function bool IsSpecReferee()
 {
-    return PlayerReplicationInfo.bOnlySpectator && SpecTeam >= 250;
+    return PlayerReplicationInfo != none && PlayerReplicationInfo.bOnlySpectator && SpecTeam >= SPEC_REFEREE;
 }
 
 final function byte GetSpecTeam()
@@ -2174,7 +2196,7 @@ final function bool SetSpecTeam(byte value)
 
     VH = class'ScrnVotingHandlerMut'.static.GetVotingHandler(Level.Game);
     if (VH != none) {
-        VH.SetVotingAdmin(self, SpecTeam >= 250);
+        VH.SetVotingAdmin(self, SpecTeam >= SPEC_REFEREE);
     }
 
     if (SpecTeam < 2 && IsSpectating()) {
@@ -3231,6 +3253,9 @@ function ServerSetViewTarget(Actor NewViewTarget)
     if ( !AllowFreeCamera() )
         return;
 
+    if (!Level.Game.CanSpectate(self, PlayerReplicationInfo.bOnlySpectator, NewViewTarget))
+        return;
+
     bWasSpec = !bBehindView && ViewTarget != Pawn && ViewTarget != self;
     SetViewTarget(NewViewTarget);
     ViewTargetChanged();
@@ -3295,7 +3320,7 @@ exec function FreeCamera( bool B )
 
 function bool AllowBehindView()
 {
-    if (GetSpecTeam() < 200)
+    if (GetSpecTeam() < SPEC_DEFAULT)
         return false;
 
     if (Pawn == none || IsSpectating())
@@ -3320,7 +3345,7 @@ function ServerToggleBehindView()
 
 function bool AllowFreeCamera()
 {
-    return (PlayerReplicationInfo.bOnlySpectator && GetSpecTeam() >= 200)
+    return IsFreeSpec()
             || !Level.GRI.bMatchHasBegun
             || (!Mut.bTSCGame && Mut.SrvTourneyMode == 0);
 }
@@ -4369,7 +4394,7 @@ defaultproperties
     GlowColorBlue=(R=0,G=64,B=128)
     GlowColorFriendly=(R=0,G=128,B=0)
     GlowColorEnemy=(R=128,G=0,B=0)
-    SpecTeam=200
+    SpecTeam=200  // SPEC_DEFAULT. Cannot use constants in defaultproperties!
 
     // MUST BE SORTED!
     RedCharacters( 0)="AGENT_WILKES"

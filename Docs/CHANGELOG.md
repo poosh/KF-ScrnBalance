@@ -31,6 +31,20 @@
 # VERSION 9
 
 -------------------------------------------------------------------------------
+## v9.74.33
+- `SPECTATE` now works after the game has ended.
+- The spectator HUD is displayed only to free-roaming spectators. Team-locked spectators get the regular player HUD.
+- Fixed an `Accessed None` error that could occur when a player reconnects without a stored team.
+### TSC
+- `MaxTeamSize` is now respected when a player joins or rejoins a team. Previously, a reconnecting player could exceed the team limit, e.g. making it 5v3 in a 4v4 game.
+- Fixed a bug where a player could become an active player without a team when the team was full. The bug applied to **FTG**, too.
+### TSC CLAN GAME
+- Fixed multiple loopholes that let a team-locked spectator watch the enemy team or roam the map freely.
+- Players registered in both clans are moved to spectators and promoted to **Guests**, as they can spectate both teams anyway.
+- Spectators are rechecked when the match starts to turn off free roaming for team-locked spectators.
+### Code Changes
+- `ScrnGameType`: `MaxTeamSize` defaults to 0 (uncapped - the player count is limited by `MaxPlayers` only). `TSCClanAdmin` controls it during Clan Games.
+
 ## v9.74.32
 - (Experimental) **TSC** and **FTG** base radius narrowed down to **20 meters**.
 - **FTG**: Fixed an issue where the trader arrow was not displayed when `FtgRule=FTG_TSCBase`

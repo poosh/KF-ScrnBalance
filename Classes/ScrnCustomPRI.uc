@@ -208,12 +208,12 @@ final simulated function byte GetSpecTeam()
 
 final simulated function bool IsReferee()
 {
-    return SpecTeam >= 250;
+    return SpecTeam >= 250;  // ScrnPlayerController.SPEC_REFEREE
 }
 
 final simulated function bool IsGuest()
 {
-    return SpecTeam >= 210;
+    return SpecTeam >= 210;  // ScrnPlayerController.SPEC_GUEST
 }
 
 final function SetSpecTeam()
@@ -244,5 +244,5 @@ defaultproperties
 {
     bNetNotify=True
     NetUpdateFrequency=1.0
-    SpecTeam=200
+    SpecTeam=200 // ScrnPlayerController.default.SpecTeam
 }

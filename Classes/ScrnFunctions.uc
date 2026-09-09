@@ -3,14 +3,31 @@ class ScrnFunctions extends ScrnF
 
 
 // TODO: Move to ScrnF on the next ScrnShared update
-static function int ObjArrayInsert(out array<Object> dst, out array<Object> src, optional int pos, optional int count,
+
+/**
+ * @brief Inserts one array into another.
+ * @param dst [out] the array to insert into
+ * @param src [in] the array to copy objects from. Must not be the same array as dst.
+ *        The src is unchanged; it is marked "out" only to pass by reference.
+ * @param pos the position in dst for object insertion. Default 0 - insert objects at the beginning of dst.
+ *        Allowed range: [0, dst.Length]
+ * @param count the number of objects to insert. Default 0 - insert all src objects.
+ *        Clamped to the available number of objects.
+ * @param skip the number of objects to skip from the beginning of src. Default 0 - no skip.
+ * @return the position in dst right after the last inserted object, so that consecutive
+ *         calls can chain insertions. Returns pos unchanged if nothing was inserted.
+ */
+static final function int ObjArrayInsert(out array<Object> dst, out array<Object> src, optional int pos, optional int count,
         optional int skip)
 {
     local int i;
 
+    pos = Clamp(pos, 0, dst.Length);
     if (src.Length == 0)
         return pos;
 
+    if (skip < 0)
+        skip = 0;
     if (count == 0 || count + skip > src.Length) {
         count = src.Length - skip;
     }
@@ -24,6 +41,7 @@ static function int ObjArrayInsert(out array<Object> dst, out array<Object> src,
     }
     return pos;
 }
+
 // MOVE SECTION END
 
 static function class<ScrnVeterancyTypes> FindPerkByName(ClientPerkRepLink L, string VeterancyNameOrIndex)

@@ -267,6 +267,13 @@ event PreLogin( string Options, string Address, string PlayerID, out string Erro
     }
 }
 
+event PostLogin(PlayerController NewPlayer)
+{
+    super.PostLogin(NewPlayer);
+
+    ClanApplySpecTeam(ScrnPlayerController(NewPlayer));
+}
+
 function Logout(Controller Exiting)
 {
     super.Logout(Exiting);
@@ -344,10 +351,18 @@ function UnrealTeamInfo MyClanTeam(PlayerReplicationInfo myPRI)
     return none;
 }
 
-function bool ForceTeam(PlayerController PC, int num)
+function bool ForceTeam(PlayerController PC, byte num)
 {
     local bool result;
     local bool oldTeamChanging;
+
+    if (num >= 2 || PC == none || PC.PlayerReplicationInfo == none)
+        return false;
+
+    if (MaxTeamSize > 0 && Teams[num].Size >= MaxTeamSize
+            && PC.PlayerReplicationInfo.Team != Teams[num]) {
+        return false;  // team is full
+    }
 
     oldTeamChanging = bTeamChanging;
     bTeamChanging = true;
@@ -359,16 +374,17 @@ function bool ForceTeam(PlayerController PC, int num)
 function byte GetForcedTeamNum(ScrnPlayerController ScrnPC)
 {
     if (bTeamChanging || !bClanGame || ScrnPC == none)
-        return 255;
+        return ScrnPC.SPEC_DEFAULT;
 
     if (TSCTeams[0].ClanRep.Clan.IsMember(ScrnPC.GetPlayerIDHash())) {
         if (TSCTeams[1].ClanRep.Clan.IsMember(ScrnPC.GetPlayerIDHash()))
-            return 255;
+            return ScrnPC.SPEC_GUEST;
         return 0;
     }
     if (TSCTeams[1].ClanRep.Clan.IsMember(ScrnPC.GetPlayerIDHash()))
         return 1;
-    return 255;
+
+    return ScrnPC.SPEC_DEFAULT;
 }
 
 function bool ChangeTeam(Controller Other, int num, bool bNewTeam)
@@ -399,7 +415,7 @@ function bool ChangeTeam(Controller Other, int num, bool bNewTeam)
         else {
             ForcedTeamNum = GetForcedTeamNum(ScrnPlayerController(PC));
             if (ForcedTeamNum < 2) {
-                NewTeam = Teams[num];
+                NewTeam = Teams[ForcedTeamNum];
             }
         }
 
@@ -416,6 +432,10 @@ function bool ChangeTeam(Controller Other, int num, bool bNewTeam)
     // check if already on this team
     if ( Other.PlayerReplicationInfo.Team == NewTeam )
         return false;
+
+    if ( !bTeamChanging && MaxTeamSize > 0 && NewTeam.Size >= MaxTeamSize ) {
+        return false;  // team is full
+    }
 
     // if player is carrying a Gnome - drop it
     gnome = TSCBaseGuardian(Other.PlayerReplicationInfo.HasFlag);
@@ -623,13 +643,28 @@ function bool AllowMidWaveRespawn(ScrnPlayerController ScrnPC)
     return super.AllowMidWaveRespawn(ScrnPC);
 }
 
+function ClanApplySpecTeam(ScrnPlayerController ScrnPC)
+{
+    local byte ForcedTeamNum;
+
+    if (bTeamChanging || !bClanGame || ClanAdmin == none || ScrnPC == none
+            || ScrnPC.PlayerReplicationInfo == none || !ScrnPC.PlayerReplicationInfo.bOnlySpectator)
+        return;
+
+    ForcedTeamNum = GetForcedTeamNum(ScrnPC);
+    if (ForcedTeamNum == ScrnPC.SPEC_GUEST) {
+        // Dual-clan member: register as a guest.
+        ClanAdmin.ForceGuestPlayer(ScrnPC);
+    }
+    else {
+        ScrnPC.SetSpecTeam(ForcedTeamNum);
+        ClanAdmin.CheckSpectator(ScrnPC);
+    }
+}
+
 function bool BecomeSpectator(PlayerController P)
 {
     local bool result;
-    local ScrnPlayerController ScrnPC;
-    local byte ForcedTeamNum;
-
-    ScrnPC = ScrnPlayerController(P);
 
     result = super.BecomeSpectator(P);
 
@@ -642,15 +677,7 @@ function bool BecomeSpectator(PlayerController P)
         }
     }
 
-    ForcedTeamNum = GetForcedTeamNum(ScrnPC);
-    if (ForcedTeamNum < 2) {
-        ScrnPC.SetSpecTeam(ForcedTeamNum);
-    }
-
-    if (ClanAdmin != none) {
-        ClanAdmin.CheckSpectator(ScrnPC);
-    }
-
+    ClanApplySpecTeam(ScrnPlayerController(P));
     return result;
 }
 
@@ -1344,6 +1371,15 @@ auto State PendingMatch
 
 State MatchInProgress
 {
+    function BeginState()
+    {
+        super.BeginState();
+
+        if (bClanGame && ClanAdmin != none) {
+            ClanAdmin.CheckSpectators();
+        }
+    }
+
     function Timer()
     {
         super.Timer();

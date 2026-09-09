@@ -2691,7 +2691,7 @@ function bool CanSpectate( PlayerController Viewer, bool bOnlySpectator, actor V
 {
     local TeamInfo AllowedTeam;
     local ScrnPlayerController ScrnPC;
-
+    local Pawn P;
 
     if ( (ViewTarget == None) )
         return false;
@@ -2702,11 +2702,12 @@ function bool CanSpectate( PlayerController Viewer, bool bOnlySpectator, actor V
 
     ScrnPC = ScrnPlayerController(Viewer);
     if (ScrnPC != none) {
-        if (ScrnPC.GetSpecTeam() < 2) {
+        if (ScrnPC.GetSpecTeam() < 2)
             AllowedTeam = Teams[ScrnPC.GetSpecTeam()];
-        }
-        else if (ScrnPC.GetSpecTeam() < 200)
-            return false;
+        else if (ScrnPC.GetSpecTeam() >= ScrnPC.SPEC_DEFAULT)
+            AllowedTeam = none;  // allow to spectate any player/zed
+        else
+            return false;  // shouldn't happen - reserved for future use.
     }
 
     if ( Controller(ViewTarget) != None ) {
@@ -2716,8 +2717,14 @@ function bool CanSpectate( PlayerController Viewer, bool bOnlySpectator, actor V
                 && (Controller(ViewTarget).PlayerReplicationInfo.Team == AllowedTeam || AllowedTeam == none);
     }
 
-    return Pawn(ViewTarget) != None && Pawn(ViewTarget).IsPlayerPawn()
-            && (Pawn(ViewTarget).PlayerReplicationInfo.Team == AllowedTeam || AllowedTeam == none);
+    P = Pawn(ViewTarget);
+    if (P == none)
+        return false;
+
+    if (AllowedTeam == none)
+        return true;  // can spectate any pawn, including zeds
+
+    return P.PlayerReplicationInfo != none && P.PlayerReplicationInfo.Team == AllowedTeam;
 }
 
 event PlayerController Login(string Portal, string Options, out string Error)
@@ -3059,7 +3066,31 @@ function RestartPlayer( Controller aPlayer )
 
 function byte GetForcedTeamNum(ScrnPlayerController ScrnPC)
 {
-    return 255;
+    return ScrnPC.SPEC_DEFAULT;
+}
+
+// allow becoming a spectator after the game has ended
+function bool BecomeSpectator(PlayerController P)
+{
+    if (P == none || P.PlayerReplicationInfo == none || P.PlayerReplicationInfo.bOnlySpectator)
+        return false;
+
+    if (NumSpectators >= MaxSpectators) {
+        P.ReceiveLocalizedMessage(GameMessageClass, 12);
+        return false;
+    }
+
+    P.PlayerReplicationInfo.bOnlySpectator = true;
+    NumSpectators++;
+    NumPlayers--;
+
+    // DeathMatch
+    if (!bKillBots)
+        RemainingBots++;
+    if (!NeedPlayers() || AddBot())
+        RemainingBots--;
+
+    return true;
 }
 
 function bool AllowBecomeTeamMember(ScrnPlayerController ScrnPC)
@@ -3070,6 +3101,8 @@ function bool AllowBecomeTeamMember(ScrnPlayerController ScrnPC)
         return true;
 
     t = GetForcedTeamNum(ScrnPC);
+    if (t >= 2)
+        t = PickTeam(255, ScrnPC);
     if (t < 2 && Teams[t].Size >= MaxTeamSize) {
         ScrnPC.ReceiveLocalizedMessage(GameMessageClass, 13);
         ScrnPC.ClientMessage("Reason: MaxTeamSize reached ("$MaxTeamSize$") for team " $ t);
@@ -4875,6 +4908,7 @@ defaultproperties
     PlayerControllerClassName="ScrnBalanceSrv.ScrnPlayerController"
     WQClass=class'ScrnGameWorkqueue'
 
+    MaxTeamSize=0  // uncapped. Player count is limited by MaxPlayers only.
     DefaultGameLength=-1
     MinRespawnCash=0
     bSingleTeamGame=true

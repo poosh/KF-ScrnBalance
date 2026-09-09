@@ -3217,8 +3217,10 @@ simulated function DrawSpectatingHud(Canvas C)
     if( bHideHud )
         return;
 
-    bSpecHUD = bDebugSpectatingHUD || PlayerOwner.PlayerReplicationInfo == none
-            || PlayerOwner.PlayerReplicationInfo.bOnlySpectator;
+    if (bDebugSpectatingHUD)
+        bSpecHUD = true; // a hack for debugging. bDebugSpectatingHUD MUST be false one release!
+    else
+        bSpecHUD = ScrnPC != none && ScrnPC.IsFreeSpec();
 
     PlayerOwner.PostFX_SetActive(0, false);
 

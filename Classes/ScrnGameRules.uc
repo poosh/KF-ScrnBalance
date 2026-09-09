@@ -388,7 +388,7 @@ function PlayerEntering(ScrnPlayerController PC)
             Mut.ResumeGame(Mut.ResumeDelayOnReconnect);
         }
 
-        if (SPI.PRI_TeamIndex < 2 && PRI.Team == none || PRI.Team.TeamIndex != SPI.PRI_TeamIndex) {
+        if (SPI.PRI_TeamIndex < 2 && (PRI.Team == none || PRI.Team.TeamIndex != SPI.PRI_TeamIndex)) {
             log("Moving " $ SPI.PlayerName $ " to team " $ SPI.PRI_TeamIndex, 'ScrnBalance');
             if (TSCGame(Level.Game) != none) {
                 TSCGame(Level.Game).ForceTeam(PC, SPI.PRI_TeamIndex);
@@ -741,11 +741,10 @@ function bool CheckEndGame(PlayerReplicationInfo Winner, string Reason)
             $", HL="$HardcoreLevel, true);
     }
 
-    if (Mut.bTSCGame) {
-        for (SPI = PlayerInfo; SPI != none; SPI = SPI.NextPlayerInfo) {
-            if (SPI.PvP_Kills > 0) {
-                mut.BroadcastMessage(SPI.PlayerName $ " killed " $ SPI.PvP_Kills $ " enemy player(-s)", true);
-            }
+    for (SPI = PlayerInfo; SPI != none; SPI = SPI.NextPlayerInfo) {
+        SPI.BackupPRI();  // in case players disconnects or switches to spectator
+        if (SPI.PvP_Kills > 0) {
+            mut.BroadcastMessage(SPI.PlayerName $ " killed " $ SPI.PvP_Kills $ " enemy player(-s)", true);
         }
     }
 

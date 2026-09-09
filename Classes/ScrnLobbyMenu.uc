@@ -297,7 +297,7 @@ DoneIt:
                 }
 
                 if ( ScrnGRI.GameAuthor != "" && ScrnGRI.GameAuthor != "ScrN" ) {
-                    s $= " (c) " $ ScrnGRI.GameAuthor;
+                    s $= " by " $ ScrnGRI.GameAuthor;
                 }
             }
         }

@@ -1369,7 +1369,7 @@ simulated function bool IsAdmin(PlayerController Sender)
 simulated function bool IsReferee(PlayerController Sender)
 {
     return IsAdmin(Sender)
-            || (ScrnPlayerController(Sender) != none && ScrnPlayerController(Sender).GetSpecTeam() >= 250);
+            || (ScrnPlayerController(Sender) != none && ScrnPlayerController(Sender).IsSpecReferee());
 }
 
 simulated function bool CheckAdmin(PlayerController Sender)
@@ -3560,7 +3560,7 @@ function GameResumed()
 
 defaultproperties
 {
-    VersionNumber=97432
+    VersionNumber=97433
     GroupName="KF-Scrn"
     FriendlyName="ScrN Balance"
     Description="Total rework of KF1 to make it modern and the best tactical coop in the world while sticking to the roots of the original."
