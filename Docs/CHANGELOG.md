@@ -1,4 +1,8 @@
+<div align="center">
+
 ![ScrN Balance](img/ScrNBalanceLogo256.jpg "ScrN Balance")
+
+</div>
 
 > [go back to README](../README.md 'go back to Table of Content')
 
@@ -31,29 +35,20 @@
 # VERSION 9
 
 -------------------------------------------------------------------------------
-## v9.74.35
-### Crash Prevention
-- Continued the dangling-pointer cleanup.
-- Wave processing moved out of `ScrnGameLength`, as the latter is an `Object`. Although `ScrnGameLength` was safe before the refactoring, it caused many crashes in the past and could trigger more in the future. The most recent one was a crash when killing a Doom boss in New Doom.
-- Custom games are unaffected: every config option in *ScrnGames.ini* and *ScrnUserGames.ini* is the same.
-### Code Changes
-- Added `ScrnWaveHandler extends Info`, which now does all wave and zed processing. Being an Actor, the Engine clears its references for it.
-- `ScrnGameLength` keeps the config options only. No functions, no actor references.
-- `ScrnGameType.ScrnGameLength` is replaced by `ScrnGameType.WaveHandler`. Config options are read through `WaveHandler.GL`.
-- **Third-party mutators referencing `ScrnGameType.ScrnGameLength` must be updated and rebuilt!**
 
--------------------------------------------------------------------------------
-## v9.74.34
+## v9.74.50
 ### Reduced Game Crash Probability By a Margin
 - Random client crashes during garbage collection are almost gone.
 - Fixed all dangling pointers in all ScrN Objects. GUI was the biggest problem, ScrN Trader Menu was the root cause of most crashes.
 - Fixed dangling pointers in KF and ServerPerks GUI objects that ScrN still uses.
 - Fixed a severe bug in ServerPerks that prevented GUI objects from calling Free() => actor references were not cleared => crash on garbage collection.
+- Wave processing moved out of `ScrnGameLength`, as the latter is an `Object`. Although `ScrnGameLength` was safe before the refactoring, it caused many crashes in the past and could trigger more in the future. The most recent one was a crash when killing a Doom boss in New Doom.
+- Custom games are unaffected: every config option in *ScrnGames.ini* and *ScrnUserGames.ini* is the same.
 ### Idiot Proofing
 - The server now shuts down with a critical error instead of running in a broken state when `ScrnBalance` fails to load under `ScrnStoryGameInfo`, `ScrnGameType` or descendents (TSC, FTG, etc.) - most likely, due to server misconfiguration.
 - Previously, it logged a warning, continued loading the map, and accepted players, but nothing worked as expected.
 - A server crash is more notable for the admin than a warning in the log.
-## Scoreboard
+### Scoreboard
 - Game/Player data is pre-cached.
 - The cache updates at 5 HZ.
 - The rest frames draw from the cache. At 120 FPS, 115 of those frames no longer execute thousands of CPU instructions per frame to repeatedly rewrite the same data. I guess that makes ScrN environmentally friendlier, so I can keep driving my 333 HP petrol car without making a polar bear sad :)
@@ -66,6 +61,11 @@
 - The TSC scoreboard got the same caching as the ScrN one.
 - Fixed an `Accessed None` warning in `Killed()`.
 ### Code Changes
+- Fixed an issue where some damage types were not `abstract`.
+- Added `ScrnWaveHandler extends Info`, which now does all wave and zed processing. Being an Actor, the Engine clears its references for it.
+- `ScrnGameLength` keeps the config options only. No functions, no actor references.
+- `ScrnGameType.ScrnGameLength` is replaced by `ScrnGameType.WaveHandler`. Config options are read through `WaveHandler.GL`.
+- **Third-party mutators referencing `ScrnGameType.ScrnGameLength` must be updated and rebuilt!**
 - `ScrnCustomPRI`: added `PlainPlayerName` and `ColoredPlayerName`. Player names are color-tag parsed once, when they change, instead of on every use. Read them via `ScrnCustomPRI.GetPlainName()` / `GetColoredName()`.
 - `ScrnScoreBoard`: added `UpdateFrequency` (0.2s). Note that it gets delayed by the Zed Time (`0.2 * 5 = 1s` => still good). Reduce the delay if your mods modify ZT.
 - `ScrnTab_BuyMenu`: actor references are now gathered in `LinkActors()` and released in `UnlinkActors()`, called from `Free()`. Every reference taken in `LinkActors()` must be nulled in `UnlinkActors()`. The pawn field is no longer linked, as its descruction was the main crash source.
@@ -73,9 +73,7 @@
 - Added `Docs\Info\ScrnClasses.md`: every `ScrnBalanceSrv` class resolved down to `Actor` or `Object`, grouped by role. It answers the reference-safety question.
 - While `WeaponFire extends Object`, it is **safe** from dangling references, as it gets Actor treatment natively by the Engine.
 - `ScrnGuiBuyMenu.NotifyLevelChange()` bypasses the bugged ServerPerks call.
-- Fixed an issue where some damage types were not `abstract`.
 
--------------------------------------------------------------------------------
 ## v9.74.33
 - `SPECTATE` now works after the game has ended.
 - The spectator HUD is displayed only to free-roaming spectators. Team-locked spectators get the regular player HUD.

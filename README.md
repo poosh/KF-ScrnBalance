@@ -1,8 +1,12 @@
-[![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=VFARLRAL7CNJ4&lc=LV&item_name=Scrake%20Naders%20Community&item_number=ScrnBalance&currency_code=EUR&bn=PP%2dDonationsBF%3abtn_donateCC_LG%2egif%3aNonHosted)
-
 <!-- some link shortcuts -->
 [ScrN Brutal KF Bundle]: https://steamcommunity.com/groups/ScrNBalance/discussions/2/483368526570475472/
 [Discord]: https://discord.com/invite/Y3W5crSXA5
+
+<div align="center">
+
+![ScrN Balance](Docs/img/ScrNBalanceLogo256.jpg "ScrN Balance")
+
+</div>
 
 # KF ScrN Balance
 
@@ -89,6 +93,26 @@ For other ScrN based packages you can check this dependency diagram.
 * Steam: [ScrN Brutal KF Bundle].
 * A [guide](http://steamcommunity.com/sharedfiles/filedetails/?id=124250783) on how to use custom weapons with this mutator.
 
+
+## AI Usage
+- In 2024, AI programming skills were laughably pathetic.
+- In 2025, they became promising.
+- In 2026, they are transitioning from recommended to mandatory.
+- In 2027, coding without AI assistance will be like writing on a typewriter instructions to manufacture punch cards.
+
+> "We, as a society, are on an uncontrollably accelerating train running into a concrete wall, while competing for a front row at the head of the train. The other option is to jump off and die immediately." - Welcome to real life, Neo!
+
+### No Dark Code
+ScrN Balance DOES NOT and WILL NOT have AI Dark Code, at least in Version 9. Every single line of code is written or reviewed by a human, except for documentation and unit tests - f**k them!
+### AI is used for:
+- Code audit.
+- Commit review.
+- Refactoring ("monkey job").
+- Documentation.
+- Tests.
+
+P.S. This text was human-written by yours truly.
+
 -------------------------------------------------------------------------------
 
-*Copyright (c) 2012-2025 PU Developing IK, Latvia, All Rights Reserved.*
+*Copyright (c) 2012-2026 PU Developing IK, Latvia, All Rights Reserved.*
