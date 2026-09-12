@@ -7,7 +7,7 @@ var transient float StinkyTime;
 var transient bool bFoundStinkyClot;
 
 
-simulated function bool CheckForStinkyClot()
+function bool CheckForStinkyClot()
 {
     local StinkyClot SC;
 
@@ -21,7 +21,7 @@ simulated function bool CheckForStinkyClot()
     return false;
 }
 
-simulated function DrawTSCHUDTextElements(Canvas C)
+function DrawTSCHUDTextElements(Canvas C)
 {
     local TSCTeamBase TeamBase;
     local bool      bAtOwnBase, bAtEnemyBase;

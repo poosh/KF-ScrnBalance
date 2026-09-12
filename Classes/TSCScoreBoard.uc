@@ -65,7 +65,7 @@ static function ResolveNameCell(PlayerReplicationInfo PRI, ScrnCustomPRI ScrnPRI
     }
 }
 
-simulated function string GetSpectatorNameFast(PlayerReplicationInfo PRI, ScrnCustomPRI ScrnPRI)
+function string GetSpectatorNameFast(PlayerReplicationInfo PRI, ScrnCustomPRI ScrnPRI)
 {
     local string s;
     local Color CustomColor;
@@ -100,7 +100,7 @@ simulated function string GetSpectatorNameFast(PlayerReplicationInfo PRI, ScrnCu
 
 // TSC splits players by team instead of collecting them into a single list,
 // so we use ScanTeams() instead of ScanPlayers().
-simulated function ScanTeams(out array<PlayerReplicationInfo> Red, out array<PlayerReplicationInfo> Blue)
+function ScanTeams(out array<PlayerReplicationInfo> Red, out array<PlayerReplicationInfo> Blue)
 {
     local int i;
     local PlayerReplicationInfo PRI;
@@ -139,7 +139,7 @@ simulated function ScanTeams(out array<PlayerReplicationInfo> Red, out array<Pla
     PlayerCount = RedCount + BlueCount;
 }
 
-simulated function UpdateGameplayRow(Canvas Canvas, out SScoreRow Row, bool bStoryMode)
+function UpdateGameplayRow(Canvas Canvas, out SScoreRow Row, bool bStoryMode)
 {
     local PlayerReplicationInfo PRI;
     local KFPlayerReplicationInfo KFPRI;
@@ -229,7 +229,7 @@ simulated function UpdateGameplayRow(Canvas Canvas, out SScoreRow Row, bool bSto
 // ScrnScoreboard shows READY status is the health columnn.
 // Since the players don't see the enemy health,
 // TSC moves READY status to the PING.
-simulated function GetPingText(Canvas Canvas, PlayerReplicationInfo PRI, out String NetText, out Color NetColor)
+function GetPingText(Canvas Canvas, PlayerReplicationInfo PRI, out String NetText, out Color NetColor)
 {
     if (!GRI.bMatchHasBegun) {
         if ( PRI.bReadyToPlay ) {
@@ -246,7 +246,7 @@ simulated function GetPingText(Canvas Canvas, PlayerReplicationInfo PRI, out Str
     super.GetPingText(Canvas, PRI, NetText, NetColor);
 }
 
-simulated function UpdateHeader(Canvas Canvas)
+function UpdateHeader(Canvas Canvas)
 {
     local TSCGameReplicationInfo TSCGRRI;
     local TSCTeam TSCTeams[2];
@@ -325,7 +325,7 @@ simulated function UpdateHeader(Canvas Canvas)
 }
 
 // Font size, box sizes and both column sets. The original recomputed all of this every frame.
-simulated function TeamResolutionChanged(Canvas Canvas)
+function TeamResolutionChanged(Canvas Canvas)
 {
     local float XL, YL;
     local int i;
@@ -401,7 +401,7 @@ simulated function TeamResolutionChanged(Canvas Canvas)
     }
 }
 
-simulated function UpdateTeamTotals(Canvas Canvas, int TeamIndex, out array<SScoreRow> Rows)
+function UpdateTeamTotals(Canvas Canvas, int TeamIndex, out array<SScoreRow> Rows)
 {
     local int i;
     local TSCTeam TSCTeam;
@@ -451,7 +451,7 @@ simulated function UpdateTeamTotals(Canvas Canvas, int TeamIndex, out array<SSco
         TeamLogo[TeamIndex] = TSCTeam.GetLogo();
 }
 
-simulated function UpdateCache(Canvas Canvas)
+function UpdateCache(Canvas Canvas)
 {
     local array<PlayerReplicationInfo> Red, Blue;
     local PlayerReplicationInfo OwnerPRI;
@@ -518,7 +518,7 @@ simulated function UpdateCache(Canvas Canvas)
     UpdateTeamTotals(Canvas, 1, BlueCache);
 }
 
-simulated function Unfreeze()
+function Unfreeze()
 {
     super.Unfreeze();
     BlueCache.Length = 0;
@@ -529,7 +529,7 @@ simulated function Unfreeze()
 //                      DRAWING
 // ============================================================================
 
-simulated function DrawCache(Canvas Canvas)
+function DrawCache(Canvas Canvas)
 {
     local float XL, YL, y;
     local Material M;
@@ -597,7 +597,7 @@ simulated function DrawCache(Canvas Canvas)
     }
 }
 
-simulated function float DrawTeam(Canvas Canvas, int TeamIndex, out array<SScoreRow> Rows)
+function float DrawTeam(Canvas Canvas, int TeamIndex, out array<SScoreRow> Rows)
 {
     local bool bEven;
     local int i, BoxTextOffsetY;
@@ -752,7 +752,7 @@ simulated function float DrawTeam(Canvas Canvas, int TeamIndex, out array<SScore
     return y;
 }
 
-simulated function float DrawTeamRow(Canvas Canvas, out SScoreRow Row, int TeamIndex, float y,
+function float DrawTeamRow(Canvas Canvas, out SScoreRow Row, int TeamIndex, float y,
         float BoxTextOffsetY, float LineHeight)
 {
     Canvas.DrawColor = HUDClass.default.WhiteColor;

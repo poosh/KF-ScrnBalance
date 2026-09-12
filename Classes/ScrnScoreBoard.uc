@@ -112,7 +112,7 @@ var transient float  HeaderOffsetY, HeaderYL;
 var transient float  ShrinkYL;
 
 
-simulated function PostBeginPlay()
+function PostBeginPlay()
 {
     super.PostBeginPlay();
     SpawnTime = Level.TimeSeconds;
@@ -384,7 +384,7 @@ function bool UpdateGRI()
     return GRI != none;
 }
 
-simulated function ResolutionChanged(Canvas Canvas)
+function ResolutionChanged(Canvas Canvas)
 {
     local float XL, YL, X0, M;
 
@@ -458,7 +458,7 @@ simulated function ResolutionChanged(Canvas Canvas)
 
 // Shrinks the row font until all of the rows fit on the screen.
 // @post Leaves Canvas.Font set to the final row font.
-simulated function ShrinkFont(Canvas Canvas)
+function ShrinkFont(Canvas Canvas)
 {
     local float XL, YL;
 
@@ -503,7 +503,7 @@ simulated function ShrinkFont(Canvas Canvas)
 //                      CACHE UPDATE
 // ============================================================================
 
-simulated function ScanPlayers(out array<PlayerReplicationInfo> Active)
+function ScanPlayers(out array<PlayerReplicationInfo> Active)
 {
     local int i;
     local PlayerReplicationInfo PRI;
@@ -551,17 +551,17 @@ simulated function ScanPlayers(out array<PlayerReplicationInfo> Active)
     }
 }
 
-simulated function string GetSpectatorNameFast(PlayerReplicationInfo PRI, ScrnCustomPRI ScrnPRI)
+function string GetSpectatorNameFast(PlayerReplicationInfo PRI, ScrnCustomPRI ScrnPRI)
 {
     return class'ScrnCustomPRI'.static.GetPlainName(PRI, ScrnPRI);
 }
 
-final simulated function string GetSpectatorName(PlayerReplicationInfo PRI)
+final function string GetSpectatorName(PlayerReplicationInfo PRI)
 {
     return GetSpectatorNameFast(PRI, class'ScrnCustomPRI'.static.FindMe(PRI));
 }
 
-simulated function int FindRow(out array<SScoreRow> Rows, PlayerReplicationInfo PRI)
+function int FindRow(out array<SScoreRow> Rows, PlayerReplicationInfo PRI)
 {
     local int i;
 
@@ -575,7 +575,7 @@ simulated function int FindRow(out array<SScoreRow> Rows, PlayerReplicationInfo 
 // Synchronizes the cached rows with the actual player list without reordering the existing entries.
 // The local player is always in row 0 unless spectating.
 // Newcomers are put at the end of the list.
-simulated function SyncRows(out array<SScoreRow> Rows, out array<PlayerReplicationInfo> Active,
+function SyncRows(out array<SScoreRow> Rows, out array<PlayerReplicationInfo> Active,
         PlayerReplicationInfo OwnerPRI)
 {
     local int i, j;
@@ -621,7 +621,7 @@ simulated function SyncRows(out array<SScoreRow> Rows, out array<PlayerReplicati
 
 // Those who joined after the game end are not displayed do not appear on the scoreboard.
 // They are drawn on the special footer line - like spectators
-simulated function AddNewcomers(out array<SScoreRow> Rows, out array<PlayerReplicationInfo> Active)
+function AddNewcomers(out array<SScoreRow> Rows, out array<PlayerReplicationInfo> Active)
 {
     local int i;
 
@@ -631,7 +631,7 @@ simulated function AddNewcomers(out array<SScoreRow> Rows, out array<PlayerRepli
     }
 }
 
-simulated function UpdateGameplayRow(Canvas Canvas, out SScoreRow Row, bool bStoryMode)
+function UpdateGameplayRow(Canvas Canvas, out SScoreRow Row, bool bStoryMode)
 {
     local PlayerReplicationInfo PRI;
     local KFPlayerReplicationInfo KFPRI;
@@ -789,7 +789,7 @@ simulated function UpdateGameplayRow(Canvas Canvas, out SScoreRow Row, bool bSto
 
 // Update PING even after the game end (bFrozen=True)
 // If the player disconnected after the game end, PING=QUIT
-simulated function UpdateTelemetryRow(Canvas Canvas, out SScoreRow Row)
+function UpdateTelemetryRow(Canvas Canvas, out SScoreRow Row)
 {
     local PlayerReplicationInfo PRI;
     local float YL;
@@ -805,7 +805,7 @@ simulated function UpdateTelemetryRow(Canvas Canvas, out SScoreRow Row)
     Canvas.TextSize(Row.NetText, Row.NetW, YL);
 }
 
-simulated function GetPingText(Canvas Canvas, PlayerReplicationInfo PRI, out String NetText, out Color NetColor)
+function GetPingText(Canvas Canvas, PlayerReplicationInfo PRI, out String NetText, out Color NetColor)
 {
     NetColor = Class'HudBase'.Default.WhiteColor;
     if (PRI.bBot) {
@@ -830,7 +830,7 @@ simulated function GetPingText(Canvas Canvas, PlayerReplicationInfo PRI, out Str
     }
 }
 
-simulated function MarkQuitter(Canvas Canvas, out SScoreRow Row)
+function MarkQuitter(Canvas Canvas, out SScoreRow Row)
 {
     local float YL;
 
@@ -846,7 +846,7 @@ simulated function MarkQuitter(Canvas Canvas, out SScoreRow Row)
 // Remeasures the frozen part of a row from its cached strings only to ensure a resolution change works
 // correctly even for rows whose PRI is gone.
 // The telemetry part remeasures itself.
-simulated function RemeasureGameplayRow(Canvas Canvas, out SScoreRow Row)
+function RemeasureGameplayRow(Canvas Canvas, out SScoreRow Row)
 {
     local float YL;
 
@@ -862,7 +862,7 @@ simulated function RemeasureGameplayRow(Canvas Canvas, out SScoreRow Row)
     Canvas.TextSize(Row.StatusText, Row.StatusW, YL);
 }
 
-simulated function UpdateHeader(Canvas Canvas)
+function UpdateHeader(Canvas Canvas)
 {
     local ScrnGameReplicationInfo ScrnGRI;
     local PlayerReplicationInfo OwnerPRI;
@@ -938,7 +938,7 @@ simulated function UpdateHeader(Canvas Canvas)
 // Rebuilds the whole cache. Called at most once per UpdateFrequency seconds.
 // XXX: Zed Time slows down the update process. Does it really matter?
 // Pro-Tip: Do not view the scoreboard during ZT ;)
-simulated function UpdateCache(Canvas Canvas)
+function UpdateCache(Canvas Canvas)
 {
     local array<PlayerReplicationInfo> Active;
     local PlayerReplicationInfo OwnerPRI;
@@ -988,12 +988,12 @@ simulated function UpdateCache(Canvas Canvas)
 // A scoreboard that has not been around long enough to have seen the game being played has nothing worth snapshotting.
 // PRIArray may still be replicating, and the player was not here for the game end results anyway.
 // Keep them on live updates.
-simulated function bool CanFreeze()
+function bool CanFreeze()
 {
     return Level.TimeSeconds - SpawnTime >= MinSnapshotAge;
 }
 
-simulated function Freeze(Canvas Canvas)
+function Freeze(Canvas Canvas)
 {
     if (!CanFreeze())
         return;
@@ -1001,7 +1001,7 @@ simulated function Freeze(Canvas Canvas)
     bFrozen = true;
 }
 
-simulated function Unfreeze()
+function Unfreeze()
 {
     bFrozen = false;
     // Update the cache on the next draw
@@ -1014,7 +1014,7 @@ simulated function Unfreeze()
 //                      DRAWING
 // ============================================================================
 
-simulated event UpdateScoreBoard(Canvas Canvas)
+event UpdateScoreBoard(Canvas Canvas)
 {
     if ( KFPlayerController(Owner) == none || GRI == none )
         return;
@@ -1027,7 +1027,7 @@ simulated event UpdateScoreBoard(Canvas Canvas)
     DrawCache(Canvas);
 }
 
-simulated function DrawCache(Canvas Canvas)
+function DrawCache(Canvas Canvas)
 {
     local PlayerReplicationInfo OwnerPRI;
     local int i, BoxTextOffsetY, TitleYPos;
@@ -1196,7 +1196,7 @@ simulated function DrawCache(Canvas Canvas)
     }
 }
 
-simulated function DrawRow(Canvas Canvas, out SScoreRow Row, float y, float IconToBoxY,
+function DrawRow(Canvas Canvas, out SScoreRow Row, float y, float IconToBoxY,
         float BoxTextOffsetY, float OriginalClipX)
 {
     local Material M;

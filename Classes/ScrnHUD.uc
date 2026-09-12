@@ -1,3 +1,10 @@
+// NB! HUD is spawned locally on the client, never replicated.
+// HUD does not exist on a dedicated server.
+// On listen server, exists only for the host player.
+// Even on the client: Role = ROLE_Authority, RemoteRole = ROLE_None.
+// The replication block does not work - nowhere to replicate.
+// The simulated keyword is redundant and misleading - all functions are executed on the client
+// because the client is the authority for the HUD.
 class ScrnHUD extends SRHUDKillingFloor
     config (ScrnUser);
 
@@ -400,14 +407,14 @@ function DrawDoorBar(Canvas C, float XCentre, float YCentre, float BarPercentage
 
 
 
-simulated function DrawCowboyMode(Canvas C)
+function DrawCowboyMode(Canvas C)
 {
     C.SetDrawColor(255, 64, 64, KFHUDAlpha);
     C.SetPos(0.5 * C.ClipX * (1.0 - CowboyTileWidth), C.ClipY * CowboyTileY);
     C.DrawTile(texCowboy, C.ClipX * CowboyTileWidth, 64 * (C.ClipX * CowboyTileWidth)/512.0, 0, 0, 512, 64);
 }
 
-simulated function int GetCurrentSpeed()
+function int GetCurrentSpeed()
 {
     local vector Velocity2D;
 
@@ -419,7 +426,7 @@ simulated function int GetCurrentSpeed()
     return round(VSize(Velocity2D));
 }
 
-simulated function int GetMaxSpeed()
+function int GetMaxSpeed()
 {
     // GroundSpeed is replicated to owner pawn only
     if (PawnOwner == none || PlayerOwner.Pawn != PawnOwner)
@@ -427,7 +434,7 @@ simulated function int GetMaxSpeed()
     return round(PawnOwner.GroundSpeed);
 }
 
-simulated function string GetSpeedStr(Canvas C)
+function string GetSpeedStr(Canvas C)
 {
     local string s;
     local int Speed;
@@ -461,7 +468,7 @@ simulated function string GetSpeedStr(Canvas C)
 }
 
 
-simulated function DrawCookingBar(Canvas C)
+function DrawCookingBar(Canvas C)
 {
     //local inventory inv;
     local ScrnFrag aFrag;
@@ -504,7 +511,7 @@ simulated function DrawCookingBar(Canvas C)
 }
 
 
-simulated function DrawEndGameHUD(Canvas C, bool bVictory)
+function DrawEndGameHUD(Canvas C, bool bVictory)
 {
     super.DrawEndGameHUD(C, bVictory);
     //display end-game achievements
@@ -512,7 +519,7 @@ simulated function DrawEndGameHUD(Canvas C, bool bVictory)
     DisplayLocalMessages(C);
 }
 
-simulated function DrawStoryHUDInfo(Canvas C)
+function DrawStoryHUDInfo(Canvas C)
 {
     if (ScrnGRI == none) {
         if (KF_StoryGRI(Level.GRI) != none) {
@@ -554,7 +561,7 @@ simulated function DrawStoryHUDInfo(Canvas C)
     }
 }
 
-simulated function FillScrnDialogue(Canvas C, out SDialogueRenderInfo Dlg)
+function FillScrnDialogue(Canvas C, out SDialogueRenderInfo Dlg)
 {
     Dlg.bFirstDisplay = true;
     Dlg.Duration = ScrnGRI.DialogueDuration;
@@ -580,7 +587,7 @@ simulated function FillScrnDialogue(Canvas C, out SDialogueRenderInfo Dlg)
     }
 }
 
-simulated function bool DrawScrnDialogue(Canvas C, out SDialogueRenderInfo Dlg)
+function bool DrawScrnDialogue(Canvas C, out SDialogueRenderInfo Dlg)
 {
     local float HeaderX,HeaderY;
     local float BackgroundOffset;
@@ -691,7 +698,7 @@ simulated function bool DrawScrnDialogue(Canvas C, out SDialogueRenderInfo Dlg)
     return true;
 }
 
-simulated function DrawDialogue(Canvas C)
+function DrawDialogue(Canvas C)
 {
     if (CurrentDlgIndex >= Dialogues.length)
         return;
@@ -713,12 +720,12 @@ simulated function DrawDialogue(Canvas C)
     super.DrawDialogue(C);
 }
 
-simulated function bool IsStoryDialogActive()
+function bool IsStoryDialogActive()
 {
     return !bShowScoreBoard && CurrentDlgIndex < Dialogues.Length && Dialogues[CurrentDlgIndex].Opacity > 0;
 }
 
-simulated function DrawHudPassA(Canvas C)
+function DrawHudPassA(Canvas C)
 {
     DrawStoryHUDInfo(C);
     DrawDoorHealthBars(C);
@@ -811,7 +818,7 @@ simulated function DrawHudPassA(Canvas C)
     }
 }
 
-simulated function DrawHudPassC(Canvas C)
+function DrawHudPassC(Canvas C)
 {
     DrawFadeEffect(C);
 
@@ -830,7 +837,7 @@ simulated function DrawHudPassC(Canvas C)
         DrawPointSphere();
 }
 
-simulated function DrawQuickSyringe(Canvas C)
+function DrawQuickSyringe(Canvas C)
 {
     local float t;
     local byte A;
@@ -896,7 +903,7 @@ simulated function DrawQuickSyringe(Canvas C)
     DrawNumericWidget(C, QuickSyringeDigits, DigitsSmall);
 }
 
-simulated function IntBox GetSpriteWidgetCoords(Canvas C, out SpriteWidget w)
+function IntBox GetSpriteWidgetCoords(Canvas C, out SpriteWidget w)
 {
     local IntBox box;
     local float scale;
@@ -915,7 +922,7 @@ simulated function IntBox GetSpriteWidgetCoords(Canvas C, out SpriteWidget w)
     return box;
 }
 
-simulated function DrawOldHudItems(Canvas C)
+function DrawOldHudItems(Canvas C)
 {
     local byte Counter, TempLevel;
     local float TempX, TempY, TempSize, BonusPerkX;
@@ -1190,7 +1197,7 @@ simulated function DrawOldHudItems(Canvas C)
 }
 
 // allows child classes to shift Cool HUD, they need to draw something beneath it
-simulated function CalcCoolHudCoords(Canvas C, float BaseSize, out float XCenter, out float YBottom)
+function CalcCoolHudCoords(Canvas C, float BaseSize, out float XCenter, out float YBottom)
 {
     if ( bCoolHudLeftAlign )
         XCenter = BaseSize * (0.6 + CoolIconToBarSize);
@@ -1199,7 +1206,7 @@ simulated function CalcCoolHudCoords(Canvas C, float BaseSize, out float XCenter
     YBottom = C.ClipY;
 }
 
-simulated function DrawCoolHud(Canvas C)
+function DrawCoolHud(Canvas C)
 {
     local float XL, YL, TempX, TempY, BaseSize, TempSize, Offset, Pct;
     local float XCenter, YBottom, StatusBarHeight, fZoom;
@@ -1462,7 +1469,7 @@ simulated function DrawCoolHud(Canvas C)
 
 }
 
-simulated function DrawWeaponName(Canvas C)
+function DrawWeaponName(Canvas C)
 {
     local string CurWeaponName;
     local float XL,YL;
@@ -1493,7 +1500,7 @@ simulated function DrawWeaponName(Canvas C)
     C.DrawText(CurWeaponName);
 }
 
-simulated function SetLowAmmoColor(out Color C, int ammo)
+function SetLowAmmoColor(out Color C, int ammo)
 {
     if (bLowAmmoColorSwitch) {
         C = SwitchDigitColors[SwitchDigitColorIndex];
@@ -1507,7 +1514,7 @@ simulated function SetLowAmmoColor(out Color C, int ammo)
     C.A = PulseAlpha;
 }
 
-simulated function PulseColorIf(out Color C, bool req)
+function PulseColorIf(out Color C, bool req)
 {
     if (req) {
         C.A = PulseAlpha;
@@ -1517,7 +1524,7 @@ simulated function PulseColorIf(out Color C, bool req)
     }
 }
 
-simulated function BlinkColorIf(out Color C, bool req)
+function BlinkColorIf(out Color C, bool req)
 {
     if (req) {
         C.A = BlinkAlpha;
@@ -1527,13 +1534,13 @@ simulated function BlinkColorIf(out Color C, bool req)
     }
 }
 
-simulated function SetAlphaColor(out Color C, Color NewColor)
+function SetAlphaColor(out Color C, Color NewColor)
 {
     C = NewColor;
     C.A = KFHUDAlpha;
 }
 
-simulated function SetAlphaColorRGB(out Color C, byte R, byte G, byte B)
+function SetAlphaColorRGB(out Color C, byte R, byte G, byte B)
 {
     C.R = R;
     C.G = G;
@@ -1541,7 +1548,7 @@ simulated function SetAlphaColorRGB(out Color C, byte R, byte G, byte B)
     C.A = KFHUDAlpha;
 }
 
-simulated function UpdateHud()
+function UpdateHud()
 {
     TeamColors[0].A = KFHUDAlpha;
     TeamColors[1].A = KFHUDAlpha;
@@ -1694,7 +1701,7 @@ simulated function UpdateHud()
     Super(HudBase).UpdateHud();
 }
 
-simulated function CalculateLeftGunAmmo()
+function CalculateLeftGunAmmo()
 {
     if ( ScrnDualDeagle(OwnerWeapon) != none ) {
         bHasLeftGun = true;
@@ -1715,7 +1722,7 @@ simulated function CalculateLeftGunAmmo()
     }
 }
 
-simulated function CalculateAmmo()
+function CalculateAmmo()
 {
     local int i;
 
@@ -1782,7 +1789,7 @@ simulated function CalculateAmmo()
     }
 }
 
-simulated function SetScoreBoardClass (class<Scoreboard> ScoreBoardClass)
+function SetScoreBoardClass (class<Scoreboard> ScoreBoardClass)
 {
     super.SetScoreBoardClass(ScoreBoardClass);
 
@@ -1960,11 +1967,11 @@ function DrawPlayerInfo(Canvas C, Pawn P, float ScreenLocX, float ScreenLocY)
     VetStarSize = default.VetStarSize; // restore from drawing in other places
 }
 
-delegate simulated ScrnDrawPlayerInfoBase(Canvas C, Pawn P, float ScreenLocX, float ScreenLocY, float fZoom,
+delegate ScrnDrawPlayerInfoBase(Canvas C, Pawn P, float ScreenLocX, float ScreenLocY, float fZoom,
     KFPlayerReplicationInfo EnemyPRI, bool bSameTeam);
 
 
-simulated function ScrnDrawPlayerInfoClassic(Canvas C, Pawn P, float ScreenLocX, float ScreenLocY, float fZoom,
+function ScrnDrawPlayerInfoClassic(Canvas C, Pawn P, float ScreenLocX, float ScreenLocY, float fZoom,
     KFPlayerReplicationInfo EnemyPRI, bool bSameTeam)
 {
     local float XL, YL, TempX, TempY, TempSize;
@@ -2086,7 +2093,7 @@ simulated function ScrnDrawPlayerInfoClassic(Canvas C, Pawn P, float ScreenLocX,
 }
 
 
-simulated function ScrnDrawPlayerInfoNew(Canvas C, Pawn P, float ScreenLocX, float ScreenLocY, float fZoom,
+function ScrnDrawPlayerInfoNew(Canvas C, Pawn P, float ScreenLocX, float ScreenLocY, float fZoom,
     KFPlayerReplicationInfo EnemyPRI, bool bSameTeam)
 {
     local float XL, YL, TempX, TempY, BaseSize, TempSize, Offset;
@@ -2161,7 +2168,7 @@ simulated function ScrnDrawPlayerInfoNew(Canvas C, Pawn P, float ScreenLocX, flo
 }
 
 
-simulated function float DrawCoolBar(Canvas C, Pawn P, KFPlayerReplicationInfo PawnPRI,
+function float DrawCoolBar(Canvas C, Pawn P, KFPlayerReplicationInfo PawnPRI,
     float BaseX, float BaseY, float BaseSize)
 {
     local float UpperBound;
@@ -2319,7 +2326,7 @@ simulated function float DrawCoolBar(Canvas C, Pawn P, KFPlayerReplicationInfo P
 
 
 
-simulated function DrawBar(Canvas C, float X, float Y, float W, float H, float Pct, Color BarColor,
+function DrawBar(Canvas C, float X, float Y, float W, float H, float Pct, Color BarColor,
     optional bool bNoBackground, optional bool bVertical, optional int Margin)
 {
     if ( !bNoBackground ) {
@@ -2350,7 +2357,7 @@ simulated function DrawBar(Canvas C, float X, float Y, float W, float H, float P
     }
 }
 
-simulated function DrawKFBarEx(Canvas C, float XCentre, float YCentre, float BarPercentage, byte BarAlpha,
+function DrawKFBarEx(Canvas C, float XCentre, float YCentre, float BarPercentage, byte BarAlpha,
         optional bool bArmor, optional float BarPercentage2)
 {
     local Color BarColor2;
@@ -2411,14 +2418,14 @@ simulated function DrawKFBarEx(Canvas C, float XCentre, float YCentre, float Bar
     }
 }
 
-simulated function DrawBlamedIcon(Canvas C, float XCentre, float YBottom, byte BarAlpha)
+function DrawBlamedIcon(Canvas C, float XCentre, float YBottom, byte BarAlpha)
 {
     C.SetDrawColor(255, 255, 255, BarAlpha);
     C.SetPos(XCentre - (0.5 * BlamedIconSize), YBottom - BlamedIconSize);
     C.DrawTile(BlamedIcon.WidgetTexture, BlamedIconSize, BlamedIconSize, 0, 0, BlamedIcon.WidgetTexture.MaterialUSize(), BlamedIcon.WidgetTexture.MaterialVSize());
 }
 
-simulated function ShowDamage(int Damage, float HitTime, vector HitLocation, byte DamTypeNum)
+function ShowDamage(int Damage, float HitTime, vector HitLocation, byte DamTypeNum)
 {
     local color c;
 
@@ -2459,7 +2466,7 @@ simulated function ShowDamage(int Damage, float HitTime, vector HitLocation, byt
         NextDamagePopupIndex=0;
 }
 
-simulated function DrawDamage(Canvas C)
+function DrawDamage(Canvas C)
 {
     local int i;
     local float TimeSinceHit;
@@ -2506,7 +2513,7 @@ exec function SetDamageFont(int inc) {
     SaveConfig();
 }
 
-simulated function MyPerkChanged(class<KFVeterancyTypes> OldPerk)
+function MyPerkChanged(class<KFVeterancyTypes> OldPerk)
 {
     // destroy current PerkOverlay, unless new perk has the same one
     if ( PerkOverlay != none && (ScrnPerk == none || ScrnPerk.default.HUDOverlay != PerkOverlay.class) ) {
@@ -2521,7 +2528,7 @@ simulated function MyPerkChanged(class<KFVeterancyTypes> OldPerk)
     }
 }
 
-simulated function LinkActors()
+function LinkActors()
 {
     super.LinkActors();
 
@@ -2607,7 +2614,7 @@ simulated function LinkActors()
     }
 }
 
-simulated event PostRender(Canvas C)
+event PostRender(Canvas C)
 {
     if (C.SizeX != ResSizeX || C.SizeY != ResSizeY) {
         LinkActors();
@@ -2618,7 +2625,7 @@ simulated event PostRender(Canvas C)
     super.PostRender(C);
 }
 
-simulated function ResolutionChanged(Canvas C)
+function ResolutionChanged(Canvas C)
 {
     local int i;
 
@@ -2646,11 +2653,11 @@ simulated function ResolutionChanged(Canvas C)
     DamagePopupFont = clamp(i, 0, 8);
 }
 
-simulated function WaveRuleChanged(byte OldRule, byte NewRule)
+function WaveRuleChanged(byte OldRule, byte NewRule)
 {
 }
 
-simulated function Tick(float deltaTime)
+function Tick(float deltaTime)
 {
     super.Tick(deltaTime);
 
@@ -2709,7 +2716,7 @@ simulated function Tick(float deltaTime)
 }
 
 
-simulated function DrawHealthBar(Canvas C, Actor A, int Health, int MaxHealth, float Height)
+function DrawHealthBar(Canvas C, Actor A, int Health, int MaxHealth, float Height)
 {
     local vector CameraLocation, CamDir, TargetLocation, HBScreenPos;
     local rotator CameraRotation;
@@ -2837,7 +2844,7 @@ function DrawBlameIcons(Canvas C)
 }
 
 
-simulated function DrawDirPointer(Canvas C, KFShopDirectionPointer DirPointer, Vector PointAt,
+function DrawDirPointer(Canvas C, KFShopDirectionPointer DirPointer, Vector PointAt,
     int Row, int Col, optional bool bHideText, optional string TextPrefix, optional bool bRightSide,
     optional EScrnEffect Effect)
 {
@@ -2919,7 +2926,7 @@ simulated function DrawDirPointer(Canvas C, KFShopDirectionPointer DirPointer, V
 }
 
 // must be called only from DrawDirPointer!
-protected simulated function DrawPointerDistance(Canvas C, Vector PointAt, string TextPrefix, Vector MyLocation)
+protected function DrawPointerDistance(Canvas C, Vector PointAt, string TextPrefix, Vector MyLocation)
 {
     local int       FontSize;
     local float     XL, YL;
@@ -2974,7 +2981,7 @@ function DisplayPortrait(PlayerReplicationInfo PRI)
 }
 
 // seems like I'm the first who removed that bloody "final" mark  -- PooSH
-simulated function DrawPortraitSE( Canvas C )
+function DrawPortraitSE( Canvas C )
 {
     local float PortraitWidth, PortraitHeight, Margin, XL, YL, X, Y;
     local int FontIdx;
@@ -3054,7 +3061,7 @@ simulated function DrawPortraitSE( Canvas C )
     C.DrawTileStretched(texture'InterfaceContent.Menu.BorderBoxA1', PortraitWidth + 2*Margin, PortraitHeight + 2*Margin);
 }
 
-simulated function DrawFirstPersonSpectatorHUD(Canvas C)
+function DrawFirstPersonSpectatorHUD(Canvas C)
 {
     local String S;
     local float TempSize, XL, YL;
@@ -3112,7 +3119,7 @@ simulated function DrawFirstPersonSpectatorHUD(Canvas C)
     }
 }
 
-simulated function DrawPlayerInfos(Canvas C)
+function DrawPlayerInfos(Canvas C)
 {
     local KFPawn KFBuddy;
     local vector CamPos, ViewDir, ScreenPos;
@@ -3135,7 +3142,7 @@ simulated function DrawPlayerInfos(Canvas C)
     }
 }
 
-simulated function DrawHud(Canvas C)
+function DrawHud(Canvas C)
 {
     if ( bDebugSpectatingHUD ) {
         DrawSpectatingHud(C);
@@ -3217,7 +3224,7 @@ simulated function DrawHud(Canvas C)
 }
 
 // a lot of copy-paste job, because some devs are using "final" mark too much
-simulated function DrawSpectatingHud(Canvas C)
+function DrawSpectatingHud(Canvas C)
 {
     local bool bGameEnded, bSpecHUD;
 
@@ -3276,7 +3283,7 @@ simulated function DrawSpectatingHud(Canvas C)
         DrawDamage(C);
 }
 
-simulated function DrawWaveCircle(Canvas C, Material M, float CircleSize)
+function DrawWaveCircle(Canvas C, Material M, float CircleSize)
 {
     local float alpha;
     local int alphaSize, matSize;
@@ -3309,9 +3316,9 @@ simulated function DrawWaveCircle(Canvas C, Material M, float CircleSize)
     }
 }
 
-simulated function OverrideWaveCounterText(Canvas C, out string S);
+function OverrideWaveCounterText(Canvas C, out string S);
 
-simulated function DrawWaveInfo(Canvas C)
+function DrawWaveInfo(Canvas C)
 {
     local float XL, YL, Y, Y2;
     local int NumZombies, Counter;
@@ -3426,7 +3433,7 @@ simulated function DrawWaveInfo(Canvas C)
     C.FontScaleY = 1;
 }
 
-simulated function DrawKFHUDTextElements(Canvas C)
+function DrawKFHUDTextElements(Canvas C)
 {
     if ( PlayerOwner == none || KFGRI == none || !KFGRI.bMatchHasBegun || ScrnPC.bShopping )
         return;
@@ -3454,7 +3461,7 @@ simulated function DrawKFHUDTextElements(Canvas C)
     }
 }
 
-simulated function DrawScrnObjectives(Canvas C)
+function DrawScrnObjectives(Canvas C)
 {
     switch (ScrnGRI.WaveEndRule) {
         case 3: // RULE_EarnDosh
@@ -3490,7 +3497,7 @@ simulated function DrawScrnObjectives(Canvas C)
 }
 
 // C&P to add CriticalOverlayTimer
-simulated function DrawModOverlay( Canvas C )
+function DrawModOverlay( Canvas C )
 {
     local float MaxRBrighten, MaxGBrighten, MaxBBrighten;
 
@@ -3652,7 +3659,7 @@ simulated function DrawModOverlay( Canvas C )
 }
 
 
-simulated function DrawSpecialSpectatingHUD(Canvas C)
+function DrawSpecialSpectatingHUD(Canvas C)
 {
     local float XL, YL;
     local string S;
@@ -3719,7 +3726,7 @@ simulated function DrawSpecialSpectatingHUD(Canvas C)
     }
 }
 
-simulated function DrawSpecWeapons(Canvas C)
+function DrawSpecWeapons(Canvas C)
 {
     local int i, count;
     local float TempX, TempY, TempWidth, TempHeight;
@@ -3764,7 +3771,7 @@ simulated function DrawSpecWeapons(Canvas C)
 }
 
 // color tag support
-simulated function LocalizedMessage( class<LocalMessage> Message, optional int Switch, optional PlayerReplicationInfo RelatedPRI_1, optional PlayerReplicationInfo RelatedPRI_2, optional Object OptionalObject, optional String CriticalString)
+function LocalizedMessage( class<LocalMessage> Message, optional int Switch, optional PlayerReplicationInfo RelatedPRI_1, optional PlayerReplicationInfo RelatedPRI_2, optional Object OptionalObject, optional String CriticalString)
 {
     local int i;
     local PlayerReplicationInfo HUDPRI;
@@ -3867,7 +3874,7 @@ simulated function LocalizedMessage( class<LocalMessage> Message, optional int S
     LocalMessages[i].LifeTime = Message.static.GetLifetime(Switch);
 }
 
-simulated function DrawMessage( Canvas C, int i, float PosX, float PosY, out float DX, out float DY )
+function DrawMessage( Canvas C, int i, float PosX, float PosY, out float DX, out float DY )
 {
     local name mcname;
 
@@ -3925,7 +3932,7 @@ function AddTextMessage(string M, class<LocalMessage> MessageClass, PlayerReplic
         TextMessages[i].PRI = None;
 }
 
-simulated function Message(PlayerReplicationInfo PRI, coerce string Msg, name MsgType)
+function Message(PlayerReplicationInfo PRI, coerce string Msg, name MsgType)
 {
     local Class<LocalMessage> LocalMessageClass;
     local string s;
@@ -4059,7 +4066,7 @@ exec function DebugCrosshair(bool bEnable)
 }
 
 // copy-pated to remove RODebugMode()  -- PooSH
-simulated function DrawCrosshair (Canvas C)
+function DrawCrosshair (Canvas C)
 {
     local float NormalScale;
     local int i, CurrentCrosshair;
@@ -4133,7 +4140,7 @@ exec function DebugZedHealth(bool bEnable)
     bZedHealthShow = bEnable;
 }
 
-simulated function DrawZedHealth(Canvas C)
+function DrawZedHealth(Canvas C)
 {
     local vector CameraLocation, CamDir, TargetLocation, HBScreenPos;
     local rotator CameraRotation;
@@ -4255,7 +4262,7 @@ static function Font LoadMenuFontStatic(int i)
     return super.LoadMenuFontStatic(min(i, arraycount(default.MenuFontArrayNames) -1));
 }
 
-simulated function SetHUDAlpha()
+function SetHUDAlpha()
 {
     super.SetHUDAlpha();
 
@@ -4280,7 +4287,7 @@ simulated function SetHUDAlpha()
     default.WhiteAlphaColor.A = KFHUDAlpha;
 }
 
-simulated function LayoutMessage( out HudLocalizedMessage Message, Canvas C )
+function LayoutMessage( out HudLocalizedMessage Message, Canvas C )
 {
     local int FontSize;
     local class<ScrnCustomFontMsg> ScrnFontMsg;

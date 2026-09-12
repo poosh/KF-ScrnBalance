@@ -94,7 +94,7 @@ var protected transient float NextStatUpdateTime;
 
 var bool bDrawShopDirPointer;
 
-simulated function DestroyDirPointers()
+function DestroyDirPointers()
 {
     if ( ShopDirPointer!=None )
         ShopDirPointer.Destroy();
@@ -106,7 +106,7 @@ simulated function DestroyDirPointers()
         EnemyBaseDirPointer.Destroy();
 }
 
-simulated function Destroyed()
+function Destroyed()
 {
     DestroyDirPointers();
     if (OutOfTheBaseMaterial != none) {
@@ -120,7 +120,7 @@ simulated function Destroyed()
     super.Destroyed();
 }
 
-simulated function LinkActors()
+function LinkActors()
 {
     super.LinkActors();
 
@@ -140,7 +140,7 @@ simulated function LinkActors()
     }
 }
 
-simulated function UpdateHud()
+function UpdateHud()
 {
     if ( KFPRI != none && KFPRI.Team != none && KFPRI.Team.TeamIndex != TeamIndex ) {
         UpdateTeamHud();
@@ -149,7 +149,7 @@ simulated function UpdateHud()
     super.UpdateHud();
 }
 
-simulated function UpdateTeamHud()
+function UpdateTeamHud()
 {
     TeamIndex = KFPRI.Team.TeamIndex;
     LinkActors();
@@ -276,7 +276,7 @@ simulated function UpdateTeamHud()
     SetHUDAlpha();
 }
 
-simulated function OverrideWaveCounterText(Canvas C, out string S)
+function OverrideWaveCounterText(Canvas C, out string S)
 {
     local int NumZombies;
 
@@ -292,7 +292,7 @@ simulated function OverrideWaveCounterText(Canvas C, out string S)
     }
 }
 
-simulated function DrawWaveInfo(Canvas C)
+function DrawWaveInfo(Canvas C)
 {
     if (bShowScoreBoard && !TSCGRI.bSingleTeamGame)
         return;
@@ -301,7 +301,7 @@ simulated function DrawWaveInfo(Canvas C)
 }
 
 
-simulated function DrawKFHUDTextElements(Canvas C)
+function DrawKFHUDTextElements(Canvas C)
 {
     local ShopVolume shop;
 
@@ -349,7 +349,7 @@ simulated function DrawKFHUDTextElements(Canvas C)
     }
 }
 
-simulated function DrawTSCHUDTextElements(Canvas C)
+function DrawTSCHUDTextElements(Canvas C)
 {
     local TSCTeamBase TeamBase;
     local bool      bAtOwnBase, bAtEnemyBase;
@@ -590,7 +590,7 @@ simulated function DrawTSCHUDTextElements(Canvas C)
 }
 
 
-simulated function DrawWeaponName(Canvas C)
+function DrawWeaponName(Canvas C)
 {
     local string CurWeaponName;
     local float XL,YL;
@@ -621,7 +621,7 @@ simulated function DrawWeaponName(Canvas C)
     C.DrawText(CurWeaponName);
 }
 
-simulated function DrawPlayerInfos(Canvas C)
+function DrawPlayerInfos(Canvas C)
 {
     local TSCBaseGuardian Gnome;
 
@@ -634,7 +634,7 @@ simulated function DrawPlayerInfos(Canvas C)
     }
 }
 
-simulated function DrawCenteredText(Canvas C, out array<string> Lines, optional bool bBottomAlign, optional float yPad)
+function DrawCenteredText(Canvas C, out array<string> Lines, optional bool bBottomAlign, optional float yPad)
 {
     local int i;
     local float XL, YL, x, y;
@@ -665,7 +665,7 @@ simulated function DrawCenteredText(Canvas C, out array<string> Lines, optional 
     }
 }
 
-simulated function DrawEndGameHUD(Canvas C, bool bVictory)
+function DrawEndGameHUD(Canvas C, bool bVictory)
 {
     local float Scalar;
     local TSCTeam Team;
@@ -742,14 +742,14 @@ simulated function DrawEndGameHUD(Canvas C, bool bVictory)
     DisplayLocalMessages(C);
 }
 
-simulated function float CalcTeamRatio(float RedTeamStat, float BlueTeamStat)
+function float CalcTeamRatio(float RedTeamStat, float BlueTeamStat)
 {
     if (RedTeamStat + BlueTeamStat < 0.0001)
         return 0.5;  // avoid div by 0
     return RedTeamStat / (RedTeamStat + BlueTeamStat);
 }
 
-simulated function CalsTeamStats()
+function CalsTeamStats()
 {
     local int i;
     local KFPlayerReplicationInfo OtherPRI;
@@ -879,7 +879,7 @@ simulated function CalsTeamStats()
     SpecInvDoshDigits[1].Tints[1].A = KFHUDAlpha;
 }
 
-simulated function DrawSpecBar(Canvas C, float Ratio, float x, float y, float w, float h,
+function DrawSpecBar(Canvas C, float Ratio, float x, float y, float w, float h,
     optional Texture RedIcon, optional Texture BlueIcon, out optional float OldRatio, out optional float OldTime)
 {
     local float redw;
@@ -959,7 +959,7 @@ simulated function DrawSpecBar(Canvas C, float Ratio, float x, float y, float w,
     C.DrawColor = OldColor;
 }
 
-simulated function DrawClan(Canvas C, byte TeamIndex, float x, float y, float h)
+function DrawClan(Canvas C, byte TeamIndex, float x, float y, float h)
 {
     local TSCClanReplicationInfo ClanRep;
     local array<string> Lines;
@@ -1018,7 +1018,7 @@ simulated function DrawClan(Canvas C, byte TeamIndex, float x, float y, float h)
     }
 }
 
-simulated function DrawSpecialSpectatingHUD(Canvas C)
+function DrawSpecialSpectatingHUD(Canvas C)
 {
     local string s;
     local TSCTeamBase TeamBase;

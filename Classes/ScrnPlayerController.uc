@@ -1,3 +1,17 @@
+// NB! On a client, only the local player's PlayerController exists. Controller has
+// bOnlyRelevantToOwner=True, so a PlayerController is replicated to its own connection and to
+// nobody else - a client never receives another player's PlayerController.
+// Server (dedicated or listen): every PlayerController, Role = ROLE_Authority.
+// Client: the local one only, Role = ROLE_AutonomousProxy, RemoteRole = ROLE_Authority.
+//
+// Unlike ScrnHUD and ScrnScoreBoard, replication here is REAL: the replication block below works,
+// and so do all of the Client*/Server* RPCs. Do not remove them.
+//
+// The simulated keyword, however, gates nothing here: a function is skipped only when
+// Role <= ROLE_SimulatedProxy, and no PlayerController is ever below ROLE_AutonomousProxy.
+// It is kept on purpose as a marker for "this is expected to run client-side" - a decorator for
+// the reader, not a functional modifier. Do not assume a non-simulated function is server-only.
+
 class ScrnPlayerController extends KFPCServ
     config(ScrnUser);
 
