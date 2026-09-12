@@ -63,6 +63,7 @@ var globalconfig color TraderGroupColor, TraderActiveGroupColor, TraderSelectedG
 var globalconfig Color TraderPriceButtonColor, TraderPriceButtonDisabledColor, TraderPriceButtonSelectedColor;
 
 var protected class<ScrnScoreBoard> ScrnScoreBoardClass; // modder friendly interface
+var transient bool bScoreboardSnapshotTaken;
 
 // vars below are set inside LinkActors()
 var protected transient class<ScrnVeterancyTypes> ScrnPerk;
@@ -3154,6 +3155,14 @@ simulated function DrawHud(Canvas C)
 
     if ( bUseBloom )
         PlayerOwner.PostFX_SetActive(0, true);
+
+    // Take the snapshot of the end game results as soon as the game is ended
+    // Do that even bHideHud=True - in case the user will change itlater.
+    if (KFGRI != none && KFGRI.EndGameType > 0 && !bScoreboardSnapshotTaken
+            && ScrnScoreBoard(ScoreBoard) != none) {
+        ScrnScoreBoard(ScoreBoard).Freeze(C);
+        bScoreboardSnapshotTaken = true;
+    }
 
     if ( bHideHud ) {
         // Draw fade effects even if the hud is hidden so poeple can't just turn off thier hud

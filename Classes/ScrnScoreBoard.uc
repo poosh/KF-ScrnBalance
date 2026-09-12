@@ -1,3 +1,10 @@
+// NB! Scoreboard is spawned locally on the client, never replicated.
+// Scoreboard does not exist on a dedicated server.
+// On listen server, exists only for the host player.
+// Even on the client: Role = ROLE_Authority, RemoteRole = ROLE_None.
+// The replication block does not work - nowhere to replicate.
+// The simulated keyword is redundant and misleading - all functions are executed on the client
+// because the client is the authority for the scoreboard.
 class ScrnScoreBoard extends SRScoreBoard;
 
 var     localized   string      AssHeaderText;
@@ -88,6 +95,8 @@ var transient array<SScoreRow> Cache;
 var float UpdateFrequency;          // seconds between two cache updates
 var transient float NextUpdateTime;
 var transient bool bFrozen;         // game over: rows and totals are a frozen result snapshot
+var transient float SpawnTime;
+var float MinSnapshotAge;
 
 // header / footer data, rebuilt together with the rows
 var transient string HeaderLine1, HeaderLine2, HeaderLine3, TeamDoshText, SpectatorLine;
@@ -102,6 +111,12 @@ var transient int    FontReduction;
 var transient float  HeaderOffsetY, HeaderYL;
 var transient float  ShrinkYL;
 
+
+simulated function PostBeginPlay()
+{
+    super.PostBeginPlay();
+    SpawnTime = Level.TimeSeconds;
+}
 
 // ============================================================================
 //                      NAME CELL
@@ -926,20 +941,12 @@ simulated function UpdateHeader(Canvas Canvas)
 simulated function UpdateCache(Canvas Canvas)
 {
     local array<PlayerReplicationInfo> Active;
-    local KFGameReplicationInfo KFGRI;
     local PlayerReplicationInfo OwnerPRI;
     local bool bStoryMode, bResolutionChanged;
     local int i;
 
-    KFGRI = KFGameReplicationInfo(GRI);
     OwnerPRI = KFPlayerController(Owner).PlayerReplicationInfo;
     bStoryMode = KF_StoryPRI(OwnerPRI) != none;
-
-    if (bFrozen && KFGRI != none && KFGRI.EndGameType == 0) {
-        // Current impossible. Reserved for future use, if ScrnGameType will support Reset()
-        bFrozen = false;
-        Cache.Length = 0;
-    }
 
     ScanPlayers(Active);
 
@@ -976,11 +983,30 @@ simulated function UpdateCache(Canvas Canvas)
         UpdateGameplayRow(Canvas, Cache[i], bStoryMode);
         UpdateTelemetryRow(Canvas, Cache[i]);
     }
+}
 
-    // We just did the final update after the game has ended.
-    // Freeze the cache updates to display the snapshop of the end results.
-    if ( KFGRI != none && KFGRI.EndGameType > 0 )
-        bFrozen = true;
+// A scoreboard that has not been around long enough to have seen the game being played has nothing worth snapshotting.
+// PRIArray may still be replicating, and the player was not here for the game end results anyway.
+// Keep them on live updates.
+simulated function bool CanFreeze()
+{
+    return Level.TimeSeconds - SpawnTime >= MinSnapshotAge;
+}
+
+simulated function Freeze(Canvas Canvas)
+{
+    if (!CanFreeze())
+        return;
+    UpdateCache(Canvas);
+    bFrozen = true;
+}
+
+simulated function Unfreeze()
+{
+    bFrozen = false;
+    // Update the cache on the next draw
+    Cache.Length = 0;
+    NextUpdateTime = 0;
 }
 
 
@@ -1300,6 +1326,7 @@ simulated function DrawRow(Canvas Canvas, out SScoreRow Row, float y, float Icon
 defaultproperties
 {
     UpdateFrequency=0.2
+    MinSnapshotAge=5.0  // Don't freeze if we don't live long enough to get all replication data for the snapshot
     TeamScoreString="Team Wallet:"
     AssHeaderText="Ass."
     KillsAssSeparator=" + "

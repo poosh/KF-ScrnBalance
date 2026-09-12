@@ -454,24 +454,15 @@ simulated function UpdateTeamTotals(Canvas Canvas, int TeamIndex, out array<SSco
 simulated function UpdateCache(Canvas Canvas)
 {
     local array<PlayerReplicationInfo> Red, Blue;
-    local KFGameReplicationInfo KFGRI;
     local PlayerReplicationInfo OwnerPRI;
     local bool bResolutionChanged;
     local int i;
 
-    KFGRI = KFGameReplicationInfo(GRI);
     OwnerPRI = KFPlayerController(Owner).PlayerReplicationInfo;
     if ( OwnerPRI != none && OwnerPRI.Team != none )
         MyTeamIndex = OwnerPRI.Team.TeamIndex;
     else
         MyTeamIndex = -1;
-
-    if (bFrozen && KFGRI != none && KFGRI.EndGameType == 0) {
-        // Current impossible. Reserved for future use, if ScrnGameType will support Reset()
-        bFrozen = false;
-        Cache.Length = 0;
-        BlueCache.Length = 0;
-    }
 
     ScanTeams(Red, Blue);
 
@@ -525,9 +516,12 @@ simulated function UpdateCache(Canvas Canvas)
 
     UpdateTeamTotals(Canvas, 0, Cache);
     UpdateTeamTotals(Canvas, 1, BlueCache);
+}
 
-    if ( KFGRI != none && KFGRI.EndGameType > 0 )
-        bFrozen = true;
+simulated function Unfreeze()
+{
+    super.Unfreeze();
+    BlueCache.Length = 0;
 }
 
 

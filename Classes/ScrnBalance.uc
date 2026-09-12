@@ -3642,7 +3642,7 @@ function GameResumed()
 
 defaultproperties
 {
-    VersionNumber=97450
+    VersionNumber=97451
     GroupName="KF-Scrn"
     FriendlyName="ScrN Balance"
     Description="Total rework of KF1 to make it modern and the best tactical coop in the world while sticking to the roots of the original."
@@ -3896,10 +3896,6 @@ defaultproperties
     MinVoteDifficulty=2
     MaxDifficulty=8
 
-
-    AmmoBoxMesh=StaticMesh'kf_generic_sm.pickups.Metal_Ammo_Box'
-    AmmoBoxDrawScale=1.000000
-    AmmoBoxDrawScale3D=(X=1.000000,Y=1.000000,Z=1.000000)
     GameStartCountDown=12
     bTradingDoorsOpen=true
 

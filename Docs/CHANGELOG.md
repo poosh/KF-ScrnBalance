@@ -36,6 +36,11 @@
 
 -------------------------------------------------------------------------------
 
+## v9.74.51
+### Scoreboard
+- The snapshot of the final results is now taken the moment the game ends, whether or not anybody has the scoreboard open. Previously it was taken when a player first opened the scoreboard after the end, so everyone who had left or joined in the meantime was frozen into the wrong picture - quitters were missing instead of showing `QUIT`, and newcomers were baked in as if they had played.
+- Players who connect after the game ends don't get the score snapshot and keep a live scoreboard instead of a frozen one.
+
 ## v9.74.50
 ### Reduced Game Crash Probability By a Margin
 - Random client crashes during garbage collection are almost gone.
