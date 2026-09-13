@@ -1008,6 +1008,36 @@ function bool UpdateMonsterCount()
     return result;
 }
 
+function CheckSpecTeams()
+{
+    local Controller C;
+    local ScrnPlayerController ScrnPC;
+    local PlayerReplicationInfo PRI;
+
+    for (C = Level.ControllerList; C != none; C = C.NextController) {
+        PRI = C.PlayerReplicationInfo;
+        if (PRI == none)
+            continue;
+
+        ScrnPC = ScrnPlayerController(C);
+        if (ScrnPC == none)
+            continue;
+
+        if (PRI.bOnlySpectator) {
+            // Release spectators who joined a team by mistake but have never played.
+            // Otherwise, they stay locked to spectating that team.
+            // Kills, unlike Score, survive switching to spectators,
+            // so "PRI.Kills == 0" is a reliable check for "haven't played yet".
+            if (!bClanGame && PRI.Kills == 0 && ScrnPC.GetSpecTeam() < 2) {
+                ScrnPC.SetSpecTeam(ScrnPC.SPEC_DEFAULT);
+            }
+        }
+        else if (!bSingleTeam && PRI.Team != none && PRI.Team.TeamIndex < 2) {
+            ScrnPC.SetSpecTeam(PRI.Team.TeamIndex);
+        }
+    }
+}
+
 function SetupWave()
 {
     local int i;
@@ -1044,6 +1074,7 @@ function SetupWave()
     SmallTeamSize = min(AliveTeamPlayerCount[0], AliveTeamPlayerCount[1]);
     bSingleTeam = AliveTeamPlayerCount[0] == 0 || AliveTeamPlayerCount[1] == 0;
     bTeamWiped = bSingleTeam;
+    CheckSpecTeams();
 
     super.SetupWave();
 

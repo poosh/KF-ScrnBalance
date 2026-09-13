@@ -36,9 +36,10 @@
 
 -------------------------------------------------------------------------------
 
-## v9.74.53
+## v9.74.54
 - Fixed the scoreboard not freezing at the end of the game.
 - **TSC**: the top killer of each team gets their kill counter drawn in purple, like in regular games.
+- Relaxed spectator restrictions in non-clan games to allow spectating both teams for those who haven't played yet (switched to spectator in the lobby or after being AFK from the game start).
 ### Spectating
 - Fixed a bug where dead players didn't see the ammo counter of the player they were watching in 1P.
 - Dead players also see the watched player's damage numbers, like "real" spectators do.
