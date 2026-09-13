@@ -1573,7 +1573,7 @@ function UpdateHud()
         FlashlightDigits.Value = 100.0 * ScrnPawnOwner.TorchBatteryLife / ScrnPawnOwner.default.TorchBatteryLife + 0.0001;
 
         if (bSpectating) {
-            WeightDigits.Value = ScrnPawnOwner.SpecWeight;
+            WeightDigits.Value = ScrnPC.SpecWeight;
         }
         else if (bShowScoreboard) {
             WeightDigits.Value = int(ScrnPawnOwner.MaxCarryWeight + 0.0001);
@@ -1623,12 +1623,7 @@ function UpdateHud()
     else if ( bSpectatingScrn ) {
         // spectating
         BulletsInClipDigits.Value = CurMagAmmo;
-        if (ScrnPawnOwner != none) {
-            GrenadeDigits.Value = ScrnPawnOwner.SpecNades;
-        }
-        else {
-            GrenadeDigits.Value = 0;
-        }
+        GrenadeDigits.Value = ScrnPC.SpecNades;
     }
 
     ClipsDigits.Value = CurClipsPrimary;
@@ -1781,9 +1776,9 @@ function CalculateAmmo()
         }
     }
     else if ( ScrnPawnOwner != none && PlayerOwner.Pawn != ScrnPawnOwner && ScrnPawnOwner.SpecWeapon != none ) {
-        CurMagAmmo = ScrnPawnOwner.SpecMagAmmo;
-        CurClipsPrimary = ScrnPawnOwner.SpecMags;
-        CurClipsSecondary = ScrnPawnOwner.SpecSecAmmo;
+        CurMagAmmo = ScrnPC.SpecMagAmmo;
+        CurClipsPrimary = ScrnPC.SpecMags;
+        CurClipsSecondary = ScrnPC.SpecSecAmmo;
         if ( ClassIsChildOf(ScrnPawnOwner.SpecWeapon, class'Welder') )
             MaxAmmoPrimary = 300; // lame, but this value is used by welder only
     }
@@ -2622,6 +2617,15 @@ event PostRender(Canvas C)
         ResSizeX = C.SizeX;
         ResSizeY = C.SizeY;
     }
+
+    // Take the snapshot of the end game results as soon as the game is ended.
+    // Do that even bHideHud=True - in case the user will change it later.
+    if (KFGRI != none && KFGRI.EndGameType > 0 && !bScoreboardSnapshotTaken
+            && ScrnScoreBoard(ScoreBoard) != none) {
+        ScrnScoreBoard(ScoreBoard).Freeze(C);
+        bScoreboardSnapshotTaken = true;
+    }
+
     super.PostRender(C);
 }
 
@@ -3162,14 +3166,6 @@ function DrawHud(Canvas C)
 
     if ( bUseBloom )
         PlayerOwner.PostFX_SetActive(0, true);
-
-    // Take the snapshot of the end game results as soon as the game is ended
-    // Do that even bHideHud=True - in case the user will change itlater.
-    if (KFGRI != none && KFGRI.EndGameType > 0 && !bScoreboardSnapshotTaken
-            && ScrnScoreBoard(ScoreBoard) != none) {
-        ScrnScoreBoard(ScoreBoard).Freeze(C);
-        bScoreboardSnapshotTaken = true;
-    }
 
     if ( bHideHud ) {
         // Draw fade effects even if the hud is hidden so poeple can't just turn off thier hud
@@ -3736,7 +3732,7 @@ function DrawSpecWeapons(Canvas C)
         return;
 
     for (i = 0; i < 4; ++i) {
-        if (ScrnPawnOwner.SpecWeapons[i] != none)
+        if (ScrnPC.SpecWeapons[i] != none)
             ++count;
     }
     if (count == 0)
@@ -3755,14 +3751,14 @@ function DrawSpecWeapons(Canvas C)
     TempY += C.ClipY * SpecWeaponsCenterOffsetY;
 
     for (i = 0; i < 4; ++i) {
-        if (ScrnPawnOwner.SpecWeapons[i] == none)
+        if (ScrnPC.SpecWeapons[i] == none)
             continue;
 
-        if (ScrnPawnOwner.SpecWeapon == ScrnPawnOwner.SpecWeapons[i]) {
+        if (ScrnPawnOwner.SpecWeapon == ScrnPC.SpecWeapons[i]) {
             Icon = ScrnPawnOwner.SpecWeapon.default.SelectedHudImage;
         }
         else {
-            Icon = ScrnPawnOwner.SpecWeapons[i].default.HudImage;
+            Icon = ScrnPC.SpecWeapons[i].default.HudImage;
         }
         C.SetPos(TempX, TempY);
         C.DrawTile(Icon, TempWidth, TempHeight, 0, 0, 256, 192);

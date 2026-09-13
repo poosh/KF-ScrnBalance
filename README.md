@@ -57,6 +57,11 @@ READ THIS before forking this repo to change "two code lines" and live with the 
 * If you still have to fork the ScrnBalance repo, **RENAME** your forked package to avoid version mismatches with the original one. For example, `MyScrnBalance.u`
 * Please submit pull requests with the changed code if the changes can be useful for other users. You have access to this code thanks to chain of developers that haven't behaved like dicks to the community. Join the chain!
 
+### Knowledge
+If you still decide to write *UnrealScript*, read the following guides on where you may shoot yourself in the foot. I learned it the hard way, so you don't have to.
+- [Network Replication Guide](Docs/Info/code/UnrealNetworkReplication.md). Unreal's networking model differs vastly from the classic client-server paradigm. Typical AJAX knowledge is irrelevant here.
+- [Object Lifetime / Garbage Collection / Dangling References](Docs/Info/code/DanglingRefCrash.md). Does your GUI crash the game? Read this guide!
+- [ScrN Classes](Docs/Info/code/ScrnClasses.md)
 
 ## Building
 

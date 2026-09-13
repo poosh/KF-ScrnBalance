@@ -36,6 +36,16 @@
 
 -------------------------------------------------------------------------------
 
+## v9.74.53
+- Fixed the scoreboard not freezing at the end of the game.
+- **TSC**: the top killer of each team gets their kill counter drawn in purple, like in regular games.
+### Spectating
+- Fixed a bug where dead players didn't see the ammo counter of the player they were watching in 1P.
+- Dead players also see the watched player's damage numbers, like "real" spectators do.
+### Code Changes
+- Spectator info moved from `ScrnHumanPawn` to `ScrnPlayerController`, which replicates to its owner only.
+- Added the [Network Replication Guide](Info/code/UnrealNetworkReplication.md) - where UnrealScript replication differs from what you expect, and how to not shoot yourself in the foot.
+
 ## v9.74.52
 ### Scoreboard
 - The snapshot of the final results is now taken the moment the game ends, whether or not anybody has the scoreboard open. Previously it was taken when a player first opened the scoreboard after the end, so everyone who had left or joined in the meantime was frozen into the wrong picture - quitters were missing instead of showing `QUIT`, and newcomers were baked in as if they had played.

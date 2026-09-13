@@ -90,11 +90,10 @@ var class<ScrnVeterancyTypes> ScrnPerk;
 var transient bool bAmIBaron; // :trollface:
 
 // spectator info
-var bool bViewTarget; // somebody spectating me
 var class<KFWeapon> SpecWeapon;
 var byte AmmoStatus;
-var byte SpecWeight, SpecMagAmmo, SpecMags, SpecSecAmmo, SpecNades;
-var class<KFWeapon> SpecWeapons[4];
+// server-side cache of the inventory shown to spectators; sent via ScrnPlayerController.SpecWeapons
+var transient class<KFWeapon> SpecWeapons[4];
 var transient bool bSpecWeaponsReady;
 var transient float NextSpecInfoUpdateTime;
 var float SpecInfoUpdateDelay;
@@ -157,12 +156,6 @@ replication
 
     reliable if( (bNetDirty || bNetInitial) && Role == ROLE_Authority )
         SpecWeapon, AmmoStatus;
-
-    reliable if( bViewTarget && (bNetDirty || bNetInitial) && Role == ROLE_Authority )
-        SpecWeight, SpecMagAmmo, SpecMags, SpecSecAmmo, SpecNades;
-
-    reliable if( bViewTarget && (bNetDirty || bNetInitial) && Role == ROLE_Authority )
-        SpecWeapons;
 
     // seem like that there is no need to replicate bCowboyMode, because it is used only on local player,
     // which can set it himself
@@ -670,44 +663,74 @@ function ServerChangedWeapon(Weapon OldWeapon, Weapon NewWeapon)
     ApplyWeaponFlashlight(false);
 }
 
+// Sends the spectator info to every player spectating this pawn. Server-side only.
 function UpdateSpecInfo()
 {
-    local KFWeapon Weap;
+    local int i;
+    local ScrnPlayerController PC;
 
     NextSpecInfoUpdateTime = Level.TimeSeconds + SpecInfoUpdateDelay;
 
-    SpecWeight = CurrentWeight;
-    Weap = KFWeapon(Weapon);
-    if ( Weap != none ) {
-        SpecWeapon = Weap.class;
-        SpecMagAmmo = Weap.MagAmmoRemaining;
-        if (  Weap.MagCapacity <= 1 ) {
-            SpecMags = Weap.AmmoAmount(0);
+    for (i = 0; i < Level.GRI.PRIArray.Length; ++i) {
+        PC = ScrnPlayerController(Level.GRI.PRIArray[i].Owner);
+        if (PC != none && PC.ViewTarget == self && PC.Pawn != self) {
+            SendSpecInfo(PC);
         }
-        else if ( Weap.bHoldToReload )
-            SpecMags = Max(Weap.AmmoAmount(0)-Weap.MagAmmoRemaining,0); // Single rounds reload, just show the true ammo count.
-        else if ( Weap.MagCapacity <= 1 )
-            SpecMags = Weap.AmmoAmount(0);
-        else if ( Weap.AmmoAmount(0) <= Weap.MagAmmoRemaining )
-            SpecMags = 0;
-        else
-            SpecMags = ceil(float(Weap.AmmoAmount(0) - Weap.MagAmmoRemaining)/Weap.MagCapacity);
-
-        if ( Weap.bHasSecondaryAmmo )
-            SpecSecAmmo = Weap.AmmoAmount(1);
-        else
-            SpecSecAmmo = 0;
     }
-    else
-        SpecWeapon = none;
+}
 
-    if ( FindPlayerGrenade() != none )
-        SpecNades = PlayerGrenade.AmmoAmount(0);
-    else
-        SpecNades = 0;
+// Fills the spectator info of PC, who is spectating this pawn.
+// ScrnPlayerController replicates it to its owner only, so the enemy team never receives it.
+function SendSpecInfo(ScrnPlayerController PC)
+{
+    local KFWeapon Weap;
+    local int i;
+
+    PC.SpecWeight = CurrentWeight;
+    Weap = KFWeapon(Weapon);
+    if (Weap != none) {
+        SpecWeapon = Weap.class;
+        PC.SpecMagAmmo = Weap.MagAmmoRemaining;
+        if (Weap.MagCapacity <= 1) {
+            PC.SpecMags = Weap.AmmoAmount(0);
+        }
+        else if (Weap.bHoldToReload) {
+            // Single rounds reload, just show the true ammo count.
+            PC.SpecMags = Max(Weap.AmmoAmount(0) - Weap.MagAmmoRemaining, 0);
+        }
+        else if (Weap.AmmoAmount(0) <= Weap.MagAmmoRemaining) {
+            PC.SpecMags = 0;
+        }
+        else {
+            PC.SpecMags = ceil(float(Weap.AmmoAmount(0) - Weap.MagAmmoRemaining) / Weap.MagCapacity);
+        }
+
+        if (Weap.bHasSecondaryAmmo) {
+            PC.SpecSecAmmo = Weap.AmmoAmount(1);
+        }
+        else {
+            PC.SpecSecAmmo = 0;
+        }
+    }
+    else {
+        SpecWeapon = none;
+        PC.SpecMagAmmo = 0;
+        PC.SpecMags = 0;
+        PC.SpecSecAmmo = 0;
+    }
+
+    if (FindPlayerGrenade() != none) {
+        PC.SpecNades = PlayerGrenade.AmmoAmount(0);
+    }
+    else {
+        PC.SpecNades = 0;
+    }
 
     if (!bSpecWeaponsReady) {
         UpdateSpecWeapons();
+    }
+    for (i = 0; i < 4; ++i) {
+        PC.SpecWeapons[i] = SpecWeapons[i];
     }
 }
 
@@ -2108,8 +2131,9 @@ simulated function Tick(float DeltaTime)
     if ( KFPRI != none && ( PrevPerkClass != KFPRI.ClientVeteranSkill || PrevPerkLevel != KFPRI.ClientVeteranSkillLevel) )
         VeterancyChanged();
 
-    if (bViewTarget && Level.TimeSeconds > NextSpecInfoUpdateTime)
+    if (Role == ROLE_Authority && Level.TimeSeconds > NextSpecInfoUpdateTime) {
         UpdateSpecInfo();
+    }
 
     if (bWantsZoom) {
         CheckZoom();

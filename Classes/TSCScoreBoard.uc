@@ -451,6 +451,26 @@ function UpdateTeamTotals(Canvas Canvas, int TeamIndex, out array<SScoreRow> Row
         TeamLogo[TeamIndex] = TSCTeam.GetLogo();
 }
 
+function HighlightBest(out array<SScoreRow> Rows)
+{
+    local int i, MaxTeamKills;
+
+    if (Rows.Length < 2)
+        return;
+
+    for (i = 0; i < Rows.Length; ++i) {
+        if (Rows[i].KFPRI != none)
+            MaxTeamKills = max(MaxTeamKills, Rows[i].KFPRI.Kills);
+    }
+    if (MaxTeamKills <= 0)
+        return;
+
+    for (i = 0; i < Rows.Length; ++i) {
+        if (Rows[i].KFPRI != none && Rows[i].KFPRI.Kills == MaxTeamKills)
+            Rows[i].KillsColor = BestColor;
+    }
+}
+
 function UpdateCache(Canvas Canvas)
 {
     local array<PlayerReplicationInfo> Red, Blue;
@@ -513,6 +533,9 @@ function UpdateCache(Canvas Canvas)
         UpdateGameplayRow(Canvas, BlueCache[i], false);
         UpdateTelemetryRow(Canvas, BlueCache[i]);
     }
+
+    HighlightBest(Cache);
+    HighlightBest(BlueCache);
 
     UpdateTeamTotals(Canvas, 0, Cache);
     UpdateTeamTotals(Canvas, 1, BlueCache);
@@ -765,9 +788,11 @@ function float DrawTeamRow(Canvas Canvas, out SScoreRow Row, int TeamIndex, floa
     }
 
     // kills
-    if ( Row.KillsText != "" ) {
+    if (Row.KillsText != "") {
+        Canvas.DrawColor = Row.KillsColor;
         Canvas.SetPos(TeamLayout[TeamIndex].KillsXPos - Row.KillsW, y);
         Canvas.DrawTextClipped(Row.KillsText);
+        Canvas.DrawColor = HUDClass.default.WhiteColor;
     }
     // assists
     if ( Row.AssistsText != "" ) {

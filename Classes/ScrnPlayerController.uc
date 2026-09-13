@@ -124,7 +124,9 @@ var localized string strNoPerkChanges, strPerkLocked, strPerkNotAvailable;
 
 var transient Controller FavoriteSpecs[2];
 var localized string strSpecFavoriteAssigned, strSpecNoFavorites;
-var transient Actor OldViewTarget;
+// info about the spectated ScrnHumanPawn (ViewTarget), filled by ScrnHumanPawn.SendSpecInfo()
+var byte SpecWeight, SpecMagAmmo, SpecMags, SpecSecAmmo, SpecNades;
+var class<KFWeapon> SpecWeapons[4];
 
 var transient rotator PrevRot;
 var transient int ab_warning;
@@ -217,6 +219,10 @@ replication
 
     reliable if ( bNetOwner && (bNetDirty || bNetInitial) && Role == ROLE_Authority )
         bForceDelayedRestart, SpecTeam;
+
+    // info about the spectated player; a PlayerController replicates to its owner only
+    reliable if (Role == ROLE_Authority)
+        SpecWeight, SpecMagAmmo, SpecMags, SpecSecAmmo, SpecNades, SpecWeapons;
 
     reliable if ( bNetOwner && (bNetDirty || bNetInitial) && Role < ROLE_Authority )
         bPrioritizePerkedWeapons, StartCash;
@@ -524,13 +530,12 @@ function SendDamageAck(int Damage, vector HitLocation, byte DamTypeNum)
 
     ClientPlayerDamaged(Damage, HitLocation, DamTypeNum);
 
-    if ( Role == ROLE_Authority && ScrnPawn != none && ScrnPawn.bViewTarget ) {
-        // show damage popups on spectating players
-        for ( i=0; i<Level.GRI.PRIArray.length; ++i ) {
-            if ( Level.GRI.PRIArray[i] != none && Level.GRI.PRIArray[i].bOnlySpectator ) {
-                SpecPC = ScrnPlayerController(Level.GRI.PRIArray[i].Owner);
-                if ( SpecPC != none && SpecPC != self && SpecPC.ViewTarget == Pawn )
-                    SpecPC.ClientPlayerDamaged(Damage, HitLocation, DamTypeNum);
+    if (Role == ROLE_Authority && Pawn != none) {
+        // show damage popups to the players spectating us, including dead players
+        for (i = 0; i < Level.GRI.PRIArray.Length; ++i) {
+            SpecPC = ScrnPlayerController(Level.GRI.PRIArray[i].Owner);
+            if (SpecPC != none && SpecPC != self && SpecPC.ViewTarget == Pawn) {
+                SpecPC.ClientPlayerDamaged(Damage, HitLocation, DamTypeNum);
             }
         }
     }
@@ -3283,29 +3288,15 @@ function ServerSetViewTarget(Actor NewViewTarget)
 
 function ViewTargetChanged()
 {
-    local Controller C;
     local ScrnHumanPawn ScrnVT;
 
-    //log("ViewTargetChanged("$OldViewTarget$")", 'ScrnBalance');
-
-    if ( Role < ROLE_Authority || !AllowFreeCamera() )
+    if (Role < ROLE_Authority)
         return;
 
-    ScrnVT = ScrnHumanPawn(OldViewTarget);
-    if ( ScrnVT != none && ScrnVT != ViewTarget ) {
-        // check if somebody else is spectating our old target
-        for ( C=Level.ControllerList; C!=None; C=C.NextController ) {
-            if ( C.Pawn != ScrnVT && PlayerController(C) != none && PlayerController(C).ViewTarget == ScrnVT )
-                break;
-        }
-        ScrnVT.bViewTarget = C!=none;
-    }
-
     ScrnVT = ScrnHumanPawn(ViewTarget);
-    if ( ScrnVT != none )
-            ScrnVT.bViewTarget = true; // tell pawn that we are watching him
-
-    OldViewTarget = ViewTarget;
+    if (ScrnVT != none && ScrnVT != Pawn) {
+        ScrnVT.SendSpecInfo(self);
+    }
 }
 
 function ClientSetBehindView(bool B)
