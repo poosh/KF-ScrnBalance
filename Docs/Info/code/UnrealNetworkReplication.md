@@ -25,7 +25,8 @@ these, and the same expression reads differently on each machine. That is what m
 **Relevancy and channels.** An actor is replicated to a client only while the server considers it
 relevant to that client, and only through a per-connection *channel* opened for it. No channel means
 nothing replicates - no properties, no RPCs. When an actor stops being relevant the channel closes,
-and closing a channel normally destroys the client's copy.
+and closing a channel normally destroys the client's copy. A client can only have so many channels
+open at once - see *Channel limit* below.
 
 **Ownership decides what is possible.**
 
@@ -62,17 +63,45 @@ On a client in a network game. (On the server, and in a solo game, every actor i
 *ScrN status:* every server-to-client RPC declared by a ScrN weapon or other inventory class is
 `simulated`.
 
+## Channel limit: about a thousand actors per client
+
+Every actor a client receives - its replicated properties *and* its RPCs - travels through a channel
+of its own on that client's connection, and a connection has a fixed number of channel slots:
+**roughly a thousand**. The limit is **per client**, not per server, and it is built into the
+network protocol itself, so no setting raises it.
+
+Not all of those slots are for actors. One always belongs to the connection itself, and one more
+to voice chat while that player has it enabled (`UseVoIP=True` under `[ALAudio.ALAudioSubsystem]`,
+the default). Package downloads briefly use a few more, but only before the player joins.
+
+**A slot is held for longer than the actor is visible:**
+
+- **An actor that stops being relevant keeps its channel open for `RelevantTimeout` seconds**
+  (`[IpDrv.TcpNetDriver]`, 5.0 by default), and then until the client confirms the close - about one
+  more round trip.
+- **A `bNetTemporary` actor still takes a slot** until the client acknowledges its single update, so
+  a burst of projectiles counts against the limit too.
+
+So the practical ceiling is closer to "everything that was relevant to this client over the last
+five seconds, plus projectiles in flight" than to "what is on screen right now".
+
+**When the slots run out, nothing is logged.** An actor that cannot get a channel is simply not
+replicated to that client - it does not exist there - and it is tried again the next time the server
+considers it, so it pops in once slots free up. A server-to-client RPC on an actor that has no
+channel yet on that connection is lost - **even a `reliable` one**.
+
 # Variable Replication
 
 ## Two independent filters
 
-A replicated property reaches a client only if **both** of these pass:
+A replicated property reaches a client only if **both** of these pass, in this order:
 
 1. **It changed.** The engine remembers, per connection, the last state it sent that client, and
-   compares against it. A value equal to what that client already holds is never resent. This is
-   automatic and cannot be switched off.
+   compares against it. A value equal to what that client already holds fails this test and is never
+   resent. This is automatic and cannot be switched off.
 2. **Your condition allows it.** The `reliable if (...)` expression - and it is evaluated **only for
-   properties that already failed the first test.**
+   properties that passed the first test**, i.e. whose value has changed. An unchanged property never
+   reaches your condition at all.
 
 So a replication condition is *not* a bandwidth filter for unchanged data. It decides **who** gets a
 changed value, never **whether** the value changed. Almost everything surprising about `bNetDirty`
@@ -126,8 +155,8 @@ per-actor one script set.
 
 **`Info` sets `bOnlyDirtyReplication=True`** (`Info.uc:59`), so every `ReplicationInfo`, GRI, PRI and
 mutator is in this mode by default - `ScrnGameReplicationInfo`, `ScrnCustomPRI` and friends. That is
-where dirtiness genuinely decides whether anything happens. (`ScrnBalance` deliberately sets it back
-to `False`.)
+where dirtiness genuinely decides whether anything happens. See *Example: how **not** to use
+`bOnlyDirtyReplication`* below for a mutator that switched it off for no reason.
 
 ### In a replication condition it is a tautology
 
@@ -153,6 +182,93 @@ already used across ScrN, to push an update out immediately:
 ```unrealscript
 NetUpdateTime = Level.TimeSeconds - 1;
 ```
+
+### Example: how **not** to use `bOnlyDirtyReplication`
+
+`ScrnBalance` is a mutator, so it inherits `Info`'s defaults, and it replicates a handful of server
+settings to clients - level caps, hardcore level, team lock, feature flags. Until v9.74.55 its
+`defaultproperties` read:
+
+```unrealscript
+bAlwaysRelevant=true
+bOnlyDirtyReplication=false  // don't do this
+// NetUpdateFrequency=10 inherited from Info
+```
+
+It was switched off as a precaution - "otherwise my changes might not reach clients". But every
+replicated `ScrnBalance` variable is changed by an ordinary script assignment, including the ones set
+from other classes (`Mut.HardcoreLevel = ...`, `ScrnBalanceMut.bTeamsLocked = ...`), and every such
+assignment marks the actor dirty. Nothing native ever touches them. So `false` fixed nothing, while
+making the server pick the mutator up ten times a second **for every connected player**, run its
+replication pass, and find nothing to send.
+
+`bOnlyDirtyReplication=false` is needed only when a replicated value can change **without** a script
+assignment:
+
+- native engine code changes it - physics or movement, the case the engine's own comment warns about;
+- a replicated struct is written member-wise (see below);
+- `SetPropertyText()`, the console `set` command or a config reload changes it.
+
+If none of those apply, leave the `Info` default alone. v9.74.55 restored it:
+
+```unrealscript
+bAlwaysRelevant=true
+bOnlyDirtyReplication=true
+// NetUpdateFrequency=10 still inherited from Info
+```
+
+A clean `ScrnBalance` is now skipped outright: each time the server considers it, a few cheap checks
+say "nothing to do" and it moves on, so 10 Hz costs next to nothing. (Better still, a mutator would not
+be replicated at all: server settings that clients need belong in a separate `ReplicationInfo`. The
+`TODO` in `ScrnBalance`'s `defaultproperties` says as much.)
+
+#### Second mistake: lowering `NetUpdateFrequency` too
+
+The first attempt at that fix also set `NetUpdateFrequency=1.0` - the settings change rarely, and
+nobody needs them instantly. It was reverted, because the update rate also decides when a **joining**
+player first receives the actor:
+
+- **The server opens an actor's channel only when it next considers that actor.** A 1 Hz actor can
+  reach a new client up to a second after that client's own pawn and HUD, and any client code that
+  expects it to be there from the start runs into `none` in the meantime. In ScrN, the HUD reads the
+  mutator while drawing perk colors, so every map load logged `Accessed None` once per rendered frame
+  for about a second.
+- **Every later change waits for the actor's next update slot** too - up to `1/NetUpdateFrequency`
+  seconds. That part was acceptable; to push one urgent change out immediately, follow the assignment
+  with `NetUpdateTime = Level.TimeSeconds - 1;`.
+
+So lower `NetUpdateFrequency` only for actors that no client code reads at startup - and with
+`bOnlyDirtyReplication=True` doing the real saving, there is rarely a reason to.
+
+#### Getting it to a joining player first
+
+Even at 10 Hz, a joining player's HUD can still reach the client before `ScrnBalance` does. The HUD is
+spawned by the `ClientSetHUD()` call in `GameInfo.PostLogin()`, and an RPC never waits: sending one to
+an actor that has no channel yet makes the server open the channel and replicate the actor on the
+spot. `ScrnBalance` has no such shortcut, so it waits twice:
+
+1. **For its next update slot** - up to `1/NetUpdateFrequency` seconds.
+2. **For its turn in the join flood.** A new client's connection saturates quickly, and whatever does
+   not fit waits for the next tick, in priority order. Every actor that is new to that client starts
+   from the same base time (`SpawnPrioritySeconds` under `[IpDrv.TcpNetDriver]`, 1.0 by default), so
+   `NetPriority` largely decides who goes first. `ScrnBalance` inherited `1.0` and queued behind the
+   controller, player pawns and weapons, which are all `3.0`.
+
+v9.74.55 addresses both, without guarding the client code that expects the mutator to exist:
+
+```unrealscript
+// ScrnBalance defaultproperties
+NetPriority=3.0
+
+// ScrnPlayerController.PostLogin() - server-side, right after GameInfo.PostLogin() sent ClientSetHUD()
+Mut.NetUpdateTime = Level.TimeSeconds - 1;
+```
+
+Forcing `NetUpdateTime` puts the mutator into the very next replication pass, where its channel to the
+new client opens, and the higher `NetPriority` puts it near the front of that pass. Neither costs
+anything in normal play: with `bOnlyDirtyReplication=True`, a clean `ScrnBalance` is dropped for every
+other client before its priority is even calculated. The RPC still wins - the HUD arrives first - but
+the gap shrinks to roughly one server tick.
 
 ## Never write a replicated struct member-wise
 

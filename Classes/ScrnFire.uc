@@ -82,24 +82,24 @@ function DoTrace(Vector Start, Rotator Dir)
     HitMomentum = Momentum;
 
     // HitCount isn't a number of max penetration. It is just to be sure we won't stuck in infinite loop
-    while( ++HitCount < 127 && HitDamage >= DamageMin )
-    {
+    while (++HitCount < 127 && HitDamage >= DamageMin) {
         Zed = none;
         HitPawn = none;
 
         Other = Instigator.HitPointTrace(HitLocation, HitNormal, End, HitPoints, Start,, 1);
-        if( Other == none ) {
+
+        if (Other == none)
             break;
-        }
-        else if( Other==Instigator || Other.Base == Instigator ) {
+
+        if (Other == Instigator || Other.Base == Instigator) {
             IgnoreActors[IgnoreActors.Length] = Other;
             Other.SetCollision(false);
             Start = HitLocation;
             continue;
         }
-        else if ( Other.bWorldGeometry || Other == Level ) {
+
+        if (Other.bWorldGeometry || Other == Level)
             break;
-        }
 
         Zed = KFMonster(Other);
         if ( Zed != none ) {
@@ -118,13 +118,24 @@ function DoTrace(Vector Start, Rotator Dir)
         }
 
         if (HitPawn != none) {
-            if(!HitPawn.bDeleteMe) {
+            // bWasDecapitated in this case means was dead or shot missed any bones/body.
+            // In that case, our bullet flies by without damage loss.
+            bWasDecapitated = HitPawn.bDeleteMe || HitPoints.Length == 0 || HitPawn.Health < 0;
+
+            if(!HitPawn.bDeleteMe && HitPoints.Length > 0) {
                 DamagePlayer(HitPawn, HitDamage, HitLocation, HitMomentum*X, HitPoints);
             }
             IgnoreActors[IgnoreActors.Length] = Other;
-            IgnoreActors[IgnoreActors.Length] = HitPawn.AuxCollisionCylinder;
             Other.SetCollision(false);
-            HitPawn.AuxCollisionCylinder.SetCollision(false);
+            if (HitPawn.AuxCollisionCylinder.bCollideActors) {
+                IgnoreActors[IgnoreActors.Length] = HitPawn.AuxCollisionCylinder;
+                HitPawn.AuxCollisionCylinder.SetCollision(false);
+            }
+
+            if(bWasDecapitated) {
+                Start = HitLocation;
+                continue;
+            }
         }
         else if (Zed != none) {
             bWasDecapitated = Zed.bDecapitated;

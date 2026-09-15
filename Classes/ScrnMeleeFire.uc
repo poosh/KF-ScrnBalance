@@ -1,3 +1,13 @@
+// NB! For every melee weapon using this fire mode, the both statements must be true:
+// 1. DamagedelayMin / GetFireSpeed() > Weapon.PutDownTime
+// 2. DamagedelayMin / GetFireSpeed() < Weapon.PutDownTime + (FireRate / GetFireSpeed() * Weapon.MinReloadPct)
+// That ensures the Timer() triggers before weapon switching (e.g., LMB quickly followed by 1)
+// The default PutDownTime is 0.33; The quick one - 0.15 (Nade, QuickMelee, Sprint)
+// GetFireSpeed() is 1.0 off-perk, 1.25 for Berserker and, if Weight <= 3, 2.0 for Combat Medic.
+// Check it against both PutDownTimes x both Off-perk and Berserker fire speeds (and x2.0 if Weight <= 3)
+// For very quick attacks, lower PutDownTime (like ScrnMachete)
+// For slow attacks, increase MinReloadPct (like ScrnClaymore)
+
 class ScrnMeleeFire extends KFMeleeFire;
 
 var array<name> FireAnims;
@@ -98,10 +108,17 @@ function Timer()
                 }
             }
             else if (HitPawn != none) {
-                HitPawn.ProcessLocationalDamage(MyDamage, Instigator, HitLocation, PointDir,
-                        hitDamageClass, HitPoints);
-                if (MeleeHitSounds.Length > 0) {
-                    Weapon.PlaySound(MeleeHitSounds[Rand(MeleeHitSounds.length)],SLOT_None,MeleeHitVolume,,,,false);
+                if (HitPoints.Length == 0) {
+                    // The center of the attack missed a human pawn (e.g., is just above the shoulder).
+                    // Reset HitActor to make HitPawn eligible for the radial attack.
+                    HitActor = none;
+                }
+                else {
+                    HitPawn.ProcessLocationalDamage(MyDamage, Instigator, HitLocation, PointDir,
+                            hitDamageClass, HitPoints);
+                    if (MeleeHitSounds.Length > 0) {
+                        Weapon.PlaySound(MeleeHitSounds[Rand(MeleeHitSounds.length)],SLOT_None,MeleeHitVolume,,,,false);
+                    }
                 }
             }
             else {

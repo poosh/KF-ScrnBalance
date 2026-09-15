@@ -4832,6 +4832,8 @@ defaultproperties
     PlayerControllerClassName="ScrnBalanceSrv.ScrnPlayerController"
     WQClass=class'ScrnGameWorkqueue'
     WaveHandlerClass=class'ScrnWaveHandler'
+    DefaultPlayerClassName="ScrnBalanceSrv.ScrnHumanPawn"
+
 
     MaxTeamSize=0  // uncapped. Player count is limited by MaxPlayers only.
     DefaultGameLength=-1

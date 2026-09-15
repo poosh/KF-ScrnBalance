@@ -507,6 +507,11 @@ function ZedCmd(PlayerController Sender, string cmd)
     if ( bNeedChanges && !Mut.CheckAdmin(Sender) )
         return;
 
+    if (bSummon && args[0] ~= "HUMAN") {
+        SummonHuman(Sender);
+        return;
+    }
+
     Sender.ClientMessage("INDEX / STATUS / SPAWN CHANCE / ZED CLASS");
     Sender.ClientMessage("=========================================================");
     for ( i = 0; i < ZedInfos.length; ++i ) {
@@ -1626,49 +1631,90 @@ function class<KFMonster> FindActiveZedByAlias(string Alias, optional string Zed
     return none;
 }
 
+function byte SummonHuman(PlayerController Sender)
+{
+    local Vector HitLoc, HitNormal;
+    local Vector SenderLoc, EndLoc;
+    local Vector x,y,z;
+    local Actor target;
+    local Vector SpawnLoc;
+    local ScrnHumanPawn H;
+
+    GetAxes( Sender.Rotation, x, y, z);
+    EndLoc = SenderLoc + X*10000;
+    if ( Sender.Pawn != none ) {
+        SenderLoc = Sender.Pawn.Location;
+        target = Sender.Pawn.Trace(HitLoc, HitNormal, EndLoc);
+    }
+    else {
+        SenderLoc = Sender.Location;
+        target = Sender.Trace(HitLoc, HitNormal, EndLoc);
+    }
+
+    if ( target == none || !target.bWorldGeometry ) {
+        Sender.ClientMessage("Look to the ground where to summon a dummy human");
+        return 0;
+    }
+
+    SpawnLoc = HitLoc;
+    SpawnLoc.Z += class'ScrnHumanPawn'.default.CollisionHeight + 25;
+    H = Spawn(class'ScrnHumanPawn',,,SpawnLoc);
+    if (H == none) {
+        Sender.ClientMessage("Spawn failed");
+        return 0;
+    }
+
+    // H has no PRI, so doesn't apply FFScale.
+    // Increase health 10x to simulate 10% FF.
+    H.HealthMax = 1000;
+    H.Health = 1000;
+    H.SetPhysics(PHYS_FALLING);
+    return 1;
+}
+
 function byte SummonZed(PlayerController Sender, string Alias, string ZedClassStr, out string msg)
 {
-     local class<KFMonster> zedc;
-     local Vector HitLoc, HitNormal;
-     local Vector SenderLoc, EndLoc;
-     local Vector x,y,z;
-     local Actor target;
-     local Vector SpawnLoc;
-     local KFMonster M;
+    local class<KFMonster> zedc;
+    local Vector HitLoc, HitNormal;
+    local Vector SenderLoc, EndLoc;
+    local Vector x,y,z;
+    local Actor target;
+    local Vector SpawnLoc;
+    local KFMonster M;
 
-     zedc = FindActiveZedByAlias(Alias, ZedClassStr);
-     if ( zedc == none ) {
-         msg = "Zed " $ Alias @ ZedClassStr $ " is not loaded";
-         return 0;
-     }
+    zedc = FindActiveZedByAlias(Alias, ZedClassStr);
+    if ( zedc == none ) {
+        msg = "Zed " $ Alias @ ZedClassStr $ " is not loaded";
+        return 0;
+    }
 
-     GetAxes( Sender.Rotation, x, y, z);
-     EndLoc = SenderLoc + X*10000;
-     if ( Sender.Pawn != none ) {
-         SenderLoc = Sender.Pawn.Location;
-         target = Sender.Pawn.Trace(HitLoc, HitNormal, EndLoc);
-     }
-     else {
-         SenderLoc = Sender.Location;
-         target = Sender.Trace(HitLoc, HitNormal, EndLoc);
-     }
+    GetAxes( Sender.Rotation, x, y, z);
+    EndLoc = SenderLoc + X*10000;
+    if ( Sender.Pawn != none ) {
+        SenderLoc = Sender.Pawn.Location;
+        target = Sender.Pawn.Trace(HitLoc, HitNormal, EndLoc);
+    }
+    else {
+        SenderLoc = Sender.Location;
+        target = Sender.Trace(HitLoc, HitNormal, EndLoc);
+    }
 
-     if ( target == none || !target.bWorldGeometry ) {
-         msg = "Look to the ground where to summon a zed";
-         return 0;
-     }
+    if ( target == none || !target.bWorldGeometry ) {
+        msg = "Look to the ground where to summon a zed";
+        return 0;
+    }
 
-     SpawnLoc = HitLoc;
-     SpawnLoc.Z += zedc.default.CollisionHeight + 25;
-     M = Spawn(zedc,,,SpawnLoc);
-     if ( M == none ) {
-         msg = "Spawn failed";
-         return 0;
-     }
+    SpawnLoc = HitLoc;
+    SpawnLoc.Z += zedc.default.CollisionHeight + 25;
+    M = Spawn(zedc,,,SpawnLoc);
+    if ( M == none ) {
+        msg = "Spawn failed";
+        return 0;
+    }
 
-     Game.OverrideMonsterHealth(M);
-     Mut.GameRules.ReinitMonster(M);
-     return 1;
+    Game.OverrideMonsterHealth(M);
+    Mut.GameRules.ReinitMonster(M);
+    return 1;
 }
 
 function byte SpawnZed(string Alias, string ZedClassStr, byte count, out string msg)

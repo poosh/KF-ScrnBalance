@@ -4213,11 +4213,11 @@ exec function SpecHeaderSize(byte size)
 
 final static function color PerkColor(int PerkLevel)
 {
-    if ( PerkLevel <= 0 )
+    if (PerkLevel <= 5)
         return default.PerkColors[0];
 
     PerkLevel--;
-    if ( class'ScrnBalance'.default.Mut.b10Stars )
+    if (class'ScrnBalance'.default.Mut.b10Stars)
         PerkLevel /= 10;
     else
         PerkLevel /= 5;
@@ -4476,7 +4476,7 @@ function MarkTarget(KFPlayerReplicationInfo Sender, Actor Target, vector Locatio
     switch (MarkGroup) {
         case MARK_PLAYERS:
             MarkLife = MarkLifePlayer;
-            Description = class'ScrnBalance'.default.Mut.ColoredPlayerName(Sender);
+            Description = class'ScrnFunctions'.static.ColoredPlayerName(Sender);
             if (KFGRI != none && !KFGRI.bWaveInProgress) {
                 // twice longer marks during the trader time
                 MarkLife *= 2;
@@ -4488,7 +4488,7 @@ function MarkTarget(KFPlayerReplicationInfo Sender, Actor Target, vector Locatio
             Target = none;
             MarkLife = MarkLifeLocation;
             if (MarkType != MARK_DEBUGLOC) {
-                Description = class'ScrnBalance'.default.Mut.ColoredPlayerName(Sender);
+                Description = class'ScrnFunctions'.static.ColoredPlayerName(Sender);
             }
 
             if (MarkType == MARK_CAMP) {

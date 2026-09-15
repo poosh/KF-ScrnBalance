@@ -36,6 +36,16 @@
 
 -------------------------------------------------------------------------------
 
+## v9.74.55
+- Fixed `QuickMelee` again
+- Fixed **melee expoloits** where players could skip the attack animation and instantly deliver damage.
+- **Syringe** instant self-heal exploit is officially renamed to a feature and is here to stay.
+### TSC
+- **20m** base radius is here to stay, as shown by the good results in the TSC practice session.
+- `MUTATE ZED HUMAN SUMMON` - a Test Map command to summon a dummy `ScrnHumanPawn` to test PvP on. The dummy has 1000 HP, as it receives the full damage instead of just `FriendlyFireScale`.
+- Fixed a bug in hitscan fire where shooting over a player's shoulder blocked bullets without dealing any damage. Now bullets correctly fly by.
+- Fixed a bug in melee fire where aiming above a player's shoulder also prevented radial damage to that player. Now, weapons with a wide radial attack angle still deal partial damage even when the attack's center point is outside the player's body.
+
 ## v9.74.54
 - Fixed the scoreboard not freezing at the end of the game.
 - **TSC**: the top killer of each team gets their kill counter drawn in purple, like in regular games.
@@ -46,6 +56,7 @@
 ### Code Changes
 - Spectator info moved from `ScrnHumanPawn` to `ScrnPlayerController`, which replicates to its owner only.
 - Added the [Network Replication Guide](Info/code/UnrealNetworkReplication.md) - where UnrealScript replication differs from what you expect, and how to not shoot yourself in the foot.
+- Added the [GOTCHA](Info/code/Gotchas.md) - a collection of the most absurd UnrealScript development quirks. Read those, as you would never have guessed them.
 
 ## v9.74.52
 ### Scoreboard

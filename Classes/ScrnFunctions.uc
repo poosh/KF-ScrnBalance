@@ -6,7 +6,7 @@ class ScrnFunctions extends ScrnF
 
 // MOVE SECTION END
 
-static function class<ScrnVeterancyTypes> FindPerkByName(ClientPerkRepLink L, string VeterancyNameOrIndex)
+static final function class<ScrnVeterancyTypes> FindPerkByName(ClientPerkRepLink L, string VeterancyNameOrIndex)
 {
     local int i;
     local class<ScrnVeterancyTypes> Perk;
@@ -32,7 +32,7 @@ static function class<ScrnVeterancyTypes> FindPerkByName(ClientPerkRepLink L, st
     return none;
 }
 
-static function SendPerkList(PlayerController PC)
+static final function SendPerkList(PlayerController PC)
 {
     local ScrnClientPerkRepLink L;
     local class<ScrnVeterancyTypes> Perk;
@@ -66,7 +66,8 @@ static function SendPerkList(PlayerController PC)
     }
 }
 
-static function bool AddGunSkin(class<KFWeaponPickup> BasePickup, class<KFWeaponPickup> SkinnedPickup) {
+static final function bool AddGunSkin(class<KFWeaponPickup> BasePickup, class<KFWeaponPickup> SkinnedPickup)
+{
     local int i;
 
     if (BasePickup == none || SkinnedPickup == none) {
@@ -83,7 +84,8 @@ static function bool AddGunSkin(class<KFWeaponPickup> BasePickup, class<KFWeapon
     return true;
 }
 
-static function RemoveGunSkin(class<KFWeaponPickup> BasePickup, class<KFWeaponPickup> SkinnedPickup) {
+static final function RemoveGunSkin(class<KFWeaponPickup> BasePickup, class<KFWeaponPickup> SkinnedPickup)
+{
     local int i;
 
     if (BasePickup == none) {
@@ -95,6 +97,17 @@ static function RemoveGunSkin(class<KFWeaponPickup> BasePickup, class<KFWeaponPi
             BasePickup.default.VariantClasses.remove(i--, 1);
         }
     }
+}
+
+// Optimization hint:
+// static final functions in UnrealScript are still functions. They are NOT inline, unlike C++.
+// While calling a final static function is cheaper than a regular (virtual) function, there is still a significant
+// overhead. Don't call this function in a time-critical section. Don't call it on a KFMeleeGun - simply check it
+// against Syringe and Welder instead.
+// Read Gotchas.md
+static final function bool IsMeleeWeapon(Weapon W)
+{
+    return KFMeleeGun(W) != none && Syringe(W) == none && Welder(W) == none;
 }
 
 

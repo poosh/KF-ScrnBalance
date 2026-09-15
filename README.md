@@ -59,6 +59,7 @@ READ THIS before forking this repo to change "two code lines" and live with the 
 
 ### Knowledge
 If you still decide to write *UnrealScript*, read the following guides on where you may shoot yourself in the foot. I learned it the hard way, so you don't have to.
+- [GOTCHA](Docs/Info/code/Gotchas.md). UnrealScript doesn't just let you shoot yourself in the foot. It keeps a loaded Boomstick pointed at your face for the entire development cycle. It is called Unreal because it is.
 - [Network Replication Guide](Docs/Info/code/UnrealNetworkReplication.md). Unreal's networking model differs vastly from the classic client-server paradigm. Typical AJAX knowledge is irrelevant here.
 - [Object Lifetime / Garbage Collection / Dangling References](Docs/Info/code/DanglingRefCrash.md). Does your GUI crash the game? Read this guide!
 - [ScrN Classes](Docs/Info/code/ScrnClasses.md)

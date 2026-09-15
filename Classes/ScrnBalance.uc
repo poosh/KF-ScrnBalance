@@ -365,7 +365,7 @@ var globalconfig byte GuardianLight, GuardianHue;
 
 replication
 {
-    reliable if ( (bNetInitial || bNetDirty) && Role == ROLE_Authority )
+    reliable if ( Role == ROLE_Authority )
         SrvMinLevel, SrvMaxLevel, HardcoreLevel, bTeamsLocked, SrvFlags, SrvAchievementFlags;
 
     // non-config vars and configs vars which seem to replicate fine
@@ -3642,7 +3642,7 @@ function GameResumed()
 
 defaultproperties
 {
-    VersionNumber=97454
+    VersionNumber=97455
     GroupName="KF-Scrn"
     FriendlyName="ScrN Balance"
     Description="Total rework of KF1 to make it modern and the best tactical coop in the world while sticking to the roots of the original."
@@ -3650,7 +3650,8 @@ defaultproperties
     // TODO: Mutator should exist server-side only. Move client stuff to ScrnSrvReplInfo.
     bAddToServerPackages=true
     bAlwaysRelevant=true
-    bOnlyDirtyReplication=false
+    bOnlyDirtyReplication=true  // v9.74.55: Restored the original value. Read UnrealNetworkReplication.md
+    NetPriority=3.0  // same as PlayerController: reach joining clients before most other actors
     RemoteRole=ROLE_SimulatedProxy
     bNetNotify=true
 

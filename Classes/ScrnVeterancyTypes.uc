@@ -61,6 +61,15 @@ final static function Pawn FindPawn(PlayerReplicationInfo PRI)
     return class'ScrnFunctions'.static.FindPawnByPRI(PRI);
 }
 
+
+// WARNING!
+// "out" arrays are not passed by reference - they are COPIED TWICE instead!
+// Unlike C++, those Class* functions are not inline wrappers - they are actual UScript functions,
+// So the input array is COPIED TWICE on each call.
+// AArray in ClassAddToArrayUnique is copied 4 times: 2 (function class) * 2 (due to out)
+// Left for backward compatibility. Should be refactored in the future.
+// See Gotchas.md
+
 // Adds class to array. Doesn't add none or classes, which already are stored in array.
 final static function bool ClassAddToArrayUnique(out array<class> AArray, class AClass)
 {
@@ -68,13 +77,13 @@ final static function bool ClassAddToArrayUnique(out array<class> AArray, class 
 }
 
 // returns true if an array contains a given class
-final static function bool ClassIsInArray(out array <class> AArray, class AClass)
+final static function bool ClassIsInArray(array <class> AArray, class AClass)
 {
     return class'ScrnFunctions'.static.ClassIsInArray(AArray, AClass);
 }
 
 //returns true if class or its parent is in a given array
-final static function bool ClassChildIsInArray(out array<class> AArray, class AClass)
+final static function bool ClassChildIsInArray(array<class> AArray, class AClass)
 {
     return class'ScrnFunctions'.static.ClassChildIsInArray(AArray, AClass);
 }

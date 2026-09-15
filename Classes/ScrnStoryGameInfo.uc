@@ -490,5 +490,6 @@ defaultproperties
     LoginMenuClass="ScrnBalanceSrv.ScrnInvasionLoginMenu"
     PlayerControllerClass=class'ScrnPlayerController'
     PlayerControllerClassName="ScrnBalanceSrv.ScrnPlayerController"
+    DefaultPlayerClassName="ScrnBalanceSrv.ScrnHumanPawn"
     bZedTimeEnabled=true
 }

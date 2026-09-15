@@ -180,7 +180,6 @@ simulated function PostBeginPlay()
 
     if ( SoundGroupClass == none )
         SoundGroupClass = Class'KFMod.KFMaleSoundGroup';
-
 }
 
 simulated function PostNetBeginPlay()
@@ -620,7 +619,9 @@ simulated function SwitchWeapon(byte F)
 simulated function ChangedWeapon()
 {
     local KFWeapon W;
+    local Weapon OldWeapon;
 
+    OldWeapon = Weapon;
     W = KFWeapon(Weapon);
     if (W != none && W.bAimingRifle) {
         W.ZoomOut(false);
@@ -636,6 +637,9 @@ simulated function ChangedWeapon()
     }
 
     if (Role < ROLE_Authority) {
+        // the server does the same in ServerChangedWeapon()
+        if (OldWeapon != Weapon)
+            DisarmPhantomTimers(OldWeapon);
         ApplyWeaponStats(Weapon);
     }
 
@@ -646,6 +650,10 @@ simulated function ChangedWeapon()
 function ServerChangedWeapon(Weapon OldWeapon, Weapon NewWeapon)
 {
     local int i;
+
+    // Weapon is still the one being put away at this point
+    if (NewWeapon != Weapon)
+        DisarmPhantomTimers(Weapon);
 
     if ( NewWeapon != none && ScrnPC != none) {
         // set skinned attachment class
@@ -661,6 +669,98 @@ function ServerChangedWeapon(Weapon OldWeapon, Weapon NewWeapon)
     super(KFPawn).ServerChangedWeapon(OldWeapon,NewWeapon);
     ApplyWeaponStats(NewWeapon);
     ApplyWeaponFlashlight(false);
+}
+
+// A Phantom Timer is an armed WeaponFire timer left behind by a weapon switch.
+// Fire mode timer ticks via WeaponTick(), and the latter ticks only when the weapon is held (Pawn.Weapon == self)
+// Even worse, phantom timers are not paused, as their are compared by their absolute value: NextTimerPop.
+// Even when the weapon is switched away, Level.TimeSeconds ticks towards NextTimerPop.
+// The very first WeaponTick() after the weapon is switched back, the phantom timer triggers due to:
+//      TimerInterval != 0 && Level.TimeSeconds > NextTimerPop
+// For example, you start swinging an Axe and switch weapons. Phantom Timer gets armed.
+// Then, you come close to a Scrake and switch back to the Axe => the Phantom Timer hits the Scrake in the very first
+// frame while your BringUp animation is played.
+// This is not only stupid but highly exploitable.
+//
+// The first exploit comes from vanilla:
+// 1. Berserker buys Claymore + Scythe (works also with other weapons but those two grant the highest DPS boost)
+// 2. Initiates Claymore's altfire and immediately switches to Scythe. A legit player would have to wait for
+//    DownDelay = FireRate/2 = 0.5s in Claymore's case, but a cheater with frame-perfect macros skips it entirely.
+//    Claymore is left with a Phantom Timer armed.
+// 3. Scythe is selected in 0.66s (Claymore.PutDownTime + Scythe.BringUpTime). Macroed attack + switch back to Claymore
+//    arms a Phantom Timer for Scythe, too.
+// 4. Claymore's Phantom Timer triggers on the very first frame (WeaponTick()), dealing 640 damage (with L6 Zerk bonus)
+// 5. Cheater's macro continues to run: attack + switch => the next Phantom Timer is armed.
+// 6. Scythe's Phantom Timer triggers on the very first Scythe.WeaponTick(), dealing 550 damage.
+// 7. The macro rearms Scythe's Phantom Time while switching to Claymore.
+// 7. Reapeat 4 - 7 while door-zerking, dealing 902 DPS: (640 + 550) / (0.66 + 0.66).
+// For comparison: Claymore's legit altfire spam deals 640 DPS; Scythe's - 367.
+//
+// The second exploit is ScrN-only. It requires sprinting but no macros:
+// 1. Initiate Claymore's alt attack (works with other weapons and primary fire, too)
+// 2. Start sprinting. Sprint quickly switches to Claymore (QuickPutDownTime=0.15s instead of the default 0.33).
+// 3. Claymore's Phantom Timer is armed.
+// 4. Run at a Scrake's face and release the sprint button.
+// 5. The Phantom Timer triggers in the very first frame. The Scrake gets stunned even before you bring your Claymore up.
+// The ScrN exploit isn't as severe or as noobish as vanilla, but it still gives you an advantage.
+// A legit player needs to get the timing right to get to the Scrake's melee range in ~0.77s after initiating Claymore's
+// altfire. Get too soon => Scrake hits you. Get too late => your Claymore swing hits thin air.
+// A cheater can get to a Scrake in anytime, dealing instant damage via a Phantom Timer.
+//
+// Phantom Timers MUST NOT exist!
+// This function disarms them, and the next one decides whether to drop the timer
+// or prematurely execute it while the weapon is still held.
+simulated function DisarmPhantomTimers(Weapon W)
+{
+    local KFWeapon KFW;
+    local WeaponFire WF;
+    local int i;
+
+    KFW = KFWeapon(W);
+    if (KFW == none)
+        return;
+
+    for (i = 0; i < 2; ++i) {  // NUM_FIRE_MODES
+        WF = KFW.GetFireMode(i);
+        if (WF == none || WF.TimerInterval == 0)
+            continue;
+
+        // disarm before triggering - a looping fire mode would re-arm itself inside Timer()
+        WF.TimerInterval = 0;
+        if (PhantomTimerTrigger(KFW, WF)) {
+            WF.Timer();
+        }
+    }
+}
+
+simulated function bool PhantomTimerTrigger(KFWeapon W, WeaponFire WF)
+{
+    // Pipebomb's timer spawns the projectile, so it must trigger;
+    // otherwise players players could lose a pipebomb, as the ammo is already consumed.
+    // Triggering SyringeAltFire.Timer() is an EXPLOIT allowing instant-heal macros.
+    // However, the community voted to rename the exploit to a feature.
+    if (PipeBombFire(WF) != none || SyringeAltFire(WF) != none)
+        return true;
+
+    // Don't trigger any random crap - silently drop it.
+    if (KFMeleeFire(WF) == none)
+        return false;
+
+    // Quick Melee always switches away before its hit lands - that is the whole point of it.
+    if (W == QuickMeleeWeapon)
+        return true;
+
+    // ScrN melee weapons are tweaked to avoid getting here - see the top comment in ScrnMeleeFire.uc.
+    // However, it is still possible at high ping (latency).
+    // And there are vanilla and custom melee guns that still require this fix.
+    // By default, the player is allowed to switch weapons after an attack in DownDelay = FireRate/2 (+/- latency).
+    // We don't want to rob a player of a LEGIT attack just because network lag rolled bad dice for them.
+    // However, there are CHEATERS who exploit network replication to skip the entire attack animation via key macros.
+    // So we decide by rounding. The first half of the DownDelay (FireRate/4) indicates cheating, so we
+    // drop the attack (return false). The last half is a legit player switching ASAP after the attack.
+    // This neat solution works because the cheater can skip only the entire DownDelay (FireRate/2).
+    // They cannot skip half of it to fall into the legit player category. Well, unless they play fair :)
+    return WF.NextTimerPop - Level.TimeSeconds < WF.FireRate / 4;
 }
 
 // Sends the spectator info to every player spectating this pawn. Server-side only.
@@ -2334,18 +2434,36 @@ function QuickMelee()
         return;
     }
 
-    if ( Weapon == QuickMeleeWeapon ) {
-        AltFire(); // already equipped quick melee gun - simply do alt fire
+    if (class'ScrnFunctions'.static.IsMeleeWeapon(Weapon)) {
+        // already holding a melee weapon - alt fire with it instead of switching to another one
+        AltFire();
+        return;
     }
-    else if ( SecondaryItem == none && QuickMeleeWeapon != none ) {
-        bQuickMeleeInProgress = true;
-        SecondaryItem = QuickMeleeWeapon;
-        // QuickMeleeFinishTime is a last resort to make sure we don't stuck in quick melee
-        QuickMeleeFinishTime = Level.TimeSeconds + QuickMeleeWeapon.GetFireMode(1).FireRate + 1.0;
-        KFW.SetTimer(0, false);
-        KFW.ClientGrenadeState = GN_TempDown;
-        KFW.PutDown();
+
+    // Every rejection must clear bAltFire. The key binding sets it before calling QuickMelee, and the engine starts
+    // the alt fire of the current weapon on its own while the button is held.
+    if (SecondaryItem != none || QuickMeleeWeapon == none
+            || QuickMeleeWeapon.GetFireMode(1).NextFireTime - Level.TimeSeconds > 0.1)
+    {
+        Controller.bAltFire = 0;
+        return;
     }
+
+    // A pending weapon switch left over from a refused PutDown() (e.g., during a reload) makes KFWeapon.Timer() do
+    // a regular weapon switch instead of calling WeaponDown(). No switch is in progress here (ClientState != WS_PutDown).
+    PendingWeapon = none;
+    KFW.ClientGrenadeState = GN_TempDown;
+    KFW.PutDown();
+    if (KFW.ClientState != WS_PutDown) {
+        KFW.ClientGrenadeState = GN_None;
+        Controller.bAltFire = 0;
+        return;
+    }
+
+    bQuickMeleeInProgress = true;
+    SecondaryItem = QuickMeleeWeapon;
+    // QuickMeleeFinishTime is a last resort to make sure we don't stuck in quick melee
+    QuickMeleeFinishTime = Level.TimeSeconds + QuickMeleeWeapon.GetFireMode(1).FireRate + 1.0;
 }
 
 function QuickMeleeFinished()

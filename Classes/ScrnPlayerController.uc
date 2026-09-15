@@ -251,6 +251,11 @@ simulated function PreBeginPlay()
 // and only if using ScrnGameType, ScrnStoryGameInfo or descendants
 function PostLogin()
 {
+    // Replicate ScrnBalance to the new client ASAP.
+    // ScrnHUD, spawned by ClientSetHUD() from GameInfo.PostLogin(), may reads it right away.
+    // See UnrealNetworkReplication.md
+    Mut.NetUpdateTime = Level.TimeSeconds - 1;
+
     ServerAcknowledgeDamages(DamageAck);
     ClientPostLogin();
 

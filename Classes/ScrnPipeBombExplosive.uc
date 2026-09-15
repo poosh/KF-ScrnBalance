@@ -42,4 +42,5 @@ defaultproperties
      FireModeClass(0)=class'ScrnPipeBombFire'
      PickupClass=class'ScrnPipeBombPickup'
      ItemName="PipeBomb SE"
+     MinReloadPct=0.70  // Must be > ScrnPipeBombFire.ProjectileSpawnDelay /  FireRate
 }
