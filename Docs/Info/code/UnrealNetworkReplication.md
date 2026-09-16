@@ -340,6 +340,242 @@ for replicated state on pawns. And ~11 Hz is a *ceiling*, not a promise - releva
 ordering and bandwidth saturation each push it lower, independently per connection. Worth remembering
 for anything on `ScrnHumanPawn`.
 
+## What a replicated property costs on the wire
+
+Every property the server actually sends is written as a **header** saying which property it is,
+followed by the **value**. For small properties the header is almost the whole cost.
+
+The header is an index into the class's replicated-field table, which holds every replicated variable
+**and** every replicated function declared anywhere in the class chain, counted together. Its width is
+`ceil(log2(N))` bits for a class with `N` such fields - so it is set by how much the *whole chain*
+replicates, not by what your own subclass added. Counted from the sources:
+
+| Class | replicated fields in chain | header |
+|---|---|---|
+| `ScrnCustomPRI` | 61 | 6 bits |
+| `ScrnBalance` | 67 | 7 bits |
+| `KFPlayerReplicationInfo` | 94 | 7 bits |
+| `ScrnGameReplicationInfo` | 153 | 8 bits |
+| `ScrnHumanPawn` | 154 | 8 bits |
+| `ScrnPlayerController` | 305 | 9 bits |
+
+The payload that follows is as small as the type allows:
+
+| Type | payload |
+|---|---|
+| `bool` | **1 bit** |
+| `byte` | 8 bits |
+| `byte` declared as an **enum** | `ceil(log2(NumNames))` bits - a 3-state enum costs **2 bits** |
+| `int`, `float` | 32 bits |
+| element of a **static array** | payload **plus a whole byte** of element index |
+
+So **a single `bool` costs 7 to 10 bits, of which one bit is data.** Eighty-five to ninety per cent of
+what you pay for a flag is the header.
+
+Two things that are *not* charged per property, and that decide whether any of this matters:
+
+- **Unchanged means never sent.** Per *Two independent filters* above, a property equal to what that
+  client was last sent is not serialized at all - and the per-connection record starts out holding the
+  **class defaults**, so it applies from the moment the channel opens too. A flag that sits at its
+  default value forever costs exactly nothing, forever.
+- **The per-actor framing is charged once, not per property.** Sending anything at all for an actor
+  costs roughly three bytes of framing on top. If the actor had nothing else to send that pass, the
+  first changed property drags that along with it; if it was already sending something, further
+  properties cost only their own header plus payload.
+
+### Is it worth packing bools into a bitmask?
+
+Sometimes for a `byte`, rarely for an `int`. Take a class with a 7-bit header:
+
+| | bits | bytes |
+|---|---|---|
+| 1 `bool` | 8 | 1 |
+| 8 `bool`s, all changing in one pass | 64 | 8 |
+| 1 `byte` bitmask | 15 | ~1.9 |
+| 32 `bool`s, all changing in one pass | 256 | 32 |
+| 1 `int` bitmask | 39 | ~4.9 |
+
+That four-to-six-fold saving is the **best** case, and it is only reached when every flag changes at
+once. A bitmask is a single property: change one bit and all eight - or all thirty-two - go out again.
+Separate bools are independent, and only the ones that actually changed are sent.
+
+So the question is how many flags typically change *in the same replication pass*. Break-even is
+`(H + W) / (H + 1)` flags, for a header of `H` bits and a mask `W` bits wide:
+
+| | header 6 | header 7 | header 9 |
+|---|---|---|---|
+| `byte` mask, 8 flags | 2.0 | 1.9 | 1.7 |
+| `int` mask, 32 flags | 5.4 | 4.9 | 4.1 |
+
+- **A `byte` mask pays off** once about two flags move together - easy to reach for state that changes
+  as a group.
+- **An `int` mask over 32 bools is usually a pessimization** - *unless the value is a wholesale
+  snapshot*, which is the case that redeems it. You need roughly five bits flipping per update before
+  it breaks even, so 32 independently moving bools are cheaper as 32 properties. But a mask that is
+  *recomputed from scratch in one pass* effectively changes all its bits at once, and then it wins
+  outright. `ScrnBalance.SrvFlags` is the worked example in this codebase: `SetReplicationData()`
+  clears it and rebuilds every bit from the live settings, and `LoadReplicationData()` unpacks the
+  lot on the client. Roughly thirty settings for one property header.
+- **Never fold a rarely-changing flag into a busy mask.** It goes from costing nothing to costing
+  eight bits every time an unrelated neighbour twitches.
+- **`var bool bFlags[8]` is the worst of the three.** A static array pays a full byte of element index
+  per element, so each flag costs `H + 9` bits.
+- **If the flags are mutually exclusive, an enum `byte` beats both** - one header, and only as many
+  bits as the enum has states.
+
+Keep the absolute scale in view. `ScrnCustomPRI` and `KFPlayerReplicationInfo` both run at
+`NetUpdateFrequency=1`, so packing eight flags there saves about 6 bytes per player per second -
+roughly 36 B/s per client on a six-player server. Real, but not what makes a bandwidth graph move. On
+a pawn, where script properties go out at ~11 Hz (see above), the same change is worth ~400 B/s per
+client, and that one is worth having.
+
+### The CPU side of the trade
+
+**On the server, packing wins.** Each replicated property is compared against the per-connection
+record once per pass, per actor, **per connection** - eight bools are eight comparisons, one byte is
+one.
+
+What packing does **not** save is condition evaluation, which is the usual misconception. Replication
+conditions are evaluated at most once per pass per *distinct condition expression*: properties whose
+conditions compile to the same expression share one evaluation, even when written as separate
+statements. So
+
+```unrealscript
+replication
+{
+    reliable if (bNetOwner) bFoo;
+    reliable if (bNetOwner) bBar;
+}
+```
+
+already evaluates `bNetOwner` exactly once. Merging the two properties buys nothing there.
+
+**On the client, packing loses**, and your instinct about why is right. Every UnrealScript operator is
+a separate native call dispatched from the bytecode, and each operand is a nested dispatch of its own:
+
+- `if (bMyBool)` - the branch, the bool-variable opcode and the variable read it wraps.
+  **3 dispatches.**
+- `if ((MyBitmask & 1) != 0)` - the branch, `!=`, `&`, the `byte`-to-`int` coercion (two dispatches,
+  see below), the variable read and the two integer constants. **8 dispatches.**
+
+Both operators are low-numbered natives (`Object.uc`: `native(156) int &`, `native(155) bool !=`), so
+they take the cheap single-opcode path - no script frame is built. Call it **roughly three times the VM
+work for the check, on the order of tens of nanoseconds**. Irrelevant everywhere except a loop that
+runs over hundreds of actors per tick.
+
+**Casts are not operators, but they are not free either.** A primitive conversion - explicit like
+`bool(X)`, or implicit like the `byte`-to-`int` coercion above - compiles to a generic "cast" opcode
+followed by a byte naming the conversion, which then dispatches through a separate table of cast
+handlers. That is **two dispatches** per cast, against one for a native operator. So:
+
+| Expression (`MyBitmask` is a `byte`) | dispatches |
+|---|---|
+| `(MyBitmask & 1) != 0` | 8 |
+| `bool(MyBitmask & 1)` | 8 |
+| same two with an `int` mask (no coercion) | 6 each |
+
+A dead heat: the cast's extra dispatch exactly replaces the `!=` plus its zero constant. Pick whichever
+reads better. Only avoid `(Mask & Bit) > 0` for the **top bit of an `int`** - that bit makes the value
+negative, so the test fails; `!= 0` and `bool()` are both correct for every bit.
+
+### Do both: pack the wire, unpack on arrival
+
+The two costs land on different machines, so they do not have to be traded off at all. Replicate the
+packed byte and expand it into real bools when it arrives:
+
+```unrealscript
+var byte RepFlags;          // replicated
+var bool bFoo, bBar, bBaz;  // NOT replicated - derived from RepFlags
+
+simulated function UnpackFlags()
+{
+    bFoo = (RepFlags & 1) != 0;
+    bBar = (RepFlags & 2) != 0;
+    bBaz = (RepFlags & 4) != 0;
+}
+
+// the only place the server writes the flags
+function SetFlags(byte NewFlags)
+{
+    RepFlags = NewFlags;
+    UnpackFlags();   // see below: the local host has no receive path
+}
+
+simulated event PostNetReceive()
+{
+    local byte Changed;
+
+    Changed = OldFlags ^ RepFlags;   // OldFlags: a second, NON-replicated byte
+    if (Changed == 0)
+        return;                      // nothing of ours moved - most calls end here
+
+    OldFlags = RepFlags;
+    UnpackFlags();
+
+    if ((Changed & 1) != 0)
+        FooChanged();                // side effects, only for the bits that moved
+}
+```
+
+with `bNetNotify=True` in `defaultproperties`, which is what makes `PostNetReceive()` fire. Every read
+site stays a plain bool: full bandwidth saving, none of the per-check cost, call sites unchanged.
+
+**Guard the body on a change, and use `^` rather than `!=` to do it.** `PostNetReceive()` fires far
+more often than your flags change - see below - so an unguarded body runs its side effects on every
+bunch. The XOR costs exactly what a `!=` costs and yields strictly more: a mask of precisely which
+bits flipped, which is what lets you fire per-flag reactions without storing a shadow copy of each
+one.
+
+This is the part that does not translate to individually replicated bools at all. There, detecting
+what changed means one cached `bOld*` and one comparison **per flag**, every single call - the engine
+knows which properties arrived but has no way to tell you, and UnrealScript has no `PreNetReceive`
+hook to snapshot from either (it exists only inside the engine). One packed value collapses all of
+that into a single compare. Treat it as a second, independent argument for packing, on top of the
+bandwidth one.
+
+One caveat on defaults: a property equal to its class default is never replicated, so if the actor's
+real state *is* the default, `PostNetReceive()` never fires with a change and the derived bools keep
+their own defaults. Those two sets of defaults must therefore agree - the default mask must be the
+packed form of the default bools. Defaulting everything to zero/`False` is the easy way to be sure.
+
+**Do not skip the `UnpackFlags()` call in the setter.** Replication only ever runs towards a remote
+client connection, so a standalone game and the **host of a listen server** never take the receive
+path for their own actors at all - `PostNetReceive()` is simply never called there, and a host that
+relied on it alone would read permanently stale bools. Calling the unpack from the setter costs
+nothing and makes all four net modes behave the same.
+
+Use a raw mask directly only where the flags are read rarely, and skip the whole exercise for an `int`
+of 32 flags unless they genuinely move as a block.
+
+### When `PostNetReceive()` actually fires
+
+Worth knowing before putting anything heavier than a bit-unpack in it.
+
+- **It is driven by the bunch, not by your properties.** The trigger is that the incoming bunch
+  contained at least one replicated field for that actor. Native engine properties count exactly like
+  script-declared ones - the client's receive path cannot tell them apart, and the "optimized" native
+  path only changes how the *server* decides what to send.
+- **A replicated function counts as a field too.** An incoming RPC that changes no properties at all
+  still fires `PostNetReceive()`. In a bunch that interleaves properties and RPCs it can fire more
+  than once.
+- **On a pawn it is not the ~11 Hz rate.** The packed position is an ordinary replicated property and
+  is sent *before* the 0.09 s gate, so for a non-owned moving pawn `PostNetReceive()` follows the
+  position rate - up to once per considered pass, roughly 100 Hz on a 100-tick server - not the ~11 Hz
+  script-property cap. For the pawn its own player owns, the position block is skipped entirely, so
+  there it does follow the slower script rate.
+- **It runs after the engine's own fixups**, last thing in the native handler. `Location`, collision,
+  `Base` and skins are already applied by the time your event body runs, so reading them is safe.
+- **It is guaranteed non-authority.** The engine calls it only when `Role != ROLE_Authority`, and
+  `ROLE_Authority` is the top of `ENetRole`, so a `Role < ROLE_Authority` test inside it is always
+  true. Leave it out.
+- **A tearing-off actor gets one last call.** `bTearOff` arrives as an ordinary property, and the role
+  flip to `ROLE_Authority` happens only after the bunch is fully processed - so `PostNetReceive()`
+  still runs for that bunch, before `TornOff()`.
+
+**The general lever is the header, not the payload.** Fewer replicated properties is what saves
+bandwidth - which means anything the client can derive for itself should not be a replicated property
+at all. That saves the same 7 to 10 bits *and* one comparison per connection per pass.
+
 ## Replicating actor destruction
 
 You do not need to replicate it yourself. When the server destroys a replicated actor, the actor
