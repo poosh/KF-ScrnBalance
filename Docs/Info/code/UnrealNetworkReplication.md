@@ -891,3 +891,38 @@ Audited for KF projectiles: every `Destroyed()` in every ScrN projectile chain, 
 KF/mod ancestors (`LAWProj`, `M79GrenadeProjectile`, `SealSquealProjectile`, `ShotgunBullet`,
 `Nade`, `PipeBombProjectile`, `HuskGunProjectile`, `CrossbowArrow` and the rest), is `simulated`.
 The only plain one is the empty `Actor.Destroyed()`, so no ScrN projectile loses parent behavior.
+
+### `PlaySound()`: the caller's `simulated` decides whether the sound is replicated
+
+`PlaySound()` is the one place where `simulated` changes what goes over the wire. The engine looks at
+the function that contains the `PlaySound()` call:
+
+- **Called on a client, or from a `simulated` function anywhere:** the sound plays on the local
+  machine only. Nothing is sent. On a dedicated server that means nobody hears it - there is no local
+  player; on a listen server only the host does.
+- **Called on the server from a non-`simulated` function (or from state code):** the server sends
+  the sound to every player within hearing range, one `PlayerController.ClientHearSound()` call per
+  hearer. That call is **unreliable** (`kfsrc` `PlayerController.uc:417-418`), so under load the
+  sound may simply not arrive. The sound maker does not have to be relevant to the client: the sound
+  plays at the location that came with it.
+
+Only the **immediate** caller counts. A non-`simulated` helper called from a `simulated` function
+replicates; a `simulated` helper called from a non-`simulated` one does not.
+
+`PlayOwnedSound()` does not look at `simulated` at all: on a server it always replicates, but skips
+the remote player who owns the sound maker - that player is expected to play it locally (the usual
+case for a weapon's fire sound).
+
+What it means in practice, for an actor simulated on both sides, such as a projectile whose
+`ProcessTouch()` / `HitWall()` are `simulated`:
+
+- **Play hit sounds from the `simulated` code path.** Every client plays the sound from its own
+  simulation, and the server sends nothing. The server runs the same function, but its call stays
+  local, so a client never hears the sound twice.
+- **A server-side sound needs the sound loaded on the server.** Assets loaded on demand by a client
+  (`DynamicLoadObject()` from a client-side preload) are `none` on a dedicated server, and
+  `PlaySound(none)` silently does nothing - a replicated hit sound that works in solo and on a listen
+  server can be missing on a dedicated one. The same applies to indexing a sound array that the
+  server never filled: it logs an `Accessed array out of bounds` warning.
+- **A replicated sound costs one RPC per hearer, per call.** A shotgun blast whose ten pellets each
+  play a sound on the server sends ten RPCs to every player nearby.

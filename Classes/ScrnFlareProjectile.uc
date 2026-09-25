@@ -43,10 +43,6 @@ simulated function ProcessTouch(Actor Other, Vector HitLocation)
 
             HitPawn = KFPawn(Other);
             if ( HitPawn != none ) {
-
-                if( !HitPawn.bDeleteMe )
-                    return;
-
                 if (class'ScrnBalance'.default.Mut.bProjIgnoreHuman && ScrnHumanPawn(Other) != none)
                     return;  // the game mode allows projectiles flying through human bodies
 

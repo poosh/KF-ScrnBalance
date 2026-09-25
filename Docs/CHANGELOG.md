@@ -36,6 +36,9 @@
 
 -------------------------------------------------------------------------------
 
+## v9.74.62
+- **TSC**: Fixed a bug where sometimes flares flew through players without damaging them.
+
 ## v9.74.55
 - Fixed `QuickMelee` again
 - Fixed **melee expoloits** where players could skip the attack animation and instantly deliver damage.
