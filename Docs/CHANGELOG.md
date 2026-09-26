@@ -26,9 +26,12 @@
 [Mortimer]: https://steamcommunity.com/id/MortimerKubrick/
 <!-- add other peaople too!!! -->
 
-# Version History
+[GOTCHA]: Info/code/Gotchas.md
+[DanglingRefCrash]: Info/code/DanglingRefCrash.md
+[Network Replication]: (Info/code/UnrealNetworkReplication.md)
+[ScrN Classes]: Info/code/ScrnClasses.md
 
-> In this document all references to config file **ScrnBalance.ini** should be treated as **ScrnBalanceSrv. ScrnBalance (ScrnBalanceSrv.ScrnBalance).
+# Version History
 
 -------------------------------------------------------------------------------
 
@@ -36,49 +39,16 @@
 
 -------------------------------------------------------------------------------
 
-## v9.74.63
-- **TSC Clan Game**: Fixed a bug where team-locked spectators could sometimes keep a free camera after the game started, until they pressed Fire.
-
-## v9.74.62
-- **TSC**: Fixed a bug where sometimes flares flew through players without damaging them.
-
-## v9.74.55
-- Fixed `QuickMelee` again
-- Fixed **melee expoloits** where players could skip the attack animation and instantly deliver damage.
-- **Syringe** instant self-heal exploit is officially renamed to a feature and is here to stay.
-### TSC
-- **20m** base radius is here to stay, as shown by the good results in the TSC practice session.
-- `MUTATE ZED HUMAN SUMMON` - a Test Map command to summon a dummy `ScrnHumanPawn` to test PvP on. The dummy has 1000 HP, as it receives the full damage instead of just `FriendlyFireScale`.
-- Fixed a bug in hitscan fire where shooting over a player's shoulder blocked bullets without dealing any damage. Now bullets correctly fly by.
-- Fixed a bug in melee fire where aiming above a player's shoulder also prevented radial damage to that player. Now, weapons with a wide radial attack angle still deal partial damage even when the attack's center point is outside the player's body.
-
-## v9.74.54
-- Fixed the scoreboard not freezing at the end of the game.
-- **TSC**: the top killer of each team gets their kill counter drawn in purple, like in regular games.
-- Relaxed spectator restrictions in non-clan games to allow spectating both teams for those who haven't played yet (switched to spectator in the lobby or after being AFK from the game start).
-### Spectating
-- Fixed a bug where dead players didn't see the ammo counter of the player they were watching in 1P.
-- Dead players also see the watched player's damage numbers, like "real" spectators do.
-### Code Changes
-- Spectator info moved from `ScrnHumanPawn` to `ScrnPlayerController`, which replicates to its owner only.
-- Added the [Network Replication Guide](Info/code/UnrealNetworkReplication.md) - where UnrealScript replication differs from what you expect, and how to not shoot yourself in the foot.
-- Added the [GOTCHA](Info/code/Gotchas.md) - a collection of the most absurd UnrealScript development quirks. Read those, as you would never have guessed them.
-
-## v9.74.52
-### Scoreboard
-- The snapshot of the final results is now taken the moment the game ends, whether or not anybody has the scoreboard open. Previously it was taken when a player first opened the scoreboard after the end, so everyone who had left or joined in the meantime was frozen into the wrong picture - quitters were missing instead of showing `QUIT`, and newcomers were baked in as if they had played.
-- Players who connect after the game ends don't get the score snapshot and keep a live scoreboard instead of a frozen one.
-### Code Changes
-- Removed the `simulated` keyword from all Scoreboard and HUD classes. See the top comment in *ScrnHUD.uc* and *ScrnScoreboard.uc* for the explanation. Short answer: HUD and Scoreboard are spawned locally on the client; never replicated. `simulated` means nothing in this case; only misleading. It's pure code cleanup, affecting nothing.
-
-## v9.74.50
+## v9.75.00
 ### Reduced Game Crash Probability By a Margin
-- Random client crashes during garbage collection are almost gone.
+- Random client crashes during **garbage collection** are almost gone.
 - Fixed all dangling pointers in all ScrN Objects. GUI was the biggest problem, ScrN Trader Menu was the root cause of most crashes.
 - Fixed dangling pointers in KF and ServerPerks GUI objects that ScrN still uses.
-- Fixed a severe bug in ServerPerks that prevented GUI objects from calling Free() => actor references were not cleared => crash on garbage collection.
+- Fixed a severe bug in ServerPerks that prevented GUI objects from calling `Free()` => actor references were not cleared => crash on garbage collection.
 - Wave processing moved out of `ScrnGameLength`, as the latter is an `Object`. Although `ScrnGameLength` was safe before the refactoring, it caused many crashes in the past and could trigger more in the future. The most recent one was a crash when killing a Doom boss in New Doom.
 - Custom games are unaffected: every config option in *ScrnGames.ini* and *ScrnUserGames.ini* is the same.
+- Read [DanglingRefCrash] for more info.
+- To hunt down dangling references, set `bSlowRefChecking=True` in *KillingFloor.ini* and watch the client log for `Reference to destroyed object`. Use it on test map only, as it freezes the game for multiple seconds during the checks.
 ### Idiot Proofing
 - The server now shuts down with a critical error instead of running in a broken state when `ScrnBalance` fails to load under `ScrnStoryGameInfo`, `ScrnGameType` or descendents (TSC, FTG, etc.) - most likely, due to server misconfiguration.
 - Previously, it logged a warning, continued loading the map, and accepted players, but nothing worked as expected.
@@ -86,16 +56,52 @@
 ### Scoreboard
 - Game/Player data is pre-cached.
 - The cache updates at 5 HZ.
-- The rest frames draw from the cache. At 120 FPS, 115 of those frames no longer execute thousands of CPU instructions per frame to repeatedly rewrite the same data. I guess that makes ScrN environmentally friendlier, so I can keep driving my 333 HP petrol car without making a polar bear sad :)
+- The rest frames draw from the cache. At 120 FPS, 115 of those frames no longer execute thousands of CPU instructions per frame to repeatedly rewrite the same data. *I guess that makes ScrN environmentally friendlier, so I can keep driving my 333 HP petrol car without making a polar bear sad :)*
 - Players are no longer sorted by kill count. The top-killer still gets their purple number.
 - The local player is always shown on the top.
 - Everybody else keeps the row they got when they joined - no player repositioning unless they reconnect.
 - After the game has ended, the scoreboard freezes to display a snapshot of the final results. Players who left the game after the end are still drawn on the scoreboard until the next map load.
 - Player ping keeps updating on the frozen scoreboard, so you can still tell who is actually still on the server. Those who already quit have PING=QUIT.
+- TSC scoreboard got the same caching as the ScrN one. The top killer of each team gets their kill counter drawn in purple, like in regular games.
 ### TSC
-- The TSC scoreboard got the same caching as the ScrN one.
+- **20m** base radius is here to stay, as shown by the good results in the TSC practice session.
+- *ScrnMapInfo.ini*: Added `-TSC` map infos (`Foundry-TSC` etc.).
+- `MUTATE ZED HUMAN SUMMON` - a Test Map command to summon a dummy `ScrnHumanPawn` to test PvP on. The dummy has 1000 HP, as it receives the full damage instead of just `FriendlyFireScale` (10%).
+- Fixed a bug in hitscan fire where shooting over a player's shoulder blocked bullets without dealing any damage. Now bullets correctly fly by.
+- Fixed a bug in melee fire where aiming above a player's shoulder also prevented radial damage to that player. Now, weapons with a wide radial attack angle still deal partial damage even when the attack's center point is outside the player's body.
+- Projectiles (rockets, grenades) still collide with the thin air above a player's shoulder. That issue is too complex to solve in v9 - postponed to v10.
+- **Broken Neck**: Technically, the KF player's head is detached from the body. **A few pixels (uu) between the player's head and body don't register as a hit!**. The fix isn't as simple as it may sound and could cause side effects. Therefore, the damage model remains unchanged, but the hibox changes are postponed to v10. Pro-tip: **DO NOT SHOOT THE NECK!**
+- Fixed a bug where sometimes flares flew through players without damaging them.
+- `MaxTeamSize` is now respected when a player joins or rejoins a team. Previously, a reconnecting player could exceed the team limit, e.g. making it 5v3 in a 4v4 game.
+- Relaxed spectator restrictions in non-clan games to allow spectating both teams for those who haven't played yet (switched to spectator in the lobby or after being AFK from the game start).
+- Fixed a bug where a player could become an active player without a team when the team was full. The bug applied to **FTG**, too.
 - Fixed an `Accessed None` warning in `Killed()`.
+### TSC CLAN GAME
+- Fixed multiple loopholes that let a team-locked spectator watch the enemy team or roam the map freely.
+- Players registered in both clans are moved to spectators and promoted to **Guests**, as they can spectate both teams anyway.
+- Spectators are rechecked when the match starts to turn off free roaming for team-locked spectators.
+### Spectating
+- Fixed a bug where dead players didn't see the ammo counter of the player they were watching in 1P.
+- Dead players also see the watched player's damage numbers, like "real" spectators do.
+- `SPECTATE` now works after the game has ended.
+- The spectator HUD is displayed only to free-roaming spectators. Team-locked spectators get the regular player HUD.
+- Fixed an `Accessed None` error that could occur when a player reconnects without a stored team.
+### Melee
+- Fixed `QuickMelee` again
+- Fixed **melee expoloits** where players could skip the attack animation and instantly deliver damage.
+- **Syringe** instant self-heal exploit is officially renamed to a feature and is here to stay.
+### Documentation
+- [DanglingRefCrash](Info/code/DanglingRefCrash.md) - a detailed explanation of why the game crashed during garbage collection and how to use Actors/Objects properly.
+- [Network Replication Guide](Info/code/UnrealNetworkReplication.md) - where UnrealScript replication differs from what you expect, and how to not shoot yourself in the foot.
+- [GOTCHA](Info/code/Gotchas.md) - a collection of the most absurd UnrealScript development quirks. Read those, as you would never have guessed them.
+- [ScrN Classes](Info/code/ScrnClasses.md) - every `ScrnBalanceSrv` class resolved down to `Actor` or `Object`, grouped by role. It answers the reference-safety question.
 ### Code Changes
+- `ScrnF`: read-only array parameters are no longer declared `out` (see [GOTCHA])
+- `ScrnF.StartsWith()` and `EndsWith()` accept an optional `bCaseSensitive` argument. The default remains case-insensitive.
+- New `ScrnF.ObjArrayInsert()` - inserts one object array into another.
+- Optimization: `ScrnF.ParseColorTags()` and `StripColorTags()` return the text immediately when it contains no color tags.
+- Spectator info moved from `ScrnHumanPawn` to `ScrnPlayerController`, which replicates to its owner only.
+- Removed the `simulated` keyword from all Scoreboard and HUD classes. See the top comment in *ScrnHUD.uc* and *ScrnScoreboard.uc* for the explanation. Short answer: HUD and Scoreboard are spawned locally on the client; never replicated. `simulated` means nothing in this case; only misleading. It's pure code cleanup, affecting nothing.
 - Fixed an issue where some damage types were not `abstract`.
 - Added `ScrnWaveHandler extends Info`, which now does all wave and zed processing. Being an Actor, the Engine clears its references for it.
 - `ScrnGameLength` keeps the config options only. No functions, no actor references.
@@ -104,23 +110,7 @@
 - `ScrnCustomPRI`: added `PlainPlayerName` and `ColoredPlayerName`. Player names are color-tag parsed once, when they change, instead of on every use. Read them via `ScrnCustomPRI.GetPlainName()` / `GetColoredName()`.
 - `ScrnScoreBoard`: added `UpdateFrequency` (0.2s). Note that it gets delayed by the Zed Time (`0.2 * 5 = 1s` => still good). Reduce the delay if your mods modify ZT.
 - `ScrnTab_BuyMenu`: actor references are now gathered in `LinkActors()` and released in `UnlinkActors()`, called from `Free()`. Every reference taken in `LinkActors()` must be nulled in `UnlinkActors()`. The pawn field is no longer linked, as its descruction was the main crash source.
-- To hunt down dangling references, set `bSlowRefChecking=True` in *KillingFloor.ini* and watch the client log for `Reference to destroyed object`. Use it on test map only, as it freezes the game for multiple seconds during the checks.
-- Added `Docs\Info\ScrnClasses.md`: every `ScrnBalanceSrv` class resolved down to `Actor` or `Object`, grouped by role. It answers the reference-safety question.
-- While `WeaponFire extends Object`, it is **safe** from dangling references, as it gets Actor treatment natively by the Engine.
 - `ScrnGuiBuyMenu.NotifyLevelChange()` bypasses the bugged ServerPerks call.
-
-## v9.74.33
-- `SPECTATE` now works after the game has ended.
-- The spectator HUD is displayed only to free-roaming spectators. Team-locked spectators get the regular player HUD.
-- Fixed an `Accessed None` error that could occur when a player reconnects without a stored team.
-### TSC
-- `MaxTeamSize` is now respected when a player joins or rejoins a team. Previously, a reconnecting player could exceed the team limit, e.g. making it 5v3 in a 4v4 game.
-- Fixed a bug where a player could become an active player without a team when the team was full. The bug applied to **FTG**, too.
-### TSC CLAN GAME
-- Fixed multiple loopholes that let a team-locked spectator watch the enemy team or roam the map freely.
-- Players registered in both clans are moved to spectators and promoted to **Guests**, as they can spectate both teams anyway.
-- Spectators are rechecked when the match starts to turn off free roaming for team-locked spectators.
-### Code Changes
 - `ScrnGameType`: `MaxTeamSize` defaults to 0 (uncapped - the player count is limited by `MaxPlayers` only). `TSCClanAdmin` controls it during Clan Games.
 
 ## v9.74.32
@@ -2023,7 +2013,7 @@ Work in progress. More info here:
 
 #### Hardcore Mode
 
-* Removed `bHardcore` from ScrnBalance.ini. Hardcore Mode can be enabled via game difficulty (6 or 8).
+* Removed `bHardcore` from ScrnBalanceSrv.ini. Hardcore Mode can be enabled via game difficulty (6 or 8).
 * Non-hardcore perks are automatically disabled in Hardcore Mode
 * Fixed Difficulty=6 (Siu+Hardcore) and Difficulty=8 (HoE+Hardcore) in KFMapVote.ini  (thanks to [nmmblez])
 * Config option `HLMult_Hardcore` (default 15%) - extra Hardcore Level multiplier in Hardcore Mode
@@ -2825,7 +2815,7 @@ By [PooSH]:
   Also, allows voting for Hardcore Mode (SUI+ and HOE+)
   Voted difficulty has higher priority that Server or KFMapVote settings.
 
-#### ScrnBalance.ini
+#### ScrnBalanceSrv.ini
 
 * `MinVoteDifficulty` - Minimum game difficulty that can be voted via `mvote DIFF`:
   * 0 - DEFAULT. Restores server/config setting.
@@ -2931,7 +2921,7 @@ By [PooSH]:
 
 From now on, in most cases there is no need to specify any mutators in server command line or KFMapVote.ini.
 Any ScrN game type automatically loads ScrnBalance mutator, which in turn loads ServerPerksMut.
-Then ScrnBalance loads all mutators listed in `AutoLoadMutators` array (ScrnBalance.ini).
+Then ScrnBalance loads all mutators listed in `AutoLoadMutators` array (ScrnBalanceSrv.ini).
 And finally `ScrnGameLength.Mutators` are loaded.
 
 ###### Mutator load order (if ScrnBalance is NOT in the server command line)
@@ -3297,7 +3287,7 @@ in regular game.
 
 #### Configuration
 
-###### ScrnBalance.ini
+###### ScrnBalanceSrv.ini
 
 * `ColoredServerName` - color server name with ColorTags
 * `ColorTags` made configurable but NOT replicated
@@ -3430,7 +3420,7 @@ be played. Experienced players shouldn't be playing on Normal difficulty.
 * Fixed bugs in zed spawning system
  (for example, it was the reason why some zeds didn't spawned on Hell Ride)
 
-#### Configuration (_ScrnBalance.ini_)
+#### Configuration (_ScrnBalanceSrv.ini_)
 
 * `MinZedSpawnPeriod` - added to prevent insane spawn rates when bSpawnRateFix=True
 
@@ -3445,7 +3435,7 @@ be played. Experienced players shouldn't be playing on Normal difficulty.
 * New server line option: NWaves to force number of regular wave in TSC game
   example: ?NWaves=7?OTWaves=2?SDWaves=1
 
-#### Configuration (_ScrnBalance.ini_)
+#### Configuration (_ScrnBalanceSrv.ini_)
 
 * bSpawnRateFix - fixes bug from the very first day of KF that was limiting
   zed spawn rate to 1 squad per second (was controlled by bBeta in v9.40)
@@ -3501,7 +3491,7 @@ be played. Experienced players shouldn't be playing on Normal difficulty.
 * `MUTATE ZED <alias> <index> PCT <chance>` - alters spawn chance of given zed:
     Enabling/Disabling zeds REQUIRE MAP RESTART!
 
-#### CONFIG VARIABLES (ScrnBalance.ini)
+#### CONFIG VARIABLES (ScrnBalanceSrv.ini)
 
 * `bScrnWaves` - use ScrnWaves.ini instead of KFMonstersCollection.
 
@@ -3517,7 +3507,7 @@ Configures games/waves/squads/zeds. A replacement for Zed Manager.
 
 * Sui map achievements are given in Turbo mode too
 * Changed some achievement requirements
-* ScrnGameRules.MapAliases made configurable (ScrnBalance.ini).
+* ScrnGameRules.MapAliases made configurable (ScrnBalanceSrv.ini).
   Now server admins can link custom maps to existing map achievements.
 
 -------------------------------------------------------------------------------
@@ -3615,7 +3605,7 @@ Configures games/waves/squads/zeds. A replacement for Zed Manager.
 
 ### v9.21
 
-#### CONFIG VARIABLES (ScrnBalance.ini)
+#### CONFIG VARIABLES (ScrnBalanceSrv.ini)
 
 * HardcoreGames - allows configuring HL for each game mode (TSC, FTG etc.)
 
@@ -3705,7 +3695,7 @@ Configures games/waves/squads/zeds. A replacement for Zed Manager.
 * Fixed TogglePathToTrader not working on server
 * [TSC] TSC TogglePathToTrader switches between PathToTrader|PathToBase|Off
 
-#### CONFIG VARIABLES (ScrnBalance.ini)
+#### CONFIG VARIABLES (ScrnBalanceSrv.ini)
 
 * bForceSteamNames - controls custom player names via SetName command
 * MinVoteFF, MaxVoteFF (see MVOTE FF)
@@ -3770,7 +3760,7 @@ Configures games/waves/squads/zeds. A replacement for Zed Manager.
 * Winning KF-HellFreezesOver1-2 unlocks KF-Hell achievements
 * [BETA] Players can push Crawlers.
 * MapInfo moved into separate config: ScrnMapInfo.ini. Now you can use commands
-  such as "MUTATE MAPZEDS 64" without worrying about messing up ScrnBalance.ini
+  such as "MUTATE MAPZEDS 64" without worrying about messing up ScrnBalanceSrv.ini
 * MUTATE MAPZEDS automatically forces new max-zeds-at-once value.
   No need to enter two commands anymore (MUTATE FORCEZEDS command removed).
 * Fixed QuickMelee bug when it hid current weapon
@@ -3801,7 +3791,7 @@ Configures games/waves/squads/zeds. A replacement for Zed Manager.
     and applies it on-the-fly.
 * `TestQuickMelee` - prints weapon states for debug purposes (in case QuickMelee bugs out again).
 
-#### CONFIG VARIABLES (ScrnBalance.ini)
+#### CONFIG VARIABLES (ScrnBalanceSrv.ini)
 
 `bRespawnDoors` - controls door respawning at the end of the wave. By default it
     is false, i.e. if door breaks, then it's gone forever.
@@ -3838,7 +3828,7 @@ Configures games/waves/squads/zeds. A replacement for Zed Manager.
   Medic damage XP is adding only once per wave - at the end of each wave.
   If any player gets killed by a zed, then medic damage xp for that wave is halved for all players.
 * Fixed Medic XP gain for server listener and solo mode.
-* Server-defined Hardcore Levels (see ScrnBalance.ini)
+* Server-defined Hardcore Levels (see ScrnBalanceSrv.ini)
 
 #### ScrnGameType (ScrN Floor)
 
@@ -3856,7 +3846,7 @@ Configures games/waves/squads/zeds. A replacement for Zed Manager.
 
 * Vanilla Knife replaced with SE version (ScrnKnife)
 * Don't forget to replace "KFMod.KnifePickup" with "ScrnBalanceSrv.ScrnKnifePickup" in
-  spawn invetory (ScrnBalance.ini). Otherwise Quick Melee won't work.
+  spawn invetory (ScrnBalanceSrv.ini). Otherwise Quick Melee won't work.
 * Currently Quick Melee Bash is working with Knife SE and Machete SE only
 * Assign the following command to a key for melee bash: "Button bAltFire | QuickMelee"
 * Console command to assign thumb mouse button for melee bash:
@@ -3966,7 +3956,7 @@ MyMusic - list of user-defined music.
 
 ### v8.17
 
-* bFixMusic (see ScrnBalance.ini for details)
+* bFixMusic (see ScrnBalanceSrv.ini for details)
 
 -------------------------------------------------------------------------------
 
@@ -4013,7 +4003,7 @@ MyMusic - list of user-defined music.
 
 ### v8.10
 
-* ScrnBalance.ini renamed to ScrnBalanceSrv.ini
+* ScrnBalanceSrv.ini renamed to ScrnBalanceSrv.ini
 * Custom DLC Locks introduced
 * DLC Locks are automatically disabled in TSC or Tourney mode
 * Chat icon
@@ -4022,7 +4012,7 @@ MyMusic - list of user-defined music.
 * Fixed bug that prevented Sirens from destroying pipebombs
 * Fixed Manual Reload for IJC Cryo Mass Driver 14 (Freezer Gun)
 * A few new achievements
-* SpawnInventory suppors achievement requirement and inventory check (see ScrnBalance.ini for details)
+* SpawnInventory suppors achievement requirement and inventory check (see ScrnBalanceSrv.ini for details)
 * SpawnInventory supports ammo pickups to give extra ammo for unlocking achievements (see ammo.txt)
 * Setting EventNum=255 doesn't ignore MapInfo anymore.
 * EventNum=254 - picks up random monster collection between regular, summer, halloween and xmas.
@@ -4034,7 +4024,7 @@ MyMusic - list of user-defined music.
 * M4-203 price lowered down to $1600
 * Faster M203 fire rate
 
-#### CONFIG VARIABLES (ScrnBalance.ini)
+#### CONFIG VARIABLES (ScrnBalanceSrv.ini)
 
 * bDoubleDoT - doubles zed burn rate (twice per second) dealing half a damage per tick
 * MySteamID64 - for solo and listen servers
@@ -4474,7 +4464,7 @@ Example (KFMapVote.ini):
 #### Other Changes
 
 * 5 new achievements related to Ghosts and Tesla Husks
-* Fixed support of AchievementFlags (see ScrnBalance.ini)
+* Fixed support of AchievementFlags (see ScrnBalanceSrv.ini)
   Now admins can remove unsupported achievements (e.g. doom3) from the list
 * Buzzsaw blades are destroyed at the start of the wave - exploit fix
 * Another attempt to fix annoying sound of stuck buzzsaw blade
@@ -4718,7 +4708,7 @@ Compatible to KF v1056
 
 #### WARNING
 
-Do not forget to set EventNum=2 in ScrnBalance.ini for Halloween zeds or you
+Do not forget to set EventNum=2 in ScrnBalanceSrv.ini for Halloween zeds or you
 can encounter invisible zeds after map change!
 
 #### Weapon Balance

@@ -3642,7 +3642,7 @@ function GameResumed()
 
 defaultproperties
 {
-    VersionNumber=97463
+    VersionNumber=97500
     GroupName="KF-Scrn"
     FriendlyName="ScrN Balance"
     Description="Total rework of KF1 to make it modern and the best tactical coop in the world while sticking to the roots of the original."
