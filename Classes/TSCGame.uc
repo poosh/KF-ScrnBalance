@@ -662,6 +662,17 @@ function ClanApplySpecTeam(ScrnPlayerController ScrnPC)
     }
 }
 
+function StartMatch()
+{
+    super.StartMatch();
+
+    // DeathMatch.StartMatch() enters MatchInProgress before GameInfo.StartMatch() spawns player pawns and sets
+    // bMatchHasBegun. Lock team spectators only now, when there are teammates to view.
+    if (bClanGame) {
+        ClanAdmin.CheckSpectators();
+    }
+}
+
 function bool BecomeSpectator(PlayerController P)
 {
     local bool result;
@@ -1036,6 +1047,10 @@ function CheckSpecTeams()
             ScrnPC.SetSpecTeam(PRI.Team.TeamIndex);
         }
     }
+
+    if (bClanGame) {
+        ClanAdmin.CheckSpectators();
+    }
 }
 
 function SetupWave()
@@ -1402,15 +1417,6 @@ auto State PendingMatch
 
 State MatchInProgress
 {
-    function BeginState()
-    {
-        super.BeginState();
-
-        if (bClanGame && ClanAdmin != none) {
-            ClanAdmin.CheckSpectators();
-        }
-    }
-
     function Timer()
     {
         super.Timer();

@@ -36,6 +36,9 @@
 
 -------------------------------------------------------------------------------
 
+## v9.74.63
+- **TSC Clan Game**: Fixed a bug where team-locked spectators could sometimes keep a free camera after the game started, until they pressed Fire.
+
 ## v9.74.62
 - **TSC**: Fixed a bug where sometimes flares flew through players without damaging them.
 
