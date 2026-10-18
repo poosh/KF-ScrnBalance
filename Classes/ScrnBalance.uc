@@ -749,13 +749,8 @@ function SetupPickups(optional bool bReduceAmount, optional bool bBoostAmount)
     local bool bSpawned;
     local int i;
 
-    // randomize remaining monster count, when pickups are reset to avoid players exploiting this
-    // knowledge
-    PickupSetupMonsters = 10 + rand(10);
-    bPickupSetupReduced = bReduceAmount;
-
-    // Except the beginner, where all pickups are still spawned
-    if (KF.GameDifficulty < 2 || (MapInfo.bDebug && KF.WaveNum == 0)) {
+    // Spawn all items on a test map
+    if (bTestMap && KF.WaveNum == 0) {
         for ( i = 0; i < KF.WeaponPickups.Length ; i++ ) {
             KF.WeaponPickups[i].TurnOn();
             KF.WeaponPickups[i].SetTimer(0, false);
@@ -763,8 +758,13 @@ function SetupPickups(optional bool bReduceAmount, optional bool bBoostAmount)
         for ( i = 0; i < KF.AmmoPickups.Length ; i++ ) {
             KF.AmmoPickups[i].GotoState('Pickup');
         }
+        bPickupSetupReduced = true;  // prevent further reduction
         return;
     }
+
+    // Randomize remaining monster count, when pickups are reset to avoid players exploiting this knowledge
+    PickupSetupMonsters = 10 + rand(10);
+    bPickupSetupReduced = bReduceAmount;
 
     if ( bReduceAmount ) {
         W = 0.10;
@@ -1335,7 +1335,7 @@ auto simulated state WaitingForTick
             Level.GRI.ServerName = class'ScrnFunctions'.static.ParseColorTags(ColoredServerName);
         }
 
-        if (MapInfo.bDebug) {
+        if (bTestMap) {
             // spawn all pickups for debug purposes
             SetupPickups();
         }
@@ -2508,7 +2508,7 @@ function bool CheckReplacement(Actor Other, out byte bSuperRelevant)
         Other.SetDrawScale3D(AmmoBoxDrawScale3D);
     }
     else if (Pickup(Other) != none) {
-        if (WeaponStayTime > 0) {
+        if (WeaponStayTime > 0 && Pickup(Other).bDropped) {
             Other.LifeSpan = WeaponStayTime;
         }
         OnSetupPickup(Pickup(Other));
@@ -3642,7 +3642,7 @@ function GameResumed()
 
 defaultproperties
 {
-    VersionNumber=97500
+    VersionNumber=97501
     GroupName="KF-Scrn"
     FriendlyName="ScrN Balance"
     Description="Total rework of KF1 to make it modern and the best tactical coop in the world while sticking to the roots of the original."

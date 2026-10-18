@@ -22,7 +22,7 @@
 [That1Guy]: https://steamcommunity.com/id/defenciveguy121
 [FishFlop_The_CatSlap]: https://steamcommunity.com/id/FishFlop_The_CatSlap/
 [jkcrmptn]: https://steamcommunity.com/id/jkcrmptn/
-[WaffleTime]: ht-tps://steamcommunity.com/id/Waffle_Time/
+[WaffleTime]: https://steamcommunity.com/id/Waffle_Time/
 [Mortimer]: https://steamcommunity.com/id/MortimerKubrick/
 <!-- add other peaople too!!! -->
 
@@ -39,7 +39,16 @@
 
 -------------------------------------------------------------------------------
 
-## v9.75.00
+## v9.75.01
+- **TSC**: Fixed zed spawn rate bug, causing early waves to be 10-30% slower than intended.
+- **Boomstick**: Price increase $400 => $600 (offperk: $1000 => $1500)
+- **Combat Shotgun**: Price increase $600 => $800 (offperk: $1500 => $2000)
+- **Nailgun**: Fixed point-blank bug (thanks [WaffleTime])
+- **Scoreboard**: Total Dosh now includes Team Wallet.
+- *ScrnBalanceSrv.ini*: `WeaponStayTime` applies only to dropped weapons, not to map pickups.
+- **Test Map**: all pickups are spawned on start and respawn in place after being picked up.
+
+## v9.75
 ### Reduced Game Crash Probability By a Margin
 - Random client crashes during **garbage collection** are almost gone.
 - Fixed all dangling pointers in all ScrN Objects. GUI was the biggest problem, ScrN Trader Menu was the root cause of most crashes.

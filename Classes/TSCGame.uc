@@ -189,12 +189,6 @@ event InitGame( string Options, out string Error )
     // force FriendlyFireScale to 10%
     FriendlyFireScale = HDmgScale;
     default.FriendlyFireScale = HDmgScale;
-
-    // set MaxZombiesOnce to at least 48, unless it is a small map with only 1 trader
-    if ( MaxZombiesOnce < default.MaxZombiesOnce && !bSingleTeamGame && ShopList.Length > 1 ) {
-        MaxZombiesOnce = default.MaxZombiesOnce;
-        StandardMaxZombiesOnce = MaxZombiesOnce;
-    }
 }
 
 
@@ -1191,6 +1185,7 @@ function bool LoadNextSpawnSquad()
         // If teams are uneven, then just pick up random player as squad's target
         bCheckSquadTeam = BigTeamSize == SmallTeamSize;
     }
+    return true;
 }
 
 // returns every alive player in a row

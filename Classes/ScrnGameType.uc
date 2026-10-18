@@ -3712,9 +3712,9 @@ function AmmoPickedUp(KFAmmoPickup PickedUp)
 
     ScrnBalanceMut.GameRules.WaveAmmoPickups++;
 
-    if (AmmoPickups.length == 1) {
-        // a tupid map with just one ammo box - respawn the same pickup again
+    if (IsTestMap() || AmmoPickups.length <= 1) {
         PickedUp.GotoState('Sleeping', 'DelayedSpawn');
+        return;
     }
 
     // CurrentAmmoBoxCount is set in ScrnAmmoPickup
@@ -3758,6 +3758,11 @@ function WeaponPickedUp(KFRandomItemSpawn PickedUp)
 
     if (PickedUp == none)
         return;
+
+    if (IsTestMap()) {
+        PickedUp.EnableMeDelayed(5.0);
+        return;
+    }
 
     RespawnDelay = 10*frand() + 30.0/AlivePlayerCount;
 

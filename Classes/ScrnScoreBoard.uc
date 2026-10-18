@@ -983,6 +983,9 @@ function UpdateCache(Canvas Canvas)
         UpdateGameplayRow(Canvas, Cache[i], bStoryMode);
         UpdateTelemetryRow(Canvas, Cache[i]);
     }
+    if (OwnerPRI != none && OwnerPRI.Team != none) {
+        TotalCash += OwnerPRI.Team.Score;
+    }
 }
 
 // A scoreboard that has not been around long enough to have seen the game being played has nothing worth snapshotting.

@@ -332,16 +332,18 @@ simulated function ProcessTouch (Actor Other, vector HitLocation)
 
     //Bounces=0; // don't bounce after hit somebody
 
-    // penetration damage reduction
-    if ( KFPRI != none && KFPRI.ClientVeteranSkill != none )
-           PenDamageReduction = KFPRI.ClientVeteranSkill.static.GetShotgunPenetrationDamageMulti(KFPRI,default.PenDamageReduction);
-    else
-           PenDamageReduction = default.PenDamageReduction;
-    // loose penetration damage after hitting specific zeds -- PooSH
-    if ( KFM != none)
-        PenDamageReduction *= ZedPenDamageReduction(KFM);
-    Damage *= PenDamageReduction; // Keep going, but lose effectiveness each time.
-    speed = VSize(Velocity);
+    // penetration damage reduction - don't do it on the initial Touch() - before PostBeginPlay()
+    if (bReadyToSplash) {
+        if ( KFPRI != none && KFPRI.ClientVeteranSkill != none )
+            PenDamageReduction = KFPRI.ClientVeteranSkill.static.GetShotgunPenetrationDamageMulti(KFPRI,default.PenDamageReduction);
+        else
+            PenDamageReduction = default.PenDamageReduction;
+        // loose penetration damage after hitting specific zeds -- PooSH
+        if ( KFM != none)
+            PenDamageReduction *= ZedPenDamageReduction(KFM);
+        Damage *= PenDamageReduction; // Keep going, but lose effectiveness each time.
+        speed = VSize(Velocity);
+    }
 
     // if we've struck through more than the max number of foes, destroy.
     if ( Damage / default.Damage < (default.PenDamageReduction ** MaxPenetrations) + 0.0001

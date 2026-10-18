@@ -3,7 +3,7 @@ class ScrnBoomStickPickup extends BoomStickPickup;
 defaultproperties
 {
      Weight=8
-     cost=1000
+     cost=1500
      AmmoCost=45
      Description="This is my BOOMstick (c) Ash, Evil Dead - Army of Darkness, 1992.|Has been used through the centuries to hunt down Demons, Aliens and Zombies. Now it's time for the ZEDs.|Can shoot from one or two barrels simultaneousely. Single shell reload is avaliable."
      ItemName="Ash's Boomstick"
