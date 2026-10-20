@@ -1,7 +1,8 @@
 class ScrnSyringe extends Syringe;
 
-var() int SoloHealBoostAmount;
-var() int AmmoRegenCharge;
+var bool bSoloHealBoost;
+var int SoloHealBoostAmount;
+var int AmmoRegenCharge;
 
 simulated function PostBeginPlay()
 {
@@ -13,6 +14,7 @@ simulated function PostBeginPlay()
     if (bCanThrow) {
         AmmoCharge[0] = 0; // prevent dropping exploit
     }
+    UpdateCharge();
 }
 
 simulated function ClientSuccessfulHeal(String HealedName)
@@ -24,19 +26,21 @@ simulated function ClientSuccessfulHeal(String HealedName)
     // }
 }
 
-simulated function int GetChargeRegen()
+function UpdateCharge()
 {
-    local int result;
     local KFPlayerReplicationInfo KFPRI;
+    local ScrnGameType ScrnGT;
 
-    result = AmmoRegenCharge;
+    AmmoRegenCharge = default.AmmoRegenCharge;
 
+    ScrnGT = ScrnGameType(Level.Game);
     if (Instigator != none)
         KFPRI = KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo);
     if (KFPRI != none)
-        result *= KFPRI.ClientVeteranSkill.Static.GetSyringeChargeRate(KFPRI);
+        AmmoRegenCharge *= KFPRI.ClientVeteranSkill.Static.GetSyringeChargeRate(KFPRI);
 
-    return result;
+    bSoloHealBoost = Level.Game.NumPlayers == 1 || (KFPRI != none && KFPRI.Team != none
+            && (KFPRI.Team.Size == 1 || (ScrnGT != none && ScrnGT.AliveTeamPlayerCount[KFPRI.Team.TeamIndex] == 1)));
 }
 
 simulated function Tick(float dt)
@@ -44,7 +48,7 @@ simulated function Tick(float dt)
     if (AmmoCharge[0] < MaxAmmoCount && RegenTimer < Level.TimeSeconds) {
         RegenTimer = Level.TimeSeconds + AmmoRegenRate;
         if (Level.NetMode != NM_Client) {
-            AmmoCharge[0] += GetChargeRegen();
+            AmmoCharge[0] += AmmoRegenCharge;
             if (AmmoCharge[0] > MaxAmmoCount)
                 AmmoCharge[0] = MaxAmmoCount;
         }

@@ -1055,6 +1055,7 @@ simulated function VeterancyChanged()
 
     CalcHealthMax();
     ApplyWeaponStats(Weapon);
+    UpdateSyringeCharge();
     RecalcAmmo();
     CheckPerkAchievements();
     PrevPerkClass = KFPRI.ClientVeteranSkill;
@@ -3748,6 +3749,21 @@ simulated function DisableGlow()
     Skins = OriginalSkins;
     bUnlit = false;
     bGlowEnabled = false;
+}
+
+function WaveStarted()
+{
+    UpdateSyringeCharge();
+}
+
+function UpdateSyringeCharge()
+{
+    local ScrnSyringe Syr;
+
+    Syr = ScrnSyringe(FindInventoryType(class'ScrnSyringe'));
+    if (Syr != none) {
+        Syr.UpdateCharge();
+    }
 }
 
 

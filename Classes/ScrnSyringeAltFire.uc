@@ -4,21 +4,21 @@ class ScrnSyringeAltFire extends SyringeAltFire;
 function Timer()
 {
     local int HealSum;
-    local KFPlayerReplicationInfo KFPRI;
     local ScrnHumanPawn ScrnPawn;
-    local ScrnGameType ScrnGT;
     local ScrnSyringe MySyringe;
 
-    KFPRI = KFPlayerReplicationInfo(Instigator.PlayerReplicationInfo);
     ScrnPawn = ScrnHumanPawn(Instigator);
-    ScrnGT = ScrnGameType(Weapon.Level.Game);
     MySyringe = ScrnSyringe(Weapon);
 
-    HealSum = MySyringe.HealBoostAmount;
-    if ( Weapon.Level.Game.NumPlayers == 1 || (KFPRI != none && KFPRI.Team != none
-            && (KFPRI.Team.Size == 1 || (ScrnGT != none && ScrnGT.AliveTeamPlayerCount[KFPRI.Team.TeamIndex] == 1))) )
-    {
-        HealSum = max(HealSum, MySyringe.SoloHealBoostAmount);
+    // The first self-heal after all teammates are dead still has bSoloHealBoost=false, healing only 20hp.
+    // That's intended to prevent selfishness.
+    // If you and your teammates are heavily wounded, you are encouraged to heal the teammate (2x20hp)
+    // rather than waiting for them to die and get +50hp for yourself.
+    if (MySyringe.bSoloHealBoost) {
+        HealSum = max(MySyringe.HealBoostAmount, MySyringe.SoloHealBoostAmount);
+    }
+    else {
+        HealSum = MySyringe.HealBoostAmount;
     }
 
     Weapon.ConsumeAmmo(ThisModeNum, AmmoPerFire);
@@ -29,6 +29,8 @@ function Timer()
         // shouldn't happen
         class'ScrnHumanPawn'.static.HealLegacyPawn(KFPawn(Instigator), Instigator, HealSum);
     }
+
+    MySyringe.UpdateCharge();
 }
 
 defaultproperties

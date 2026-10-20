@@ -39,6 +39,11 @@
 
 -------------------------------------------------------------------------------
 
+## v9.75.02
+- Fixed a bug where the **Scoreboard** was empty after the game ended if the player hadn't opened it during the game.
+- **Chainsaw**: Price increase $400 => $600 (offperk: $1000 => $1500)
+- **Syringe**: The first self-heal after all teammates are dead still heals for only 20hp (+perk bonus). That's intended to prevent selfishness. If you and your teammate are heavily wounded, you are encouraged to heal the teammate (2x20hp) rather than waiting for them to die and get +50hp for yourself.
+
 ## v9.75.01
 - **TSC**: Fixed zed spawn rate bug, causing early waves to be 10-30% slower than intended.
 - **Boomstick**: Price increase $400 => $600 (offperk: $1000 => $1500)

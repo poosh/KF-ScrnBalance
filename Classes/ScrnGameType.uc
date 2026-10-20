@@ -3446,6 +3446,7 @@ function SetupWave()
     local ScrnCustomPRI ScrnPRI;
     local ScrnPlayerController ScrnPC;
     local InvasionBot B;
+    local ScrnHumanPawn ScrnPawn;
 
     // Enabled by default; might get disabled later in the code.
     EnableTraderMessages();
@@ -3542,6 +3543,12 @@ function SetupWave()
     // moved here from TraderTimer
     for (C = Level.ControllerList; C != none; C = C.NextController) {
         if (!C.bIsPlayer) continue;
+
+        ScrnPawn = ScrnHumanPawn(C.Pawn);
+        if (ScrnPawn != none) {
+            ScrnPawn.WaveStarted();
+        }
+
         ScrnPC = ScrnPlayerController(C);
         if (ScrnPC != none) {
             ScrnPRI = class'ScrnCustomPRI'.static.FindMe(C.PlayerReplicationInfo);

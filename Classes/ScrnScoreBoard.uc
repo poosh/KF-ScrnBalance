@@ -998,7 +998,7 @@ function bool CanFreeze()
 
 function Freeze(Canvas Canvas)
 {
-    if (!CanFreeze())
+    if (!CanFreeze() || !UpdateGRI())
         return;
     UpdateCache(Canvas);
     bFrozen = true;

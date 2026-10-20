@@ -7,6 +7,9 @@ Function Timer()
     local KFHumanPawn Healed;
     local int HealSum; // for modifying based on perks
     local bool bHealed;
+    local ScrnSyringe MySyringe;
+
+    MySyringe = ScrnSyringe(Weapon);
 
     Healed = CachedHealee;
     CachedHealee = none;
@@ -35,6 +38,7 @@ Function Timer()
             LastHealMessageTime = Level.TimeSeconds;
         }
     }
+    MySyringe.UpdateCharge();
 }
 
 function KFHumanPawn GetHealee()
