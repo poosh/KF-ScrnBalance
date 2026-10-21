@@ -465,6 +465,7 @@ function PlayerSpawned(ScrnPlayerController PC)
         return; // wtf?
 
     if (SPI.HealthBeforeDisconnect > 0) {
+        SPI.StartSampling();
         // guns
         for (i = 0; i < SPI.DroppedWeapons.Length; ++i) {
             WP = SPI.DroppedWeapons[i];
@@ -743,9 +744,19 @@ function bool CheckEndGame(PlayerReplicationInfo Winner, string Reason)
 
     for (SPI = PlayerInfo; SPI != none; SPI = SPI.NextPlayerInfo) {
         SPI.BackupPRI();  // in case players disconnects or switches to spectator
-        if (SPI.PvP_Kills > 0) {
-            mut.BroadcastMessage(SPI.PlayerName $ " killed " $ SPI.PvP_Kills $ " enemy player(-s)", true);
+    }
+
+    if (Mut.bTSCGame) {
+        for (SPI = PlayerInfo; SPI != none; SPI = SPI.NextPlayerInfo) {
+            if (SPI.PvP_Kills > 0)
+                BroadcastPvP(SPI);
         }
+        for (SPI = BackupPlayerInfo; SPI != none; SPI = SPI.NextPlayerInfo) {
+            if (SPI.PvP_Kills > 0)
+                BroadcastPvP(SPI);
+        }
+        BroadcastAvgPing(0, "^r$");
+        BroadcastAvgPing(1, "^s$");
     }
 
     for ( i=0; i<AchHandlers.length; ++i ) {
@@ -753,6 +764,56 @@ function bool CheckEndGame(PlayerReplicationInfo Winner, string Reason)
     }
 
     return true;
+}
+
+function BroadcastPvP(ScrnPlayerInfo SPI)
+{
+    mut.BroadcastMessage(SPI.PlayerName $ " killed " $ SPI.PvP_Kills $ " enemy player(-s)", true);
+}
+
+function BroadcastAvgPing(byte TeamIndex, string TeamColor)
+{
+    local ScrnPlayerInfo SPI;
+    local array<int> Pings;
+    local int i, PingSum;
+    local string s;
+
+    for (SPI = PlayerInfo; SPI != none; SPI = SPI.NextPlayerInfo) {
+        AddPlayerAvgPing(SPI, TeamIndex, TeamColor, Pings);
+    }
+    for (SPI = BackupPlayerInfo; SPI != none; SPI = SPI.NextPlayerInfo) {
+        AddPlayerAvgPing(SPI, TeamIndex, TeamColor, Pings);
+    }
+    if (Pings.Length == 0)
+        return;
+
+    for (i = 0; i < Pings.Length; ++i) {
+        PingSum += Pings[i];
+        if (i > 0) {
+            s $= ",";
+        }
+        s $= Pings[i];
+    }
+    Mut.BroadcastMessage(TeamColor $ KF.Teams[TeamIndex].GetHumanReadableName() $ " average ping "
+            $ (PingSum / Pings.Length) $ " (" $ s $ ")", true);
+}
+
+function AddPlayerAvgPing(ScrnPlayerInfo SPI, byte TeamIndex, string TeamColor, out array<int> Pings)
+{
+    local int i, Ping;
+
+    if (SPI.PRI_TeamIndex != TeamIndex || SPI.PingSamples == 0)
+        return;
+
+    Ping = SPI.GetAvgPing();
+    i = Pings.Length;
+    while (i > 0 && Pings[i - 1] > Ping) {
+        --i;
+    }
+    Pings.Insert(i, 1);
+    Pings[i] = Ping;
+
+    Mut.Broadcast2Admins(TeamColor $ SPI.PlayerName $ " average ping: " $ Ping $ "ms");
 }
 
 function float CalcEndGameBonusMult()
@@ -1667,7 +1728,7 @@ final function ClearNonePlayerInfos()
     // we already know that PlayerInfo has PlayerOwner, otherwise we won't reach here
     SPI = PrevSPI.NextPlayerInfo;
     while ( SPI != none ) {
-        if ( SPI.PlayerOwner == none || PlayerInfo.PlayerOwner.Pawn == none ) {
+        if ( SPI.PlayerOwner == none || SPI.PlayerOwner.Pawn == none ) {
             PrevSPI.NextPlayerInfo = SPI.NextPlayerInfo;
             BackupOrDestroySPI(SPI);
         }

@@ -138,6 +138,11 @@ var byte PRI_DeathWave;
 var bool PRI_HadPawn;
 var int PRI_StarCash;
 
+var int PingSum, PingSamples;  // committed samples, ms
+var protected int PendingPing;  // the last sample, committed one second later if the client was still alive
+var protected PlayerController PingOwner;  // PlayerOwner at the last sample; differs after a reconnect
+var protected float PingClientTimeStamp;  // PingOwner.CurrentTimeStamp at the last sample
+
 function Destroyed()
 {
     local ScrnCustomPlayerInfo CPI;
@@ -1047,11 +1052,14 @@ function WaveStarted(byte WaveNum)
     CashDonatedPerWave = 0;
     CashReceivedPerWave = 0;
     CashFoundPerWave = 0;
+
+    StartSampling();
 }
 
 function WaveEnded(byte WaveNum)
 {
     ResetDisconnectStats();
+    StopSampling();
 }
 
 function ResetDisconnectStats()
@@ -1170,6 +1178,58 @@ function RestorePRI()
     );
 }
 
+function StartSampling()
+{
+    SetTimer(1.0, true);
+    PendingPing = 0;
+}
+
+function StopSampling()
+{
+    SetTimer(0, false);
+    PendingPing = 0;
+}
+
+function Timer()
+{
+    if (!IsAlive()) {
+        StopSampling();
+        return;
+    }
+
+    SamplePing();
+}
+
+function SamplePing()
+{
+    local bool bConnected;
+
+    bConnected = PlayerOwner == PingOwner && PlayerOwner.CurrentTimeStamp != PingClientTimeStamp;
+    if (bConnected && PendingPing > 0) {
+        PingSum += PendingPing;
+        ++PingSamples;
+    }
+    PendingPing = 0;
+    PingOwner = PlayerOwner;
+
+    PingClientTimeStamp = PlayerOwner.CurrentTimeStamp;
+    if (bConnected && IsPingSampleAllowed()) {
+        PendingPing = int(PlayerOwner.ConsoleCommand("GETPING"));
+    }
+}
+
+function bool IsPingSampleAllowed()
+{
+    return GameRules.Mut.KF.NumMonsters > 10
+            && NetConnection(PlayerOwner.Player) != none;  // the listen server host has no connection to measure
+}
+
+function int GetAvgPing()
+{
+    if (PingSamples == 0)
+        return 0;
+    return PingSum / PingSamples;
+}
 
 function PickedCash(CashPickup Dosh)
 {

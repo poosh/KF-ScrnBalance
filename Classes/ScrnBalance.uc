@@ -592,6 +592,23 @@ function BroadcastMessage(string Msg, optional bool bSaveToLog)
     }
 }
 
+function Broadcast2Admins(string Msg)
+{
+    local Controller C;
+    local PlayerController PC;
+
+    log(class'ScrnFunctions'.static.StripColorTags(Msg), 'ScrnBalance');
+
+    for (C = Level.ControllerList; C != none; C = C.nextController) {
+        if (C.PlayerReplicationInfo == none)
+            continue;
+        PC = PlayerController(C);
+        if (PC != none && IsReferee(PC)) {
+            PC.ClientMessage(Msg, 'Log');
+        }
+    }
+}
+
 function SendFriendlyFireWarning(PlayerController Player)
 {
     if (TSCGame(KF) != none) {
@@ -3642,7 +3659,7 @@ function GameResumed()
 
 defaultproperties
 {
-    VersionNumber=97502
+    VersionNumber=97503
     GroupName="KF-Scrn"
     FriendlyName="ScrN Balance"
     Description="Total rework of KF1 to make it modern and the best tactical coop in the world while sticking to the roots of the original."

@@ -39,6 +39,9 @@
 
 -------------------------------------------------------------------------------
 
+## v9.75.03
+- **TSC**: team/player average ping is reported at game end.
+
 ## v9.75.02
 - Fixed a bug where the **Scoreboard** was empty after the game ended if the player hadn't opened it during the game.
 - **Chainsaw**: Price increase $400 => $600 (offperk: $1000 => $1500)
