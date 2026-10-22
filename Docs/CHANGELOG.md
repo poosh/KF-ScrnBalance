@@ -39,6 +39,20 @@
 
 -------------------------------------------------------------------------------
 
+## v9.75.04
+- Fixed weapon spread at the end of Zed Time (during the speeding-up phase).
+- **Story Mode**: Fixed Zed Time never ending server-side on dedicated servers, which disabled weapon spread build-up for the rest of the map.
+### TSC Tourney v2.03
+- Restored the minimum `MaxZombiesOnce=48` on small maps (broken since v9.74.13)
+- Forced `MaxZombiesOnce=64` in wave 1 even on small maps, since players are spread apart, looking for candies.
+### ScrN Zed Pack
+- Improved **headshot detection**. Most noticeable in Zed Time and mid-air.
+- **Listen servers** and **Solo** games now use the same, more generous head hitboxes as dedicated servers.
+- *ScrnZedPack.ini*: removed `bHeadshotSrvFixWalk` and `bHeadshotSrvFixAttackAndMove`. Both fixes are always on.
+- *ScrnZedPack.ini*: removed `bHeadshotSrvTorsoTwist`. It had no effect.
+### Code Changes
+- `ScrnPlayerController.bZEDTimeActive` stays true until Zed Time fully ends (`FinishZedTime()` / `ClientFinishZedTime()`). `ExitZedTime()` is called when the game starts speeding back up and only plays the exit sound.
+
 ## v9.75.03
 - **TSC**: team/player average ping is reported at game end.
 

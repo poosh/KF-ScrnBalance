@@ -831,6 +831,7 @@ function int GetZVolVisibleCount()
 function HandleZedTime(float dt)
 {
     local Controller C;
+    local ScrnPlayerController ScrnPC;
 
     if( !bZEDTimeActive )
         return;
@@ -843,20 +844,26 @@ function HandleZedTime(float dt)
         bSpeedingBackUp = false;
         SetGameSpeed(TurboScale);
         ZedTimeExtensionsUsed = -ExtraZedTimeExtensions;
+        for (C = Level.ControllerList; C != none; C = C.NextController) {
+            if (C.PlayerReplicationInfo == none)
+                continue;
+
+            ScrnPC = ScrnPlayerController(C);
+            if (ScrnPC != none)
+                ScrnPC.FinishZedTime();
+        }
     }
     else if( CurrentZEDTimeDuration < ZEDTimeTransitionTime ) {
         if( !bSpeedingBackUp ) {
             bSpeedingBackUp = true;
             ZEDTimeNextUpdate = CurrentZEDTimeDuration;
-            for( C=Level.ControllerList;C!=None;C=C.NextController ) {
-                if (C.PlayerReplicationInfo != none) {
-                    if (ScrnPlayerController(C) != none) {
-                        ScrnPlayerController(C).ExitZedTime();;
-                    }
-                    else if (KFPlayerController(C) != none) {
-                        KFPlayerController(C).ClientExitZedTime();
-                    }
-                }
+            for (C = Level.ControllerList; C != none; C = C.NextController) {
+                if (C.PlayerReplicationInfo == none)
+                    continue;
+
+                ScrnPC = ScrnPlayerController(C);
+                if (ScrnPC != none)
+                    ScrnPC.ExitZedTime();
             }
         }
         if ( CurrentZEDTimeDuration <= ZEDTimeNextUpdate || Level.NetMode == NM_StandAlone ) {
@@ -1094,8 +1101,10 @@ function DramaticEvent(float Chance, optional float DesiredZedTimeDuration)
 
 }
 
-function StartZedTime(optional float DesiredZedTimeDuration) {
+function StartZedTime(optional float DesiredZedTimeDuration)
+{
     local Controller C;
+    local ScrnPlayerController ScrnPC;
 
     bZEDTimeActive =  true;
     bSpeedingBackUp = false;
@@ -1118,11 +1127,9 @@ function StartZedTime(optional float DesiredZedTimeDuration) {
         if (C.PlayerReplicationInfo == none)
             continue;
 
-        if (ScrnPlayerController(C) != none) {
-            ScrnPlayerController(C).EnterZedTime();
-        }
-        else if (KFPlayerController(C) != none) {
-            KFPlayerController(C).ClientEnterZedTime();
+        ScrnPC = ScrnPlayerController(C);
+        if (ScrnPC != none) {
+            ScrnPC.EnterZedTime();
         }
 
         if (KFSteamStatsAndAchievements(C.PlayerReplicationInfo.SteamStatsAndAchievements) != none) {

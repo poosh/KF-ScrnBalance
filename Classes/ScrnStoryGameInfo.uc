@@ -267,6 +267,29 @@ function StartZedTime(optional float DesiredZedTimeDuration) {
     }
 }
 
+// KFGameType.Tick() handles zed time but only calls ClientExitZedTime() when speeding back up.
+// Tell ScrnPlayerController when zed time is fully over.
+event Tick(float DeltaTime)
+{
+    local Controller C;
+    local ScrnPlayerController ScrnPC;
+    local bool bWasActive;
+
+    bWasActive = bZEDTimeActive;
+    super.Tick(DeltaTime);
+    if (bWasActive && !bZEDTimeActive) {
+        for (C = Level.ControllerList; C != none; C = C.NextController) {
+            if (C.PlayerReplicationInfo == none)
+                continue;
+
+            ScrnPC = ScrnPlayerController(C);
+            if (ScrnPC != none) {
+                ScrnPC.FinishZedTime();
+            }
+        }
+    }
+}
+
 // Fixed Spawn rate for >6 players  -- PooSH
 function float GetAdjustedSpawnInterval(float BaseInterval, float UsedWaveTimeElapsed, bool bIgnoreSineMod)
 {

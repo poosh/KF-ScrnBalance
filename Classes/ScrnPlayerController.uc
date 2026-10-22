@@ -200,7 +200,7 @@ delegate OnTraderDoshRequest(PlayerReplicationInfo Sender, string Msg);
 replication
 {
     reliable if ( Role == ROLE_Authority )
-        ClientMonsterBlamed, ClientPostLogin, ClientMark, ClientUnmark, ClientInvite;
+        ClientMonsterBlamed, ClientPostLogin, ClientMark, ClientUnmark, ClientInvite, ClientFinishZedTime;
 
     unreliable if ( Role == ROLE_Authority )
         ClientPlayerDamaged, ClientFlareDamage;
@@ -1989,6 +1989,10 @@ simulated function ClientEnterZedTime()
 simulated function ClientExitZedTime()
 {
     super.ClientExitZedTime();
+}
+
+simulated function ClientFinishZedTime()
+{
     bZEDTimeActive = false;
 }
 
@@ -2002,8 +2006,13 @@ function EnterZedTime()
 
 function ExitZedTime()
 {
-    bZEDTimeActive = false;
     ClientExitZedTime();
+}
+
+function FinishZedTime()
+{
+    bZEDTimeActive = false;
+    ClientFinishZedTime();
 }
 
 function bool AllowVoiceMessage(name msgtype)
