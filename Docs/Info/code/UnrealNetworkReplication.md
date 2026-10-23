@@ -322,7 +322,7 @@ The whole block is wrapped in "not the owner", which has a second consequence: t
 never receives the packed position at all. It predicts locally and is corrected through the movement
 RPCs instead.
 
-**Server tick rate does not raise the cap.** The 0.09 s is wall-clock, measured per connection
+**Server tick rate does not raise the cap.** The 0.09 s is measured per connection
 against that connection's last full update, so tick rate only decides how often the pawn is
 *considered*. `PossessedBy()` sets `NetUpdateFrequency = 100` and `NetPriority = 3` on every
 possessed pawn (`Pawn.uc:747-748`), so on a 100-tick server a pawn is considered almost every tick
@@ -333,6 +333,19 @@ and still gets a full update only every 0.09 s:
 | Packed position (non-owner) | up to ~100 Hz, but only when `Velocity` changes |
 | `PlayerReplicationInfo` | every considered pass |
 | Native pawn state + **all script-replicated variables** | **~11 Hz** |
+
+**The 0.09 s is game time, not wall-clock.** It is measured against `Level.TimeSeconds`, which
+advances by the frame time multiplied by `Level.TimeDilation`. So the cap is ~11 full updates per
+*game* second, and its real-time rate follows the game speed:
+
+| | `Level.TimeDilation` | full update every (real) | real-time rate |
+|---|---|---|---|
+| Normal play (`SetGameSpeed(1.0)` sets `1.1 * GameSpeed`) | 1.1 | ~0.082 s | ~12 Hz |
+| Zed Time (`SetGameSpeed(0.2)`) | 0.22 | ~0.41 s | ~2.4 Hz |
+
+Animations, timers and `Level.TimeSeconds` all run on the same dilated clock, so relative to gameplay
+the cap is constant. A script time window that compares `Level.TimeSeconds` against 0.09 matches the
+throttle at every game speed and needs no Zed Time scaling.
 | The pawn its owner controls, for that one connection | full rate, every pass |
 
 So raising the tick rate past about 11 buys movement smoothness and RPC latency, and nothing at all

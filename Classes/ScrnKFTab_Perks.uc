@@ -1,5 +1,8 @@
 class ScrnKFTab_Perks extends SRKFTab_Perks;
 
+var transient class<KFVeterancyTypes> PendingPerk;
+var transient int PerkWaitCount;
+
 function Free()
 {
     super.Free();
@@ -12,6 +15,7 @@ function ShowPanel(bool bShow)
 {
     super.ShowPanel(bShow);
 
+    PendingPerk = none;
     if (bShow) {
         // For some reason, the perk list cannot receive focus on panel show, so we have to delay it.
         SetTimer(0.1, false);
@@ -23,18 +27,41 @@ function ShowPanel(bool bShow)
 
 function Timer()
 {
-    FocusFirst(none);
+    if (PendingPerk == none) {
+        FocusFirst(none);
+        return;
+    }
+    // 50 * 0.05s = 2.5s. The server may reject or defer the perk change, so never wait forever.
+    if (KFPlayerReplicationInfo(PlayerOwner().PlayerReplicationInfo).ClientVeteranSkill == PendingPerk
+            || ++PerkWaitCount >= 10) {
+        KillTimer();
+        PendingPerk = none;
+        OnDoneClick(none);
+    }
 }
 
 function bool OnSaveButtonClicked(GUIComponent Sender)
 {
     local ClientPerkRepLink L;
 
-    L = Class'ScrnClientPerkRepLink'.Static.FindMe(PlayerOwner());
-    if ( L!=None && lb_PerkSelect.GetIndex()>=0 ) {
-        ScrnPlayerController(PlayerOwner()).SelectVeterancy(L.CachePerks[lb_PerkSelect.GetIndex()].PerkClass);
+    if (PendingPerk != none)
+        return true;  // already waiting for the server
+
+    L = class'ScrnClientPerkRepLink'.static.FindMe(PlayerOwner());
+    if (L == none || lb_PerkSelect.GetIndex() < 0)
+        return OnDoneClick(Sender);
+
+    PendingPerk = L.CachePerks[lb_PerkSelect.GetIndex()].PerkClass;
+    ScrnPlayerController(PlayerOwner()).SelectVeterancy(PendingPerk);
+    if (KFPlayerReplicationInfo(PlayerOwner().PlayerReplicationInfo).ClientVeteranSkill == PendingPerk) {
+        // the same perk, or standalone / listen host where the change is applied immediately
+        PendingPerk = none;
+        return OnDoneClick(Sender);
     }
-    return OnDoneClick(Sender);
+    // wait until KFPRI.ClientVeteranSkill gets replicated
+    PerkWaitCount = 0;
+    SetTimer(0.05, true);
+    return true;
 }
 
 function bool OnDoneClick(GUIComponent Sender)

@@ -39,17 +39,27 @@
 
 -------------------------------------------------------------------------------
 
-## v9.75.04
+## v9.75.05
 - Fixed weapon spread at the end of Zed Time (during the speeding-up phase).
 - **Story Mode**: Fixed Zed Time never ending server-side on dedicated servers, which disabled weapon spread build-up for the rest of the map.
+- **Shop Menu**: Fixed the perked weapon category load on perk change.
 ### TSC Tourney v2.03
 - Restored the minimum `MaxZombiesOnce=48` on small maps (broken since v9.74.13)
 - Forced `MaxZombiesOnce=64` in wave 1 even on small maps, since players are spread apart, looking for candies.
 ### ScrN Zed Pack
 - Improved **headshot detection**. Most noticeable in Zed Time and mid-air.
 - **Listen servers** and **Solo** games now use the same, more generous head hitboxes as dedicated servers.
+- Zed heads are synced between the server and clients *when it matters*. For example, Pro Sharpies won't have to hit the thin air above the Scrake's head in the first second of a stun to score headshots - the head will actually be drawn there. Hitboxes are unchanged; the visual appearance is.
+- **Running and charging zeds** (Scrake, Gorefast, Fleshpound, Brute): on a dedicated server, headshots during attacks on the move and hit reactions now use the running pose that players see instead of the walking pose. Charging zeds' heads are now where they appear on screen.
+- **Fleshpound**: an enraged Fleshpound now uses its rage attack animation on dedicated servers too, as it always did in Solo. The rage attack deals 104-115 damage on HoE: it kills a player with 100 HP and no armor, but even 25 armor guarantees survival. In Solo, it is weaker than before (77-85 instead of 115-129). Set `bLegacyFleshpound=true` in *ScrnZedPack.ini* to keep the old attacks.
 - *ScrnZedPack.ini*: removed `bHeadshotSrvFixWalk` and `bHeadshotSrvFixAttackAndMove`. Both fixes are always on.
 - *ScrnZedPack.ini*: removed `bHeadshotSrvTorsoTwist`. It had no effect.
+### Doom 3
+- **Listen servers** and **Solo** games now use the same, more generous head hitboxes as dedicated servers.
+- **Guardian**, **Berserk Hunter** and **Invulnerable Hunter**: on a dedicated server, headshots now use the pose that players see while the Guardian charges, the Berserk Hunter rages, or the Invulnerable Hunter is shielded.
+- **Maggot**, **Tick**, **Trite** and **Fat Zombie**: the server now picks the random walk animation and replicates it to clients, so the head moves the same way on every side. Previously, the server and every client each picked their own (the Fat Zombie on the server always used the first one).
+- **Cacodemon**, **Seeker** and **Maledict**: on a dedicated server, headshots now use the hovering pose while the demon hovers, instead of the flying one.
+- **Imp**: hit reactions while crawling are now visible to players. Previously, they played on the server only and silently cancelled the Imp's crawl attacks and leaps. Now a crawling Imp, like a standing one, stops briefly when hit, but only when it is not attacking.
 ### Code Changes
 - `ScrnPlayerController.bZEDTimeActive` stays true until Zed Time fully ends (`FinishZedTime()` / `ClientFinishZedTime()`). `ExitZedTime()` is called when the game starts speeding back up and only plays the exit sound.
 
