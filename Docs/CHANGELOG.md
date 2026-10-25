@@ -45,6 +45,8 @@
 - Last remaining zeds are marked in **TSC**, too.
 - **ZED Guns** removed from the default (non-bundled) *ScrnServerPerks.ini* and are no longer supported. You can still use the **HTec** versions along with the perk.
 - *ScrnServerPerks.ini*: added **MAC10** to the Medic's category, as it is a cross-perk weapon (Firebug + Combat Medic).
+- *ScrnZedsIni*: renamed `ClassicZeds` => `DefaultZeds`; `ClassicGrittierZeds` => `DefaultGrittierZeds` to allow easy override during seasonal events.
+- *ScrnZedsIni*: added `TourneyZeds` - the classic zeds that must not be overrided; used in TSC and XCM.
 
 ## v9.75.05
 - Fixed weapon spread at the end of Zed Time (during the speeding-up phase).
