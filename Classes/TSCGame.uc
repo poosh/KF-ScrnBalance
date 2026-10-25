@@ -1138,11 +1138,6 @@ function int GetHdmgMsgIndex(bool enabled)
     return 231; // human damage enabled
 }
 
-function HandleRemainingZeds() {
-    if (bSingleTeamGame)
-        super.HandleRemainingZeds();
-}
-
 function EZedSpawnLocation GetSpawnLocation()
 {
     if (!bTeamWiped) {

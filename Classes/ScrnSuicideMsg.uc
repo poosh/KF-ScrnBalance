@@ -4,6 +4,7 @@ class ScrnSuicideMsg extends CriticalEventPlus
 var texture Icon;
 var Color CriticalColor;
 var int OldValue;
+var float OldPulse;
 
 static function RenderComplexMessage(
         Canvas C,
@@ -31,8 +32,8 @@ static function RenderComplexMessage(
     PC = ScrnPlayerController(RelatedPRI_1.Owner);
     if ( PC == none )
         return;
-    if ( !RelatedPRI_1.bIsSpectator && (PC.Pawn == none || PC.Pawn.Health <= 0) )
-        return;
+    // if ( !RelatedPRI_1.bIsSpectator && (PC.Pawn == none || PC.Pawn.Health <= 0) )
+    //     return;
     hud = ScrnHUD(PC.myHud);
     if ( hud == none )
         return;
@@ -46,18 +47,18 @@ static function RenderComplexMessage(
         Seconds = TimeLeft;
         C.DrawColor = default.CriticalColor;
         C.DrawColor.A = hud.PulseAlpha;
-        if ( Beep > 0 && hud.PulseAlpha > default.OldValue) {
+        if (Beep > 0 && PC.Pawn != none && hud.PulseAlpha > default.OldPulse) {
             // beep on pulse's peek
             PC.Pawn.PlaySound(class'ScrnSuicideBomb'.default.BeepSound, SLOT_Misc, 2.0, , 150.0);
         }
-        default.OldValue = hud.PulseAlpha;
+        default.OldPulse = hud.PulseAlpha;
     }
     else {
         Minutes = TimeLeft / 60;
         Seconds = TimeLeft % 60;
         // C.Color = DrawColor;
         // C.Color.A = KFHUDAlpha;
-        if ( Beep > 0 && TimeLeft != default.OldValue ) {
+        if (Beep > 0 && PC.Pawn != none && TimeLeft != default.OldValue) {
             // beep once per second
             PC.Pawn.PlaySound(class'ScrnSuicideBomb'.default.BeepSound, SLOT_Misc, 2.0, , 150.0);
             default.OldValue = TimeLeft;

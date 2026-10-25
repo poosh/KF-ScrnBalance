@@ -3200,6 +3200,7 @@ function AddSuicideTime(int dt, bool bReset)
     ScrnGRI.RemainingMinute = RemainingTime;
     ScrnGRI.bStopCountDown = !bSuicideTimer;
     if ( bSuicideTimer && Level.NetMode != NM_DedicatedServer ) {
+        ScrnGRI.RemainingTime = RemainingTime;
         ScrnGRI.ShowTimeMsg(true);
     }
 

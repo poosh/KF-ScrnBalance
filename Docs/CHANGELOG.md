@@ -39,6 +39,13 @@
 
 -------------------------------------------------------------------------------
 
+## v9.75.06
+- Spectators and dead players can see **Suicide Timer** now.
+- Fixed Suicide Timer display and beeping on Listen Servers.
+- Last remaining zeds are marked in **TSC**, too.
+- **ZED Guns** removed from the default (non-bundled) *ScrnServerPerks.ini* and are no longer supported. You can still use the **HTec** versions along with the perk.
+- *ScrnServerPerks.ini*: added **MAC10** to the Medic's category, as it is a cross-perk weapon (Firebug + Combat Medic).
+
 ## v9.75.05
 - Fixed weapon spread at the end of Zed Time (during the speeding-up phase).
 - **Story Mode**: Fixed Zed Time never ending server-side on dedicated servers, which disabled weapon spread build-up for the rest of the map.
@@ -60,6 +67,9 @@
 - **Maggot**, **Tick**, **Trite** and **Fat Zombie**: the server now picks the random walk animation and replicates it to clients, so the head moves the same way on every side. Previously, the server and every client each picked their own (the Fat Zombie on the server always used the first one).
 - **Cacodemon**, **Seeker** and **Maledict**: on a dedicated server, headshots now use the hovering pose while the demon hovers, instead of the flying one.
 - **Imp**: hit reactions while crawling are now visible to players. Previously, they played on the server only and silently cancelled the Imp's crawl attacks and leaps. Now a crawling Imp, like a standing one, stops briefly when hit, but only when it is not attacking.
+### Heavy Machine Gunner
+- Weapon arsenal overhaul by [That1Guy]. Enhanced weapon models, animations, and sounds.
+- Tactical reloads for **Heavy Tommy Gun**, **SA80LSW**, **RPK-47**, and **AUG** (by [That1Guy])
 ### Code Changes
 - `ScrnPlayerController.bZEDTimeActive` stays true until Zed Time fully ends (`FinishZedTime()` / `ClientFinishZedTime()`). `ExitZedTime()` is called when the game starts speeding back up and only plays the exit sound.
 
