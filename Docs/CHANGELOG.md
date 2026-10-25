@@ -39,7 +39,7 @@
 
 -------------------------------------------------------------------------------
 
-## v9.75.06
+## v9.76
 - Spectators and dead players can see **Suicide Timer** now.
 - Fixed Suicide Timer display and beeping on Listen Servers.
 - Last remaining zeds are marked in **TSC**, too.
@@ -47,11 +47,10 @@
 - *ScrnServerPerks.ini*: added **MAC10** to the Medic's category, as it is a cross-perk weapon (Firebug + Combat Medic).
 - *ScrnZedsIni*: renamed `ClassicZeds` => `DefaultZeds`; `ClassicGrittierZeds` => `DefaultGrittierZeds` to allow easy override during seasonal events.
 - *ScrnZedsIni*: added `TourneyZeds` - the classic zeds that must not be overrided; used in TSC and XCM.
-
-## v9.75.05
 - Fixed weapon spread at the end of Zed Time (during the speeding-up phase).
 - **Story Mode**: Fixed Zed Time never ending server-side on dedicated servers, which disabled weapon spread build-up for the rest of the map.
 - **Shop Menu**: Fixed the perked weapon category load on perk change.
+- **TSC**: team/player average ping is reported at game end.
 ### TSC Tourney v2.03
 - Restored the minimum `MaxZombiesOnce=48` on small maps (broken since v9.74.13)
 - Forced `MaxZombiesOnce=64` in wave 1 even on small maps, since players are spread apart, looking for candies.
@@ -74,9 +73,6 @@
 - Tactical reloads for **Heavy Tommy Gun**, **SA80LSW**, **RPK-47**, and **AUG** (by [That1Guy])
 ### Code Changes
 - `ScrnPlayerController.bZEDTimeActive` stays true until Zed Time fully ends (`FinishZedTime()` / `ClientFinishZedTime()`). `ExitZedTime()` is called when the game starts speeding back up and only plays the exit sound.
-
-## v9.75.03
-- **TSC**: team/player average ping is reported at game end.
 
 ## v9.75.02
 - Fixed a bug where the **Scoreboard** was empty after the game ended if the player hadn't opened it during the game.
