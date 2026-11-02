@@ -296,3 +296,34 @@ checks, plus extra opcodes for the call, the parameter read and the return.
 
 UnrealScript has no `inline` keyword and no macros, so there is no way to get the helper's readability
 without paying for the call.
+
+### Empty functions are not free
+
+A common C++ habit is to disable debug output by emptying the function body and leaving the call
+sites alone, trusting the compiler to drop calls to a function that does nothing:
+
+```unrealscript
+final function MyDebug(string S)
+{
+    // log(S);
+}
+```
+
+The UnrealScript compiler drops nothing. Every call to an empty function still pays the full price
+listed under *What every script call costs* — frame setup, the replication and state checks — only
+to execute a bare `return`.
+
+Worse, **the arguments are still evaluated**. They are computed into the callee's frame before the
+body runs, so the body cannot skip them:
+
+```unrealscript
+MyDebug("Zed " $ Z $ " at " $ Z.Location);  // all the string building still happens
+```
+
+Every `$`, every object-to-string and vector-to-string conversion and every temporary string
+allocation runs, and the result is thrown away. That usually costs far more than the call itself.
+
+- Outside hot code, an empty stub is fine — one wasted call per event does not matter.
+- In hot code, guard the call sites with a `bool`: `if (bDebug) MyDebug(...);`. A `bool` test is a
+  couple of cheap opcodes and skips both the call and the argument evaluation. Or comment the call
+  sites out.

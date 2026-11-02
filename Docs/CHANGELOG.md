@@ -39,6 +39,12 @@
 
 -------------------------------------------------------------------------------
 
+## v9.76.01
+- **Zed Time** no longer stalls the game clock. Every Zed Time used to cost the server 1-2 seconds of its once-per-second game timer.
+- **Server performance**: Zed Time no longer saves the server config (*KillingFloor.ini*) on every game speed change, several times per Zed Time.
+### ScrN Zed Pack
+- **Server performance**: the server-side **Stalker** spot check (`bCommandoRevealsStalkers=true` in *ScrnZedPack.ini*, the default) runs about 4 times per second instead of every server tick. It was one of the most expensive server-side script functions.
+
 ## v9.76
 - Spectators and dead players can see **Suicide Timer** now.
 - Fixed Suicide Timer display and beeping on Listen Servers.

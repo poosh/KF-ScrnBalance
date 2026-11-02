@@ -380,6 +380,8 @@ The payload that follows is as small as the type allows:
 | `byte` | 8 bits |
 | `byte` declared as an **enum** | `ceil(log2(NumNames))` bits - a 3-state enum costs **2 bits** |
 | `int`, `float` | 32 bits |
+| `vector` | ~5 bits + 3 x (`ceil(log2(1+M))` + 1) bits, `M` = largest component — **lossy**, see below |
+| `rotator` | 3 bits + 8 bits per non-zero axis — **lossy**, see below |
 | element of a **static array** | payload **plus a whole byte** of element index |
 
 So **a single `bool` costs 7 to 10 bits, of which one bit is data.** Eighty-five to ninety per cent of
@@ -395,6 +397,32 @@ Two things that are *not* charged per property, and that decide whether any of t
   costs roughly three bytes of framing on top. If the actor had nothing else to send that pass, the
   first changed property drags that along with it; if it was already sending something, further
   properties cost only their own header plus payload.
+
+### Vectors and rotators arrive rounded
+
+The engine packs `vector` and `rotator` values specially on the wire, and both lose precision. This
+applies everywhere one crosses the network: a replicated variable, a struct member, or an RPC
+parameter.
+
+**`vector`: each component is rounded to the nearest whole unit.**
+
+- Fine for locations and velocities: a unit is about 2 cm, and velocity loses roughly 0.1% of its
+  direction at running speed.
+- **Destroys unit vectors.** A direction or a hit normal arrives with every component rounded to
+  -1, 0 or 1: `(0.6, 0.8, 0)` becomes `(1, 1, 0)`. Scale it up before sending (`Dir * 32767`) and
+  normalise it on arrival, or send a `rotator`.
+- The size adapts to the largest component, so small vectors are cheap: `(0,0,0)` is about 11 bits,
+  a typical map location about 44 bits, against 96 for three raw floats.
+
+**`rotator`: one byte per axis, i.e. steps of 256 units = 1.40625 degrees.**
+
+- The value is **truncated**, not rounded, so the error always points the same way, up to 1.4 degrees.
+- **The client receives every axis normalised to `0..65280`.** `Yaw=-16384` arrives as `49152`. So
+  comparing a replicated rotator with the server's value using `==`, or testing `Yaw < 0` on the
+  client, fails even when nothing changed. Normalise both sides before comparing.
+- An axis that is exactly zero costs one bit, so a yaw-only rotator is 11 bits.
+- Anything that needs finer angles — an aim pitch, a slowly turning turret — has to go as an `int` or
+  `float` (32 bits each).
 
 ### Is it worth packing bools into a bitmask?
 

@@ -9,7 +9,6 @@ defaultproperties
     Spread=0.20
     maxVerticalRecoilAngle=250
     maxHorizontalRecoilAngle=150
-    KickMomentum = vect(0,0,0);
     bFiringDoesntAffectMovement=true
 
     FireSoundRef="KF_NailShotgun.KF_NailShotgun_Fire_Alt_M"

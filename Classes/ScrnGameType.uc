@@ -873,6 +873,28 @@ function HandleZedTime(float dt)
     }
 }
 
+function SetGameSpeed(float T)
+{
+    local float OldSpeed;
+
+    if (!AllowGameSpeedChange()) {
+        Level.TimeDilation = 1.1;
+        GameSpeed = 1.0;
+        Default.GameSpeed = GameSpeed;
+    }
+    else {
+        OldSpeed = GameSpeed;
+        GameSpeed = FMax(T, 0.1);
+        Level.TimeDilation = 1.1 * GameSpeed;
+        if (GameSpeed != OldSpeed) {
+            Default.GameSpeed = GameSpeed;
+        }
+    }
+    if (TimerRate != 1.1) {
+        SetTimer(1.1, true);
+    }
+}
+
 function int ReduceDamage(int Damage, pawn injured, pawn instigatedBy, vector HitLocation, out vector Momentum,
         class<DamageType> DamageType)
 {
