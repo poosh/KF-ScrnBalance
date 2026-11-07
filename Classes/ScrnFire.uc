@@ -61,7 +61,7 @@ function DoTrace(Vector Start, Rotator Dir)
     local KFPawn HitPawn;
     local KFMonster Zed;
     local int i;
-    local bool bWasDecapitated;
+    local bool bWasDecapitated, bWasDead;
 
     KillCountPerTrace = 0;
 
@@ -85,6 +85,8 @@ function DoTrace(Vector Start, Rotator Dir)
     while (++HitCount < 127 && HitDamage >= DamageMin) {
         Zed = none;
         HitPawn = none;
+        bWasDead = false;
+        bWasDecapitated = false;
 
         Other = Instigator.HitPointTrace(HitLocation, HitNormal, End, HitPoints, Start,, 1);
 
@@ -118,9 +120,7 @@ function DoTrace(Vector Start, Rotator Dir)
         }
 
         if (HitPawn != none) {
-            // bWasDecapitated in this case means was dead or shot missed any bones/body.
-            // In that case, our bullet flies by without damage loss.
-            bWasDecapitated = HitPawn.bDeleteMe || HitPoints.Length == 0 || HitPawn.Health < 0;
+            bWasDead = HitPawn.bDeleteMe || HitPoints.Length == 0 || HitPawn.Health < 0;
 
             if(!HitPawn.bDeleteMe && HitPoints.Length > 0) {
                 DamagePlayer(HitPawn, HitDamage, HitLocation, HitMomentum*X, HitPoints);
@@ -131,21 +131,21 @@ function DoTrace(Vector Start, Rotator Dir)
                 IgnoreActors[IgnoreActors.Length] = HitPawn.AuxCollisionCylinder;
                 HitPawn.AuxCollisionCylinder.SetCollision(false);
             }
-
-            if(bWasDecapitated) {
-                Start = HitLocation;
-                continue;
-            }
         }
         else if (Zed != none) {
             bWasDecapitated = Zed.bDecapitated;
+            bWasDead = Zed.Health < 0;
+
             DamageZed(Zed, AdjustZedDamage(Zed, X, HitDamage), HitLocation, HitMomentum*X);
-            if (Zed == none || Zed.Health <= 0 || (!bWasDecapitated && Zed.bDecapitated)) {
-                ++KillCountPerTrace;
-            }
-            else if (Zed != none && PenDmgReductionByHealth > 0) {
-                HitDamage *= 1.0 - PenDmgReductionByHealth * Zed.Health;
-                HitMomentum *= 1.0 - PenDmgReductionByHealth * Zed.Health;
+
+            if (!bWasDead) {
+                if (Zed == none || Zed.Health <= 0 || (!bWasDecapitated && Zed.bDecapitated)) {
+                    ++KillCountPerTrace;
+                }
+                else if (Zed != none && PenDmgReductionByHealth > 0) {
+                    HitDamage *= 1.0 - PenDmgReductionByHealth * Zed.Health;
+                    HitMomentum *= 1.0 - PenDmgReductionByHealth * Zed.Health;
+                }
             }
         }
         else {
@@ -153,11 +153,14 @@ function DoTrace(Vector Start, Rotator Dir)
             break;
         }
 
-        if (++PenCounter > MaxPenetrations)
-            break;
+        // Damage dead bodies for kick momentum and Fx but don't affect gameplay
+        if (!bWasDead) {
+            if (++PenCounter > MaxPenetrations)
+                break;
+            HitDamage *= PenDmgReduction;
+            HitMomentum *= PenDmgReduction;
+        }
 
-        HitDamage *= PenDmgReduction;
-        HitMomentum *= PenDmgReduction;
         Start = HitLocation;
     }
 
