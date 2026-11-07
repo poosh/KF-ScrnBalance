@@ -319,7 +319,9 @@ function InitGameReplicationInfo()
             ScrnGRI.ZedTimeValue = 0;
         }
 
-        if (FakedPlayers > 1) {
+        WaveHandler.LoadGRI(ScrnGRI);
+
+        if (ScrnGRI.FakedPlayers > 1) {
             ScrnBalanceMut.DynamicLevelCap();
         }
     }
@@ -2512,6 +2514,10 @@ function GetServerDetails( out ServerResponseLine ServerState )
         }
     }
 
+    if (!ScrnBalanceMut.bServerInfoPlayers) {
+        ServerState.CurrentPlayers = 0;
+    }
+
     // skip UnrealMPGameInfo
     // AddServerDetail( ServerState, "MinPlayers", MinPlayers );
     // AddServerDetail( ServerState, "EndTimeDelay", EndTimeDelay );
@@ -2539,6 +2545,22 @@ function GetServerDetails( out ServerResponseLine ServerState )
     if (WaveHandler != none) {
         AddServerDetail(ServerState, "ScrN Game", class'ScrnFunctions'.static.StripColorTags(WaveHandler.GL.GameTitle));
     }
+}
+
+function int GetNumPlayers()
+{
+    if (!ScrnBalanceMut.bServerInfoPlayers)
+        return 0;
+
+    return super.GetNumPlayers();
+}
+
+function GetServerPlayers( out ServerResponseLine ServerState )
+{
+    if (!ScrnBalanceMut.bServerInfoPlayers)
+        return;
+
+    super.GetServerPlayers(ServerState);
 }
 
 // This is the only place where TourneyMode can be changed by descendants.

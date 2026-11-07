@@ -717,6 +717,10 @@ function int GetVoteIndex(PlayerController Sender, string Key, out string Value,
     else if ( Key == "FAKED" || Key == "FAKEDPLAYERS" ) {
         if ( !Mut.CheckScrnGT(Sender) )
             return VOTE_LOCAL;
+        if (!Mut.bAllowFakedVote) {
+            Sender.ClientMessage(strNotAvaliableATM);
+            return VOTE_LOCAL;
+        }
         if ( !TryStrToInt(Value, v) || v < 0 || v > 32 )
             return VOTE_ILLEGAL;
         if ( Mut.ScrnGT.ScrnGRI.FakedPlayers == v && Mut.ScrnGT.ScrnGRI.FakedAlivePlayers == v )
@@ -732,6 +736,10 @@ function int GetVoteIndex(PlayerController Sender, string Key, out string Value,
     else if ( Key == "FAKEDCOUNT" ) {
         if ( !Mut.CheckScrnGT(Sender) )
             return VOTE_LOCAL;
+        if (!Mut.bAllowFakedVote) {
+            Sender.ClientMessage(strNotAvaliableATM);
+            return VOTE_LOCAL;
+        }
         if ( !TryStrToInt(Value, v) || v < 0 || v > 32 )
             return VOTE_ILLEGAL;
         if ( Mut.ScrnGT.ScrnGRI.FakedPlayers == v )
@@ -747,6 +755,10 @@ function int GetVoteIndex(PlayerController Sender, string Key, out string Value,
     else if ( Key == "FAKEDHEALTH" ) {
         if ( !Mut.CheckScrnGT(Sender) )
             return VOTE_LOCAL;
+        if (!Mut.bAllowFakedVote) {
+            Sender.ClientMessage(strNotAvaliableATM);
+            return VOTE_LOCAL;
+        }
         if ( !TryStrToInt(Value, v) || v < 0 || v > 32 )
             return VOTE_ILLEGAL;
         if ( Mut.ScrnGT.ScrnGRI.FakedAlivePlayers == v )

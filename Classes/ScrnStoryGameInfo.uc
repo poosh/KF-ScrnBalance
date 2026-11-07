@@ -71,6 +71,14 @@ function final string GetCmdLine()
     return CmdLine;
 }
 
+function int GetNumPlayers()
+{
+    if (!ScrnBalanceMut.bServerInfoPlayers)
+        return 0;
+
+    return NumPlayers;
+}
+
 event Broadcast( Actor Sender, coerce string Msg, optional name Type )
 {
     super.Broadcast(Sender, class'ScrnF'.static.ParseColorTags(Msg), Type);

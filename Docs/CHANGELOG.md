@@ -39,7 +39,11 @@
 
 -------------------------------------------------------------------------------
 
-## v9.76.01
+## v9.76.03
+- **49. Warzone** - a new game mode. Recommended to play solo to lose sanity.
+- *ScrnGames.ini*: added `FakedPlayerCount` and `FakedPlayerHealth`.
+- All hitscan weapons (`ScrnFire`) penetrate dead bodies now.
+- *ScrnBalanceSrv.ini*: added `bServerInfoPlayers`. Disabling player number reporting reduces the risk of DDoS attacks.
 - **Zed Time** no longer stalls the game clock. Every Zed Time used to cost the server 1-2 seconds of its once-per-second game timer.
 - **Server performance**: Zed Time no longer saves the server config (*KillingFloor.ini*) on every game speed change, several times per Zed Time.
 ### ScrN Zed Pack

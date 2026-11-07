@@ -150,6 +150,7 @@ var globalconfig bool bPauseTraderOnly; //game can be vote-paused in trader time
 var globalconfig float SkippedTradeTimeMult; //how much of the skipped trader time (mvote ENDTRADE) to add to the next one (0 - don't add, 1 - full, 0.5 - half of the skipped time)
 var transient int TradeTimeAddSeconds; //amount of seconds to add to the next trader time
 var globalconfig bool bAllowBlameVote, bAllowKickVote, bKickBan;
+var bool bAllowFakedVote;  // no configurable; usually allowed unless forced
 var globalconfig int BlameVoteCoolDown;
 var globalconfig bool bBlameFart;
 var transient int BlameCounter;
@@ -261,7 +262,7 @@ var float OriginalWaveSpawnPeriod;
 var globalconfig float MinZedSpawnPeriod;
 var globalconfig bool bZedFights;
 var globalconfig float ZedToZedDamageMult;
-var globalconfig bool bServerInfoVeterancy;
+var globalconfig bool bServerInfoVeterancy, bServerInfoPlayers;
 var globalconfig bool bLouderZeds;
 
 var transient array<KFUseTrigger> DoorKeys;
@@ -1943,6 +1944,9 @@ function GetServerDetails( out GameInfo.ServerResponseLine ServerState )
             if ( ServerState.ServerInfo[i].Key == "Veterancy" || Left(ServerState.ServerInfo[i].Key, 9) == "SP: Perk " )
                 ServerState.ServerInfo.remove(i--, 1);
         }
+    }
+    if (!bServerInfoPlayers) {
+        ServerState.CurrentPlayers = 0;
     }
 
     i = ServerState.ServerInfo.Length;
@@ -3659,7 +3663,7 @@ function GameResumed()
 
 defaultproperties
 {
-    VersionNumber=97601
+    VersionNumber=97603
     GroupName="KF-Scrn"
     FriendlyName="ScrN Balance"
     Description="Total rework of KF1 to make it modern and the best tactical coop in the world while sticking to the roots of the original."
@@ -3871,6 +3875,7 @@ defaultproperties
     bReplaceScoreBoard=true
     ServerPerksPkgName="ScrnSP.ServerPerksMutSE"
     bServerInfoVeterancy=true
+    bServerInfoPlayers=true
     bFixMusic=true
     bRespawnDoors=false
 
@@ -3902,6 +3907,7 @@ defaultproperties
     bBlameFart=true
     bAllowBoringVote=true
     BoringFastTrack=1
+    bAllowFakedVote=true
     MaxVoteKillMonsters=9
     MaxVoteKillBounty=49
     bVoteKillCheckVisibility=true

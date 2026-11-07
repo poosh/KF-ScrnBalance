@@ -33,6 +33,7 @@ var config int SuicideTime;
 var config int SuicideTimePerWave;
 var config float SuicideTimePerPlayerMult, SuicideTimePerPlayerDeath;
 var config float FriendlyFireScale;
+var config byte FakedPlayerCount, FakedPlayerHealth;
 
 struct SHL {
     var byte Difficulty;

@@ -305,6 +305,15 @@ function LoadGame(ScrnGameType MyGame)
     LoadWeaponLists();
 }
 
+function LoadGRI(ScrnGameReplicationInfo GRI)
+{
+    if (GL.FakedPlayerCount > 0 || GL.FakedPlayerHealth > 0) {
+        Mut.bAllowFakedVote = false;
+        GRI.FakedPlayers = max(GL.FakedPlayerCount, GRI.FakedPlayers);
+        GRI.FakedAlivePlayers = max(GL.FakedPlayerHealth, GRI.FakedAlivePlayers);
+    }
+}
+
 function PrecacheWaves()
 {
     local int i;
