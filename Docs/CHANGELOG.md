@@ -39,9 +39,11 @@
 
 -------------------------------------------------------------------------------
 
-## v9.76.03
-- **49. Warzone** - a new game mode. Recommended to play solo to lose sanity.
+## v9.76.05
+- **77. Warzone** - a new game mode. Recommended to play solo to lose sanity.
 - *ScrnGames.ini*: added `FakedPlayerCount` and `FakedPlayerHealth`.
+- *ScrnGames.ini*: `Mutators` can override `ScrnBalanceSrv.AutoLoadMutators` - load a different mutator from the same group.
+- **XCM** - fIxed a typo in Wave 2 (thanks[WaffleTime])
 - All hitscan weapons (`ScrnFire`) penetrate dead bodies now.
 - *ScrnBalanceSrv.ini*: added `bServerInfoPlayers`. Disabling player number reporting reduces the risk of DDoS attacks.
 - **Zed Time** no longer stalls the game clock. Every Zed Time used to cost the server 1-2 seconds of its once-per-second game timer.

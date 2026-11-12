@@ -2738,7 +2738,6 @@ function PostBeginPlay()
 {
     local ScrnVotingHandlerMut VH;
     local ScrnAchHandler AchHandler;
-    local int i;
     local string s;
 
     if ( bLogObjectsAtMapStart )
@@ -2933,10 +2932,20 @@ function PostBeginPlay()
 
     Log(FriendlyName @ GetVersionStr()$" loaded", 'ScrnBalance');
 
-    for ( i=0; i<AutoLoadMutators.length; ++i ) {
-        if ( AutoLoadMutators[i] != "" )  {
-            Log("Loading additional mutator: " $ AutoLoadMutators[i], 'ScrnBalance');
-            KF.AddMutator(AutoLoadMutators[i], true);
+    // ScrnGameLength.Mutators can override AutoLoadMutators, so load them first.
+    if (ScrnGT == none || !bScrnWaves) {
+        AddMutators(AutoLoadMutators);
+    }
+}
+
+function AddMutators(array<string> Mutators)
+{
+    local int i;
+
+    for (i = 0; i < Mutators.length; ++i) {
+        if (Mutators[i] != "")  {
+            Log("Loading additional mutator: " $ Mutators[i], 'ScrnBalance');
+            KF.AddMutator(Mutators[i], true);
         }
     }
 }
@@ -3663,7 +3672,7 @@ function GameResumed()
 
 defaultproperties
 {
-    VersionNumber=97603
+    VersionNumber=97605
     GroupName="KF-Scrn"
     FriendlyName="ScrN Balance"
     Description="Total rework of KF1 to make it modern and the best tactical coop in the world while sticking to the roots of the original."

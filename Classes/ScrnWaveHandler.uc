@@ -163,12 +163,8 @@ function LoadGame(ScrnGameType MyGame)
         Game.AddToPackageMap(GL.ServerPackages[i]);
     }
 
-    for (i = 0; i < GL.Mutators.length; ++i) {
-        if (GL.Mutators[i] != "")  {
-            Log("Loading additional mutator: " $ GL.Mutators[i], class.name);
-            Game.AddMutator(GL.Mutators[i], true);
-        }
-    }
+    Mut.AddMutators(GL.Mutators);
+    Mut.AddMutators(Mut.AutoLoadMutators);
 
     if (GL.TraderSpeedBoost != 0) {
         Mut.bTraderSpeedBoost = GL.TraderSpeedBoost > 0;
