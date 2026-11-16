@@ -39,6 +39,10 @@
 
 -------------------------------------------------------------------------------
 
+## v9.76.06
+- Fixed zed events (thanks [Mortimer])
+- FTG now supports zed events, but falls back to standard zeds if the map doesn't define `ZedEventNum` (no mixed zeds).
+
 ## v9.76.05
 - **77. Warzone** - a new game mode. Recommended to play solo to lose sanity.
 - *ScrnGames.ini*: added `FakedPlayerCount` and `FakedPlayerHealth`.
