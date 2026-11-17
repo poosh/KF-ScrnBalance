@@ -77,6 +77,17 @@ simulated function Destroyed()
     Super.Destroyed();
 }
 
+simulated function PostNetReceive()
+{
+    super.PostNetReceive();
+
+    if (bDud && Physics != PHYS_Falling) {
+        AmbientSound = none;
+        Velocity = vect(0,0,0);
+        SetPhysics(PHYS_Falling);
+    }
+}
+
 simulated function PostNetBeginPlay()
 {
     Super.PostNetBeginPlay();
@@ -120,6 +131,8 @@ simulated function bool IsArmed()
 simulated function ProcessTouch(Actor Other, Vector HitLocation)
 {
     local Vector X;
+    local vector BodyHitLocation;
+    local array<int> HitPoints;
 
     // Don't let it hit this player, or blow up on another player
     if (bDud || bHasExploded || Other == none || Other == Instigator || Other.Base == Instigator
@@ -131,8 +144,21 @@ simulated function ProcessTouch(Actor Other, Vector HitLocation)
 
     X = Vector(Rotation);
 
+    if (Pawn(Other) != none && Pawn(Other).Health <= 0) {
+        if (ImpactDamage > 0)
+            Other.TakeDamage(ImpactDamage, Instigator, HitLocation, MomentumTransfer * X, ImpactDamageType);
+        return;
+    }
+
+    if (KFPawn(Other) != none) {
+        if (!Func.static.DetectPlayerHit(self, KFPawn(Other), HitLocation, X, BodyHitLocation, HitPoints))
+            return;
+        HitLocation = BodyHitLocation;
+    }
+
     if (!IsArmed()) {
         if (Role == ROLE_Authority) {
+            bUpdateSimulatedPosition = true;
             AmbientSound=none;
             PlaySound(Sound'ProjectileSounds.PTRD_deflect04',,2.0);
             Other.TakeDamage(ImpactDamage, Instigator, HitLocation, X, ImpactDamageType);
@@ -231,6 +257,8 @@ defaultproperties
     ExplosionSoundVolume=2.0
     Health=300
     bDoubleDamageOnImpact=True
+    bNetTemporary=false
+    bUpdateSimulatedPosition=false
     Damage=1000.000000
     ImpactDamage=350
     //adds light to projectile

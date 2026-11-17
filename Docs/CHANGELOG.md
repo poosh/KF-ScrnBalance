@@ -39,6 +39,10 @@
 
 -------------------------------------------------------------------------------
 
+## v9.76.07
+- Rockets and grenades no longer explode on the empty space of a player's collision cylinder (e.g., above the shoulders). Only a hit on the body counts.
+- Dead bodies no longer stop rockets and grenades. A corpse takes the impact damage, and the projectile flies on.
+
 ## v9.76.06
 - Fixed zed events (thanks [Mortimer])
 - FTG now supports zed events, but falls back to standard zeds if the map doesn't define `ZedEventNum` (no mixed zeds).

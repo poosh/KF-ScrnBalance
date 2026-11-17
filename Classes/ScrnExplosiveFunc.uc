@@ -125,3 +125,25 @@ static function DealDamage(Projectile Proj, Actor Victim, int Damage, vector Hit
 }
 
 static function Killed(Projectile Proj, class<Pawn> KilledClass);
+
+static function bool DetectPlayerHit(Projectile Proj, KFPawn Player, vector HitLocation, vector X,
+        out vector BodyHitLocation, out array<int> HitPoints)
+{
+    local Actor TraceSource;
+    local vector TraceStart, HitNormal;
+
+    TraceStart = HitLocation;
+    if (Proj.Instigator != none) {
+        TraceSource = Proj.Instigator;
+        if (!Proj.bReadyToSplash) {
+            TraceStart = HitLocation - X * ((HitLocation - (Proj.Instigator.Location
+                    + Proj.Instigator.EyePosition())) dot X);
+        }
+    }
+    else {
+        TraceSource = Proj;
+    }
+
+    return TraceSource.HitPointTrace(BodyHitLocation, HitNormal, HitLocation + 200 * X, HitPoints, TraceStart,, 1)
+            == Player && HitPoints.Length > 0;
+}
